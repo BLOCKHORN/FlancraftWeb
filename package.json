@@ -1,0 +1,17 @@
+{
+  "name": "flancraft-web",
+  "private": true,
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "dev": "concurrently -n FRONT,API -c blue,green \"npm:dev -w apps/frontend\" \"npm:dev -w apps/backend\"",
+    "build": "npm run build -w apps/backend && npm run build -w apps/frontend",
+    "start": "npm run start -w apps/backend",
+    "lint": "npm run lint -w apps/frontend || true && npm run lint -w apps/backend || true",
+    "fmt": "prettier -w ."
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.0",
+    "prettier": "^3.3.3"
+  }
+}
+
