@@ -1,0 +1,192 @@
+.editar-noticia {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 5rem 3rem;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+  background: url("/assets/papertexture.jpeg") center top / cover no-repeat;
+  min-height: 100vh;
+
+  h2 {
+    font-family: 'IM Fell English SC', serif;
+    font-size: 2.2rem;
+    color: #3e2f1c;
+    margin-bottom: 1.5rem;
+    text-align: center;
+  }
+
+  // por si lo envuelves en un form o en un div
+  form,
+  .editar-noticia-inner {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  label {
+    display: block;
+    margin-top: 1rem;
+    font-weight: bold;
+    color: #3a2b1a;
+  }
+
+  input[type="text"],
+  input[type="datetime-local"] {
+    width: 100%;
+    padding: 0.7rem;
+    margin-top: 0.5rem;
+    border-radius: 8px;
+    border: 1px solid #c1a374;
+    font-size: 1rem;
+    background-color: #fefaf4;
+    color: #3a2b1a;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+  }
+
+  .editor-toolbar {
+    margin-top: 1rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+
+    button,
+    .color-picker {
+      padding: 0.4rem 0.6rem;
+      font-size: 0.9rem;
+      background-color: #e9dbc3;
+      border: 1px solid #b49a76;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+
+      &.is-active {
+        background-color: #d1b58b;
+        font-weight: bold;
+      }
+
+      &:hover {
+        background-color: #f5ecd9;
+      }
+
+      input[type="color"] {
+        border: none;
+        background: transparent;
+        padding: 0;
+        height: 1.2rem;
+        width: 1.2rem;
+        cursor: pointer;
+      }
+    }
+  }
+
+  .editor-wrapper {
+    margin-top: 1rem;
+    background: #f0f0f0;
+    border: 1px solid #d2b79c;
+    border-radius: 12px;
+    padding: 1rem;
+    min-height: 400px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+    .ProseMirror {
+      outline: none;
+      font-size: 1.1rem;
+      line-height: 1.6;
+      font-family: 'Georgia', serif;
+      color: #2f2a25;
+    }
+  }
+
+  .guardar-btn {
+    margin-top: 1.5rem;
+    background-color: #7b4f2a;
+    color: #fff8e7;
+    font-weight: bold;
+    padding: 0.8rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-block;
+
+    &:hover {
+      background-color: #a66c3f;
+    }
+  }
+
+  .cargando {
+    text-align: center;
+    font-size: 1.2rem;
+    padding: 2rem;
+    color: #5e4630;
+  }
+
+  /* ---------- RESPONSIVE ---------- */
+
+  /* Tablets / portátiles pequeños */
+  @media (max-width: 1024px) {
+    padding: 4rem 2rem;
+
+    h2 {
+      font-size: 2rem;
+    }
+
+    .editor-wrapper {
+      min-height: 360px;
+    }
+  }
+
+  /* Tablets verticales y móviles grandes */
+  @media (max-width: 768px) {
+    padding: 3rem 1.5rem;
+
+    h2 {
+      font-size: 1.8rem;
+    }
+
+    form,
+    .editar-noticia-inner {
+      max-width: 100%;
+    }
+
+    .editor-toolbar {
+      justify-content: center;
+    }
+
+    .editor-wrapper {
+      padding: 0.7rem;
+      min-height: 320px;
+    }
+
+    .guardar-btn {
+      width: 100%;
+      text-align: center;
+    }
+  }
+
+  /* Smartphones */
+  @media (max-width: 480px) {
+    padding: 2.5rem 1rem;
+
+    h2 {
+      font-size: 1.6rem;
+    }
+
+    .editor-wrapper {
+      padding: 0.6rem;
+      min-height: 280px;
+
+      .ProseMirror {
+        font-size: 1rem;
+      }
+    }
+
+    .editor-toolbar {
+      gap: 0.4rem;
+    }
+  }
+}

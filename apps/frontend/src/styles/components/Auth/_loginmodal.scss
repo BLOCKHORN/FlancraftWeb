@@ -1,0 +1,463 @@
+@import url('https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&display=swap');
+
+.login-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 5, 5, 0.55);
+  backdrop-filter: blur(4px);
+  z-index: 9999;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  animation: fadeIn 0.4s ease-in-out;
+
+  .overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+  }
+
+  .hanging-login {
+    position: relative;
+    margin-top: -800px;
+    animation: dropDown 0.8s ease-out forwards;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1;
+
+    .frame-wrapper {
+      position: relative;
+      width: 90vw;
+      max-width: 700px;
+      aspect-ratio: 1248 / 880;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+
+      .hanging-frame {
+        width: 100%;
+        height: auto;
+        pointer-events: none;
+        user-select: none;
+        z-index: 2;
+        display: block;
+      }
+
+      .login-inside {
+        position: absolute;
+        top: 60%;
+        left: 50%;
+        width: 86%;
+        height: 55%;
+        max-height: 100%;
+        overflow-y: auto;
+        max-width: 1000px;
+        transform: translate(-50%, -43%);
+        background: #cab888;
+        border-radius: 14px;
+        z-index: 0;
+        padding: 1.5rem 1.5rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        box-shadow: inset 0 0 0 3px #a17b48;
+
+        .login-box {
+          min-height: 100%;
+          width: 100%;
+          justify-content: center;
+          color: #3C3B47;
+          font-family: 'IM Fell English SC', serif;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          text-align: center;
+          gap: 0.65rem;
+
+          h2 {
+            font-size: 1.6rem;
+            color: #2c1d12;
+            margin-bottom: 0.4rem;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.4);
+            letter-spacing: 0.5px;
+          }
+
+            form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+          input {
+            width: 100%;
+            padding: 0.5rem 0.9rem;
+            border: 2px solid #a17b48;
+            border-radius: 6px;
+            background: #fff8dc;
+            font-size: 0.95rem;
+            font-weight: bold;
+            color: #3b2f1e;
+            transition: 0.3s ease;
+
+            &:focus {
+              border-color: #facc15;
+              box-shadow: 0 0 10px #facc1580;
+              outline: none;
+            }
+
+            &.error-input {
+              border-color: #e74c3c !important;
+              background-color: #fff0f0;
+            }
+          }
+
+          button {
+            width: 100%;
+            padding: 0.55rem;
+            font-size: 0.95rem;
+            border-radius: 12px;
+            border: 2px solid #7c5a3a;
+            font-weight: bold;
+            font-family: 'IM Fell English SC', serif;
+            background: #e8d7b9;
+            color: #3c2b1b;
+            cursor: pointer;
+            box-shadow: inset 0 2px 3px #ffffff88, 0 3px 0 #b38b63, 0 4px 6px rgba(0, 0, 0, 0.2);
+            transition: all 0.15s ease-in-out;
+
+            &:hover {
+              background: #f3e6cc;
+              transform: translateY(-1px);
+              box-shadow: inset 0 2px 3px #ffffff88, 0 4px 0 #b38b63, 0 6px 10px rgba(0, 0, 0, 0.25);
+            }
+
+            &:active {
+              transform: scale(0.98);
+              background: #f9edd5;
+              box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.15), 0 2px 0 #b38b63;
+            }
+
+            &:disabled {
+              background: #ccc2a2;
+              color: #8d7a5c;
+              cursor: not-allowed;
+              opacity: 0.6;
+              box-shadow: none;
+            }
+
+            &.mini {
+              width: auto;
+              font-size: 0.82rem;
+              padding: 0.35rem 0.7rem;
+              border-radius: 8px;
+            }
+          }
+
+          .auth-options {
+            width: 100%;
+            margin-top: 0.3rem;
+
+            .auth-buttons-row {
+              display: flex;
+              justify-content: space-between;
+              gap: 0.4rem;
+              flex-wrap: wrap;
+
+              button {
+                font-size: 0.82rem;
+                padding: 0.35rem 0.7rem;
+                border: 2px solid #7c5a3a;
+                border-radius: 10px;
+                background: #e8d7b9;
+                color: #3c2b1b;
+                font-weight: bold;
+                font-family: 'IM Fell English SC', serif;
+                cursor: pointer;
+                box-shadow: inset 0 2px 2px #ffffff66, 0 2px 0 #b38b63, 0 3px 6px rgba(0, 0, 0, 0.2);
+                transition: all 0.15s ease-in-out;
+
+                &:hover {
+                  background: #f3e6cc;
+                  transform: translateY(-1px);
+                  box-shadow: inset 0 2px 2px #ffffff66, 0 3px 0 #b38b63, 0 5px 10px rgba(0, 0, 0, 0.2);
+                }
+
+                &:active {
+                  transform: scale(0.98);
+                  background: #f9edd5;
+                }
+              }
+            }
+          }
+
+          .error {
+            margin-top: 0.5rem;
+            background: #4a2c2c;
+            color: #ffbdbd;
+            padding: 0.5rem 0.9rem;
+            border-radius: 5px;
+            border: 2px solid #992222;
+            font-size: 0.92rem;
+          }
+
+          .success {
+            margin-top: 0.5rem;
+            background: #254f2a;
+            color: #bdfcc5;
+            padding: 0.5rem 0.9rem;
+            border-radius: 5px;
+            border: 2px solid #2c882f;
+            font-size: 0.92rem;
+          }
+        }
+
+        .login-box.registro,
+        .login-box.reset {
+          h2 {
+            font-size: 1.55rem;
+            color: #1f1409;
+            margin-bottom: 0.4rem;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+          }
+
+          p {
+            font-size: 0.92rem;
+            color: #3b2f1e;
+            background: #f7e6c0;
+            padding: 0.4rem 0.8rem;
+            border-radius: 6px;
+            width: 100%;
+            text-align: left;
+            margin-bottom: 0.3rem;
+
+            strong {
+              color: #2c1d12;
+            }
+          }
+
+          input {
+            background: #fffef8;
+            border-color: #c5a86a;
+          }
+
+          button {
+            background: #e8d7b9;
+            border: 2px solid #7c5a3a;
+            color: #3c2b1b;
+            box-shadow: inset 0 2px 3px #ffffff88, 0 3px 0 #b38b63;
+
+            &:hover {
+              background: #f3e6cc;
+              box-shadow: inset 0 2px 3px #ffffff88, 0 4px 0 #b38b63, 0 6px 10px rgba(0, 0, 0, 0.25);
+            }
+
+            &:active {
+              background: #f9edd5;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+// Animaciones
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes dropDown {
+  from {
+    margin-top: -800px;
+  }
+  to {
+    margin-top: 0px;
+  }
+}
+
+@keyframes dropUp {
+  from {
+    margin-top: 0px;
+    opacity: 1;
+  }
+  to {
+    margin-top: -800px;
+    opacity: 0;
+  }
+}
+
+.login-modal.fade-out-up .hanging-login {
+  animation: dropUp 0.6s ease-in-out forwards;
+}
+
+// Botón volver y cerrar
+.back-button,
+button.close-btn {
+  background: none;
+  border: none;
+  color: #d9b670;
+  font-weight: bold;
+  margin-bottom: 0.6rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: color 0.3s ease;
+
+  &:hover {
+    color: #f6e2b3;
+    text-decoration: underline;
+  }
+}
+
+// Toast de error
+.toast-error {
+  position: fixed;
+  bottom: 39rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #4a2c2c;
+  color: #ffbdbd;
+  border: 2px solid #992222;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: bold;
+  z-index: 10000;
+  box-shadow: 0 0 10px #00000044;
+  animation: fadeSlideUp 0.4s ease-out;
+}
+
+@keyframes fadeSlideUp {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 10px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+@media (max-width: 480px) {
+  .login-modal {
+    align-items: flex-start;
+    overflow-y: none;
+
+    .hanging-login {
+      margin-top: 0;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      padding: 2rem 0;
+
+      .frame-wrapper {
+        width: 100vw;
+        max-width: 500px;
+        aspect-ratio: 1 / 0; // más alto que ancho para caber todo
+        position: fixed;
+        top: 0%;
+
+        .hanging-frame {
+          width: 100%;
+          height: auto;
+          display: block;
+        }
+
+        .login-inside {
+  position: absolute;
+  top: 64%;
+  left: 23%;
+  transform: translate(-50%, -50%);
+  width: 135%;
+  height: 100%;
+  max-height: 100%;
+  overflow-y: auto;
+  padding: 0.8rem 0.6rem;
+  background: #cab888;
+  border-radius: 10px;
+  box-shadow: inset 0 0 0 2px #a17b48;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  transform-origin: top center;
+  scale: 0.6;
+}
+
+
+        .login-box {
+          width: 100%;
+          gap: 0.6rem;
+
+          h2 {
+            font-size: 1.15rem;
+            margin-bottom: 0.3rem;
+            line-height: 1.2;
+          }
+
+          form {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+          }
+
+          input {
+            font-size: 0.88rem;
+            padding: 0.45rem 0.75rem;
+          }
+
+          button {
+            font-size: 0.9rem;
+            padding: 0.5rem;
+          }
+
+          .auth-options {
+            .auth-buttons-row {
+              flex-direction: column;
+              gap: 0.4rem;
+
+              button {
+                width: 100%;
+                font-size: 0.85rem;
+                padding: 0.4rem 0.7rem;
+              }
+            }
+          }
+
+          p {
+            font-size: 0.85rem;
+            line-height: 1.3;
+            margin-bottom: 0.3rem;
+            text-align: left;
+          }
+
+          .error,
+          .success {
+            font-size: 0.85rem;
+            padding: 0.5rem 0.8rem;
+          }
+        }
+      }
+    }
+
+    .toast-error {
+      bottom: 50rem;
+      font-size: 0.85rem;
+      padding: 0.6rem 1rem;
+      max-width: 90%;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+  }
+}

@@ -1,0 +1,25 @@
+@use '../base/variables' as *;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'IM Fell English SC', serif;
+  background: #2b1e15 url('/textures/body.webp') repeat;
+  background-size: 512px;
+  color: $color-texto;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+}

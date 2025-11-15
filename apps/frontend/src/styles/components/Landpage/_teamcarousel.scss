@@ -1,0 +1,274 @@
+/* ===== WRAPPER — fondo completo de la sección ===== */
+.team-carousel-wrapper {
+  position: relative;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  /* mordemos el padding de .main-content para que NO se vea la franja oscura */
+  z-index: 5;
+  overflow: hidden;
+
+  /* fondo ilustrado */
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100vw;
+    height: 100%;
+    min-height: 750px; /* para monitores grandes */
+    background:
+      linear-gradient(
+        to bottom,
+        rgba(30, 27, 23, 1) 0%,
+        rgba(30, 27, 23, 0) 12%,
+        rgba(30, 27, 23, 0) 88%,
+        rgba(30, 27, 23, 1) 100%
+      ),
+      url("/assets/backmeet.png") center top / cover no-repeat;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* un poco de espacio */
+  padding: 5rem 0 6.5rem;
+}
+
+/* ===== BLOQUE DEL PERGAMINO ===== */
+.team-carousel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  background: #f5eee7;
+  border-radius: 16px;
+  padding: 3rem 2rem;
+  width: min(1100px, 95vw);
+  margin: 0 auto;
+  box-shadow: 0 0 0 6px #ffe4b8, 0 10px 30px rgba(0, 0, 0, 0.25);
+  border: 2px solid #ffe4b8;
+  box-sizing: border-box;
+  position: relative;
+  z-index: 2;
+
+  .team-content {
+    display: flex;
+    align-items: stretch;
+    justify-content: space-between;
+    gap: 3rem;
+    width: 100%;
+    flex-wrap: wrap;
+    min-height: 420px;
+
+    @media (max-width: 768px) {
+      flex-direction: column;
+      min-height: 600px;
+      align-items: center;
+    }
+  }
+
+  .team-text {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    max-width: 520px;
+    min-height: 420px;
+
+    .title {
+      font-size: 2.5rem;
+      color: #2e2e2e;
+      position: relative;
+      padding-bottom: 1rem;
+      letter-spacing: 0.5px;
+      font-family: "IM Fell English SC", serif;
+
+      &::before {
+        content: "";
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 120px;
+        height: 4px;
+        background-color: #f4cc62;
+        border-radius: 2px;
+      }
+    }
+
+    .name {
+      font-size: 1.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: #333;
+      font-family: "IM Fell English SC", serif;
+
+      svg {
+        margin-right: 0.4rem;
+      }
+
+      .badge {
+        padding: 0.3rem 0.7rem;
+        border-radius: 5px;
+        font-size: 0.85rem;
+        font-weight: bold;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        text-shadow: 0 1px 1px rgba(0, 0, 0, 0.3);
+        white-space: nowrap;
+      }
+    }
+
+    .description {
+      font-size: 1.1rem;
+      color: #444;
+      line-height: 1.75;
+      border-top: 2px dashed #ccc;
+      padding-top: 1rem;
+      text-align: justify;
+    }
+  }
+
+  .team-avatar {
+    flex-shrink: 0;
+    width: 260px;
+    height: 260px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 260px;
+
+    .skin-pose {
+      max-height: 100%;
+      width: 100%;
+      height: auto;
+      object-fit: contain;
+      image-rendering: pixelated;
+      transition: transform 0.5s ease, opacity 0.5s ease;
+
+      &.animate-in {
+        transform: translateX(30px);
+        opacity: 0;
+        animation: slide-in 0.5s ease forwards;
+      }
+    }
+  }
+
+  @keyframes slide-in {
+    from {
+      transform: translateX(30px);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
+  .progress-bar-wrapper {
+    position: relative;
+    width: 100%;
+    height: 6px;
+    margin-top: 2rem;
+    overflow: hidden;
+    border-radius: 4px;
+
+    .progress-inner {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(to right, #f4cc62, #ffd700);
+      transform-origin: center;
+      transform: scaleX(1);
+      transition: transform 0.1s linear;
+    }
+  }
+
+  .carousel-heads {
+    margin-top: 2rem;
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+
+    .head-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      border: 2px solid transparent;
+
+      &.active {
+        transform: translateY(-10px) scale(1.1);
+        border-color: #ffa958;
+        box-shadow: 0 6px 12px rgba(255, 169, 88, 0.4);
+        z-index: 2;
+      }
+
+      &:hover {
+        transform: scale(1.05);
+      }
+    }
+  }
+
+  /* ===== responsive ===== */
+  @media (max-width: 1024px) {
+    .team-text {
+      .title { font-size: 2.25rem; }
+      .name { font-size: 1.5rem; }
+      .description { font-size: 1.05rem; }
+    }
+    .team-avatar {
+      width: 220px;
+      height: 220px;
+    }
+  }
+
+  @media (max-width: 768px) {
+    padding: 2rem 1.2rem;
+
+    .team-text {
+      min-height: 480px;
+      .title { font-size: 2rem; }
+      .name { font-size: 1.4rem; }
+      .description { font-size: 1rem; }
+    }
+
+    .team-avatar {
+      width: 200px;
+      height: 200px;
+    }
+
+    .carousel-heads .head-icon {
+      width: 42px;
+      height: 42px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    padding: 2rem 1rem;
+
+    .team-text {
+      .title { font-size: 1.7rem; }
+      .name { font-size: 1.3rem; }
+      .description { font-size: 0.95rem; }
+    }
+
+    .team-avatar {
+      width: 180px;
+      height: 180px;
+    }
+
+    .carousel-heads {
+      gap: 0.6rem;
+      .head-icon {
+        width: 36px;
+        height: 36px;
+      }
+    }
+  }
+}

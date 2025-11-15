@@ -1,0 +1,110 @@
+@use '../../base/_variables' as *;
+@use 'sass:color';
+
+.server-status-bar {
+  background: #2E1D0F;
+  color: #fdf6dd;
+  border: 2px solid $color-pixel-border;
+  padding: 0.8rem 1.2rem;
+  border-radius: 6px;
+  font-family: $font-minecraft;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  max-width: 520px;
+  margin: 1.5rem auto 0 auto;
+  box-shadow:
+    inset 2px 2px 0 #4d3b2b,
+    0 0 12px rgba(0, 0, 0, 0.25);
+  position: relative;
+  transition: border-color 0.3s ease;
+
+  .ip-info {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+
+    button {
+      background: none;
+      border: none;
+      padding: 0;
+      color: $color-acento;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      transition: color 0.2s;
+
+      svg {
+        width: 18px;
+        height: 18px;
+        stroke-width: 2;
+      }
+
+      &:hover {
+        color: color.adjust($color-acento, $lightness: 12%);
+        transform: scale(1.05);
+      }
+    }
+  }
+
+  .status-indicator {
+    font-weight: 700;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+
+    &::before {
+      content: '';
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background-color: currentColor;
+      box-shadow: 0 0 6px currentColor;
+    }
+  }
+
+  &.online {
+    border-color: #5A3B1D;
+
+    .status-indicator {
+      color: #61d377;
+    }
+  }
+
+  &.offline {
+    border-color: #d36060;
+
+    .status-indicator {
+      color: #d36060;
+    }
+  }
+
+  .copied-text {
+    position: absolute;
+    bottom: -1.8rem;
+    right: 1rem;
+    font-size: 0.8rem;
+    background: rgba(0, 0, 0, 0.85);
+    color: #fdf6dd;
+    padding: 0.3rem 0.6rem;
+    border-radius: 4px;
+    font-family: $font-minecraft;
+    animation: fadeOut 2.5s forwards;
+    pointer-events: none;
+  }
+
+  @keyframes fadeOut {
+    0% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(-6px);
+    }
+  }
+}

@@ -1,0 +1,350 @@
+@use '../../base/variables' as *;
+
+.navbar-content {
+  background: #2e1d0f;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  font-family: 'IM Fell English SC', serif;
+  border-bottom: 3px solid #5a3b1d;
+  padding: 0.5rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  z-index: 998;
+
+  @media (max-width: 768px) {
+    display: none;
+  }
+
+  .nav-left {
+    display: flex;
+    align-items: center;
+
+    .logo {
+      display: flex;
+      align-items: center;
+
+      .logo-img {
+        height: 35px;
+        filter: drop-shadow(0 0 2px #000);
+        transition: transform 0.3s ease;
+
+        &:hover {
+          transform: scale(1.2);
+        }
+      }
+      .logo-img.logo-activo {
+  filter: brightness(1.6) drop-shadow(0 0 8px rgba(255, 224, 150, 0.6));
+  transform: scale(1.05);
+}
+
+    }
+  }
+
+  .nav-center {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+
+    a,
+    .dropdown-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.4rem 0.9rem;
+      font-size: 1rem;
+      font-weight: bold;
+      background: #f6e8c1;
+      color: #3e2b1a;
+      border: 2px solid #5a3b1d;
+      border-radius: 12px;
+      box-shadow: inset 0 -2px 0 #dcc38a, 0 5px 9px rgba(0, 0, 0, 0.25);
+      transition: all 0.2s ease;
+      text-decoration: none;
+      cursor: pointer !important;
+  user-select: none;
+
+      i {
+        font-size: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      &:hover {
+        background: #ffda6a;
+        color: #2e1d0f;
+        transform: translateY(-2px) scale(1.02);
+        box-shadow:
+          inset 0 -2px 0 #e9cc8c,
+          0 6px 12px rgba(255, 218, 106, 0.45),
+          0 0 12px rgba(255, 230, 140, 0.25);
+      }
+
+      &:active {
+        transform: translateY(1px) scale(0.98);
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3), 0 1px 4px rgba(0, 0, 0, 0.2);
+      }
+
+      &.active {
+        background: #ffe399;
+        border-color: #8a6133;
+        transform: translateY(1px);
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3), 0 1px 3px rgba(0, 0, 0, 0.25);
+      }
+
+      .arrow-icon {
+        font-size: 0.75rem;
+      }
+    }
+
+    .dropdown {
+      position: relative;
+
+      .dropdown-menu {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        margin-top: 0.4rem;
+        background: #fef7e0;
+        border: 2px solid #5a3b1d;
+        border-radius: 10px;
+        padding: 0.4rem 0;
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(8px);
+        pointer-events: none;
+        transition: all 0.3s ease;
+        min-width: 180px;
+        z-index: 100;
+
+        a {
+          padding: 0.5rem 1rem;
+          color: #3e2b1a;
+          font-weight: bold;
+          font-size: 0.9rem;
+          border-radius: 6px;
+          display: block;
+          transition: background 0.2s ease;
+
+          &:hover {
+            background: #ffedb3;
+            color: #2e1d0f;
+          }
+        }
+      }
+
+      &.show-dropdown .dropdown-menu {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+        pointer-events: auto;
+      }
+    }
+  }
+
+  .nav-right {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+
+    .login-button {
+      background: #f6e8c1;
+      color: #3e2b1a;
+      font-weight: bold;
+      padding: 0.4rem 1rem;
+      border-radius: 10px;
+      border: 2px solid #5a3b1d;
+      box-shadow: inset 0 -2px 0 #dcc38a, 0 2px 6px rgba(0, 0, 0, 0.25);
+      transition: all 0.3s ease;
+
+      &:hover {
+        background: #ffda6a;
+        color: #2e1d0f;
+        transform: translateY(-1px);
+        box-shadow: inset 0 -2px 0 #e9cc8c, 0 4px 10px rgba(255, 218, 106, 0.35);
+      }
+    }
+
+    .user-box {
+      position: relative;
+
+      .user-trigger {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.35rem 0.8rem;
+        background: #f6e8c1;
+        border: 2px solid #5a3b1d;
+        border-radius: 12px;
+        box-shadow: inset 0 -2px 0 #dcc38a, 0 2px 6px rgba(0, 0, 0, 0.25);
+        cursor: pointer;
+
+        .user-avatar {
+          width: 32px;
+          height: 32px;
+          border-radius: 6px;
+          border: 2px solid #ffda6a;
+          box-shadow: 0 0 4px rgba(255, 215, 0, 0.2);
+        }
+
+        .username {
+          font-weight: bold;
+          color: #3e2b1a;
+        }
+
+
+      }
+
+      .user-dropdown-wrapper.enhanced {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  transform: translateY(10px);
+  background: #fff7dd;
+  border: 2px solid #5a3b1d;
+  border-radius: 16px;
+  padding: 1.2rem 1.4rem;
+  min-width: 300px;
+  max-width: 340px;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.35);
+  z-index: 100;
+  display: none;
+
+  &.open {
+    display: block;
+  }
+
+  .user-dropdown {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .user-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding-bottom: 0.8rem;
+    border-bottom: 1px solid #d8c69b;
+
+    .user-avatar-large {
+      width: 64px;
+      height: 64px;
+      border-radius: 8px;
+      border: 2px solid #ffda6a;
+      box-shadow: 0 0 6px rgba(255, 223, 100, 0.3);
+    }
+
+    .username-big {
+      font-family: 'IM Fell English SC', serif;
+      font-size: 1.3rem;
+      font-weight: bold;
+      color: #3e2b1a;
+
+      .level-text {
+        display: block;
+        font-size: 0.95rem;
+        margin-top: 0.25rem;
+        color: #b8860b;
+      }
+
+      .nombre-colored {
+        display: inline-block;
+        padding: 0.1rem 0.5rem;
+        background: rgba(0, 0, 0, 0.07);
+        border-radius: 6px;
+      }
+    }
+  }
+
+  .xp-bar-profile {
+    width: 100%;
+    height: 10px;
+    background: #e0cda3;
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2);
+
+    .xp-fill {
+      height: 100%;
+      background: linear-gradient(to right, #ffe65a, #ffcc00);
+      transition: width 0.3s ease;
+    }
+  }
+
+  .balance-wrapper {
+    display: flex;
+    justify-content: center;
+
+    .balance-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      background: #fff0c9;
+      border: 1px solid #d8c69b;
+      font-weight: bold;
+      color: #3e2b1a;
+
+      img.eco-icon-navbar {
+        width: 20px;
+        height: 20px;
+        filter: drop-shadow(0 0 2px rgba(255, 215, 0, 0.6));
+      }
+    }
+  }
+
+  .dropdown-link {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.6rem 1rem;
+    font-weight: bold;
+    font-size: 1rem;
+    border-radius: 10px;
+    background: #f9e6b2;
+    border: 2px solid #b78b4a;
+    box-shadow: 0 3px 0 #a1703d;
+    transition: all 0.2s ease;
+    color: #3e2b1a;
+
+    i {
+      color: #a0703a;
+    }
+
+    &:hover {
+      background: #ffe399;
+      transform: translateX(3px);
+    }
+
+    &.logout-button {
+      background: #eed3c3;
+      border-color: #a05252;
+      color: #802020;
+
+      i {
+        color: #a33;
+      }
+
+      &:hover {
+        background: #f4c2b4;
+        color: #3e0000;
+      }
+    }
+  }
+}
+    }}}
+    .username-saludo {
+  display: flex;
+  align-items: center;
+  font-weight: bold;
+  color: #3e2b1a;
+  font-family: 'IM Fell English SC', serif;
+  font-size: 1rem;
+}

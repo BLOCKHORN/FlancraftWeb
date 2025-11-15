@@ -1,0 +1,59 @@
+// _variables.scss ✅ limpio
+$color-bg: #fdf6dd;
+$color-acento: #bda871;
+$color-texto: #3a2d18;
+$color-pixel-border: #5e471b;
+$font-minecraft: 'VT323', monospace;
+$font-epic: 'IM Fell English SC', serif;
+
+// Flancraft navbar vars
+$color-oro: #ffd44d;
+$color-oro-brillo: #ffec94;
+$color-hover-glow: rgba(255, 215, 85, 0.5);
+$color-shadow: rgba(0, 0, 0, 0.4);
+$color-borde-oro: #f7c14d;
+$color-bg-marron: #2b241d;
+$color-bg-marron-claro: #403025;
+$blur-bg: rgba(27, 24, 21, 0.92);
+$glow-gold: 0 0 12px rgba(255, 215, 85, 0.4);
+$hover-gold: linear-gradient(to bottom, #6b4a2e, #3e2a1a);
+$radius: 6px;
+
+// C:\Users\Crystalchemist\Desktop\Webs\flancraft-web\src\styles\base\variables.scss
+
+// 🎨 Colores
+$golden-border: #c4a651;
+$gold-deep: #a67c00;
+$gold-light: #f5e9c1;
+
+$text-light: #f0eada;
+$dark-bg: #1e1206;
+
+// 🧾 Tipografía
+$font-main: 'IM Fell English SC', serif;
+
+// 📐 Medidas y espacio (puedes ir sumando según usas)
+$section-padding: 4rem;
+$border-radius-default: 4px;
+
+// ✨ Sombras
+$shadow-golden: 0 0 20px rgba(255, 215, 0, 0.2);
+$shadow-hover-eko: 0 0 20px rgba(255, 230, 130, 0.8);
+// 🎨 COLORES COMPLEMENTARIOS QUE SE USAN PERO NO ESTÁN DECLARADOS
+$color-disabled-bg: #444;       // Para botones inactivos
+$color-disabled-text: #bbb;     // Texto de botones desactivados
+$color-ritual-progress: #d8c288; // Color del contador de viñeta
+$color-description: #fefae0;    // Texto principal del lore
+$color-subtitle: #eee;          // Subtítulos debajo del título principal
+$color-badge-text: #111;        // Texto interior de la badge
+
+// 🔮 ANIMACIONES / LUCES (ya implícitos, pero no declarados)
+$glow-eko-light: #00f0ff;       // Color de energía EKO
+$glow-eko-soft: #66f0ff;        // Alternativa para degradado suave
+
+// 🎨 BORDES / DECORACIONES
+$thumbnail-border: rgba(255, 230, 120, 0.3); // Para ítem centrado en el carrusel
+$thumbnail-shadow: rgba(255, 255, 200, 0.4); // Glow badge
+
+$break-tablet-min: 601px;
+$break-tablet-max: 1024px;

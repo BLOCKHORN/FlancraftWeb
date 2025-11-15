@@ -1,0 +1,168 @@
+.staffpanel-wrapper {
+  padding: 2rem;
+  background-color: #fef9c3;
+  font-family: "IM Fell English SC", serif;
+  color: #3b2f1e;
+  max-width: 960px;
+  margin: 0 auto;
+
+  .staffpanel-title {
+    font-size: 2.4rem;
+    text-align: center;
+    margin-bottom: 2rem;
+    color: #78350f;
+    text-shadow: 1px 1px #facc15;
+  }
+
+  .staffpanel-search {
+    width: 100%;
+    max-width: 480px;
+    margin: 0 auto 2rem;
+    display: block;
+    padding: 0.6rem 1rem;
+    border-radius: 8px;
+    border: 2px solid #eab308;
+    background: #fffce7;
+    font-size: 1rem;
+    text-align: center;
+
+    &:focus {
+      outline: none;
+      border-color: #facc15;
+      box-shadow: 0 0 6px #facc15;
+    }
+  }
+
+  .staffpanel-permisos-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .permiso-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background-color: #fff8dc;
+    border: 2px solid #fde68a;
+    border-radius: 1rem;
+    padding: 0.8rem 1.2rem;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
+    transition: transform 0.15s ease;
+
+    &:hover {
+      transform: scale(1.01);
+    }
+
+    .avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 6px;
+      border: 1px solid #e4c27d;
+      flex-shrink: 0;
+    }
+
+    .permiso-info {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 1rem;
+      flex: 1;
+      justify-content: space-between;
+
+      strong {
+        font-size: 1.1rem;
+        flex: 1 1 140px;
+      }
+
+      select {
+        background: #fffce7;
+        border: 1px solid #eab308;
+        border-radius: 8px;
+        padding: 0.4rem 0.8rem;
+        font-size: 1rem;
+        color: #3b2f1e;
+        width: 140px;
+        text-align: center;
+
+        &:focus {
+          outline: none;
+          border-color: #facc15;
+          box-shadow: 0 0 4px #facc15;
+        }
+      }
+    }
+  }
+
+  .toast {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    background-color: #fef3c7;
+    color: #3b2f1e;
+    border: 2px solid #fcd34d;
+    padding: 1rem 1.5rem;
+    border-radius: 12px;
+    font-size: 1rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 9999;
+    animation: fadeInOut 3s ease-in-out;
+
+    &.error {
+      background-color: #fee2e2;
+      border-color: #f87171;
+      color: #7f1d1d;
+    }
+  }
+
+  @keyframes fadeInOut {
+    0% { opacity: 0; transform: translateY(20px); }
+    10% { opacity: 1; transform: translateY(0); }
+    90% { opacity: 1; }
+    100% { opacity: 0; transform: translateY(20px); }
+  }
+
+  @media (max-width: 600px) {
+    .permiso-card {
+      flex-direction: column;
+      align-items: flex-start;
+
+      .permiso-info {
+        flex-direction: column;
+        align-items: stretch;
+        width: 100%;
+
+        strong {
+          text-align: left;
+        }
+
+        select {
+          width: 100%;
+        }
+      }
+    }
+
+    .staffpanel-search {
+      font-size: 0.95rem;
+    }
+  }
+}
+
+// Badges reutilizables
+.rango-badge {
+  font-weight: bold;
+  font-size: 0.9rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  color: #fff;
+  text-align: center;
+  min-width: 80px;
+  text-transform: uppercase;
+  background-color: #999;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+}
+
+.rango-badge.nova { background-color: #38bdf8; }
+.rango-badge.alpha { background: linear-gradient(90deg, #28DBFB, #76FBCF); color: #3b2f1e; }
+.rango-badge.inmortal { background: linear-gradient(90deg, #FF0000, #FFCF00);; }

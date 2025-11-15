@@ -1,0 +1,157 @@
+// apps/frontend/src/styles/components/Tienda/tienda-layout.scss
+@use "../../base/_variables" as *;
+
+/* =========================================
+   LAYOUT GENERAL
+   ========================================= */
+
+.tienda-layout {
+  position: relative;
+  min-height: calc(100vh - 66px); // altura navbar
+  padding: 1.5rem 0 2rem;
+  display: flex;
+  justify-content: stretch;   // que ocupe todo el ancho
+  background-color: #050302;
+  color: #fbe8c5;
+}
+
+/* -----------------------------------------
+   IMAGEN DE LA TABERNA
+   - pegada a la izquierda
+   - ocupando TODO el ancho de la columna de contenido
+   - sin recortarse (no max-width)
+   ----------------------------------------- */
+
+.tienda-layout::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+
+  /* dejamos libre exactamente el ancho del sidebar */
+  right: 340px; // mismo ancho que la columna del carrito
+
+  background-image: url("/assets/tienda.png"); // tu imagen
+  background-size: cover;        // se adapta sin dejar huecos
+  background-position: left top; // anclada a la izquierda
+  background-repeat: no-repeat;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Vignette suave encima para integrar */
+.tienda-layout::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at center,
+    rgba(0, 0, 0, 0.12),
+    rgba(0, 0, 0, 0.85)
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* =========================================
+   CONTENEDOR PRINCIPAL (GRID)
+   ========================================= */
+
+.tienda-layout-main {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 100%;               // ocupa todo el ancho
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px; // contenido + carrito
+  column-gap: 1.75rem;
+  align-items: stretch;
+  padding: 0 1.75rem 0 1.75rem;  // margen interior simétrico
+  box-sizing: border-box;
+}
+
+/* =========================================
+   COLUMNA IZQUIERDA (contenido tienda)
+   ========================================= */
+
+.tienda-layout-left {
+  min-width: 0;
+  display: flex;
+  align-items: stretch;
+}
+
+.tienda-shelf-frame {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  padding: 1.2rem 1.5rem 1.8rem;
+  box-sizing: border-box;
+  background: transparent; // no tapa la ilustración
+}
+
+.tienda-shelf-inner {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.tienda-shelf-portada {}
+.tienda-shelf-contenido {}
+
+/* =========================================
+   COLUMNA DERECHA (carrito)
+   ========================================= */
+
+.tienda-layout-sidebar {
+  position: relative;
+  display: flex;
+  justify-content: flex-end; // pegado a la derecha
+  align-items: stretch;
+}
+
+.tienda-sidebar-card {
+  width: 100%;
+  max-width: 340px;
+  background: rgba(17, 9, 4, 0.96);
+  border-radius: 1.15rem;
+  padding: 1.25rem 1.3rem 1.5rem;
+  box-shadow:
+    0 0 0 2px rgba(0, 0, 0, 0.7),
+    0 18px 40px rgba(0, 0, 0, 0.95);
+  box-sizing: border-box;
+}
+
+/* =========================================
+   RESPONSIVE
+   ========================================= */
+
+@media (max-width: 960px) {
+  .tienda-layout {
+    padding: 1rem 0 1.5rem;
+  }
+
+  .tienda-layout::before {
+    left: 0;
+    right: 0;              // en móvil la imagen ocupa todo
+  }
+
+  .tienda-layout-main {
+    grid-template-columns: 1fr;
+    row-gap: 1.5rem;
+    padding: 0 1rem;
+  }
+
+  .tienda-layout-sidebar {
+    justify-content: center;
+  }
+
+  .tienda-sidebar-card {
+    max-width: 380px;
+  }
+
+  .tienda-shelf-frame {
+    padding: 1rem 0.5rem 1.5rem;
+  }
+}

@@ -1,0 +1,589 @@
+@use "../../base/_variables" as *;
+
+/* ==============================
+   CONTENEDOR PRINCIPAL
+   ============================== */
+
+.vista-productos-wynn {
+  position: relative;
+  width: 160%;          // wrap grande como tienes ahora
+  max-width: 120%;
+  margin: 0 auto;
+  font-family: "IM Fell English SC", serif;
+  color: #3a2415;
+}
+
+/* ==============================
+   CABECERA PARCHMENT
+   ============================== */
+
+.wynn-header {
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: 1.8rem;
+  /* menos espacio muerto, pero sigue siendo contundente */
+  padding: 2.6rem 3.2rem 2.1rem;
+  border-radius: 1rem 1rem 0.4rem 0.4rem;
+  background: linear-gradient(180deg, #f4e1b7, #e2c48d);
+  box-shadow:
+    0 0 0 3px #b1834b,
+    0 8px 0 #7a4c25,
+    0 16px 30px rgba(0, 0, 0, 0.6);
+}
+
+.wynn-header-left {
+  display: flex;
+  align-items: center;
+  gap: 1.3rem;
+  min-width: 0;
+}
+
+/* Cuadro de la imagen de categoría */
+.wynn-header-icon {
+  width: 82px;
+  height: 82px;
+  border-radius: 0.9rem;
+  background:
+    radial-gradient(circle at 30% 20%, #fffadd, transparent 65%),
+    linear-gradient(145deg, #f6e48a, #d6a94c);
+  box-shadow:
+    0 0 0 3px #8c5b25,
+    0 0 18px rgba(255, 241, 170, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.wynn-header-icon-img {
+  width: 86%;
+  height: 86%;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+.wynn-header-text {
+  min-width: 0;
+}
+
+.wynn-header-title {
+  font-size: 2.4rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 0.15rem;
+}
+
+.wynn-header-desc {
+  font-size: 1rem;
+  max-width: 720px;
+  line-height: 1.4;
+}
+
+.wynn-header-sub {
+  font-size: 0.9rem;
+  margin-top: 0.3rem;
+  opacity: 0.9;
+}
+
+.wynn-header-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.55rem;
+}
+
+/* Chapita tipo "PREMIUM" arriba a la derecha */
+
+.wynn-header-badge {
+  padding: 0.25rem 0.9rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  background: linear-gradient(180deg, #f5e6c3, #e0c295);
+  color: #8a5b2c;
+  box-shadow:
+    0 0 0 2px #c59b64,
+    0 3px 0 #8a5b2c;
+}
+
+/* Mini selector de subcategorías en cabecera */
+
+.wynn-subcats-mini {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.3rem;
+}
+
+.wynn-subcat-mini {
+  border: none;
+  border-radius: 999px;
+  padding: 0.25rem 0.7rem;
+  font-size: 0.8rem;
+  background: #d3b37c;
+  color: #3a2415;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
+
+  &.active {
+    opacity: 1;
+    box-shadow:
+      0 0 0 2px #805022,
+      0 0 12px rgba(255, 241, 170, 0.9);
+    transform: translateY(-1px);
+  }
+
+  &:hover:not(.active) {
+    opacity: 0.85;
+  }
+}
+
+/* Botón volver tipo CLOSE de Wynncraft (idéntico estilo) */
+/* Botón VOLVER A CATEGORÍAS idéntico al CLOSE */
+
+.wynn-close-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+
+  padding: 0.42rem 1.35rem 0.46rem; // similar tamaño al CLOSE
+  border-radius: 0.55rem;
+
+  // borde fino alrededor
+  border: 2px solid #4b3326;
+
+  // cuerpo gris-marrón (parte superior del botón)
+  background-color: #877765;
+
+  color: #fdf7e6;
+  font-family: "IM Fell English SC", serif;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  white-space: nowrap;
+
+  cursor: pointer;
+  transform: translateY(0);
+  transition:
+    transform 0.08s ease,
+    filter 0.08s ease,
+    box-shadow 0.08s ease;
+  box-shadow: 0 0 0 0 transparent;
+
+  // para que el zócalo quede por debajo
+  overflow: visible;
+}
+
+/* zócalo oscuro inferior, como en el CLOSE de Wynncraft */
+.wynn-close-btn::after {
+  content: "";
+  position: absolute;
+  left: -1px;
+  right: -1px;
+  bottom: -6px;              // altura del zócalo
+  height: 8px;
+  background-color: #3f2724; // marrón oscuro
+  border-radius: 0 0 0.55rem 0.55rem;
+  border: 1px solid #4b3326;
+  box-shadow: 0 0 0 0 rgba(0, 0, 0, 0.4);
+  z-index: -1;
+}
+
+.wynn-close-x {
+  font-size: 1rem;
+  line-height: 1;
+  margin-top: -1px;
+}
+
+.wynn-close-text {
+  font-size: 0.9rem;
+}
+
+/* efecto “sube un poquito” al pasar el ratón */
+.wynn-close-btn:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.03);
+}
+
+.wynn-close-btn:hover::after {
+  bottom: -5px;
+}
+
+/* efecto “botón pulsado” */
+.wynn-close-btn:active {
+  transform: translateY(1px);
+  filter: brightness(0.97);
+}
+
+.wynn-close-btn:active::after {
+  bottom: -3px;
+  height: 6px;
+}
+
+
+
+/* ==============================
+   CUERPO PARCHMENT CLARO
+   ============================== */
+
+.wynn-body {
+  margin-top: 0;
+  padding: 2.4rem 3.2rem 2.8rem;
+  border-radius: 0 0 1rem 1rem;
+  background: #e9d3a9;
+  box-shadow:
+    0 0 0 3px #b1834b,
+    0 10px 0 #7a4c25,
+    0 22px 35px rgba(0, 0, 0, 0.6);
+}
+
+.wynn-sin-productos {
+  font-size: 0.9rem;
+}
+
+/* Fila de productos: ocupa todo el ancho del parchment */
+
+.wynn-products-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.4rem;
+}
+
+/* Carta de producto */
+
+.wynn-product-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 1.4rem 1.4rem 1.1rem;
+  border-radius: 0.95rem;
+  background: #f6e7c8;
+  box-shadow:
+    0 0 0 2px #caa36f,
+    0 4px 0 #936234,
+    0 10px 18px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+  transition: box-shadow 0.12s ease;
+}
+
+.wynn-product-card.in-cart::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 2px solid rgba(65, 183, 86, 0.95);
+  pointer-events: none;
+}
+
+/* Solo se mueve la imagen, no toda la carta */
+
+.wynn-product-card:hover {
+  box-shadow:
+    0 0 0 2px #caa36f,
+    0 7px 0 #7a4c25,
+    0 18px 26px rgba(0, 0, 0, 0.55);
+}
+
+.wynn-product-top {
+  text-align: center;
+}
+
+.wynn-product-image-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 0.5rem;
+  transition: transform 0.16s ease, filter 0.16s ease;
+}
+
+.wynn-product-card:hover .wynn-product-image-wrapper {
+  transform: translateY(-8px);
+  filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.65));
+}
+
+.wynn-product-image {
+  max-width: 120px;
+  max-height: 120px;
+  image-rendering: pixelated;
+}
+
+.wynn-product-name {
+  font-size: 1.05rem;
+  margin-bottom: 0.15rem;
+}
+
+/* Precio */
+
+.wynn-producto-precio {
+  display: flex;
+  justify-content: center;
+  align-items: baseline;
+  gap: 0.35rem;
+  font-size: 1rem;
+}
+
+.wynn-precio-original {
+  text-decoration: line-through;
+  opacity: 0.7;
+  font-size: 0.85rem;
+}
+
+.wynn-precio-oferta {
+  color: #39a845;
+}
+
+/* Botón verde tipo Wynncraft Buy */
+
+.wynn-product-cta {
+  margin-top: 0.9rem;
+  border: none;
+  border-radius: 0.8rem;
+  padding: 0.7rem 0.5rem;
+  font-size: 0.9rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  background: linear-gradient(
+    180deg,
+    #2ead38 0%,
+    #1f922f 55%,
+    #177124 55%,
+    #0f4c18 100%
+  );
+  color: #fef7e5;
+  box-shadow:
+    0 0 0 2px #0f3c15,
+    0 4px 0 #0b2a10;
+  cursor: pointer;
+  transition: transform 0.08s ease, box-shadow 0.08s ease, filter 0.08s ease;
+}
+
+.wynn-product-cta:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    0 0 0 2px #0f3c15,
+    0 2px 0 #0b2a10,
+    0 0 14px rgba(19, 117, 49, 0.8);
+  filter: brightness(1.03);
+}
+
+.wynn-product-cta:active {
+  transform: translateY(1px);
+  box-shadow:
+    0 0 0 2px #0f3c15,
+    0 1px 0 #0b2a10;
+}
+
+/* ==============================
+   MODAL DETALLE TIPO WYNN
+   ============================== */
+
+.wynn-modal-overlay {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at center,
+    rgba(0, 0, 0, 0.65),
+    rgba(0, 0, 0, 0.9)
+  );
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+}
+
+.wynn-modal {
+  position: relative;
+  width: min(780px, 100%);
+  max-height: 82vh;
+  background: #f6e7c8;
+  border-radius: 1rem;
+  box-shadow:
+    0 0 0 3px #caa36f,
+    0 18px 40px rgba(0, 0, 0, 0.9);
+  padding: 1.2rem 1.4rem 1rem;
+  display: flex;
+  flex-direction: column;
+  animation: wynnModalIn 0.22s ease-out forwards;
+}
+
+@keyframes wynnModalIn {
+  from {
+    transform: scale(0.92) translateY(12px);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+.wynn-modal-close {
+  position: absolute;
+  top: 0.55rem;
+  right: 0.75rem;
+  border: none;
+  background: none;
+  font-size: 1.6rem;
+  color: #84512a;
+  cursor: pointer;
+}
+
+.wynn-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.8rem;
+}
+
+.wynn-modal-image-frame {
+  width: 96px;
+  height: 96px;
+  border-radius: 0.9rem;
+  background:
+    radial-gradient(circle at 30% 20%, #fff4cf, transparent 60%),
+    linear-gradient(145deg, #754823, #3a2310);
+  box-shadow: 0 0 0 2px #4c2a10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wynn-modal-image {
+  max-width: 72px;
+  max-height: 72px;
+  image-rendering: pixelated;
+}
+
+.wynn-modal-header-text {
+  flex: 1;
+}
+
+.wynn-modal-title {
+  font-size: 1.4rem;
+  margin-bottom: 0.25rem;
+}
+
+.wynn-modal-description {
+  flex: 1;
+  padding: 0.6rem 0.3rem;
+  margin-bottom: 0.6rem;
+  overflow-y: auto;
+  font-size: 0.9rem;
+
+  scrollbar-width: thin;
+  scrollbar-color: #b1834b transparent;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: #b1834b;
+    border-radius: 999px;
+  }
+
+  p {
+    margin-bottom: 0.4rem;
+  }
+
+  ul {
+    padding-left: 1.1rem;
+    margin-bottom: 0.4rem;
+  }
+}
+
+.wynn-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+}
+
+.wynn-modal-add,
+.wynn-modal-cancel {
+  border-radius: 0.7rem;
+  border: none;
+  padding: 0.5rem 0.9rem;
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.wynn-modal-add {
+  background: linear-gradient(
+    180deg,
+    #2ead38 0%,
+    #1f922f 55%,
+    #177124 55%,
+    #0f4c18 100%
+  );
+  color: #fef7e5;
+  box-shadow:
+    0 0 0 2px #0f3c15,
+    0 3px 0 #0b2a10;
+}
+
+.wynn-modal-cancel {
+  background: #e2c48d;
+  color: #3a2415;
+  box-shadow:
+    0 0 0 2px #b1834b,
+    0 3px 0 #7a4c25;
+}
+
+/* ==============================
+   RESPONSIVE
+   ============================== */
+
+@media (max-width: 900px) {
+  .wynn-header {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 1.6rem 1.6rem 1.4rem;
+  }
+
+  .wynn-header-right {
+    align-items: flex-start;
+  }
+
+  .wynn-close-btn {
+    align-self: stretch;
+    justify-content: center;
+  }
+
+  .wynn-body {
+    padding: 1.6rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .vista-productos-wynn {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .wynn-modal {
+    width: 100%;
+    max-height: 88vh;
+  }
+
+  .wynn-modal-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .wynn-modal-actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .wynn-modal-add,
+  .wynn-modal-cancel {
+    width: 100%;
+    text-align: center;
+  }
+}

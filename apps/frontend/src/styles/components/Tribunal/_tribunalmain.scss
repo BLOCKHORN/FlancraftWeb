@@ -1,0 +1,823 @@
+@import url('https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&display=swap');
+
+.tribunal-epic {
+  font-family: 'IM Fell English SC', serif;
+  background: url('/assets/leadertexture.jpeg') repeat;
+  background-size: cover;
+  color: #3b2f1e;
+  padding-bottom: 4rem;
+
+  // ---------- CABECERA ----------
+  .epic-header {
+    position: relative;
+    background: url('/assets/tribunalsanciones.png') no-repeat center bottom;
+    background-size: cover;
+    height: 520px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 0 2rem;
+    color: #fefae0;
+    text-shadow: 2px 2px 5px #000000cc;
+
+    &::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to bottom, #00000055, #00000055);
+      z-index: 0;
+    }
+
+    h1,
+    p {
+      position: relative;
+      z-index: 1;
+    }
+
+    h1 {
+      font-size: 3.4rem;
+      margin-bottom: 0.75rem;
+      font-weight: bold;
+    }
+
+    p {
+      font-size: 1.2rem;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+  }
+
+  // ---------- RESUMEN SUPERIOR ----------
+    // ---------- RESUMEN SUPERIOR ----------
+  .resumen-panel {
+    max-width: 1100px;
+    margin: -1.5rem auto 2rem; // menos solapado y más aire abajo
+    padding: 1.1rem 1.4rem;
+    background: rgba(15, 10, 5, 0.96);
+    border: 3px solid #c9a46a;
+    border-radius: 16px;
+    box-shadow:
+      0 10px 24px rgba(0, 0, 0, 0.4),
+      0 0 0 1px #00000055;
+    display: flex;
+    gap: 1.4rem;
+    color: #fdf3dc;
+  }
+
+  .resumen-panel .resumen-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center; // centrado real
+    justify-content: center;
+    text-align: center;
+    padding: 0.3rem 0.6rem;
+    border-right: 1px solid rgba(254, 240, 195, 0.18);
+
+    &:last-child {
+      border-right: none;
+    }
+
+    .label {
+      display: block;
+      font-size: 0.95rem;            // más grande
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #fce3b3;               // más clara
+      margin-bottom: 0.15rem;
+    }
+
+    .valor {
+      display: block;
+      font-size: 1.7rem;            // número grande y claro
+      font-weight: 700;
+      line-height: 1.1;
+      text-shadow: 0 0 8px rgba(0, 0, 0, 0.6);
+    }
+
+    .valor.destacado {
+      color: #facc15;
+    }
+  }
+
+
+  // ---------- PANEL DE FILTROS ----------
+  .selector-panel {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: url('/assets/madera.jpeg') center/cover no-repeat;
+    padding: 1rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    border-top: 4px solid #3b2f1e;
+    border-bottom: 4px solid #3b2f1e;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.18);
+
+    .filtros-left {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.8rem;
+      align-items: center;
+    }
+
+    .campo-busqueda .filtro-input {
+      background: #fff8e1;
+      border: 2px solid #7b5a35;
+      padding: 0.65rem 1rem;
+      font-size: 1.05rem;
+      border-radius: 12px;
+      font-family: 'IM Fell English SC', serif;
+      color: #3a2b1e;
+      box-shadow:
+        inset 0 1px 2px #ffffffaa,
+        0 2px 4px rgba(0, 0, 0, 0.15);
+      min-width: 240px;
+      transition: border-color 0.15s ease, background 0.15s ease;
+
+      &:focus {
+        outline: none;
+        border-color: #a67c52;
+        background: #fef4d9;
+      }
+    }
+
+    .campo-select {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: #f3e6cc;
+      border: 2px solid #7c5a3a;
+      padding: 0.45rem 0.7rem;
+      border-radius: 12px;
+      box-shadow:
+        inset 0 2px 3px #ffffff66,
+        0 3px 0 #b38b63,
+        0 4px 6px rgba(0, 0, 0, 0.2);
+
+      select {
+        appearance: none;
+        background: transparent;
+        border: none;
+        font-family: inherit;
+        font-size: 1rem;
+        color: #3b2b1b;
+        padding-right: 1rem;
+        cursor: pointer;
+
+        &:focus {
+          outline: none;
+        }
+      }
+    }
+
+    .leyenda-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: #e8d7b9;
+      border: 2px solid #7c5a3a;
+      border-radius: 12px;
+      padding: 0.6rem 1.2rem;
+      font-weight: bold;
+      font-size: 1rem;
+      font-family: 'IM Fell English SC', serif;
+      color: #3c2b1b;
+      cursor: pointer;
+      box-shadow:
+        inset 0 2px 3px #ffffff88,
+        0 3px 0 #b38b63,
+        0 4px 6px rgba(0, 0, 0, 0.2);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+
+      &:hover {
+        transform: translateY(-1px);
+        box-shadow:
+          inset 0 2px 3px #ffffff88,
+          0 4px 0 #b38b63,
+          0 6px 10px rgba(0, 0, 0, 0.25);
+      }
+    }
+  }
+
+  // ---------- MODAL LEYENDA ----------
+  .leyenda-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    display: grid;
+    place-items: center;
+    padding: 1rem;
+    z-index: 1000; // por encima del sticky
+    cursor: pointer; // clic fuera indica cierre
+
+    .leyenda-content {
+      position: relative;
+      width: min(920px, 95vw);
+      background: #fffaf0 url('/assets/papertexture.jpeg') repeat;
+      border: 3px solid #b88b4a;
+      border-radius: 12px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+      padding: 1.5rem 1.25rem;
+      overflow: hidden;
+      cursor: default; // dentro no cierra
+      z-index: 1001;
+
+      .close-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 0.35rem 0.6rem;
+        border-radius: 10px;
+        border: 1px solid #d3b07a;
+        background: #f7e8c9;
+        color: #7a4c3d;
+        cursor: pointer;
+        transition: transform 0.12s ease;
+        z-index: 1002;
+
+        &:hover {
+          transform: translateY(-1px);
+        }
+      }
+
+      h2 {
+        text-align: center;
+        margin: 0.4rem 0 1rem;
+        color: #3b2b18;
+        font-size: 1.35rem;
+      }
+
+      .leyenda-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.95rem;
+
+        th,
+        td {
+          border: 1px solid #d6b26c;
+          padding: 0.5rem 0.75rem;
+          text-align: center;
+        }
+
+        th {
+          background: #f0e2c0;
+          font-weight: bold;
+          position: sticky;
+          top: 0;
+          z-index: 1;
+        }
+
+        td {
+          background: #fffef9;
+        }
+      }
+    }
+  }
+
+  // ---------- SKELETON / ERROR ----------
+  .skeleton-table {
+    display: grid;
+    gap: 0.75rem;
+    padding: 1.5rem;
+
+    .row {
+      height: 52px;
+      border-radius: 10px;
+      background: linear-gradient(90deg, #eee1c9, #f7edd6, #eee1c9);
+      background-size: 200% 100%;
+      animation: shimmer 1.1s infinite linear;
+    }
+  }
+
+  .error-box {
+    margin: 1.5rem;
+    padding: 1rem 1.25rem;
+    border: 2px solid #e09a9a;
+    background: #fdecec;
+    color: #7b2d2d;
+    border-radius: 10px;
+  }
+
+  @keyframes shimmer {
+    to {
+      background-position: -200% 0;
+    }
+  }
+
+  // ---------- TABLA DESKTOP ----------
+  .tabla-scroll-wrapper {
+    overflow-x: auto;
+    padding: 2rem;
+
+    &::-webkit-scrollbar {
+      height: 10px;
+      width: 10px;
+    }
+    &::-webkit-scrollbar-track {
+      background: #ecdcbf;
+      border-radius: 10px;
+    }
+    &::-webkit-scrollbar-thumb {
+      background: #c3a675;
+      border-radius: 10px;
+      border: 2px solid #ecdcbf;
+    }
+
+    .sanciones-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0 8px;
+      background: transparent;
+
+      thead th {
+        position: sticky;
+        top: 0;
+        background: #cbb78d;
+        border-bottom: 2px solid #a67c52;
+        padding: 1rem;
+        font-size: 1rem;
+        text-align: center;
+        z-index: 2;
+      }
+
+      tbody td {
+        background: #fef8e6;
+        border: 2px solid #d2b991;
+        padding: 0.8rem;
+        text-align: center;
+        vertical-align: middle;
+
+        &:first-child {
+          text-align: left;
+        }
+
+        .jugador-info {
+          display: flex;
+          align-items: center;
+          gap: 0.6rem;
+
+          .avatar-head {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            border: 2px solid #cdb78d;
+            background: #fff8dc;
+          }
+
+          .jugador-link {
+            font-weight: bold;
+            font-size: 1rem;
+            color: #3a2b15;
+            cursor: pointer;
+            text-decoration: none;
+
+            &:hover {
+              text-decoration: underline;
+            }
+          }
+
+          .permaban-badge {
+            background: #c0392b;
+            color: #fff;
+            font-size: 0.75rem;
+            font-weight: bold;
+            padding: 2px 6px;
+            border-radius: 999px;
+          }
+        }
+
+        .tipo {
+          font-weight: bold;
+          text-transform: capitalize;
+          margin-bottom: 0.3rem;
+          display: block;
+          color: #5b3e22;
+        }
+
+        .strikes {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.4rem;
+          color: #8b5e3c;
+          font-size: 0.85rem;
+
+          &.permaban {
+            color: #b71c1c;
+            font-weight: bold;
+          }
+        }
+
+        .duracion-extra {
+          font-size: 0.75rem;
+          color: #7a6a5a;
+          margin-top: 0.2rem;
+        }
+
+        .server-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          font-weight: 600;
+          padding: 4px 10px;
+          border-radius: 8px;
+          font-size: 0.85rem;
+          background: #eee1c9;
+          border: 1px solid #c3a675;
+          color: #4a351f;
+
+          svg {
+            color: inherit;
+          }
+        }
+
+        .situacion {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.4rem;
+          padding: 4px 10px;
+          font-weight: 600;
+          border-radius: 999px;
+          font-size: 0.85rem;
+          justify-content: center;
+
+          .txt {
+            letter-spacing: 0.03em;
+          }
+
+          &.perma {
+            background-color: #fdecea;
+            color: #b91c1c;
+            border: 1px solid #e0a1a1;
+          }
+
+          &.activa {
+            background-color: #fff4d5;
+            color: #b45309;
+            border: 1px solid #f3c892;
+          }
+
+          &.finalizada {
+            background-color: #e8f9e5;
+            color: #166534;
+            border: 1px solid #a6d8b6;
+          }
+        }
+      }
+
+      tbody tr {
+        transition: transform 0.18s ease, box-shadow 0.18s ease;
+
+        &.perma td {
+          background: #fbeae8;
+          border-color: #e0a1a1;
+        }
+
+        &.activa td {
+          background: #fff5dd;
+          border-color: #f3c892;
+        }
+
+        &.finalizada td {
+          background: #f4fbf2;
+          border-color: #a6d8b6;
+        }
+
+        &:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+        }
+      }
+    }
+  }
+
+  // ---------- CARDS MÓVIL ----------
+  .sanciones-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1rem;
+
+    .sancion-card {
+      background: #fff8e1;
+      border: 2px solid #caa762;
+      border-radius: 12px;
+      padding: 1rem;
+      box-shadow: inset 0 0 10px #d4b276aa;
+      font-size: 0.9rem;
+      color: #3a2714;
+      transition: transform 0.16s ease;
+
+      &.card-perma {
+        border-color: #c0392b;
+        box-shadow:
+          0 0 0 3px rgba(192, 57, 43, 0.15),
+          inset 0 0 10px #e6b1ab;
+      }
+
+      &.perma {
+        background: #fbeae8;
+      }
+
+      &.activa {
+        background: #fff5dd;
+      }
+
+      &.finalizada {
+        background: #f4fbf2;
+      }
+
+      &:active {
+        transform: scale(0.997);
+      }
+
+      .header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+
+        img {
+          width: 40px;
+          height: 40px;
+          border-radius: 6px;
+          border: 2px solid #d6b26c;
+          background-color: #fefae0;
+          flex-shrink: 0;
+        }
+
+        .player-info {
+          display: flex;
+          flex-direction: column;
+          flex: 1;
+
+          strong {
+            font-size: 1rem;
+            font-weight: bold;
+            color: #2c1c0a;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            cursor: pointer;
+          }
+
+          .baneado-badge,
+          .permaban-badge {
+            margin-top: 0.3rem;
+            padding: 2px 6px;
+            font-size: 0.7rem;
+            border-radius: 999px;
+            font-weight: bold;
+            color: #fff;
+            align-self: flex-start;
+          }
+
+          .baneado-badge {
+            background: #e67e22;
+          }
+          .permaban-badge {
+            background: #c0392b;
+          }
+        }
+      }
+
+      .info {
+        margin-top: 0.75rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.3rem;
+
+        div {
+          line-height: 1.3;
+        }
+
+        strong {
+          color: #5e3c16;
+        }
+
+        .server {
+          display: inline-flex;
+          align-items: center;
+          padding: 4px 8px;
+          border-radius: 8px;
+          font-weight: 600;
+          font-size: 0.82rem;
+          margin-top: 0.2rem;
+          background: #eee1c9;
+          border: 1px solid #c3a675;
+          color: #4a351f;
+          gap: 6px;
+        }
+
+        .strikes {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.4rem;
+          color: #8b5e3c;
+
+          &.permaban {
+            color: #b71c1c;
+            font-weight: bold;
+          }
+        }
+
+        .situacion-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.4rem;
+          margin-top: 0.3rem;
+          padding: 4px 9px;
+          border-radius: 999px;
+          font-size: 0.8rem;
+          font-weight: 600;
+
+          .txt {
+            letter-spacing: 0.03em;
+          }
+
+          &.perma {
+            background-color: #fdecea;
+            color: #b91c1c;
+            border: 1px solid #e0a1a1;
+          }
+
+          &.activa {
+            background-color: #fff4d5;
+            color: #b45309;
+            border: 1px solid #f3c892;
+          }
+
+          &.finalizada {
+            background-color: #e8f9e5;
+            color: #166534;
+            border: 1px solid #a6d8b6;
+          }
+        }
+      }
+    }
+  }
+}
+
+// ---------- RESPONSIVE ----------
+@media (max-width: 768px) {
+  .tribunal-epic {
+    padding-bottom: 2rem;
+
+    .epic-header {
+      height: 380px;
+      padding: 0 1rem;
+
+      h1 {
+        font-size: 2.2rem;
+      }
+      p {
+        font-size: 1rem;
+        max-width: 90%;
+      }
+    }
+
+    .resumen-panel {
+      flex-direction: column;
+      margin: -2rem 1rem 1rem;
+      padding: 0.8rem 0.9rem;
+
+      .resumen-item {
+        border-right: none;
+        border-bottom: 1px solid rgba(254, 240, 195, 0.18);
+        padding-bottom: 0.3rem;
+        margin-bottom: 0.2rem;
+
+        &:last-child {
+          border-bottom: none;
+          margin-bottom: 0;
+        }
+
+        .label {
+          font-size: 0.78rem;
+        }
+        .valor {
+          font-size: 1.2rem;
+        }
+      }
+    }
+
+    .selector-panel {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.75rem;
+
+      .campo-busqueda .filtro-input {
+        width: 100%;
+        font-size: 1rem;
+        padding: 0.6rem 1rem;
+        min-width: 0;
+      }
+
+      .campo-select {
+        width: 100%;
+        justify-content: space-between;
+
+        select {
+          width: 100%;
+        }
+      }
+
+      .leyenda-btn {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+
+    .leyenda-modal .leyenda-content {
+      padding: 1rem;
+      max-height: 85vh;
+      overflow: auto;
+
+      .leyenda-table {
+        font-size: 0.88rem;
+
+        th,
+        td {
+          padding: 0.45rem 0.5rem;
+        }
+      }
+    }
+  }
+}
+
+@media (min-width: 600px) and (max-width: 1024px) {
+  .tribunal-epic {
+    .epic-header {
+      height: 440px;
+      padding: 0 1.5rem;
+
+      h1 {
+        font-size: 2.6rem;
+      }
+      p {
+        font-size: 1rem;
+        max-width: 90%;
+      }
+    }
+
+    .resumen-panel {
+      margin-top: -2.3rem;
+      padding: 0.9rem 1.1rem;
+
+      .resumen-item .valor {
+        font-size: 1.25rem;
+      }
+    }
+
+    .selector-panel {
+      flex-wrap: wrap;
+      gap: 0.8rem;
+
+      .campo-busqueda .filtro-input {
+        font-size: 1rem;
+      }
+      .leyenda-btn {
+        font-size: 1rem;
+        padding: 0.7rem 1rem;
+      }
+    }
+
+    .tabla-scroll-wrapper {
+      padding: 1.5rem;
+
+      .sanciones-table {
+        th,
+        td {
+          font-size: 0.9rem;
+          padding: 0.65rem 0.55rem;
+        }
+
+        td {
+          .jugador-info .jugador-link {
+            font-size: 0.95rem;
+          }
+          .tipo {
+            font-size: 0.9rem;
+          }
+          .strikes {
+            font-size: 0.8rem;
+          }
+          .duracion-extra {
+            font-size: 0.72rem;
+          }
+          .server-badge,
+          .situacion {
+            font-size: 0.78rem;
+            padding: 3px 8px;
+          }
+        }
+      }
+    }
+  }
+}

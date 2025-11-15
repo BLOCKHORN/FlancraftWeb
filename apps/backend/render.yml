@@ -1,0 +1,16 @@
+# render.yaml — configuración para Render
+services:
+  - type: web
+    name: flancraft-api
+    env: docker
+    plan: free
+    branch: main
+    repo: https://github.com/FlanCoin/flancraftweb-backend
+    dockerfilePath: Dockerfile
+    buildCommand: ""
+    startCommand: "npm start"
+    envVars:
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false

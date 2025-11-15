@@ -1,0 +1,108 @@
+// apps/frontend/src/styles/components/Tienda/tienda-modal-jugador.scss
+@use "../../base/_variables" as *;
+
+.modal-login-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 3, 1, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  padding: 1rem;
+}
+
+.modal-login {
+  max-width: 420px;
+  width: 100%;
+  background: radial-gradient(circle at top, #2a1b11 0, #100806 60%);
+  border-radius: 1rem;
+  border: 1px solid rgba(248, 228, 175, 0.65);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.95);
+  padding: 1.4rem 1.5rem 1.2rem;
+  color: #fbe8c5;
+}
+
+.modal-contenido {
+  h2 {
+    font-size: 1.35rem;
+    margin-bottom: 0.9rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  input {
+    width: 100%;
+    border-radius: 0.55rem;
+    border: 1px solid rgba(248, 228, 175, 0.7);
+    background: #1a1009;
+    color: #fbe8c5;
+    padding: 0.5rem 0.7rem;
+    font-size: 0.95rem;
+    outline: none;
+    margin-bottom: 0.6rem;
+
+    &::placeholder {
+      color: rgba(251, 232, 197, 0.5);
+    }
+  }
+
+  .error {
+    font-size: 0.85rem;
+    color: #ffbebe;
+    margin-bottom: 0.5rem;
+  }
+
+  .acciones {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-top: 0.2rem;
+
+    button {
+      border-radius: 999px;
+      padding: 0.4rem 0.9rem;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      border: none;
+      cursor: pointer;
+      transition: background 0.16s ease, transform 0.1s ease,
+        box-shadow 0.16s ease;
+    }
+
+    button:not(.cerrar) {
+      background: linear-gradient(135deg, #3c8f47, #1e5f29);
+      color: #f8f5e2;
+      box-shadow: 0 0 16px rgba(104, 255, 131, 0.5);
+
+      &:hover {
+        background: linear-gradient(135deg, #51a85c, #247334);
+        transform: translateY(-1px);
+        box-shadow: 0 0 20px rgba(148, 255, 173, 0.7);
+      }
+    }
+
+    .cerrar {
+      background: linear-gradient(135deg, #8f3838, #5c1919);
+      color: #fbe8e8;
+      box-shadow: 0 0 16px rgba(255, 148, 148, 0.5);
+
+      &:hover {
+        background: linear-gradient(135deg, #b24a4a, #742121);
+        transform: translateY(-1px);
+        box-shadow: 0 0 20px rgba(255, 189, 189, 0.7);
+      }
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .modal-login {
+    padding: 1.2rem 1.1rem 1rem;
+  }
+
+  .modal-contenido h2 {
+    font-size: 1.15rem;
+  }
+}

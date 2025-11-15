@@ -1,0 +1,478 @@
+@use "../../base/_variables" as *;
+
+/* ================================
+   CONTENEDOR GENERAL
+   ================================ */
+
+.carrito-lateral {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: stretch;
+  justify-content: stretch;
+  background: transparent;
+}
+
+/* Panel completo estilo Tebex (parchment) */
+.carrito-panel {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0.55rem;
+  border-radius: 0.75rem;
+  border: 2px solid #d2b071;
+  background: #f7e2b2;
+  box-shadow:
+    0 0 0 1px rgba(90, 59, 23, 0.35),
+    0 14px 30px rgba(0, 0, 0, 0.65);
+  box-sizing: border-box;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  color: #3a2816;
+}
+
+/* ================================
+   BLOQUE SUPERIOR: CUENTA + MONEDA
+   ================================ */
+
+.carrito-top {
+  background: #f7e2b2;
+  border-radius: 0.55rem;
+  padding: 0.5rem 0.55rem 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.carrito-top-header {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.2rem 0;
+  border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+  margin-bottom: 0.35rem;
+}
+
+.carrito-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 0.35rem;
+  overflow: hidden;
+  border: 2px solid #b48849;
+  background: #d8b57a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.avatar-skin {
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+}
+
+.avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #3b2919;
+}
+
+.carrito-player-name {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+/* Botones tipo Tebex */
+
+.carrito-top-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.carrito-btn {
+  flex: 1;
+  position: relative;
+  border-radius: 0.45rem;
+  border: 2px solid #5b3b26;
+  background: #c29a6a;
+  box-shadow: 0 4px 0 #5b3b26;
+  padding: 0.55rem 0.65rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #2b180c;
+  cursor: pointer;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  transition: transform 0.08s ease, box-shadow 0.08s ease,
+    background 0.12s ease;
+}
+
+.carrito-btn:hover {
+  background: #cfa36f;
+}
+
+.carrito-btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 #5b3b26;
+}
+
+.carrito-btn-account {
+  justify-content: center;
+}
+
+.carrito-btn-currency {
+  justify-content: space-between;
+  background: #a37a53;
+}
+
+.currency-left {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.currency-icon {
+  font-size: 1rem;
+}
+
+.currency-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.currency-label {
+  font-size: 0.68rem;
+}
+
+.currency-current {
+  font-size: 0.8rem;
+}
+
+.currency-chevron {
+  font-size: 1rem;
+}
+
+/* Select transparente que captura el click */
+.currency-select-overlay {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+/* ================================
+   BLOQUE INFERIOR: CARRITO
+   ================================ */
+
+.carrito-basket {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: rgba(250, 230, 188, 0.96);
+  border-radius: 0.55rem;
+  box-shadow: inset 0 0 0 1px rgba(134, 93, 40, 0.35);
+  overflow: hidden;
+}
+
+.basket-header {
+  padding: 0.5rem 0.7rem 0.35rem;
+  font-size: 0.96rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-bottom: 2px solid rgba(0, 0, 0, 0.15);
+}
+
+.basket-scroll {
+  flex: 1;
+  padding: 0.45rem 0.7rem;
+  overflow-y: auto;
+
+  scrollbar-width: thin;
+  scrollbar-color: #b1834b transparent;
+
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+  &::-webkit-scrollbar-track {
+    background: rgba(212, 183, 135, 0.8);
+  }
+  &::-webkit-scrollbar-thumb {
+    background: #a37843;
+    border-radius: 999px;
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    background: #c18d53;
+  }
+}
+
+/* Items o estado vacío */
+
+.basket-empty {
+  text-align: center;
+  font-size: 0.85rem;
+  margin-top: 0.4rem;
+}
+
+/* =========================================
+   ITEM DEL CARRITO – estilo Wynncraft
+   ========================================= */
+
+.basket-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  padding: 0.35rem 0.5rem;
+
+  border-radius: 0.65rem;
+  background: #6b5847;
+  border: 1px solid #3f2b1f;
+  box-shadow: 0 2px 0 #3f2b1f;
+
+  color: #fefaf2;
+  font-size: 0.9rem;
+}
+
+.basket-item-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.basket-item-icon-frame {
+  width: 40px;
+  height: 32px;
+  border-radius: 0.4rem;
+  background: #4c3b2c;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.basket-item-icon {
+  max-width: 90%;
+  max-height: 90%;
+  image-rendering: pixelated;
+}
+
+.basket-item-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.basket-item-name {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.basket-item-price {
+  font-size: 0.8rem;
+  color: #f4dca3;
+}
+
+.basket-item-right {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.basket-item-qty {
+  border-radius: 0.45rem;
+  padding: 0.1rem 0.45rem;
+  font-size: 0.8rem;
+  background: #4b3a2b;
+  color: #fefaf2;
+}
+
+.basket-item-remove {
+  border: none;
+  border-radius: 0.45rem;
+  width: 22px;
+  height: 22px;
+  font-size: 0.85rem;
+  line-height: 1;
+  text-align: center;
+
+  background: #4b2b2b;
+  color: #fef7e5;
+  cursor: pointer;
+  transition: transform 0.08s ease, filter 0.08s ease;
+}
+
+.basket-item-remove:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.1);
+}
+
+.basket-item-remove:active {
+  transform: translateY(1px);
+}
+
+/* Pie del carrito: total + botón */
+
+.basket-footer {
+  padding: 0.5rem 0.7rem 0.6rem;
+  border-top: 2px solid rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.basket-total {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+}
+
+.basket-total-label {
+  font-weight: 700;
+}
+
+.basket-total-value {
+  font-weight: 700;
+}
+
+/* =========================================
+   BOTÓN DE CHECKOUT – verde con shine
+   ========================================= */
+
+.basket-checkout-btn {
+  position: relative;
+  margin-top: 0.1rem;
+  width: 100%;
+  border-radius: 0.8rem;
+  border: none;
+  padding: 0.65rem 0.9rem;
+
+  background: linear-gradient(
+    180deg,
+    #2ead38 0%,
+    #1f922f 55%,
+    #177124 55%,
+    #0f4c18 100%
+  );
+  color: #fef7e5;
+  font-family: "IM Fell English SC", serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  text-align: center;
+
+  box-shadow:
+    0 0 0 2px #0f3c15,
+    0 4px 0 #0b2a10;
+  cursor: pointer;
+  overflow: hidden;
+
+  transform: translateY(0);
+  transition: transform 0.08s ease, box-shadow 0.08s ease,
+    filter 0.08s ease, opacity 0.08s ease;
+}
+
+/* Shine diagonal cada X segundos */
+.basket-checkout-btn::before {
+  content: "";
+  position: absolute;
+  top: -60%;
+  left: -40%;
+  width: 40%;
+  height: 220%;
+  background: linear-gradient(
+    115deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.65) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  transform: translateX(-130%);
+  animation: checkoutShine 4.5s infinite ease-in-out;
+  pointer-events: none;
+}
+
+@keyframes checkoutShine {
+  0%,
+  60% {
+    transform: translateX(-130%);
+  }
+  70% {
+    transform: translateX(160%);
+  }
+  100% {
+    transform: translateX(160%);
+  }
+}
+
+.basket-checkout-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow:
+    0 0 0 2px #0f3c15,
+    0 2px 0 #0b2a10,
+    0 0 16px rgba(19, 117, 49, 0.8);
+  filter: brightness(1.03);
+}
+
+.basket-checkout-btn:active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow:
+    0 0 0 2px #0f3c15,
+    0 1px 0 #0b2a10;
+}
+
+/* estado deshabilitado */
+.basket-checkout-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow:
+    0 0 0 2px #0f3c15,
+    0 2px 0 #0b2a10;
+}
+
+.basket-checkout-btn:disabled::before {
+  animation: none;
+}
+
+/* ================================
+   RESPONSIVE
+   ================================ */
+
+@media (max-width: 900px) {
+  .carrito-panel {
+    box-shadow:
+      0 0 0 1px rgba(90, 59, 23, 0.35),
+      0 -10px 25px rgba(0, 0, 0, 0.75);
+  }
+
+  .carrito-top-actions {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 480px) {
+  .carrito-player-name {
+    font-size: 0.9rem;
+  }
+
+  .carrito-btn {
+    font-size: 0.75rem;
+  }
+
+  .basket-header {
+    font-size: 0.9rem;
+  }
+}

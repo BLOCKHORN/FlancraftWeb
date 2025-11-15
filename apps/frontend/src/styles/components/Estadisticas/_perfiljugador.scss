@@ -1,0 +1,607 @@
+@import url("https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&display=swap");
+
+.perfiljugador-page {
+  --paper: #f3e6cc;
+  --panel: #fffdf3;
+  --brown: #3c2b1b;
+  --line: #b58f5a;
+
+  font-family: "IM Fell English SC", serif;
+  color: var(--brown);
+  background: #d8ccae;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ========== LOADING ========== */
+.perfiljugador-loading {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: url("/assets/papertexture.jpeg") center/cover repeat;
+  color: #3c2b1b;
+
+  .loading-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1.4rem 1.8rem;
+    background: rgba(255, 253, 243, 0.96);
+    border-radius: 14px;
+    border: 2px solid #b58f5a;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.18);
+  }
+
+  .loading-gema {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 3px solid #b58f5a;
+    border-top-color: transparent;
+    animation: spin 0.9s linear infinite;
+  }
+
+  p {
+    margin: 0;
+    font-size: 1.05rem;
+  }
+}
+
+/* ========== HERO ========== */
+.perfiljugador-hero {
+  position: relative;
+  width: 100%;
+  height: 400px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+
+  .hero-bg {
+    position: absolute;
+    inset: 0;
+    background: url("/assets/cabecera-minecraft.webp") center/cover no-repeat;
+    z-index: 1;
+  }
+
+  .hero-inner {
+    position: relative;
+    z-index: 3; /* por encima de la madera */
+    width: min(1100px, 100%);
+    padding: 0 1.25rem;
+    display: flex;
+    justify-content: center;
+    padding-bottom: 4.4rem; /* baja la tarjeta para que no se corte */
+  }
+
+  .perfiljugador-headcard {
+    background: #f3e6cc;
+    border: 3px solid #7c5a3a;
+    border-radius: 18px 18px 10px 10px;
+    width: min(1000px, 100%);
+    display: flex;
+    gap: 1.6rem;
+    align-items: center;
+    padding: 1.1rem 1.3rem 1.25rem;
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
+    position: relative;
+    overflow: hidden;
+
+    /* ligero brillo superior para darle “profundidad” */
+    &::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      top: -40%;
+      background: radial-gradient(circle at top, rgba(255, 255, 255, 0.35), transparent 65%);
+      pointer-events: none;
+    }
+  }
+
+  .perfiljugador-skin {
+    width: 120px;
+    border-radius: 10px;
+    border: 2px solid #7c5a3a;
+    background: #fff;
+    flex: 0 0 auto;
+    box-shadow: 0 10px 18px rgba(0, 0, 0, 0.3);
+    position: relative;
+    z-index: 1;
+  }
+
+  .perfiljugador-info {
+    flex: 1 1 auto;
+    min-width: 0;
+    position: relative;
+    z-index: 1;
+
+    .nombre-jugador {
+      font-size: 2.1rem;
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      word-break: break-word;
+    }
+
+    .icono-premium {
+      width: 23px;
+      height: 23px;
+      filter: drop-shadow(0 0 4px rgba(255, 221, 120, 0.8));
+    }
+
+    .nivel {
+      margin-top: 0.35rem;
+      font-size: 1.05rem;
+    }
+
+    .xp-bar {
+      width: 100%;
+      height: 14px;
+      margin-top: 0.4rem;
+      background: #d9c49f;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow:
+        inset 0 0 4px rgba(0, 0, 0, 0.3),
+        0 0 6px rgba(255, 234, 180, 0.8);
+
+      .xp-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #ffe186, #f4c661, #ffe186);
+        transition: width 0.35s ease-out;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .xp-fill::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+          120deg,
+          rgba(255, 255, 255, 0.8),
+          transparent 40%,
+          transparent 60%,
+          rgba(255, 255, 255, 0.9)
+        );
+        background-size: 200% 100%;
+        mix-blend-mode: screen;
+        animation: xp-shine 1.8s linear infinite;
+      }
+    }
+
+    .xp-text {
+      font-size: 0.95rem;
+      margin-top: 0.35rem;
+      color: #5f4b30;
+    }
+  }
+
+  /* tira de madera */
+  .hero-wood {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 55px;
+    background-size: cover;
+    background-position: center;
+    background-repeat: repeat-x;
+    z-index: 2;
+    box-shadow:
+      0 -4px 6px rgba(0, 0, 0, 0.25),
+      0 10px 18px rgba(0, 0, 0, 0.4);
+  }
+}
+
+/* ========== BODY (papel) ========== */
+.perfiljugador-body {
+  width: 100%;
+  background: url("/assets/papertexture.jpeg") top center repeat-y;
+  background-size: cover;
+  position: relative;
+  z-index: 1;
+  padding-top: 0;
+}
+
+/* deco sobre el papel, debajo de la madera */
+.paper-decor {
+  position: absolute;
+  top: 0; /* justo al empezar el papel */
+  left: 0;
+  width: 100%;
+  pointer-events: none;
+  z-index: 2;
+
+  .paper-top {
+    width: 100%;
+    display: block;
+    opacity: 0.9;
+  }
+
+  .paper-fold {
+    position: absolute;
+    top: -12px;
+    right: 0;
+    width: 170px;
+    opacity: 0.85;
+  }
+}
+
+/* contenido centrado */
+.perfiljugador-body-inner {
+  width: min(1100px, 100%);
+  margin: 0 auto;
+  padding: 4.9rem 1.5rem 3.2rem;
+  box-sizing: border-box;
+  position: relative;
+  z-index: 3; /* por encima de la deco */
+
+  /* bordes verticales decorativos a ambos lados del bloque */
+  &::before,
+  &::after {
+    content: "";
+    position: absolute;
+    top: 22px;
+    bottom: 22px;
+    width: 3px;
+    background: linear-gradient(to bottom, #7c5a3a, #f3e6cc, #7c5a3a);
+    opacity: 0.45;
+    pointer-events: none;
+  }
+
+  &::before {
+    left: 18px;
+  }
+
+  &::after {
+    right: 18px;
+  }
+}
+
+/* ========== SELECTOR ========== */
+.selector-servidor {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+  margin-bottom: 2.1rem;
+
+  .selector-btn {
+    background: #f3e6cc;
+    border: 2px solid #7c5a3a;
+    border-radius: 12px;
+    padding: 0.45rem 1.5rem;
+    font-family: inherit;
+    font-size: 1rem;
+    color: #3c2b1b;
+    cursor: pointer;
+    transition: 0.15s all ease-out;
+    box-shadow: inset 0 1px 2px #fff3, 0 4px 6px rgba(0, 0, 0, 0.2);
+
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 5px 10px rgba(0, 0, 0, 0.25);
+    }
+
+    &.active {
+      background: #f9edd5;
+      box-shadow:
+        inset 0 3px 6px rgba(0, 0, 0, 0.25),
+        0 1px 0 #b38b63;
+    }
+  }
+}
+
+/* ========== PANEL ESTADÍSTICAS ========== */
+.estadisticas-panel {
+  background: rgba(255, 253, 243, 0.98);
+  border: 3px solid #b58f5a;
+  border-radius: 16px;
+  padding: 2.6rem 1.6rem 2.1rem;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.08);
+  margin-bottom: 2.9rem;
+  position: relative;
+  overflow: hidden;
+
+  .panel-title {
+    font-size: 1.7rem;
+    text-align: center;
+    margin-bottom: 1.5rem;
+    text-shadow: 0 1px 0 #ffffffbb;
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 1.1rem;
+  }
+
+  .stat-card {
+    background: #fff6db;
+    border: 1px solid #dec49b;
+    border-radius: 12px;
+    padding: 1rem 1.1rem;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.12s ease-out, box-shadow 0.12s ease-out;
+
+    &::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at top left, rgba(255, 255, 255, 0.5), transparent 60%);
+      opacity: 0;
+      transition: opacity 0.2s ease-out;
+      pointer-events: none;
+    }
+
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+    }
+
+    &:hover::before {
+      opacity: 1;
+    }
+
+    .label {
+      font-weight: bold;
+      font-size: 1.02rem;
+    }
+
+    .valor {
+      font-size: 1.3rem;
+      color: #5a4327;
+    }
+  }
+
+  .mensaje-vacio {
+    text-align: center;
+    font-style: italic;
+    color: #806241;
+  }
+
+  &.estadisticas-vacias {
+    text-align: center;
+
+    .mensaje-vacio-global {
+      max-width: 640px;
+      margin: 0.5rem auto 0;
+      font-size: 1.02rem;
+      line-height: 1.5;
+      color: #6d5333;
+    }
+  }
+}
+
+/* ========== SANCIONES ========== */
+.sanciones-panel {
+  background: rgba(255, 253, 245, 0.98);
+  border: 2px solid #c0a070;
+  border-radius: 12px;
+  padding: 1.6rem 1.4rem 1.4rem;
+  margin-bottom: 2.4rem;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+
+  h2 {
+    font-size: 1.55rem;
+    text-align: center;
+    margin-bottom: 1.1rem;
+  }
+
+  .sanciones-lista {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.8rem;
+  }
+
+  .sancion-item {
+    padding: 0.85rem 0.8rem;
+    border-radius: 10px;
+    background: #fff9eb;
+    border-left: 3px solid #c46a4a;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.04);
+
+    p {
+      margin: 0.3rem 0;
+    }
+  }
+
+  .sin-sanciones {
+    text-align: center;
+    font-style: italic;
+    color: #4c3927;
+    background: #e5f6e9;
+    border-radius: 10px;
+    padding: 0.65rem 0.9rem;
+    border: 1px solid #98d5a4;
+  }
+}
+
+/* ========== BOTÓN VOLVER ========== */
+.volver-btn {
+  text-align: center;
+
+  .btn {
+    background: #e8d7b9;
+    border: 2px solid #7c5a3a;
+    border-radius: 12px;
+    padding: 0.6rem 1.6rem;
+    font-weight: bold;
+    font-size: 1.05rem;
+    color: #3c2b1b;
+    cursor: pointer;
+    transition: all 0.15s ease-out;
+    font-family: "IM Fell English SC", serif;
+
+    &:hover {
+      background: #f3e6cc;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.18);
+    }
+  }
+}
+
+/* ========== PERFIL NO ENCONTRADO ========== */
+.perfiljugador-wrapper.no-encontrado {
+  min-height: 100vh;
+  background: url("/assets/papertexture.jpeg") center/cover repeat;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  .perfiljugador-card.error {
+    background: rgba(255, 253, 243, 0.96);
+    border-radius: 18px;
+    border: 3px solid #c46a4a;
+    padding: 2rem 2.5rem;
+    text-align: center;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+
+    h2 {
+      font-size: 1.8rem;
+      margin: 1rem 0 0.5rem;
+    }
+
+    p {
+      margin-bottom: 1.4rem;
+    }
+
+    .perfiljugador-skin {
+      width: 110px;
+      border-radius: 10px;
+      border: 2px solid #7c5a3a;
+      background: #fff;
+    }
+
+    .btn {
+      background: #f3e6cc;
+      border: 2px solid #7c5a3a;
+      border-radius: 12px;
+      padding: 0.5rem 1.6rem;
+      font-family: "IM Fell English SC", serif;
+      cursor: pointer;
+
+      &:hover {
+        background: #fffaf0;
+      }
+    }
+  }
+}
+
+/* ========== RANGOS (coherente con leaderboard) ========== */
+.nombre-jugador {
+  &.rango-nova {
+    color: #b5ff6b !important;
+    text-shadow: 0 0 2px #7ed957;
+  }
+
+  &.rango-alpha {
+    color: #58d4ff !important;
+    text-shadow: 0 0 2px #30bdee;
+  }
+
+  &.rango-inmortal {
+    color: #ff4b2b !important;
+    text-shadow: 0 0 4px #ff8000, 0 0 10px #ff4b2b;
+  }
+}
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 992px) {
+  .perfiljugador-hero {
+    height: 330px;
+  }
+
+  .estadisticas-panel .stats-grid {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .perfiljugador-hero {
+    height: auto;
+  }
+
+  .perfiljugador-hero .perfiljugador-headcard {
+    flex-direction: row;
+    width: calc(100% - 2rem);
+  }
+
+  .perfiljugador-body-inner {
+    padding: 4.5rem 1rem 3rem;
+
+    &::before,
+    &::after {
+      left: 10px;
+      right: 10px;
+    }
+  }
+
+  .paper-decor .paper-fold {
+    right: 0;
+    width: 150px;
+  }
+
+  .estadisticas-panel {
+    padding-inline: 1rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .perfiljugador-hero .perfiljugador-headcard {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .perfiljugador-hero .perfiljugador-skin {
+    width: 110px;
+  }
+
+  .selector-servidor .selector-btn {
+    width: calc(50% - 0.5rem);
+    text-align: center;
+  }
+
+  .estadisticas-panel .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .sanciones-panel {
+    padding-inline: 0.9rem;
+  }
+
+  .perfiljugador-body-inner::before,
+  .perfiljugador-body-inner::after {
+    display: none; /* para que no “coman” espacio en móvil estrecho */
+  }
+}
+
+/* Evitar scroll horizontal global raro */
+body {
+  overflow-x: hidden;
+}
+
+/* ========== ANIMACIONES ========== */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes xp-shine {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
