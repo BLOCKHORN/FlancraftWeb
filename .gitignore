@@ -1,12 +1,40 @@
-# Monorepo
+# =========================
+# Node / Monorepo
+# =========================
 node_modules/
+**/node_modules/
+
+# Builds (Vite, Next, etc.)
 dist/
+**/dist/
 .next/
-.vercel/
-.DS_Store
+out/
+
+# =========================
+# Entorno
+# =========================
+# Archivos .env locales (se mantiene solo el ejemplo)
 .env
 .env.*
+!.env.example
+
+# =========================
+# Logs
+# =========================
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
 *.log
 
+# =========================
+# Sistema / Editor
+# =========================
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
 
-.vercel
+# =========================
+# Vercel
+# =========================
+.vercel/
