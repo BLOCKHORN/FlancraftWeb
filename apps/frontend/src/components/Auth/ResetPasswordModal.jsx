@@ -16,7 +16,7 @@ export default function ResetPasswordModal({ onClose }) {
     setLoading(true);
 
     try {
-      const res = await fetch("https://flancraftweb-backend.onrender.com/api/reset/validate", {
+      const res = await fetch("https://flancraft-backend.onrender.com/api/reset/validate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token }),
@@ -45,7 +45,7 @@ export default function ResetPasswordModal({ onClose }) {
     setLoading(true);
 
     try {
-      const res = await fetch("https://flancraftweb-backend.onrender.com/api/reset/set-password", {
+      const res = await fetch("https://flancraft-backend.onrender.com/api/reset/set-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token, nuevaPassword: password }),

@@ -51,7 +51,7 @@ const Navbar = ({ onLoginClick }) => {
       try {
         const [userRes, monedasRes] = await Promise.all([
           supabase.from("usuarios").select("*").eq("uuid", user.uuid).single(),
-          fetch(`https://flancraftweb-backend.onrender.com/api/monedas/${user.uuid}`)
+          fetch(`https://flancraft-backend.onrender.com/api/monedas/${user.uuid}`)
         ]);
         const userData = userRes.data;
         const monedas = monedasRes.ok ? await monedasRes.json() : { ecos: 0 };

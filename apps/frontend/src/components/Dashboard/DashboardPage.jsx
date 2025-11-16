@@ -23,15 +23,15 @@ export default function DashboardPage() {
       try {
         const [usuarioRes, monedasRes, xpRes, usuariosRes] = await Promise.all([
           fetch(
-            `https://flancraftweb-backend.onrender.com/api/usuarios/${parsed.uuid}`
+            `https://flancraft-backend.onrender.com/api/usuarios/${parsed.uuid}`
           ),
           fetch(
-            `https://flancraftweb-backend.onrender.com/api/monedas/${parsed.uuid}`
+            `https://flancraft-backend.onrender.com/api/monedas/${parsed.uuid}`
           ),
           fetch(
-            `https://flancraftweb-backend.onrender.com/api/usuarios/${parsed.uuid}/xp`
+            `https://flancraft-backend.onrender.com/api/usuarios/${parsed.uuid}/xp`
           ),
-          fetch(`https://flancraftweb-backend.onrender.com/api/usuarios`),
+          fetch(`https://flancraft-backend.onrender.com/api/usuarios`),
         ]);
 
         if (!usuarioRes.ok || !monedasRes.ok || !xpRes.ok || !usuariosRes.ok) {
@@ -63,7 +63,7 @@ export default function DashboardPage() {
     if (!user) return;
     try {
       const res = await fetch(
-        `https://flancraftweb-backend.onrender.com/api/monedas/${user.uuid}`
+        `https://flancraft-backend.onrender.com/api/monedas/${user.uuid}`
       );
       if (!res.ok) throw new Error("Error al actualizar monedas");
       const monedasActualizadas = await res.json();

@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { motion as Motion } from "framer-motion";
 import "../../styles/components/Noticias/_allnews.scss";
 
-const API_URL = "https://flancraftweb-backend.onrender.com";
+const API_URL = "https://flancraft-backend.onrender.com";
 
 const AllNews = () => {
   const [newsData, setNewsData] = useState([]);

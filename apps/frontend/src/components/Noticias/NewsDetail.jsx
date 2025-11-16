@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import "../../styles/components/Noticias/_newsdetail.scss";
 
-const API_URL = "https://flancraftweb-backend.onrender.com";
+const API_URL = "https://flancraft-backend.onrender.com";
 
 // --- helpers para convertir el JSON de Tiptap a HTML ---
 

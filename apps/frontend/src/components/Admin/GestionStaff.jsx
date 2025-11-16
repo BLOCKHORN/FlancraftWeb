@@ -2,7 +2,7 @@ import React, { useEffect, useState, useContext } from "react";
 import { UserContext } from "../../context/UserContext";
 import "../../styles/components/Admin/_gestionstaff.scss";
 
-const API_URL = "https://flancraftweb-backend.onrender.com";
+const API_URL = "https://flancraft-backend.onrender.com";
 
 export default function GestionStaff() {
   const { user } = useContext(UserContext);

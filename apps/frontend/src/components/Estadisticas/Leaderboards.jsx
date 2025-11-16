@@ -53,7 +53,7 @@ export default function Leaderboards() {
   const paginasTotales = 10;
 
   useEffect(() => {
-    fetch("https://flancraftweb-backend.onrender.com/api/usuarios")
+    fetch("https://flancraft-backend.onrender.com/api/usuarios")
       .then((res) => res.json())
       .then((usuarios) => {
         const mapa = usuarios.reduce((acc, u) => {

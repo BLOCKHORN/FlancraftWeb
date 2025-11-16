@@ -12,7 +12,7 @@ import Iframe from "../../config/Iframe";
 import toast from "react-hot-toast";
 import "../../styles/components/Noticias/_editarnoticia.scss";
 
-const API_URL = "https://flancraftweb-backend.onrender.com";
+const API_URL = "https://flancraft-backend.onrender.com";
 
 const EditarNoticia = () => {
   const { id } = useParams();

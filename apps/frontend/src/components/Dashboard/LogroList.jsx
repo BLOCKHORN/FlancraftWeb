@@ -70,7 +70,7 @@ function LogroList({ user, onXpClaimed }) {
     setCargando(true);
 
     fetch(
-      `https://flancraftweb-backend.onrender.com/api/logros/${user.uuid}${param}`
+      `https://flancraft-backend.onrender.com/api/logros/${user.uuid}${param}`
     )
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -91,7 +91,7 @@ function LogroList({ user, onXpClaimed }) {
     try {
       setCargandoId(id_logro);
       const res = await fetch(
-        `https://flancraftweb-backend.onrender.com/api/logros/reclamar/${id_logro}`,
+        `https://flancraft-backend.onrender.com/api/logros/reclamar/${id_logro}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

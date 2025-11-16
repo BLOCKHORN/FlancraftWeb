@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import "../../styles/components/Landpage/_newshighlight.scss";
 
-const API_URL = "https://flancraftweb-backend.onrender.com/api/noticias";
+const API_URL = "https://flancraft-backend.onrender.com/api/noticias";
 
 const NewsHighlight = () => {
   const [newsData, setNewsData] = useState([]);

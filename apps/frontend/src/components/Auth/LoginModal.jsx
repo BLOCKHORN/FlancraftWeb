@@ -96,7 +96,7 @@ const goToDashboard = (uuid, username, rol_admin, extras = {}) => {
     setLoading(true);
     try {
       const res = await fetch(
-        "https://flancraftweb-backend.onrender.com/api/vincular/login",
+        "https://flancraft-backend.onrender.com/api/vincular/login",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -109,7 +109,7 @@ const goToDashboard = (uuid, username, rol_admin, extras = {}) => {
       localStorage.setItem("token", data.token);
       
       const usuarioRes = await fetch(
-        `https://flancraftweb-backend.onrender.com/api/usuarios/${data.uuid}`
+        `https://flancraft-backend.onrender.com/api/usuarios/${data.uuid}`
       );
       const usuarioData = await usuarioRes.json();
 
@@ -136,7 +136,7 @@ const goToDashboard = (uuid, username, rol_admin, extras = {}) => {
     setLoading(true);
     try {
       const res = await fetch(
-        "https://flancraftweb-backend.onrender.com/api/vincular/validate",
+        "https://flancraft-backend.onrender.com/api/vincular/validate",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -165,7 +165,7 @@ const goToDashboard = (uuid, username, rol_admin, extras = {}) => {
     setLoading(true);
     try {
       const registerRes = await fetch(
-        "https://flancraftweb-backend.onrender.com/api/vincular/registrar",
+        "https://flancraft-backend.onrender.com/api/vincular/registrar",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -181,7 +181,7 @@ const goToDashboard = (uuid, username, rol_admin, extras = {}) => {
         throw new Error(registerData.error || "Error al registrar usuario");
 
       const markRes = await fetch(
-        "https://flancraftweb-backend.onrender.com/api/vincular/marcar",
+        "https://flancraft-backend.onrender.com/api/vincular/marcar",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -191,7 +191,7 @@ const goToDashboard = (uuid, username, rol_admin, extras = {}) => {
       if (!markRes.ok) throw new Error("Error al marcar token como usado");
 
       const usuarioRes = await fetch(
-        `https://flancraftweb-backend.onrender.com/api/usuarios/${form.uuid}`
+        `https://flancraft-backend.onrender.com/api/usuarios/${form.uuid}`
       );
       const usuarioData = await usuarioRes.json();
 
@@ -214,7 +214,7 @@ const goToDashboard = (uuid, username, rol_admin, extras = {}) => {
     setError(null);
     setLoading(true);
     try {
-      const res = await fetch("https://flancraftweb-backend.onrender.com/api/reset/validate", {
+      const res = await fetch("https://flancraft-backend.onrender.com/api/reset/validate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token: form.token }),
@@ -240,7 +240,7 @@ const goToDashboard = (uuid, username, rol_admin, extras = {}) => {
 
     setLoading(true);
     try {
-      const res = await fetch("https://flancraftweb-backend.onrender.com/api/reset/set-password", {
+      const res = await fetch("https://flancraft-backend.onrender.com/api/reset/set-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token: form.token, nuevaPassword: form.password }),

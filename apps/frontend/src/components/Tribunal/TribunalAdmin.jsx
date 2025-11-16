@@ -44,7 +44,7 @@ export default function AdminPanel() {
 
   const cargarSanciones = async () => {
     try {
-      const res = await fetch("https://flancraftweb-backend.onrender.com/api/sanciones");
+      const res = await fetch("https://flancraft-backend.onrender.com/api/sanciones");
       const data = await res.json();
       setSanciones(data);
     } catch (err) {
@@ -54,7 +54,7 @@ export default function AdminPanel() {
 
   const guardarCambios = async (sancion) => {
     try {
-      await fetch(`https://flancraftweb-backend.onrender.com/api/sanciones/${sancion.id}`, {
+      await fetch(`https://flancraft-backend.onrender.com/api/sanciones/${sancion.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -78,7 +78,7 @@ export default function AdminPanel() {
   const eliminarSancion = async (id, nombre) => {
     if (!confirm(`¿Seguro que deseas eliminar la sanción de ${nombre}?`)) return;
     try {
-      await fetch(`https://flancraftweb-backend.onrender.com/api/sanciones/${id}`, {
+      await fetch(`https://flancraft-backend.onrender.com/api/sanciones/${id}`, {
         method: 'DELETE'
       });
       cargarSanciones();

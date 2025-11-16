@@ -32,7 +32,7 @@ function RangoSelectorAnimado() {
     const fetchPrecios = async () => {
       try {
         const res = await fetch(
-          "https://flancraftweb-backend.onrender.com/api/rangos/lista"
+          "https://flancraft-backend.onrender.com/api/rangos/lista"
         );
         const data = await res.json();
         if (res.ok) {
@@ -64,7 +64,7 @@ function RangoSelectorAnimado() {
       try {
         setCargandoSaldo(true);
         const res = await fetch(
-          `https://flancraftweb-backend.onrender.com/api/monedas/${user.uuid}`
+          `https://flancraft-backend.onrender.com/api/monedas/${user.uuid}`
         );
         if (!res.ok) throw new Error("No se pudo obtener el saldo.");
         const data = await res.json();
@@ -91,7 +91,7 @@ function RangoSelectorAnimado() {
       if (user?.uuid) {
         try {
           const res = await fetch(
-            `https://flancraftweb-backend.onrender.com/api/usuarios/${user.uuid}`
+            `https://flancraft-backend.onrender.com/api/usuarios/${user.uuid}`
           );
           const data = await res.json();
           setRangoDatos({
@@ -184,7 +184,7 @@ function RangoSelectorAnimado() {
     setComprando(true);
     try {
       const res = await fetch(
-        "https://flancraftweb-backend.onrender.com/api/rangos/comprar-rango",
+        "https://flancraft-backend.onrender.com/api/rangos/comprar-rango",
         {
           method: "POST",
           headers: {

@@ -7,7 +7,7 @@ export async function getLeaderboards({ tipo, servidor, limit = 10, offset = 0 }
   params.append("limit", limit);
   params.append("offset", offset);
 
-  const res = await fetch(`https://flancraftweb-backend.onrender.com/api/stats/ranking?${params}`);
+  const res = await fetch(`https://flancraft-backend.onrender.com/api/stats/ranking?${params}`);
   if (!res.ok) throw new Error("Error al obtener el leaderboard");
 
   return await res.json(); // { total, resultados: [...] }

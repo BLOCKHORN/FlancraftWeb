@@ -44,7 +44,7 @@ export default function RewardList({
   // ==========================
   useEffect(() => {
     fetch(
-      `https://flancraftweb-backend.onrender.com/api/recompensas/reclamadas/${user.uuid}`
+      `https://flancraft-backend.onrender.com/api/recompensas/reclamadas/${user.uuid}`
     )
       .then((res) => res.json())
       .then((data) => {
@@ -184,7 +184,7 @@ export default function RewardList({
 
     try {
       const res = await fetch(
-        "https://flancraftweb-backend.onrender.com/api/recompensas/reclamar",
+        "https://flancraft-backend.onrender.com/api/recompensas/reclamar",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

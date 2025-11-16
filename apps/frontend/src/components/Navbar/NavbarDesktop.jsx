@@ -45,7 +45,7 @@ const NavbarDesktop = ({
     const fetchRangoUsuario = async () => {
       if (isLoggedIn && userData?.uuid) {
         try {
-          const res = await fetch(`https://flancraftweb-backend.onrender.com/api/usuarios/${userData.uuid}`);
+          const res = await fetch(`https://flancraft-backend.onrender.com/api/usuarios/${userData.uuid}`);
           const data = await res.json();
           setRangoDatos({
             rango: data.rango_usuario?.toLowerCase() || null,

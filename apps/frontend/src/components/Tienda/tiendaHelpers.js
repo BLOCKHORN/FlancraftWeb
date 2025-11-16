@@ -2,7 +2,7 @@
 
 export const API_URL =
   import.meta.env.VITE_BACKEND_URL ||
-  "https://flancraftweb-backend.onrender.com";
+  "https://flancraft-backend.onrender.com";
 
 /** Quita acentos SIN tocar mayúsculas/espacios (compat con código viejo) */
 export function stripAccents(str = "") {
