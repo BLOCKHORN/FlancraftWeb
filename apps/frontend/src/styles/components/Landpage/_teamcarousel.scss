@@ -218,9 +218,15 @@
   /* ===== responsive ===== */
   @media (max-width: 1024px) {
     .team-text {
-      .title { font-size: 2.25rem; }
-      .name { font-size: 1.5rem; }
-      .description { font-size: 1.05rem; }
+      .title {
+        font-size: 2.25rem;
+      }
+      .name {
+        font-size: 1.5rem;
+      }
+      .description {
+        font-size: 1.05rem;
+      }
     }
     .team-avatar {
       width: 220px;
@@ -233,9 +239,16 @@
 
     .team-text {
       min-height: 480px;
-      .title { font-size: 2rem; }
-      .name { font-size: 1.4rem; }
-      .description { font-size: 1rem; }
+
+      .title {
+        font-size: 2rem;
+      }
+      .name {
+        font-size: 1.4rem;
+      }
+      .description {
+        font-size: 1rem;
+      }
     }
 
     .team-avatar {
@@ -253,9 +266,15 @@
     padding: 2rem 1rem;
 
     .team-text {
-      .title { font-size: 1.7rem; }
-      .name { font-size: 1.3rem; }
-      .description { font-size: 0.95rem; }
+      .title {
+        font-size: 1.7rem;
+      }
+      .name {
+        font-size: 1.3rem;
+      }
+      .description {
+        font-size: 0.95rem;
+      }
     }
 
     .team-avatar {
@@ -265,6 +284,7 @@
 
     .carousel-heads {
       gap: 0.6rem;
+
       .head-icon {
         width: 36px;
         height: 36px;
