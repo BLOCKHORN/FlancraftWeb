@@ -9,18 +9,19 @@ import { Lock, CheckCircle } from "lucide-react";
 import "../../styles/components/Dashboard/_rewardlist.scss";
 
 const RECOMPENSAS = [
-  { nivel: 1, descripcion: "17 ECOS", tipo: "eco" },
-  { nivel: 5, descripcion: "134 ECOS", tipo: "eco" },
-  { nivel: 10, descripcion: "255 ECOS", tipo: "eco" },
-  { nivel: 15, descripcion: "351 ECOS", tipo: "eco" },
-  { nivel: 20, descripcion: "431 ECOS", tipo: "eco" },
-  { nivel: 25, descripcion: "501 ECOS", tipo: "eco" },
-  { nivel: 30, descripcion: "562 ECOS", tipo: "eco" },
-  { nivel: 35, descripcion: "617 ECOS", tipo: "eco" },
-  { nivel: 40, descripcion: "671 ECOS", tipo: "eco" },
-  { nivel: 45, descripcion: "717 ECOS", tipo: "eco" },
-  { nivel: 50, descripcion: "744 ECOS", tipo: "eco" },
+  { nivel: 1, descripcion: "200 ECOS", tipo: "eco" },
+  { nivel: 5, descripcion: "600 ECOS", tipo: "eco" },
+  { nivel: 10, descripcion: "1000 ECOS", tipo: "eco" },
+  { nivel: 15, descripcion: "1500 ECOS", tipo: "eco" },
+  { nivel: 20, descripcion: "2000 ECOS", tipo: "eco" },
+  { nivel: 25, descripcion: "2600 ECOS", tipo: "eco" },
+  { nivel: 30, descripcion: "3200 ECOS", tipo: "eco" },
+  { nivel: 35, descripcion: "4000 ECOS", tipo: "eco" },
+  { nivel: 40, descripcion: "4800 ECOS", tipo: "eco" },
+  { nivel: 45, descripcion: "5600 ECOS", tipo: "eco" },
+  { nivel: 50, descripcion: "9500 ECOS + PRESTIGIO", tipo: "eco" },
 ];
+// suma total = 35.000 ECOS
 
 export default function RewardList({
   user,
@@ -268,10 +269,11 @@ export default function RewardList({
   // ==========================
   return (
     <section className="reward-pass">
-      <h2 className="titulo-reward">Recompensas de Nivel</h2>
+      <h2 className="titulo-reward">Camino al Prestigio</h2>
 
       <div className="recompensas-subtitulo">
-        Completa aventuras, sube de nivel y reclama tus gemas de ECOS.
+        Completa aventuras, sube de nivel y reclama hasta 35.000 ECOS
+        en tu camino al Prestigio.
       </div>
 
       <div className="rewards-scroll-container">

@@ -87,7 +87,6 @@ const Home = () => {
               loop
               playsInline
               preload="none"
-              poster="/images/background-placeholder.jpg"
             >
               <source src="/videos/background1.mp4" type="video/mp4" />
               Tu navegador no admite video HTML5.
