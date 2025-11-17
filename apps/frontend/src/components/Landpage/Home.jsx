@@ -193,7 +193,7 @@ const Home = () => {
                 ) : (
                   <>
                     <span className="cta-line1">
-                      ¡Retos disponibles, {displayName}!
+                      ¡Tienes retos disponibles, {displayName}!
                     </span>
                     <span className="cta-line2">
                       Continúa tu progreso y reclama recompensas
