@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useContext } from "react";
+import React, { useEffect, useState, useContext, useCallback } from "react";
 import { HiBolt, HiChevronLeft, HiChevronRight } from "react-icons/hi2";
 import { useNavigate } from "react-router-dom";
 import ColorThief from "color-thief-browser";
@@ -10,12 +10,11 @@ import "../../styles/components/Landpage/_ritual.scss";
 export default function RitualEko() {
   const [index, setIndex] = useState(0);
   const [viewed, setViewed] = useState(Array(codexData.length).fill(false));
-  const [dominantColor, setDominantColor] = useState("#ffffff");
+  const [dominantColor, setDominantColor] = useState("#f5e3b8");
   const [progress, setProgress] = useState("0%");
   const [hasUnlocked, setHasUnlocked] = useState(false);
   const [showAccessMessage, setShowAccessMessage] = useState(false);
 
-  const imgRef = useRef(null);
   const navigate = useNavigate();
   const { user } = useContext(UserContext);
 
@@ -23,57 +22,81 @@ export default function RitualEko() {
   const isVideo = current.bg?.endsWith(".mp4");
   const allViewed = viewed.every(Boolean);
 
-  // Ajusta el campo según tu UserContext
   const isLoggedIn = Boolean(user && (user.uuid || user.id || user.nombre_minecraft));
 
   // Marcar viñeta como vista
   useEffect(() => {
-    setViewed((prevViewed) => {
-      if (prevViewed[index]) return prevViewed;
-      const updated = [...prevViewed];
+    setViewed((prev) => {
+      if (prev[index]) return prev;
+      const updated = [...prev];
       updated[index] = true;
       return updated;
     });
   }, [index]);
 
-  // Extraer color dominante
+  // Extraer color dominante de la imagen
   useEffect(() => {
-    if (!current?.bg || isVideo) return;
+    if (!current?.bg || isVideo) {
+      setDominantColor("#f5e3b8");
+      return;
+    }
+
+    let cancelled = false;
     const img = new Image();
-    img.crossOrigin = "Anonymous";
+    img.crossOrigin = "anonymous";
     img.src = current.bg;
     img.onload = () => {
+      if (cancelled) return;
       try {
-        const color = ColorThief.getColor(img);
-        setDominantColor(`rgb(${color.join(",")})`);
+        const thief = new ColorThief();
+        const color = thief.getColor(img);
+        setDominantColor(`rgb(${color[0]}, ${color[1]}, ${color[2]})`);
       } catch (err) {
         console.error("ColorThief error:", err);
+        setDominantColor("#f5e3b8");
       }
+    };
+
+    return () => {
+      cancelled = true;
     };
   }, [current, isVideo]);
 
-  // Calcular progreso visual
+  // Calcular progreso visual para el botón líquido
   useEffect(() => {
-    const percentage = `${
-      (viewed.filter(Boolean).length / codexData.length) * 100
-    }%`;
-    setProgress(percentage);
+    const pct = (viewed.filter(Boolean).length / codexData.length) * 100;
+    setProgress(`${Math.min(Math.max(pct, 0), 100)}%`);
   }, [viewed]);
 
-  // Detectar desbloqueo
+  // Detectar desbloqueo una sola vez
   useEffect(() => {
     if (allViewed && !hasUnlocked) {
       setHasUnlocked(true);
     }
   }, [allViewed, hasUnlocked]);
 
-  const prev = () => {
-    if (index > 0) setIndex(index - 1);
-  };
+  const prev = useCallback(() => {
+    setIndex((prevIndex) => (prevIndex > 0 ? prevIndex - 1 : prevIndex));
+  }, []);
 
-  const next = () => {
-    if (index < codexData.length - 1) setIndex(index + 1);
-  };
+  const next = useCallback(() => {
+    setIndex((prevIndex) =>
+      prevIndex < codexData.length - 1 ? prevIndex + 1 : prevIndex
+    );
+  }, []);
+
+  // Navegación por teclado
+  useEffect(() => {
+    const handleKey = (e) => {
+      if (e.key === "ArrowRight") {
+        next();
+      } else if (e.key === "ArrowLeft") {
+        prev();
+      }
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [next, prev]);
 
   const getClass = (i) => {
     if (i === index) return "center";
@@ -86,29 +109,37 @@ export default function RitualEko() {
     if (!allViewed) return;
 
     if (isLoggedIn) {
-      // Usuario logueado -> ir al Dashboard (logros / recompensas)
       navigate("/dashboard");
     } else {
-      // Usuario NO logueado -> mostrar mensaje
       setShowAccessMessage(true);
     }
   };
 
   return (
     <section className="ritual-carousel">
+      {/* Fondo con fade suave, el texto NO se desmonta */}
       {isVideo ? (
-        <video autoPlay loop muted playsInline className="ritual-video-bg">
+        <video
+          key={current.bg}
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="ritual-video-bg fading-bg"
+        >
           <source src={current.bg} type="video/mp4" />
         </video>
       ) : (
         <div
-          className="ritual-image-bg"
+          key={current.bg}
+          className="ritual-image-bg fading-bg"
           style={{ backgroundImage: `url(${current.bg})` }}
         />
       )}
 
       <div className="overlay" />
 
+      {/* OJO: sin key={index}, el cuadro no parpadea */}
       <div
         className={`codex-box ${
           !viewed[index + 1] && index < codexData.length - 1
@@ -121,35 +152,46 @@ export default function RitualEko() {
         }}
       >
         {/* Flechas */}
-        <div className="arrow-panel left-arrow" onClick={prev}>
+        <button
+          type="button"
+          className="arrow-panel left-arrow"
+          onClick={prev}
+          disabled={index === 0}
+          aria-label="Anterior"
+        >
           {index > 0 && <HiChevronLeft />}
-        </div>
+        </button>
 
-        <div
+        <button
+          type="button"
           className={`arrow-panel right-arrow ${
             !viewed[index + 1] && index < codexData.length - 1 ? "glow" : ""
           }`}
           onClick={next}
+          disabled={index === codexData.length - 1}
+          aria-label="Siguiente"
         >
           {index < codexData.length - 1 && <HiChevronRight />}
-        </div>
+        </button>
 
         {/* Título y contenido */}
-        <h2 className="ritual-title" style={{ color: dominantColor }}>
-          {current.title}
-        </h2>
+        <header className="ritual-header">
+          <h2 className="ritual-title" style={{ color: dominantColor }}>
+            {current.title}
+          </h2>
 
-        <h3 className="ritual-subtitle">
-          {current.subtitle}
-          <span
-            className="ritual-badge"
-            style={{ backgroundColor: current.badgeColor }}
-          >
-            {current.badge}
-          </span>
-        </h3>
+          <h3 className="ritual-subtitle">
+            {current.subtitle}
+            <span
+              className="ritual-badge"
+              style={{ backgroundColor: current.badgeColor }}
+            >
+              {current.badge}
+            </span>
+          </h3>
+        </header>
 
-        <div className="ritual-description fade-in">
+        <div className="ritual-description">
           {current.description.split("\n").map((line, idx) => (
             <p key={idx}>{line}</p>
           ))}
@@ -158,17 +200,33 @@ export default function RitualEko() {
         {/* Miniaturas */}
         <div className="carousel-inner">
           {codexData.map((item, i) => (
-            <img
+            <button
               key={i}
-              src={item.thumb}
-              alt={item.title}
-              className={`carousel-item ${getClass(i)}`}
-            />
+              type="button"
+              className={`carousel-thumb-wrapper ${getClass(i)}`}
+              onClick={() => setIndex(i)}
+              aria-label={`Ir a viñeta ${i + 1}`}
+            >
+              <img
+                src={item.thumb}
+                alt={item.title}
+                className="carousel-item"
+              />
+            </button>
           ))}
         </div>
 
-        <div className="ritual-progress">
-          Viñeta {index + 1} de {codexData.length}
+        {/* Progreso */}
+        <div className="ritual-progress-block">
+          <span className="ritual-progress-label">
+            Viñeta {index + 1} de {codexData.length}
+          </span>
+          <div className="ritual-progress-bar">
+            <div
+              className="ritual-progress-fill"
+              style={{ "--progress": progress }}
+            />
+          </div>
         </div>
 
         {/* Botón mágico */}
@@ -187,7 +245,6 @@ export default function RitualEko() {
           >
             <div className="liquid-bg" />
 
-            {/* Solo mostrar líquido animado si no se ha desbloqueado */}
             {!allViewed && (
               <div className="liquid-fill">
                 <div className="liquid-wave" />
@@ -196,28 +253,19 @@ export default function RitualEko() {
 
             <div className="eko-liquid-text">
               <HiBolt className="bolt-icon" />
-              {allViewed ? "Obtener Eco" : "Descubre el poder..."}
+              {allViewed ? "Consigue Eco" : "Descubre el poder..."}
             </div>
           </button>
         </div>
       </div>
 
-      {/* Imagen oculta para extracción de color */}
-      {!isVideo && (
-        <img
-          ref={imgRef}
-          src={current.bg}
-          alt="hidden-color-source"
-          crossOrigin="anonymous"
-          style={{ display: "none" }}
-        />
-      )}
-
       {/* Mensaje de acceso si no está logueado */}
       {showAccessMessage && (
         <div className="ritual-access-overlay">
           <div className="ritual-access-card">
-            <h3 className="ritual-access-title">Vincula tu cuenta de Flancraft</h3>
+            <h3 className="ritual-access-title">
+              Vincula tu cuenta de Flancraft
+            </h3>
             <p className="ritual-access-text">
               Para acceder al panel de logros y obtener ECOS necesitas
               registrarte en la web y vincular tu cuenta de Flancraft con el

@@ -59,71 +59,84 @@ const GameModes = () => {
     <section className="gamemodes-wrapper">
       <div className="gm-bg" />
       <div className="gm-inner">
-        <div className="gm-header">
-          <div className="gm-title-wrapper">
-            <h2 className="gm-title">Modos de juego</h2>
-            <p className="gm-desc">
-              Desde aventuras clásicas hasta retos épicos. ¡Explora los mundos
-              de Flancraft!
+        {/* BLOQUE MUNDOS + SELECTOR */}
+        <div className="gm-selector-block">
+          <div className="gm-subheader">
+            <p className="gm-subtitle">
+              Descubre cada uno de nuestros maravillosos
             </p>
-            <div className="gm-title-line top" />
-            <div className="gm-title-line bottom" />
+            <h4 className="gm-mundos">MUNDOS</h4>
+          </div>
+
+          <div className="gm-selector">
+            {modes.map((mode) => {
+              const isLongName = mode.name.length > 13;
+              const isActive = active.id === mode.id;
+
+              return (
+                <button
+                  key={mode.id}
+                  className={`gm-mode-btn ${mode.id} ${
+                    isActive ? "active" : ""
+                  }`}
+                  onClick={() => setActive(mode)}
+                  type="button"
+                >
+                  <div className="gm-mode-icon-wrap">
+                    <img src={mode.icon} alt={mode.name} />
+                  </div>
+
+                  <span
+                    className={
+                      "gm-mode-badge" +
+                      (isLongName ? " gm-mode-badge--small" : "")
+                    }
+                  >
+                    {mode.name}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        <div className="gm-main">
-          {/* LADO IZQUIERDO: MARCO */}
+        {/* BLOQUE IMAGEN + DESCRIPCIÓN */}
+        <div className="gm-content">
           <div className="gm-left">
             <div className="gm-video-frame">
-              <img className="marco" src="/assets/marcomadera.png" alt="marco" />
-              <img className="contenido" src={active.image} alt={active.name} />
-            </div>
+  {/* capa 1: imagen presentativa, dentro de la máscara */}
+  <div className="gm-video-inner">
+    <img
+      key={active.id}
+      className="gm-presentacion gm-image-transition"
+      src={active.image}
+      alt={active.name}
+    />
+  </div>
+
+  {/* capa 2: marco madera (siempre cubre el ancho) */}
+  <img
+    className="gm-marco"
+    src="/assets/marcomadera.png"
+    alt="Marco Flancraft"
+  />
+
+  {/* capa 3: florituras por encima de todo */}
+  <img
+    className="gm-florituras"
+    src="/assets/florituras.png"
+    alt="Decoración Flancraft"
+  />
+</div>
+
           </div>
 
-          {/* LADO DERECHO: MUNDOS */}
-          <div className="gm-right">
-            <div className="gm-subheader">
-              <p className="gm-subtitle">
-                Descubre cada uno de nuestros maravillosos
+          <div className="gm-details">
+            <div className="gm-details-wrapper">
+              <h3 className={active.id}>{active.name}</h3>
+              <p key={active.id} className="gm-glitch-transition">
+                {active.description}
               </p>
-              <h4 className="gm-mundos">MUNDOS</h4>
-            </div>
-
-            <div className="gm-selector">
-              {modes.map((mode) => {
-                const isLongName = mode.name.length > 13; // 2 palabras, etc.
-                return (
-                  <button
-                    key={mode.id}
-                    className={`gm-mode-btn ${mode.id} ${
-                      active.id === mode.id ? "active" : ""
-                    }`}
-                    onClick={() => setActive(mode)}
-                  >
-                    <div className="gm-mode-icon-wrap">
-                      <img src={mode.icon} alt={mode.name} />
-                    </div>
-
-                    <span
-                      className={
-                        "gm-mode-badge" +
-                        (isLongName ? " gm-mode-badge--small" : "")
-                      }
-                    >
-                      {mode.name}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="gm-details">
-              <div className="gm-details-wrapper">
-                <h3 className={active.id}>{active.name}</h3>
-                <p key={active.id} className="gm-glitch-transition">
-                  {active.description}
-                </p>
-              </div>
             </div>
           </div>
         </div>

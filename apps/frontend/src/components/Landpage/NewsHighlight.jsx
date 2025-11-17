@@ -83,7 +83,6 @@ const NewsHighlight = () => {
 
   const highlight = useMemo(() => latest, [latest]);
 
-  // por si alguna noticia vieja no tiene slug, lo generamos
   const ensureSlug = (n) =>
     n.slug ||
     (n.titulo || "")
@@ -100,7 +99,8 @@ const NewsHighlight = () => {
           <div className="news-title-wrapper">
             <h2 className="news-title">Novedades</h2>
             <p className="news-desc">
-              Mantente al día con las últimas noticias y actualizaciones de Flancraft.
+              Mantente al día con las últimas noticias y actualizaciones de
+              Flancraft.
             </p>
           </div>
         </header>
@@ -117,40 +117,54 @@ const NewsHighlight = () => {
         )}
 
         {status === "error" && (
-          <p className="news-error">No se pudieron cargar las noticias ahora mismo.</p>
+          <p className="news-error">
+            No se pudieron cargar las noticias ahora mismo.
+          </p>
         )}
 
         {status === "idle" && highlight && (
           <article className="highlight-featured">
-            <div className="highlight-image">
-              <img
-                src={
-                  highlight.portada ||
-                  highlight.imagen ||
-                  "/assets/placeholder.png"
-                }
-                alt={highlight.titulo}
-                loading="lazy"
-              />
-            </div>
-            <div className="highlight-content">
-              <div className="headline-row">
-                <span className="date">{formatDaysAgo(highlight.fecha)}</span>
+            {/* HERO GRANDE ARRIBA */}
+            <div className="featured-hero">
+              <div className="featured-hero-inner">
+                <img
+                  src={
+                    highlight.portada ||
+                    highlight.imagen ||
+                    "/assets/placeholder.png"
+                  }
+                  alt={highlight.titulo}
+                  loading="lazy"
+                />
               </div>
-              <h3 className="highlight-title">
-                <Link to={`/news/${ensureSlug(highlight)}`}>
-                  {highlight.titulo}
+            </div>
+
+            {/* PERGAMINO CON TEXTO DEBAJO */}
+            <div className="featured-info">
+              <div className="featured-info-inner">
+                <div className="headline-row">
+                  <span className="headline-label">Última noticia</span>
+                  <span className="date">{formatDaysAgo(highlight.fecha)}</span>
+                </div>
+
+                <h3 className="highlight-title">
+                  <Link to={`/news/${ensureSlug(highlight)}`}>
+                    {highlight.titulo}
+                  </Link>
+                </h3>
+
+                <p className="highlight-excerpt">
+                  {getExcerpt(highlight.contenido)}
+                </p>
+
+                <Link
+                  to={`/news/${ensureSlug(highlight)}`}
+                  className="readmore-link readmore-link--inline"
+                >
+                  Leer más
+                  <ArrowRight size={16} className="icon-inline" />
                 </Link>
-              </h3>
-              <p className="highlight-excerpt">
-                {getExcerpt(highlight.contenido)}
-              </p>
-              <Link
-                to={`/news/${ensureSlug(highlight)}`}
-                className="readmore-link"
-              >
-                Leer más <ArrowRight size={16} className="icon-inline" />
-              </Link>
+              </div>
             </div>
           </article>
         )}
@@ -167,9 +181,7 @@ const NewsHighlight = () => {
                   <div className="card-img-wrapper">
                     <img
                       src={
-                        news.portada ||
-                        news.imagen ||
-                        "/assets/placeholder.png"
+                        news.portada || news.imagen || "/assets/placeholder.png"
                       }
                       alt={news.titulo}
                       loading="lazy"

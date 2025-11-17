@@ -1,3 +1,4 @@
+// src/components/Landpage/Home.jsx
 import React, { useState, useContext, useRef, useEffect } from "react";
 import "../../styles/components/Landpage/_home.scss";
 
@@ -15,41 +16,48 @@ import LoginModal from "../Auth/LoginModal";
 import { UserContext } from "../../context/UserContext";
 import { useNavigate, useLocation } from "react-router-dom";
 
+const mensajesCarga = [
+  "Cargando el mundo de Flancraft...",
+  "Cargando aldeanos...",
+  "Encendiendo antorchas...",
+  "Reuniendo aventureros...",
+  "Forjando espadas legendarias...",
+  "Preparando cofres de recompensas...",
+  "Abriendo portales interdimensionales...",
+  "Generando chunks...",
+  "Asignando misiones secundarias...",
+  "Revisando magia antigua...",
+];
+
 const Home = () => {
   const { user, setUser } = useContext(UserContext);
   const [showLogin, setShowLogin] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
-  const [mensajeCarga, setMensajeCarga] = useState("Cargando el mundo de Flancraft...");
+  const [mensajeCarga, setMensajeCarga] = useState(mensajesCarga[0]);
+  const [playerName, setPlayerName] = useState(null);
+
   const navigate = useNavigate();
   const location = useLocation();
   const gameModesRef = useRef(null);
 
-  const mensajes = [
-    "Cargando el mundo de Flancraft...",
-    "Cargando aldeanos...",
-    "Encendiendo antorchas...",
-    "Reuniendo aventureros...",
-    "Forjando espadas legendarias...",
-    "Preparando cofres de recompensas...",
-    "Abriendo portales interdimensionales...",
-    "Generando chunks...",
-    "Asignando misiones secundarias...",
-    "Revisando magia antigua...",
-  ];
-
+  // Rotar mensajes de carga
   useEffect(() => {
     const interval = setInterval(() => {
       setMensajeCarga((prev) => {
-        const index = mensajes.indexOf(prev);
-        return mensajes[(index + 1) % mensajes.length];
+        const index = mensajesCarga.indexOf(prev);
+        return mensajesCarga[(index + 1) % mensajesCarga.length];
       });
     }, 2000);
     return () => clearInterval(interval);
   }, []);
 
+  // Cuando la página está lista -> mostrar contenido
   useEffect(() => {
     const handleReady = () => setTimeout(() => setIsLoaded(true), 400);
-    if (document.readyState === "complete" || document.readyState === "interactive") {
+    if (
+      document.readyState === "complete" ||
+      document.readyState === "interactive"
+    ) {
       handleReady();
     } else {
       window.addEventListener("load", handleReady);
@@ -57,15 +65,60 @@ const Home = () => {
     }
   }, []);
 
+  // Cargar nombre real del jugador desde backend (igual que navbar)
+  useEffect(() => {
+    const fetchPlayerName = async () => {
+      if (!user?.uuid) return;
+
+      try {
+        const res = await fetch(
+          `https://flancraft-backend.onrender.com/api/usuarios/${user.uuid}`
+        );
+        if (!res.ok) throw new Error("Respuesta no OK");
+        const data = await res.json();
+        setPlayerName(
+          data.uid ||
+            data.username ||
+            data.nombre_minecraft ||
+            data.nick ||
+            "aventurero"
+        );
+      } catch (err) {
+        console.error("Error al obtener nombre de jugador en Home:", err);
+        setPlayerName("aventurero");
+      }
+    };
+
+    fetchPlayerName();
+  }, [user?.uuid]);
+
+  // Scroll suave a game-modes si viene desde la navbar
   useEffect(() => {
     if (location.state?.scrollTo === "game-modes-section") {
       const target = document.getElementById("game-modes-section");
-      if (target) setTimeout(() => target.scrollIntoView({ behavior: "smooth" }), 400);
+      if (target) {
+        setTimeout(
+          () => target.scrollIntoView({ behavior: "smooth" }),
+          400
+        );
+      }
     }
   }, [location]);
 
-  const handleMainButtonClick = () =>
-    !user ? setShowLogin(true) : navigate("/dashboard");
+  const handleMainButtonClick = () => {
+    if (!user) {
+      setShowLogin(true);
+    } else {
+      navigate("/dashboard");
+    }
+  };
+
+  const displayName =
+    playerName ||
+    user?.username ||
+    user?.uid ||
+    user?.name ||
+    "aventurero";
 
   return (
     <>
@@ -96,7 +149,11 @@ const Home = () => {
           <div className="hero-overlay" />
 
           <div className="hero-content">
-            <div className="hero-flan" role="img" aria-label="Flancraft Flan" />
+            <div
+              className="hero-flan"
+              role="img"
+              aria-label="Flancraft Flan"
+            />
 
             <h1 className="titulo-epico-flancraft">
               {"FLANCRAFT".split("").map((letra, i) => (
@@ -104,22 +161,47 @@ const Home = () => {
               ))}
             </h1>
 
-            <p>Tu aventura empieza aquí. Sube de nivel y deja tu legado en el mundo.</p>
+            <p className="hero-tagline">
+              Tu aventura empieza aquí. Sube de nivel y deja tu legado en el
+              mundo.
+            </p>
 
             <ServerStatus />
 
-            <button className="hero-btn" onClick={handleMainButtonClick}>
-              {!user ? (
-                "Conectarse a Flancraft"
-              ) : (
-                <span className="hero-user-wrapper">
-                  <span className="greeting-text">Disfruta de tu hogar,</span>
-                  <span className="nombre-colored">
-                    {user?.name || user?.username || "aventurero"}
-                  </span>
-                </span>
-              )}
-            </button>
+            {/* CTA RETOS / LOGROS */}
+            <div
+              className="hero-quests-cta"
+              onClick={handleMainButtonClick}
+              role="button"
+              aria-label="Ir al panel de retos y logros"
+            >
+              <div className="hero-quests-cta__image">
+                <img
+                  src="/assets/ui/cta-retos-panel.png"
+                  alt="Entrar al panel de retos"
+                />
+              </div>
+
+              <div className="hero-quests-cta__text">
+                {!user ? (
+                  <>
+                    <span className="cta-line1">Misiones y Logros</span>
+                    <span className="cta-line2">
+                      Entra al panel de retos de FlanCraft
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span className="cta-line1">
+                      ¡Retos disponibles, {displayName}!
+                    </span>
+                    <span className="cta-line2">
+                      Continúa tu progreso y reclama recompensas
+                    </span>
+                  </>
+                )}
+              </div>
+            </div>
           </div>
         </header>
 

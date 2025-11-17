@@ -1,5 +1,4 @@
-import { NavLink, Link, useNavigate, useLocation } from "react-router-dom";
-import { FaBalanceScale } from "react-icons/fa";
+import { NavLink, Link, useLocation } from "react-router-dom";
 import LogoutButton from "../Auth/LogoutButton";
 import { useEffect, useRef, useState } from "react";
 
@@ -19,7 +18,6 @@ const NavbarDesktop = ({
   const triggerRef = useRef();
   const dropdownRef = useRef();
 
-  const navigate = useNavigate();
   const location = useLocation();
   const isHome = location.pathname === "/"; // 🔥 Detectar si estamos en Home
 
@@ -45,7 +43,9 @@ const NavbarDesktop = ({
     const fetchRangoUsuario = async () => {
       if (isLoggedIn && userData?.uuid) {
         try {
-          const res = await fetch(`https://flancraft-backend.onrender.com/api/usuarios/${userData.uuid}`);
+          const res = await fetch(
+            `https://flancraft-backend.onrender.com/api/usuarios/${userData.uuid}`
+          );
           const data = await res.json();
           setRangoDatos({
             rango: data.rango_usuario?.toLowerCase() || null,
@@ -59,23 +59,19 @@ const NavbarDesktop = ({
     fetchRangoUsuario();
   }, [isLoggedIn, userData?.uuid]);
 
-  // Scroll a la sección de mundos si estamos en home
-  const handleMundosClick = () => {
-    if (location.pathname === "/") {
-      const target = document.getElementById("game-modes-section");
-      if (target) {
-        target.scrollIntoView({ behavior: "smooth" });
-      }
-    } else {
-      navigate("/", { state: { scrollTo: "game-modes-section" } });
-    }
-  };
-
   const getRangoColorClass = () => {
     if (!isLoggedIn || !userData?.uuid) return "";
     const raw = rangoDatos?.rango;
     if (!raw) return "rango-basico";
     return `rango-${raw}`;
+  };
+
+  const navIconStyle = {
+    width: "22px",
+    height: "22px",
+    marginRight: "0.45rem",
+    display: "inline-block",
+    verticalAlign: "middle",
   };
 
   return (
@@ -91,25 +87,47 @@ const NavbarDesktop = ({
       </div>
 
       <div className="nav-center">
-        <NavLink to="/"><i className="fas fa-home" /> Inicio</NavLink>
-        <NavLink to="/news"><i className="fas fa-scroll" /> Noticias</NavLink>
+        <NavLink to="/">
+          <img src="/botones/home.png" alt="Inicio" style={navIconStyle} />
+          Inicio
+        </NavLink>
 
-        <div
-          className={`dropdown ${activeDropdown === 'mundos' ? 'show-dropdown' : ''}`}
-          onMouseEnter={() => handleDropdownHover('mundos')}
-          onMouseLeave={handleDropdownLeave}
-        >
-          <span className="dropdown-toggle" onClick={handleMundosClick}>
-            <i className="fas fa-map-marked-alt" /> Mundos 
-          </span>
-        </div>
+        <NavLink to="/news">
+          <img
+            src="/botones/noticias.png"
+            alt="Noticias"
+            style={navIconStyle}
+          />
+          Noticias
+        </NavLink>
 
-        <NavLink to="/leaderboards"><i className="fas fa-chart-line" /> Estadísticas</NavLink>
+        <NavLink to="/leaderboards">
+          <img
+            src="/botones/estadisticas.png"
+            alt="Estadísticas"
+            style={navIconStyle}
+          />
+          Estadísticas
+        </NavLink>
 
-<NavLink to="/tienda"><i className="fas fa-store" /> Mercado</NavLink>
-<NavLink to="/rangos"><i className="fas fa-medal" /> Rangos</NavLink>
+        <NavLink to="/tienda">
+          <img src="/botones/tienda.png" alt="Mercado" style={navIconStyle} />
+          Tienda
+        </NavLink>
 
-        <NavLink to="/tribunal"><FaBalanceScale /> Tribunal</NavLink>
+        <NavLink to="/rangos">
+          <img src="/botones/rangos.png" alt="Rangos" style={navIconStyle} />
+          Rangos
+        </NavLink>
+
+        <NavLink to="/tribunal">
+          <img
+            src="/botones/tribunal.png"
+            alt="Tribunal"
+            style={navIconStyle}
+          />
+          Tribunal
+        </NavLink>
       </div>
 
       <div className="nav-right">
@@ -138,7 +156,10 @@ const NavbarDesktop = ({
             </div>
 
             {profileOpen && (
-              <div className="user-dropdown-wrapper enhanced open" ref={dropdownRef}>
+              <div
+                className="user-dropdown-wrapper enhanced open"
+                ref={dropdownRef}
+              >
                 <div className="user-dropdown">
                   <div className="user-header">
                     <img
@@ -148,10 +169,14 @@ const NavbarDesktop = ({
                     />
                     <div>
                       <p className="username-big">
-                        <span className={`nombre-colored ${getRangoColorClass()}`}>
+                        <span
+                          className={`nombre-colored ${getRangoColorClass()}`}
+                        >
                           {userData.username}
                         </span>
-                        <span className="level-text">Nv. {userData.userLevel}</span>
+                        <span className="level-text">
+                          Lvl. {userData.userLevel}
+                        </span>
                       </p>
                     </div>
                   </div>
@@ -160,7 +185,9 @@ const NavbarDesktop = ({
                     <div
                       className="xp-fill"
                       style={{
-                        width: `${(userData.userXP / userData.userXPMax) * 100}%`,
+                        width: `${
+                          (userData.userXP / userData.userXPMax) * 100
+                        }%`,
                       }}
                     />
                   </div>
@@ -176,14 +203,60 @@ const NavbarDesktop = ({
                     </div>
                   </div>
 
+                  {/* Recompensas */}
                   <NavLink to="/dashboard" className="dropdown-link">
-                    <i className="fas fa-gift" /> Tu Posada
-                  </NavLink>
-                  <NavLink to={`/perfil/${userData.username}`} className="dropdown-link">
-                    <i className="fas fa-chart-bar" /> Ver estadísticas
+                    <img
+                      src="/botones/recompensas.png"
+                      alt="Recompensas"
+                      style={{
+                        width: "26px",
+                        height: "26px",
+                        marginRight: "0.6rem",
+                        flexShrink: 0,
+                      }}
+                    />
+                    <span>Mis Recompensas</span>
                   </NavLink>
 
-                  <LogoutButton />
+                  {/* Estadísticas */}
+                  <NavLink
+                    to={`/perfil/${userData.username}`}
+                    className="dropdown-link"
+                  >
+                    <img
+                      src="/botones/estadisticas.png"
+                      alt="Ver estadísticas"
+                      style={{
+                        width: "26px",
+                        height: "26px",
+                        marginRight: "0.6rem",
+                        flexShrink: 0,
+                      }}
+                    />
+                    <span>Mis estadísticas</span>
+                  </NavLink>
+
+                  {/* Cerrar sesión */}
+                  <div
+                    className="dropdown-link"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <img
+                      src="/botones/atras.png"
+                      alt="Cerrar sesión"
+                      style={{
+                        width: "26px",
+                        height: "26px",
+                        marginRight: "0.6rem",
+                        flexShrink: 0,
+                      }}
+                    />
+                    <LogoutButton />
+                  </div>
                 </div>
               </div>
             )}

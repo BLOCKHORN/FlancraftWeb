@@ -1,4 +1,5 @@
-@use '../../base/_variables' as *;
+// src/styles/components/Landpage/_home.scss
+@use "../../base/_variables" as *;
 
 .home {
   background-color: #1e1b17;
@@ -6,6 +7,15 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+
+  &.invisible {
+    opacity: 0;
+  }
+
+  &.visible {
+    opacity: 1;
+    transition: opacity 0.35s ease-out;
+  }
 }
 
 /* HERO */
@@ -34,14 +44,22 @@
   }
 
   @keyframes fadeInVideo {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
 
   .hero-overlay {
     position: absolute;
     inset: 0;
-    background: radial-gradient(ellipse at center, rgba(0,0,0,0.25), #0f0d0b 90%);
+    background: radial-gradient(
+      ellipse at center,
+      rgba(0, 0, 0, 0.25),
+      #0f0d0b 90%
+    );
     z-index: 1;
     animation: pulse 8s ease-in-out infinite;
   }
@@ -58,13 +76,13 @@
       margin: 0 auto 1rem;
       aspect-ratio: 16 / 9;
       background: url("/assets/flancraftlogo.png") center/contain no-repeat;
-      filter: drop-shadow(0 0 20px rgba(0,0,0,0.742));
+      filter: drop-shadow(0 0 20px rgba(0, 0, 0, 0.742));
       animation: levitar 5s ease-in-out infinite;
     }
 
     .titulo-epico-flancraft {
-      font-family: "IM Fell English SC", serif;
-      font-size: 4rem;
+      font-family: $font-epic1;
+      font-size: clamp(3rem, 5vw, 4rem);
       display: flex;
       justify-content: center;
       gap: 0.3rem;
@@ -82,39 +100,125 @@
       }
     }
 
-    p {
+    .hero-tagline {
       margin-top: 1rem;
       font-size: 1.2rem;
       color: #dbcbb5;
       max-width: 600px;
       margin-inline: auto;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
     }
 
-    .hero-btn {
-      margin-top: 2rem;
-      font-size: 1.1rem;
-      padding: 0.75rem 2rem;
-      background: linear-gradient(145deg, #dfb65b, #a97f33);
-      border: 2px solid #4e391d;
-      box-shadow: 0 0 10px rgba(255, 200, 100, 0.4);
-      color: #1d1407;
-      border-radius: 6px;
-      font-weight: bold;
+    /* === CTA RETOS / LOGROS === */
+    .hero-quests-cta {
+      margin: 2.2rem auto 0;
+      max-width: 620px;
+      width: 100%;
+      position: relative;
       cursor: pointer;
-      transition: 0.3s;
-      animation: floatBtn 4s ease-in-out infinite;
-      display: inline-flex;
+      display: flex;
       align-items: center;
-      gap: .4rem;
+      justify-content: center;
+      gap: 1.2rem;
+      padding: 0.75rem 1.2rem;
+      border-radius: 12px;
+      background: radial-gradient(
+        circle at center,
+        rgba(255, 204, 104, 0.18),
+        rgba(0, 0, 0, 0.55)
+      );
+      box-shadow:
+        0 0 22px rgba(0, 0, 0, 0.8),
+        0 0 30px rgba(255, 204, 104, 0.35);
+      transform: translateY(0);
+      transition:
+        transform 0.25s ease-out,
+        box-shadow 0.25s ease-out,
+        background 0.25s ease-out;
+
+      &:before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        border: 1px solid rgba(255, 219, 160, 0.25);
+        pointer-events: none;
+      }
 
       &:hover {
-        background: linear-gradient(145deg, #f0c769, #b6863f);
-        box-shadow: 0 0 15px rgba(255, 210, 120, 0.6);
+        transform: translateY(-6px) scale(1.01);
+        background: radial-gradient(
+          circle at center,
+          rgba(255, 214, 124, 0.3),
+          rgba(0, 0, 0, 0.7)
+        );
+        box-shadow:
+          0 0 30px rgba(0, 0, 0, 0.9),
+          0 0 42px rgba(255, 214, 124, 0.6);
+      }
+
+      /* wrapper de la imagen, igual filosofía que gm-mode-icon-wrap */
+      .hero-quests-cta__image {
+        flex: 0 0 260px;
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        transform-origin: center bottom;
+        animation: floatQuest 4.5s ease-in-out infinite;
+        transition: transform 0.22s ease;
+      }
+
+      .hero-quests-cta__image img {
+        width: 100%;
+        height: auto;
+        display: block;
+        filter: drop-shadow(0 0 0 rgba(0, 0, 0, 0.0));
+        transition: filter 0.22s ease;
+      }
+
+      /* hover: el cartel se alza un poco y SOLO brilla el contorno gracias al PNG */
+      &:hover .hero-quests-cta__image {
+        transform: translateY(-4px) scale(1.03);
+      }
+
+      &:hover .hero-quests-cta__image img {
+        filter:
+          drop-shadow(0 0 2px rgba(255, 230, 170, 1))
+          drop-shadow(0 0 7px rgba(255, 210, 120, 0.9))
+          drop-shadow(0 0 12px rgba(255, 170, 60, 0.75));
+      }
+
+      .hero-quests-cta__text {
+        flex: 1;
+        text-align: left;
+        font-family: "IM Fell English SC", serif;
+        color: #fff5d2;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+
+        .cta-line1 {
+          font-size: 1.2rem;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+        }
+
+        .cta-line2 {
+          font-size: 0.95rem;
+          color: #f1dfb5;
+          opacity: 0.92;
+        }
       }
     }
+
+    /* botón antiguo por si lo quieres reutilizar, ya no se usa
+    .hero-btn { ... }
+    */
   }
 }
 
+/* resto del archivo igual que lo tenías... */
 .divider-overlay {
   position: relative;
   height: 0;
@@ -123,7 +227,7 @@
     position: absolute;
     left: 0;
     width: 100%;
-    background: url('/assets/dividerbattle.png') center bottom no-repeat;
+    background: url("/assets/dividerbattle.png") center bottom no-repeat;
     background-size: cover;
     z-index: 10000;
     pointer-events: none;
@@ -134,7 +238,11 @@
 .pantalla-carga {
   position: fixed;
   inset: 0;
-  background: radial-gradient(circle at center, #1c120a 0%, #0e0703 100%);
+  background: radial-gradient(
+    circle at center,
+    #1c120a 0%,
+    #0e0703 100%
+  );
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -154,17 +262,98 @@
   }
 }
 
-@keyframes spin { to { transform: rotate(360deg); } }
-@keyframes pulse { 0%,100%{opacity:0.9}50%{opacity:0.6} }
-@keyframes floatBtn { 0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)} }
-@keyframes levitar { 0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)} }
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 0.9;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+@keyframes floatBtn {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+@keyframes levitar {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
 @keyframes resplandorEpico {
-  0%,100% { text-shadow:0 0 4px #000,2px 2px 0 #3b2615,4px 4px 10px #000; }
-  50% { text-shadow:0 0 10px #816b4c,2px 2px 0 #3b2615,4px 4px 12px #8f715b; }
+  0%,
+  100% {
+    text-shadow:
+      0 0 4px #000,
+      2px 2px 0 #3b2615,
+      4px 4px 10px #000;
+  }
+  50% {
+    text-shadow:
+      0 0 10px #816b4c,
+      2px 2px 0 #3b2615,
+      4px 4px 12px #8f715b;
+  }
+}
+@keyframes floatQuest {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
 }
 
 @media (max-width: 768px) {
-  .hero-flancraft { padding: 2rem 1rem; }
-  .hero-flancraft .hero-content .titulo-epico-flancraft { font-size: 2.5rem; }
-  .home { overflow-x: hidden; }
+  .hero-flancraft {
+    padding: 2rem 1rem;
+
+    .hero-content {
+      .titulo-epico-flancraft {
+        font-size: 2.5rem;
+      }
+
+      .hero-quests-cta {
+        flex-direction: column;
+        padding: 0.9rem 0.8rem;
+        max-width: 100%;
+
+        .hero-quests-cta__image {
+          flex: 0 0 auto;
+          width: 100%;
+        }
+
+        .hero-quests-cta__text {
+          text-align: center;
+
+          .cta-line1 {
+            font-size: 1.1rem;
+          }
+
+          .cta-line2 {
+            font-size: 0.9rem;
+          }
+        }
+      }
+    }
+  }
+
+  .home {
+    overflow-x: hidden;
+  }
 }

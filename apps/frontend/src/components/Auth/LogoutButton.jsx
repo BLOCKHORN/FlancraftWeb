@@ -22,7 +22,7 @@ export default function LogoutButton() {
 
   return (
     <button onClick={handleLogout} className="dropdown-link logout-btn">
-      <i className="fas fa-sign-out-alt" /> Cerrar sesión
+      Cerrar sesión
     </button>
   );
 }

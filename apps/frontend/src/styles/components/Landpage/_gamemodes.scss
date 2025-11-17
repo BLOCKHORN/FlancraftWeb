@@ -2,15 +2,16 @@
 
 .gamemodes-wrapper {
   position: relative;
-  padding: 5rem 2rem;
+  padding: 3.5rem 2rem 4rem;
   background: url("/assets/bggames.avif") center/cover no-repeat;
   font-family: $font-epic;
   color: #fff;
+  overflow: hidden;
 
   .gm-bg {
     position: absolute;
     inset: 0;
-    background: rgba(15, 12, 5, 0.281);
+    background: rgba(15, 12, 5, 0.28);
     z-index: 1;
     backdrop-filter: brightness(1.2) blur(1px);
   }
@@ -20,38 +21,281 @@
     z-index: 2;
     max-width: 1400px;
     margin: 0 auto;
+  }
+}
+
+/* =========================
+   BLOQUE SELECTOR MUNDOS
+   ========================= */
+.gm-selector-block {
+  position: relative;
+  margin: 0 auto 2.2rem;
+  max-width: 1100px;
+  text-align: center;
+
+  .gm-subheader {
+    margin-bottom: 1.1rem;
+
+    .gm-subtitle {
+      font-size: 1.25rem;
+      color: #29231e;
+      letter-spacing: 0.4px;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+    }
+
+    .gm-mundos {
+      margin-top: 0.3rem;
+      font-size: 3.2rem;
+      color: #29231e;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+      border-top: 2px solid rgba(255, 255, 255, 0.15);
+      border-bottom: 2px solid rgba(255, 255, 255, 0.15);
+      padding: 0.45rem 1.2rem;
+      display: inline-block;
+      border-radius: 8px;
+    }
+  }
+
+  /* 6 en una fila en desktop ancho */
+  .gm-selector {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    column-gap: 2.8rem;
+    row-gap: 1.8rem;
+    justify-items: center;
+    align-items: start;
+  }
+
+  .gm-mode-btn {
+    background: transparent;
+    border: none;
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.6rem;
+    height: 160px;
+    min-width: 0;
+    outline: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .gm-mode-icon-wrap {
+    width: 90px;
+    height: 90px;                 // altura fija para alinear todas las chapas
+    display: flex;
+    align-items: flex-end;        // todos apoyan abajo
+    justify-content: center;
+    transform-origin: center bottom;
+    transition: transform 0.22s ease;
+  }
+
+  .gm-mode-icon-wrap img {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 0;
+    filter: drop-shadow(0 0 0 rgba(0, 0, 0, 0));
+    transition: filter 0.22s ease;
+  }
+
+  .gm-mode-badge {
+    min-width: 130px;
+    max-width: 150px;
+    height: 40px;
+    padding: 0.35rem 0.7rem;
+    border-radius: 0.7rem;
+
+    // fondo pergamino sutil y legible
+    background: radial-gradient(
+      circle at top,
+      rgba(255, 248, 220, 0.96) 0%,
+      #e4cda0 55%,
+      #c9aa74 100%
+    );
+    border: 1px solid rgba(0, 0, 0, 0.4);
+    box-shadow:
+      0 3px 8px rgba(0, 0, 0, 0.55),
+      0 0 0 1px rgba(255, 255, 255, 0.2);
+
+    font-size: 0.8rem;
+    line-height: 1.15;
+    color: #3b2a16;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    white-space: normal;
+    word-break: break-word;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+  }
+
+  .gm-mode-badge--small {
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+  }
+
+  /* Hover: alza icono */
+  .gm-mode-btn:hover .gm-mode-icon-wrap {
+    transform: translateY(-5px) scale(1.03);
+  }
+
+  /* Active: flotando suave */
+  .gm-mode-btn.active .gm-mode-icon-wrap {
+    animation: gmFloatIcon 2.2s ease-in-out infinite;
+  }
+
+  /* Colores por modo */
+  .gm-mode-btn.survival:hover img,
+  .gm-mode-btn.survival.active img {
+    filter:
+      drop-shadow(0 0 2px rgba(132, 217, 107, 1))
+      drop-shadow(0 0 6px rgba(132, 217, 107, 0.85))
+      brightness(1.05);
+  }
+
+  .gm-mode-btn.anarquico:hover img,
+  .gm-mode-btn.anarquico.active img {
+    filter:
+      drop-shadow(0 0 2px rgba(241, 132, 62, 1))
+      drop-shadow(0 0 6px rgba(241, 132, 62, 0.85))
+      brightness(1.05);
+  }
+
+  .gm-mode-btn.hardcore:hover img,
+  .gm-mode-btn.hardcore.active img {
+    filter:
+      drop-shadow(0 0 2px rgba(243, 90, 90, 1))
+      drop-shadow(0 0 6px rgba(243, 90, 90, 0.85))
+      brightness(1.05);
+  }
+
+  .gm-mode-btn.oneblock:hover img,
+  .gm-mode-btn.oneblock.active img {
+    filter:
+      drop-shadow(0 0 2px rgba(120, 204, 240, 1))
+      drop-shadow(0 0 6px rgba(120, 204, 240, 0.9))
+      brightness(1.05);
+  }
+
+  .gm-mode-btn.chunklock:hover img,
+  .gm-mode-btn.chunklock.active img {
+    filter:
+      drop-shadow(0 0 2px rgba(79, 227, 196, 1))
+      drop-shadow(0 0 6px rgba(79, 227, 196, 0.9))
+      brightness(1.05);
+  }
+
+  .gm-mode-btn.parkour:hover img,
+  .gm-mode-btn.parkour.active img {
+    filter:
+      drop-shadow(0 0 2px rgba(248, 232, 109, 1))
+      drop-shadow(0 0 6px rgba(248, 232, 109, 0.9))
+      brightness(1.05);
+  }
+}
+
+/* =========================
+   BLOQUE IMAGEN + DESCRIPCIÓN
+   ========================= */
+.gm-content {
+  margin-top: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3.5rem;
+
+  .gm-left {
+    flex: 1 1 50%;
+    display: flex;
+    justify-content: center;
+  }
+
+  .gm-video-frame {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    width: 100%;
+    max-width: 780px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    // ¡ojo! aquí ya NO hay overflow:hidden,
+    // la máscara la tendrá el inner.
+  }
+
+  /* máscara interior con el tamaño del hueco del marco */
+  .gm-video-inner {
+    position: relative;
+    z-index: 1;
+    width: 88%;           // ajusta si quieres más o menos margen
+    aspect-ratio: 16 / 9;
+    border-radius: 12px;
+    overflow: hidden;      // el zoom nunca se sale de aquí
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* capa 1: imagen del modo dentro de la máscara */
+  .gm-presentacion {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.25s ease-out;
+  }
+
+  /* capa 2: marco madera, cubre todo el ancho */
+  .gm-marco {
+    position: absolute;
+    z-index: 2;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    pointer-events: none;
+  }
+
+  /* capa 3: florituras por encima, puede sobresalir */
+  .gm-florituras {
+    position: absolute;
+    z-index: 3;
+    width: 118%;
+    height: auto;
+    top: 47%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+  }
+
+  /* zoom bonito al pasar el ratón, SIN salirse del marco */
+  .gm-video-frame:hover .gm-presentacion {
+    transform: scale(1.05);
+  }
+
+  .gm-details {
+    flex: 1 1 50%;
+    display: flex;
+    justify-content: center;
     text-align: center;
 
-    /* =========================
-       HEADER
-       ========================= */
-    .gm-header {
-      text-align: center;
-      margin-bottom: 3rem;
+    .gm-details-wrapper {
       position: relative;
+      display: inline-block;
+      padding: 2rem 3rem;
+      background: rgba(255, 248, 220, 0.06);
+      border-radius: 12px;
+      min-width: 0;
 
-      .gm-title-wrapper {
-        display: inline-block;
-        position: relative;
-        padding: 2rem 4rem;
-        margin-bottom: 1rem;
-        background: rgba(255, 248, 220, 0.082);
-        border-radius: 10px;
-      }
-
-      .gm-title {
-        font-size: 4.5rem;
-        font-family: $font-epic;
-        font-weight: 900;
-        color: #29231e;
-        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
-        z-index: 2;
-        position: relative;
-      }
-
-      .gm-title-line {
+      &::before,
+      &::after {
+        content: "";
         position: absolute;
-        height: 4px;
+        height: 3px;
         width: 140%;
         left: 50%;
         transform: translateX(-50%);
@@ -63,370 +307,65 @@
           #68492a 65%,
           transparent
         );
-        opacity: 0.6;
-
-        &.top {
-          top: -12px;
-        }
-
-        &.bottom {
-          bottom: -12px;
-        }
+        opacity: 0.5;
       }
 
-      .gm-desc {
-        font-size: 1.4rem;
-        color: #29231e;
-        max-width: 850px;
-        margin: 1.5rem auto 0;
-        font-family: $font-epic;
-        line-height: 1.6;
+      &::before {
+        top: -10px;
+      }
+
+      &::after {
+        bottom: -10px;
       }
     }
 
-    /* =========================
-       CONTENIDO
-       ========================= */
-    .gm-main {
-      display: flex;
-      flex-direction: row;
-      justify-content: space-between;
-      align-items: center;
-      gap: 5rem;
-      flex-wrap: nowrap;
+    h3 {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      font-family: $font-epic;
+      text-shadow:
+        1px 1px 1px rgba(0, 0, 0, 0.5),
+        0 0 4px rgba(0, 0, 0, 0.4);
+      transition: color 0.3s ease;
 
-      /* LADO IZQUIERDO */
-      .gm-left {
-        flex: 1 1 50%;
-        display: flex;
-        justify-content: center;
-        margin-bottom: 15%;
-
-        .gm-video-frame {
-          position: relative;
-          aspect-ratio: 16 / 9;
-          width: 100%;
-          max-width: 720px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          margin: 0 auto;
-          overflow: hidden;
-
-          .marco {
-            position: absolute;
-            top: 48%;
-            left: 49%;
-            transform: translate(-50%, -50%);
-            width: 135%;
-            height: 130%;
-            object-fit: contain;
-            z-index: 1000;
-            pointer-events: none;
-          }
-
-          .contenido {
-            position: relative;
-            z-index: 2;
-            width: 78%;
-            height: auto;
-            aspect-ratio: 16 / 9;
-            object-fit: cover;
-            border-radius: 12px;
-            box-shadow: 0 0 8px rgba(0, 0, 0, 0.3);
-          }
-        }
+      &.survival {
+        color: #84d96b;
+        text-shadow: 1px 1px 0 #1c3315, 0 0 4px #4f9440;
       }
-
-      /* LADO DERECHO */
-      .gm-right {
-        flex: 1 1 50%;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        min-width: 0;
-
-        .gm-subheader {
-          text-align: center;
-          margin-bottom: 2rem;
-
-          .gm-subtitle {
-            font-family: $font-epic;
-            font-size: 1.4rem;
-            color: #29231e;
-            letter-spacing: 0.5px;
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-          }
-
-          .gm-mundos {
-            font-family: $font-epic;
-            font-size: 3.8rem;
-            color: #29231e;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
-            margin-top: 0.5rem;
-            border-top: 2px solid rgba(255, 255, 255, 0.15);
-            border-bottom: 2px solid rgba(255, 255, 255, 0.15);
-            padding: 0.5rem 1rem;
-            display: inline-block;
-            border-radius: 8px;
-          }
-        }
-
-        /* =========================
-           SELECTOR (ICONO + BADGE)
-           ========================= */
-        .gm-selector {
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          column-gap: 4rem;
-          row-gap: 2.4rem;
-          justify-items: center;
-          align-items: start;
-          margin-bottom: 3rem;
-        }
-
-        .gm-mode-btn {
-          background: transparent;
-          border: none;
-          padding: 0;
-          margin: 0;
-          cursor: pointer;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: flex-start;
-          gap: 0.7rem;
-          outline: none;
-          -webkit-tap-highlight-color: transparent;
-
-          /* altura fija para que TODAS las celdas midan lo mismo,
-             y los badges queden alineados en la misma línea */
-          height: 180px;
-        }
-
-        /* ICONO: PNG SUELTO SIN CÍRCULO */
-        .gm-mode-icon-wrap {
-          width: 96px;
-          height: auto;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          transform-origin: center bottom;
-          transition: transform 0.22s ease;
-        }
-
-        .gm-mode-icon-wrap img {
-          width: 100%;
-          height: auto;
-          display: block;
-          border-radius: 0;
-          border: none;
-          filter: drop-shadow(0 0 0 rgba(0, 0, 0, 0));
-          transition: filter 0.22s ease;
-        }
-
-        /* Badge con el nombre del modo (alineado y misma altura) */
-        .gm-mode-badge {
-          min-width: 140px;
-          max-width: 160px;
-          height: 46px; // misma altura para todos
-          padding: 0.4rem 0.8rem;
-          border-radius: 0.7rem;
-          background: rgba(255, 248, 220, 0.13);
-          border: 1px solid rgba(0, 0, 0, 0.6);
-          box-shadow:
-            0 4px 10px rgba(0, 0, 0, 0.55),
-            0 0 0 1px rgba(255, 255, 255, 0.08);
-          font-size: 0.85rem;
-          line-height: 1.15;
-          color: #f2e4c6;
-          text-align: center;
-          text-transform: uppercase;
-          letter-spacing: 0.09em;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          white-space: normal;
-          word-break: break-word;
-        }
-
-        /* Nombres largos (2 palabras…) un poco más pequeños
-           para que no hagan crecer la celda ni la sección */
-        .gm-mode-badge--small {
-          font-size: 0.78rem;
-          letter-spacing: 0.08em;
-        }
-
-        /* ==== HOVER: SOLO ICONO (alza + brillo) ==== */
-        .gm-mode-btn:hover .gm-mode-icon-wrap {
-          transform: translateY(-6px) scale(1.03);
-        }
-
-        /* ==== ACTIVE: flotando suave ==== */
-        .gm-mode-btn.active .gm-mode-icon-wrap {
-          animation: gmFloatIcon 2.2s ease-in-out infinite;
-        }
-
-        /* Colores por modo usando drop-shadow
-           (contorno más marcado) */
-        .gm-mode-btn.survival:hover img,
-        .gm-mode-btn.survival.active img {
-          filter:
-            drop-shadow(0 0 2px rgba(132, 217, 107, 1))
-            drop-shadow(0 0 6px rgba(132, 217, 107, 0.85))
-            brightness(1.05);
-        }
-
-        .gm-mode-btn.anarquico:hover img,
-        .gm-mode-btn.anarquico.active img {
-          filter:
-            drop-shadow(0 0 2px rgba(241, 132, 62, 1))
-            drop-shadow(0 0 6px rgba(241, 132, 62, 0.85))
-            brightness(1.05);
-        }
-
-        .gm-mode-btn.hardcore:hover img,
-        .gm-mode-btn.hardcore.active img {
-          filter:
-            drop-shadow(0 0 2px rgba(243, 90, 90, 1))
-            drop-shadow(0 0 6px rgba(243, 90, 90, 0.85))
-            brightness(1.05);
-        }
-
-        .gm-mode-btn.oneblock:hover img,
-        .gm-mode-btn.oneblock.active img {
-          filter:
-            drop-shadow(0 0 2px rgba(120, 204, 240, 1))
-            drop-shadow(0 0 6px rgba(120, 204, 240, 0.9))
-            brightness(1.05);
-        }
-
-        .gm-mode-btn.chunklock:hover img,
-        .gm-mode-btn.chunklock.active img {
-          filter:
-            drop-shadow(0 0 2px rgba(79, 227, 196, 1))
-            drop-shadow(0 0 6px rgba(79, 227, 196, 0.9))
-            brightness(1.05);
-        }
-
-        .gm-mode-btn.parkour:hover img,
-        .gm-mode-btn.parkour.active img {
-          filter:
-            drop-shadow(0 0 2px rgba(248, 232, 109, 1))
-            drop-shadow(0 0 6px rgba(248, 232, 109, 0.9))
-            brightness(1.05);
-        }
-
-        /* =========================
-           DETALLES DEL MODO
-           ========================= */
-        .gm-details {
-          h3 {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            font-family: $font-epic;
-            transition: color 0.3s ease;
-            text-shadow:
-              1px 1px 1px rgba(0, 0, 0, 0.5),
-              0 0 4px rgba(0, 0, 0, 0.4);
-
-            &.survival {
-              color: #84d96b;
-              text-shadow: 1px 1px 0 #1c3315, 0 0 4px #4f9440;
-            }
-            &.anarquico {
-              color: #f1843e;
-              text-shadow: 1px 1px 0 #3a1d08, 0 0 4px #bd581b;
-            }
-            &.hardcore {
-              color: #f35a5a;
-              text-shadow: 1px 1px 0 #3c0b0b, 0 0 4px #bb2525;
-            }
-            &.oneblock {
-              color: #78ccf0;
-              text-shadow: 1px 1px 0 #153344, 0 0 4px #3888b9;
-            }
-            &.chunklock {
-              color: #4fe3c4;
-              text-shadow: 1px 1px 0 #104137, 0 0 4px #2a9e84;
-            }
-            &.parkour {
-              color: #f8e86d;
-              text-shadow: 1px 1px 0 #33300d, 0 0 4px #d1b800;
-            }
-          }
-
-          .gm-details-wrapper {
-            position: relative;
-            display: inline-block;
-            padding: 2rem 3rem;
-            background: rgba(255, 248, 220, 0.06);
-            border-radius: 12px;
-            margin-top: 2rem;
-
-            &::before,
-            &::after {
-              content: "";
-              position: absolute;
-              height: 3px;
-              width: 140%;
-              left: 50%;
-              transform: translateX(-50%);
-              background: linear-gradient(
-                to right,
-                transparent,
-                #68492a 35%,
-                #68492a 90%,
-                #68492a 65%,
-                transparent
-              );
-              opacity: 0.5;
-            }
-
-            &::before {
-              top: -10px;
-            }
-
-            &::after {
-              bottom: -10px;
-            }
-
-            h3 {
-              margin-bottom: 1rem;
-            }
-
-            p {
-              margin: 0;
-            }
-          }
-
-          .gm-animated-description {
-            font-size: 1.5rem;
-            color: #29231e;
-            max-width: 550px;
-            margin: 0 auto;
-            line-height: 1.8;
-            font-family: $font-epic;
-            letter-spacing: 0.3px;
-            white-space: pre-wrap;
-            transition: all 0.3s ease;
-          }
-
-          p {
-            font-size: 1.5rem;
-            color: #29231e;
-            max-width: 550px;
-            margin: 0 auto;
-            line-height: 1.8;
-          }
-        }
+      &.anarquico {
+        color: #f1843e;
+        text-shadow: 1px 1px 0 #3a1d08, 0 0 4px #bd581b;
       }
+      &.hardcore {
+        color: #f35a5a;
+        text-shadow: 1px 1px 0 #3c0b0b, 0 0 4px #bb2525;
+      }
+      &.oneblock {
+        color: #78ccf0;
+        text-shadow: 1px 1px 0 #153344, 0 0 4px #3888b9;
+      }
+      &.chunklock {
+        color: #4fe3c4;
+        text-shadow: 1px 1px 0 #104137, 0 0 4px #2a9e84;
+      }
+      &.parkour {
+        color: #f8e86d;
+        text-shadow: 1px 1px 0 #33300d, 0 0 4px #d1b800;
+      }
+    }
+
+    p {
+      font-size: 1.5rem;
+      color: #29231e;
+      max-width: 550px;
+      margin: 0 auto;
+      line-height: 1.8;
     }
   }
 }
 
 /* =========================
-   FLOAT ICON ANIMATION
+   ANIMACIONES
    ========================= */
 @keyframes gmFloatIcon {
   0% {
@@ -440,78 +379,6 @@
   }
 }
 
-/* =========================
-   RESPONSIVE
-   ========================= */
-@media (max-width: 980px) {
-  .gamemodes-wrapper {
-    .gm-inner {
-      .gm-main {
-        flex-direction: column;
-        flex-wrap: wrap;
-
-        .gm-left,
-        .gm-right {
-          width: 100%;
-          max-width: 100%;
-        }
-
-        .gm-video-frame {
-          max-width: 100%;
-
-          .marco {
-            width: 115%;
-            height: 125%;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-          }
-
-          .contenido {
-            width: 82%;
-            height: auto;
-          }
-        }
-      }
-    }
-  }
-}
-
-.gm-right {
-  flex: 1 1 45%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-
-  .gm-subheader {
-    text-align: center;
-    margin-bottom: 2rem;
-
-    .gm-subtitle {
-      font-family: $font-epic;
-      font-size: 1.4rem;
-      color: #29231e;
-      letter-spacing: 0.5px;
-      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-    }
-
-    .gm-mundos {
-      font-family: $font-epic;
-      font-size: 3.8rem;
-      color: #29231e;
-      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
-      margin-top: 0.5rem;
-      border-top: 2px solid rgba(255, 255, 255, 0.15);
-      border-bottom: 2px solid rgba(255, 255, 255, 0.15);
-      padding: 0.5rem 1rem;
-      display: inline-block;
-      border-radius: 8px;
-    }
-  }
-}
-
-/* animación descripción */
 @keyframes glitchMagic {
   0% {
     opacity: 0;
@@ -529,6 +396,17 @@
   }
 }
 
+@keyframes gmImageIn {
+  0% {
+    opacity: 0;
+    transform: scale(1.05);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 .gm-glitch-transition {
   animation: glitchMagic 0.35s ease-out;
   font-size: 1.5rem;
@@ -539,91 +417,101 @@
   font-family: $font-epic;
 }
 
-@media (max-width: 768px) {
-  .gamemodes-wrapper {
-    padding: 3rem 1rem;
+.gm-image-transition {
+  animation: gmImageIn 0.35s ease-out;
+}
 
-    .gm-inner {
-      .gm-main {
-        flex-direction: column;
-        gap: 3rem;
-
-        .gm-left {
-          width: 100%;
-
-          .gm-video-frame {
-            max-width: 100%;
-
-            .marco {
-              width: 110%;
-              height: 140%;
-              position: absolute;
-              top: 50%;
-              left: 50%;
-              transform: translate(-50%, -50%);
-            }
-
-            .contenido {
-              width: 85%;
-              height: auto;
-            }
-          }
-        }
-
-        .gm-right {
-          width: 100%;
-
-          .gm-subheader {
-            .gm-subtitle {
-              font-size: 1.2rem;
-            }
-
-            .gm-mundos {
-              font-size: 2.6rem;
-              margin-top: 0.5rem;
-            }
-          }
-
-          .gm-selector {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            column-gap: 2.4rem;
-            row-gap: 2rem;
-          }
-
-          .gm-mode-badge {
-            max-width: 170px;
-          }
-
-          .gm-details-wrapper {
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 2rem 3rem;
-            background: rgba(255, 248, 220, 0.06);
-            border-radius: 12px;
-            margin-top: 2rem;
-            min-height: 240px;
-            overflow: hidden;
-            text-align: center;
-
-            h3 {
-              margin-bottom: 1rem;
-              font-size: 2.4rem;
-              word-break: break-word;
-            }
-
-            p {
-              font-size: 1.2rem;
-              line-height: 1.6;
-              max-width: 100%;
-              margin: 0;
-              overflow-wrap: break-word;
-            }
-          }
-        }
-      }
+/* =========================
+   RESPONSIVE
+   ========================= */
+@media (max-width: 1200px) {
+  .gm-selector-block {
+    .gm-selector {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      column-gap: 2.4rem;
+      row-gap: 2rem;
     }
+  }
+}
+
+@media (max-width: 930px) {
+  .gamemodes-wrapper {
+    padding: 3rem 1.5rem 3.5rem;
+  }
+
+  .gm-content {
+    flex-direction: column;
+    gap: 3rem;
+
+    .gm-left,
+    .gm-details {
+      flex: 1 1 100%;
+      max-width: 100%;
+    }
+
+    .gm-video-frame .gm-presentacion {
+      width: 88%;
+    }
+
+    .gm-video-frame .gm-florituras {
+      width: 120%;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .gm-selector-block {
+    .gm-subheader .gm-subtitle {
+      font-size: 1.1rem;
+    }
+
+    .gm-subheader .gm-mundos {
+      font-size: 2.6rem;
+    }
+
+    .gm-selector {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      column-gap: 1.8rem;
+      row-gap: 1.8rem;
+    }
+
+    .gm-mode-btn {
+      height: 150px;
+    }
+
+    .gm-mode-icon-wrap {
+      width: 80px;
+      height: 80px;
+    }
+  }
+
+  .gm-content .gm-details .gm-details-wrapper {
+    padding: 2rem 2.2rem;
+
+    h3 {
+      font-size: 2.4rem;
+    }
+
+    p,
+    .gm-glitch-transition {
+      font-size: 1.25rem;
+      line-height: 1.6;
+    }
+  }
+}
+
+@media (max-width: 520px) {
+  .gm-selector-block .gm-selector {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 1.4rem;
+  }
+
+  .gm-selector-block .gm-mode-icon-wrap {
+    width: 72px;
+    height: 72px;
+  }
+
+  .gm-selector-block .gm-mundos {
+    font-size: 2.3rem;
   }
 }
