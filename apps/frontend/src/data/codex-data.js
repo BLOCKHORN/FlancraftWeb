@@ -4,7 +4,7 @@ const codexData = [
     subtitle: "Donde Comenzó Todo",
     badge: "Origen Sagrado",
     badgeColor: "#66ccff",
-    bg: "/assets/comic/panel1.mp4",
+    bg: "/assets/comic/panel1.webp",
     thumb: "/assets/comic/panel1.webp",
     description:
       "Hace eras, cuando los bloques aún eran caos, una chispa resonó en la oscuridad. No fue creación, fue recuerdo. Una memoria cósmica reactivó los cimientos del mundo. Así nació la Resonancia: la vibración arcana que une todos los planos. Dormía... hasta ahora.",

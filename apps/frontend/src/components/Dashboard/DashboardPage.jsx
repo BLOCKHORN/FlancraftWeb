@@ -122,7 +122,7 @@ export default function DashboardPage() {
 
                       {user.rango_usuario && (
                         <img
-                          src={`/assets/etiquetas/${user.rango_usuario.toLowerCase()}.png`}
+                          src={`/assets/etiquetas/${user.rango_usuario.toLowerCase()}.webp`}
                           alt={user.rango_usuario}
                           className="avatar-rango-badge"
                         />

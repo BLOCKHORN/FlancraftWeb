@@ -7,48 +7,48 @@ const modes = [
     name: "Survival Clásico",
     description:
       "La experiencia survival de siempre, con economía, clanes y un mundo vivo en constante expansión.",
-    image: "/assets/modes/survival.png",
-    icon: "/assets/reinos/survival-clasico.png",
+    image: "/assets/modes/survival.webp",
+    icon: "/assets/reinos/survival-clasico.webp",
   },
   {
     id: "anarquico",
     name: "Survival Anárquico",
     description:
       "Sin reglas, sin límites. Survival puro donde todo vale y solo los más astutos sobreviven.",
-    image: "/assets/modes/anarquico.png",
-    icon: "/assets/reinos/survival-anarquico.png",
+    image: "/assets/modes/anarquico.webp",
+    icon: "/assets/reinos/survival-anarquico.webp",
   },
   {
     id: "hardcore",
     name: "Survival Hardcore",
     description:
       "Dificultad máxima y castigo definitivo: si mueres, lo pierdes todo. ¿Te atreves al reto definitivo?",
-    image: "/assets/modes/hardcore.png",
-    icon: "/assets/reinos/survival-hardcore.png",
+    image: "/assets/modes/hardcore.webp",
+    icon: "/assets/reinos/survival-hardcore.webp",
   },
   {
     id: "oneblock",
     name: "OneBlock",
     description:
       "Comienza en un solo bloque, mejora tu isla y enfréntate a desafíos únicos mientras avanzas de fase.",
-    image: "/assets/modes/oneblock.png",
-    icon: "/assets/reinos/oneblock.png",
+    image: "/assets/modes/oneblock.webp",
+    icon: "/assets/reinos/oneblock.webp",
   },
   {
     id: "chunklock",
     name: "Chunklock",
     description:
       "Reclama tu propio chunk, mejóralo, automatiza y compite por el control del mundo bloque a bloque.",
-    image: "/assets/modes/chunklock.png",
-    icon: "/assets/reinos/chunklock.png",
+    image: "/assets/modes/chunklock.webp",
+    icon: "/assets/reinos/chunklock.webp",
   },
   {
     id: "parkour",
     name: "Parkour",
     description:
       "Salta a través de circuitos diseñados al milímetro. Supera tiempos, mejora tus récords.",
-    image: "/assets/modes/parkour.png",
-    icon: "/assets/reinos/parkour.png",
+    image: "/assets/modes/parkour.webp",
+    icon: "/assets/reinos/parkour.webp",
   },
 ];
 

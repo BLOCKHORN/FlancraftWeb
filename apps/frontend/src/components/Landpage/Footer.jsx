@@ -7,7 +7,7 @@ export default function Footer() {
   return (
     <footer className="footer-flancraft">
       <div className="follow-section">
-        <h2>SEGUIR A FLANCRAFT</h2>
+        <h2>SIGUENOS EN NUESTRAS REDES</h2>
         <div className="social-icons">
           <a href="https://discord.gg/flancraft" target="_blank" rel="noopener noreferrer" aria-label="Discord">
             <FaDiscord />

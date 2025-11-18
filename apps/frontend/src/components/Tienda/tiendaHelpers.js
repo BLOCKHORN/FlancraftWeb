@@ -45,7 +45,7 @@ export const PORTADA_TILES = [
     server: "lobby",
     name: "RANGOS",
     slug: "rangos",
-    image: "/tienda/categorias/rangos.png",
+    image: "/tienda/categorias/rangos.webp",
   },
   {
     server: "oneblock",

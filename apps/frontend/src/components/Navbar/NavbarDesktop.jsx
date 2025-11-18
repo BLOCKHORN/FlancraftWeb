@@ -88,13 +88,13 @@ const NavbarDesktop = ({
 
       <div className="nav-center">
         <NavLink to="/">
-          <img src="/botones/home.png" alt="Inicio" style={navIconStyle} />
+          <img src="/botones/home.webp" alt="Inicio" style={navIconStyle} />
           Inicio
         </NavLink>
 
         <NavLink to="/news">
           <img
-            src="/botones/noticias.png"
+            src="/botones/noticias.webp"
             alt="Noticias"
             style={navIconStyle}
           />
@@ -103,7 +103,7 @@ const NavbarDesktop = ({
 
         <NavLink to="/leaderboards">
           <img
-            src="/botones/estadisticas.png"
+            src="/botones/estadisticas.webp"
             alt="Estadísticas"
             style={navIconStyle}
           />
@@ -111,18 +111,18 @@ const NavbarDesktop = ({
         </NavLink>
 
         <NavLink to="/tienda">
-          <img src="/botones/tienda.png" alt="Mercado" style={navIconStyle} />
+          <img src="/botones/tienda.webp" alt="Mercado" style={navIconStyle} />
           Tienda
         </NavLink>
 
         <NavLink to="/rangos">
-          <img src="/botones/rangos.png" alt="Rangos" style={navIconStyle} />
+          <img src="/botones/rangos.webp" alt="Rangos" style={navIconStyle} />
           Rangos
         </NavLink>
 
         <NavLink to="/tribunal">
           <img
-            src="/botones/tribunal.png"
+            src="/botones/tribunal.webp"
             alt="Tribunal"
             style={navIconStyle}
           />
@@ -206,7 +206,7 @@ const NavbarDesktop = ({
                   {/* Recompensas */}
                   <NavLink to="/dashboard" className="dropdown-link">
                     <img
-                      src="/botones/recompensas.png"
+                      src="/botones/recompensas.webp"
                       alt="Recompensas"
                       style={{
                         width: "26px",
@@ -224,7 +224,7 @@ const NavbarDesktop = ({
                     className="dropdown-link"
                   >
                     <img
-                      src="/botones/estadisticas.png"
+                      src="/botones/estadisticas.webp"
                       alt="Ver estadísticas"
                       style={{
                         width: "26px",
@@ -246,7 +246,7 @@ const NavbarDesktop = ({
                     }}
                   >
                     <img
-                      src="/botones/atras.png"
+                      src="/botones/atras.webp"
                       alt="Cerrar sesión"
                       style={{
                         width: "26px",

@@ -7,17 +7,17 @@ const TABS_MISION = [
   {
     id: "permanente",
     label: "Logros permanentes",
-    imagen: "/assets/logros/tab-permanentes.png",
+    imagen: "/assets/logros/tab-permanentes.webp",
   },
   {
     id: "diaria",
     label: "Misiones diarias",
-    imagen: "/assets/logros/tab-diarias.png",
+    imagen: "/assets/logros/tab-diarias.webp",
   },
   {
     id: "semanal",
     label: "Retos semanales",
-    imagen: "/assets/logros/tab-semanales.png",
+    imagen: "/assets/logros/tab-semanales.webp",
   },
 ];
 
@@ -27,32 +27,32 @@ const SERVIDORES = [
   {
     nombre: "Survival Clásico",
     valor: "survival",
-    imagen: "/assets/reinos/survival-clasico.png",
+    imagen: "/assets/reinos/survival-clasico.webp",
   },
   {
     nombre: "Survival Anárquico",
     valor: "anarquico",
-    imagen: "/assets/reinos/survival-anarquico.png",
+    imagen: "/assets/reinos/survival-anarquico.webp",
   },
   {
     nombre: "Survival Hardcore",
     valor: "hardcore",
-    imagen: "/assets/reinos/survival-hardcore.png",
+    imagen: "/assets/reinos/survival-hardcore.webp",
   },
   {
     nombre: "OneBlock",
     valor: "oneblock",
-    imagen: "/assets/reinos/oneblock.png",
+    imagen: "/assets/reinos/oneblock.webp",
   },
   {
     nombre: "Chunklock",
     valor: "chunklock",
-    imagen: "/assets/reinos/chunklock.png",
+    imagen: "/assets/reinos/chunklock.webp",
   },
   {
     nombre: "Parkour",
     valor: "parkour",
-    imagen: "/assets/reinos/parkour.png",
+    imagen: "/assets/reinos/parkour.webp",
   },
 ];
 

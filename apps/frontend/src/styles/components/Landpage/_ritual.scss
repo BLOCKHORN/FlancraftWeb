@@ -8,9 +8,18 @@
   justify-content: center;
   align-items: center;
   padding: 5rem 2rem;
-  overflow: hidden;
+  overflow: hidden; // 🔒 nada del fondo se sale de esta sección
   font-family: $font-epic;
   color: #fff;
+  isolation: isolate; // nuevo stacking context por si acaso
+
+  // Capa contenedora del fondo
+  .ritual-bg-layer {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden; // doble seguro
+  }
 
   .overlay {
     position: absolute;
@@ -21,6 +30,7 @@
       rgba(5, 3, 1, 0.6)
     );
     z-index: 1; // encima del fondo, debajo del contenido
+    pointer-events: none;
   }
 
   .ritual-video-bg,
@@ -31,6 +41,7 @@
     height: 100%;
     object-fit: cover;
     z-index: 0;
+    pointer-events: none; // que no interfiera con clics
   }
 
   .ritual-image-bg {
@@ -40,7 +51,6 @@
 
   .ritual-video-bg {
     object-fit: cover;
-    pointer-events: none;
   }
 
   // 🔥 Fondo con fade suave en cada cambio de viñeta

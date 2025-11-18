@@ -1,7 +1,7 @@
+// src/components/Landpage/RitualEko.jsx
 import React, { useEffect, useState, useContext, useCallback } from "react";
 import { HiBolt, HiChevronLeft, HiChevronRight } from "react-icons/hi2";
 import { useNavigate } from "react-router-dom";
-import ColorThief from "color-thief-browser";
 
 import codexData from "../../data/codex-data";
 import { UserContext } from "../../context/UserContext";
@@ -22,7 +22,9 @@ export default function RitualEko() {
   const isVideo = current.bg?.endsWith(".mp4");
   const allViewed = viewed.every(Boolean);
 
-  const isLoggedIn = Boolean(user && (user.uuid || user.id || user.nombre_minecraft));
+  const isLoggedIn = Boolean(
+    user && (user.uuid || user.id || user.nombre_minecraft)
+  );
 
   // Marcar viñeta como vista
   useEffect(() => {
@@ -34,33 +36,16 @@ export default function RitualEko() {
     });
   }, [index]);
 
-  // Extraer color dominante de la imagen
+  // Color dominante basado en los datos del codex (sin ColorThief)
   useEffect(() => {
-    if (!current?.bg || isVideo) {
+    if (!current) {
       setDominantColor("#f5e3b8");
       return;
     }
 
-    let cancelled = false;
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.src = current.bg;
-    img.onload = () => {
-      if (cancelled) return;
-      try {
-        const thief = new ColorThief();
-        const color = thief.getColor(img);
-        setDominantColor(`rgb(${color[0]}, ${color[1]}, ${color[2]})`);
-      } catch (err) {
-        console.error("ColorThief error:", err);
-        setDominantColor("#f5e3b8");
-      }
-    };
-
-    return () => {
-      cancelled = true;
-    };
-  }, [current, isVideo]);
+    // Usamos badgeColor como acento si existe, si no el color por defecto
+    setDominantColor(current.badgeColor || "#f5e3b8");
+  }, [current]);
 
   // Calcular progreso visual para el botón líquido
   useEffect(() => {
@@ -117,29 +102,30 @@ export default function RitualEko() {
 
   return (
     <section className="ritual-carousel">
-      {/* Fondo con fade suave, el texto NO se desmonta */}
-      {isVideo ? (
-        <video
-          key={current.bg}
-          autoPlay
-          loop
-          muted
-          playsInline
-          className="ritual-video-bg fading-bg"
-        >
-          <source src={current.bg} type="video/mp4" />
-        </video>
-      ) : (
-        <div
-          key={current.bg}
-          className="ritual-image-bg fading-bg"
-          style={{ backgroundImage: `url(${current.bg})` }}
-        />
-      )}
+      {/* Capa de fondo totalmente contenida en la sección */}
+      <div className="ritual-bg-layer">
+        {isVideo ? (
+          <video
+            key={current.bg}
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="ritual-video-bg fading-bg"
+          >
+            <source src={current.bg} type="video/mp4" />
+          </video>
+        ) : (
+          <div
+            key={current.bg}
+            className="ritual-image-bg fading-bg"
+            style={{ backgroundImage: `url(${current.bg})` }}
+          />
+        )}
+        <div className="overlay" />
+      </div>
 
-      <div className="overlay" />
-
-      {/* OJO: sin key={index}, el cuadro no parpadea */}
+      {/* Contenido principal */}
       <div
         className={`codex-box ${
           !viewed[index + 1] && index < codexData.length - 1
@@ -207,11 +193,7 @@ export default function RitualEko() {
               onClick={() => setIndex(i)}
               aria-label={`Ir a viñeta ${i + 1}`}
             >
-              <img
-                src={item.thumb}
-                alt={item.title}
-                className="carousel-item"
-              />
+              <img src={item.thumb} alt={item.title} className="carousel-item" />
             </button>
           ))}
         </div>
