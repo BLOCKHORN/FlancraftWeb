@@ -206,7 +206,7 @@ const crearNoticia = async (req, res) => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           username: "FlanCraft Noticias",
-          avatar_url: "https://flancraftv3.vercel.app/assets/avioneta.png",
+          avatar_url: "https://flancraftv3.vercel.app/assets/avioneta.webp",
           content: `📢 Nueva noticia en *${servidor.toUpperCase()}*:\n**${titulo}**\nhttps://flancraft.com/noticias/${slugFinal}\n@here @everyone`,
           embeds: portada
             ? [

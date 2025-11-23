@@ -234,7 +234,7 @@ const AllNews = () => {
         <h3 className="scroll-title">Últimos artículos</h3>
         <div className="floating-news-hero">
           <img
-            src="/assets/avioneta.png"
+            src="/assets/avioneta.webp"
             alt="Repartidor de noticias Flancraft"
           />
         </div>

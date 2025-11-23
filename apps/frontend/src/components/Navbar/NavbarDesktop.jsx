@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 
 const NavbarDesktop = ({
   isLoggedIn,
+  isUserLoading,
   userData,
   activeDropdown,
   handleDropdownHover,
@@ -19,7 +20,7 @@ const NavbarDesktop = ({
   const dropdownRef = useRef();
 
   const location = useLocation();
-  const isHome = location.pathname === "/"; // 🔥 Detectar si estamos en Home
+  const isHome = location.pathname === "/";
 
   // Click fuera del dropdown del perfil
   useEffect(() => {
@@ -81,7 +82,7 @@ const NavbarDesktop = ({
           <img
             src="/assets/logonav.png"
             alt="Flancraft logo"
-            className={`logo-img ${isHome ? "logo-activo" : ""}`} // ✅ Activar clase en home
+            className={`logo-img ${isHome ? "logo-activo" : ""}`}
           />
         </Link>
       </div>
@@ -93,11 +94,7 @@ const NavbarDesktop = ({
         </NavLink>
 
         <NavLink to="/news">
-          <img
-            src="/botones/noticias.webp"
-            alt="Noticias"
-            style={navIconStyle}
-          />
+          <img src="/botones/noticias.webp" alt="Noticias" style={navIconStyle} />
           Noticias
         </NavLink>
 
@@ -132,10 +129,17 @@ const NavbarDesktop = ({
 
       <div className="nav-right">
         {!isLoggedIn ? (
+          // No hay sesión válida → botón de login
           <button className="login-button" onClick={onLoginClick}>
             <i className="fas fa-sign-in-alt" /> Iniciar sesión
           </button>
+        ) : isUserLoading ? (
+          // Sesión detectada pero cargando datos → estado intermedio claro
+          <div className="user-box user-loading">
+            <span className="username-saludo">Cargando perfil...</span>
+          </div>
         ) : (
+          // Sesión cargada correctamente
           <div
             className="user-box"
             onMouseEnter={handleProfileEnter}
@@ -203,7 +207,6 @@ const NavbarDesktop = ({
                     </div>
                   </div>
 
-                  {/* Recompensas */}
                   <NavLink to="/dashboard" className="dropdown-link">
                     <img
                       src="/botones/recompensas.webp"
@@ -218,7 +221,6 @@ const NavbarDesktop = ({
                     <span>Mis Recompensas</span>
                   </NavLink>
 
-                  {/* Estadísticas */}
                   <NavLink
                     to={`/perfil/${userData.username}`}
                     className="dropdown-link"
@@ -236,7 +238,6 @@ const NavbarDesktop = ({
                     <span>Mis estadísticas</span>
                   </NavLink>
 
-                  {/* Cerrar sesión */}
                   <div
                     className="dropdown-link"
                     style={{

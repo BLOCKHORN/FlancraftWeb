@@ -65,10 +65,10 @@ const Home = () => {
     }
   }, []);
 
-  // Cargar nombre real del jugador desde backend (igual que navbar)
+  // Cargar nombre real del jugador desde backend (solo si está logueado)
   useEffect(() => {
     const fetchPlayerName = async () => {
-      if (!user?.uuid) return;
+      if (!user?.loggedIn || !user?.uuid) return;
 
       try {
         const res = await fetch(
@@ -90,7 +90,7 @@ const Home = () => {
     };
 
     fetchPlayerName();
-  }, [user?.uuid]);
+  }, [user?.loggedIn, user?.uuid]);
 
   // Scroll suave a game-modes si viene desde la navbar
   useEffect(() => {
@@ -106,7 +106,7 @@ const Home = () => {
   }, [location]);
 
   const handleMainButtonClick = () => {
-    if (!user) {
+    if (!user?.loggedIn) {
       setShowLogin(true);
     } else {
       navigate("/dashboard");
@@ -114,10 +114,11 @@ const Home = () => {
   };
 
   const displayName =
-    playerName ||
-    user?.username ||
-    user?.uid ||
-    user?.name ||
+    (user?.loggedIn &&
+      (playerName ||
+        user?.username ||
+        user?.uid ||
+        user?.name)) ||
     "aventurero";
 
   return (
@@ -173,34 +174,54 @@ const Home = () => {
               className="hero-quests-cta"
               onClick={handleMainButtonClick}
               role="button"
-              aria-label="Ir al panel de retos y logros"
+              aria-label={
+                user?.loggedIn
+                  ? "Ir al panel de retos y logros"
+                  : "Iniciar sesión para empezar tu aventura"
+              }
             >
-              <div className="hero-quests-cta__image">
-                <img
-                  src="/assets/ui/cta-retos-panel.png"
-                  alt="Entrar al panel de retos"
-                />
-              </div>
+              {user?.loggedIn ? (
+                // ✅ Vista para usuarios logueados (con imagen de panel)
+                <>
+                  <div className="hero-quests-cta__image">
+                    <img
+                      src="/assets/ui/cta-retos-panel.png"
+                      alt="Entrar al panel de retos"
+                    />
+                  </div>
 
-              <div className="hero-quests-cta__text">
-                {!user ? (
-                  <>
-                    <span className="cta-line1">Misiones y Logros</span>
-                    <span className="cta-line2">
-                      Entra al panel de retos de FlanCraft
-                    </span>
-                  </>
-                ) : (
-                  <>
+                  <div className="hero-quests-cta__text">
                     <span className="cta-line1">
                       ¡Tienes retos disponibles, {displayName}!
                     </span>
                     <span className="cta-line2">
                       Continúa tu progreso y reclama recompensas
                     </span>
-                  </>
-                )}
-              </div>
+                  </div>
+                </>
+              ) : (
+                // 🔥 Vista para invitados (sin imagen, invitando a loguear)
+                <div className="hero-quests-cta__content hero-quests-cta__content--guest">
+                  <div className="hero-quests-cta__text">
+                    <span className="cta-line1">Empieza tu aventura</span>
+                    <span className="cta-line2">
+                      Inicia sesión para desbloquear misiones, logros y
+                      recompensas.
+                    </span>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="hero-quests-cta__button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleMainButtonClick();
+                    }}
+                  >
+                    Iniciar sesión
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </header>

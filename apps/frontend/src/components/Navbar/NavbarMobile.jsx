@@ -9,6 +9,7 @@ const NavbarMobile = ({
   profileOpen,
   setProfileOpen,
   isLoggedIn,
+  isUserLoading,
   userData,
 }) => {
   const wrapperRef = useRef();
@@ -111,7 +112,19 @@ const NavbarMobile = ({
           </Link>
         </div>
 
-        {isLoggedIn ? (
+        {!isLoggedIn ? (
+          <button
+            className="profile-button full"
+            onClick={() => setLoginModalOpen(true)}
+          >
+            <i className="fas fa-sign-in-alt" />
+            <span className="profile-greeting">Iniciar sesión</span>
+          </button>
+        ) : isUserLoading ? (
+          <div className="profile-button full loading">
+            <span className="profile-greeting">Cargando perfil...</span>
+          </div>
+        ) : (
           <div className="profile-button-wrapper">
             <button
               className="profile-button full"
@@ -136,18 +149,10 @@ const NavbarMobile = ({
               />
             </button>
           </div>
-        ) : (
-          <button
-            className="profile-button full"
-            onClick={() => setLoginModalOpen(true)}
-          >
-            <i className="fas fa-sign-in-alt" />
-            <span className="profile-greeting">Iniciar sesión</span>
-          </button>
         )}
       </div>
 
-      {isLoggedIn && (
+      {isLoggedIn && !isUserLoading && (
         <div
           ref={wrapperRef}
           className={`user-dropdown-wrapper mobile-only ${
@@ -191,7 +196,6 @@ const NavbarMobile = ({
               </div>
             </div>
 
-            {/* Recompensas */}
             <NavLink
               to="/dashboard"
               className="dropdown-link"
@@ -210,7 +214,6 @@ const NavbarMobile = ({
               <span>Mis Recompensas</span>
             </NavLink>
 
-            {/* Estadísticas */}
             <NavLink
               to={`/perfil/${userData.username}`}
               className="dropdown-link"
@@ -229,7 +232,6 @@ const NavbarMobile = ({
               <span>Mis estadísticas</span>
             </NavLink>
 
-            {/* Cerrar sesión */}
             <div
               className="dropdown-link"
               style={{
@@ -294,8 +296,6 @@ const NavbarMobile = ({
             />
             Noticias
           </NavLink>
-
-          {/* Mundos eliminado */}
 
           <NavLink to="/leaderboards" onClick={() => setMenuOpen(false)}>
             <img

@@ -1,4 +1,3 @@
-// src/components/ServerStatus.jsx
 import React, { useState, useEffect } from "react";
 import { Copy } from "lucide-react";
 import "../../styles/components/Landpage/_serverstatus.scss";
@@ -46,12 +45,15 @@ const ServerStatus = () => {
             <span className="status-dot" />
             {isOnline ? "Servidor activo" : "Servidor offline"}
           </span>
-
         </div>
 
         {/* Centro: IP + botón copiar */}
         <div className="status-center">
-          <button className="ip-button" onClick={copyIP} title="Copiar IP">
+          <button
+            className="ip-button"
+            onClick={copyIP}
+            title="Copiar IP del servidor"
+          >
             <span className="ip-text">{IP}</span>
             <Copy size={16} />
           </button>

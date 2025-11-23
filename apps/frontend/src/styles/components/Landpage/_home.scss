@@ -157,7 +157,7 @@
           0 0 42px rgba(255, 214, 124, 0.6);
       }
 
-      /* wrapper de la imagen, igual filosofía que gm-mode-icon-wrap */
+      /* wrapper de la imagen (vista logueado) */
       .hero-quests-cta__image {
         flex: 0 0 260px;
         display: flex;
@@ -172,11 +172,10 @@
         width: 100%;
         height: auto;
         display: block;
-        filter: drop-shadow(0 0 0 rgba(0, 0, 0, 0.0));
+        filter: drop-shadow(0 0 0 rgba(0, 0, 0, 0));
         transition: filter 0.22s ease;
       }
 
-      /* hover: el cartel se alza un poco y SOLO brilla el contorno gracias al PNG */
       &:hover .hero-quests-cta__image {
         transform: translateY(-4px) scale(1.03);
       }
@@ -208,6 +207,73 @@
           font-size: 0.95rem;
           color: #f1dfb5;
           opacity: 0.92;
+        }
+      }
+
+      /* === VERSIÓN INVITADO (sin imagen, con botón) === */
+      .hero-quests-cta__content {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1.4rem;
+        width: 100%;
+      }
+
+      .hero-quests-cta__content--guest {
+        padding: 0.4rem 0.2rem;
+      }
+
+      .hero-quests-cta__button {
+        flex-shrink: 0;
+        padding: 0.78rem 2.4rem;
+        border-radius: 12px; // cartoon pero algo cuadrado
+        border: 2px solid #f3b34a;
+        outline: none;
+        font-family: "IM Fell English SC", serif;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        font-size: 0.95rem;
+        cursor: pointer;
+
+        // paleta dopamínica: amarillo/naranja muy vivo
+        background: linear-gradient(
+          180deg,
+          #ffeaa4 0%,
+          #ffcb5a 36%,
+          #ff9b2e 72%,
+          #f47621 100%
+        );
+        color: #3a1a06;
+
+        // efecto botón físico + glow cálido
+        box-shadow:
+          0 3px 0 #b46121,
+          0 0 18px rgba(255, 188, 92, 0.9),
+          0 8px 18px rgba(0, 0, 0, 0.8);
+
+        text-shadow: 0 1px 0 rgba(255, 244, 217, 0.9);
+
+        transition:
+          transform 0.14s ease-out,
+          box-shadow 0.14s ease-out,
+          filter 0.14s ease-out;
+
+        &:hover {
+          transform: translateY(-2px) scale(1.02);
+          box-shadow:
+            0 4px 0 #b46121,
+            0 0 24px rgba(255, 205, 120, 1),
+            0 12px 22px rgba(0, 0, 0, 0.9);
+          filter: brightness(1.06);
+        }
+
+        &:active {
+          transform: translateY(1px) scale(0.99);
+          box-shadow:
+            0 1px 0 #8a4518,
+            0 0 14px rgba(255, 188, 92, 0.8),
+            0 6px 14px rgba(0, 0, 0, 0.9);
+          filter: brightness(0.97);
         }
       }
     }
@@ -348,6 +414,17 @@
           .cta-line2 {
             font-size: 0.9rem;
           }
+        }
+
+        /* versión invitado en móvil: todo apilado */
+        .hero-quests-cta__content {
+          flex-direction: column;
+          align-items: center;
+        }
+
+        .hero-quests-cta__button {
+          width: 100%;
+          max-width: 260px;
         }
       }
     }
