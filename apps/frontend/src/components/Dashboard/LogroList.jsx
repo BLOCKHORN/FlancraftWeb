@@ -1,6 +1,13 @@
+// apps/frontend/src/components/Dashboard/LogroList.jsx
 import { useEffect, useState, useRef } from "react";
 import { CheckCircle, Clock, Medal, Filter } from "lucide-react";
 import "../../styles/components/Dashboard/_logrolist.scss";
+
+// 🔗 BASE API: configurable vía .env (VITE_BACKEND_URL)
+// - En local:  http://localhost:10000
+// - En producción (Vercel): https://flancraft-backend.onrender.com  (si no pones env)
+const API_BASE =
+  import.meta.env.VITE_BACKEND_URL || "http://localhost:10000";
 
 // Tabs superiores: tipo de misión
 const TABS_MISION = [
@@ -56,11 +63,15 @@ const SERVIDORES = [
   },
 ];
 
-// Mapa rápido: servidor -> imagen (sin "Todos")
-const MAPA_SERVIDOR_IMAGEN = SERVIDORES.reduce((mapa, srv) => {
-  if (srv.valor) mapa[srv.valor] = srv.imagen;
-  return mapa;
-}, {});
+// Mapa rápido: servidor -> imagen (incluye GLOBAL)
+const MAPA_SERVIDOR_IMAGEN = {
+  ...SERVIDORES.reduce((mapa, srv) => {
+    if (srv.valor) mapa[srv.valor] = srv.imagen;
+    return mapa;
+  }, {}),
+  // Icono especial para misiones globales
+  global: "/assets/reinos/global.webp",
+};
 
 const CRITERIOS = [
   { nombre: "Completados primero", valor: "completado" },
@@ -164,7 +175,7 @@ function LogroList({ user, onXpClaimed }) {
   };
 
   // ==========================
-  // CARGA DE LOGROS (desde backend)
+  // CARGA DE LOGROS / MISIONES (desde backend)
   // ==========================
   useEffect(() => {
     const fetchLogros = async () => {
@@ -172,25 +183,63 @@ function LogroList({ user, onXpClaimed }) {
         setCargando(true);
         setError(null);
 
-        const params = new URLSearchParams();
-        // siempre indicamos el tipo de misión al backend
-        params.append("tipo_mision", tipoMision);
+        let url;
 
-        // solo filtramos por servidor cuando estamos en permanentes
-        if (tipoMision === "permanente" && servidorActivo) {
-          params.append("servidor", servidorActivo);
+        if (tipoMision === "diaria") {
+          // Misiones diarias
+          url = `${API_BASE}/api/misiones/dailys`;
+        } else if (tipoMision === "semanal") {
+          // Misiones semanales
+          url = `${API_BASE}/api/misiones/semanales`;
+        } else {
+          // Logros permanentes (con progreso por jugador)
+          const params = new URLSearchParams();
+          params.append("tipo_mision", tipoMision);
+          if (servidorActivo) {
+            params.append("servidor", servidorActivo);
+          }
+          url = `${API_BASE}/api/logros/${user.uuid}?${params.toString()}`;
         }
-
-        const url = `https://flancraft-backend.onrender.com/api/logros/${user.uuid}?${params.toString()}`;
 
         const res = await fetch(url);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
 
-        setLogros(data || []);
+        if (tipoMision === "permanente") {
+          // la RPC ya devuelve todos los campos listos
+          setLogros(data || []);
+        } else {
+          // Diarias / semanales:
+          // el controlador devuelve { fecha, misiones } o { semana, misiones }
+          const misionesCrudas = Array.isArray(data)
+            ? data
+            : data.misiones || [];
+
+          const adaptadas = (misionesCrudas || []).map((m) => ({
+            id: m.id,
+            nombre: m.nombre,
+            descripcion: m.descripcion,
+            tipo: m.tipo,
+            objetivo: m.objetivo,
+            xp_otorgada: m.xp_otorgada,
+            servidor: m.servidor,
+            categoria: m.categoria,
+            progreso_compartido: m.progreso_compartido,
+            orden: m.orden,
+            activa: m.activa,
+            // campos que el componente espera para la UI
+            progreso_actual: 0, // todavía sin progreso por jugador
+            completado: false,
+            reclamado: false,
+            tipo_mision: tipoMision,
+          }));
+
+          setLogros(adaptadas);
+        }
       } catch (err) {
         console.error("[LOGROS FETCH ERROR]", err);
         setError(err.message);
+        setLogros([]);
       } finally {
         setCargando(false);
       }
@@ -229,13 +278,13 @@ function LogroList({ user, onXpClaimed }) {
   }, [tipoMision]);
 
   // ==========================
-  // RECLAMAR LOGRO
+  // RECLAMAR LOGRO (solo permanentes, de momento)
   // ==========================
   const reclamarLogro = async (id_logro, xp_otorgada) => {
     try {
       setCargandoId(id_logro);
       const res = await fetch(
-        `https://flancraft-backend.onrender.com/api/logros/reclamar/${id_logro}`,
+        `${API_BASE}/api/logros/reclamar/${id_logro}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -384,9 +433,7 @@ function LogroList({ user, onXpClaimed }) {
 
         {/* COUNTDOWN SOLO DIARIA / SEMANAL */}
         {tipoMision !== "permanente" && tiempoRestante && (
-          <div
-            className={`logros-countdown logros-countdown-${tipoMision}`}
-          >
+          <div className={`logros-countdown logros-countdown-${tipoMision}`}>
             <span className="countdown-label">
               {tipoMision === "diaria"
                 ? "La rotación diaria termina en"
@@ -609,21 +656,24 @@ function LogroList({ user, onXpClaimed }) {
                         )}
                       </span>
 
-                      {esCompletado && !esReclamado && (
-                        <button
-                          ref={(el) => (buttonRefs.current[logro.id] = el)}
-                          type="button"
-                          className="logro-claim-btn"
-                          onClick={() =>
-                            reclamarLogro(logro.id, logro.xp_otorgada)
-                          }
-                          disabled={cargandoId === logro.id}
-                        >
-                          {cargandoId === logro.id
-                            ? "Reclamando..."
-                            : "Reclamar XP"}
-                        </button>
-                      )}
+                      {/* De momento solo hay botón de reclamar para logros permanentes */}
+                      {tipoMision === "permanente" &&
+                        esCompletado &&
+                        !esReclamado && (
+                          <button
+                            ref={(el) => (buttonRefs.current[logro.id] = el)}
+                            type="button"
+                            className="logro-claim-btn"
+                            onClick={() =>
+                              reclamarLogro(logro.id, logro.xp_otorgada)
+                            }
+                            disabled={cargandoId === logro.id}
+                          >
+                            {cargandoId === logro.id
+                              ? "Reclamando..."
+                              : "Reclamar XP"}
+                          </button>
+                        )}
                     </div>
                   </div>
 
