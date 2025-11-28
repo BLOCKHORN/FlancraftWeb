@@ -1,3 +1,4 @@
+// src/components/Landpage/GameModes.jsx
 import React, { useState } from "react";
 import "../../styles/components/Landpage/_gamemodes.scss";
 
@@ -65,7 +66,7 @@ const GameModes = () => {
             <p className="gm-subtitle">
               Descubre cada uno de nuestros maravillosos
             </p>
-            <h4 className="gm-mundos">MUNDOS</h4>
+            <h2 className="gm-mundos">MUNDOS</h2>
           </div>
 
           <div className="gm-selector">
@@ -104,31 +105,30 @@ const GameModes = () => {
         <div className="gm-content">
           <div className="gm-left">
             <div className="gm-video-frame">
-  {/* capa 1: imagen presentativa, dentro de la máscara */}
-  <div className="gm-video-inner">
-    <img
-      key={active.id}
-      className="gm-presentacion gm-image-transition"
-      src={active.image}
-      alt={active.name}
-    />
-  </div>
+              {/* capa 1: imagen presentativa, dentro de la máscara */}
+              <div className="gm-video-inner">
+                <img
+                  key={active.id}
+                  className="gm-presentacion gm-image-transition"
+                  src={active.image}
+                  alt={active.name}
+                />
+              </div>
 
-  {/* capa 2: marco madera (siempre cubre el ancho) */}
-  <img
-    className="gm-marco"
-    src="/assets/marcomadera.webp"
-    alt="Marco Flancraft"
-  />
+              {/* capa 2: marco madera (siempre cubre el ancho) */}
+              <img
+                className="gm-marco"
+                src="/assets/marcomadera.webp"
+                alt="Marco Flancraft"
+              />
 
-  {/* capa 3: florituras por encima de todo */}
-  <img
-    className="gm-florituras"
-    src="/assets/florituras.webp"
-    alt="Decoración Flancraft"
-  />
-</div>
-
+              {/* capa 3: florituras por encima de todo */}
+              <img
+                className="gm-florituras"
+                src="/assets/florituras.webp"
+                alt="Decoración Flancraft"
+              />
+            </div>
           </div>
 
           <div className="gm-details">

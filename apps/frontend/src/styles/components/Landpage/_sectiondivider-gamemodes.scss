@@ -1,0 +1,138 @@
+// src/styles/components/Landpage/_sectiondivider-gamemodes.scss
+
+/* Contenedor que envuelve GameModes en Home.jsx */
+.section-gamemodes-wrapper {
+  position: relative;
+}
+
+/* Capa de decoración (barras + esquinas) */
+.section-gamemodes-frame {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 20; // por encima del contenido de GameModes y section-divider normal
+}
+
+/* =========================
+   BARRAS SUPERIOR / INFERIOR
+   ========================= */
+
+.sgm-divider {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  height: auto;
+  image-rendering: auto;
+  z-index: 1; // por debajo de las esquinas e icono
+}
+
+.sgm-divider--top {
+  top: 0;
+  transform: translate(-50%, -50%); // mitad por encima, mitad por debajo
+}
+
+.sgm-divider--bottom {
+  bottom: 0;
+  transform: translate(-50%, 50%);
+}
+
+/* =========================
+   ICONO CENTRAL SUPERIOR
+   ========================= */
+
+.sgm-icon {
+  position: absolute;
+  height: auto;
+  image-rendering: auto;
+  z-index: 3; // por encima de barras y esquinas
+}
+
+.sgm-icon--top {
+  top: 0;
+  left: 50%;
+  transform: translate(-50%, -50%); // que cuelgue un poco por fuera
+  width: 5%; // proporción respecto al ancho de la sección
+}
+
+/* =========================
+   ESQUINAS
+   ========================= */
+
+.sgm-corner {
+  position: absolute;
+  width: 5%;
+  height: auto;
+  image-rendering: auto;
+  z-index: 2; // encima de las barras, debajo del icono central
+}
+
+/* Top left */
+.sgm-corner--tl {
+  top: -10px;
+  left: 0;
+}
+
+/* Top right */
+.sgm-corner--tr {
+  top: -10px;
+  right: 0;
+}
+
+/* Bottom left */
+.sgm-corner--bl {
+  bottom: -10px;
+  left: 0;
+}
+
+/* Bottom right */
+.sgm-corner--br {
+  bottom: -10px;
+  right: 0;
+}
+
+/* =========================
+   RESPONSIVE
+   ========================= */
+
+@media (max-width: 930px) {
+  .sgm-corner {
+    width: 110px;
+  }
+
+  .sgm-icon--top {
+    width: 130px;
+  }
+
+  .sgm-divider {
+    max-width: 1800px;
+  }
+}
+
+@media (max-width: 768px) {
+  .sgm-corner {
+    width: 95px;
+  }
+
+  .sgm-icon--top {
+    width: 110px;
+  }
+
+  .sgm-divider {
+    max-width: 1400px;
+  }
+}
+
+@media (max-width: 520px) {
+  .sgm-corner {
+    width: 80px;
+  }
+
+  .sgm-icon--top {
+    width: 90px;
+  }
+
+  .sgm-divider {
+    max-width: 1100px;
+  }
+}

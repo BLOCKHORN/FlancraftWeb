@@ -8,6 +8,7 @@ import GameModes from "./GameModes";
 import TeamCarousel from "./TeamCarousel";
 import SectionDivider from "./SectionDivider";
 import SectionDivider2 from "./SectionDivider2";
+import SectionDividerGameModes from "./SectionDividerGameModes";
 import PlayerDashboard from "../PlayerDashboard";
 import RitualEko from "./RitualEko";
 import Footer from "./Footer";
@@ -251,13 +252,19 @@ const Home = () => {
         <PlayerDashboard />
         <SectionDivider />
         <RitualEko />
-        <SectionDivider />
 
-        <div ref={gameModesRef} id="game-modes-section">
-          <GameModes />
-        </div>
+<div
+  ref={gameModesRef}
+  id="game-modes-section"
+  className="section-gamemodes-wrapper"
+>
+  <SectionDividerGameModes />
 
-        <SectionDivider />
+
+  <GameModes />
+</div>
+
+
 
         {/* TEAM */}
         <div className="team-slot">
