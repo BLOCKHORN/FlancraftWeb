@@ -1,6 +1,6 @@
 // src/components/Landpage/RitualEko.jsx
 import React, { useEffect, useState, useContext, useCallback } from "react";
-import { HiBolt, HiChevronLeft, HiChevronRight } from "react-icons/hi2";
+import { HiChevronLeft, HiChevronRight } from "react-icons/hi2";
 import { useNavigate } from "react-router-dom";
 
 import codexData from "../../data/codex-data";
@@ -13,6 +13,7 @@ export default function RitualEko() {
   const [dominantColor, setDominantColor] = useState("#f5e3b8");
   const [progress, setProgress] = useState("0%");
   const [hasUnlocked, setHasUnlocked] = useState(false);
+  const [justUnlocked, setJustUnlocked] = useState(false);
   const [showAccessMessage, setShowAccessMessage] = useState(false);
 
   const navigate = useNavigate();
@@ -36,27 +37,28 @@ export default function RitualEko() {
     });
   }, [index]);
 
-  // Color dominante basado en los datos del codex (sin ColorThief)
+  // Color dominante
   useEffect(() => {
     if (!current) {
       setDominantColor("#f5e3b8");
       return;
     }
-
-    // Usamos badgeColor como acento si existe, si no el color por defecto
     setDominantColor(current.badgeColor || "#f5e3b8");
   }, [current]);
 
-  // Calcular progreso visual para el botón líquido
+  // Progreso
   useEffect(() => {
     const pct = (viewed.filter(Boolean).length / codexData.length) * 100;
     setProgress(`${Math.min(Math.max(pct, 0), 100)}%`);
   }, [viewed]);
 
-  // Detectar desbloqueo una sola vez
+  // Desbloqueo una sola vez + animación inicial del botón
   useEffect(() => {
     if (allViewed && !hasUnlocked) {
       setHasUnlocked(true);
+      setJustUnlocked(true);
+      const t = setTimeout(() => setJustUnlocked(false), 2600);
+      return () => clearTimeout(t);
     }
   }, [allViewed, hasUnlocked]);
 
@@ -73,11 +75,8 @@ export default function RitualEko() {
   // Navegación por teclado
   useEffect(() => {
     const handleKey = (e) => {
-      if (e.key === "ArrowRight") {
-        next();
-      } else if (e.key === "ArrowLeft") {
-        prev();
-      }
+      if (e.key === "ArrowRight") next();
+      if (e.key === "ArrowLeft") prev();
     };
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
@@ -101,8 +100,8 @@ export default function RitualEko() {
   };
 
   return (
-    <section className="ritual-carousel">
-      {/* Capa de fondo totalmente contenida en la sección */}
+    <section className="ritual-eko">
+      {/* Fondo */}
       <div className="ritual-bg-layer">
         {isVideo ? (
           <video
@@ -122,126 +121,110 @@ export default function RitualEko() {
             style={{ backgroundImage: `url(${current.bg})` }}
           />
         )}
-        <div className="overlay" />
+        <div className="ritual-bg-vignette" />
       </div>
 
       {/* Contenido principal */}
       <div
-        className={`codex-box ${
-          !viewed[index + 1] && index < codexData.length - 1
-            ? "right-glow-border"
-            : ""
-        }`}
-        style={{
-          borderColor: dominantColor,
-          boxShadow: `inset 0 0 12px ${dominantColor}`,
-        }}
+        className={`ritual-card ${hasUnlocked ? "ritual-card--unlocked" : ""}`}
+        style={{ "--accent": dominantColor }}
       >
-        {/* Flechas */}
+        {/* Flechas laterales */}
         <button
           type="button"
-          className="arrow-panel left-arrow"
+          className="ritual-arrow ritual-arrow--left"
           onClick={prev}
           disabled={index === 0}
           aria-label="Anterior"
         >
-          {index > 0 && <HiChevronLeft />}
+          <HiChevronLeft />
         </button>
 
         <button
           type="button"
-          className={`arrow-panel right-arrow ${
-            !viewed[index + 1] && index < codexData.length - 1 ? "glow" : ""
-          }`}
+          className="ritual-arrow ritual-arrow--right"
           onClick={next}
           disabled={index === codexData.length - 1}
           aria-label="Siguiente"
         >
-          {index < codexData.length - 1 && <HiChevronRight />}
+          <HiChevronRight />
         </button>
 
-        {/* Título y contenido */}
-        <header className="ritual-header">
-          <h2 className="ritual-title" style={{ color: dominantColor }}>
-            {current.title}
-          </h2>
-
-          <h3 className="ritual-subtitle">
-            {current.subtitle}
-            <span
-              className="ritual-badge"
-              style={{ backgroundColor: current.badgeColor }}
-            >
-              {current.badge}
-            </span>
-          </h3>
+        {/* Cabecera */}
+        <header className="ritual-card-header">
+          <div className="ritual-card-crest" />
+          <h1 className="ritual-title">{current.title}</h1>
+          <div className="ritual-subrow">
+            <h2 className="ritual-subtitle">{current.subtitle}</h2>
+            <span className="ritual-badge">{current.badge}</span>
+          </div>
         </header>
 
-        <div className="ritual-description">
-          {current.description.split("\n").map((line, idx) => (
-            <p key={idx}>{line}</p>
-          ))}
-        </div>
-
-        {/* Miniaturas */}
-        <div className="carousel-inner">
-          {codexData.map((item, i) => (
-            <button
-              key={i}
-              type="button"
-              className={`carousel-thumb-wrapper ${getClass(i)}`}
-              onClick={() => setIndex(i)}
-              aria-label={`Ir a viñeta ${i + 1}`}
-            >
-              <img src={item.thumb} alt={item.title} className="carousel-item" />
-            </button>
-          ))}
-        </div>
-
-        {/* Progreso */}
-        <div className="ritual-progress-block">
-          <span className="ritual-progress-label">
-            Viñeta {index + 1} de {codexData.length}
-          </span>
-          <div className="ritual-progress-bar">
-            <div
-              className="ritual-progress-fill"
-              style={{ "--progress": progress }}
-            />
+        {/* Texto + miniaturas + progreso */}
+        <div className="ritual-body">
+          <div className="ritual-description">
+            {current.description.split("\n").map((line, idx) => (
+              <p key={idx}>{line}</p>
+            ))}
           </div>
-        </div>
 
-        {/* Botón mágico */}
-        <div
-          className={`eko-liquid-wrapper ${
-            allViewed ? "unlocked" : ""
-          } ${hasUnlocked ? "unlocked-shake" : ""}`}
-          style={{ "--progress": progress }}
-        >
-          <button
-            type="button"
-            className={`eko-liquid-btn ${hasUnlocked ? "btn-reveal" : ""}`}
-            disabled={!allViewed}
-            onClick={handleGetEco}
-            style={{ "--dominant": dominantColor }}
-          >
-            <div className="liquid-bg" />
-
-            {!allViewed && (
-              <div className="liquid-fill">
-                <div className="liquid-wave" />
-              </div>
-            )}
-
-            <div className="eko-liquid-text">
-              <HiBolt className="bolt-icon" />
-              {allViewed ? "Consigue Eco" : "Descubre el poder..."}
+          {/* Miniaturas */}
+          <div className="ritual-thumbs-row">
+            <div className="ritual-thumbs-track">
+              {codexData.map((item, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  className={`carousel-thumb-wrapper ${getClass(i)}`}
+                  onClick={() => setIndex(i)}
+                  aria-label={`Ir a viñeta ${i + 1}`}
+                >
+                  <img
+                    src={item.thumb}
+                    alt={item.title}
+                    className="carousel-item"
+                  />
+                </button>
+              ))}
             </div>
-          </button>
+          </div>
+
+          {/* Progreso + CTA */}
+          <div className="ritual-footer">
+            <div
+              className="ritual-progress"
+              style={{ "--progress": progress }}
+            >
+              <span className="ritual-progress-label">
+                Viñeta {index + 1} de {codexData.length}
+              </span>
+              <div className="ritual-progress-track">
+                <div className="ritual-progress-fill" />
+                <div className="ritual-progress-gem" />
+              </div>
+            </div>
+
+            <div className="ritual-cta-wrapper">
+              <button
+                type="button"
+                className={[
+                  "ritual-cta",
+                  allViewed ? "ritual-cta--active" : "ritual-cta--locked",
+                  justUnlocked ? "ritual-cta--just-unlocked" : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+                disabled={!allViewed}
+                onClick={handleGetEco}
+              >
+                {allViewed ? "Consigue Eco" : "Completa todas las viñetas"}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Mensaje de acceso si no está logueado */}
+      {/* Mensaje acceso */}
       {showAccessMessage && (
         <div className="ritual-access-overlay">
           <div className="ritual-access-card">
