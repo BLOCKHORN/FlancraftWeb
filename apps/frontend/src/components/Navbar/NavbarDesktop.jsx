@@ -80,7 +80,7 @@ const NavbarDesktop = ({
       <div className="nav-left">
         <Link to="/" className="logo">
           <img
-            src="/assets/logonav.png"
+            src="/assets/logonav.webp"
             alt="Flancraft logo"
             className={`logo-img ${isHome ? "logo-activo" : ""}`}
           />
@@ -199,7 +199,7 @@ const NavbarDesktop = ({
                   <div className="balance-wrapper">
                     <div className="balance-item">
                       <img
-                        src="/assets/eco.png"
+                        src="/assets/eco.webp"
                         alt="ECOS"
                         className="eco-icon-navbar"
                       />

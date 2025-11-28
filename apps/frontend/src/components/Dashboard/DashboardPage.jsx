@@ -107,7 +107,7 @@ export default function DashboardPage() {
                     <div className="avatar-frame">
                       <div className="avatar-inner">
                         <img
-                          src="/assets/profile.png"
+                          src="/assets/profile.webp"
                           alt="Fondo del perfil"
                           className="avatar-bg"
                         />
@@ -147,7 +147,7 @@ export default function DashboardPage() {
 
                           {user.es_premium && (
                             <img
-                              src="/assets/premium.png"
+                              src="/assets/premium.webp"
                               alt="Cuenta premium"
                               className="badge-premium"
                             />
@@ -174,7 +174,7 @@ export default function DashboardPage() {
                               {user.monedas?.ecos || 0}
                             </span>
                             <img
-                              src="/assets/eco.png"
+                              src="/assets/eco.webp"
                               alt="Gema ECOS"
                               className="icono-eco pulse"
                             />
@@ -264,7 +264,7 @@ export default function DashboardPage() {
             <div className="loading-ring" />
             <div className="loading-gem-wrapper">
               <img
-                src="/assets/eco.png"
+                src="/assets/eco.webp"
                 alt="Cargando perfil"
                 className="loading-gem"
               />
@@ -275,9 +275,7 @@ export default function DashboardPage() {
 
           <div className="loading-text-block">
             <p className="loading-title">Invocando tu posada...</p>
-            <p className="loading-subtitle">
-              Cargando perfil de aventurero
-            </p>
+            <p className="loading-subtitle">Cargando perfil de aventurero</p>
           </div>
         </div>
       )}

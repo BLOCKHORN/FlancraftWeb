@@ -31,7 +31,7 @@ export default function Footer() {
       </div>
 
       <div className="footer-bottom">
-        <img src="/assets/logofooter2.png" alt="Flancraft" className="footer-logo" />
+        <img src="/assets/logofooter2.webp" alt="Flancraft" className="footer-logo" />
         <p>©2025 Blockhorn Studios. Todos los derechos reservados.</p>
         <ul className="footer-links">
           <li><a href="#">Privacidad</a></li>

@@ -75,7 +75,7 @@
       width: 100%;
       margin: 0 auto 1rem;
       aspect-ratio: 16 / 9;
-      background: url("/assets/flancraftlogo.png") center/contain no-repeat;
+      background: url("/assets/flancraftlogo.webp") center/contain no-repeat;
       filter: drop-shadow(0 0 20px rgba(0, 0, 0, 0.742));
       animation: levitar 5s ease-in-out infinite;
     }
@@ -293,7 +293,7 @@
     position: absolute;
     left: 0;
     width: 100%;
-    background: url("/assets/dividerbattle.png") center bottom no-repeat;
+    background: url("/assets/dividerbattle.webp") center bottom no-repeat;
     background-size: cover;
     z-index: 10000;
     pointer-events: none;

@@ -85,9 +85,9 @@
 
   .gm-mode-icon-wrap {
     width: 90px;
-    height: 90px;                 // altura fija para alinear todas las chapas
+    height: 90px; // altura fija para alinear todas las chapas
     display: flex;
-    align-items: flex-end;        // todos apoyan abajo
+    align-items: flex-end; // todos apoyan abajo
     justify-content: center;
     transform-origin: center bottom;
     transition: transform 0.22s ease;
@@ -225,18 +225,17 @@
     align-items: center;
     justify-content: center;
     margin: 0 auto;
-    // ¡ojo! aquí ya NO hay overflow:hidden,
-    // la máscara la tendrá el inner.
+    // el recorte lo hace el inner, no el frame
   }
 
   /* máscara interior con el tamaño del hueco del marco */
   .gm-video-inner {
     position: relative;
     z-index: 1;
-    width: 88%;           // ajusta si quieres más o menos margen
+    width: 100%;          // SIEMPRE tan ancho como el marco
     aspect-ratio: 16 / 9;
     border-radius: 12px;
-    overflow: hidden;      // el zoom nunca se sale de aquí
+    overflow: hidden;     // el zoom nunca se sale de aquí
     display: flex;
     align-items: center;
     justify-content: center;
@@ -449,10 +448,7 @@
       max-width: 100%;
     }
 
-    .gm-video-frame .gm-presentacion {
-      width: 88%;
-    }
-
+    /* la imagen ya ocupa el 100% de la máscara, no hace falta tocar width aquí */
     .gm-video-frame .gm-florituras {
       width: 120%;
     }

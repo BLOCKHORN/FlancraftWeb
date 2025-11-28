@@ -81,7 +81,7 @@ function ModalCompraRango({
                 <span className="modal-price-pill" aria-label="Precio en ECOS">
                   {precio30.toLocaleString("es-ES")}
                   <img
-                    src="/assets/eco.png"
+                    src="/assets/eco.webp"
                     alt=""
                     aria-hidden="true"
                     className="eco-mini"

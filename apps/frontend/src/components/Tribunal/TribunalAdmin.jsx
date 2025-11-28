@@ -150,7 +150,7 @@ if (user === null || !user.loggedIn || !user.rol_admin) {
   return (
     <div className="admin-wrapper" style={{ textAlign: 'center', padding: '4rem', color: '#ffffff' }}>
       <img
-        src="/assets/gandalf_minecraft.png"
+        src="/assets/gandalf_minecraft.webp"
         alt="No tienes poder aquí"
         style={{ maxWidth: '320px', marginBottom: '1rem' }}
       />

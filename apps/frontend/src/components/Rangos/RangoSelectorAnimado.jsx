@@ -214,7 +214,7 @@ function RangoSelectorAnimado() {
             <span>
               30 días por {precios[rango.id]["30d"]}{" "}
               <img
-                src="/assets/eco.png"
+                src="/assets/eco.webp"
                 alt="ECOS"
                 className="eco-mini-inline"
               />
@@ -299,7 +299,7 @@ function RangoSelectorAnimado() {
                     : "—"}
                   {saldoVisible !== null && (
                     <img
-                      src="/assets/eco.png"
+                      src="/assets/eco.webp"
                       alt="ECOS"
                       className="eco-mini-inline"
                     />
@@ -310,7 +310,7 @@ function RangoSelectorAnimado() {
               <>
                 <span>Inicia sesión para ver tu saldo de</span>
                 <img
-                  src="/assets/eco.png"
+                  src="/assets/eco.webp"
                   alt="ECOS"
                   className="eco-mini-inline"
                 />
@@ -386,7 +386,7 @@ function RangoSelectorAnimado() {
                       <>
                         {precio.toLocaleString("es-ES")}{" "}
                         <img
-                          src="/assets/eco.png"
+                          src="/assets/eco.webp"
                           alt="ECOS"
                           className="eco-mini"
                         />{" "}
@@ -462,7 +462,7 @@ function RangoSelectorAnimado() {
                           {typeof valor === "boolean" ? (
                             valor ? (
                               <img
-                                src="/assets/check.png"
+                                src="/assets/check.webp"
                                 alt="Sí"
                                 className={`icono-check ${claseCheck}`}
                               />
@@ -477,13 +477,13 @@ function RangoSelectorAnimado() {
                                   String(valor)
                                     .toLowerCase()
                                     .includes("op")
-                                    ? "/assets/netheritafull.png"
+                                    ? "/assets/netheritafull.webp"
                                     : valor &&
                                       String(valor)
                                         .toLowerCase()
                                         .includes("netherita")
-                                    ? "/assets/netherita.png"
-                                    : "/assets/diamante.png"
+                                    ? "/assets/netherita.webp"
+                                    : "/assets/diamante.webp"
                                 }
                                 alt="Kit Icon"
                                 className="kit-icono"

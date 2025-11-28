@@ -185,7 +185,7 @@ const Home = () => {
                 <>
                   <div className="hero-quests-cta__image">
                     <img
-                      src="/assets/ui/cta-retos-panel.png"
+                      src="/assets/ui/cta-retos-panel.webp"
                       alt="Entrar al panel de retos"
                     />
                   </div>

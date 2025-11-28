@@ -28,7 +28,7 @@ const teamMembers = [
     role: "GRAN MAESTRE DEL REINO",
     badgeColor: "#f4cc62",
     skinImage: "/assets/skins/paxino.png",
-    headImage: "https://crafatar.com/avatars/a2276db9b1874e3caacca9c4dbd72bca",
+    headImage: "/assets/skins/paxinohead.png",
     description:
       "Fundador de Flancraft y estratega principal. Supervisa la visión global del servidor, la cohesión del equipo y la toma de decisiones clave. Experto en diseño de experiencias multijugador, gestión de proyectos con metodologías ágiles y resolución de conflictos en comunidades online. Coordina todas las áreas del proyecto para asegurar estabilidad, innovación y crecimiento sostenible.",
     icon: <FaUserTie />,
@@ -38,7 +38,7 @@ const teamMembers = [
     role: "ARQUITECTO DE REALIDADES",
     badgeColor: "#ff9248",
     skinImage: "/assets/skins/janitovp.png",
-    headImage: "https://crafatar.com/avatars/a0022b8a220c48d4bc2418007aae5c58",
+    headImage: "/assets/skins/janitovphead.png",
     description:
       "Especialista en diseño visual, construcción estructural y producción multimedia. Domina herramientas como WorldEdit, VoxelSniper, Blender y ReplayMod para crear mundos inmersivos y material promocional de alto impacto. Responsable del estilo visual del servidor, animaciones y cinemáticas. Colabora con desarrollo para alinear estética con funcionalidades jugables.",
     icon: <FaPencilRuler />,

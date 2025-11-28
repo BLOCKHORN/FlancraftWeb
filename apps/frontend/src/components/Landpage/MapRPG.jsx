@@ -23,7 +23,7 @@ const zones = [
     description: 'Últimas noticias, cambios y eventos del reino.',
     route: '/news',
     className: 'news',
-    image: '/assets/taberna.png',
+    image: '/assets/taberna.webp',
   },
   {
     icon: <ShieldCheck />,
@@ -31,7 +31,7 @@ const zones = [
     description: 'Registro de sanciones y sentencias del Tribunal.',
     route: '/tribunal',
     className: 'sanctions',
-    image: '/assets/fortaleza.png',
+    image: '/assets/fortaleza.webp',
   },
   {
     icon: <BarChart3 />,
@@ -39,7 +39,7 @@ const zones = [
     description: 'Rankings, tiempos de juego y marcas legendarias.',
     route: '/leaderboards',
     className: 'stats',
-    image: '/assets/mina.png',
+    image: '/assets/mina.webp',
   },
   {
     icon: <Gift />,
@@ -47,7 +47,7 @@ const zones = [
     description: 'Reclama cofres, monedas y premios del pase.',
     route: '/dashboard',
     className: 'rewards',
-    image: '/assets/recompensas.png',
+    image: '/assets/recompensas.webp',
   },
   {
     icon: <UserCircle />,
@@ -56,7 +56,7 @@ const zones = [
     // ruta por defecto si no hay usuario
     route: '/perfil/tuNombre',
     className: 'player',
-    image: '/assets/torre.png',
+    image: '/assets/torre.webp',
   },
   {
     icon: <ShoppingBag />,
@@ -64,7 +64,7 @@ const zones = [
     description: 'La tienda oficial de FlanCraft, rangos y más.',
     route: '/tienda',
     className: 'shop',
-    image: '/assets/mercado.png',
+    image: '/assets/mercado.webp',
   },
 ]
 

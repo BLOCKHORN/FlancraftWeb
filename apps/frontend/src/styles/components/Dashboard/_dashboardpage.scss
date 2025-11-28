@@ -26,7 +26,7 @@
 .hero-posada-bg {
   position: absolute;
   inset: 0;
-  background-image: url("/assets/posada.png");
+  background-image: url("/assets/posada.webp");
   background-size: cover;
   background-position: center top;
   filter: brightness(1);
@@ -705,17 +705,32 @@
    RESPONSIVE
    ========================= */
 
+/* Tablet y móvil grande */
 @media (max-width: 900px) {
   .dashboard-epic {
-    padding-inline: 1.1rem;
+    padding-inline: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .player-nombre-row {
+    justify-content: center;
+    text-align: center;
+  }
+  .hero-posada {
+    border-radius: 1rem;
+    width: 100%;
+    max-width: 480px;
+    margin: 0 auto;
   }
 
   .hero-posada-content {
-    padding: 2.6rem 1.3rem 2.1rem;
+    padding: 3rem 1.4rem 2.4rem;
   }
 
   .epic-title {
     font-size: 2.4rem;
+    letter-spacing: 0.14em;
   }
 
   .player-main-layout {
@@ -725,6 +740,8 @@
 
   .dashboard-player-card {
     padding-inline: 1.4rem;
+    max-width: 480px;
+    width: 100%;
   }
 
   .player-info-column {
@@ -741,25 +758,78 @@
     }
   }
 
+  /* ⚠️ Ajuste de nombre para que no se salga */
+  .player-nombre {
+    font-size: 1.6rem;
+    letter-spacing: 0.11em;
+    overflow-wrap: anywhere; // permite partir palabras largas
+  }
+
   .btn-primario {
     margin-left: 0;
+    width: 100%;
+    justify-content: center;
   }
 
   .nivel-global-wrapper {
     max-width: 100%;
   }
+
+  .nivel-global-text {
+    margin-left: 0;
+    justify-content: center;
+  }
+
+  .player-admin-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-btn {
+    font-size: 0.76rem;
+  }
+
+  .dashboard-secciones {
+    align-items: center;
+
+    > * {
+      width: 100%;
+      max-width: 480px;
+    }
+  }
 }
 
+/* Móvil más pequeño */
 @media (max-width: 600px) {
+  .dashboard-epic {
+    padding: 0 0.9rem 3rem;
+  }
+
   .hero-posada {
     border-radius: 0.8rem;
   }
 
+  .hero-posada-content {
+    padding: 2.4rem 1.1rem 2.1rem;
+  }
+
   .epic-title {
     font-size: 2.1rem;
+    letter-spacing: 0.12em;
   }
 
   .dashboard-player-card {
     max-width: 100%;
+    padding-inline: 1.2rem;
+  }
+
+  .avatar-frame {
+    width: 170px;
+    height: 200px;
+  }
+
+  /* nombre aún más controlado en móviles pequeños */
+  .player-nombre {
+    font-size: 1.4rem;
+    letter-spacing: 0.1em;
   }
 }

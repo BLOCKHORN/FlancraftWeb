@@ -374,7 +374,7 @@ const NoticiasAdmin = () => {
         style={{ textAlign: "center", padding: "4rem" }}
       >
         <img
-          src="/assets/gandalf_minecraft.png"
+          src="/assets/gandalf_minecraft.webp"
           alt="No tienes poder aquí"
           style={{ maxWidth: "320px", marginBottom: "1rem" }}
         />

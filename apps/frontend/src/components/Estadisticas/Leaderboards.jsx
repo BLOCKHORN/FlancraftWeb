@@ -221,11 +221,11 @@ export default function Leaderboards() {
               const datosUsuario = usuariosVinculados[player.uuid] || {};
               const medalla =
                 posicion === 0
-                  ? "/assets/oro.png"
+                  ? "/assets/oro.webp"
                   : posicion === 1
-                  ? "/assets/plata.png"
+                  ? "/assets/plata.webp"
                   : posicion === 2
-                  ? "/assets/bronce.png"
+                  ? "/assets/bronce.webp"
                   : null;
 
               return (
@@ -286,7 +286,7 @@ export default function Leaderboards() {
                         {player.nombre_minecraft || "Desconocido"}
                         {datosUsuario.premium && (
                           <img
-                            src="/assets/premium.png"
+                            src="/assets/premium.webp"
                             alt="Premium"
                             className="icono-premium"
                           />

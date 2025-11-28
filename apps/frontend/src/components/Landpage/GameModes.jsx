@@ -117,14 +117,14 @@ const GameModes = () => {
   {/* capa 2: marco madera (siempre cubre el ancho) */}
   <img
     className="gm-marco"
-    src="/assets/marcomadera.png"
+    src="/assets/marcomadera.webp"
     alt="Marco Flancraft"
   />
 
   {/* capa 3: florituras por encima de todo */}
   <img
     className="gm-florituras"
-    src="/assets/florituras.png"
+    src="/assets/florituras.webp"
     alt="Decoración Flancraft"
   />
 </div>

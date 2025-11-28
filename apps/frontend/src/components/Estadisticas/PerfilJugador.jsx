@@ -4,8 +4,8 @@ import { supabase } from "../../lib/supabaseClient";
 import "../../styles/components/Estadisticas/_perfiljugador.scss";
 
 // mismas rutas
-import borde2 from "/assets/borde2.png";
-import topborder from "/assets/topborder.png";
+import borde2 from "/assets/borde2.webp";
+import topborder from "/assets/topborder.webp";
 import madera from "/assets/madera.jpeg";
 
 export default function PerfilJugador() {
@@ -237,7 +237,7 @@ export default function PerfilJugador() {
                 {usuario.nombre_minecraft}
                 {usuario.es_premium && (
                   <img
-                    src="/assets/premium.png"
+                    src="/assets/premium.webp"
                     alt="Premium"
                     className="icono-premium"
                   />

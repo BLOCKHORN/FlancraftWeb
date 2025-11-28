@@ -227,8 +227,8 @@ const AllNews = () => {
 
       <div className="news-scroll-bg">
         <div className="news-scroll-top-decor">
-          <img src="/assets/topborder.png" alt="" className="border-main" />
-          <img src="/assets/borde2.png" alt="" className="border-corner" />
+          <img src="/assets/topborder.webp" alt="" className="border-main" />
+          <img src="/assets/borde2.webp" alt="" className="border-corner" />
         </div>
 
         <h3 className="scroll-title">Últimos artículos</h3>

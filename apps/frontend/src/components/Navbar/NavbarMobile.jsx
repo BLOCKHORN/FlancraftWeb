@@ -105,7 +105,7 @@ const NavbarMobile = ({
 
           <Link to="/" className="logo-inline">
             <img
-              src="/assets/logonav.png"
+              src="/assets/logonav.webp"
               alt="Flancraft logo"
               className={`logo-img ${isHome ? "logo-activo" : ""}`}
             />
@@ -189,7 +189,7 @@ const NavbarMobile = ({
               <div className="balance-item">
                 <span> ECOS: {userData.ecos}</span>
                 <img
-                  src="/assets/eco.png"
+                  src="/assets/eco.webp"
                   alt="ECOS"
                   className="eco-icon-navbar"
                 />
@@ -268,14 +268,14 @@ const NavbarMobile = ({
             onClick={() => setMenuOpen(false)}
           />
           <img
-            src="/assets/blockhorn.png"
+            src="/assets/blockhorn.webp"
             alt="Blockhorn"
             className="blockhorn-logo"
           />
           <div className="logo-divider"></div>
           <div className="logo-glow-wrapper">
             <img
-              src="/assets/flancraftlogo.png"
+              src="/assets/flancraftlogo.webp"
               alt="Flancraft"
               className="flancraft-logo"
             />

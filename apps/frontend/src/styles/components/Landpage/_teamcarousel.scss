@@ -26,13 +26,17 @@
         rgba(30, 27, 23, 0) 88%,
         rgba(30, 27, 23, 1) 100%
       ),
-      url("/assets/backmeet.png") center top / cover no-repeat;
+      url("/assets/backmeet.webp") center top / cover no-repeat;
     pointer-events: none;
     z-index: 0;
   }
 
   /* un poco de espacio */
   padding: 5rem 0 6.5rem;
+
+  @media (max-width: 480px) {
+    padding: 4rem 0 5rem;
+  }
 }
 
 /* ===== BLOQUE DEL PERGAMINO ===== */
@@ -52,6 +56,7 @@
   box-sizing: border-box;
   position: relative;
   z-index: 2;
+  overflow: hidden;
 
   .team-content {
     display: flex;
@@ -65,7 +70,7 @@
     @media (max-width: 768px) {
       flex-direction: column;
       min-height: 600px;
-      align-items: center;
+      align-items: flex-start;
     }
   }
 
@@ -104,9 +109,11 @@
       gap: 0.5rem;
       color: #333;
       font-family: "IM Fell English SC", serif;
+      flex-wrap: wrap; /* evita desbordes en desktop muy estrechos */
 
       svg {
         margin-right: 0.4rem;
+        flex-shrink: 0;
       }
 
       .badge {
@@ -238,14 +245,28 @@
     padding: 2rem 1.2rem;
 
     .team-text {
-      min-height: 480px;
+      max-width: 100%;
+      min-height: auto;
 
       .title {
         font-size: 2rem;
       }
+
       .name {
         font-size: 1.4rem;
+        flex-direction: column; /* nombre arriba, badge debajo */
+        align-items: flex-start;
+        gap: 0.2rem;
+
+        .badge {
+          margin-top: 0.2rem;
+          margin-left: 0;
+          white-space: normal; /* permite romper línea */
+          max-width: 100%;
+          text-align: left;
+        }
       }
+
       .description {
         font-size: 1rem;
       }
@@ -254,6 +275,7 @@
     .team-avatar {
       width: 200px;
       height: 200px;
+      align-self: center;
     }
 
     .carousel-heads .head-icon {
@@ -269,9 +291,15 @@
       .title {
         font-size: 1.7rem;
       }
+
       .name {
-        font-size: 1.3rem;
+        font-size: 1.25rem;
+
+        .badge {
+          font-size: 0.78rem;
+        }
       }
+
       .description {
         font-size: 0.95rem;
       }

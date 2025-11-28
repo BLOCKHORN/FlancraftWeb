@@ -699,7 +699,7 @@ function LogroList({ user, onXpClaimed }) {
           <div className="logros-loading-overlay">
             <div className="logros-loading-inner">
               <img
-                src="/assets/eco.png"
+                src="/assets/eco.webp"
                 alt="Cargando logros"
                 className="logros-loading-gem"
               />

@@ -143,7 +143,7 @@ export default function RewardList({
 
     for (let i = 0; i < maxMonedas; i++) {
       const moneda = document.createElement("img");
-      moneda.src = "/assets/eco.png";
+      moneda.src = "/assets/eco.webp";
       moneda.className = "eco-fly";
       document.body.appendChild(moneda);
 
@@ -315,7 +315,7 @@ export default function RewardList({
                 estadoNodo === "progresado" && !yaReclamada;
 
               const icono = (
-                <img src="/assets/eco.png" alt="ECO" />
+                <img src="/assets/eco.webp" alt="ECO" />
               );
 
               return (

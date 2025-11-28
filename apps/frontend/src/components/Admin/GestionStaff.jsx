@@ -93,7 +93,7 @@ export default function GestionStaff() {
   if (!user?.loggedIn || user.rol_admin?.toLowerCase() !== "owner") {
     return (
       <div className="admin-wrapper" style={{ textAlign: "center", padding: "4rem" }}>
-        <img src="/assets/gandalf_minecraft.png" alt="No tienes poder aquí" style={{ maxWidth: "320px", marginBottom: "1rem" }} />
+        <img src="/assets/gandalf_minecraft.webp" alt="No tienes poder aquí" style={{ maxWidth: "320px", marginBottom: "1rem" }} />
         <h2 style={{ fontFamily: "'IM Fell English SC', serif", fontSize: "2rem" }}>¡No tienes poder aquí!</h2>
         <p>Acceso denegado al panel de gestión de staff</p>
       </div>
