@@ -253,18 +253,14 @@ const Home = () => {
         <SectionDivider />
         <RitualEko />
 
-<div
-  ref={gameModesRef}
-  id="game-modes-section"
-  className="section-gamemodes-wrapper"
->
-  <SectionDividerGameModes />
-
-
-  <GameModes />
-</div>
-
-
+        <div
+          ref={gameModesRef}
+          id="game-modes-section"
+          className="section-gamemodes-wrapper"
+        >
+          <SectionDividerGameModes />
+          <GameModes />
+        </div>
 
         {/* TEAM */}
         <div className="team-slot">
@@ -272,9 +268,7 @@ const Home = () => {
         </div>
 
         {/* DIVISOR FINAL */}
-        <div className="divider-overlay">
-          <SectionDivider2 />
-        </div>
+        <SectionDivider2 />
 
         <Footer />
       </div>

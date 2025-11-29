@@ -1,14 +1,15 @@
 // src/main.jsx
-import './config/lucidePatch'; // 👈 debe ir antes o después de estilos, pero antes de render
+import "./config/lucidePatch"; // 👈 parches de lucide primero
+import "./utils/devBackendProxy"; // 👈 proxy SOLO en dev para redirigir Render → localhost
 
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import { BrowserRouter } from 'react-router-dom';
-import App from './App';
-import { UserProvider } from './context/UserContext';
-import './styles/base/main.scss';
+import React from "react";
+import ReactDOM from "react-dom/client";
+import { BrowserRouter } from "react-router-dom";
+import App from "./App";
+import { UserProvider } from "./context/UserContext";
+import "./styles/base/main.scss";
 
-ReactDOM.createRoot(document.getElementById('root')).render(
+ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <BrowserRouter>
       <UserProvider>
@@ -17,4 +18,3 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     </BrowserRouter>
   </React.StrictMode>
 );
-

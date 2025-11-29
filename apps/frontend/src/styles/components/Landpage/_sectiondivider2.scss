@@ -1,35 +1,35 @@
+// src/styles/components/Landpage/_sectiondivider2.scss
+
 .section-divider2 {
+  position: relative;
   width: 100%;
-  height: 80px;
-  background: url('/assets/dividerbattle.webp') center bottom no-repeat;
-  background-size: cover;
-  position: absolute;
-  bottom: -50px;
-  left: 0;
-  filter: drop-shadow(0 -2px 4px rgba(0, 0, 0, 0.4));
-  z-index: 1000;
   pointer-events: none;
-
-  // 📱 MÓVILES
-  @media (max-width: 600px) {
-    height: 50px;
-    bottom: -30px;
-    background-size: contain;
-  }
-
-  // 📲 TABLETS
-  @media (min-width: 601px) and (max-width: 1024px) {
-    height: 65px;
-    bottom: -40px;
-    background-size: contain;
-  }
-
-  // 🖥️ ULTRAWIDE
-// 🖥️ ULTRAWIDE (ajustado a evitar 1920x1080)
-@media (min-width: 2000px) {
-  height: 109px;
-  bottom: -60px;
-  background-size: cover;
+  z-index: 20;
 }
 
+/* Barra base */
+.section-divider2__bar {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+}
+
+/* Medalla centrada, más pequeña y menos saturada */
+.section-divider2__medal {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  transform: translate(-50%, -30%); // centrado fino
+  display: block;
+
+  /* tamaño más pequeño */
+  max-width: 90px;  // antes 140px
+  height: auto;
+
+  /* bajamos un pelín la saturación y el brillo */
+  filter:
+    saturate(0.9)
+    brightness(0.96)
+    drop-shadow(0 0 6px rgba(0, 0, 0, 0.75));
 }
