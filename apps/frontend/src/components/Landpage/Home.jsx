@@ -9,7 +9,8 @@ import TeamCarousel from "./TeamCarousel";
 import SectionDivider from "./SectionDivider";
 import SectionDivider2 from "./SectionDivider2";
 import SectionDividerGameModes from "./SectionDividerGameModes";
-import PlayerDashboard from "../PlayerDashboard";
+import SectionDividerNews from "./SectionDividerNews"; // 👈 divisor noticias
+import NewsHighlight from "./NewsHighlight";
 import RitualEko from "./RitualEko";
 import Footer from "./Footer";
 import LoginModal from "../Auth/LoginModal";
@@ -98,10 +99,7 @@ const Home = () => {
     if (location.state?.scrollTo === "game-modes-section") {
       const target = document.getElementById("game-modes-section");
       if (target) {
-        setTimeout(
-          () => target.scrollIntoView({ behavior: "smooth" }),
-          400
-        );
+        setTimeout(() => target.scrollIntoView({ behavior: "smooth" }), 400);
       }
     }
   }, [location]);
@@ -182,7 +180,6 @@ const Home = () => {
               }
             >
               {user?.loggedIn ? (
-                // ✅ Vista para usuarios logueados (con imagen de panel)
                 <>
                   <div className="hero-quests-cta__image">
                     <img
@@ -201,7 +198,6 @@ const Home = () => {
                   </div>
                 </>
               ) : (
-                // 🔥 Vista para invitados (sin imagen, invitando a loguear)
                 <div className="hero-quests-cta__content hero-quests-cta__content--guest">
                   <div className="hero-quests-cta__text">
                     <span className="cta-line1">Empieza tu aventura</span>
@@ -248,8 +244,10 @@ const Home = () => {
         {/* SECCIONES */}
         <SectionDivider />
         <MapRPG />
-        <SectionDivider />
-        <PlayerDashboard />
+
+        <SectionDividerNews />
+        <NewsHighlight />
+
         <SectionDivider />
         <RitualEko />
 

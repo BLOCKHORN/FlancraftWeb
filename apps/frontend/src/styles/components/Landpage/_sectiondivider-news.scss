@@ -1,0 +1,98 @@
+// src/styles/components/Landpage/_sectiondivider-news.scss
+@use "../../base/variables" as *;
+
+.section-news-divider {
+  position: relative;
+  width: 100%;
+}
+
+.snews-divider {
+  width: 100%;
+  display: block;
+  pointer-events: none;
+}
+
+/* Piedra + glifo encima */
+.snews-rune {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 70px;
+  aspect-ratio: 1 / 1;
+}
+
+.snews-rune-base {
+  width: 100%;
+  height: auto;
+  display: block;
+  pointer-events: none;
+}
+
+/* Contenedor del logo */
+.snews-glyph {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 50%;
+  aspect-ratio: 1 / 1;
+  pointer-events: none;
+}
+
+/* Logo “normal” */
+.snews-glyph-base {
+  width: 100%;
+  height: auto;
+  display: block;
+  filter: brightness(0.9) contrast(1.02);
+  pointer-events: none;
+}
+
+/* Logo para el glow, misma forma, apaga/enciende por opacidad */
+.snews-glyph-glow {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: auto;
+  display: block;
+  opacity: 0;
+  pointer-events: none;
+  filter:
+    brightness(1.35) contrast(1.12) saturate(1.1)
+;
+  transition: opacity 0.85s cubic-bezier(0.19, 1, 0.22, 1);
+  will-change: opacity;
+}
+
+/* Hover: encendido suave siguiendo exactamente la forma del logo */
+.snews-rune:hover .snews-glyph-glow {
+  opacity: 1;
+}
+
+/* Responsive */
+
+@media (max-width: 900px) {
+  .section-news-divider {
+    height: 20px;
+  }
+
+  .snews-divider {
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .snews-rune {
+    width: 72px;
+  }
+}
+
+@media (max-width: 640px) {
+  .section-news-divider {
+    height: 16px;
+  }
+
+  .snews-rune {
+    width: 62px;
+  }
+}

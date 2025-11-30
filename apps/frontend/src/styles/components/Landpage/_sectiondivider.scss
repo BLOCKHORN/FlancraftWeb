@@ -1,6 +1,6 @@
 .section-divider {
   position: relative;
-  width: 100%;
+  width: 100%;   // siempre ocupa todo el ancho del contenedor padre
   z-index: 2;
   pointer-events: none; // solo decorativo
 }
@@ -8,6 +8,24 @@
 .section-divider__image {
   display: block;
   width: 100%;
-  height: auto;      // respeta la proporción de la imagen
-  object-fit: cover; // por si en algún momento ajustas altura
+  height: auto;        // en desktop respeta proporción original
+  object-fit: cover;
+}
+
+/* ============================
+ * RESPONSIVE
+ * ========================== */
+
+/* Móvil / vertical: solo un pelín más alto, sin tocar el ancho */
+@media (max-width: 768px) {
+  .section-divider__image {
+    height: 18px;      // un poquito más alto para que se note
+    object-fit: cover;
+  }
+}
+
+@media (max-width: 480px) {
+  .section-divider__image {
+    height: 20px;      // un pelín más en móviles muy altos
+  }
 }

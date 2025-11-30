@@ -2,12 +2,15 @@
 
 .section-divider2 {
   position: relative;
-  width: 100%;
+  width: 100%;        // siempre de punta a punta del contenedor padre
   pointer-events: none;
   z-index: 20;
+
+  // por si el padre tiene display raro, nos aseguramos:
+  display: block;
 }
 
-/* Barra base */
+/* Barra base: ocupa todo el ancho disponible */
 .section-divider2__bar {
   display: block;
   width: 100%;
@@ -15,21 +18,29 @@
   object-fit: cover;
 }
 
-/* Medalla centrada, más pequeña y menos saturada */
+/* Medalla centrada, responsive y siempre alineada al centro de la barra */
 .section-divider2__medal {
   position: absolute;
   left: 50%;
   top: 0;
-  transform: translate(-50%, -30%); // centrado fino
+  transform: translate(-50%, -32%); // centrado horizontal, sobresale un poco por arriba
   display: block;
 
-  /* tamaño más pequeño */
-  max-width: 90px;  // antes 140px
+  /* Tamaño responsive pero acotado */
+  width: clamp(60px, 7vw, 90px);
   height: auto;
 
-  /* bajamos un pelín la saturación y el brillo */
   filter:
     saturate(0.9)
     brightness(0.96)
     drop-shadow(0 0 6px rgba(0, 0, 0, 0.75));
+}
+
+/* ============================
+ * Ajuste suave para móviles muy pequeños
+ * ========================== */
+@media (max-width: 480px) {
+  .section-divider2__medal {
+    transform: translate(-50%, -28%); // un pelín menos “alta” para que no se despegue tanto
+  }
 }

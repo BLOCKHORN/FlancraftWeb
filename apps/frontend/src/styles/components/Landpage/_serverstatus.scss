@@ -1,316 +1,265 @@
 @use "../../base/_variables" as *;
 @use "sass:color";
 
-.server-status-bar {
-  position: relative;
-  margin: 1.8rem auto 0;
+.server-status-minimal {
+  margin: 1.6rem auto 0;
   max-width: 640px;
-  padding: 1rem 1.3rem 1.15rem;
-  border-radius: 0.7rem;
-  border: 2px solid $color-pixel-border;
-  background: radial-gradient(
-      circle at 20% 0,
-      rgba(255, 188, 92, 0.12),
-      transparent 55%
-    ),
-    radial-gradient(circle at 80% 120%, rgba(43, 23, 10, 0.9), #1c1009);
-  box-shadow:
-    inset 2px 2px 0 #4d3b2b,
-    0 0 25px rgba(0, 0, 0, 0.6);
-  font-family: $font-minecraft;
-  color: #fdf6dd;
+  width: 100%;
+  position: relative;
+  text-align: center;
+  color: #fdf0d0;
+  font-family: "IM Fell English SC", system-ui, -apple-system,
+    BlinkMacSystemFont, "Segoe UI", sans-serif;
 
-  // pequeño borde decorativo superior
+  /* Glow muy amplio y suave, sin cortes */
   &::before {
     content: "";
     position: absolute;
-    inset: 0.18rem 0.24rem auto 0.24rem;
-    height: 2px;
-    border-radius: 999px;
-    background: linear-gradient(
-      90deg,
-      rgba(255, 212, 140, 0.9),
-      rgba(255, 164, 80, 0.5),
-      rgba(120, 72, 36, 0.4)
+    left: -25%;
+    right: -25%;
+    top: -0.8rem;
+    height: 6rem;
+    margin: 0 auto;
+    background: radial-gradient(
+      circle at 50% 50%,
+      rgba(255, 214, 150, 0.32) 0%,
+      rgba(255, 214, 150, 0.2) 35%,
+      rgba(255, 214, 150, 0.08) 65%,
+      transparent 100%
     );
-    opacity: 0.85;
-    pointer-events: none;
-  }
-
-  .status-inner {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1.6rem;
-    flex-wrap: wrap;
-    z-index: 1;
-  }
-
-  /* =======================================================
-     LADO IZQUIERDO
-     ======================================================= */
-
-  .status-left {
-    display: flex;
-    flex-direction: column;
-    gap: 0.2rem;
-    min-width: 0;
-  }
-
-  .status-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.55rem;
-    padding: 0.4rem 0.75rem;
-    border-radius: 999px;
-    background: rgba(13, 7, 3, 0.9);
-    border: 1px solid rgba(255, 210, 140, 0.35);
-    font-size: 0.85rem;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    white-space: nowrap;
-  }
-
-  .status-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background: #d36060;
-    box-shadow: 0 0 6px rgba(0, 0, 0, 0.8);
-  }
-
-  .status-subtext {
-    font-size: 0.8rem;
-    opacity: 0.85;
-    max-width: 260px;
-  }
-
-  /* =======================================================
-     CENTRO: IP
-     ======================================================= */
-
-  .status-center {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.3rem;
-    flex: 1;
-    min-width: 190px;
-  }
-
-  .ip-label {
-    font-size: 0.7rem;
-    text-transform: uppercase;
-    letter-spacing: 0.22em;
-    opacity: 0.8;
-  }
-
-  // NUEVO ESTILO: más cuadrado y verdoso
-  .ip-button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.6rem;
-    padding: 0.55rem 1.1rem;
-    border-radius: 0.6rem; // menos “pastilla”
-    border: 1px solid rgba(0, 0, 0, 0.9);
-    background: linear-gradient(
-      180deg,
-      #ddffe9,
-      #8de5ae 55%,
-      #4da96c 100%
-    );
-    box-shadow:
-      0 2px 0 #283a28,
-      0 0 0 1px rgba(0, 0, 0, 0.6),
-      0 0 18px rgba(0, 0, 0, 0.65);
-    font-size: 0.9rem;
-    color: #132313;
-    cursor: pointer;
-    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
-    transition:
-      transform 0.12s ease-out,
-      box-shadow 0.12s ease-out,
-      background 0.15s ease-out,
-      filter 0.15s ease-out;
-
-    .ip-text {
-      font-weight: 700;
-    }
-
-    svg {
-      width: 16px;
-      height: 16px;
-      stroke-width: 2.2;
-    }
-
-    &:hover {
-      transform: translateY(-1px);
-      box-shadow:
-        0 3px 0 #283a28,
-        0 0 0 1px rgba(0, 0, 0, 0.8),
-        0 0 22px rgba(150, 255, 193, 0.9);
-      filter: saturate(1.1);
-      background: linear-gradient(
-        180deg,
-        #e9fff0,
-        #97f0b7 55%,
-        #55b674 100%
-      );
-    }
-
-    &:active {
-      transform: translateY(1px);
-      box-shadow:
-        0 1px 0 #283a28,
-        0 0 0 1px rgba(0, 0, 0, 0.85);
-    }
-  }
-
-  /* =======================================================
-     DERECHA: PLAYERS
-     ======================================================= */
-
-  .status-right {
-    display: flex;
-    justify-content: flex-end;
-    min-width: 0;
-  }
-
-  .players-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.45rem;
-    padding: 0.35rem 0.7rem;
-    border-radius: 999px;
-    font-size: 0.8rem;
-    background: rgba(10, 6, 3, 0.9);
-    border: 1px solid rgba(0, 0, 0, 0.8);
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.55);
-    white-space: nowrap;
-  }
-
-  .players-led {
-    width: 9px;
-    height: 9px;
-    border-radius: 50%;
-    background: #61d377;
-    box-shadow: 0 0 8px rgba(97, 211, 119, 0.9);
-  }
-
-  .players-pill-offline {
     opacity: 0.9;
-  }
-
-  /* =======================================================
-     ESTADOS
-     ======================================================= */
-
-  &.online {
-    border-color: #5a3b1d;
-
-    .status-dot {
-      background: #61d377;
-      box-shadow: 0 0 10px rgba(97, 211, 119, 0.95);
-      animation: dotPulse 1.4s ease-in-out infinite;
-    }
-
-    // bolita de jugadores parpadeante
-    .players-led {
-      animation: dotPulse 1.4s ease-in-out infinite;
-    }
-
-    .status-pill {
-      border-color: rgba(97, 211, 119, 0.5);
-    }
-  }
-
-  &.offline {
-    border-color: #d36060;
-
-    .status-dot {
-      background: #d36060;
-      box-shadow: 0 0 8px rgba(211, 96, 96, 0.9);
-      animation: none;
-    }
-
-    .players-pill,
-    .status-pill {
-      border-color: rgba(211, 96, 96, 0.55);
-    }
-  }
-
-  /* Mensaje de IP copiada */
-  .copied-text {
-    position: absolute;
-    bottom: -1.9rem;
-    right: 1.2rem;
-    font-size: 0.8rem;
-    background: rgba(0, 0, 0, 0.9);
-    color: #fdf6dd;
-    padding: 0.3rem 0.6rem;
-    border-radius: 4px;
-    font-family: $font-minecraft;
-    animation: fadeOut 2.5s forwards;
+    filter: blur(3px);
     pointer-events: none;
+    z-index: -1;
+  }
+}
+
+/* ============================
+ * Línea difuminada superior
+ * ========================== */
+
+.ss-line {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  margin-bottom: 0.3rem;
+}
+
+.ss-line-segment {
+  flex: 1;
+  height: 1px;
+  max-width: 260px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgba(255, 220, 170, 0.8),
+    transparent
+  );
+}
+
+/* ============================
+ * Fila principal
+ * ========================== */
+
+.ss-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  flex-wrap: wrap; // si no cabe, se apila sin cortar nada
+}
+
+/* IP minimal – solo texto con subrayado animado + levitación */
+
+.ss-ip-trigger {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  color: #e9ffe7;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+  font-size: 0.9rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  transform: translateY(0) scale(1);
+  transition:
+    transform 0.22s ease-out,
+    color 0.22s ease-out;
+}
+
+.ss-ip-text {
+  position: relative;
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+
+/* Subrayado center-out */
+.ss-ip-text::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -0.15rem;
+  height: 2px;
+  margin: 0 auto;
+  background: linear-gradient(
+    to right,
+    transparent,
+    #9effb0,
+    transparent
+  );
+  transform-origin: center;
+  transform: scaleX(0);
+  opacity: 0;
+  transition:
+    transform 0.22s ease-out,
+    opacity 0.22s ease-out;
+}
+
+.ss-ip-icon {
+  opacity: 0.9;
+  transform: translateY(0);
+  transition: transform 0.16s ease-out, opacity 0.16s ease-out;
+}
+
+/* Hover elegante: levita un pelín + subrayado + icono */
+.ss-ip-trigger:hover {
+  transform: translateY(-1px) scale(1.03);
+}
+
+.ss-ip-trigger:hover .ss-ip-text::after {
+  transform: scaleX(1);
+  opacity: 1;
+}
+
+.ss-ip-trigger:hover .ss-ip-icon {
+  transform: translateY(-1px);
+  opacity: 1;
+}
+
+/* Bolita de estado como separador central */
+
+.ss-status-dot {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  background: #8b8b8b;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.8);
+}
+
+/* Pulso sutil cuando el servidor está online */
+@keyframes ss-dot-pulse {
+  0% {
+    transform: scale(1);
+    box-shadow:
+      0 0 6px rgba(123, 255, 145, 0.6),
+      0 0 12px rgba(123, 255, 145, 0.4);
+  }
+  50% {
+    transform: scale(1.15);
+    box-shadow:
+      0 0 10px rgba(123, 255, 145, 0.95),
+      0 0 20px rgba(123, 255, 145, 0.7);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow:
+      0 0 6px rgba(123, 255, 145, 0.6),
+      0 0 12px rgba(123, 255, 145, 0.4);
+  }
+}
+
+.server-status-minimal.online .ss-status-dot {
+  background: #7bff91;
+  animation: ss-dot-pulse 1.6s ease-in-out infinite;
+}
+
+.server-status-minimal.offline .ss-status-dot {
+  background: #ff7f7f;
+  box-shadow:
+    0 0 6px rgba(255, 127, 127, 0.95),
+    0 0 14px rgba(255, 127, 127, 0.7);
+}
+
+/* Players a la derecha */
+
+.ss-players-label {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.3rem;
+  font-size: 0.84rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.ss-players-count {
+  font-weight: 700;
+  font-size: 0.92rem;
+  color: #9effb0; // verde positivo
+  text-shadow:
+    0 0 6px rgba(0, 0, 0, 0.9),
+    0 0 10px rgba(138, 255, 169, 0.8);
+}
+
+.ss-players-text {
+  font-size: 0.82rem;
+  color: #ffeac1;
+}
+
+/* Mensaje de copia */
+
+.ss-copy-hint {
+  display: block;
+  margin-top: 0.4rem;
+  font-size: 0.78rem;
+  color: #ffeec6;
+  opacity: 0;
+  transform: translateY(6px);
+  transition:
+    opacity 0.22s ease-out,
+    transform 0.22s ease-out;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
+
+  &.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ============================
+ * RESPONSIVE
+ * ========================== */
+
+@media (max-width: 640px) {
+  .server-status-minimal {
+    &::before {
+      left: -10%;
+      right: -10%;
+      height: 5.5rem;
+    }
   }
 
-  @keyframes fadeOut {
-    0% {
-      opacity: 1;
-      transform: translateY(0);
-    }
-    100% {
-      opacity: 0;
-      transform: translateY(-6px);
-    }
+  .ss-row {
+    gap: 0.45rem;
+  }
+}
+
+@media (max-width: 420px) {
+  .server-status-minimal {
+    margin-top: 1.3rem;
   }
 
-  @keyframes dotPulse {
-    0% {
-      transform: scale(1);
-      opacity: 0.8;
-    }
-    50% {
-      transform: scale(1.25);
-      opacity: 1;
-    }
-    100% {
-      transform: scale(1);
-      opacity: 0.8;
-    }
+  .ss-row {
+    flex-direction: column;
   }
 
-  /* Responsive */
-  @media (max-width: 720px) {
-    .status-inner {
-      flex-direction: column;
-      align-items: stretch;
-      gap: 0.9rem;
-    }
-
-    .status-left,
-    .status-center,
-    .status-right {
-      align-items: center;
-      text-align: center;
-    }
-
-    .status-left {
-      align-items: flex-start;
-
-      @media (max-width: 540px) {
-        align-items: center;
-      }
-    }
-
-    .status-subtext {
-      max-width: none;
-    }
-
-    .status-right {
-      justify-content: center;
-    }
+  .ss-players-label {
+    white-space: normal;
   }
 }
