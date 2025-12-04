@@ -1,0 +1,69 @@
+/* Marco / divisor justo debajo del navbar y por encima del hero */
+
+.nav-divider-frame {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+
+  height: 0; // no empuja layout
+  pointer-events: none;
+
+  // hero-video z=0, overlay z=1, hero-content z=2 -> ponemos este por encima
+  z-index: 5;
+
+  @media (max-width: 768px) {
+    display: none; // solo desktop
+  }
+}
+
+/* Barra central */
+.nav-divider {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  transform: translate(-50%, -50%); // mitad por encima del corte nav/hero, mitad por debajo
+  width: 100%;
+  max-width: 1900px;
+  height: auto;
+  image-rendering: auto;
+}
+
+/* Esquinas laterales colgando hacia abajo */
+.nav-corner {
+  position: absolute;
+  top: 0;
+  height: auto;
+  image-rendering: auto;
+
+  /* tamaño base */
+  width: 120px;
+}
+
+/* Izquierda */
+.nav-corner--left {
+  left: 0;
+  transform: translateY(-15%); // ajusta a tu gusto
+}
+
+/* Derecha */
+.nav-corner--right {
+  right: 0;
+  transform: translateY(-15%);
+}
+
+/* =========================
+   RESPONSIVE
+   ========================= */
+
+@media (max-width: 1200px) {
+  .nav-corner {
+    width: 100px;
+  }
+}
+
+@media (max-width: 930px) {
+  .nav-corner {
+    width: 85px;
+  }
+}

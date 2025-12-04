@@ -9,7 +9,8 @@ import TeamCarousel from "./TeamCarousel";
 import SectionDivider from "./SectionDivider";
 import SectionDivider2 from "./SectionDivider2";
 import SectionDividerGameModes from "./SectionDividerGameModes";
-import SectionDividerNews from "./SectionDividerNews"; // 👈 divisor noticias
+import SectionDividerNews from "./SectionDividerNews";
+import SectionDividerNav from "./SectionDividerNav";  // 👈 divisor noticias
 import NewsHighlight from "./NewsHighlight";
 import RitualEko from "./RitualEko";
 import Footer from "./Footer";
@@ -130,8 +131,10 @@ const Home = () => {
       )}
 
       <div className={`home ${isLoaded ? "visible" : "invisible"}`}>
+        
         {/* HERO */}
         <header className="hero-flancraft">
+          
           {isLoaded && (
             <video
               className="hero-video"

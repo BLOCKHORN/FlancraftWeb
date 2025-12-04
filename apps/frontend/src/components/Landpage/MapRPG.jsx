@@ -1,70 +1,68 @@
-import React, { useContext, useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { motion as Motion } from 'framer-motion'
+// src/components/Landpage/MapRPG.jsx
+import React, { useContext, useEffect, useMemo, useState } from 'react'
+import { motion as Motion, AnimatePresence } from 'framer-motion'
 import { Howl } from 'howler'
-import clickSoundFile from '/assets/sounds/vibration.wav'
-import {
-  ScrollText,
-  ShieldCheck,
-  BarChart3,
-  Gift,
-  UserCircle,
-  ShoppingBag,
-  DoorOpen,
-} from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { UserContext } from '../../context/UserContext'
 import { supabase } from '@lib/supabaseClient'
+import clickSoundFile from '/assets/sounds/vibration.wav'
 import '../../styles/components/Landpage/_maprpg.scss'
 
-const zones = [
+const baseZones = [
   {
-    icon: <ScrollText />,
+    id: 'news',
+    labelCorto: 'Taberna',
     title: 'Taberna de Noticias',
-    description: 'Últimas noticias, cambios y eventos del reino.',
+    shortDescription: 'Noticias, cambios y eventos del reino.',
     route: '/news',
-    className: 'news',
     image: '/assets/taberna.webp',
+    runeImage: '/assets/runes/runa-taberna.png',
   },
   {
-    icon: <ShieldCheck />,
+    id: 'tribunal',
+    labelCorto: 'Tribunal',
     title: 'Fortaleza de Sanciones',
-    description: 'Registro de sanciones y sentencias del Tribunal.',
+    shortDescription: 'Historial de sanciones y sentencias.',
     route: '/tribunal',
-    className: 'sanctions',
     image: '/assets/fortaleza.webp',
+    runeImage: '/assets/runes/runa-tribunal.png',
   },
   {
-    icon: <BarChart3 />,
+    id: 'stats',
+    labelCorto: 'Estadísticas',
     title: 'Mina de Estadísticas',
-    description: 'Rankings, tiempos de juego y marcas legendarias.',
+    shortDescription: 'Rankings, tiempo de juego y récords.',
     route: '/leaderboards',
-    className: 'stats',
     image: '/assets/mina.webp',
+    runeImage: '/assets/runes/runa-estadisticas.png',
   },
   {
-    icon: <Gift />,
+    id: 'rewards',
+    labelCorto: 'Recompensas',
     title: 'Templo de Recompensas',
-    description: 'Reclama cofres, monedas y premios del pase.',
+    shortDescription: 'Cofres, monedas y premios del pase.',
     route: '/dashboard',
-    className: 'rewards',
     image: '/assets/recompensas.webp',
+    runeImage: '/assets/runes/runa-recompensas.png',
   },
   {
-    icon: <UserCircle />,
+    id: 'player',
+    labelCorto: 'Perfil',
     title: 'Torre del Jugador',
-    description: 'Tu perfil público, logros y progreso global.',
-    // ruta por defecto si no hay usuario
+    shortDescription: 'Tu perfil público y progreso global.',
     route: '/perfil/tuNombre',
-    className: 'player',
     image: '/assets/torre.webp',
+    runeImage: '/assets/runes/runa-perfil.png',
   },
   {
-    icon: <ShoppingBag />,
-    title: 'Tienda',
-    description: 'La tienda oficial de FlanCraft, rangos y más.',
+    id: 'shop',
+    labelCorto: 'Tienda',
+    title: 'Tienda Oficial',
+    shortDescription: 'Rangos, llaves y mucho más.',
     route: '/tienda',
-    className: 'shop',
     image: '/assets/mercado.webp',
+    runeImage: '/assets/runes/runa-tienda.png',
   },
 ]
 
@@ -73,21 +71,19 @@ const clickSound = new Howl({
   volume: 0.4,
 })
 
-const containerVariants = {
-  hidden: {},
-  show: {
-    transition: {
-      staggerChildren: 0.08,
-    },
-  },
-}
-
-const cardVariants = {
-  hidden: { opacity: 0, y: 24 },
-  show: {
+const portalVariants = {
+  initial: { opacity: 0, scale: 0.96, y: 10 },
+  animate: {
     opacity: 1,
+    scale: 1,
     y: 0,
     transition: { duration: 0.45, ease: 'easeOut' },
+  },
+  exit: {
+    opacity: 0,
+    scale: 1.03,
+    y: -10,
+    transition: { duration: 0.2, ease: 'easeIn' },
   },
 }
 
@@ -97,8 +93,10 @@ const MapRPG = () => {
 
   const isLoggedIn = Boolean(user && user.loggedIn)
   const [playerSlug, setPlayerSlug] = useState(null)
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const [direction, setDirection] = useState(0) // -1 izq, 1 dcha, 0 neutro
 
-  // 🔥 Igual que en Navbar: sacamos los datos reales desde la tabla `usuarios`
+  // slug para el perfil público
   useEffect(() => {
     const fetchPlayerSlug = async () => {
       if (!user?.uuid) {
@@ -119,8 +117,6 @@ const MapRPG = () => {
           return
         }
 
-        // En Navbar se pone username: userData.uid
-        // así que usamos uid también aquí
         if (data?.uid) {
           setPlayerSlug(data.uid)
         } else {
@@ -135,94 +131,207 @@ const MapRPG = () => {
     fetchPlayerSlug()
   }, [user?.uuid])
 
-  const handleClick = (route, index) => {
+  const zones = useMemo(
+    () =>
+      baseZones.map((zone) =>
+        zone.id === 'player' && isLoggedIn && playerSlug
+          ? { ...zone, route: `/perfil/${playerSlug}` }
+          : zone
+      ),
+    [isLoggedIn, playerSlug]
+  )
+
+  const len = zones.length
+  const selectedZone = zones[currentIndex] ?? zones[0]
+
+  const prevIndex = (currentIndex - 1 + len) % len
+  const nextIndex = (currentIndex + 1) % len
+
+  // navegación con flechas
+  const moveCarousel = (side) => {
+    const dirNum = side === 'left' ? -1 : 1
+    setDirection(dirNum)
+
+    setCurrentIndex((prev) => {
+      const next =
+        side === 'left' ? (prev - 1 + len) % len : (prev + 1) % len
+      return next
+    })
+
     clickSound.play()
-
-    const cards = document.querySelectorAll('.zone-card')
-    const el = cards[index]
-    if (el) {
-      el.classList.add('vibrate')
-      requestAnimationFrame(() => {
-        setTimeout(() => el.classList.remove('vibrate'), 180)
-      })
-    }
-
-    navigate(route)
   }
 
-  const handleKeyDown = (e, route, index) => {
+  const handlePortalClick = () => {
+    if (!selectedZone?.route) return
+    clickSound.play()
+    navigate(selectedZone.route)
+  }
+
+  const handlePortalKeyDown = (e) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault()
-      handleClick(route, index)
+      handlePortalClick()
     }
   }
 
-  return (
-    <section className="map-rpg-wrapper">
-      <div className="map-rpg-background" />
+  // click en runas laterales / central
+  const handleRuneClick = (index) => {
+    if (index === currentIndex) return
 
-      <section className="map-rpg">
-        <header className="map-header">
-          <h2 className="map-title">
-            <DoorOpen className="map-title-icon" size={24} />
-            Portales Mágicos
-          </h2>
-          <p className="map-subtitle">
-            Desde esta sala puedes viajar a la taberna, el tribunal, la mina de
-            estadísticas o el templo de recompensas. Elige tu portal.
-          </p>
+    let dirNum = 1
+    if (index === prevIndex) dirNum = -1
+    if (index === nextIndex) dirNum = 1
+
+    setDirection(dirNum)
+    clickSound.play()
+    setCurrentIndex(index)
+  }
+
+  const handleRuneKeyDown = (e, index) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      handleRuneClick(index)
+    }
+  }
+
+  // trío visible: izquierda / centro / derecha
+  const carouselZones = [
+    { zone: zones[prevIndex], index: prevIndex, position: 'left' },
+    { zone: selectedZone, index: currentIndex, position: 'center' },
+    { zone: zones[nextIndex], index: nextIndex, position: 'right' },
+  ]
+
+  return (
+    <section className="maprpg-wrapper">
+      <div className="maprpg-inner">
+        <header className="maprpg-header">
+          <h2 className="maprpg-title">PORTAL DE TELETRANSPORTE</h2>
         </header>
 
-        <Motion.div
-          className="zones-grid"
-          variants={containerVariants}
-          initial="hidden"
-          whileInView="show"
-          viewport={{ once: true, amount: 0.2 }}
-        >
-          {zones.map((zone, index) => {
-            // Si es la Torre del Jugador y tenemos slug de jugador,
-            // usamos /perfil/<uid> igual que en el navbar
-            const dynamicRoute =
-              zone.className === 'player' && isLoggedIn && playerSlug
-                ? `/perfil/${playerSlug}`
-                : zone.route
+        <div className="maprpg-stage">
+          <div className="maprpg-portal-block">
+            {/* PORTAL */}
+            <div className="maprpg-portal-frame">
+              <div className="maprpg-portal-frame-image" />
 
-            return (
-              <Motion.div
-                key={zone.title}
-                className={`zone-card ${zone.className}`}
-                variants={cardVariants}
-                role="button"
-                tabIndex={0}
-                onClick={() => handleClick(dynamicRoute, index)}
-                onKeyDown={(e) => handleKeyDown(e, dynamicRoute, index)}
+              <div className="maprpg-portal-inner">
+                <AnimatePresence mode="wait">
+                  {selectedZone && (
+                    <Motion.div
+                      key={selectedZone.id}
+                      className="maprpg-portal-layer"
+                      variants={portalVariants}
+                      initial="initial"
+                      animate="animate"
+                      exit="exit"
+                    >
+                      <div
+                        className="maprpg-portal-backdrop"
+                        style={{
+                          backgroundImage: `url(${selectedZone.image})`,
+                        }}
+                      />
+
+                      {/* Aura clicable */}
+                      <div
+                        className="maprpg-portal-aura"
+                        role="button"
+                        tabIndex={0}
+                        onClick={handlePortalClick}
+                        onKeyDown={handlePortalKeyDown}
+                        aria-label={`Entrar en ${selectedZone.title}`}
+                      />
+
+                      {/* Texto dentro del portal */}
+                      <div className="maprpg-portal-content">
+                        <h3 className="maprpg-portal-title">
+                          {selectedZone.title}
+                        </h3>
+                        <p className="maprpg-portal-desc">
+                          {selectedZone.shortDescription}
+                        </p>
+                      </div>
+                    </Motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
+
+            {/* CARRUSEL DE RUNAS */}
+            <div className="maprpg-carousel">
+              <button
+                type="button"
+                className="maprpg-carousel-arrow maprpg-carousel-arrow--left"
+                onClick={() => moveCarousel('left')}
+                aria-label="Anterior destino"
               >
-                {/* capa de imagen con zoom/parallax */}
-                <div
-                  className="zone-image-layer"
-                  style={{ backgroundImage: `url(${zone.image})` }}
-                />
+                <ChevronLeft size={22} />
+              </button>
 
-                <div className="zone-overlay" />
+              {/* Centro: runas + mensaje */}
+              <div className="maprpg-carousel-center">
+                <Motion.div
+                  className="maprpg-carousel-runes"
+                  layout
+                  transition={{ layout: { duration: 0.6, ease: 'easeInOut' } }}
+                >
+                  {carouselZones.map(({ zone, index, position }) => {
+                    const isNew =
+                      direction !== 0 &&
+                      ((direction === 1 && position === 'right') ||
+                        (direction === -1 && position === 'left'))
 
-                <div className="zone-inner">
-                  <div className="zone-icon-wrapper">
-                    <span className="zone-medallion">
-                      <span className="zone-medallion-inner">{zone.icon}</span>
-                    </span>
-                  </div>
+                    return (
+                      <Motion.button
+                        key={zone.id}
+                        type="button"
+                        className={`maprpg-rune maprpg-rune--${position}`}
+                        onClick={() => handleRuneClick(index)}
+                        onKeyDown={(e) => handleRuneKeyDown(e, index)}
+                        aria-label={zone.title}
+                        layout
+                        initial={
+                          isNew
+                            ? {
+                                x: direction === 1 ? 40 : -40,
+                                opacity: 0,
+                              }
+                            : { opacity: 1 }
+                        }
+                        animate={{ x: 0, opacity: 1 }}
+                        transition={{
+                          layout: { duration: 0.6, ease: 'easeInOut' },
+                          duration: 0.6,
+                          ease: 'easeInOut',
+                        }}
+                        whileTap={{ scale: 0.94 }}
+                      >
+                        <span
+                          className="maprpg-rune-image"
+                          style={{ backgroundImage: `url(${zone.runeImage})` }}
+                        />
+                      </Motion.button>
+                    )
+                  })}
+                </Motion.div>
 
-                  <div className="zone-text">
-                    <h3>{zone.title}</h3>
-                    <p>{zone.description}</p>
-                  </div>
-                </div>
-              </Motion.div>
-            )
-          })}
-        </Motion.div>
-      </section>
+                <p className="maprpg-carousel-hint">
+                  Haz clic en el portal para viajar al destino seleccionado.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                className="maprpg-carousel-arrow maprpg-carousel-arrow--right"
+                onClick={() => moveCarousel('right')}
+                aria-label="Siguiente destino"
+              >
+                <ChevronRight size={22} />
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </section>
   )
 }
