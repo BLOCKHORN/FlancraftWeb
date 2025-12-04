@@ -1,4 +1,3 @@
-// src/components/Landpage/MapRPG.jsx
 import React, { useContext, useEffect, useMemo, useState } from 'react'
 import { motion as Motion, AnimatePresence } from 'framer-motion'
 import { Howl } from 'howler'
@@ -7,6 +6,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { UserContext } from '../../context/UserContext'
 import { supabase } from '@lib/supabaseClient'
 import clickSoundFile from '/assets/sounds/vibration.wav'
+import teleportSoundFile from '/assets/sounds/teleport.wav'
 import '../../styles/components/Landpage/_maprpg.scss'
 
 const baseZones = [
@@ -31,7 +31,7 @@ const baseZones = [
   {
     id: 'stats',
     labelCorto: 'Estadísticas',
-    title: 'Mina de Estadísticas',
+    title: 'Estadísticas',
     shortDescription: 'Rankings, tiempo de juego y récords.',
     route: '/leaderboards',
     image: '/assets/mina.webp',
@@ -66,9 +66,15 @@ const baseZones = [
   },
 ]
 
+// SFX globales (no se recrean en cada render)
 const clickSound = new Howl({
   src: [clickSoundFile],
   volume: 0.4,
+})
+
+const teleportSound = new Howl({
+  src: [teleportSoundFile],
+  volume: 0.1,
 })
 
 const portalVariants = {
@@ -96,7 +102,7 @@ const MapRPG = () => {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [direction, setDirection] = useState(0) // -1 izq, 1 dcha, 0 neutro
 
-  // slug para el perfil público
+  // slug del perfil público
   useEffect(() => {
     const fetchPlayerSlug = async () => {
       if (!user?.uuid) {
@@ -158,12 +164,15 @@ const MapRPG = () => {
       return next
     })
 
+    // SFX de cambio de selección
     clickSound.play()
   }
 
+  // entrar al portal
   const handlePortalClick = () => {
     if (!selectedZone?.route) return
-    clickSound.play()
+    // SFX de teletransporte
+    teleportSound.play()
     navigate(selectedZone.route)
   }
 
@@ -174,7 +183,7 @@ const MapRPG = () => {
     }
   }
 
-  // click en runas laterales / central
+  // click en runas
   const handleRuneClick = (index) => {
     if (index === currentIndex) return
 
@@ -191,6 +200,21 @@ const MapRPG = () => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault()
       handleRuneClick(index)
+    }
+  }
+
+  // click en puntitos
+  const handleDotClick = (index) => {
+    if (index === currentIndex) return
+    setDirection(0)
+    clickSound.play()
+    setCurrentIndex(index)
+  }
+
+  const handleDotKeyDown = (e, index) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      handleDotClick(index)
     }
   }
 
@@ -232,7 +256,6 @@ const MapRPG = () => {
                         }}
                       />
 
-                      {/* Aura clicable */}
                       <div
                         className="maprpg-portal-aura"
                         role="button"
@@ -242,7 +265,6 @@ const MapRPG = () => {
                         aria-label={`Entrar en ${selectedZone.title}`}
                       />
 
-                      {/* Texto dentro del portal */}
                       <div className="maprpg-portal-content">
                         <h3 className="maprpg-portal-title">
                           {selectedZone.title}
@@ -268,7 +290,6 @@ const MapRPG = () => {
                 <ChevronLeft size={22} />
               </button>
 
-              {/* Centro: runas + mensaje */}
               <div className="maprpg-carousel-center">
                 <Motion.div
                   className="maprpg-carousel-runes"
@@ -318,6 +339,21 @@ const MapRPG = () => {
                 <p className="maprpg-carousel-hint">
                   Haz clic en el portal para viajar al destino seleccionado.
                 </p>
+
+                <div className="maprpg-carousel-dots">
+                  {zones.map((zone, index) => (
+                    <button
+                      key={zone.id}
+                      type="button"
+                      className={`maprpg-dot ${
+                        index === currentIndex ? 'maprpg-dot--active' : ''
+                      }`}
+                      onClick={() => handleDotClick(index)}
+                      onKeyDown={(e) => handleDotKeyDown(e, index)}
+                      aria-label={zone.title}
+                    />
+                  ))}
+                </div>
               </div>
 
               <button
