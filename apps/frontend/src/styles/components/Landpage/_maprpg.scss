@@ -29,25 +29,39 @@
   flex-direction: column;
   align-items: stretch;
 
+  /* Tablet / portátiles pequeños */
   @media (max-width: 992px) {
     padding: 2.4rem 1.25rem 0;
-    --ground-h: clamp(300px, 30vh, 340px);
-    --ground-texture-h: 580px;
+    /* Menos altura total que desktop, pero sigue respirando */
+    min-height: 105vh;
+
+    /* Suelo algo más cerca del portal que en desktop */
+    --ground-h: clamp(260px, 24vh, 300px);
+
+    /* Textura algo más baja y subida un pelín */
+    --ground-texture-h: 420px;
     --ground-rock-shift: -40px;
   }
 
+  /* Tablet vertical / phablets grandes */
   @media (max-width: 768px) {
     padding: 1.8rem 0.75rem 0;
-    --ground-h: clamp(260px, 32vh, 300px);
-    --ground-texture-h: 520px;
+    /* Más compacta que en 992px, pero sin aplastar demasiado el portal */
+    min-height: 90vh;
+
+    /* Aproximamos proporción al 480px pero con un pelín más de margen */
+    --ground-h: clamp(240px, 22vh, 260px);
+
+    --ground-texture-h: 320px;
     --ground-rock-shift: -20px;
   }
 
+  /* Móviles (la que has dejado fina) */
   @media (max-width: 480px) {
-    padding: 1.4rem 0.5rem 0;
-    --ground-h: clamp(240px, 34vh, 280px);
-    --ground-texture-h: 480px;
-    --ground-rock-shift: -10px;
+    min-height: 80vh;
+    --ground-h: clamp(240px, 20vh, 240px);
+    --ground-texture-h: 250px;
+    --ground-rock-shift: 0px;
   }
 }
 
@@ -63,8 +77,8 @@
     url("/assets/maprpg/ground-rock.png"),
     linear-gradient(
       to bottom,
-      rgba(0, 0, 0, 0) 0%,
-      #5f8e3e 100%
+      rgba(0, 0, 0, 0) 0%,  // arriba totalmente transparente
+      #00973A 100%
     );
   background-repeat: no-repeat, no-repeat;
   background-size: 100% auto, 100% 100%;
@@ -99,11 +113,11 @@
   text-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
 
   @media (max-width: 768px) {
-    margin-bottom: 1.6rem;
+    margin-bottom: 1rem;
   }
 
   @media (max-width: 480px) {
-    margin-bottom: 1.3rem;
+    margin-bottom: 0.7rem;
   }
 }
 
@@ -149,15 +163,15 @@
   padding-bottom: var(--ground-h);
 
   @media (max-width: 992px) {
-    padding-top: 1rem;
+    padding-top: 0.4rem;
   }
 
   @media (max-width: 768px) {
-    padding-top: 0.6rem;
+    padding-top: 0.1rem;
   }
 
   @media (max-width: 480px) {
-    padding-top: 0.4rem;
+    padding-top: 0;
   }
 }
 
@@ -173,10 +187,6 @@
 
   @media (max-width: 768px) {
     gap: 1.4rem;
-  }
-
-  @media (max-width: 480px) {
-    gap: 1.1rem;
   }
 }
 
@@ -259,7 +269,7 @@
 .maprpg-portal-inner {
   position: absolute;
 
-  /* Ajusta estos % al hueco del PNG (desktop perfecto) */
+  /* mismos % en todos los breakpoints para que no se descuadre */
   top: 20%;
   bottom: -5%;
   left: 12%;
@@ -272,21 +282,6 @@
     0 0 26px rgba(156, 96, 255, 0.7); /* glow morado */
   background: #06130e;
   z-index: 0;
-
-  @media (max-width: 768px) {
-    /* recuadro algo más centrado en móvil pero dentro del marco */
-    top: 18%;
-    bottom: 6%;
-    left: 17%;
-    right: 17%;
-  }
-
-  @media (max-width: 480px) {
-    top: 18%;
-    bottom: 7%;
-    left: 18%;
-    right: 18%;
-  }
 }
 
 .maprpg-portal-layer {
@@ -295,7 +290,7 @@
   height: 100%;
 }
 
-/* Fondo interior del portal: zoom “respirando” */
+/* Fondo interior del portal: zoom “respirando” + zoom extra al hover */
 .maprpg-portal-backdrop {
   position: absolute;
   inset: 0;
@@ -311,7 +306,10 @@
   transform: scale(var(--zb-scale)) translateY(var(--zb-translateY));
   transform-origin: center center;
 
-  animation: maprpg-backdrop-idle 18s ease-in-out infinite;
+  /* respiración lenta por defecto */
+  animation: maprpg-backdrop-zoom-soft 18s ease-in-out infinite;
+
+  /* transición para ir y volver de los estados de hover */
   transition: transform 2s ease-out;
 }
 
@@ -427,7 +425,6 @@
     0 0 18px rgba(0, 0, 0, 0.9);
 }
 
-/* Texto secundario */
 .maprpg-portal-desc {
   max-width: 18rem;
   font-size: 0.92rem;
@@ -454,7 +451,7 @@
    =============================== */
 
 /* zoom suave de “respiración” usando variables */
-@keyframes maprpg-backdrop-idle {
+@keyframes maprpg-backdrop-zoom-soft {
   0% {
     --zb-scale: 1.02;
     --zb-translateY: 0%;
@@ -595,13 +592,13 @@
   @media (max-width: 768px) {
     max-width: 420px;
     gap: 1.1rem;
-    bottom: calc(var(--ground-h) - 190px);
+    bottom: calc(var(--ground-h) - 210px);
   }
 
   @media (max-width: 480px) {
     max-width: 360px;
     gap: 0.8rem;
-    bottom: calc(var(--ground-h) - 160px);
+    bottom: calc(var(--ground-h) - 190px);
   }
 
   &::before {
