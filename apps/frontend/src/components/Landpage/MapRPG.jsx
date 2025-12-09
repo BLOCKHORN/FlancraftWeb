@@ -1,4 +1,10 @@
-import React, { useContext, useEffect, useMemo, useState } from 'react'
+import React, {
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import { motion as Motion, AnimatePresence } from 'framer-motion'
 import { Howl } from 'howler'
 import { useNavigate } from 'react-router-dom'
@@ -77,19 +83,17 @@ const teleportSound = new Howl({
   volume: 0.1,
 })
 
+// Importante: aquí ya NO tocamos scale ni translate,
+// solo opacidad, para no interferir con el zoom del CSS.
 const portalVariants = {
-  initial: { opacity: 0, scale: 0.96, y: 10 },
+  initial: { opacity: 0 },
   animate: {
     opacity: 1,
-    scale: 1,
-    y: 0,
-    transition: { duration: 0.45, ease: 'easeOut' },
+    transition: { duration: 0.4, ease: 'easeOut' },
   },
   exit: {
     opacity: 0,
-    scale: 1.03,
-    y: -10,
-    transition: { duration: 0.2, ease: 'easeIn' },
+    transition: { duration: 0.25, ease: 'easeIn' },
   },
 }
 
@@ -101,6 +105,10 @@ const MapRPG = () => {
   const [playerSlug, setPlayerSlug] = useState(null)
   const [currentIndex, setCurrentIndex] = useState(0)
   const [direction, setDirection] = useState(0) // -1 izq, 1 dcha, 0 neutro
+
+  // Estado para luciérnagas "asustadas"
+  const [firefliesScared, setFirefliesScared] = useState(false)
+  const scareTimeoutRef = useRef(null)
 
   // slug del perfil público
   useEffect(() => {
@@ -137,6 +145,25 @@ const MapRPG = () => {
     fetchPlayerSlug()
   }, [user?.uuid])
 
+  useEffect(() => {
+    return () => {
+      if (scareTimeoutRef.current) {
+        clearTimeout(scareTimeoutRef.current)
+      }
+    }
+  }, [])
+
+  const triggerFirefliesScare = () => {
+    // reiniciamos la animación cada vez que pasas/clickas por la zona
+    if (scareTimeoutRef.current) {
+      clearTimeout(scareTimeoutRef.current)
+    }
+    setFirefliesScared(true)
+    scareTimeoutRef.current = setTimeout(() => {
+      setFirefliesScared(false)
+    }, 350) // ~0.35s de "salida" rápida
+  }
+
   const zones = useMemo(
     () =>
       baseZones.map((zone) =>
@@ -171,7 +198,6 @@ const MapRPG = () => {
   // entrar al portal
   const handlePortalClick = () => {
     if (!selectedZone?.route) return
-    // SFX de teletransporte
     teleportSound.play()
     navigate(selectedZone.route)
   }
@@ -228,54 +254,56 @@ const MapRPG = () => {
   return (
     <section className="maprpg-wrapper">
       <div className="maprpg-inner">
-        <header className="maprpg-header">
-          <h2 className="maprpg-title">PORTAL DE TELETRANSPORTE</h2>
-        </header>
+        <header className="maprpg-header">{/* título opcional */}</header>
 
         <div className="maprpg-stage">
           <div className="maprpg-portal-block">
             {/* PORTAL */}
-            <div className="maprpg-portal-frame">
+            <div
+              className={`maprpg-portal-frame ${
+                firefliesScared ? 'maprpg-portal-frame--scared' : ''
+              }`}
+              onMouseMove={triggerFirefliesScare}
+              onClick={triggerFirefliesScare}
+              onTouchStart={triggerFirefliesScare}
+            >
               <div className="maprpg-portal-frame-image" />
 
               <div className="maprpg-portal-inner">
+                {/* Solo el BACKDROP cambia con AnimatePresence.
+                    El aura y el texto NO se desmontan => la animación del aura no se reinicia */}
                 <AnimatePresence mode="wait">
                   {selectedZone && (
                     <Motion.div
                       key={selectedZone.id}
-                      className="maprpg-portal-layer"
+                      className="maprpg-portal-backdrop"
                       variants={portalVariants}
                       initial="initial"
                       animate="animate"
                       exit="exit"
-                    >
-                      <div
-                        className="maprpg-portal-backdrop"
-                        style={{
-                          backgroundImage: `url(${selectedZone.image})`,
-                        }}
-                      />
-
-                      <div
-                        className="maprpg-portal-aura"
-                        role="button"
-                        tabIndex={0}
-                        onClick={handlePortalClick}
-                        onKeyDown={handlePortalKeyDown}
-                        aria-label={`Entrar en ${selectedZone.title}`}
-                      />
-
-                      <div className="maprpg-portal-content">
-                        <h3 className="maprpg-portal-title">
-                          {selectedZone.title}
-                        </h3>
-                        <p className="maprpg-portal-desc">
-                          {selectedZone.shortDescription}
-                        </p>
-                      </div>
-                    </Motion.div>
+                      style={{
+                        backgroundImage: `url(${selectedZone.image})`,
+                      }}
+                    />
                   )}
                 </AnimatePresence>
+
+                <button
+                  type="button"
+                  className="maprpg-portal-aura"
+                  onClick={handlePortalClick}
+                  onKeyDown={handlePortalKeyDown}
+                  aria-label={`Entrar en ${selectedZone.title}`}
+                >
+                  <div className="maprpg-portal-content">
+                    <h3 className="maprpg-portal-title">
+                      {selectedZone.title}
+                    </h3>
+                    <p className="maprpg-portal-desc">
+                      {selectedZone.shortDescription}
+                    </p>
+                  </div>
+                </button>
               </div>
             </div>
 
@@ -329,7 +357,9 @@ const MapRPG = () => {
                       >
                         <span
                           className="maprpg-rune-image"
-                          style={{ backgroundImage: `url(${zone.runeImage})` }}
+                          style={{
+                            backgroundImage: `url(${zone.runeImage})`,
+                          }}
                         />
                       </Motion.button>
                     )
