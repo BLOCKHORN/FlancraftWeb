@@ -196,10 +196,10 @@ const Home = () => {
     "aventurero";
 
   // ========================
-  //   LÓGICA DRAGÓN / ISLA
+  //   LÓGICA DRAGÓN / LOGO
   // ========================
 
-  const handleIslandClick = () => {
+  const handleLogoClick = () => {
     if (dragonPhase !== "hidden" || dragonCooldownRef.current) return;
 
     dragonCooldownRef.current = true;
@@ -214,7 +214,7 @@ const Home = () => {
     // reset de ciclo de rugidos para este vuelo
     lastRoarIndexRef.current = 0;
 
-    // vibración isla inmediata
+    // vibración del logo inmediata
     setIslandShaking(true);
     const shakeId = window.setTimeout(() => {
       setIslandShaking(false);
@@ -330,24 +330,6 @@ const Home = () => {
             <div className="cloud cloud--5" />
           </div>
 
-          {/* Isla flotante */}
-          <div
-            className={
-              "hero-floating-island" +
-              (islandShaking ? " hero-floating-island--shake" : "")
-            }
-            role="button"
-            tabIndex={0}
-            aria-label="Invocar al dragón guardián del tesoro"
-            onClick={handleIslandClick}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                handleIslandClick();
-              }
-            }}
-          />
-
           {/* Dragón (wrapper = trayectoria, inner = sprite/roar) */}
           <div
             className={
@@ -370,12 +352,6 @@ const Home = () => {
           <div className="hero-overlay" />
 
           <div className="hero-content">
-            <div
-              className="hero-flan"
-              role="img"
-              aria-label="Logotipo de FlanCraft, network de servidores de Minecraft"
-            />
-
             <h1
               className={
                 "hero-title-seo" +
@@ -385,13 +361,29 @@ const Home = () => {
               FLANCRAFT
             </h1>
 
-            <p className="hero-tagline">
-              Tu aventura empieza aquí. Sube de nivel y deja tu legado en el
-              mundo.
-            </p>
+            {/* Logo central grande – invoca al dragón */}
+            <div
+              className={
+                "hero-flan" + (islandShaking ? " hero-flan--shake" : "")
+              }
+              role="button"
+              tabIndex={0}
+              aria-label="Invocar al dragón guardián del tesoro"
+              onClick={handleLogoClick}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  handleLogoClick();
+                }
+              }}
+            />
+
+            
 
             <ServerStatus />
-
+<p className="hero-tagline">
+              Tu aventura empieza aquí. Sube de nivel y deja tu legado en la mejor network de Minecraft.
+            </p>
             {user?.loggedIn && (
               <div
                 className="hero-quests-cta"

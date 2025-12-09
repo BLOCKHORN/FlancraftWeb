@@ -40,10 +40,7 @@ const ServerStatus = () => {
   return (
     <div className={`server-status-minimal ${isOnline ? "online" : "offline"}`}>
       {/* Línea difuminada superior (sin bolita) */}
-      <div className="ss-line">
-        <span className="ss-line-segment ss-line-segment--left" />
-        <span className="ss-line-segment ss-line-segment--right" />
-      </div>
+
 
       {/* IP · bolita estado · players */}
       <div className="ss-row">
@@ -70,6 +67,10 @@ const ServerStatus = () => {
       <span className={`ss-copy-hint ${copied ? "visible" : ""}`}>
         {copied ? "¡IP copiada al portapapeles!" : "Haz clic en la IP para copiarla"}
       </span>
+            <div className="ss-line">
+        <span className="ss-line-segment ss-line-segment--left" />
+        <span className="ss-line-segment ss-line-segment--right" />
+      </div>
     </div>
   );
 };
