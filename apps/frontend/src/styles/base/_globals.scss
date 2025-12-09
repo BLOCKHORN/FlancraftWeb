@@ -13,6 +13,10 @@ body {
   color: $color-texto;
 }
 
+/* ===========================
+   ENLACES / BOTONES
+   =========================== */
+
 a {
   text-decoration: none;
   color: inherit;
@@ -22,4 +26,63 @@ button {
   font-family: inherit;
   cursor: pointer;
   border: none;
+}
+
+/* ===========================
+   SCROLLBAR GLOBAL FLANCRAFT
+   =========================== */
+
+/* Firefox */
+html {
+  /* grosor fino */
+  scrollbar-width: thin;
+  /* thumb | track */
+  scrollbar-color: #f0c870 #1a120b;
+}
+
+/* WebKit (Chrome, Edge, Safari) */
+::-webkit-scrollbar {
+  width: 11px;          /* grosor del scroll vertical */
+  height: 11px;         /* por si aparece horizontal */
+}
+
+/* fondo de la pista */
+::-webkit-scrollbar-track {
+  background: radial-gradient(circle at 30% 0, #3a2414 0, #1a120b 60%);
+  border-left: 1px solid rgba(0, 0, 0, 0.4);
+}
+
+/* “thumb” (la parte que se mueve) */
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(
+    180deg,
+    #ffe1a4 0%,
+    #f0b95c 35%,
+    #e38a33 70%,
+    #b5631f 100%
+  );
+  border-radius: 999px;
+  border: 2px solid #22120a;
+  box-shadow:
+    0 0 6px rgba(0, 0, 0, 0.9),
+    0 0 10px rgba(255, 210, 130, 0.7);
+}
+
+/* hover del thumb */
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(
+    180deg,
+    #ffe8b7 0%,
+    #f6c76c 35%,
+    #f0933a 70%,
+    #c76e25 100%
+  );
+  box-shadow:
+    0 0 8px rgba(0, 0, 0, 0.95),
+    0 0 14px rgba(255, 220, 150, 0.9);
+}
+
+/* esquina cuando hay scroll horizontal + vertical */
+::-webkit-scrollbar-corner {
+  background: #1a120b;
 }
