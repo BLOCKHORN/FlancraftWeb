@@ -65,49 +65,9 @@ const ensureSlug = (n) =>
     .replace(/[^a-z0-9 ]/g, "")
     .replace(/\s+/g, "-");
 
-// ==============================
-// helper: color dominante
-// ==============================
-const getDominantColorFromImage = (imgEl) => {
-  const canvas = document.createElement("canvas");
-  const ctx = canvas.getContext("2d");
-  const width = (canvas.width = 32);
-  const height = (canvas.height = 32);
-
-  ctx.drawImage(imgEl, 0, 0, width, height);
-
-  const { data } = ctx.getImageData(0, 0, width, height);
-  let r = 0,
-    g = 0,
-    b = 0,
-    count = 0;
-
-  for (let i = 0; i < data.length; i += 4) {
-    r += data[i];
-    g += data[i + 1];
-    b += data[i + 2];
-    count++;
-  }
-
-  if (!count) return "#050201";
-
-  r = Math.round(r / count);
-  g = Math.round(g / count);
-  b = Math.round(b / count);
-
-  // Bajamos un poco el brillo para que quede más “oscuro WoW”
-  const factor = 0.7;
-  r = Math.round(r * factor);
-  g = Math.round(g * factor);
-  b = Math.round(b * factor);
-
-  return `rgb(${r}, ${g}, ${b})`;
-};
-
 const NewsHighlight = () => {
   const [newsData, setNewsData] = useState([]);
   const [status, setStatus] = useState("idle");
-  const [featuredBg, setFeaturedBg] = useState("#050201");
 
   useEffect(() => {
     const fetchNews = async () => {
@@ -132,16 +92,6 @@ const NewsHighlight = () => {
   const latest = newsData[0];
   const previous = newsData.slice(1, 5);
   const highlight = useMemo(() => latest, [latest]);
-
-  const handleFeaturedImageLoad = (e) => {
-    try {
-      const color = getDominantColorFromImage(e.target);
-      setFeaturedBg(color);
-    } catch (err) {
-      console.warn("No se pudo calcular color dominante:", err);
-      setFeaturedBg("#050201");
-    }
-  };
 
   return (
     <section className="news-highlight">
@@ -187,21 +137,13 @@ const NewsHighlight = () => {
                     }
                     alt={highlight.titulo}
                     loading="lazy"
-                    onLoad={handleFeaturedImageLoad}
                   />
                   <span className="featured-tag">
                     Última noticia &middot; {formatDaysAgo(highlight.fecha)}
                   </span>
                 </div>
 
-                <div
-                  className="featured-overlay"
-                  style={{
-                    background:
-                      `radial-gradient(circle at top left, rgba(255,255,255,0.05), transparent 60%), ` +
-                      `linear-gradient(135deg, ${featuredBg}, #050201)`,
-                  }}
-                >
+                <div className="featured-overlay">
                   <h3 className="featured-title">{highlight.titulo}</h3>
                   <p className="featured-excerpt">
                     {getExcerpt(highlight.contenido)}

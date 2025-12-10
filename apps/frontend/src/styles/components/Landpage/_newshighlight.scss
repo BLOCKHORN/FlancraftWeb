@@ -39,14 +39,13 @@
     display: inline-block;
     padding-bottom: 0.7rem;
 
-    /* SUBRAYADO DEBAJO DEL TEXTO */
     &::after {
       content: "";
       position: absolute;
       left: 50%;
       bottom: 0;
       transform: translateX(-50%);
-      width: calc(100% + 4rem); // más largo que el texto
+      width: calc(100% + 4rem);
       height: 2px;
       background: linear-gradient(
         to right,
@@ -75,7 +74,7 @@
  * ==================== */
 
 .highlight-featured {
-  border-radius: 0.6rem; // sutil
+  border-radius: 0.6rem;
   overflow: hidden;
   background: linear-gradient(135deg, #050201, #020000);
   box-shadow:
@@ -172,7 +171,6 @@
   padding-bottom: 0.2rem;
   overflow: hidden;
 
-  /* subrayado animado centro -> fuera */
   &::after {
     content: "";
     position: absolute;
@@ -245,8 +243,8 @@
 .highlight-row {
   display: flex;
   align-items: stretch;
-  gap: 0; // sin hueco entre imagen y texto
-  border-radius: 0.5rem; // sutil
+  gap: 0;
+  border-radius: 0.5rem;
   overflow: hidden;
   background: rgba(40, 24, 14, 0.96);
   box-shadow:
@@ -259,7 +257,7 @@
     background 0.16s ease-out;
 
   @media (max-width: 640px) {
-    flex-direction: row;
+    flex-direction: column; // en móvil: imagen arriba, texto abajo
   }
 }
 
@@ -275,12 +273,8 @@
   img {
     width: 100%;
     height: 100%;
-    object-fit: contain; // no se corta
+    object-fit: contain; // desktop: se ve completa como ahora
     display: block;
-  }
-
-  @media (max-width: 640px) {
-    flex-basis: 150px;
   }
 }
 
@@ -320,6 +314,8 @@
   line-height: 1.5;
   color: #f5d9b2;
 }
+
+/* hover */
 
 .highlight-row:hover {
   transform: translateY(-2px);
@@ -455,7 +451,9 @@
   }
 }
 
-/* RESPONSIVE */
+/* ======================
+   RESPONSIVE
+   ====================== */
 
 @media (max-width: 900px) {
   .news-highlight {
@@ -485,7 +483,30 @@
     font-size: 1.4rem;
   }
 
+  /* tarjetas secundarias en columna + imagen completa */
+  .highlight-row {
+    min-height: 0;
+  }
+
+  .row-thumb {
+    flex-basis: auto;
+    width: 100%;
+    min-height: 0;
+    aspect-ratio: 2.62 / 1; // misma proporción que tu banner
+    img {
+      object-fit: contain; // se ve entera
+    }
+  }
+
+  .row-body {
+    padding: 0.75rem 0.9rem 0.9rem;
+  }
+
   .row-excerpt {
     font-size: 0.82rem;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3; // 3 líneas máximo
+    overflow: hidden;
   }
 }

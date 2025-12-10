@@ -3,10 +3,60 @@ import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
 import "../../styles/components/Estadisticas/_perfiljugador.scss";
 
-// mismas rutas
-import borde2 from "/assets/borde2.webp";
-import topborder from "/assets/topborder.webp";
-import madera from "/assets/madera.jpeg";
+const SERVER_INFO = {
+  global: {
+    label: "Global",
+    icon: "/assets/reinos/global.webp",
+  },
+  "survival-clasico": {
+    label: "Survival Clásico",
+    icon: "/assets/reinos/survival-clasico.webp",
+  },
+  survival_clasico: {
+    label: "Survival Clásico",
+    icon: "/assets/reinos/survival-clasico.webp",
+  },
+  survival: {
+    label: "Survival Clásico",
+    icon: "/assets/reinos/survival-clasico.webp",
+  },
+  "survival-anarquico": {
+    label: "Survival Anárquico",
+    icon: "/assets/reinos/survival-anarquico.webp",
+  },
+  survival_anarquico: {
+    label: "Survival Anárquico",
+    icon: "/assets/reinos/survival-anarquico.webp",
+  },
+  anarquico: {
+    label: "Survival Anárquico",
+    icon: "/assets/reinos/survival-anarquico.webp",
+  },
+  "survival-hardcore": {
+    label: "Survival Hardcore",
+    icon: "/assets/reinos/survival-hardcore.webp",
+  },
+  survival_hardcore: {
+    label: "Survival Hardcore",
+    icon: "/assets/reinos/survival-hardcore.webp",
+  },
+  hardcore: {
+    label: "Survival Hardcore",
+    icon: "/assets/reinos/survival-hardcore.webp",
+  },
+  oneblock: {
+    label: "OneBlock",
+    icon: "/assets/reinos/oneblock.webp",
+  },
+  chunklock: {
+    label: "ChunkLock",
+    icon: "/assets/reinos/chunklock.webp",
+  },
+  parkour: {
+    label: "Parkour",
+    icon: "/assets/reinos/parkour.webp",
+  },
+};
 
 export default function PerfilJugador() {
   const { nombre } = useParams();
@@ -19,17 +69,19 @@ export default function PerfilJugador() {
   const [cargando, setCargando] = useState(true);
   const [sinEstadisticas, setSinEstadisticas] = useState(false);
 
+  const [xpData, setXpData] = useState(null);
+
   useEffect(() => {
     const fetchData = async () => {
       setCargando(true);
       setSinEstadisticas(false);
 
       try {
-        // 1) Intentar encontrar al jugador en "usuarios" por nombre
+        // 1) Buscar en `usuarios` por uid (nick)
         const { data: userMeta, error: userError } = await supabase
           .from("usuarios")
-          .select("uuid, nombre_minecraft, nivel, xp_actual, rango_usuario, es_premium")
-          .eq("nombre_minecraft", nombre)
+          .select("uuid, uid, nivel, xp_actual, rango_usuario, es_premium")
+          .eq("uid", nombre)
           .maybeSingle();
 
         let jugador = null;
@@ -41,17 +93,15 @@ export default function PerfilJugador() {
         }
 
         if (userMeta) {
-          // Jugador existe en usuarios -> base del perfil
           jugador = {
             uuid: userMeta.uuid,
-            nombre_minecraft: userMeta.nombre_minecraft || nombre,
+            nombre_minecraft: userMeta.uid || nombre,
             nivel: userMeta.nivel,
             xp_actual: userMeta.xp_actual,
             rango_usuario: userMeta.rango_usuario,
             es_premium: userMeta.es_premium,
           };
 
-          // Stats por uuid (puede que no tenga aún)
           const { data: statsByUuid, error: statsError } = await supabase
             .from("estadisticas_agrupadas")
             .select("*")
@@ -63,7 +113,6 @@ export default function PerfilJugador() {
 
           statsData = statsByUuid || [];
 
-          // Sanciones por uuid
           if (jugador.uuid) {
             const { data: jailsData, error: jailsError } = await supabase
               .from("jails")
@@ -77,18 +126,20 @@ export default function PerfilJugador() {
             sancionesData = jailsData || [];
           }
         } else {
-          // 2) Fallback antiguo: no está en usuarios, pero podría haber stats
+          // 2) Fallback: buscar en estadísticas por nombre
           const { data: statsByName, error: statsByNameError } = await supabase
             .from("estadisticas_agrupadas")
             .select("*")
             .eq("nombre_minecraft", nombre);
 
           if (statsByNameError) {
-            console.error("Error al obtener estadísticas por nombre:", statsByNameError);
+            console.error(
+              "Error al obtener estadísticas por nombre:",
+              statsByNameError
+            );
           }
 
           if (!statsByName || statsByName.length === 0) {
-            // No está ni en usuarios ni en estadísticas -> jugador realmente no encontrado
             setUsuario(null);
             setEstadisticas([]);
             setSanciones([]);
@@ -105,23 +156,30 @@ export default function PerfilJugador() {
             uuid: statsByName[0].uuid,
           };
 
-          // Metadatos desde usuarios por uuid
-          const { data: metaFromUuid, error: metaUuidError } = await supabase
-            .from("usuarios")
-            .select("nivel, xp_actual, rango_usuario, es_premium")
-            .eq("uuid", jugador.uuid)
-            .maybeSingle();
-
-          if (metaUuidError) {
-            console.error("Error al obtener meta por uuid:", metaUuidError);
-          }
-
-          if (metaFromUuid) {
-            jugador = { ...jugador, ...metaFromUuid };
-          }
-
-          // Sanciones por uuid
+          // completar con meta de `usuarios` si existe por uuid
           if (jugador.uuid) {
+            const { data: metaFromUuid, error: metaUuidError } = await supabase
+              .from("usuarios")
+              .select("uid, nivel, xp_actual, rango_usuario, es_premium")
+              .eq("uuid", jugador.uuid)
+              .maybeSingle();
+
+            if (metaUuidError) {
+              console.error("Error al obtener meta por uuid:", metaUuidError);
+            }
+
+            if (metaFromUuid) {
+              jugador = {
+                ...jugador,
+                nivel: metaFromUuid.nivel,
+                xp_actual: metaFromUuid.xp_actual,
+                rango_usuario: metaFromUuid.rango_usuario,
+                es_premium: metaFromUuid.es_premium,
+                nombre_minecraft:
+                  metaFromUuid.uid || jugador.nombre_minecraft,
+              };
+            }
+
             const { data: jailsData, error: jailsError } = await supabase
               .from("jails")
               .select("*")
@@ -155,6 +213,26 @@ export default function PerfilJugador() {
     fetchData();
   }, [nombre]);
 
+  // XP para la barra
+  useEffect(() => {
+    const fetchXpData = async () => {
+      if (!usuario?.uuid) return;
+
+      try {
+        const res = await fetch(
+          `https://flancraft-backend.onrender.com/api/usuarios/${usuario.uuid}/xp`
+        );
+        if (!res.ok) throw new Error("Error al obtener XP");
+        const data = await res.json();
+        setXpData(data);
+      } catch (err) {
+        console.error("Error al cargar xpData:", err);
+      }
+    };
+
+    fetchXpData();
+  }, [usuario?.uuid]);
+
   const formatearTiempo = (ticks) => {
     const totalSegundos = Math.floor((ticks || 0) / 20);
     const horas = Math.floor(totalSegundos / 3600);
@@ -183,20 +261,21 @@ export default function PerfilJugador() {
   }
 
   if (!usuario) {
-    // Caso realmente no existe en la BBDD
     return (
-      <div className="perfiljugador-wrapper no-encontrado">
-        <div className="perfiljugador-card error">
-          <img
-            src="/assets/default-head.png"
-            alt="No encontrado"
-            className="perfiljugador-skin"
-          />
-          <h2>Jugador no encontrado</h2>
-          <p>No hay registros en FlanCraft para "{nombre}".</p>
-          <button className="btn" onClick={() => navigate(-1)}>
-            Volver atrás
-          </button>
+      <div className="perfiljugador-page perfiljugador-page--empty">
+        <div className="perfiljugador-shell">
+          <div className="perfiljugador-card perfiljugador-card--error">
+            <img
+              src="/assets/interrogante.png"
+              alt="Jugador no encontrado"
+              className="perfiljugador-skin"
+            />
+            <h2>Jugador no encontrado</h2>
+            <p>No hay registros en FlanCraft para "{nombre}".</p>
+            <button className="btn-volver" onClick={() => navigate(-1)}>
+              Volver atrás
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -207,105 +286,253 @@ export default function PerfilJugador() {
   ];
   const statsActuales = estadisticas.find((e) => e.servidor === servidorActivo);
 
+  const totalTiempoTicks = estadisticas.reduce(
+    (acc, e) => acc + (e.tiempo_jugado || 0),
+    0
+  );
+  const totalBloquesMinados = estadisticas.reduce(
+    (acc, e) => acc + (e.bloques_minados || 0),
+    0
+  );
+  const totalMobsMatados = estadisticas.reduce(
+    (acc, e) => acc + (e.mobs_matados || 0),
+    0
+  );
+  const totalKillsPvp = estadisticas.reduce(
+    (acc, e) => acc + (e.kills_pvp || 0),
+    0
+  );
+
+  const fechasPosibles = estadisticas
+    .map(
+      (e) => e.fecha_primera_vez || e.primera_vez || e.fecha || e.created_at
+    )
+    .filter(Boolean);
+
+  let antiguedadTexto = "—";
+  if (fechasPosibles.length > 0) {
+    const fechasDate = fechasPosibles
+      .map((f) => new Date(f))
+      .filter((d) => !isNaN(d));
+    if (fechasDate.length > 0) {
+      const masAntigua = fechasDate.reduce(
+        (min, d) => (d < min ? d : min),
+        fechasDate[0]
+      );
+      antiguedadTexto = masAntigua.toLocaleDateString("es-ES");
+    }
+  }
+
   const xpActual = usuario.xp_actual || 0;
-  const xpTope = 100;
-  const xpPercent = Math.min((xpActual / xpTope) * 100, 100);
+  const nivelActual = usuario.nivel || 1;
+  const nivelInfo = xpData?.niveles?.find((n) => n.nivel === nivelActual);
+  const xpDelNivelActual = nivelInfo?.xp_requerida || 1;
+  const xpPercent = Math.min(
+    100,
+    xpDelNivelActual > 0 ? (xpActual / xpDelNivelActual) * 100 : 0
+  );
+
+  const featuredStats = [
+    {
+      label: "Tiempo jugado total",
+      value: formatearTiempo(totalTiempoTicks),
+    },
+    {
+      label: "Antigüedad",
+      value: antiguedadTexto,
+    },
+    {
+      label: "Bloques minados",
+      value: totalBloquesMinados.toLocaleString("es-ES"),
+    },
+    {
+      label: "Mobs matados",
+      value: totalMobsMatados.toLocaleString("es-ES"),
+    },
+    {
+      label: "Kills PvP",
+      value: totalKillsPvp.toLocaleString("es-ES"),
+    },
+  ];
+
+  const getServerInfo = (servidor) => {
+    if (!servidor) return null;
+    const key = servidor.toLowerCase();
+    return (
+      SERVER_INFO[key] ||
+      SERVER_INFO[key.replace("_", "-")] || {
+        label: servidor,
+        icon: null,
+      }
+    );
+  };
+
+  const rangoLower = (usuario.rango_usuario || "").toLowerCase();
+  const nombreClaseRango =
+    rangoLower === "nova"
+      ? "nombre-nova"
+      : rangoLower === "alpha"
+      ? "nombre-alpha"
+      : rangoLower === "inmortal"
+      ? "nombre-inmortal"
+      : "";
 
   return (
     <div className="perfiljugador-page">
-      {/* HERO SUPERIOR */}
-      <header className="perfiljugador-hero">
-        <div className="hero-bg" />
-        <div className="hero-inner">
-          <div className="perfiljugador-headcard">
-            <img
-              src={`https://mc-heads.net/body/${usuario.nombre_minecraft}/right`}
-              alt={`Skin de ${usuario.nombre_minecraft}`}
-              className="perfiljugador-skin"
-              onError={(e) => {
-                e.currentTarget.src = "/assets/default-head.png";
-              }}
-            />
-            <div className="perfiljugador-info">
-              <h1
-                className={`nombre-jugador ${
-                  usuario.rango_usuario
-                    ? `rango-${usuario.rango_usuario.toLowerCase()}`
-                    : ""
-                }`}
-              >
-                {usuario.nombre_minecraft}
-                {usuario.es_premium && (
-                  <img
-                    src="/assets/premium.webp"
-                    alt="Premium"
-                    className="icono-premium"
-                  />
-                )}
-              </h1>
-              <p className="nivel">Nivel {usuario.nivel || 1}</p>
-              <div className="xp-bar">
-                <div className="xp-fill" style={{ width: `${xpPercent}%` }} />
-              </div>
-              <p className="xp-text">{xpActual} XP</p>
+      <div className="perfiljugador-bg-scene" />
+      <div className="perfiljugador-shell">
+        <div className="perfiljugador-maincard">
+          {/* AVATAR */}
+          <div className="perfiljugador-avatar-wrapper">
+            <div className="perfiljugador-avatar-frame">
+              <div className="perfiljugador-avatar-bg" />
+              <img
+                src={`https://mc-heads.net/body/${usuario.nombre_minecraft}/180`}
+                alt={`Skin de ${usuario.nombre_minecraft}`}
+                className="perfiljugador-avatar-img"
+                onError={(e) => {
+                  e.currentTarget.src = "/assets/default-head.png";
+                }}
+              />
             </div>
           </div>
-        </div>
 
-        {/* Tira de madera */}
-        <div
-          className="hero-wood"
-          style={{ backgroundImage: `url(${madera})` }}
-        />
-      </header>
+          {/* INTERIOR PERGAMINO */}
+          <div className="perfiljugador-maincard-inner">
+            <div className="perfiljugador-topwrap">
+              <header className="perfiljugador-header">
+                <div className="perfiljugador-name-block">
+                  <div className="perfiljugador-name-row">
+                    {rangoLower && (
+                      <div className="perfiljugador-rankicon-wrap">
+                        <img
+                          src={`/assets/rangos/${rangoLower}.webp`}
+                          alt={usuario.rango_usuario}
+                          className="perfiljugador-rankicon"
+                        />
+                      </div>
+                    )}
 
-      {/* CUERPO */}
-      <main className="perfiljugador-body">
-        {/* deco del pergamino debajo de la madera */}
-        <div className="paper-decor">
-          <img src={topborder} alt="" className="paper-top" />
-          <img src={borde2} alt="" className="paper-fold" />
-        </div>
+                    <h1
+                      className={`perfiljugador-name ${nombreClaseRango}`.trim()}
+                    >
+                      {usuario.nombre_minecraft}
+                    </h1>
 
-        <div className="perfiljugador-body-inner">
-          {/* ESTADÍSTICAS */}
-          {sinEstadisticas ? (
-            <section className="estadisticas-panel estadisticas-vacias">
-              <h2 className="panel-title">Actividad aún por registrar</h2>
-              <p className="mensaje-vacio-global">
-                Este jugador está vinculado a FlanCraft,
-                pero todavía no tiene estadísticas registradas en los servidores.
-                En cuanto juegue, sus logros y progreso aparecerán aquí.
-              </p>
-            </section>
-          ) : (
-            <>
-              {/* selector de servidor */}
-              <div className="selector-servidor">
-                {servidoresDisponibles.map((s) => (
-                  <button
-                    key={s}
-                    className={`selector-btn ${
-                      servidorActivo === s ? "active" : ""
-                    }`}
-                    onClick={() => setServidorActivo(s)}
-                    type="button"
-                  >
-                    {s}
-                  </button>
-                ))}
+                    {usuario.es_premium && (
+                      <span className="perfiljugador-premium">
+                        <img
+                          src="/assets/premium.png"
+                          alt="Cuenta premium"
+                          className="perfiljugador-premium-img"
+                        />
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="perfiljugador-level-row">
+                    <span className="perfiljugador-level-label">
+                      Nivel {nivelActual}
+                    </span>
+                    <div className="perfiljugador-xpbar">
+                      <div
+                        className="perfiljugador-xpfill"
+                        style={{ width: `${xpPercent}%` }}
+                      />
+                    </div>
+                    <span className="perfiljugador-xptext">
+                      {xpActual} / {xpDelNivelActual} XP
+                    </span>
+                  </div>
+                </div>
+              </header>
+            </div>
+
+            {/* STATS PRINCIPALES */}
+            <section className="perfiljugador-featured">
+              <div className="perfiljugador-featured-wrapper">
+                <div className="featured-header">
+                  <span className="featured-title">
+                    Estadísticas destacadas
+                  </span>
+                </div>
+                <div className="featured-grid">
+                  {featuredStats.map((stat, idx) => (
+                    <div key={idx} className="featured-card">
+                      <span className="featured-value">{stat.value}</span>
+                      <span className="featured-label">{stat.label}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
+            </section>
 
-              {/* panel con estadísticas del servidor activo */}
-              <section className="estadisticas-panel">
-                {statsActuales ? (
+            <hr className="perfiljugador-divider" />
+
+            {/* COLUMNAS: ACTIVIDAD & SANCIONES */}
+            <section className="perfiljugador-columns">
+              {/* ACTIVIDAD POR SERVIDOR */}
+              <div className="perfiljugador-col perfiljugador-col--activity">
+                <div className="panel-header">
+                  <h2>Actividad por servidor</h2>
+
+                  {!sinEstadisticas && servidoresDisponibles.length > 0 && (
+                    <div className="server-selector">
+                      {servidoresDisponibles.map((s) => {
+                        const info = getServerInfo(s);
+                        if (!info) return null;
+                        const isActive = servidorActivo === s;
+
+                        return (
+                          <button
+                            key={s}
+                            type="button"
+                            className={`server-pill ${
+                              isActive ? "server-pill--active" : ""
+                            }`}
+                            onClick={() => setServidorActivo(s)}
+                          >
+                            {info.icon && (
+                              <span className="server-pill-icon-wrap">
+                                <img
+                                  src={info.icon}
+                                  alt={info.label}
+                                  className="server-pill-icon"
+                                />
+                              </span>
+                            )}
+                            <span className="server-pill-label">
+                              {info.label}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {sinEstadisticas ? (
+                  <div className="panel-empty">
+                    <p>
+                      Este jugador está vinculado a FlanCraft, pero todavía no
+                      tiene estadísticas registradas.
+                    </p>
+                  </div>
+                ) : statsActuales ? (
                   <>
-                    <h2 className="panel-title">{statsActuales.servidor}</h2>
+                    <p className="panel-subtitle">
+                      Estadísticas en{" "}
+                      <span className="panel-servidor">
+                        {getServerInfo(statsActuales.servidor)?.label ||
+                          statsActuales.servidor}
+                      </span>
+                    </p>
+
                     <div className="stats-grid">
                       {Object.entries(etiquetas).map(([clave, label]) => (
                         <article key={clave} className="stat-card">
-                          <span className="label">{label}</span>
-                          <span className="valor">
+                          <span className="stat-label">{label}</span>
+                          <span className="stat-value">
                             {clave === "tiempo_jugado"
                               ? formatearTiempo(statsActuales[clave])
                               : (statsActuales[clave] || 0).toLocaleString(
@@ -317,50 +544,61 @@ export default function PerfilJugador() {
                     </div>
                   </>
                 ) : (
-                  <p className="mensaje-vacio">
-                    Sin estadísticas registradas en este servidor.
-                  </p>
+                  <div className="panel-empty">
+                    <p>Sin estadísticas registradas en este servidor.</p>
+                  </div>
                 )}
-              </section>
-            </>
-          )}
+              </div>
 
-          {/* SANCIONES */}
-          <section className="sanciones-panel">
-            <h2>Sanciones</h2>
-            {sanciones.length === 0 ? (
-              <p className="sin-sanciones">
-                Este jugador es un ejemplo a seguir. No tiene ninguna sanción.
-              </p>
-            ) : (
-              <ul className="sanciones-lista">
-                {sanciones.map((s, i) => (
-                  <li key={i} className="sancion-item">
-                    <p>
-                      <strong>Razón:</strong> {s.razon || "No especificada"}
-                    </p>
-                    <p>
-                      <strong>Fecha:</strong>{" "}
-                      {s.fecha
-                        ? new Date(s.fecha).toLocaleDateString()
-                        : "—"}
-                    </p>
-                    <p>
-                      <strong>Staff:</strong> {s.staff || "Desconocido"}
-                    </p>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
+              {/* SANCIONES */}
+              <div className="perfiljugador-col perfiljugador-col--sanctions">
+                <div className="panel-header">
+                  <h2>Sanciones</h2>
+                </div>
 
-          <div className="volver-btn">
-            <button className="btn" onClick={() => navigate(-1)}>
-              Volver atrás
-            </button>
+                {sanciones.length === 0 ? (
+                  <p className="panel-empty panel-empty--text">
+                    Este jugador no tiene sanciones registradas.
+                  </p>
+                ) : (
+                  <ul className="sanciones-list">
+                    {sanciones.map((s, i) => (
+                      <li key={i} className="sancion-item">
+                        <div className="sancion-line">
+                          <span className="sancion-label">Razón</span>
+                          <span className="sancion-value">
+                            {s.razon || "No especificada"}
+                          </span>
+                        </div>
+                        <div className="sancion-line">
+                          <span className="sancion-label">Fecha</span>
+                          <span className="sancion-value">
+                            {s.fecha
+                              ? new Date(s.fecha).toLocaleDateString()
+                              : "—"}
+                          </span>
+                        </div>
+                        <div className="sancion-line">
+                          <span className="sancion-label">Staff</span>
+                          <span className="sancion-value">
+                            {s.staff || "Desconocido"}
+                          </span>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </section>
+
+            <div className="perfiljugador-actions">
+              <button className="btn-volver" onClick={() => navigate(-1)}>
+                Inicio
+              </button>
+            </div>
           </div>
         </div>
-      </main>
+      </div>
     </div>
   );
 }

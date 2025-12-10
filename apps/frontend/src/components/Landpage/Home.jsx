@@ -48,6 +48,10 @@ const Home = () => {
   const [playerName, setPlayerName] = useState(null);
   const [showLoginTeaser, setShowLoginTeaser] = useState(false);
 
+  // limitar popup a HERO + MAPRPG
+  const heroMapSectionRef = useRef(null);
+  const [isInHeroMapZone, setIsInHeroMapZone] = useState(true);
+
   // Dragón: "hidden" | "flight"
   const [dragonPhase, setDragonPhase] = useState("hidden");
   const [islandShaking, setIslandShaking] = useState(false);
@@ -121,6 +125,24 @@ const Home = () => {
       window.addEventListener("load", onLoad);
       return () => window.removeEventListener("load", onLoad);
     }
+  }, []);
+
+  // Detectar si estamos dentro de la zona HERO + MAPRPG
+  useEffect(() => {
+    const handleScrollZone = () => {
+      if (!heroMapSectionRef.current) return;
+      const rect = heroMapSectionRef.current.getBoundingClientRect();
+      const viewportHeight =
+        window.innerHeight || document.documentElement.clientHeight;
+
+      // dentro mientras parte del contenedor está en pantalla
+      const inside = rect.bottom > 0 && rect.top < viewportHeight;
+      setIsInHeroMapZone(inside);
+    };
+
+    handleScrollZone();
+    window.addEventListener("scroll", handleScrollZone);
+    return () => window.removeEventListener("scroll", handleScrollZone);
   }, []);
 
   // Popup flotante de login para invitados
@@ -308,142 +330,148 @@ const Home = () => {
       )}
 
       <div className={`home ${isLoaded ? "visible" : "invisible"}`}>
-        {/* HERO */}
-        <header className="hero-flancraft">
-          {/* Estrellas de fondo */}
-          <div className="stars-layer" aria-hidden="true">
-            <div className="star star--1" />
-            <div className="star star--2" />
-            <div className="star star--3" />
-            <div className="star star--4" />
-            <div className="star star--5" />
-            <div className="star star--6" />
-            <div className="shooting-star shooting-star--1" />
-          </div>
+        {/* ZONA HERO + MAPRPG (para limitar el popup) */}
+        <div ref={heroMapSectionRef} className="hero-map-section">
+          {/* HERO */}
+          <header className="hero-flancraft">
+            {/* Estrellas de fondo */}
+            <div className="stars-layer" aria-hidden="true">
+              <div className="star star--1" />
+              <div className="star star--2" />
+              <div className="star star--3" />
+              <div className="star star--4" />
+              <div className="star star--5" />
+              <div className="star star--6" />
+              <div className="shooting-star shooting-star--1" />
+            </div>
 
-          {/* Nubes animadas */}
-          <div className="clouds-layer" aria-hidden="true">
-            <div className="cloud cloud--1" />
-            <div className="cloud cloud--2" />
-            <div className="cloud cloud--3" />
-            <div className="cloud cloud--4" />
-            <div className="cloud cloud--5" />
-          </div>
+            {/* Nubes animadas */}
+            <div className="clouds-layer" aria-hidden="true">
+              <div className="cloud cloud--1" />
+              <div className="cloud cloud--2" />
+              <div className="cloud cloud--3" />
+              <div className="cloud cloud--4" />
+              <div className="cloud cloud--5" />
+            </div>
 
-          {/* Dragón (wrapper = trayectoria, inner = sprite/roar) */}
-          <div
-            className={
-              "hero-ender-dragon-wrapper" +
-              (dragonPhase === "flight"
-                ? " hero-ender-dragon-wrapper--flight"
-                : "")
-            }
-            onClick={handleDragonClick}
-            aria-hidden={dragonPhase === "hidden"}
-          >
+            {/* Dragón */}
             <div
               className={
-                "hero-ender-dragon" +
-                (isDragonRoaring ? " hero-ender-dragon--roaring" : "")
+                "hero-ender-dragon-wrapper" +
+                (dragonPhase === "flight"
+                  ? " hero-ender-dragon-wrapper--flight"
+                  : "")
               }
-            />
-          </div>
-
-          <div className="hero-overlay" />
-
-          <div className="hero-content">
-            <h1
-              className={
-                "hero-title-seo" +
-                (isDragonPresent ? " hero-title-seo--hidden" : "")
-              }
+              onClick={handleDragonClick}
+              aria-hidden={dragonPhase === "hidden"}
             >
-              FLANCRAFT
-            </h1>
-
-            {/* Logo central grande – invoca al dragón */}
-            <div
-              className={
-                "hero-flan" + (islandShaking ? " hero-flan--shake" : "")
-              }
-              role="button"
-              tabIndex={0}
-              aria-label="Invocar al dragón guardián del tesoro"
-              onClick={handleLogoClick}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  handleLogoClick();
-                }
-              }}
-            />
-
-            
-
-            <ServerStatus />
-<p className="hero-tagline">
-              Tu aventura empieza aquí. Sube de nivel y deja tu legado en la mejor network de Minecraft.
-            </p>
-            {user?.loggedIn && (
               <div
-                className="hero-quests-cta"
-                onClick={handleMainButtonClick}
-                role="button"
-                aria-label="Ir al panel de retos y logros"
+                className={
+                  "hero-ender-dragon" +
+                  (isDragonRoaring ? " hero-ender-dragon--roaring" : "")
+                }
+              />
+            </div>
+
+            <div className="hero-overlay" />
+
+            <div className="hero-content">
+              {/* Logo H1 como imagen elegante */}
+              <div
+                className={
+                  "hero-logo" + (isDragonPresent ? " hero-logo--hidden" : "")
+                }
+                aria-hidden="true"
               >
-                <div className="hero-quests-cta__image">
-                  <img
-                    src="/assets/ui/cta-retos-panel.webp"
-                    alt="Entrar al panel de retos"
-                  />
-                </div>
-
-                <div className="hero-quests-cta__text">
-                  <span className="cta-line1">
-                    ¡Tienes retos disponibles, {displayName}!
-                  </span>
-                  <span className="cta-line2">
-                    Continúa tu progreso y reclama recompensas.
-                  </span>
-                </div>
+                <img src="/assets/h1.png" alt="FlanCraft Minecraft Network" />
               </div>
-            )}
-          </div>
-        </header>
 
-        {/* POPUP FLOTANTE DE LOGIN PARA INVITADOS */}
-        {!user?.loggedIn && showLoginTeaser && (
-          <div className="login-teaser-pop">
-            <button
-              type="button"
-              className="login-teaser-pop__close"
-              onClick={() => setShowLoginTeaser(false)}
-              aria-label="Cerrar aviso de inicio de sesión"
-            >
-              ×
-            </button>
+              {/* Logo central grande – invoca al dragón */}
+              <div
+                className={
+                  "hero-flan" + (islandShaking ? " hero-flan--shake" : "")
+                }
+                role="button"
+                tabIndex={0}
+                aria-label="Invocar al dragón guardián del tesoro"
+                onClick={handleLogoClick}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    handleLogoClick();
+                  }
+                }}
+              />
 
-            <div className="login-teaser-pop__icon" />
-
-            <div className="login-teaser-pop__body">
-              <p className="login-teaser-pop__title">Empieza tu aventura</p>
-              <p className="login-teaser-pop__text">
-                Inicia sesión para desbloquear misiones, logros y recompensas
-                exclusivas.
+              <ServerStatus />
+              <p className="hero-tagline">
+                Tu aventura empieza aquí. Sube de nivel y deja tu legado en la
+                mejor network de Minecraft.
               </p>
 
+              {user?.loggedIn && (
+                <div
+                  className="hero-quests-cta"
+                  onClick={handleMainButtonClick}
+                  role="button"
+                  aria-label="Ir al panel de retos y logros"
+                >
+                  <div className="hero-quests-cta__image">
+                    <img
+                      src="/assets/ui/cta-retos-panel.webp"
+                      alt="Entrar al panel de retos"
+                    />
+                  </div>
+
+                  <div className="hero-quests-cta__text">
+                    <span className="cta-line1">
+                      ¡Tienes retos disponibles, {displayName}!
+                    </span>
+                    <span className="cta-line2">
+                      Continúa tu progreso y reclama recompensas.
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </header>
+
+          {/* POPUP FLOTANTE DE LOGIN PARA INVITADOS
+              Solo visible en home + MapRPG */}
+          {!user?.loggedIn && showLoginTeaser && isInHeroMapZone && (
+            <div className="login-teaser-pop">
               <button
                 type="button"
-                className="login-teaser-pop__button"
-                onClick={handleMainButtonClick}
+                className="login-teaser-pop__close"
+                onClick={() => setShowLoginTeaser(false)}
+                aria-label="Cerrar aviso de inicio de sesión"
               >
-                Iniciar sesión
+                ×
               </button>
-            </div>
-          </div>
-        )}
 
-        {/* MODAL LOGIN */}
+              <div className="login-teaser-pop__body">
+                <p className="login-teaser-pop__title">Empieza tu aventura</p>
+                <p className="login-teaser-pop__text">
+                  Inicia sesión para desbloquear misiones, logros y recompensas
+                  exclusivas.
+                </p>
+
+                <button
+                  type="button"
+                  className="login-teaser-pop__button"
+                  onClick={handleMainButtonClick}
+                >
+                  Iniciar sesión
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* MAPA RPG */}
+          <MapRPG />
+        </div>
+
+        {/* MODAL LOGIN (disponible en toda la home) */}
         {showLogin && (
           <LoginModal
             onClose={() => {
@@ -461,9 +489,7 @@ const Home = () => {
           />
         )}
 
-        {/* SECCIONES */}
-        <MapRPG />
-
+        {/* SECCIONES RESTO DE LA HOME */}
         <SectionDividerNews />
         <NewsHighlight />
 

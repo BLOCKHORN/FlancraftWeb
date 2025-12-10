@@ -11,7 +11,7 @@ import NewsDetail from "./components/Noticias/NewsDetail";
 import DashboardPage from "./components/Dashboard/DashboardPage";
 import RangoSelectorAnimado from "./components/Rangos/RangoSelectorAnimado";
 import PerfilJugador from "./components/Estadisticas/PerfilJugador";
-import LeaderboardsPage from "./components/Estadisticas/LeaderboardsPage";
+import Leaderboards from "./components/Estadisticas/Leaderboards";
 
 // Tribunal System
 import TribunalMain from "./components/Tribunal/TribunalMain";
@@ -42,7 +42,7 @@ const App = () => {
         <Route path="/news/:slug" element={<NewsDetail />} />
 <Route path="/tienda/*" element={<TiendaLayout />} />        <Route path="/rangos" element={<RangoSelectorAnimado />} />
         <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/leaderboards" element={<LeaderboardsPage />} />
+        <Route path="/leaderboards" element={<Leaderboards />} />
         <Route path="/perfil/:nombre" element={<PerfilJugador />} />
 
         {/* 🛡️ Admin Paneles */}

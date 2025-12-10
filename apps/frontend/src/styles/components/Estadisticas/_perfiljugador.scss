@@ -1,607 +1,794 @@
-@import url("https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&display=swap");
+@use "../../base/_variables" as *;
+
+/* ============================
+   FONDO GENERAL
+   ============================ */
 
 .perfiljugador-page {
-  --paper: #f3e6cc;
-  --panel: #fffdf3;
-  --brown: #3c2b1b;
-  --line: #b58f5a;
-
-  font-family: "IM Fell English SC", serif;
-  color: var(--brown);
-  background: #d8ccae;
   min-height: 100vh;
-  overflow-x: hidden;
-}
-
-/* ========== LOADING ========== */
-.perfiljugador-loading {
-  min-height: 100vh;
+  padding: 4.8rem 1.5rem 3rem;
   display: flex;
   justify-content: center;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(0, 0, 0, 0.6) 0%,
+      rgba(0, 0, 0, 0.75) 40%,
+      rgba(0, 0, 0, 0.9) 100%
+    ),
+    url("/assets/backperfil.png") center top / cover no-repeat;
+  font-family: "IM Fell English SC", system-ui, -apple-system,
+    BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #fdf6dd;
+
+  &--empty {
+    align-items: center;
+  }
+}
+
+/* Overlay radial tipo viñeta oscura */
+.perfiljugador-bg-scene {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(0, 0, 0, 0.75), transparent 55%),
+    radial-gradient(circle at 50% 100%, rgba(0, 0, 0, 0.85), transparent 55%);
+  mix-blend-mode: multiply;
+}
+
+.perfiljugador-shell {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 1120px;
+}
+
+/* ============================
+   LOADING / ERROR
+   ============================ */
+
+.perfiljugador-loading {
+  min-height: 100vh;
+  padding: 4.8rem 1.5rem 3rem;
+  display: flex;
   align-items: center;
-  background: url("/assets/papertexture.jpeg") center/cover repeat;
-  color: #3c2b1b;
+  justify-content: center;
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(0, 0, 0, 0.6) 0%,
+      rgba(0, 0, 0, 0.75) 40%,
+      rgba(0, 0, 0, 0.9) 100%
+    ),
+    url("/assets/backperfil.png") center top / cover no-repeat;
+
+  font-family: "IM Fell English SC", system-ui, -apple-system,
+    BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #fdf6dd;
 
   .loading-inner {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 1.4rem 1.8rem;
-    background: rgba(255, 253, 243, 0.96);
-    border-radius: 14px;
-    border: 2px solid #b58f5a;
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.18);
+    padding: 2rem 2.6rem;
+    border-radius: 1.3rem;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(8, 11, 18, 0.95);
+    box-shadow: 0 18px 36px rgba(0, 0, 0, 0.8);
+    text-align: center;
   }
 
   .loading-gema {
-    width: 32px;
-    height: 32px;
+    display: inline-block;
+    width: 24px;
+    height: 24px;
     border-radius: 50%;
-    border: 3px solid #b58f5a;
+    border: 2px solid rgba(0, 167, 228, 0.8);
     border-top-color: transparent;
-    animation: spin 0.9s linear infinite;
+    animation: perfil-spinner 0.9s linear infinite;
+    margin-bottom: 0.7rem;
   }
 
   p {
-    margin: 0;
-    font-size: 1.05rem;
-  }
-}
-
-/* ========== HERO ========== */
-.perfiljugador-hero {
-  position: relative;
-  width: 100%;
-  height: 400px;
-  display: flex;
-  justify-content: center;
-  align-items: flex-end;
-
-  .hero-bg {
-    position: absolute;
-    inset: 0;
-    background: url("/assets/cabecera-minecraft.webp") center/cover no-repeat;
-    z-index: 1;
-  }
-
-  .hero-inner {
-    position: relative;
-    z-index: 3; /* por encima de la madera */
-    width: min(1100px, 100%);
-    padding: 0 1.25rem;
-    display: flex;
-    justify-content: center;
-    padding-bottom: 4.4rem; /* baja la tarjeta para que no se corte */
-  }
-
-  .perfiljugador-headcard {
-    background: #f3e6cc;
-    border: 3px solid #7c5a3a;
-    border-radius: 18px 18px 10px 10px;
-    width: min(1000px, 100%);
-    display: flex;
-    gap: 1.6rem;
-    align-items: center;
-    padding: 1.1rem 1.3rem 1.25rem;
-    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
-    position: relative;
-    overflow: hidden;
-
-    /* ligero brillo superior para darle “profundidad” */
-    &::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      top: -40%;
-      background: radial-gradient(circle at top, rgba(255, 255, 255, 0.35), transparent 65%);
-      pointer-events: none;
-    }
-  }
-
-  .perfiljugador-skin {
-    width: 120px;
-    border-radius: 10px;
-    border: 2px solid #7c5a3a;
-    background: #fff;
-    flex: 0 0 auto;
-    box-shadow: 0 10px 18px rgba(0, 0, 0, 0.3);
-    position: relative;
-    z-index: 1;
-  }
-
-  .perfiljugador-info {
-    flex: 1 1 auto;
-    min-width: 0;
-    position: relative;
-    z-index: 1;
-
-    .nombre-jugador {
-      font-size: 2.1rem;
-      display: flex;
-      gap: 0.5rem;
-      align-items: center;
-      word-break: break-word;
-    }
-
-    .icono-premium {
-      width: 23px;
-      height: 23px;
-      filter: drop-shadow(0 0 4px rgba(255, 221, 120, 0.8));
-    }
-
-    .nivel {
-      margin-top: 0.35rem;
-      font-size: 1.05rem;
-    }
-
-    .xp-bar {
-      width: 100%;
-      height: 14px;
-      margin-top: 0.4rem;
-      background: #d9c49f;
-      border-radius: 8px;
-      overflow: hidden;
-      box-shadow:
-        inset 0 0 4px rgba(0, 0, 0, 0.3),
-        0 0 6px rgba(255, 234, 180, 0.8);
-
-      .xp-fill {
-        height: 100%;
-        background: linear-gradient(90deg, #ffe186, #f4c661, #ffe186);
-        transition: width 0.35s ease-out;
-        position: relative;
-        overflow: hidden;
-      }
-
-      .xp-fill::after {
-        content: "";
-        position: absolute;
-        inset: 0;
-        background: linear-gradient(
-          120deg,
-          rgba(255, 255, 255, 0.8),
-          transparent 40%,
-          transparent 60%,
-          rgba(255, 255, 255, 0.9)
-        );
-        background-size: 200% 100%;
-        mix-blend-mode: screen;
-        animation: xp-shine 1.8s linear infinite;
-      }
-    }
-
-    .xp-text {
-      font-size: 0.95rem;
-      margin-top: 0.35rem;
-      color: #5f4b30;
-    }
-  }
-
-  /* tira de madera */
-  .hero-wood {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 55px;
-    background-size: cover;
-    background-position: center;
-    background-repeat: repeat-x;
-    z-index: 2;
-    box-shadow:
-      0 -4px 6px rgba(0, 0, 0, 0.25),
-      0 10px 18px rgba(0, 0, 0, 0.4);
-  }
-}
-
-/* ========== BODY (papel) ========== */
-.perfiljugador-body {
-  width: 100%;
-  background: url("/assets/papertexture.jpeg") top center repeat-y;
-  background-size: cover;
-  position: relative;
-  z-index: 1;
-  padding-top: 0;
-}
-
-/* deco sobre el papel, debajo de la madera */
-.paper-decor {
-  position: absolute;
-  top: 0; /* justo al empezar el papel */
-  left: 0;
-  width: 100%;
-  pointer-events: none;
-  z-index: 2;
-
-  .paper-top {
-    width: 100%;
-    display: block;
-    opacity: 0.9;
-  }
-
-  .paper-fold {
-    position: absolute;
-    top: -12px;
-    right: 0;
-    width: 170px;
-    opacity: 0.85;
-  }
-}
-
-/* contenido centrado */
-.perfiljugador-body-inner {
-  width: min(1100px, 100%);
-  margin: 0 auto;
-  padding: 4.9rem 1.5rem 3.2rem;
-  box-sizing: border-box;
-  position: relative;
-  z-index: 3; /* por encima de la deco */
-
-  /* bordes verticales decorativos a ambos lados del bloque */
-  &::before,
-  &::after {
-    content: "";
-    position: absolute;
-    top: 22px;
-    bottom: 22px;
-    width: 3px;
-    background: linear-gradient(to bottom, #7c5a3a, #f3e6cc, #7c5a3a);
-    opacity: 0.45;
-    pointer-events: none;
-  }
-
-  &::before {
-    left: 18px;
-  }
-
-  &::after {
-    right: 18px;
-  }
-}
-
-/* ========== SELECTOR ========== */
-.selector-servidor {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  justify-content: center;
-  margin-bottom: 2.1rem;
-
-  .selector-btn {
-    background: #f3e6cc;
-    border: 2px solid #7c5a3a;
-    border-radius: 12px;
-    padding: 0.45rem 1.5rem;
-    font-family: inherit;
-    font-size: 1rem;
-    color: #3c2b1b;
-    cursor: pointer;
-    transition: 0.15s all ease-out;
-    box-shadow: inset 0 1px 2px #fff3, 0 4px 6px rgba(0, 0, 0, 0.2);
-
-    &:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 5px 10px rgba(0, 0, 0, 0.25);
-    }
-
-    &.active {
-      background: #f9edd5;
-      box-shadow:
-        inset 0 3px 6px rgba(0, 0, 0, 0.25),
-        0 1px 0 #b38b63;
-    }
-  }
-}
-
-/* ========== PANEL ESTADÍSTICAS ========== */
-.estadisticas-panel {
-  background: rgba(255, 253, 243, 0.98);
-  border: 3px solid #b58f5a;
-  border-radius: 16px;
-  padding: 2.6rem 1.6rem 2.1rem;
-  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.08);
-  margin-bottom: 2.9rem;
-  position: relative;
-  overflow: hidden;
-
-  .panel-title {
-    font-size: 1.7rem;
-    text-align: center;
-    margin-bottom: 1.5rem;
-    text-shadow: 0 1px 0 #ffffffbb;
-  }
-
-  .stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-    gap: 1.1rem;
-  }
-
-  .stat-card {
-    background: #fff6db;
-    border: 1px solid #dec49b;
-    border-radius: 12px;
-    padding: 1rem 1.1rem;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-    display: flex;
-    flex-direction: column;
-    gap: 0.35rem;
-    position: relative;
-    overflow: hidden;
-    transition: transform 0.12s ease-out, box-shadow 0.12s ease-out;
-
-    &::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background: radial-gradient(circle at top left, rgba(255, 255, 255, 0.5), transparent 60%);
-      opacity: 0;
-      transition: opacity 0.2s ease-out;
-      pointer-events: none;
-    }
-
-    &:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
-    }
-
-    &:hover::before {
-      opacity: 1;
-    }
-
-    .label {
-      font-weight: bold;
-      font-size: 1.02rem;
-    }
-
-    .valor {
-      font-size: 1.3rem;
-      color: #5a4327;
-    }
-  }
-
-  .mensaje-vacio {
-    text-align: center;
-    font-style: italic;
-    color: #806241;
-  }
-
-  &.estadisticas-vacias {
-    text-align: center;
-
-    .mensaje-vacio-global {
-      max-width: 640px;
-      margin: 0.5rem auto 0;
-      font-size: 1.02rem;
-      line-height: 1.5;
-      color: #6d5333;
-    }
-  }
-}
-
-/* ========== SANCIONES ========== */
-.sanciones-panel {
-  background: rgba(255, 253, 245, 0.98);
-  border: 2px solid #c0a070;
-  border-radius: 12px;
-  padding: 1.6rem 1.4rem 1.4rem;
-  margin-bottom: 2.4rem;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
-
-  h2 {
-    font-size: 1.55rem;
-    text-align: center;
-    margin-bottom: 1.1rem;
-  }
-
-  .sanciones-lista {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: grid;
-    gap: 0.8rem;
-  }
-
-  .sancion-item {
-    padding: 0.85rem 0.8rem;
-    border-radius: 10px;
-    background: #fff9eb;
-    border-left: 3px solid #c46a4a;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.04);
-
-    p {
-      margin: 0.3rem 0;
-    }
-  }
-
-  .sin-sanciones {
-    text-align: center;
-    font-style: italic;
-    color: #4c3927;
-    background: #e5f6e9;
-    border-radius: 10px;
-    padding: 0.65rem 0.9rem;
-    border: 1px solid #98d5a4;
-  }
-}
-
-/* ========== BOTÓN VOLVER ========== */
-.volver-btn {
-  text-align: center;
-
-  .btn {
-    background: #e8d7b9;
-    border: 2px solid #7c5a3a;
-    border-radius: 12px;
-    padding: 0.6rem 1.6rem;
-    font-weight: bold;
-    font-size: 1.05rem;
-    color: #3c2b1b;
-    cursor: pointer;
-    transition: all 0.15s ease-out;
-    font-family: "IM Fell English SC", serif;
-
-    &:hover {
-      background: #f3e6cc;
-      transform: translateY(-1px);
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.18);
-    }
-  }
-}
-
-/* ========== PERFIL NO ENCONTRADO ========== */
-.perfiljugador-wrapper.no-encontrado {
-  min-height: 100vh;
-  background: url("/assets/papertexture.jpeg") center/cover repeat;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-
-  .perfiljugador-card.error {
-    background: rgba(255, 253, 243, 0.96);
-    border-radius: 18px;
-    border: 3px solid #c46a4a;
-    padding: 2rem 2.5rem;
-    text-align: center;
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-
-    h2 {
-      font-size: 1.8rem;
-      margin: 1rem 0 0.5rem;
-    }
-
-    p {
-      margin-bottom: 1.4rem;
-    }
-
-    .perfiljugador-skin {
-      width: 110px;
-      border-radius: 10px;
-      border: 2px solid #7c5a3a;
-      background: #fff;
-    }
-
-    .btn {
-      background: #f3e6cc;
-      border: 2px solid #7c5a3a;
-      border-radius: 12px;
-      padding: 0.5rem 1.6rem;
-      font-family: "IM Fell English SC", serif;
-      cursor: pointer;
-
-      &:hover {
-        background: #fffaf0;
-      }
-    }
-  }
-}
-
-/* ========== RANGOS (coherente con leaderboard) ========== */
-.nombre-jugador {
-  &.rango-nova {
-    color: #b5ff6b !important;
-    text-shadow: 0 0 2px #7ed957;
-  }
-
-  &.rango-alpha {
-    color: #58d4ff !important;
-    text-shadow: 0 0 2px #30bdee;
-  }
-
-  &.rango-inmortal {
-    color: #ff4b2b !important;
-    text-shadow: 0 0 4px #ff8000, 0 0 10px #ff4b2b;
-  }
-}
-
-/* ========== RESPONSIVE ========== */
-@media (max-width: 992px) {
-  .perfiljugador-hero {
-    height: 330px;
-  }
-
-  .estadisticas-panel .stats-grid {
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    font-size: 0.9rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
   }
 }
 
 @media (max-width: 768px) {
-  .perfiljugador-hero {
-    height: auto;
-  }
-
-  .perfiljugador-hero .perfiljugador-headcard {
-    flex-direction: row;
-    width: calc(100% - 2rem);
-  }
-
-  .perfiljugador-body-inner {
-    padding: 4.5rem 1rem 3rem;
-
-    &::before,
-    &::after {
-      left: 10px;
-      right: 10px;
-    }
-  }
-
-  .paper-decor .paper-fold {
-    right: 0;
-    width: 150px;
-  }
-
-  .estadisticas-panel {
-    padding-inline: 1rem;
+  .perfiljugador-loading {
+    padding: 4.4rem 0.9rem 2.4rem;
   }
 }
 
-@media (max-width: 600px) {
-  .perfiljugador-hero .perfiljugador-headcard {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .perfiljugador-hero .perfiljugador-skin {
-    width: 110px;
-  }
-
-  .selector-servidor .selector-btn {
-    width: calc(50% - 0.5rem);
-    text-align: center;
-  }
-
-  .estadisticas-panel .stats-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .sanciones-panel {
-    padding-inline: 0.9rem;
-  }
-
-  .perfiljugador-body-inner::before,
-  .perfiljugador-body-inner::after {
-    display: none; /* para que no “coman” espacio en móvil estrecho */
-  }
-}
-
-/* Evitar scroll horizontal global raro */
-body {
-  overflow-x: hidden;
-}
-
-/* ========== ANIMACIONES ========== */
-@keyframes spin {
+@keyframes perfil-spinner {
   to {
     transform: rotate(360deg);
   }
 }
 
-@keyframes xp-shine {
-  0% {
-    background-position: 200% 0;
+.perfiljugador-card.perfiljugador-card--error {
+  margin: 0 auto;
+  max-width: 420px;
+  padding: 2.2rem 2rem 2rem;
+  border-radius: 1.4rem;
+  background: #302219;
+  border: 3px solid #6b4a2f;
+  box-shadow:
+    0 18px 36px rgba(0, 0, 0, 0.75),
+    0 0 0 2px rgba(109, 70, 36, 0.4);
+  text-align: center;
+  color: #fdf6dd;
+
+  .perfiljugador-skin {
+    width: 96px;
+    height: 96px;
+    border-radius: 0.7rem;
+    margin-bottom: 1rem;
+    object-fit: cover;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.6);
   }
-  100% {
-    background-position: -200% 0;
+
+  h2 {
+    font-size: 1.6rem;
+    margin-bottom: 0.5rem;
+  }
+
+  p {
+    font-size: 0.95rem;
+    margin-bottom: 1.4rem;
+  }
+}
+
+/* ============================
+   TARJETA PRINCIPAL PERGAMINO
+   ============================ */
+
+.perfiljugador-maincard {
+  position: relative;
+  margin: 0 auto;
+  margin-top: 3.2rem;
+  background: #d9c28b; // pergamino
+  border-radius: 1.4rem;
+  padding-top: 0;
+  box-shadow:
+    0 0 0 2px #3b2217,
+    0 0 0 6px #6b4933,
+    0 0 0 8px #3b2217,
+    0 22px 46px rgba(0, 0, 0, 0.75);
+}
+
+.perfiljugador-maincard-inner {
+  padding: 5rem 2.6rem 2.2rem 3rem;
+  border-radius: 1.4rem;
+  background: #d9c28b;
+  color: #fdf6dd;
+}
+
+/* Wrap superior para que SOLO el header no quede debajo del avatar */
+.perfiljugador-topwrap {
+  margin-left: 15rem;
+  max-width: calc(100% - 15rem);
+}
+
+/* ============================
+   AVATAR ESTILO WYNNCRAFT
+   ============================ */
+
+.perfiljugador-avatar-wrapper {
+  position: absolute;
+  top: -100px;
+  left: 2.6rem;
+}
+
+.perfiljugador-avatar-frame {
+  position: relative;
+  width: 240px;
+  height: 250px;
+  border-radius: 0;
+  background: #2b1810;
+  border: 4px solid #2b1810;
+  box-shadow:
+    0 24px 40px rgba(0, 0, 0, 0.9),
+    0 0 0 3px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+}
+
+/* Fondo interno: imagen bgprofile.png claramente visible */
+.perfiljugador-avatar-bg {
+  position: absolute;
+  inset: 0;
+  background: #3b2518 url("/assets/bgprofile.png") center center / cover
+    no-repeat;
+  z-index: 0;
+}
+
+/* Skin dejando margen para ver el fondo */
+.perfiljugador-avatar-img {
+  position: absolute;
+  inset: 10%;
+  margin-bottom: 10%;
+  border-radius: 0.9rem;
+  object-fit: cover;
+  object-position: 50% 18%;
+  image-rendering: pixelated;
+  z-index: 1;
+}
+
+/* ============================
+   HEADER: NOMBRE + RANGO + XP
+   ============================ */
+
+.perfiljugador-header {
+  margin-bottom: 1.6rem;
+}
+
+.perfiljugador-name-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.perfiljugador-name-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+/* Contenedor del icono de rango */
+.perfiljugador-rankicon-wrap {
+  width: 46px;
+  height: 46px;
+  border-radius: 0.9rem;
+  background: #251710;
+  box-shadow:
+    0 4px 8px rgba(0, 0, 0, 0.6),
+    0 0 0 2px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.perfiljugador-rankicon {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+/* Nombre base: fuente pixel + sombrita inferior */
+.perfiljugador-name {
+  font-family: "Press Start 2P", system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
+  font-size: 1.7rem;
+  text-transform: none; // respetar cómo lo escribe el jugador
+  color: #42d4d2; // color base por si no tiene rango
+  text-shadow:
+    0 2px 0 #146b6a,
+    0 3px 0 rgba(0, 0, 0, 0.55);
+}
+
+/* Colores según rango (sin degradados tochos, solo tono + sombra) */
+.nombre-nova {
+  color: #5bef6e;
+  text-shadow:
+    0 2px 0 #1e6b33,
+    0 3px 0 rgba(0, 0, 0, 0.6);
+}
+
+.nombre-alpha {
+  color: #46c8ff;
+  text-shadow:
+    0 2px 0 #16658c,
+    0 3px 0 rgba(0, 0, 0, 0.6);
+}
+
+.nombre-inmortal {
+  color: #ff6340;
+  text-shadow:
+    0 2px 0 #8a3b12,
+    0 3px 0 rgba(0, 0, 0, 0.6);
+}
+
+/* Badge premium como imagen */
+.perfiljugador-premium {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.perfiljugador-premium-img {
+  display: block;
+  height: 24px;
+  width: auto;
+  image-rendering: pixelated;
+  filter:
+    drop-shadow(0 2px 0 rgba(0, 0, 0, 0.75))
+    drop-shadow(0 0 6px rgba(255, 240, 180, 0.9));
+}
+
+/* Fila nivel + barra XP */
+.perfiljugador-level-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+/* Nivel con fondo tipo chapa */
+.perfiljugador-level-label {
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  padding: 0.18rem 0.9rem 0.22rem;
+  border-radius: 999px;
+  background: #2c2116;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(0, 0, 0, 0.4);
+}
+
+/* Barra de XP */
+.perfiljugador-xpbar {
+  flex: 1;
+  min-width: 80px;
+  height: 10px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: #1b2833;
+  box-shadow:
+    inset 0 1px 2px rgba(0, 0, 0, 0.5),
+    0 0 8px rgba(117, 225, 255, 0.4);
+}
+
+.perfiljugador-xpfill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #74e1ff 0%, #9cf5ff 40%, #fdf6dd 100%);
+}
+
+.perfiljugador-xptext {
+  font-size: 0.8rem;
+  opacity: 0.96;
+}
+
+/* ============================
+   FEATURED STATS (PANEL)
+   ============================ */
+
+.perfiljugador-featured {
+  margin-bottom: 1.6rem;
+}
+
+.perfiljugador-featured-wrapper {
+  padding: 0.9rem 1rem 1.1rem;
+  border-radius: 1rem;
+  border: 2px solid #7b5934;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15) inset;
+  color: #fdf6dd;
+}
+
+.featured-header {
+  margin-bottom: 0.6rem;
+}
+
+.featured-title {
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+}
+
+.featured-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+
+.featured-card {
+  padding: 0.9rem 0.7rem;
+  border-radius: 0.8rem;
+  background: #8f7045;
+  border: 2px solid #684324;
+  text-align: center;
+  box-shadow: 0 10px 18px rgba(0, 0, 0, 0.35);
+  color: #fdf6dd;
+}
+
+.featured-value {
+  display: block;
+  font-size: 1.05rem;
+  margin-bottom: 0.2rem;
+}
+
+.featured-label {
+  display: block;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+}
+
+/* Separador */
+
+.perfiljugador-divider {
+  border: none;
+  border-top: 1px solid rgba(93, 68, 36, 0.6);
+  margin: 1.4rem 0 1.6rem;
+}
+
+/* ============================
+   COLUMNAS: ACTIVIDAD / SANCIONES
+   ============================ */
+
+.perfiljugador-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+  gap: 1.2rem;
+}
+
+.perfiljugador-col {
+  background: #b39461;
+  border-radius: 1rem;
+  border: 2px solid #7b5934;
+  padding: 1rem 1.1rem 1.2rem;
+  color: #fdf6dd;
+}
+
+/* Cabecera de panel */
+
+.panel-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  margin-bottom: 0.8rem;
+
+  h2 {
+    font-size: 0.95rem;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+  }
+}
+
+/* ============================
+   SELECTOR DE SERVIDOR CON ICONOS
+   ============================ */
+
+.server-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  justify-content: flex-end;
+}
+
+.server-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.18rem 0.6rem 0.18rem 0.4rem;
+  border-radius: 999px;
+  border: 1px solid #79532c;
+  background: #8f7045;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  cursor: pointer;
+  transition:
+    background 0.15s ease-out,
+    box-shadow 0.15s ease-out,
+    transform 0.1s ease-out;
+  color: #fdf6dd;
+}
+
+.server-pill-icon-wrap {
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: #2f2418;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.server-pill-icon {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  display: block;
+}
+
+.server-pill-label {
+  white-space: nowrap;
+}
+
+.server-pill--active {
+  background: #f4d16b;
+  box-shadow: 0 0 12px rgba(244, 209, 107, 0.8);
+  transform: translateY(-1px);
+  color: #3a2511;
+}
+
+/* Texto bajo selector */
+
+.panel-subtitle {
+  font-size: 0.85rem;
+  margin-bottom: 0.7rem;
+}
+
+.panel-servidor {
+  font-weight: 700;
+}
+
+/* Grid estadísticas */
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+
+.stat-card {
+  padding: 0.7rem 0.7rem;
+  border-radius: 0.7rem;
+  background: #8f7045;
+  border: 1px solid #7e5d33;
+  color: #fdf6dd;
+}
+
+.stat-label {
+  display: block;
+  font-size: 0.78rem;
+  margin-bottom: 0.2rem;
+}
+
+.stat-value {
+  font-size: 0.95rem;
+}
+
+/* Panel vacío */
+
+.panel-empty {
+  border-radius: 0.7rem;
+  padding: 0.8rem 0.7rem;
+  background: #8f7045;
+  border: 1px dashed #7c5a35;
+  font-size: 0.85rem;
+  color: #fdf6dd;
+}
+
+.panel-empty--text {
+  margin-top: 0.3rem;
+}
+
+/* Sanciones */
+
+.sanciones-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.7rem;
+}
+
+.sancion-item {
+  padding: 0.7rem 0.7rem;
+  border-radius: 0.7rem;
+  background: #8f7045;
+  border: 1px solid #7e5d33;
+  color: #fdf6dd;
+}
+
+.sancion-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.6rem;
+  font-size: 0.8rem;
+
+  & + & {
+    margin-top: 0.2rem;
+  }
+}
+
+.sancion-label {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.72rem;
+}
+
+.sancion-value {
+  text-align: right;
+}
+
+/* Botón volver */
+
+.perfiljugador-actions {
+  margin-top: 1.6rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.btn-volver {
+  border: none;
+  outline: none;
+  cursor: pointer;
+  padding: 0.55rem 1.4rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  background: #f4d06f;
+  color: #3a2511;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.65);
+  border: 1px solid #5e3c22;
+  transition:
+    transform 0.12s ease-out,
+    box-shadow 0.12s ease-out;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 14px 26px rgba(0, 0, 0, 0.75);
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow: 0 9px 18px rgba(0, 0, 0, 0.7);
+  }
+}
+
+/* ============================
+   RESPONSIVE
+   ============================ */
+
+@media (max-width: 992px) {
+  .perfiljugador-page {
+    padding-inline: 1.1rem;
+  }
+
+  .perfiljugador-maincard-inner {
+    padding-inline: 2rem;
+    padding-left: 3rem;
+  }
+
+  .perfiljugador-topwrap {
+    margin-left: 11rem;
+    max-width: calc(100% - 11rem);
+  }
+
+  .perfiljugador-name {
+    font-size: 1.6rem;
+  }
+
+  .featured-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .perfiljugador-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .perfiljugador-avatar-frame {
+    width: 230px;
+    height: 230px;
+  }
+}
+
+@media (max-width: 768px) {
+  .perfiljugador-page {
+    padding: 4.4rem 0.9rem 2.4rem;
+  }
+
+  .perfiljugador-maincard-inner {
+    padding: 5.5rem 1.4rem 1.9rem;
+  }
+
+  .perfiljugador-topwrap {
+    margin-left: 0;
+    margin-top: 4.4rem;
+    max-width: 100%;
+  }
+
+  .perfiljugador-avatar-wrapper {
+    left: 50%;
+    transform: translateX(-50%);
+    top: -90px;
+  }
+
+  .perfiljugador-header {
+    text-align: left;
+  }
+
+  /* Mantener rango + nombre + premium en una sola línea */
+  .perfiljugador-name-row {
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: nowrap;
+  }
+
+  .perfiljugador-name {
+    font-size: 1.4rem;
+    max-width: 60%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .perfiljugador-level-row {
+    width: 100%;
+  }
+
+  .perfiljugador-xpbar {
+    height: 12px;
+  }
+
+  .featured-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .stats-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .server-selector {
+    justify-content: flex-start;
+  }
+
+  .sancion-line {
+    flex-direction: column;
+    align-items: flex-start;
+
+    .sancion-value {
+      text-align: left;
+    }
+  }
+
+  .perfiljugador-actions {
+    justify-content: center;
+  }
+
+  .perfiljugador-avatar-frame {
+    width: 210px;
+    height: 210px;
+  }
+}
+
+@media (max-width: 480px) {
+  .perfiljugador-maincard-inner {
+    padding-inline: 1.1rem;
+  }
+
+  .perfiljugador-name {
+    font-size: 1.25rem;
+  }
+
+  .featured-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .perfiljugador-avatar-frame {
+    width: 190px;
+    height: 190px;
+  }
+
+  .perfiljugador-level-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.4rem;
+  }
+
+  .perfiljugador-xpbar {
+    width: 100%;
+  }
+
+  .perfiljugador-xptext {
+    font-size: 0.75rem;
   }
 }
