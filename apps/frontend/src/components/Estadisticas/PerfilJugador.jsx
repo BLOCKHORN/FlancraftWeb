@@ -77,7 +77,7 @@ export default function PerfilJugador() {
       setSinEstadisticas(false);
 
       try {
-        // 1) Buscar en `usuarios` por uid (nick)
+        // Buscar en `usuarios` por uid (nick)
         const { data: userMeta, error: userError } = await supabase
           .from("usuarios")
           .select("uuid, uid, nivel, xp_actual, rango_usuario, es_premium")
@@ -126,11 +126,12 @@ export default function PerfilJugador() {
             sancionesData = jailsData || [];
           }
         } else {
-          // 2) Fallback: buscar en estadísticas por nombre
-          const { data: statsByName, error: statsByNameError } = await supabase
-            .from("estadisticas_agrupadas")
-            .select("*")
-            .eq("nombre_minecraft", nombre);
+          // Fallback: buscar en estadísticas por nombre
+          const { data: statsByName, error: statsByNameError } =
+            await supabase
+              .from("estadisticas_agrupadas")
+              .select("*")
+              .eq("nombre_minecraft", nombre);
 
           if (statsByNameError) {
             console.error(
@@ -156,7 +157,7 @@ export default function PerfilJugador() {
             uuid: statsByName[0].uuid,
           };
 
-          // completar con meta de `usuarios` si existe por uuid
+          // Completar con meta de `usuarios` si existe por uuid
           if (jugador.uuid) {
             const { data: metaFromUuid, error: metaUuidError } = await supabase
               .from("usuarios")
@@ -249,6 +250,16 @@ export default function PerfilJugador() {
     tiempo_jugado: "Tiempo jugado",
   };
 
+  // Iconos para cada estadística
+  const statIcons = {
+    bloques_minados: "/assets/statsperfil/mining.png",
+    bloques_colocados: "/assets/statsperfil/build.png",
+    mobs_matados: "/assets/statsperfil/mobs.png",
+    kills_pvp: "/assets/statsperfil/pvp.png",
+    muertes: "/assets/statsperfil/deaths.png",
+    tiempo_jugado: "/assets/statsperfil/playtime.png",
+  };
+
   if (cargando) {
     return (
       <div className="perfiljugador-loading">
@@ -266,7 +277,7 @@ export default function PerfilJugador() {
         <div className="perfiljugador-shell">
           <div className="perfiljugador-card perfiljugador-card--error">
             <img
-              src="/assets/interrogante.webp"
+              src="/assets/interrogante.png"
               alt="Jugador no encontrado"
               className="perfiljugador-skin"
             />
@@ -451,7 +462,10 @@ export default function PerfilJugador() {
             {/* STATS PRINCIPALES */}
             <section className="perfiljugador-featured">
               <div className="perfiljugador-featured-wrapper">
-                <div className="featured-header">
+                <div
+                  className="featured-header"
+                  style={{ textAlign: "center" }}
+                >
                   <span className="featured-title">
                     Estadísticas destacadas
                   </span>
@@ -473,43 +487,52 @@ export default function PerfilJugador() {
             <section className="perfiljugador-columns">
               {/* ACTIVIDAD POR SERVIDOR */}
               <div className="perfiljugador-col perfiljugador-col--activity">
-                <div className="panel-header">
+                <div
+                  className="panel-header"
+                  style={{ justifyContent: "center", textAlign: "center" }}
+                >
                   <h2>Actividad por servidor</h2>
-
-                  {!sinEstadisticas && servidoresDisponibles.length > 0 && (
-                    <div className="server-selector">
-                      {servidoresDisponibles.map((s) => {
-                        const info = getServerInfo(s);
-                        if (!info) return null;
-                        const isActive = servidorActivo === s;
-
-                        return (
-                          <button
-                            key={s}
-                            type="button"
-                            className={`server-pill ${
-                              isActive ? "server-pill--active" : ""
-                            }`}
-                            onClick={() => setServidorActivo(s)}
-                          >
-                            {info.icon && (
-                              <span className="server-pill-icon-wrap">
-                                <img
-                                  src={info.icon}
-                                  alt={info.label}
-                                  className="server-pill-icon"
-                                />
-                              </span>
-                            )}
-                            <span className="server-pill-label">
-                              {info.label}
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
                 </div>
+
+                {!sinEstadisticas && servidoresDisponibles.length > 0 && (
+                  <div
+                    className="server-selector"
+                    style={{
+                      justifyContent: "center",
+                      marginBottom: "0.6rem",
+                    }}
+                  >
+                    {servidoresDisponibles.map((s) => {
+                      const info = getServerInfo(s);
+                      if (!info) return null;
+                      const isActive = servidorActivo === s;
+
+                      return (
+                        <button
+                          key={s}
+                          type="button"
+                          className={`server-pill ${
+                            isActive ? "server-pill--active" : ""
+                          }`}
+                          onClick={() => setServidorActivo(s)}
+                        >
+                          {info.icon && (
+                            <span className="server-pill-icon-wrap">
+                              <img
+                                src={info.icon}
+                                alt={info.label}
+                                className="server-pill-icon"
+                              />
+                            </span>
+                          )}
+                          <span className="server-pill-label">
+                            {info.label}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
 
                 {sinEstadisticas ? (
                   <div className="panel-empty">
@@ -519,18 +542,19 @@ export default function PerfilJugador() {
                     </p>
                   </div>
                 ) : statsActuales ? (
-                  <>
-                    <p className="panel-subtitle">
-                      Estadísticas en{" "}
-                      <span className="panel-servidor">
-                        {getServerInfo(statsActuales.servidor)?.label ||
-                          statsActuales.servidor}
-                      </span>
-                    </p>
+                  <div className="stats-grid">
+                    {Object.entries(etiquetas).map(([clave, label]) => (
+                      <article
+                        key={clave}
+                        className={`stat-card stat-card--${clave}`}
+                      >
+                        {statIcons[clave] && (
+                          <div className="stat-icon-inline">
+                            <img src={statIcons[clave]} alt={label} />
+                          </div>
+                        )}
 
-                    <div className="stats-grid">
-                      {Object.entries(etiquetas).map(([clave, label]) => (
-                        <article key={clave} className="stat-card">
+                        <div className="stat-text">
                           <span className="stat-label">{label}</span>
                           <span className="stat-value">
                             {clave === "tiempo_jugado"
@@ -539,10 +563,10 @@ export default function PerfilJugador() {
                                   "es-ES"
                                 )}
                           </span>
-                        </article>
-                      ))}
-                    </div>
-                  </>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
                 ) : (
                   <div className="panel-empty">
                     <p>Sin estadísticas registradas en este servidor.</p>
@@ -552,8 +576,21 @@ export default function PerfilJugador() {
 
               {/* SANCIONES */}
               <div className="perfiljugador-col perfiljugador-col--sanctions">
-                <div className="panel-header">
+                <div
+                  className="panel-header"
+                  style={{
+                    justifyContent: "center",
+                    textAlign: "center",
+                    gap: "0.5rem",
+                  }}
+                >
                   <h2>Sanciones</h2>
+                  <div className="panel-header-icon panel-header-icon--sanciones">
+                    <img
+                      src="/assets/statsperfil/sanciones.png"
+                      alt="Sanciones"
+                    />
+                  </div>
                 </div>
 
                 {sanciones.length === 0 ? (
