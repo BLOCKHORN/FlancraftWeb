@@ -74,7 +74,7 @@
   height: var(--ground-texture-h);
 
   background-image:
-    url("/assets/maprpg/ground-rock.png"),
+    url("/assets/maprpg/ground-rock.webp"),
     linear-gradient(
       to bottom,
       rgba(0, 0, 0, 0) 0%,  // arriba totalmente transparente
@@ -254,7 +254,7 @@
 .maprpg-portal-frame-image {
   position: absolute;
   inset: -40%;
-  background-image: url("/assets/maprpg/nether-portal-frame.png"); /* PNG con personajes */
+  background-image: url("/assets/maprpg/nether-portal-frame.webp"); /* PNG con personajes */
   background-size: contain;
   background-position: center;
   background-repeat: no-repeat;

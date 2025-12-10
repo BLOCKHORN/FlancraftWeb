@@ -204,7 +204,7 @@ $sky-gradient:
   .cloud--1 {
     top: 14%;
     width: 260px;
-    background-image: url("/assets/nube.png");
+    background-image: url("/assets/nube.webp");
     animation-duration: 140s;
     animation-delay: -20s;
     z-index: 2;
@@ -213,7 +213,7 @@ $sky-gradient:
   .cloud--2 {
     top: 20%;
     width: 320px;
-    background-image: url("/assets/nube1.png");
+    background-image: url("/assets/nube1.webp");
     animation-duration: 160s;
     animation-delay: -40s;
     z-index: 4;
@@ -222,7 +222,7 @@ $sky-gradient:
   .cloud--3 {
     top: 8%;
     width: 230px;
-    background-image: url("/assets/nube1.png");
+    background-image: url("/assets/nube1.webp");
     animation-duration: 150s;
     animation-delay: -60s;
     opacity: 0.9;
@@ -232,7 +232,7 @@ $sky-gradient:
   .cloud--4 {
     top: 28%;
     width: 240px;
-    background-image: url("/assets/nube.png");
+    background-image: url("/assets/nube.webp");
     animation-duration: 170s;
     animation-delay: -80s;
     opacity: 0.95;
@@ -242,7 +242,7 @@ $sky-gradient:
   .cloud--5 {
     top: 10%;
     width: 280px;
-    background-image: url("/assets/nube1.png");
+    background-image: url("/assets/nube1.webp");
     animation-duration: 155s;
     animation-delay: -100s;
     opacity: 0.95;
@@ -370,7 +370,7 @@ $sky-gradient:
       width: 100%;
       margin: -0.3rem auto -4.4rem;
       aspect-ratio: 1 / 1;
-      background: url("/assets/islalogo1.png") center/contain no-repeat;
+      background: url("/assets/islalogo1.webp") center/contain no-repeat;
       animation: floatFlan 4.5s ease-in-out infinite;
       filter:
         drop-shadow(0 10px 14px rgba(0, 0, 0, 0.85))

@@ -7,7 +7,7 @@ const SectionDivider = () => {
     <div className="section-divider" aria-hidden="true">
       <img
         className="section-divider__image"
-        src="/assets/Divider.png"
+        src="/assets/Divider.webp"
         alt=""
       />
     </div>

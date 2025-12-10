@@ -16,7 +16,7 @@
       rgba(0, 0, 0, 0.75) 40%,
       rgba(0, 0, 0, 0.9) 100%
     ),
-    url("/assets/backperfil.png") center top / cover no-repeat;
+    url("/assets/backperfil.webp") center top / cover no-repeat;
   font-family: "IM Fell English SC", system-ui, -apple-system,
     BlinkMacSystemFont, "Segoe UI", sans-serif;
   color: #fdf6dd;
@@ -63,7 +63,7 @@
       rgba(0, 0, 0, 0.75) 40%,
       rgba(0, 0, 0, 0.9) 100%
     ),
-    url("/assets/backperfil.png") center top / cover no-repeat;
+    url("/assets/backperfil.webp") center top / cover no-repeat;
 
   font-family: "IM Fell English SC", system-ui, -apple-system,
     BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -199,7 +199,7 @@
 .perfiljugador-avatar-bg {
   position: absolute;
   inset: 0;
-  background: #3b2518 url("/assets/bgprofile.png") center center / cover
+  background: #3b2518 url("/assets/bgprofile.webp") center center / cover
     no-repeat;
   z-index: 0;
 }

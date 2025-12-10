@@ -23,7 +23,7 @@ const baseZones = [
     shortDescription: 'Noticias, cambios y eventos del reino.',
     route: '/news',
     image: '/assets/taberna.webp',
-    runeImage: '/assets/runes/runa-taberna.png',
+    runeImage: '/assets/runes/runa-taberna.webp',
   },
   {
     id: 'tribunal',
@@ -32,7 +32,7 @@ const baseZones = [
     shortDescription: 'Historial de sanciones y sentencias.',
     route: '/tribunal',
     image: '/assets/fortaleza.webp',
-    runeImage: '/assets/runes/runa-tribunal.png',
+    runeImage: '/assets/runes/runa-tribunal.webp',
   },
   {
     id: 'stats',
@@ -41,7 +41,7 @@ const baseZones = [
     shortDescription: 'Rankings, tiempo de juego y récords.',
     route: '/leaderboards',
     image: '/assets/mina.webp',
-    runeImage: '/assets/runes/runa-estadisticas.png',
+    runeImage: '/assets/runes/runa-estadisticas.webp',
   },
   {
     id: 'rewards',
@@ -50,7 +50,7 @@ const baseZones = [
     shortDescription: 'Cofres, monedas y premios del pase.',
     route: '/dashboard',
     image: '/assets/recompensas.webp',
-    runeImage: '/assets/runes/runa-recompensas.png',
+    runeImage: '/assets/runes/runa-recompensas.webp',
   },
   {
     id: 'player',
@@ -59,7 +59,7 @@ const baseZones = [
     shortDescription: 'Tu perfil público y progreso global.',
     route: '/perfil/tuNombre',
     image: '/assets/torre.webp',
-    runeImage: '/assets/runes/runa-perfil.png',
+    runeImage: '/assets/runes/runa-perfil.webp',
   },
   {
     id: 'shop',
@@ -68,7 +68,7 @@ const baseZones = [
     shortDescription: 'Rangos, llaves y mucho más.',
     route: '/tienda',
     image: '/assets/mercado.webp',
-    runeImage: '/assets/runes/runa-tienda.png',
+    runeImage: '/assets/runes/runa-tienda.webp',
   },
 ]
 

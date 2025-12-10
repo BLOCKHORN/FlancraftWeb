@@ -5,7 +5,7 @@ import "../../styles/components/Landpage/_sectiondivider-news.scss";
 const SectionDividerNews = () => {
   return (
     <div className="section-news-divider" aria-hidden="true">
-      <img className="snews-divider" src="/assets/Divider.png" alt="" />
+      <img className="snews-divider" src="/assets/Divider.webp" alt="" />
 
       <div className="snews-rune">
         <img className="snews-rune-base" src="/assets/runa.webp" alt="" />

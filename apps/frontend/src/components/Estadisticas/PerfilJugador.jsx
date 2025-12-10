@@ -266,7 +266,7 @@ export default function PerfilJugador() {
         <div className="perfiljugador-shell">
           <div className="perfiljugador-card perfiljugador-card--error">
             <img
-              src="/assets/interrogante.png"
+              src="/assets/interrogante.webp"
               alt="Jugador no encontrado"
               className="perfiljugador-skin"
             />
@@ -422,7 +422,7 @@ export default function PerfilJugador() {
                     {usuario.es_premium && (
                       <span className="perfiljugador-premium">
                         <img
-                          src="/assets/premium.png"
+                          src="/assets/premium.webp"
                           alt="Cuenta premium"
                           className="perfiljugador-premium-img"
                         />

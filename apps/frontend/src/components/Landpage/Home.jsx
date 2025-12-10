@@ -383,7 +383,7 @@ const Home = () => {
                 }
                 aria-hidden="true"
               >
-                <img src="/assets/h1.png" alt="FlanCraft Minecraft Network" />
+                <img src="/assets/h1.webp" alt="FlanCraft Minecraft Network" />
               </div>
 
               {/* Logo central grande – invoca al dragón */}

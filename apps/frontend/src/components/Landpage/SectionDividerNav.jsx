@@ -8,7 +8,7 @@ const SectionDividerNav = () => {
       {/* Barra central (Divider) */}
       <img
         className="nav-divider"
-        src="/assets/Divider.png"
+        src="/assets/Divider.webp"
         alt=""
       />
 

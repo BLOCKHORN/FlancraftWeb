@@ -8,12 +8,12 @@ const SectionDividerGameModes = () => {
       {/* Barras superior e inferior */}
       <img
         className="sgm-divider sgm-divider--top"
-        src="/assets/dividergame.png"
+        src="/assets/dividergame.webp"
         alt=""
       />
       <img
         className="sgm-divider sgm-divider--bottom"
-        src="/assets/dividergame.png"
+        src="/assets/dividergame.webp"
         alt=""
       />
 
