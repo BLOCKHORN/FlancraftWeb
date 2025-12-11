@@ -252,12 +252,12 @@ export default function PerfilJugador() {
 
   // Iconos para cada estadística
   const statIcons = {
-    bloques_minados: "/assets/statsperfil/mining.png",
-    bloques_colocados: "/assets/statsperfil/build.png",
-    mobs_matados: "/assets/statsperfil/mobs.png",
-    kills_pvp: "/assets/statsperfil/pvp.png",
-    muertes: "/assets/statsperfil/deaths.png",
-    tiempo_jugado: "/assets/statsperfil/playtime.png",
+    bloques_minados: "/assets/statsperfil/mining.webp",
+    bloques_colocados: "/assets/statsperfil/build.webp",
+    mobs_matados: "/assets/statsperfil/mobs.webp",
+    kills_pvp: "/assets/statsperfil/pvp.webp",
+    muertes: "/assets/statsperfil/deaths.webp",
+    tiempo_jugado: "/assets/statsperfil/playtime.webp",
   };
 
   if (cargando) {
@@ -277,7 +277,7 @@ export default function PerfilJugador() {
         <div className="perfiljugador-shell">
           <div className="perfiljugador-card perfiljugador-card--error">
             <img
-              src="/assets/interrogante.png"
+              src="/assets/interrogante.webp"
               alt="Jugador no encontrado"
               className="perfiljugador-skin"
             />
@@ -491,7 +491,7 @@ export default function PerfilJugador() {
                   className="panel-header"
                   style={{ justifyContent: "center", textAlign: "center" }}
                 >
-                  <h2>Actividad por servidor</h2>
+                  <h2>Estadísticas por servidor</h2>
                 </div>
 
                 {!sinEstadisticas && servidoresDisponibles.length > 0 && (
@@ -587,7 +587,7 @@ export default function PerfilJugador() {
                   <h2>Sanciones</h2>
                   <div className="panel-header-icon panel-header-icon--sanciones">
                     <img
-                      src="/assets/statsperfil/sanciones.png"
+                      src="/assets/statsperfil/sanciones.webp"
                       alt="Sanciones"
                     />
                   </div>

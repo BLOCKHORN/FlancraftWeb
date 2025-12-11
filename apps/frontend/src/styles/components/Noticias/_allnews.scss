@@ -8,7 +8,7 @@
   .news-header-bg {
     position: relative;
     background: none;
-    padding: 5rem 2rem 3rem;
+    padding: 3rem 2rem 3rem;
     text-align: center;
     z-index: 1;
     overflow: hidden;
@@ -17,7 +17,7 @@
   content: "";
   position: absolute;
   inset: 0;
-  background: url('/assets/bgnews.webp') center center no-repeat;
+  background: url('/assets/bgnews.png') center center no-repeat;
   background-size: cover;
   filter: blur(2.4px) brightness(1.1);
   z-index: -1;

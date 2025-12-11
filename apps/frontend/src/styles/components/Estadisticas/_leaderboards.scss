@@ -1,444 +1,730 @@
-@import url('https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&family=Press+Start+2P&display=swap");
+
+/* ===============================
+   LAYOUT GENERAL + PANEL CENTRAL
+   =============================== */
 
 .leaderboard-epic {
-  font-family: 'IM Fell English SC', serif;
-  background: url('/assets/leadertexture.jpeg') repeat;
-  background-size: cover;
-  color: #3b2f1e;
-  padding-bottom: 4rem;
+  min-height: 100vh;
+  padding: 0 1.4rem; // sin margen arriba/abajo
+  background:
+    linear-gradient(
+      180deg,
+      rgba(0, 0, 0, 0.65) 0%,
+      rgba(0, 0, 0, 0.78) 40%,
+      rgba(0, 0, 0, 0.9) 100%
+    ),
+    url("/assets/backperfil.webp") center top / cover no-repeat;
+  font-family: "IM Fell English SC", system-ui, -apple-system,
+    BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #fdf6dd;
+  display: flex;
+  justify-content: center;
+}
 
-  .epic-header {
-    position: relative;
-    background: url('/assets/leaderboard.webp') no-repeat center -250px;
-    background-size: cover;
-    height: 520px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-    padding: 0 2rem;
-    color: #fefae0;
-    text-shadow: 2px 2px 5px #000000cc;
+.leaderboard-shell {
+  width: 100%;
+  max-width: 1120px;
+}
 
-    &::after {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(to bottom, #00000055, #00000055);
-      z-index: 0;
-    }
+.leaderboard-frame {
+  background: #d9c28b;
+  padding: 2.2rem 2.6rem 2.6rem;
+  min-height: 100vh; // panel a toda altura
+  border-left: 4px solid #3b2217;
+  border-right: 4px solid #3b2217;
+  box-shadow:
+    0 0 0 4px #6b4933,
+    0 26px 52px rgba(0, 0, 0, 0.8);
+  display: flex;
+  flex-direction: column;
+  transform-origin: center top;
+  transition: filter 0.3s ease;
+}
 
-    h1,
-    p {
-      position: relative;
-      z-index: 1;
-    }
+.leaderboard-frame--closing {
+  animation: leaderboardClosing 0.55s ease forwards;
+  pointer-events: none; /* bloqueamos interacción mientras se cierra */
+}
 
-    h1 {
-      font-size: 3.6rem;
-      margin-bottom: 1rem;
-      font-weight: bold;
-    }
+/* ===============================
+   CABECERA
+   =============================== */
 
-    p {
-      font-size: 1.25rem;
-      max-width: 900px;
-      margin: 0 auto;
-    }
+.epic-header {
+  text-align: center;
+  margin-bottom: 1.8rem;
+
+  h1 {
+    font-size: 2.8rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    margin-bottom: 0.3rem;
+    color: #fdf6dd;
+    text-shadow:
+      0 2px 0 #8a5b32,
+      0 4px 12px rgba(0, 0, 0, 0.7);
   }
 
-  .selector-panel {
-    background: url('/assets/madera.jpeg') repeat-x center;
-    background-size: cover;
-    padding: 1.5rem;
-    display: flex;
-    justify-content: center;
-    gap: 1rem;
-    border-top: 4px solid #3b2f1e;
-    border-bottom: 4px solid #3b2f1e;
-    flex-wrap: wrap;
+  p {
+    font-size: 0.95rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    opacity: 0.9;
+  }
+}
 
-    .selector-button {
-      background: #e8d7b9;
-      border: 2px solid #7c5a3a;
-      border-radius: 12px;
-      padding: 0.6rem 1.6rem;
-      font-weight: bold;
-      font-size: 1.1rem;
-      font-family: 'IM Fell English SC', serif;
-      color: #3c2b1b;
+/* ===============================
+   SELECTOR DE SERVIDORES (CARDS)
+   =============================== */
+
+.server-section {
+  margin-bottom: 2rem;
+}
+
+.server-section-title {
+  text-align: center;
+  font-size: 1rem;
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+  color: #3a2615;
+}
+
+/* grid más contenido y con ancho máximo para que no se vean gigantes */
+.server-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.4rem 1.2rem;
+  max-width: 980px;
+  margin: 0 auto;
+}
+
+/* Tarjeta exterior (wrap): más pequeña visualmente */
+.server-card {
+  position: relative;
+  padding: 0.1rem 0.2rem;
+  background: #b39461;
+  border: 3px solid #7b5934;
+  cursor: pointer;
+  overflow: visible;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.55);
+  transition:
+    transform 0.16s ease-out,
+    box-shadow 0.16s ease-out,
+    border-color 0.16s ease-out;
+}
+
+/* Contenido interno: más bajito y limitado de ancho */
+.server-card-inner {
+  position: relative;
+  width: 100%;
+  max-width: 320px; /* hace el card más pequeño */
+  margin: 0 auto;
+  aspect-ratio: 16 / 6; /* proporción rectangular tipo banner */
+  border-radius: 1rem;
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-end;
+}
+
+/* WRAP DE LA IMAGEN: se escala, pero partiendo de más pequeña */
+.server-card-image-wrap {
+  position: absolute;
+  inset: 0 0 20px 0; /* deja hueco abajo para la banda de texto */
+  border-radius: 1rem;
+  overflow: hidden;
+  transform-origin: center bottom;
+  transform: translateY(0) scale(0.86); /* más pequeña por defecto */
+  transition:
+    transform 0.5s ease-out,
+    box-shadow 0.4s ease-out;
+  z-index: 1;
+}
+
+.server-card-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain; /* no recorta el asset */
+  object-position: center;
+  display: block;
+  transition: filter 0.25s ease-out;
+}
+
+/* Cinta inferior con el nombre */
+.server-card-label {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  text-align: center;
+  padding: 0.35rem 1rem 0.45rem;
+  margin-top: auto;
+
+  color: #fdf6dd;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 0.8rem;
+  border-top: 2px solid rgba(255, 255, 255, 0.18);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+}
+
+/* ------------ HOVER / ACTIVO ------------ */
+
+.server-card:hover,
+.server-card.server-card--active {
+  transform: translateY(-2px);
+  border-color: #8f6a3e;
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.9);
+}
+
+.server-card:hover .server-card-image-wrap,
+.server-card.server-card--active .server-card-image-wrap {
+  transform: translateY(-30px) scale(0.98);
+}
+
+.server-card:hover .server-card-label,
+.server-card.server-card--active .server-card-label {
+  color: #ffffff;
+  border-top-color: rgba(255, 255, 255, 0.7);
+  text-shadow:
+    0 0 6px rgba(0, 0, 0, 0.9),
+    0 0 10px rgba(255, 255, 255, 0.35);
+}
+
+/* ===============================
+   COLORES POR SERVIDOR (brillo bordes)
+   =============================== */
+
+/* Survival clásico */
+.server-card--survival_clasico:hover .server-card-image,
+.server-card--survival_clasico.server-card--active .server-card-image {
+  filter:
+    drop-shadow(0 0 3px rgb(150, 233, 132))
+    drop-shadow(0 0 1px rgba(20, 209, 77, 0.85))
+    brightness(1.05);
+}
+
+/* Survival anárquico */
+.server-card--survival_anarquico:hover .server-card-image,
+.server-card--survival_anarquico.server-card--active .server-card-image {
+  filter:
+    drop-shadow(0 0 3px rgba(241, 132, 62, 1))
+    drop-shadow(0 0 1px rgba(241, 132, 62, 0.85))
+    brightness(1.05);
+}
+
+/* Survival hardcore */
+.server-card--survival_hardcore:hover .server-card-image,
+.server-card--survival_hardcore.server-card--active .server-card-image {
+  filter:
+    drop-shadow(0 0 3px rgba(243, 90, 90, 1))
+    drop-shadow(0 0 1px rgba(243, 90, 90, 0.85))
+    brightness(1.05);
+}
+
+/* OneBlock */
+.server-card--oneblock:hover .server-card-image,
+.server-card--oneblock.server-card--active .server-card-image {
+  filter:
+    drop-shadow(0 0 3px rgba(120, 204, 240, 1))
+    drop-shadow(0 0 1px rgba(120, 204, 240, 0.9))
+    brightness(1.05);
+}
+
+/* ChunkLock */
+.server-card--chunklock:hover .server-card-image,
+.server-card--chunklock.server-card--active .server-card-image {
+  filter:
+    drop-shadow(0 0 3px rgba(79, 227, 196, 1))
+    drop-shadow(0 0 1px rgba(79, 227, 196, 0.9))
+    brightness(1.05);
+}
+
+/* Parkour */
+.server-card--parkour:hover .server-card-image,
+.server-card--parkour.server-card--active .server-card-image {
+  filter:
+    drop-shadow(0 0 3px rgba(248, 232, 109, 1))
+    drop-shadow(0 0 1px rgba(248, 232, 109, 0.9))
+    brightness(1.05);
+}
+
+/* ===============================
+   BLOQUE TABLA + TÍTULO
+   =============================== */
+
+.tabla-section {
+  margin-top: 0.4rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.tabla-titulo {
+  text-align: center;
+  margin: 0.6rem 0 0.8rem;
+  color: #4a3215;
+}
+
+.tabla-titulo-main {
+  display: inline-flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.tabla-titulo-servidor {
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 1.1rem;
+  font-weight: bold;
+}
+
+.tabla-titulo-stat {
+  font-size: 0.95rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+
+  .flecha-orden {
+    font-size: 0.9rem;
+    margin-left: 0.3rem;
+    color: #7b5a35;
+  }
+}
+
+/* Separador tipo Wynncraft (líneas + punto) */
+.tabla-separator {
+  margin-top: 0.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+}
+
+.tabla-separator-line {
+  flex: 1;
+  max-width: 180px;
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgba(74, 50, 21, 0.8)
+  );
+  opacity: 0.9;
+
+  &:last-child {
+    background: linear-gradient(
+      to left,
+      transparent,
+      rgba(74, 50, 21, 0.8)
+    );
+  }
+}
+
+.tabla-separator-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #746b5f5d;
+  box-shadow:
+    0 0 6px rgba(0, 0, 0, 0.6),
+    0 0 4px rgba(255, 255, 255, 0.5);
+}
+
+/* ===============================
+   TABLA PRINCIPAL – CON CONTENEDOR
+   =============================== */
+
+.tabla-epica {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 6px;
+  background: transparent;
+
+  thead {
+    background: transparent;
+
+    th {
+      padding: 0.7rem 0.6rem;
+      font-size: 0.9rem;
+      user-select: none;
       cursor: pointer;
-      box-shadow:
-        inset 0 2px 3px #ffffff88,
-        0 3px 0 #b38b63,
-        0 4px 6px rgba(0, 0, 0, 0.2);
-      transition: all 0.15s ease-in-out;
-
-      &:hover {
-        background: #f3e6cc;
-        transform: translateY(-1px);
-        box-shadow:
-          inset 0 2px 3px #ffffff88,
-          0 4px 0 #b38b63,
-          0 6px 10px rgba(0, 0, 0, 0.25);
-      }
-
-      &.active {
-        background: #f9edd5;
-        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.15), 0 2px 0 #b38b63;
-        transform: translateY(1px);
-      }
-
-      &:focus-visible {
-        outline: 3px solid #ffdd87;
-        outline-offset: 2px;
-      }
-    }
-  }
-
-  .tabla-titulo {
-    text-align: center;
-    font-size: 1.5rem;
-    margin: 2rem 0 1rem 0;
-    color: #4a3215;
-    font-weight: bold;
-
-    .flecha-orden {
-      font-size: 1.2rem;
-      margin-left: 0.5rem;
-      color: #7b5a35;
-    }
-
-    .tabla-subtitulo-servidor {
-      display: block;
-      font-size: 1.1rem;
-      color: #7b5a35;
-      margin-bottom: 0.2rem;
-    }
-  }
-
-  .table-container {
-    overflow-x: auto;
-    padding: 0 2rem;
-    max-width: 95%;
-    margin: 0 auto;
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
-    border-radius: 12px;
-
-    .tabla-epica {
-      width: 100%;
-      border-collapse: separate;
-      border-spacing: 0 6px;
-      background: transparent;
-
-      thead {
-        background: #cbb78d;
-        border-bottom: 3px solid #a67c52;
-
-        th {
-          padding: 1rem;
-          font-size: 1rem;
-          user-select: none;
-          cursor: pointer;
-          border-bottom: 2px solid #a67c52;
-          background: #e7d7b3;
-          text-align: center;
-          position: relative;
-
-          &.activo {
-            color: #b4432b;
-            text-decoration: underline;
-          }
-
-          &.ordenable:hover {
-            color: #a05a00;
-            transform: scale(1.02);
-          }
-
-          .flecha-orden {
-            font-size: 1rem;
-            margin-left: 6px;
-          }
-        }
-      }
-
-      tbody {
-        &.tbody-animado-entrada tr {
-          animation: fadeInCascade 0.6s ease forwards;
-          animation-fill-mode: both;
-          will-change: transform, opacity;
-        }
-
-        &.tbody-animado-salida tr {
-          animation: fadeOutDown 0.4s ease forwards;
-          animation-fill-mode: both;
-        }
-
-        tr {
-          background: #fef8e6;
-          border: 2px solid #d2b991;
-          border-radius: 8px;
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-          transition: background 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease;
-          cursor: pointer;
-          position: relative;
-
-          &:hover {
-            background: #fff5d6;
-            transform: scale(1.02);
-            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
-            z-index: 1;
-          }
-
-          &.seleccionada {
-            background: #fff6dc !important;
-            box-shadow: inset 0 0 0 3px #e4ba6b;
-            animation: highlight 0.4s ease-in-out;
-
-            &::after {
-              content: "★";
-              position: absolute;
-              left: -14px;
-              top: 50%;
-              transform: translateY(-50%);
-              font-size: 1.1rem;
-              color: #f5c542;
-              text-shadow: 1px 1px 2px #c69d39;
-              animation: glowPulse 1.8s infinite ease-in-out;
-            }
-          }
-
-          &.fila-1.seleccionada::after {
-            animation: topGlow 2s infinite ease-in-out;
-          }
-
-          &.fila-vacia {
-            cursor: default;
-            background: #fbf3dd;
-            border-style: dashed;
-            text-align: center;
-
-            &:hover {
-              transform: none;
-              box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
-              background: #fbf3dd;
-            }
-
-            .mensaje-vacio {
-              padding: 1.4rem 1rem;
-              font-size: 1rem;
-              font-style: italic;
-              color: #6c4c28;
-            }
-          }
-
-          td {
-            vertical-align: middle;
-            text-align: center;
-            height: 60px;
-            padding: 0.8rem 0.6rem;
-
-            &:first-child {
-              width: 64px;
-            }
-
-            &:nth-child(2) {
-              text-align: left;
-            }
-
-            .jugador-info {
-              display: flex;
-              align-items: center;
-              justify-content: flex-start;
-              gap: 0.6rem;
-
-              .avatar-head {
-                width: 32px;
-                height: 32px;
-                border: 2px solid #7f5b3e;
-                border-radius: 4px;
-                transition: transform 1s ease, box-shadow 1s ease;
-              }
-
-              span {
-                font-weight: bold;
-                font-size: 1rem;
-                color: #3a2b15;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                max-width: 180px;
-              }
-            }
-
-            .medalla {
-              width: 28px;
-              height: 28px;
-              filter: drop-shadow(0 0 4px #d4af37);
-            }
-
-            .numero-rango {
-              font-weight: bold;
-              font-size: 1.2rem;
-              color: #5c4327;
-            }
-          }
-        }
-      }
-    }
-  }
-
-  .epic-pagination,
-  .paginador-numerico {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 0.4rem;
-    margin-top: 2rem;
-    flex-wrap: wrap;
-
-    button {
-      background: #d5c59d;
-      color: #3e2f1c;
-      border: 2px solid #a08a63;
-      border-radius: 6px;
-      padding: 0.5rem 0.85rem;
-      font-size: 1rem;
-      font-family: 'IM Fell English SC', serif;
-      font-weight: bold;
-      min-width: 36px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
-
-      &:hover:not(:disabled) {
-        background: #f0e4c1;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-      }
-
-      &:disabled {
-        background: #ccc2a2;
-        color: #8d7a5c;
-        cursor: not-allowed;
-        box-shadow: none;
-      }
+      text-align: center;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #3b2b17;
+      border-bottom: 2px solid #a48046;
 
       &.activo {
-        background: #f6e7b5;
-        color: #2f1f0e;
-        box-shadow: 0 0 10px #d2b16c;
-        transform: scale(1.05);
+        color: #b4432b;
+      }
+
+      &.ordenable:hover {
+        color: #a05a00;
+      }
+
+      .flecha-orden {
+        font-size: 0.85rem;
+        margin-left: 6px;
+      }
+
+      &.col-nivel {
+        cursor: default;
+        width: 70px;
       }
     }
   }
 
-  @keyframes glowPulse {
-    0% {
-      transform: scale(1);
-      opacity: 0.7;
+  tbody {
+    &.tbody-animado-entrada tr {
+      animation: fadeInCascade 0.6s ease forwards;
+      animation-fill-mode: both;
+      will-change: transform, opacity;
     }
-    50% {
-      transform: scale(1.2);
-      opacity: 1;
-    }
-    100% {
-      transform: scale(1);
-      opacity: 0.7;
-    }
-  }
 
-  @keyframes topGlow {
-    0% {
-      text-shadow: 0 0 4px #ffb300;
+    &.tbody-animado-salida tr {
+      animation: fadeOutDown 0.4s ease forwards;
+      animation-fill-mode: both;
     }
-    50% {
-      text-shadow: 0 0 10px #ffd700;
-    }
-    100% {
-      text-shadow: 0 0 4px #ffb300;
-    }
-  }
 
-  @keyframes highlight {
-    0% {
-      background-color: #fff0ba;
-    }
-    100% {
-      background-color: #fff6dc;
-    }
-  }
+    tr {
+      background: #f2e2b5;
+      cursor: pointer;
+      box-shadow: 0 1px 0 rgba(0, 0, 0, 0.25);
+      transition:
+        background 0.18s ease,
+        box-shadow 0.18s ease,
+        transform 0.18s ease;
+      position: relative;
 
-  @keyframes fadeInCascade {
-    0% {
-      opacity: 0;
-      transform: translateY(-8px) scale(0.98);
-    }
-    100% {
-      opacity: 1;
-      transform: translateY(0) scale(1);
-    }
-  }
+      &.fila-1 {
+        background: #f7e7b7;
+      }
 
-  @keyframes fadeOutDown {
-    0% {
-      opacity: 1;
-      transform: translateY(0) scale(1);
-    }
-    100% {
-      opacity: 0;
-      transform: translateY(10px) scale(0.98);
+      &:nth-child(2n) {
+        background: #ecd7a7;
+      }
+
+      &:hover {
+        background: #f9edc4;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+      }
+
+      &.seleccionada {
+        background: #fbe9b6 !important;
+        box-shadow:
+          0 0 0 2px #e4ba6b,
+          0 0 12px rgba(0, 0, 0, 0.28);
+        animation: highlight 0.4s ease-in-out;
+      }
+
+      &.fila-vacia {
+        cursor: default;
+        background: #f3e1b6;
+        text-align: center;
+        box-shadow: none;
+
+        &:hover {
+          background: #f3e1b6;
+          transform: none;
+        }
+
+        .mensaje-vacio {
+          padding: 1.4rem 1rem;
+          font-size: 1rem;
+          font-style: italic;
+          color: #6c4c28;
+        }
+      }
+
+      /* Fila que "viaja" al perfil */
+      &.fila--transition {
+        animation: filaExpandToPerfil 0.55s ease forwards;
+        z-index: 3;
+      }
+
+      /* Filas vecinas que se desvanecen mientras viaja la seleccionada */
+      &.fila--fade-out {
+        animation: filaFadeNeighbors 0.55s ease forwards;
+      }
+
+      td {
+        vertical-align: middle;
+        text-align: center;
+        padding: 0.7rem 0.6rem;
+        font-size: 0.92rem;
+        color: #3a2b15;
+        border: none;
+
+        &:first-child {
+          width: 70px;
+          border-radius: 6px 0 0 6px;
+        }
+
+        &:last-child {
+          border-radius: 0 6px 6px 0;
+        }
+
+        &:nth-child(2) {
+          text-align: left;
+        }
+
+        .jugador-info {
+          display: flex;
+          align-items: center;
+          justify-content: flex-start;
+          gap: 0.55rem;
+
+          .avatar-head {
+            width: 32px;
+            height: 32px;
+            border-radius: 4px;
+            border: 2px solid #7f5b3e;
+            box-shadow: 0 0 4px rgba(0, 0, 0, 0.4);
+            transition: transform 0.4s ease, box-shadow 0.4s ease;
+          }
+        }
+
+        .medalla {
+          width: 26px;
+          height: 26px;
+          display: inline-block;
+        }
+
+        .numero-rango {
+          font-weight: 700;
+          font-size: 1rem;
+          color: #4c361d;
+        }
+
+        &.col-nivel-td {
+          font-weight: 700;
+          font-size: 0.9rem;
+          color: #2f2414;
+        }
+      }
     }
   }
 }
 
-// Fuera de nesting para selector válido
-td:nth-child(2):hover .avatar-head,
-tr.seleccionada .avatar-head {
+/* ===============================
+   PAGINACIÓN
+   =============================== */
+
+.epic-pagination,
+.paginador-numerico {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 1.8rem;
+  flex-wrap: wrap;
+
+  button {
+    background: #d5c59d;
+    color: #3e2f1c;
+    border: 2px solid #a08a63;
+    border-radius: 6px;
+    padding: 0.5rem 0.85rem;
+    font-size: 1rem;
+    font-family: "IM Fell English SC", serif;
+    font-weight: bold;
+    min-width: 36px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+
+    &:hover:not(:disabled) {
+      background: #f0e4c1;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    &:disabled {
+      background: #ccc2a2;
+      color: #8d7a5c;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    &.activo {
+      background: #f6e7b5;
+      color: #2f1f0e;
+      box-shadow: 0 0 10px #d2b16c;
+      transform: scale(1.05);
+    }
+  }
+}
+
+/* ===============================
+   EFECTOS VARIOS
+   =============================== */
+
+@keyframes highlight {
+  0% {
+    background-color: #fff0ba;
+  }
+  100% {
+    background-color: #fff6dc;
+  }
+}
+
+@keyframes fadeInCascade {
+  0% {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes fadeOutDown {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+}
+
+/* Fila seleccionada que "entra" al perfil */
+@keyframes filaExpandToPerfil {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: none;
+  }
+  30% {
+    transform: translateY(-2px) scale(1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(-8px) scale(1.06);
+    box-shadow:
+      0 0 0 3px rgba(0, 0, 0, 0.45),
+      0 18px 36px rgba(0, 0, 0, 0.7);
+    filter: brightness(1.03);
+  }
+}
+
+/* Filas vecinas que se desvanecen */
+@keyframes filaFadeNeighbors {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(14px) scale(0.98);
+    filter: blur(3px);
+  }
+}
+
+/* Cierre del pergamino del leaderboard */
+@keyframes leaderboardClosing {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.96) translateY(6px);
+    filter: blur(3px);
+  }
+}
+
+/* Avatar flotando al pasar por encima o al seleccionar fila */
+.tabla-epica tbody tr:hover .avatar-head,
+.tabla-epica tbody tr.seleccionada .avatar-head {
   transform: translateY(-10px);
   box-shadow: 0 0 12px #ffe9b3;
   z-index: 2;
 }
 
-// Rangos y premium
+/* ===============================
+   NOMBRES, RANGOS Y PREMIUM
+   =============================== */
+
 .nombre-colored {
-  font-weight: bold;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  max-width: 240px;
+  text-decoration: none;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.4);
   transition: all 0.2s ease;
-  max-width: 200px;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  color: #3a2b15;
 
   &:hover {
-    filter: brightness(0.95);
-  }
-
-  &.rango-nova {
-    color: #b5ff6b !important;
-    text-shadow: 0 0 2px #7ed957;
-    font-size: 1.05rem;
-  }
-
-  &.rango-alpha {
-    color: #58d4ff !important;
-    text-shadow: 0 0 2px #30bdee;
-    font-size: 1.08rem;
-  }
-
-  &.rango-inmortal {
-    color: #ff4b2b !important;
-    text-shadow: 0 0 4px #ff8000, 0 0 10px #ff4b2b;
-    font-size: 1.12rem;
-    animation: glowPulse 2.4s infinite ease-in-out;
-  }
-
-  &[class*="rango-"] {
-    transition: color 0.3s ease, text-shadow 0.3s ease;
+    filter: brightness(0.98);
   }
 }
 
+.nombre-colored-label {
+  font-family: "Press Start 2P", system-ui, -apple-system, sans-serif;
+  font-size: 0.62rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  max-width: 160px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nombre-colored--con-rango {
+  padding: 0.2rem 0.55rem;
+  border-radius: 8px;
+  background: #050608;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.6),
+    0 0 12px rgba(0, 0, 0, 0.65);
+}
+
+.nombre-colored--premium-sin-rango {
+  padding-right: 0.35rem;
+}
+
+/* colores por rango (aplicados al texto) */
+.rango-nova .nombre-colored-label {
+  color: #b5ff6b !important;
+  text-shadow: 0 0 2px #7ed957;
+}
+
+.rango-alpha .nombre-colored-label {
+  color: #58d4ff !important;
+  text-shadow: 0 0 2px #30bdee;
+}
+
+.rango-inmortal .nombre-colored-label {
+  color: #ff4b2b !important;
+  text-shadow: 0 0 4px #ff8000, 0 0 10px #ff4b2b;
+}
+
+/* chapita de rango al lado del nombre */
+.badge-rango {
+  width: 20px;
+  height: 20px;
+  image-rendering: pixelated;
+  filter:
+    drop-shadow(0 0 3px rgba(0, 0, 0, 0.8))
+    drop-shadow(0 0 4px rgba(255, 255, 255, 0.35));
+}
+
+/* icono de premium */
 .icono-premium {
   width: 16px;
   height: 16px;
@@ -458,123 +744,81 @@ tr.seleccionada .avatar-head {
   }
 }
 
-@media (max-width: 1024px) {
+/* ===============================
+   RESPONSIVE
+   =============================== */
+
+@media (max-width: 992px) {
   .leaderboard-epic {
-    .epic-header {
-      background-position: center -50px;
-      height: auto;
-      padding: 5rem 1rem;
+    padding: 0 0rem;
+  }
 
-      h1 {
-        font-size: 2.4rem;
-      }
+  .leaderboard-frame {
+    padding-inline: 1.8rem;
+  }
 
-      p {
-        font-size: 1.05rem;
-        max-width: 95%;
-      }
+  .server-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.2rem 0.9rem;
+  }
+
+  .tabla-epica {
+    thead th,
+    tbody td {
+      font-size: 0.9rem;
+      padding: 0.6rem 0.4rem;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      overflow: hidden;
     }
 
-    .selector-panel {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 0.6rem;
-      padding: 1rem;
-
-      .selector-button {
-        font-size: 1rem;
-        padding: 0.5rem 1.2rem;
-        white-space: nowrap;
-        max-width: 100%;
-      }
+    .nombre-colored-label {
+      max-width: 120px;
     }
 
-    .table-container {
-      padding: 0;
-
-      .tabla-epica {
-        table-layout: fixed;
-        width: 100%;
-        overflow-x: hidden;
-
-        thead th,
-        tbody td {
-          font-size: 0.9rem;
-          padding: 0.6rem 0.4rem;
-          white-space: nowrap;
-          text-overflow: ellipsis;
-          overflow: hidden;
-        }
-
-        tbody td .jugador-info span {
-          font-size: 0.85rem;
-          max-width: 100px;
-        }
-
-        tbody td .avatar-head {
-          width: 28px;
-          height: 28px;
-        }
-
-        .numero-rango {
-          font-size: 1rem;
-        }
-
-        .medalla {
-          width: 24px;
-          height: 24px;
-        }
-      }
+    tbody td .avatar-head {
+      width: 28px;
+      height: 28px;
     }
 
-    .epic-pagination,
-    .paginador-numerico {
-      flex-wrap: wrap;
-      gap: 0.4rem;
-      margin-top: 1.5rem;
-
-      button {
-        font-size: 0.95rem;
-        padding: 0.45rem 0.75rem;
-        min-width: 32px;
-      }
+    .numero-rango {
+      font-size: 1rem;
     }
+
+    .medalla {
+      width: 24px;
+      height: 24px;
+    }
+  }
+
+  .epic-pagination button,
+  .paginador-numerico button {
+    font-size: 0.95rem;
+    padding: 0.45rem 0.75rem;
+    min-width: 32px;
   }
 }
 
 @media (max-width: 600px) {
-  .leaderboard-epic {
-    .epic-header {
-      h1 {
-        font-size: 2rem;
-      }
+  .leaderboard-frame {
+    padding-inline: 1.2rem;
+  }
 
-      p {
-        font-size: 0.95rem;
-      }
-    }
+  .epic-header h1 {
+    font-size: 2.1rem;
+  }
 
-    .selector-panel {
-      gap: 0.4rem;
-      padding: 0.8rem 0.5rem;
-    }
+  .server-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
+  }
 
-    .table-container {
-      .tabla-epica {
-        thead th,
-        tbody td {
-          font-size: 0.85rem;
-          padding: 0.5rem;
-        }
-
-        tbody td .jugador-info span {
-          max-width: 80px;
-        }
-      }
-    }
+  .nombre-colored-label {
+    max-width: 140px;
   }
 }
+
+/* Modo tarjetas en móvil muy pequeño */
 
 @media (max-width: 480px) {
   .tabla-epica {
@@ -620,16 +864,15 @@ tr.seleccionada .avatar-head {
         border: 2px solid #7f5b3e !important;
         box-shadow: 0 0 5px #00000022 !important;
       }
+    }
 
-      span {
-        font-size: 1rem !important;
-        font-weight: bold !important;
-        color: #3e2b1a !important;
-        max-width: 160px !important;
-        white-space: nowrap !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis !important;
-      }
+    .nombre-colored {
+      max-width: 100%;
+    }
+
+    .nombre-colored-label {
+      max-width: 170px;
+      font-size: 0.58rem;
     }
 
     .medalla {
@@ -646,11 +889,11 @@ tr.seleccionada .avatar-head {
       filter: drop-shadow(0 0 2px #facc15) !important;
     }
 
-    td[data-label="Rango"] {
+    td[data-label="Posición"] {
       display: none !important;
     }
 
-    td[data-label]:not([data-label="Jugador"]):not([data-label="Rango"]) {
+    td[data-label]:not([data-label="Jugador"]):not([data-label="Posición"]) {
       display: flex !important;
       justify-content: space-between !important;
       align-items: center !important;
@@ -681,31 +924,13 @@ tr.seleccionada .avatar-head {
         left: 0.5rem;
         right: 0.5rem;
         height: 1px;
-        background: radial-gradient(ellipse at center, #dbc8a0 0%, transparent 80%);
+        background: radial-gradient(
+          ellipse at center,
+          #dbc8a0 0%,
+          transparent 80%
+        );
         opacity: 0.3;
       }
-    }
-
-    .nombre-colored {
-      font-size: 1rem !important;
-      font-weight: bold !important;
-      text-shadow: none !important;
-    }
-
-    .nombre-colored.rango-inmortal {
-      color: #e84228 !important;
-      text-shadow: 0 0 4px #ff8c00 !important;
-      font-size: 1.05rem !important;
-    }
-
-    .nombre-colored.rango-alpha {
-      color: #30bdee !important;
-      text-shadow: 0 0 3px #8deeff !important;
-    }
-
-    .nombre-colored.rango-nova {
-      color: #7ed957 !important;
-      text-shadow: 0 0 3px #c4ff95 !important;
     }
   }
 }

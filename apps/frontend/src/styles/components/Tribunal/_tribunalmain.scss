@@ -1,18 +1,51 @@
-@import url('https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&display=swap");
 
 .tribunal-epic {
-  font-family: 'IM Fell English SC', serif;
-  background: url('/assets/leadertexture.jpeg') repeat;
-  background-size: cover;
-  color: #3b2f1e;
-  padding-bottom: 4rem;
+  min-height: 100vh;
+  font-family: "IM Fell English SC", serif;
+  color: #fdf6dd;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  background: url("/assets/backperfil.webp") center top / cover no-repeat;
 
-  // ---------- CABECERA ----------
-  .epic-header {
+  /* ---------- PERGAMINO + HERO UNIDOS ---------- */
+  .tribunal-shell {
+    width: 100%;
+    display: flex;
+    justify-content: center; // centramos el frame
+  }
+
+  .tribunal-frame {
+    background: #d9c28b;
+    padding: 0 2.4rem 2.5rem; // sin padding-top para que el hero toque arriba
+    border: 4px solid #3b2217; // madera alrededor
+    box-shadow:
+      0 0 0 4px #6b4933,
+      0 26px 52px rgba(0, 0, 0, 0.8);
+    display: flex;
+    flex-direction: column;
+    border-radius: 0 0 18px 18px;
+    width: 100%;
+    max-width: 1200px; // límite de ancho
+    margin: 0 auto; // centrado
+  }
+
+  /* ---------- HERO SUPERIOR ---------- */
+  .tribunal-hero.epic-header {
     position: relative;
-    background: url('/assets/tribunalsanciones.webp') no-repeat center bottom;
+    background: url("/assets/tribunalsanciones.webp") no-repeat center bottom;
     background-size: cover;
-    height: 520px;
+    height: 420px;
+
+    /* ancho extra para cubrir el padding lateral del frame
+       (2.4rem a cada lado) y que llegue a los bordes */
+    width: calc(100% + 4.8rem);
+    margin-top: 0;
+    margin-bottom: 0;
+    margin-left: -2.4rem;
+    margin-right: -2.4rem;
+
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -26,7 +59,7 @@
       content: "";
       position: absolute;
       inset: 0;
-      background: linear-gradient(to bottom, #00000055, #00000055);
+      background: linear-gradient(to bottom, #00000040, #00000088);
       z-index: 0;
     }
 
@@ -37,27 +70,28 @@
     }
 
     h1 {
-      font-size: 3.4rem;
-      margin-bottom: 0.75rem;
+      font-size: 3rem;
+      margin-bottom: 0.7rem;
       font-weight: bold;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
     }
 
     p {
-      font-size: 1.2rem;
+      font-size: 1.1rem;
       max-width: 900px;
       margin: 0 auto;
     }
   }
 
-  // ---------- RESUMEN SUPERIOR ----------
-    // ---------- RESUMEN SUPERIOR ----------
+  /* ---------- RESUMEN SUPERIOR ---------- */
   .resumen-panel {
-    max-width: 1100px;
-    margin: -1.5rem auto 2rem; // menos solapado y más aire abajo
-    padding: 1.1rem 1.4rem;
+    width: 100%;
+    margin: 1.4rem 0 1.6rem;
+    padding: 1rem 1.25rem;
     background: rgba(15, 10, 5, 0.96);
     border: 3px solid #c9a46a;
-    border-radius: 16px;
+    border-radius: 14px;
     box-shadow:
       0 10px 24px rgba(0, 0, 0, 0.4),
       0 0 0 1px #00000055;
@@ -70,7 +104,7 @@
     flex: 1;
     display: flex;
     flex-direction: column;
-    align-items: center; // centrado real
+    align-items: center;
     justify-content: center;
     text-align: center;
     padding: 0.3rem 0.6rem;
@@ -82,16 +116,16 @@
 
     .label {
       display: block;
-      font-size: 0.95rem;            // más grande
+      font-size: 0.95rem;
       letter-spacing: 0.08em;
       text-transform: uppercase;
-      color: #fce3b3;               // más clara
-      margin-bottom: 0.15rem;
+      color: #fce3b3;
+      margin-bottom: 0.16rem;
     }
 
     .valor {
       display: block;
-      font-size: 1.7rem;            // número grande y claro
+      font-size: 1.7rem;
       font-weight: 700;
       line-height: 1.1;
       text-shadow: 0 0 8px rgba(0, 0, 0, 0.6);
@@ -102,14 +136,14 @@
     }
   }
 
-
-  // ---------- PANEL DE FILTROS ----------
+  /* ---------- PANEL DE FILTROS ---------- */
   .selector-panel {
     position: sticky;
     top: 0;
-    z-index: 10;
-    background: url('/assets/madera.jpeg') center/cover no-repeat;
-    padding: 1rem 1.5rem;
+    z-index: 5;
+    background: url("/assets/madera.jpeg") center / cover no-repeat;
+    padding: 0.9rem 1.2rem;
+    margin: 0 -2.4rem 1.6rem; // se estira hasta borde interno del frame
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -128,10 +162,10 @@
     .campo-busqueda .filtro-input {
       background: #fff8e1;
       border: 2px solid #7b5a35;
-      padding: 0.65rem 1rem;
-      font-size: 1.05rem;
+      padding: 0.6rem 1rem;
+      font-size: 1.02rem;
       border-radius: 12px;
-      font-family: 'IM Fell English SC', serif;
+      font-family: "IM Fell English SC", serif;
       color: #3a2b1e;
       box-shadow:
         inset 0 1px 2px #ffffffaa,
@@ -152,7 +186,7 @@
       gap: 0.4rem;
       background: #f3e6cc;
       border: 2px solid #7c5a3a;
-      padding: 0.45rem 0.7rem;
+      padding: 0.4rem 0.7rem;
       border-radius: 12px;
       box-shadow:
         inset 0 2px 3px #ffffff66,
@@ -185,7 +219,7 @@
       padding: 0.6rem 1.2rem;
       font-weight: bold;
       font-size: 1rem;
-      font-family: 'IM Fell English SC', serif;
+      font-family: "IM Fell English SC", serif;
       color: #3c2b1b;
       cursor: pointer;
       box-shadow:
@@ -204,7 +238,7 @@
     }
   }
 
-  // ---------- MODAL LEYENDA ----------
+  /* ---------- MODAL LEYENDA ---------- */
   .leyenda-modal {
     position: fixed;
     inset: 0;
@@ -212,20 +246,19 @@
     display: grid;
     place-items: center;
     padding: 1rem;
-    z-index: 1000; // por encima del sticky
-    cursor: pointer; // clic fuera indica cierre
+    z-index: 1000;
+    cursor: pointer;
 
     .leyenda-content {
       position: relative;
       width: min(920px, 95vw);
-      background: #fffaf0 url('/assets/papertexture.jpeg') repeat;
+      background: #fffaf0 url("/assets/papertexture.jpeg") repeat;
       border: 3px solid #b88b4a;
       border-radius: 12px;
       box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
       padding: 1.5rem 1.25rem;
       overflow: hidden;
-      cursor: default; // dentro no cierra
-      z-index: 1001;
+      cursor: default;
 
       .close-btn {
         position: absolute;
@@ -233,7 +266,6 @@
         right: 10px;
         display: inline-flex;
         align-items: center;
-        gap: 6px;
         padding: 0.35rem 0.6rem;
         border-radius: 10px;
         border: 1px solid #d3b07a;
@@ -241,7 +273,7 @@
         color: #7a4c3d;
         cursor: pointer;
         transition: transform 0.12s ease;
-        z-index: 1002;
+        z-index: 1;
 
         &:hover {
           transform: translateY(-1px);
@@ -282,7 +314,7 @@
     }
   }
 
-  // ---------- SKELETON / ERROR ----------
+  /* ---------- SKELETON / ERROR ---------- */
   .skeleton-table {
     display: grid;
     gap: 0.75rem;
@@ -298,7 +330,7 @@
   }
 
   .error-box {
-    margin: 1.5rem;
+    margin: 1.5rem 0;
     padding: 1rem 1.25rem;
     border: 2px solid #e09a9a;
     background: #fdecec;
@@ -312,14 +344,13 @@
     }
   }
 
-  // ---------- TABLA DESKTOP ----------
+  /* ---------- TABLA DESKTOP (filas banda) ---------- */
   .tabla-scroll-wrapper {
     overflow-x: auto;
-    padding: 2rem;
+    padding: 1.6rem 0 0;
 
     &::-webkit-scrollbar {
       height: 10px;
-      width: 10px;
     }
     &::-webkit-scrollbar-track {
       background: #ecdcbf;
@@ -331,7 +362,7 @@
       border: 2px solid #ecdcbf;
     }
 
-    .sanciones-table {
+    .sanciones-table.tabla-epica {
       width: 100%;
       border-collapse: separate;
       border-spacing: 0 8px;
@@ -340,173 +371,195 @@
       thead th {
         position: sticky;
         top: 0;
-        background: #cbb78d;
-        border-bottom: 2px solid #a67c52;
-        padding: 1rem;
-        font-size: 1rem;
+        background: #b28f55;
+        border-bottom: 2px solid #7d5630;
+        padding: 0.7rem 0.6rem;
+        font-size: 0.96rem;
         text-align: center;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #231407;
         z-index: 2;
       }
 
-      tbody td {
-        background: #fef8e6;
-        border: 2px solid #d2b991;
-        padding: 0.8rem;
-        text-align: center;
-        vertical-align: middle;
-
-        &:first-child {
-          text-align: left;
-        }
-
-        .jugador-info {
-          display: flex;
-          align-items: center;
-          gap: 0.6rem;
-
-          .avatar-head {
-            width: 32px;
-            height: 32px;
-            border-radius: 6px;
-            border: 2px solid #cdb78d;
-            background: #fff8dc;
-          }
-
-          .jugador-link {
-            font-weight: bold;
-            font-size: 1rem;
-            color: #3a2b15;
-            cursor: pointer;
-            text-decoration: none;
-
-            &:hover {
-              text-decoration: underline;
-            }
-          }
-
-          .permaban-badge {
-            background: #c0392b;
-            color: #fff;
-            font-size: 0.75rem;
-            font-weight: bold;
-            padding: 2px 6px;
-            border-radius: 999px;
-          }
-        }
-
-        .tipo {
-          font-weight: bold;
-          text-transform: capitalize;
-          margin-bottom: 0.3rem;
-          display: block;
-          color: #5b3e22;
-        }
-
-        .strikes {
-          display: inline-flex;
-          align-items: center;
-          gap: 0.4rem;
-          color: #8b5e3c;
-          font-size: 0.85rem;
-
-          &.permaban {
-            color: #b71c1c;
-            font-weight: bold;
-          }
-        }
-
-        .duracion-extra {
-          font-size: 0.75rem;
-          color: #7a6a5a;
-          margin-top: 0.2rem;
-        }
-
-        .server-badge {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          font-weight: 600;
-          padding: 4px 10px;
-          border-radius: 8px;
-          font-size: 0.85rem;
-          background: #eee1c9;
-          border: 1px solid #c3a675;
-          color: #4a351f;
-
-          svg {
-            color: inherit;
-          }
-        }
-
-        .situacion {
-          display: inline-flex;
-          align-items: center;
-          gap: 0.4rem;
-          padding: 4px 10px;
-          font-weight: 600;
-          border-radius: 999px;
-          font-size: 0.85rem;
-          justify-content: center;
-
-          .txt {
-            letter-spacing: 0.03em;
-          }
-
-          &.perma {
-            background-color: #fdecea;
-            color: #b91c1c;
-            border: 1px solid #e0a1a1;
-          }
-
-          &.activa {
-            background-color: #fff4d5;
-            color: #b45309;
-            border: 1px solid #f3c892;
-          }
-
-          &.finalizada {
-            background-color: #e8f9e5;
-            color: #166534;
-            border: 1px solid #a6d8b6;
-          }
-        }
-      }
-
       tbody tr {
-        transition: transform 0.18s ease, box-shadow 0.18s ease;
+        background: #f2dfb5;
+        cursor: default;
+        box-shadow: 0 1px 0 rgba(0, 0, 0, 0.25);
+        transition:
+          background 0.18s ease,
+          box-shadow 0.18s ease,
+          transform 0.18s ease;
+        position: relative;
+        border-radius: 10px;
+        overflow: hidden;
 
-        &.perma td {
-          background: #fbeae8;
-          border-color: #e0a1a1;
+        &:nth-child(2n) {
+          background: #e4cf9a;
         }
 
-        &.activa td {
-          background: #fff5dd;
-          border-color: #f3c892;
+        &.perma {
+          background: #f4c7c0;
         }
 
-        &.finalizada td {
-          background: #f4fbf2;
-          border-color: #a6d8b6;
+        &.activa {
+          background: #f6e3b6;
+        }
+
+        &.finalizada {
+          background: #d5ebcf;
         }
 
         &:hover {
           transform: translateY(-1px);
-          box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+          box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
+        }
+
+        td {
+          border: none;
+          padding: 0.75rem 0.7rem;
+          font-size: 0.92rem;
+          color: #2a1a0c;
+          text-align: center;
+          vertical-align: middle;
+
+          &:first-child {
+            text-align: left;
+          }
+
+          .jugador-info {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+
+            .avatar-head {
+              width: 32px;
+              height: 32px;
+              border-radius: 6px;
+              border: 2px solid #cdb78d;
+              background: #fff8dc;
+              box-shadow: 0 0 4px rgba(0, 0, 0, 0.4);
+              transition: transform 0.3s ease, box-shadow 0.3s ease;
+            }
+
+            .jugador-link {
+              font-weight: bold;
+              font-size: 1rem;
+              color: #3a2b15;
+              cursor: pointer;
+              text-decoration: none;
+
+              &:hover {
+                text-decoration: underline;
+              }
+            }
+          }
+
+          .tipo {
+            font-weight: bold;
+            text-transform: capitalize;
+            margin-bottom: 0.3rem;
+            display: block;
+            color: #5b3e22;
+          }
+
+          .tipo-sancion-pill {
+            display: inline-block;
+            margin-bottom: 0.2rem;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            background: #e4cf9a;
+            border: 1px solid #b8945b;
+          }
+
+          .strikes {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            color: #6e4528;
+            font-size: 0.83rem;
+            margin-top: 0.2rem;
+
+            &.permaban {
+              color: #b71c1c;
+              font-weight: bold;
+            }
+          }
+
+          .duracion-extra {
+            font-size: 0.75rem;
+            color: #6a5b4c;
+            margin-top: 0.2rem;
+          }
+
+          .server-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 0.85rem;
+            background: #e4cf9a;
+            border: 1px solid #b8945b;
+            color: #3c2916;
+
+            .server-badge-img {
+              width: 26px;
+              height: 26px;
+              border-radius: 6px;
+              object-fit: cover;
+              border: 1px solid #b8945b;
+            }
+          }
+
+          .situacion {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 4px 10px;
+            font-weight: 600;
+            border-radius: 999px;
+            font-size: 0.85rem;
+            justify-content: center;
+
+            .txt {
+              letter-spacing: 0.03em;
+            }
+
+            &.perma {
+              background-color: #fde2df;
+              color: #b91c1c;
+              border: 1px solid #e0a1a1;
+            }
+
+            &.activa {
+              background-color: #ffe8c4;
+              color: #b45309;
+              border: 1px solid #f3c892;
+            }
+
+            &.finalizada {
+              background-color: #c8ecc0;
+              color: #166534;
+              border: 1px solid #8ac497;
+            }
+          }
         }
       }
     }
   }
 
-  // ---------- CARDS MÓVIL ----------
+  /* ---------- CARDS MÓVIL ---------- */
   .sanciones-cards {
     display: flex;
     flex-direction: column;
     gap: 1rem;
-    padding: 1rem;
+    padding-top: 1.4rem;
 
     .sancion-card {
-      background: #fff8e1;
+      background: #f2dfb5;
       border: 2px solid #caa762;
       border-radius: 12px;
       padding: 1rem;
@@ -515,23 +568,16 @@
       color: #3a2714;
       transition: transform 0.16s ease;
 
-      &.card-perma {
-        border-color: #c0392b;
-        box-shadow:
-          0 0 0 3px rgba(192, 57, 43, 0.15),
-          inset 0 0 10px #e6b1ab;
-      }
-
       &.perma {
-        background: #fbeae8;
+        background: #f4c7c0;
       }
 
       &.activa {
-        background: #fff5dd;
+        background: #f6e3b6;
       }
 
       &.finalizada {
-        background: #f4fbf2;
+        background: #d5ebcf;
       }
 
       &:active {
@@ -566,24 +612,6 @@
             text-overflow: ellipsis;
             cursor: pointer;
           }
-
-          .baneado-badge,
-          .permaban-badge {
-            margin-top: 0.3rem;
-            padding: 2px 6px;
-            font-size: 0.7rem;
-            border-radius: 999px;
-            font-weight: bold;
-            color: #fff;
-            align-self: flex-start;
-          }
-
-          .baneado-badge {
-            background: #e67e22;
-          }
-          .permaban-badge {
-            background: #c0392b;
-          }
         }
       }
 
@@ -601,6 +629,16 @@
           color: #5e3c16;
         }
 
+        .tipo-sancion-badge {
+          display: inline-block;
+          margin-top: 0.15rem;
+          padding: 2px 7px;
+          border-radius: 999px;
+          font-size: 0.8rem;
+          background: #e4cf9a;
+          border: 1px solid #b8945b;
+        }
+
         .server {
           display: inline-flex;
           align-items: center;
@@ -609,10 +647,18 @@
           font-weight: 600;
           font-size: 0.82rem;
           margin-top: 0.2rem;
-          background: #eee1c9;
-          border: 1px solid #c3a675;
+          background: #e4cf9a;
+          border: 1px solid #b8945b;
           color: #4a351f;
           gap: 6px;
+
+          .server-icon-img {
+            width: 26px;
+            height: 26px;
+            border-radius: 6px;
+            object-fit: cover;
+            border: 1px solid #b8945b;
+          }
         }
 
         .strikes {
@@ -642,49 +688,106 @@
           }
 
           &.perma {
-            background-color: #fdecea;
+            background-color: #fde2df;
             color: #b91c1c;
             border: 1px solid #e0a1a1;
           }
 
           &.activa {
-            background-color: #fff4d5;
+            background-color: #ffe8c4;
             color: #b45309;
             border: 1px solid #f3c892;
           }
 
           &.finalizada {
-            background-color: #e8f9e5;
+            background-color: #c8ecc0;
             color: #166534;
-            border: 1px solid #a6d8b6;
+            border: 1px solid #8ac497;
           }
         }
       }
     }
   }
+
+  /* ---------- PAGINACIÓN ---------- */
+  .tribunal-pagination {
+    margin-top: 1.6rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.9rem;
+
+    .page-btn {
+      background: #e8d7b9;
+      border: 2px solid #7c5a3a;
+      border-radius: 999px;
+      padding: 0.4rem 1.1rem;
+      font-size: 0.9rem;
+      font-family: "IM Fell English SC", serif;
+      cursor: pointer;
+      color: #3b2b1b;
+      box-shadow:
+        inset 0 2px 3px #ffffff88,
+        0 3px 0 #b38b63,
+        0 4px 6px rgba(0, 0, 0, 0.2);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+
+      &:hover:not(:disabled) {
+        transform: translateY(-1px);
+        box-shadow:
+          inset 0 2px 3px #ffffff88,
+          0 4px 0 #b38b63,
+          0 6px 10px rgba(0, 0, 0, 0.25);
+      }
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: default;
+        box-shadow:
+          inset 0 1px 2px #ffffff66,
+          0 2px 0 #b38b63;
+      }
+    }
+
+    .page-indicator {
+      font-size: 0.95rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: #3b2b1b;
+    }
+  }
 }
 
-// ---------- RESPONSIVE ----------
+/* ---------- RESPONSIVE ---------- */
 @media (max-width: 768px) {
   .tribunal-epic {
-    padding-bottom: 2rem;
+    padding: 0 0 2rem;
 
-    .epic-header {
-      height: 380px;
+    .tribunal-frame {
+      padding: 0 1.3rem 1.8rem;
+      border-width: 4px 3px 3px 3px;
+    }
+
+    .tribunal-hero.epic-header {
+      height: 340px;
       padding: 0 1rem;
+
+      /* el frame tiene padding 1.3rem → 2 * 1.3 = 2.6 */
+      width: calc(100% + 2.6rem);
+      margin: 0 -1.3rem 0;
 
       h1 {
         font-size: 2.2rem;
       }
       p {
-        font-size: 1rem;
+        font-size: 0.98rem;
         max-width: 90%;
       }
     }
 
     .resumen-panel {
       flex-direction: column;
-      margin: -2rem 1rem 1rem;
+      margin-bottom: 1.1rem;
       padding: 0.8rem 0.9rem;
 
       .resumen-item {
@@ -699,10 +802,10 @@
         }
 
         .label {
-          font-size: 0.78rem;
+          font-size: 0.8rem;
         }
         .valor {
-          font-size: 1.2rem;
+          font-size: 1.3rem;
         }
       }
     }
@@ -710,11 +813,11 @@
     .selector-panel {
       flex-direction: column;
       align-items: stretch;
-      gap: 0.75rem;
+      margin-inline: -1.3rem;
 
       .campo-busqueda .filtro-input {
         width: 100%;
-        font-size: 1rem;
+        font-size: 0.98rem;
         padding: 0.6rem 1rem;
         min-width: 0;
       }
@@ -748,14 +851,31 @@
         }
       }
     }
+
+    .tabla-scroll-wrapper {
+      padding-top: 1.2rem;
+    }
+
+    .tribunal-pagination {
+      flex-direction: column;
+      gap: 0.5rem;
+    }
   }
 }
 
 @media (min-width: 600px) and (max-width: 1024px) {
   .tribunal-epic {
-    .epic-header {
-      height: 440px;
+    .tribunal-frame {
+      padding: 0 1.8rem 2rem;
+    }
+
+    .tribunal-hero.epic-header {
+      height: 380px;
       padding: 0 1.5rem;
+
+      /* frame padding 1.8rem → 2 * 1.8 = 3.6 */
+      width: calc(100% + 3.6rem);
+      margin: 0 -1.8rem 0;
 
       h1 {
         font-size: 2.6rem;
@@ -767,17 +887,17 @@
     }
 
     .resumen-panel {
-      margin-top: -2.3rem;
+      margin-bottom: 1.2rem;
       padding: 0.9rem 1.1rem;
 
       .resumen-item .valor {
-        font-size: 1.25rem;
+        font-size: 1.35rem;
       }
     }
 
     .selector-panel {
-      flex-wrap: wrap;
       gap: 0.8rem;
+      margin-inline: -1.8rem;
 
       .campo-busqueda .filtro-input {
         font-size: 1rem;
@@ -785,38 +905,6 @@
       .leyenda-btn {
         font-size: 1rem;
         padding: 0.7rem 1rem;
-      }
-    }
-
-    .tabla-scroll-wrapper {
-      padding: 1.5rem;
-
-      .sanciones-table {
-        th,
-        td {
-          font-size: 0.9rem;
-          padding: 0.65rem 0.55rem;
-        }
-
-        td {
-          .jugador-info .jugador-link {
-            font-size: 0.95rem;
-          }
-          .tipo {
-            font-size: 0.9rem;
-          }
-          .strikes {
-            font-size: 0.8rem;
-          }
-          .duracion-extra {
-            font-size: 0.72rem;
-          }
-          .server-badge,
-          .situacion {
-            font-size: 0.78rem;
-            padding: 3px 8px;
-          }
-        }
       }
     }
   }

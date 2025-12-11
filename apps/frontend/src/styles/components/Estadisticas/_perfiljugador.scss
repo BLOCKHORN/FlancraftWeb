@@ -122,12 +122,9 @@
   color: #fdf6dd;
 
   .perfiljugador-skin {
-    width: 96px;
-    height: 96px;
-    border-radius: 0.7rem;
-    margin-bottom: 1rem;
+    width: 90px;
+    height: 120px;
     object-fit: cover;
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.6);
   }
 
   h2 {
@@ -157,6 +154,9 @@
     0 0 0 6px #6b4933,
     0 0 0 8px #3b2217,
     0 22px 46px rgba(0, 0, 0, 0.75);
+  transform-origin: center top;
+  animation: perfilJugadorEnter 0.55s ease forwards;
+  opacity: 0;
 }
 
 .perfiljugador-maincard-inner {
@@ -165,7 +165,18 @@
   background: #d9c28b;
   color: #fdf6dd;
 }
-
+@keyframes perfilJugadorEnter {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.96);
+    filter: blur(3px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
 /* Header desplazado por avatar */
 
 .perfiljugador-topwrap {
@@ -600,7 +611,6 @@
   font-size: 0.78rem;
   margin-bottom: 0.15rem;
   text-transform: uppercase;
-  letter-spacing: 0.12em;
 }
 
 /* Valor – placa dorada */
@@ -609,7 +619,6 @@
   font-size: 1.05rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-  letter-spacing: 0.02em;
 
   color: #f8f2f0;
   padding: 0.12rem 0.7rem 0.2rem;

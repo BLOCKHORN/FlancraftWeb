@@ -254,7 +254,7 @@ function RangoSelectorAnimado() {
       {/* HERO */}
       <div className="rango-banner-hero">
         <div className="banner-overlay">
-          <h1>Rangos Épicos (Mensuales)</h1>
+          <h1>Rangos</h1>
           <p>
             Desbloquea beneficios exclusivos durante un mes completo: kits
             mejorados, más trabajos, más llaves y comandos especiales que te
