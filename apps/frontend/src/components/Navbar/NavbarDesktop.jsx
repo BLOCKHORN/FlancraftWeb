@@ -107,7 +107,8 @@ const NavbarDesktop = ({
           Estadísticas
         </NavLink>
 
-        <NavLink to="/tienda">
+        {/* 👇 AQUÍ el cambio: clase nav-store para aplicar el estilo dorado */}
+        <NavLink to="/tienda" className="nav-store">
           <img src="/botones/tienda.webp" alt="Mercado" style={navIconStyle} />
           Tienda
         </NavLink>
@@ -129,17 +130,14 @@ const NavbarDesktop = ({
 
       <div className="nav-right">
         {!isLoggedIn ? (
-          // No hay sesión válida → botón de login
           <button className="login-button" onClick={onLoginClick}>
             <i className="fas fa-sign-in-alt" /> Iniciar sesión
           </button>
         ) : isUserLoading ? (
-          // Sesión detectada pero cargando datos → estado intermedio claro
           <div className="user-box user-loading">
             <span className="username-saludo">Cargando perfil...</span>
           </div>
         ) : (
-          // Sesión cargada correctamente
           <div
             className="user-box"
             onMouseEnter={handleProfileEnter}
@@ -151,7 +149,7 @@ const NavbarDesktop = ({
                 alt="avatar"
                 className="user-avatar"
               />
-              <span className="username-saludo">
+            <span className="username-saludo">
                 Hola,&nbsp;
                 <span className={`nombre-colored ${getRangoColorClass()}`}>
                   {userData.username}

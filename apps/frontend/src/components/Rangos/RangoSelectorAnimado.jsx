@@ -251,297 +251,300 @@ function RangoSelectorAnimado() {
 
   return (
     <section className="rango-selector-epico">
-      {/* HERO */}
-      <div className="rango-banner-hero">
-        <div className="banner-overlay">
-          <h1>Rangos</h1>
-          <p>
-            Desbloquea beneficios exclusivos durante un mes completo: kits
-            mejorados, más trabajos, más llaves y comandos especiales que te
-            harán la vida mucho más fácil en FlanCraft.
-          </p>
-        </div>
-      </div>
-
-      {/* BARRA INFORMATIVA + RANGO ACTUAL + SALDO */}
-      <div className="rango-banner-textura">
-        <div className="banner-info-grid">
-          {/* Izquierda: rango actual */}
-          <div className="info-rango-actual">
-            {user ? (
-              <>
-                <span className="label">Tu rango actual es:</span>
-                <strong className="valor">{getNombreRangoActual()}</strong>
-              </>
-            ) : (
-              <span className="label">
-                Inicia sesión para ver tu rango actual.
-              </span>
-            )}
-          </div>
-
-          {/* Centro: texto ECOS */}
-          <p className="modo-unico-texto">
-            Los rangos solo pueden comprarse con <strong>ECOS</strong>,
-            obtenidos al completar misiones y logros únicos desde tu perfil web.
-          </p>
-
-          {/* Derecha: saldo ECOS */}
-          <div className="saldo-ecos">
-            {user ? (
-              <>
-                <span>Tu saldo:</span>
-                <strong>
-                  {cargandoSaldo && saldoVisible === null
-                    ? "Cargando..."
-                    : saldoVisible !== null
-                    ? saldoVisible.toLocaleString("es-ES")
-                    : "—"}
-                  {saldoVisible !== null && (
-                    <img
-                      src="/assets/eco.webp"
-                      alt="ECOS"
-                      className="eco-mini-inline"
-                    />
-                  )}
-                </strong>
-              </>
-            ) : (
-              <>
-                <span>Inicia sesión para ver tu saldo de</span>
-                <img
-                  src="/assets/eco.webp"
-                  alt="ECOS"
-                  className="eco-mini-inline"
-                />
-              </>
-            )}
+      {/* MARCO ÚNICO CON LATERALES DE MADERA */}
+      <div className="rango-panel-marco">
+        {/* HERO */}
+        <div className="rango-banner-hero">
+          <div className="banner-overlay">
+            <h1>Rangos</h1>
+            <p>
+              Desbloquea beneficios exclusivos durante un mes completo: kits
+              mejorados, más trabajos, más llaves y comandos especiales.
+            </p>
           </div>
         </div>
-      </div>
 
-      {/* TABLA DE RANGOS */}
-      <div className="tabla-rangos">
-        {/* Header: columnas de rangos */}
-        <div className="tabla-header">
-          <div className="beneficio-label encabezado">
-            Beneficios de cada rango
-          </div>
+        {/* BARRA INFORMATIVA + RANGO ACTUAL + SALDO */}
+        <div className="rango-banner-textura">
+          <div className="banner-info-grid">
+            {/* Izquierda: rango actual */}
+            <div className="info-rango-actual">
+              {user ? (
+                <>
+                  <span className="label">Tu rango actual es:</span>
+                  <strong className="valor">{getNombreRangoActual()}</strong>
+                </>
+              ) : (
+                <span className="label">
+                  Inicia sesión para ver tu rango actual.
+                </span>
+              )}
+            </div>
 
-          {RANGOS_ORDENADOS.map((id) => {
-            const rango = RANGOS.find((r) => r.id === id);
-            const precio = precios?.[rango.id]?.["30d"];
-            const b = rango?.beneficios_30d ?? {};
+            {/* Centro: texto ECOS */}
+            <p className="modo-unico-texto">
+              Los rangos solo pueden comprarse con <strong>ECOS</strong>,
+              obtenidos al completar misiones y logros únicos desde tu perfil
+              web.
+            </p>
 
-            const indiceRango = RANGOS_ORDENADOS.indexOf(rango.id);
-            const tieneRangoActual = indiceRangoActual !== -1;
-            const esRangoInferior =
-              tieneRangoActual && indiceRango < indiceRangoActual;
-            const esRangoActual =
-              tieneRangoActual && rango.id === rangoDatos?.rango;
-
-            return (
-              <div
-                key={rango.id}
-                className={`columna-rango ${
-                  rango.id === "inmortal" ? "resaltado" : ""
-                } ${esRangoActual ? "rango-actual" : ""} ${
-                  esRangoInferior ? "rango-bloqueado" : ""
-                }`}
-              >
-                {rango.id === "inmortal" && (
-                  <span className="etiqueta-popular">MÁS COMPRADO</span>
-                )}
-
-                {esRangoActual && (
-                  <span className="etiqueta-rango-actual">TU RANGO</span>
-                )}
-
-                <img
-                  src={rango.imagen}
-                  alt={`Rango ${rango.nombre}`}
-                  className="imagen-rango"
-                />
-
-                <h2 className="nombre-rango">{rango.nombre}</h2>
-                <p className="rango-duracion">1 Mes</p>
-
-                <div className="rango-mini-resumen">
-                  <span>{b.trabajos ?? "-"} trabajos</span>
-                  <span>{b.dinero || "—"} iniciales</span>
-                  <span>{b.dupe ? `/dupe ${b.dupe}` : "Sin /dupe"}</span>
-                </div>
-
-                <div className="botones-compra">
-                  <button
-                    className="boton-compra btn-30"
-                    onClick={
-                      esRangoInferior ? undefined : () => handleComprar(rango)
-                    }
-                    disabled={precio === undefined || esRangoInferior}
-                  >
-                    {esRangoInferior ? (
-                      "Rango inferior bloqueado"
-                    ) : precio !== undefined ? (
-                      <>
-                        {precio.toLocaleString("es-ES")}{" "}
-                        <img
-                          src="/assets/eco.webp"
-                          alt="ECOS"
-                          className="eco-mini"
-                        />{" "}
-                        30 días
-                      </>
-                    ) : (
-                      "Cargando..."
+            {/* Derecha: saldo ECOS */}
+            <div className="saldo-ecos">
+              {user ? (
+                <>
+                  <span>Tu saldo:</span>
+                  <strong>
+                    {cargandoSaldo && saldoVisible === null
+                      ? "Cargando..."
+                      : saldoVisible !== null
+                      ? saldoVisible.toLocaleString("es-ES")
+                      : "—"}
+                    {saldoVisible !== null && (
+                      <img
+                        src="/assets/eco.webp"
+                        alt="ECOS"
+                        className="eco-mini-inline"
+                      />
                     )}
-                  </button>
-
-                  <button
-                    className="boton-detalles"
-                    type="button"
-                    onClick={() => handleVerDetalles(rango)}
-                  >
-                    Ver detalles
-                  </button>
-                </div>
-              </div>
-            );
-          })}
+                  </strong>
+                </>
+              ) : (
+                <>
+                  <span>Inicia sesión para ver tu saldo de</span>
+                  <img
+                    src="/assets/eco.webp"
+                    alt="ECOS"
+                    className="eco-mini-inline"
+                  />
+                </>
+              )}
+            </div>
+          </div>
         </div>
 
-        {/* Cuerpo comparativa */}
-        <div className="tabla-body">
-          {FILAS.map((fila) => {
-            const esFilaKit = fila.clave === "kit";
+        {/* TABLA DE RANGOS */}
+        <div className="tabla-rangos">
+          {/* Header: columnas de rangos */}
+          <div className="tabla-header">
+            <div className="beneficio-label encabezado">
+              Beneficios de cada rango
+            </div>
 
-            return (
-              <div key={fila.clave}>
+            {RANGOS_ORDENADOS.map((id) => {
+              const rango = RANGOS.find((r) => r.id === id);
+              const precio = precios?.[rango.id]?.["30d"];
+              const b = rango?.beneficios_30d ?? {};
+
+              const indiceRango = RANGOS_ORDENADOS.indexOf(rango.id);
+              const tieneRangoActual = indiceRangoActual !== -1;
+              const esRangoInferior =
+                tieneRangoActual && indiceRango < indiceRangoActual;
+              const esRangoActual =
+                tieneRangoActual && rango.id === rangoDatos?.rango;
+
+              return (
                 <div
-                  className={`fila-beneficio ${
-                    fila.clave === "comida" ? "fila-comida" : ""
+                  key={rango.id}
+                  className={`columna-rango ${
+                    rango.id === "inmortal" ? "resaltado" : ""
+                  } ${esRangoActual ? "rango-actual" : ""} ${
+                    esRangoInferior ? "rango-bloqueado" : ""
                   }`}
                 >
-                  <div className="beneficio-label">{fila.label}</div>
+                  {rango.id === "inmortal" && (
+                    <span className="etiqueta-popular">MÁS COMPRADO</span>
+                  )}
 
-                  <div className="beneficio-celda-group">
-                    {RANGOS_ORDENADOS.map((id) => {
-                      const rango = RANGOS.find((r) => r.id === id);
-                      const valor = rango?.beneficios_30d?.[fila.clave];
+                  {esRangoActual && (
+                    <span className="etiqueta-rango-actual">TU RANGO</span>
+                  )}
 
-                      const claseColor =
-                        fila.clave === "dinero"
-                          ? "verde-economico"
-                          : [
-                              "sethomes",
-                              "subastas",
-                              "warps",
-                              "tiendas",
-                              "trabajos",
-                            ].includes(fila.clave)
-                          ? "amarillo-beneficio"
-                          : ["keys_survival", "keys_oneblock"].includes(
-                              fila.clave
-                            )
-                          ? "violeta-keys"
-                          : ["kit", "comida", "dupe"].includes(fila.clave)
-                          ? "dorado-kit"
-                          : "";
+                  <img
+                    src={rango.imagen}
+                    alt={`Rango ${rango.nombre}`}
+                    className="imagen-rango"
+                  />
 
-                      const claseCheck = fila.clave.includes("avanzados")
-                        ? "check-avanzado"
-                        : fila.clave.includes("extra")
-                        ? "check-extra"
-                        : "check-basico";
+                  <h2 className="nombre-rango">{rango.nombre}</h2>
+                  <p className="rango-duracion">1 Mes</p>
 
-                      return (
-                        <div
-                          key={rango.id + fila.clave}
-                          className="beneficio-celda"
-                        >
-                          {typeof valor === "boolean" ? (
-                            valor ? (
-                              <img
-                                src="/assets/check.webp"
-                                alt="Sí"
-                                className={`icono-check ${claseCheck}`}
-                              />
-                            ) : (
-                              <span className="no-disponible">X</span>
-                            )
-                          ) : fila.clave === "kit" ? (
-                            <div className="kit-con-icono">
-                              <img
-                                src={
-                                  valor &&
-                                  String(valor)
-                                    .toLowerCase()
-                                    .includes("op")
-                                    ? "/assets/netheritafull.webp"
-                                    : valor &&
-                                      String(valor)
-                                        .toLowerCase()
-                                        .includes("netherita")
-                                    ? "/assets/netherita.webp"
-                                    : "/assets/diamante.webp"
-                                }
-                                alt="Kit Icon"
-                                className="kit-icono"
-                              />
-                              <span
-                                className={`valor-num ${claseColor} kit-desplegable-toggle`}
-                                onClick={() =>
-                                  setKitDesplegado(
-                                    kitDesplegado ? null : "todos"
-                                  )
-                                }
-                                style={{ cursor: "pointer" }}
-                                title="Ver detalles de los kits"
-                              >
-                                {valor ?? "—"} ▼
-                              </span>
-                            </div>
-                          ) : (
-                            <span className={`valor-num ${claseColor}`}>
-                              {valor ?? "—"}
-                            </span>
-                          )}
-                        </div>
-                      );
-                    })}
+                  <div className="rango-mini-resumen">
+                    <span>{b.trabajos ?? "-"} trabajos</span>
+                    <span>{b.dinero || "—"} iniciales</span>
+                    <span>{b.dupe ? `/dupe ${b.dupe}` : "Sin /dupe"}</span>
+                  </div>
+
+                  <div className="botones-compra">
+                    <button
+                      className="boton-compra btn-30"
+                      onClick={
+                        esRangoInferior ? undefined : () => handleComprar(rango)
+                      }
+                      disabled={precio === undefined || esRangoInferior}
+                    >
+                      {esRangoInferior ? (
+                        "Rango inferior bloqueado"
+                      ) : precio !== undefined ? (
+                        <>
+                          {precio.toLocaleString("es-ES")}{" "}
+                          <img
+                            src="/assets/eco.webp"
+                            alt="ECOS"
+                            className="eco-mini"
+                          />{" "}
+                          30 días
+                        </>
+                      ) : (
+                        "Cargando..."
+                      )}
+                    </button>
+
+                    <button
+                      className="boton-detalles"
+                      type="button"
+                      onClick={() => handleVerDetalles(rango)}
+                    >
+                      Ver detalles
+                    </button>
                   </div>
                 </div>
+              );
+            })}
+          </div>
 
-                {/* Detalle de kits (muestra los tres a la vez) */}
-                {esFilaKit && kitDesplegado && (
-                  <div className="fila-kit-detallado">
-                    <div className="beneficio-label" />
+          {/* Cuerpo comparativa */}
+          <div className="tabla-body">
+            {FILAS.map((fila) => {
+              const esFilaKit = fila.clave === "kit";
+
+              return (
+                <div key={fila.clave}>
+                  <div
+                    className={`fila-beneficio ${
+                      fila.clave === "comida" ? "fila-comida" : ""
+                    }`}
+                  >
+                    <div className="beneficio-label">{fila.label}</div>
+
                     <div className="beneficio-celda-group">
                       {RANGOS_ORDENADOS.map((id) => {
                         const rango = RANGOS.find((r) => r.id === id);
+                        const valor = rango?.beneficios_30d?.[fila.clave];
+
+                        const claseColor =
+                          fila.clave === "dinero"
+                            ? "verde-economico"
+                            : [
+                                "sethomes",
+                                "subastas",
+                                "warps",
+                                "tiendas",
+                                "trabajos",
+                              ].includes(fila.clave)
+                            ? "amarillo-beneficio"
+                            : ["keys_survival", "keys_oneblock"].includes(
+                                fila.clave
+                              )
+                            ? "violeta-keys"
+                            : ["kit", "comida", "dupe"].includes(fila.clave)
+                            ? "dorado-kit"
+                            : "";
+
+                        const claseCheck = fila.clave.includes("avanzados")
+                          ? "check-avanzado"
+                          : fila.clave.includes("extra")
+                          ? "check-extra"
+                          : "check-basico";
+
                         return (
                           <div
-                            key={id + "_kitdetalle"}
+                            key={rango.id + fila.clave}
                             className="beneficio-celda"
                           >
-                            {rango?.kit_detallado?.length ? (
-                              <ul className="kit-detalle-lista">
-                                {rango.kit_detallado.map((item, index) => (
-                                  <li key={index}>{item}</li>
-                                ))}
-                              </ul>
+                            {typeof valor === "boolean" ? (
+                              valor ? (
+                                <img
+                                  src="/assets/check.webp"
+                                  alt="Sí"
+                                  className={`icono-check ${claseCheck}`}
+                                />
+                              ) : (
+                                <span className="no-disponible">X</span>
+                              )
+                            ) : fila.clave === "kit" ? (
+                              <div className="kit-con-icono">
+                                <img
+                                  src={
+                                    valor &&
+                                    String(valor)
+                                      .toLowerCase()
+                                      .includes("op")
+                                      ? "/assets/netheritafull.webp"
+                                      : valor &&
+                                        String(valor)
+                                          .toLowerCase()
+                                          .includes("netherita")
+                                      ? "/assets/netherita.webp"
+                                      : "/assets/diamante.webp"
+                                  }
+                                  alt="Kit Icon"
+                                  className="kit-icono"
+                                />
+                                <span
+                                  className={`valor-num ${claseColor} kit-desplegable-toggle`}
+                                  onClick={() =>
+                                    setKitDesplegado(
+                                      kitDesplegado ? null : "todos"
+                                    )
+                                  }
+                                  style={{ cursor: "pointer" }}
+                                  title="Ver detalles de los kits"
+                                >
+                                  {valor ?? "—"} ▼
+                                </span>
+                              </div>
                             ) : (
-                              <span className="kit-detalle-vacio">—</span>
+                              <span className={`valor-num ${claseColor}`}>
+                                {valor ?? "—"}
+                              </span>
                             )}
                           </div>
                         );
                       })}
                     </div>
                   </div>
-                )}
-              </div>
-            );
-          })}
+
+                  {/* Detalle de kits (muestra los tres a la vez) */}
+                  {esFilaKit && kitDesplegado && (
+                    <div className="fila-kit-detallado">
+                      <div className="beneficio-label" />
+                      <div className="beneficio-celda-group">
+                        {RANGOS_ORDENADOS.map((id) => {
+                          const rango = RANGOS.find((r) => r.id === id);
+                          return (
+                            <div
+                              key={id + "_kitdetalle"}
+                              className="beneficio-celda"
+                            >
+                              {rango?.kit_detallado?.length ? (
+                                <ul className="kit-detalle-lista">
+                                  {rango.kit_detallado.map((item, index) => (
+                                    <li key={index}>{item}</li>
+                                  ))}
+                                </ul>
+                              ) : (
+                                <span className="kit-detalle-vacio">—</span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
 

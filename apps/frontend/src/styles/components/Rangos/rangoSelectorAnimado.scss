@@ -1,18 +1,31 @@
 .rango-selector-epico {
   position: relative;
-  padding-bottom: 3rem;
+  padding: 0rem 1.2rem 0rem;
   color: #fce3b3;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-    sans-serif;
+  font-family: "IM Fell English SC", system-ui, -apple-system,
+    BlinkMacSystemFont, "Segoe UI", sans-serif;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  overflow-x: hidden;
+}
+
+/* MARCO ÚNICO CON LATERALES DE MADERA (SIN BORDE SUPERIOR) */
+.rango-panel-marco {
+  width: 100%;
+  max-width: 1600px;
+  background: #0b0704;
+  border-style: solid;
+  border-width: 0 12px 12px; // solo laterales + inferior
+  border-image: url("/assets/madera.jpeg") 40 round;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.9);
+  overflow: hidden;
 }
 
 /* ------------------- HERO / CABECERA ------------------- */
 
 .rango-banner-hero {
   position: relative;
-  margin-bottom: 1.5rem;
-  border-radius: 1rem;
-  overflow: hidden;
   min-height: 220px;
   display: flex;
   align-items: flex-end;
@@ -20,6 +33,10 @@
   background-image: url("/assets/header-forja.webp");
   background-size: cover;
   background-position: center;
+
+  // ahora el hero va a sangre dentro del marco, sin radios propios
+  margin-bottom: 0;
+  border-radius: 0;
 
   &::before {
     content: "";
@@ -61,14 +78,12 @@
 /* ------------------- BARRA INFORMATIVA ------------------- */
 
 .rango-banner-textura {
-  margin: 0 auto 1.5rem;
-  padding: 0.8rem 1rem;
-  border-radius: 0.75rem;
+  margin: 0.75rem 0 1.2rem;
+  padding: 1rem 1rem;
   background: #1a110a;
   border: 1px solid #51331b;
   box-shadow: inset 0 0 0 1px #26160c, 0 6px 12px rgba(0, 0, 0, 0.7);
   display: block;
-  max-width: 1560px;
   width: 100%;
   box-sizing: border-box;
 }
@@ -87,7 +102,6 @@
   color: #fbe7b9;
   display: flex;
   flex-direction: column;
-  gap: 0.1rem;
 
   .label {
     opacity: 0.85;
@@ -96,7 +110,6 @@
   .valor {
     font-weight: 700;
     font-size: 1rem;
-    letter-spacing: 0.07em;
     text-transform: uppercase;
     color: #ffe29b;
     text-shadow: 0 0 6px rgba(255, 226, 155, 0.55);
@@ -130,7 +143,7 @@
     align-items: center;
     gap: 0.25rem;
     padding: 0.25rem 0.6rem;
-    border-radius: 999px;
+    border-radius: 4px;
     background: #25160b;
     border: 1px solid #8c5b2b;
   }
@@ -142,18 +155,16 @@
   object-fit: contain;
 }
 
-/* ------------------- TABLA GENERAL (MARCO DE MADERA) ------------------- */
+/* ------------------- TABLA GENERAL (YA SIN MARCO PROPIO) ------------------- */
 
 .tabla-rangos {
-  margin: 1rem auto 0;
-  background-color: #0b0704;
-  border-radius: 0.85rem;
-  border: 12px solid transparent;
-  border-image: url("/assets/madera.jpeg") 40 round;
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.9);
-  overflow: hidden;
-  max-width: 1560px;
   width: 100%;
+  margin: 0;
+  background-color: transparent;
+  border-radius: 0;
+  border: none;
+  box-shadow: none;
+  overflow: hidden;
 }
 
 /* CABECERA */
@@ -176,7 +187,6 @@
   font-weight: 700;
   font-size: 1rem;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
   color: #fce3b3;
   display: flex;
   align-items: center;
@@ -194,17 +204,10 @@
   align-items: center;
   gap: 0.35rem;
   background: #15100c;
-  transition: transform 0.2s ease, box-shadow 0.2s ease,
-    background-color 0.2s ease, filter 0.2s ease;
+
 
   &:last-child {
     border-right: none;
-  }
-
-  &:hover {
-    transform: translateY(-2px);
-    background-color: #1d140d;
-    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.8);
   }
 }
 
@@ -240,7 +243,7 @@
   left: 50%;
   transform: translateX(-50%);
   padding: 0.25rem 0.8rem;
-  border-radius: 999px;
+  border-radius: 4px;
   font-size: 0.68rem;
   font-weight: 800;
   letter-spacing: 0.14em;
@@ -287,8 +290,13 @@
   height: auto;
   object-fit: contain;
   filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.9));
+  transition: transform 0.2s ease, filter 0.2s ease;
 }
-
+/* Cuando pasas por encima de la columna, solo se anima la imagen */
+.columna-rango:hover .imagen-rango {
+  transform: translateY(-6px);
+  filter: drop-shadow(0 10px 16px rgba(0, 0, 0, 1));
+}
 .nombre-rango {
   margin: 0.7rem 0 0;
   font-size: 1.05rem;
@@ -313,7 +321,7 @@
 
   span {
     background: #24150c;
-    border-radius: 999px;
+    border-radius: 4px;
     padding: 0.18rem 0.6rem;
     border: 1px solid #5e371a;
   }
@@ -333,7 +341,7 @@
   width: 100%;
   border: none;
   outline: none;
-  border-radius: 999px;
+  border-radius: 4px;
   padding: 0.55rem 0.75rem;
   font-size: 0.8rem;
   font-weight: 700;
@@ -381,7 +389,7 @@
 
 .boton-detalles {
   width: 100%;
-  border-radius: 999px;
+  border-radius: 4px;
   padding: 0.4rem 0.75rem;
   font-size: 0.78rem;
   border: 1px solid #5b3719;
@@ -559,7 +567,7 @@
   align-items: center;
   gap: 0.75rem;
   padding: 0.7rem 1rem;
-  border-radius: 999px;
+  border-radius: 4px;
   background: #18a44a;
   color: #fdfaf1;
   box-shadow: 0 6px 0 #0b5c2b, 0 12px 24px rgba(0, 0, 0, 0.9);
@@ -831,7 +839,7 @@
   }
 }
 
-/* Spinner de carga dentro del botón */
+/* Spinner */
 .spinner {
   width: 16px;
   height: 16px;
@@ -982,7 +990,7 @@
   }
 }
 
-/* Imágenes decorativas (parte superior tipo Tebex) */
+/* Imágenes decorativas, secciones, etc.  (sin cambios) */
 
 .modal-detalle-imagenes {
   display: flex;
@@ -1250,6 +1258,10 @@
 }
 
 @media (max-width: 768px) {
+  .rango-selector-epico {
+    padding: 0rem 0.8rem 2.7rem;
+  }
+
   .rango-banner-hero {
     min-height: 180px;
   }
@@ -1333,6 +1345,14 @@
 }
 
 @media (max-width: 600px) {
+  .rango-selector-epico {
+    padding: 0rem 0.5rem 2.4rem;
+  }
+
+  .rango-panel-marco {
+    border-width: 0 8px 8px;
+  }
+
   .rango-banner-textura {
     padding: 0.75rem 0.8rem;
   }
