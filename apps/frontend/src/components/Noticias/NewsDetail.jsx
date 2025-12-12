@@ -120,6 +120,7 @@ const NewsDetail = () => {
   const [relacionadas, setRelacionadas] = useState([]);
   const [status, setStatus] = useState("idle");
   const [copiado, setCopiado] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
 
   // usuario actual (para saber si puede editar)
   const user = (() => {
@@ -186,10 +187,45 @@ const NewsDetail = () => {
     navigate(`/admin/noticias/editar/${noticia.id}`);
   };
 
+  const handleShare = (platform) => {
+    if (!noticia) return;
+
+    const url = encodeURIComponent(window.location.href);
+    const title = encodeURIComponent(noticia.titulo || "FlanCraft");
+
+    switch (platform) {
+      case "x": {
+        const shareUrl = `https://twitter.com/intent/tweet?url=${url}&text=${title}`;
+        window.open(shareUrl, "_blank", "noopener,noreferrer");
+        break;
+      }
+      case "discord": {
+        handleCopy();
+        window.open("https://discord.com/app", "_blank", "noopener,noreferrer");
+        break;
+      }
+      case "telegram": {
+        const shareUrl = `https://t.me/share/url?url=${url}&text=${title}`;
+        window.open(shareUrl, "_blank", "noopener,noreferrer");
+        break;
+      }
+      case "whatsapp": {
+        const shareUrl = `https://api.whatsapp.com/send?text=${title}%20-%20${url}`;
+        window.open(shareUrl, "_blank", "noopener,noreferrer");
+        break;
+      }
+      case "copy":
+      default:
+        handleCopy();
+        break;
+    }
+
+    setShareOpen(false);
+  };
+
   const renderContenido = () => {
     if (!noticia) return null;
 
-    // 1) Preferimos HTML directo si existe
     if (noticia.contenido_html) {
       return (
         <div
@@ -199,7 +235,6 @@ const NewsDetail = () => {
       );
     }
 
-    // 2) Contenido string legacy (lo tratamos como HTML)
     if (typeof noticia.contenido === "string") {
       return (
         <div
@@ -209,7 +244,6 @@ const NewsDetail = () => {
       );
     }
 
-    // 3) JSON de Tiptap
     if (
       typeof noticia.contenido === "object" &&
       noticia.contenido !== null &&
@@ -217,10 +251,7 @@ const NewsDetail = () => {
     ) {
       const html = tiptapJsonToHtml(noticia.contenido);
       return (
-        <div
-          className="content"
-          dangerouslySetInnerHTML={{ __html: html }}
-        />
+        <div className="content" dangerouslySetInnerHTML={{ __html: html }} />
       );
     }
 
@@ -230,11 +261,13 @@ const NewsDetail = () => {
   if (status === "loading") {
     return (
       <div className="news-detail loading">
-        <div className="loading-placeholder">
-          <div className="glow-bar" />
-          <div className="glow-bar short" />
-          <div className="glow-img" />
-          <div className="glow-paragraph" />
+        <div className="news-layout">
+          <div className="loading-placeholder">
+            <div className="glow-bar" />
+            <div className="glow-bar short" />
+            <div className="glow-img" />
+            <div className="glow-paragraph" />
+          </div>
         </div>
       </div>
     );
@@ -243,10 +276,12 @@ const NewsDetail = () => {
   if (status === "notfound") {
     return (
       <div className="news-detail">
-        <p>Noticia no encontrada.</p>
-        <button className="back-btn" onClick={() => navigate("/news")}>
-          ← Volver a noticias
-        </button>
+        <div className="news-layout">
+          <p>Noticia no encontrada.</p>
+          <button className="back-btn" onClick={() => navigate("/news")}>
+            ← Volver a noticias
+          </button>
+        </div>
       </div>
     );
   }
@@ -254,17 +289,18 @@ const NewsDetail = () => {
   if (status === "error") {
     return (
       <div className="news-detail">
-        <p>Ha ocurrido un error al cargar la noticia.</p>
-        <button className="back-btn" onClick={() => navigate("/news")}>
-          ← Volver a noticias
-        </button>
+        <div className="news-layout">
+          <p>Ha ocurrido un error al cargar la noticia.</p>
+          <button className="back-btn" onClick={() => navigate("/news")}>
+            ← Volver a noticias
+          </button>
+        </div>
       </div>
     );
   }
 
   if (!noticia) return null;
 
-  // ⬇️ aquí usamos el nombre bonito si viene del backend
   const authorDisplay =
     noticia.autor_nombre || noticia.usuarios?.uid || noticia.autor;
 
@@ -273,8 +309,14 @@ const NewsDetail = () => {
       <div className="news-layout">
         <div className="news-container">
           <header className="news-header">
-            <div>
-              <h1 className="title">{noticia.titulo}</h1>
+            {/* TÍTULO SOLO */}
+            <h1 className="title">{noticia.titulo}</h1>
+
+            {/* LÍNEA DIVISORA JUSTO BAJO EL TÍTULO */}
+            <div className="news-header-divider" />
+
+            {/* SEGUNDA LÍNEA: AUTOR/FECHA IZQ, BOTONES DCHA */}
+            <div className="news-subheader">
               <div className="meta-line">
                 {authorDisplay && (
                   <span className="autor">Autor: {authorDisplay}</span>
@@ -289,26 +331,116 @@ const NewsDetail = () => {
                   </span>
                 )}
               </div>
-            </div>
 
-            <div className="right-actions">
-              {canEdit && (
-                <button className="edit-btn" onClick={irAEditar}>
-                  Editar noticia
-                </button>
-              )}
-              <div className="share">
-                <svg
-                  onClick={handleCopy}
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="22"
-                  height="22"
-                  fill="currentColor"
-                  viewBox="0 0 16 16"
-                >
-                  <path d="M13.5 1a1.5 1.5 0 0 0-1.415 1H8.913a.5.5 0 0 0-.354.146L5.793 4.914A.5.5 0 0 0 5.646 5.27l-.007 2.318-.54.54A2.5 2.5 0 1 0 6.5 10.5l.54-.54 2.318-.007a.5.5 0 0 0 .354-.147l2.768-2.767a.5.5 0 0 0 .146-.354V2.915A1.5 1.5 0 0 0 13.5 1z" />
-                  <path d="M6.5 12a1.5 1.5 0 1 1-1.415-1H5.5a.5.5 0 0 1 .5.5v.5z" />
-                </svg>
+              <div className="news-header-actions">
+                {canEdit && (
+                  <button
+                    className="edit-btn-rect"
+                    type="button"
+                    onClick={irAEditar}
+                  >
+                    <span className="edit-btn-rect__icon" aria-hidden="true">
+                      <svg
+                        viewBox="0 0 16 16"
+                        width="13"
+                        height="13"
+                        focusable="false"
+                      >
+                        <path
+                          d="M11.3 1.5a1.4 1.4 0 0 1 2 2L7 9.8 4 10.5l.7-3L11.3 1.5Z"
+                          fill="currentColor"
+                        />
+                        <path
+                          d="M3 13.5h9v1H3z"
+                          fill="currentColor"
+                        />
+                      </svg>
+                    </span>
+                    <span className="edit-btn-rect__label">Editar</span>
+                  </button>
+                )}
+
+                <div className="share-wrapper">
+                  <button
+                    type="button"
+                    className="share-trigger-rect"
+                    onClick={() => setShareOpen((v) => !v)}
+                    aria-label="Compartir noticia"
+                  >
+                    <svg
+                      viewBox="0 0 20 20"
+                      width="14"
+                      height="14"
+                      focusable="false"
+                    >
+                      <path
+                        d="M13.8 4a2 2 0 1 1-1.58 3.23L8.7 9a2 2 0 0 1-.02 2l3.52 1.77a2 2 0 1 1-.44 1.04L8.2 12a2 2 0 1 1 0-4l3.56-1.8A2 2 0 0 1 13.8 4Z"
+                        fill="currentColor"
+                      />
+                    </svg>
+                    <span>Compartir</span>
+                  </button>
+
+                  {shareOpen && (
+  <div className="share-menu">
+    <button
+      type="button"
+      className="share-item share-x"
+      onClick={() => handleShare("x")}
+    >
+      <span className="share-item__icon">
+        <i className="fa-brands fa-x-twitter" aria-hidden="true" />
+      </span>
+      <span>X</span>
+    </button>
+
+    <button
+      type="button"
+      className="share-item share-discord"
+      onClick={() => handleShare("discord")}
+    >
+      <span className="share-item__icon">
+        <i className="fa-brands fa-discord" aria-hidden="true" />
+      </span>
+      <span>Discord</span>
+    </button>
+
+    <button
+      type="button"
+      className="share-item share-telegram"
+      onClick={() => handleShare("telegram")}
+    >
+      <span className="share-item__icon">
+        <i className="fa-brands fa-telegram" aria-hidden="true" />
+      </span>
+      <span>Telegram</span>
+    </button>
+
+    <button
+      type="button"
+      className="share-item share-whatsapp"
+      onClick={() => handleShare("whatsapp")}
+    >
+      <span className="share-item__icon">
+        <i className="fa-brands fa-whatsapp" aria-hidden="true" />
+      </span>
+      <span>WhatsApp</span>
+    </button>
+
+    <button
+      type="button"
+      className="share-item share-copy"
+      onClick={() => handleShare("copy")}
+    >
+      <span className="share-item__icon">
+        <i className="fa-solid fa-link" aria-hidden="true" />
+      </span>
+      <span>Copiar enlace</span>
+    </button>
+  </div>
+)}
+
+                </div>
               </div>
             </div>
           </header>

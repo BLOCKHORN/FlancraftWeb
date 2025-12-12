@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="140" height="40" viewBox="0 0 104 30" preserveAspectRatio="none">
+  <defs>
+    <style>
+      .base{fill:#ffdd86;}
+      .hi{fill:#fff2bf;}
+      .sh{fill:#d89a3a;}
+      .ol{fill:none;stroke:#b9772e;stroke-width:1.7;stroke-linejoin:round;}
+      .il{fill:none;stroke:rgba(255,255,255,.42);stroke-width:.9;stroke-linejoin:round;}
+    </style>
+    <linearGradient id="goldGlaze" x1="0" x2="1">
+      <stop offset="0" stop-color="rgba(255,255,255,0)"/>
+      <stop offset="0.52" stop-color="rgba(255,255,255,.22)"/>
+      <stop offset="1" stop-color="rgba(255,255,255,0)"/>
+    </linearGradient>
+  </defs>
+
+  <polygon class="base" points="4,0 100,0 104,4 104,26 100,30 4,30 0,26 0,4"/>
+  <polygon class="hi" points="0,22 12,6 74,0 4,0 0,4" opacity="0.85"/>
+  <polygon class="sh" points="104,8 92,25 20,30 100,30 104,26" opacity="0.95"/>
+
+  <!-- soft gold glaze -->
+  <rect x="0" y="0" width="104" height="30" fill="url(#goldGlaze)" opacity="0.75"/>
+
+  <polygon class="ol" points="4,0 100,0 104,4 104,26 100,30 4,30 0,26 0,4"/>
+  <polygon class="il" points="4,1.2 100,1.2 102.8,4 102.8,26 100,28.8 4,28.8 1.2,26 1.2,4"/>
+</svg>

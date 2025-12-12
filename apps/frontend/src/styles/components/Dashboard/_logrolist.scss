@@ -1,5 +1,9 @@
 @use "../../base/_variables" as *;
 
+/* =========================================================
+   LOGROS (EPIC)
+   ========================================================= */
+
 .logros-epic {
   margin: 0 auto;
   margin-top: 0.4rem;
@@ -7,7 +11,7 @@
   width: 100%;
   max-width: 100%;
 
-  border-radius: 1.4rem;
+  border-radius: 3px;
   background: radial-gradient(
       circle at top,
       rgba(255, 255, 255, 0.05),
@@ -22,7 +26,9 @@
     BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
-/* CABECERA */
+/* =========================================================
+   CABECERA
+   ========================================================= */
 
 .logros-header {
   text-align: center;
@@ -36,13 +42,6 @@
   margin-bottom: 0.1rem;
 }
 
-.logros-subtitulo {
-  font-size: 0.9rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  opacity: 0.85;
-}
-
 .logros-subtitulo-secundario {
   margin-top: 0.2rem;
   font-size: 0.78rem;
@@ -51,7 +50,9 @@
   opacity: 0.7;
 }
 
-/* TABS: PERMANENTES / DIARIAS / SEMANALES */
+/* =========================================================
+   TABS: PERMANENTES / DIARIAS / SEMANALES
+   ========================================================= */
 
 .logros-tabs-tipo {
   margin: 0.7rem auto 0.4rem;
@@ -60,7 +61,7 @@
   align-items: stretch;
   justify-content: center;
   gap: 0.18rem;
-  border-radius: 999px;
+  border-radius: 3px;
   background:
     radial-gradient(
       circle at top,
@@ -76,7 +77,7 @@
 .logros-tab-tipo {
   border: none;
   padding: 0.22rem 1rem;
-  border-radius: 999px;
+  border-radius: 3px;
   cursor: pointer;
   font-size: 0.74rem;
   letter-spacing: 0.13em;
@@ -99,7 +100,7 @@
 .logros-tab-icon-wrap {
   width: 32px;
   height: 32px;
-  border-radius: 0.8rem;
+  border-radius: 3px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -114,9 +115,7 @@
   transition: transform 0.35s ease;
 }
 
-.logros-tab-label {
-  padding-right: 0.1rem;
-}
+.logros-tab-label { padding-right: 0.1rem; }
 
 .logros-tab-tipo:hover {
   transform: translateY(-1px);
@@ -136,7 +135,9 @@
   transform: translateY(-2px) scale(1.06);
 }
 
-/* TOOLBAR – TODO CENTRADO */
+/* =========================================================
+   TOOLBAR
+   ========================================================= */
 
 .logros-toolbar {
   display: flex;
@@ -146,7 +147,9 @@
   margin-bottom: 1rem;
 }
 
-/* Selector de reinos */
+/* =========================================================
+   REINOS
+   ========================================================= */
 
 .logros-reinos-wrapper {
   display: flex;
@@ -157,7 +160,7 @@
 
 .todos-pill {
   padding: 0.32rem 0.9rem;
-  border-radius: 999px;
+  border-radius: 3px;
   border: none;
   background: linear-gradient(135deg, #3c2919, #201109);
   color: #fbe8c5;
@@ -180,14 +183,18 @@
       0 10px 18px rgba(0, 0, 0, 0.9);
   }
 
-  &:hover {
-    transform: translateY(-1px);
-  }
-
+  &:hover { transform: translateY(-1px); }
   &:active {
     transform: translateY(1px);
     box-shadow: 0 3px 6px rgba(0, 0, 0, 0.9);
   }
+}
+
+.todos-pill.todos-pill-claimable {
+  box-shadow:
+    0 0 0 1px rgba(120, 255, 170, 0.22),
+    0 10px 18px rgba(0, 0, 0, 0.9),
+    0 0 18px rgba(120, 255, 170, 0.18);
 }
 
 .reinos-grid {
@@ -201,7 +208,7 @@
   position: relative;
   width: 110px;
   padding: 0.42rem 0.45rem 0.55rem;
-  border-radius: 0.9rem;
+  border-radius: 3px;
   background: radial-gradient(
       circle at top,
       rgba(255, 255, 255, 0.06),
@@ -217,7 +224,8 @@
   text-align: center;
   transition:
     box-shadow 0.15s ease,
-    background 0.15s ease;
+    background 0.15s ease,
+    transform 0.15s ease;
 }
 
 .reino-card.activo {
@@ -232,19 +240,53 @@
     linear-gradient(145deg, #3b2618, #1a0f08);
 }
 
-/* CONTENEDOR DEL ICONO – MÁS ALTO Y SIN CLIP */
+@keyframes reinoClaimBlink {
+  0%, 100% {
+    box-shadow:
+      0 10px 18px rgba(0, 0, 0, 0.9),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.02),
+      0 0 0 0 rgba(120, 255, 170, 0.0);
+    transform: translateY(0);
+    filter: saturate(1) brightness(1);
+  }
+  50% {
+    box-shadow:
+      0 10px 18px rgba(0, 0, 0, 0.9),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.02),
+      0 0 0 2px rgba(120, 255, 170, 0.22),
+      0 0 18px rgba(120, 255, 170, 0.18);
+    transform: translateY(-1px);
+    filter: saturate(1.1) brightness(1.06);
+  }
+}
+
+.reino-card.reino-card-claimable {
+  animation: reinoClaimBlink 1.35s ease-in-out infinite;
+}
+
+.reino-card.reino-card-claimable::after {
+  content: "";
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: radial-gradient(circle at 30% 30%, #92fe9d, #00c9ff);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.9),
+    0 0 14px rgba(120, 255, 170, 0.55);
+}
 
 .reino-img-wrap {
   position: relative;
-  border-radius: 0.7rem;
+  border-radius: 3px;
   height: 76px;
   overflow: visible;
   display: flex;
   align-items: center;
   justify-content: center;
 }
-
-/* ICONO – SIEMPRE COMPLETO */
 
 .reino-img {
   width: 70px;
@@ -253,8 +295,6 @@
   transform: translateY(0) scale(1);
   transition: transform 0.4s ease;
 }
-
-/* Solo se anima la imagen, no la tarjeta entera */
 
 .reino-card:hover .reino-img,
 .reino-card.activo .reino-img {
@@ -269,7 +309,9 @@
   text-transform: uppercase;
 }
 
-/* Orden */
+/* =========================================================
+   ORDEN
+   ========================================================= */
 
 .logros-filtros-orden {
   display: flex;
@@ -286,14 +328,11 @@
   gap: 0.25rem;
   opacity: 0.9;
 
-  svg {
-    width: 15px;
-    height: 15px;
-  }
+  svg { width: 15px; height: 15px; }
 }
 
 .orden-select {
-  border-radius: 999px;
+  border-radius: 3px;
   border: none;
   background: rgba(0, 0, 0, 0.75);
   color: #fbe8c5;
@@ -305,7 +344,9 @@
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.85);
 }
 
-/* ESTADOS */
+/* =========================================================
+   ESTADOS
+   ========================================================= */
 
 .logros-estado {
   margin-top: 0.6rem;
@@ -315,20 +356,18 @@
   text-transform: uppercase;
   opacity: 0.85;
 
-  &.logros-estado-error {
-    color: #ffb3b3;
-  }
+  &.logros-estado-error { color: #ffb3b3; }
 }
 
-/* WRAPPER LISTA + OVERLAY */
+/* =========================================================
+   LISTA + OVERLAY
+   ========================================================= */
 
 .logros-list-wrapper {
   position: relative;
   margin-top: 0.8rem;
-  min-height: 140px; // para que siempre haya hueco para el overlay
+  min-height: 140px;
 }
-
-/* LISTA – MÁS CLARA Y CON MARGEN */
 
 .logros-lista {
   list-style: none;
@@ -340,8 +379,7 @@
   gap: 0.8rem;
 }
 
-/* Animaciones en cascada */
-
+/* Cascada */
 .logros-lista-entrante .logro-row {
   opacity: 0;
   transform: translateY(10px);
@@ -357,38 +395,26 @@
 }
 
 @keyframes logrosCascadeIn {
-  0% {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  0% { opacity: 0; transform: translateY(10px); }
+  100% { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes logrosCascadeOut {
-  0% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  100% {
-    opacity: 0;
-    transform: translateY(-8px);
-  }
+  0% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-8px); }
 }
 
-/* ============================
-   TARJETA DE LOGRO ESTILO "COFRE"
-   ============================ */
+/* =========================================================
+   TARJETA LOGRO
+   ========================================================= */
 
 .logro-row {
   position: relative;
   display: flex;
   align-items: stretch;
   gap: 0.9rem;
-  padding: 1.05rem 8rem 1.15rem 1.1rem; // reserva a la derecha para la franja oscura
-  border-radius: 1.1rem;
+  padding: 1.05rem 8rem 1.15rem 1.1rem;
+  border-radius: 3px;
   overflow: hidden;
 
   background:
@@ -398,22 +424,22 @@
       rgba(15, 8, 4, 0.96)
     ),
     linear-gradient(135deg, #5b3923, #2c180d);
+
   box-shadow:
     0 14px 30px rgba(0, 0, 0, 0.95),
     inset 0 0 0 1px rgba(0, 0, 0, 0.8);
+
   transform-origin: center;
-  transition:
-    transform 0.14s ease,
-    box-shadow 0.14s ease,
-    background 0.18s ease;
+  transition: transform 0.14s ease, box-shadow 0.14s ease, background 0.18s ease;
+
+  isolation: auto;
 }
 
-/* panel interior biselado */
 .logro-row::before {
   content: "";
   position: absolute;
   inset: 0.22rem 0.55rem;
-  border-radius: 0.9rem;
+  border-radius: 3px;
   background:
     linear-gradient(
       180deg,
@@ -429,7 +455,6 @@
   z-index: 0;
 }
 
-/* rayo suave en el centro */
 .logro-row::after {
   content: "";
   position: absolute;
@@ -456,19 +481,48 @@
     inset 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
-/* contenido por encima del panel interior */
-.logro-acento,
-.logro-main,
+/* =========================================================
+   CAPAS / Z-INDEX
+   ========================================================= */
+
 .logro-reino-overlay {
-  position: relative;
+  position: absolute;
+  top: 0.22rem;
+  bottom: 0.22rem;
+  right: 0.65rem;
+  width: 7rem;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
   z-index: 1;
 }
 
-/* barra lateral */
+.logro-acento,
+.logro-main {
+  position: relative;
+  z-index: 5;
+}
+
+.logro-top-right,
+.logro-footer {
+  position: relative;
+  z-index: 10;
+}
+
+.logro-claim-btn {
+  position: relative;
+  z-index: 12;
+}
+
+/* =========================================================
+   CONTENIDO
+   ========================================================= */
 
 .logro-acento {
   width: 4px;
-  border-radius: 999px;
+  border-radius: 3px;
   background: linear-gradient(180deg, #35d5ff, #92fe9d);
   box-shadow:
     0 0 12px rgba(0, 201, 255, 0.9),
@@ -484,7 +538,6 @@
 }
 
 /* TOP */
-
 .logro-top {
   display: flex;
   justify-content: space-between;
@@ -492,9 +545,7 @@
   gap: 1rem;
 }
 
-.logro-top-left {
-  min-width: 0;
-}
+.logro-top-left { min-width: 0; }
 
 .logro-nombre {
   font-size: 1.08rem;
@@ -509,8 +560,7 @@
   opacity: 0.95;
 }
 
-/* XP chip tipo plaquita */
-
+/* TOP RIGHT */
 .logro-top-right {
   display: flex;
   flex-direction: column;
@@ -518,19 +568,33 @@
   gap: 0.35rem;
 }
 
+/* ✅ XP + estado juntos */
+.logro-xp-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+/* ✅ Icono estado al lado del XP (izquierda) */
+.logro-xp-status-img {
+  height: 26px;
+  width: auto;
+  display: block;
+  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.9));
+}
+
+/* XP chip */
 .logro-xp-chip {
   position: relative;
-  padding: 0.26rem 1.1rem 0.26rem 2rem;
-  border-radius: 999px;
+  padding: 0.28rem 0.9rem;
+  border-radius: 3px;
   font-size: 0.72rem;
   letter-spacing: 0.13em;
   text-transform: uppercase;
-  background:
-    linear-gradient(180deg, #fbe8c5, #e2b56e);
+  background: linear-gradient(180deg, #fbe8c5, #e2b56e);
   color: #3b230d;
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
   box-shadow:
     0 2px 0 #b97b34,
     0 6px 14px rgba(0, 0, 0, 0.85),
@@ -539,35 +603,10 @@
   overflow: hidden;
 }
 
-.logro-xp-chip::before {
-  content: "";
-  position: absolute;
-  left: 0.45rem;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 1.4rem;
-  height: 1.4rem;
-  border-radius: 999px;
-  background: radial-gradient(
-      circle at 30% 20%,
-      rgba(255, 255, 255, 0.7),
-      transparent 55%
-    ),
-    radial-gradient(circle at center, #f5c96f, #bf7a33);
-  box-shadow:
-    0 0 0 1px rgba(80, 39, 8, 0.85),
-    0 0 10px rgba(0, 0, 0, 0.75);
-}
+.logro-xp-chip::before { display: none !important; }
+.logro-xp-chip svg { display: none !important; }
 
-.logro-xp-chip svg {
-  position: relative;
-  z-index: 1;
-  width: 14px;
-  height: 14px;
-}
-
-/* PROGRESO – barra más gruesa y "mágica" */
-
+/* PROGRESO */
 .logro-progress {
   display: flex;
   flex-direction: column;
@@ -577,9 +616,12 @@
 .logro-progress-track {
   position: relative;
   height: 10px;
-  border-radius: 999px;
-  background:
-    linear-gradient(180deg, rgba(0, 0, 0, 0.9), rgba(20, 30, 35, 0.9));
+  border-radius: 3px;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.9),
+    rgba(20, 30, 35, 0.9)
+  );
   box-shadow:
     inset 0 0 8px rgba(0, 0, 0, 0.95),
     0 0 0 1px rgba(0, 0, 0, 0.9);
@@ -623,98 +665,83 @@
 
 .logro-progress-texto {
   padding: 0.12rem 0.6rem;
-  border-radius: 999px;
+  border-radius: 3px;
   background: rgba(0, 0, 0, 0.7);
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.12),
     0 4px 8px rgba(0, 0, 0, 0.8);
 }
 
-/* FOOTER */
-
+/* FOOTER (ahora solo botón) */
 .logro-footer {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   margin-top: 0.18rem;
   gap: 0.8rem;
-}
-
-.logro-status {
-  font-size: 0.76rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  padding: 0.18rem 0.65rem;
-  border-radius: 999px;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-
-  svg {
-    width: 14px;
-    height: 14px;
-  }
-}
-
-.logro-status-pendiente {
-  background: rgba(0, 0, 0, 0.7);
-  border: 1px solid rgba(0, 0, 0, 0.85);
-}
-
-.logro-status-completado {
-  background: rgba(82, 143, 80, 0.28);
-  border: 1px solid rgba(160, 255, 190, 0.85);
-  box-shadow: 0 0 12px rgba(160, 255, 190, 0.45);
-}
-
-.logro-status-reclamado {
-  background: rgba(88, 151, 55, 0.4);
-  border: 1px solid rgba(200, 255, 210, 0.95);
-  box-shadow: 0 0 14px rgba(150, 255, 200, 0.5);
+  min-height: 44px; // mantiene altura consistente aunque no haya botón
 }
 
 /* BOTÓN RECLAMAR */
-
 .logro-claim-btn {
-  padding: 0.35rem 1rem;
-  border-radius: 0.7rem;
-  border: none;
+  padding: 0.48rem 1.1rem;
+  border-radius: 3px;
+  border: 1px solid rgba(20, 10, 4, 0.9);
   cursor: pointer;
+
   font-size: 0.78rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  background: linear-gradient(135deg, #f6c978, #e59a3b);
-  color: #3b230d;
+  color: #2a170c;
+
+  background:
+    radial-gradient(circle at 30% 10%, rgba(255, 255, 255, 0.55), transparent 45%),
+    linear-gradient(180deg, #ffd88a 0%, #f2b24f 55%, #d98926 100%);
+
   box-shadow:
-    0 3px 0 #c47a26,
-    0 8px 16px rgba(0, 0, 0, 0.75);
+    0 3px 0 rgba(130, 72, 18, 0.95),
+    0 10px 18px rgba(0, 0, 0, 0.78),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55);
+
+  transition: transform 0.12s ease, filter 0.15s ease, box-shadow 0.12s ease;
   white-space: nowrap;
-  transition:
-    transform 0.1s ease,
-    box-shadow 0.1s ease,
-    filter 0.15s ease,
-    opacity 0.15s ease;
+  position: relative;
 }
+
+.logro-claim-btn::after {
+  content: "";
+  position: absolute;
+  inset: 2px 2px auto 2px;
+  height: 40%;
+  border-radius: 3px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.55), transparent);
+  pointer-events: none;
+  opacity: 0.55;
+}
+
+/* ✅ Quitamos el “glow grande” porque quieres borde parpadeando */
+.logro-claim-btn::before { display: none !important; }
 
 .logro-claim-btn:hover {
   transform: translateY(-1px);
-  filter: brightness(1.05);
+  filter: brightness(1.05) saturate(1.05);
 }
 
 .logro-claim-btn:active {
   transform: translateY(1px);
   box-shadow:
-    0 1px 0 #c47a26,
-    0 4px 10px rgba(0, 0, 0, 0.85);
+    0 1px 0 rgba(130, 72, 18, 0.95),
+    0 6px 12px rgba(0, 0, 0, 0.85),
+    inset 0 1px 0 rgba(255, 255, 255, 0.45);
 }
 
 .logro-claim-btn:disabled {
-  opacity: 0.75;
+  opacity: 0.72;
   cursor: default;
+  filter: grayscale(0.12);
 }
 
 /* ESTADO COMPLETAMENTE RECLAMADO */
-
 .logro-row.logro-reclamado {
   background: radial-gradient(
       circle at top left,
@@ -724,27 +751,13 @@
     linear-gradient(135deg, #385427, #182012);
 }
 
-/* FRANJA OSCURA CON ICONO DEL REINO */
-
-.logro-reino-overlay {
-  position: absolute;
-  top: 0.22rem;
-  bottom: 0.22rem;
-  right: 0.65rem;
-  width: 7rem; // franja derecha
-  overflow: hidden;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
-}
-
+/* FRANJA DEL REINO */
 .logro-reino-glow {
   position: absolute;
   inset: 0;
   mix-blend-mode: screen;
   opacity: 0.6;
+  pointer-events: none;
 }
 
 .logro-reino-img {
@@ -755,13 +768,8 @@
   object-fit: contain;
   filter: drop-shadow(0 0 14px rgba(0, 0, 0, 0.9));
   transform: translateY(0) scale(0.98);
-  transition:
-    transform 0.25s ease,
-    filter 0.25s ease,
-    opacity 0.25s ease;
+  transition: transform 0.25s ease, filter 0.25s ease, opacity 0.25s ease;
 }
-
-/* un poco más de vida cuando está completo/reclamado o hover */
 
 .logro-row:hover .logro-reino-img,
 .logro-row.logro-completado .logro-reino-img {
@@ -770,7 +778,66 @@
   filter: drop-shadow(0 0 18px rgba(0, 0, 0, 1));
 }
 
-/* OVERLAY DE CARGA */
+/* =========================================================
+   CLAIMABLE (POR RECLAMAR)
+   ========================================================= */
+
+@keyframes logroClaimRing {
+  0%, 100% {
+    box-shadow:
+      0 14px 30px rgba(0, 0, 0, 0.95),
+      inset 0 0 0 1px rgba(0, 0, 0, 0.8),
+      0 0 0 1px rgba(120, 255, 170, 0.00);
+  }
+  50% {
+    box-shadow:
+      0 14px 30px rgba(0, 0, 0, 0.95),
+      inset 0 0 0 1px rgba(0, 0, 0, 0.8),
+      0 0 0 1px rgba(120, 255, 170, 0.14);
+  }
+}
+
+.logro-row.logro-claimable {
+  animation: logroClaimRing 2.8s ease-in-out infinite;
+}
+
+/* ✅ NUEVO: parpadeo del BORDE del botón */
+@keyframes claimBtnBorderPulse {
+  0%, 100% {
+    border-color: rgba(20, 10, 4, 0.9);
+    box-shadow:
+      0 3px 0 rgba(130, 72, 18, 0.95),
+      0 10px 18px rgba(0, 0, 0, 0.78),
+      inset 0 1px 0 rgba(255, 255, 255, 0.55),
+      0 0 0 0 rgba(120, 255, 170, 0.0);
+  }
+  50% {
+    border-color: rgba(120, 255, 170, 0.75);
+    box-shadow:
+      0 3px 0 rgba(130, 72, 18, 0.95),
+      0 10px 18px rgba(0, 0, 0, 0.78),
+      inset 0 1px 0 rgba(255, 255, 255, 0.55),
+      0 0 0 2px rgba(120, 255, 170, 0.20),
+      0 0 18px rgba(120, 255, 170, 0.18);
+  }
+}
+
+.logro-row.logro-claimable .logro-claim-btn {
+  animation: claimBtnBorderPulse 1.15s ease-in-out infinite;
+}
+
+/* Accesibilidad */
+@media (prefers-reduced-motion: reduce) {
+  .logro-row.logro-claimable,
+  .logro-row.logro-claimable .logro-claim-btn,
+  .reino-card.reino-card-claimable {
+    animation: none !important;
+  }
+}
+
+/* =========================================================
+   OVERLAY CARGA
+   ========================================================= */
 
 .logros-loading-overlay {
   position: absolute;
@@ -811,22 +878,15 @@
 }
 
 @keyframes logrosSpinGem {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 @keyframes logrosPulseGlow {
-  0% {
-    filter: drop-shadow(0 0 10px rgba(0, 255, 220, 0.7));
-  }
-  100% {
-    filter: drop-shadow(0 0 18px rgba(0, 255, 220, 1));
-  }
+  0% { filter: drop-shadow(0 0 10px rgba(0, 255, 220, 0.7)); }
+  100% { filter: drop-shadow(0 0 18px rgba(0, 255, 220, 1)); }
 }
+
 /* =========================================================
    COUNTDOWN DIARIO / SEMANAL
    ========================================================= */
@@ -850,7 +910,7 @@
     align-items: center;
     gap: 0.4rem;
     padding: 0.35rem 0.9rem;
-    border-radius: 999px;
+    border-radius: 3px;
     background:
       radial-gradient(circle at 0% 0%, rgba(0, 255, 194, 0.16), transparent 60%),
       radial-gradient(circle at 100% 100%, rgba(0, 163, 255, 0.16), transparent 55%),
@@ -907,32 +967,24 @@
         0 0 18px rgba(92, 255, 163, 0.35);
     }
     .countdown-number {
-      // un pelín más grande en semanal para los días
-      &:first-child {
-        font-size: 1.7rem;
-      }
+      &:first-child { font-size: 1.7rem; }
     }
   }
 }
 
 @media (max-width: 768px) {
   .logros-countdown {
-    .countdown-digits {
-      padding: 0.3rem 0.7rem;
-      gap: 0.3rem;
-    }
-    .countdown-number {
-      font-size: 1.3rem;
-    }
+    .countdown-digits { padding: 0.3rem 0.7rem; gap: 0.3rem; }
+    .countdown-number { font-size: 1.3rem; }
   }
 }
 
-/* RESPONSIVE */
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
 
 @media (max-width: 1024px) {
-  .logros-epic {
-    padding-inline: 2rem;
-  }
+  .logros-epic { padding-inline: 2rem; }
 
   .logro-top {
     flex-direction: column;
@@ -942,14 +994,14 @@
   .logro-top-right {
     flex-direction: row;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.6rem;
   }
 }
 
 @media (max-width: 680px) {
   .logros-epic {
     padding-inline: 1.4rem;
-    border-radius: 1rem;
+    border-radius: 3px;
   }
 
   .logros-tabs-tipo {
@@ -964,30 +1016,16 @@
     padding-inline: 0.5rem;
   }
 
-  .reino-card {
-    width: 96px;
-  }
+  .reino-card { width: 96px; }
+  .reino-img-wrap { height: 70px; }
+  .reino-img { width: 64px; height: 64px; }
 
-  .reino-img-wrap {
-    height: 70px;
-  }
+  .logros-lista { padding-inline: 0; }
 
-  .reino-img {
-    width: 64px;
-    height: 64px;
-  }
-
-  .logros-lista {
-    padding-inline: 0;
-  }
-
-  .logro-row {
-    padding-inline: 0.9rem 6.2rem; // menos ancho en móvil
-  }
+  .logro-row { padding-inline: 0.9rem 6.2rem; }
 
   .logro-footer {
-    flex-direction: column;
-    align-items: flex-start;
+    justify-content: flex-start;
   }
 
   .logro-top-right {
@@ -995,12 +1033,44 @@
     flex-direction: column;
   }
 
-  .logro-reino-overlay {
-    width: 5.8rem;
-  }
+  .logro-reino-overlay { width: 5.8rem; }
+  .logro-reino-img { width: 50px; height: 50px; }
+}
 
-  .logro-reino-img {
-    width: 50px;
-    height: 50px;
+/* =========================================================
+   FIX DEFINITIVO: nunca ocultar items por culpa de animaciones
+   ========================================================= */
+
+@keyframes logrosCascadeIn {
+  0% { opacity: 0; transform: translateY(10px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes logrosCascadeOut {
+  0% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-8px); }
+}
+
+.logro-row {
+  opacity: 1 !important;
+  transform: translateY(0) !important;
+}
+
+.logros-lista-entrante .logro-row {
+  animation: logrosCascadeIn 0.45s ease-out both;
+  animation-delay: var(--delay, 0ms);
+}
+
+.logros-lista-saliente .logro-row {
+  animation: logrosCascadeOut 0.35s ease-in both;
+  animation-delay: var(--delay, 0ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .logros-lista-entrante .logro-row,
+  .logros-lista-saliente .logro-row {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: translateY(0) !important;
   }
 }

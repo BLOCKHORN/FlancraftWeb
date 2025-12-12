@@ -2,17 +2,27 @@
 
 // --- Animaciones globales utilizadas ---
 @keyframes shimmer {
-  0% { background-position: -150% center; }
-  100% { background-position: 150% center; }
+  0% {
+    background-position: -150% center;
+  }
+  100% {
+    background-position: 150% center;
+  }
 }
 
 @keyframes pulse-reward {
-  0%, 100% { box-shadow: 0 0 6px rgba(255, 230, 80, 0.4); }
-  50% { box-shadow: 0 0 12px rgba(255, 230, 80, 0.6); }
+  0%,
+  100% {
+    box-shadow: 0 0 6px rgba(255, 230, 80, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 12px rgba(255, 230, 80, 0.6);
+  }
 }
 
 @keyframes pulse-glow {
-  0%, 100% {
+  0%,
+  100% {
     transform: translate(-50%, -50%) scale(1);
     opacity: 0.85;
   }
@@ -28,7 +38,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 0.6rem 1.2rem;
-  background-color: #2E1D0F;
+  background-color: #2e1d0f;
 
   @media (min-width: 769px) {
     display: none;
@@ -68,20 +78,23 @@
 
         &:hover {
           transform: scale(1.05);
-          filter: brightness(1.6) drop-shadow(0 0 8px rgba(255, 224, 150, 0.6));
+          filter: brightness(1.6)
+            drop-shadow(0 0 8px rgba(255, 224, 150, 0.6));
         }
-
       }
-              .logo-img.logo-activo {
-  filter: brightness(1.6) drop-shadow(0 0 8px rgba(255, 224, 150, 0.6));
-  transform: scale(1.05);
-}
+
+      .logo-img.logo-activo {
+        filter: brightness(1.6)
+          drop-shadow(0 0 8px rgba(255, 224, 150, 0.6));
+        transform: scale(1.05);
+      }
     }
   }
 
   .profile-button {
     z-index: 3;
   }
+}
 
 .profile-button.full {
   display: flex;
@@ -150,12 +163,14 @@
     background: #ffda6a;
     color: #2e1d0f;
     transform: translateY(-1px);
-    box-shadow: inset 0 -2px 0 #e9cc8c, 0 4px 10px rgba(255, 218, 106, 0.35);
+    box-shadow: inset 0 -2px 0 #e9cc8c,
+      0 4px 10px rgba(255, 218, 106, 0.35);
   }
 
   &:active {
     transform: translateY(1px);
-    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3), 0 1px 3px rgba(0, 0, 0, 0.25);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3),
+      0 1px 3px rgba(0, 0, 0, 0.25);
   }
 
   &.active {
@@ -163,8 +178,6 @@
     border-color: #8a6133;
   }
 }
-}
-
 
 // --- Overlay menú móvil ---
 .mobile-menu-overlay {
@@ -224,8 +237,14 @@
       }
     }
 
-    .blockhorn-logo { max-width: 7rem; margin-top: 1rem; }
-    .flancraft-logo { max-width: 10rem; margin-top: 0.5rem; }
+    .blockhorn-logo {
+      max-width: 7rem;
+      margin-top: 1rem;
+    }
+    .flancraft-logo {
+      max-width: 10rem;
+      margin-top: 0.5rem;
+    }
 
     .logo-divider {
       width: 80%;
@@ -233,8 +252,7 @@
       margin: 0.6rem auto;
       background: #ddb879;
       border-radius: 10px;
-      box-shadow:
-        0 0 8px rgba(193, 110, 44, 0.25),
+      box-shadow: 0 0 8px rgba(193, 110, 44, 0.25),
         0 0 4px rgba(101, 54, 16, 0.2) inset;
       animation: shimmer 6s infinite linear;
       opacity: 0.9;
@@ -242,73 +260,73 @@
   }
 
   .mobile-links {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-  padding: 0 0.8rem;
-
-  a,
-  .mobile-dropdown-toggle {
-    background: linear-gradient(to bottom, #fbe68c, #e4c465);
-    padding: 0.7rem 1rem;
-    font-size: 1rem;
-    color: #3b2f1e;
-    font-weight: bold;
-    border-radius: 12px;
-    border: 2px solid #9d742f;
     display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    box-shadow: 0 3px 0 #b1863c;
-    text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.4);
-    cursor: pointer;
-    transition: all 0.15s ease;
+    flex-direction: column;
+    gap: 0.4rem;
+    padding: 0 0.8rem;
 
-    &:hover {
-      background: linear-gradient(to bottom, #fcd75a, #e4b634);
-      transform: translateY(1px);
-      box-shadow: 0 1px 0 #9d742f;
+    a,
+    .mobile-dropdown-toggle {
+      background: linear-gradient(to bottom, #fbe68c, #e4c465);
+      padding: 0.7rem 1rem;
+      font-size: 1rem;
+      color: #3b2f1e;
+      font-weight: bold;
+      border-radius: 12px;
+      border: 2px solid #9d742f;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      box-shadow: 0 3px 0 #b1863c;
+      text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.4);
+      cursor: pointer;
+      transition: all 0.15s ease;
+
+      &:hover {
+        background: linear-gradient(to bottom, #fcd75a, #e4b634);
+        transform: translateY(1px);
+        box-shadow: 0 1px 0 #9d742f;
+      }
+
+      &:active {
+        transform: translateY(2px);
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+      }
+
+      &.active {
+        background: linear-gradient(to bottom, #ffecc0, #f5d889);
+        box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.15),
+          0 2px 0 #b1863c;
+      }
     }
 
-    &:active {
-      transform: translateY(2px);
-      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+    .mobile-link {
+      background: linear-gradient(to bottom, #fbe68c, #e4c465);
+      padding: 0.7rem 1rem;
+      font-size: 1rem;
+      color: #3b2f1e;
+      font-weight: bold;
+      border-radius: 12px;
+      border: 2px solid #9d742f;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      box-shadow: 0 3px 0 #b1863c;
+      text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.4);
+      cursor: pointer;
+      transition: all 0.15s ease;
+
+      &:hover {
+        background: linear-gradient(to bottom, #fcd75a, #e4b634);
+        transform: translateY(1px);
+        box-shadow: 0 1px 0 #9d742f;
+      }
+
+      &:active {
+        transform: translateY(2px);
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+      }
     }
-
-    &.active {
-      background: linear-gradient(to bottom, #ffecc0, #f5d889);
-      box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.15), 0 2px 0 #b1863c;
-    }
-  }
-
-  .mobile-link {
-  background: linear-gradient(to bottom, #fbe68c, #e4c465);
-  padding: 0.7rem 1rem;
-  font-size: 1rem;
-  color: #3b2f1e;
-  font-weight: bold;
-  border-radius: 12px;
-  border: 2px solid #9d742f;
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  box-shadow: 0 3px 0 #b1863c;
-  text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.4);
-  cursor: pointer;
-  transition: all 0.15s ease;
-
-  &:hover {
-    background: linear-gradient(to bottom, #fcd75a, #e4b634);
-    transform: translateY(1px);
-    box-shadow: 0 1px 0 #9d742f;
-  }
-
-  &:active {
-    transform: translateY(2px);
-    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
-  }
-}
-
 
     .logo-divider {
       width: 80%;
@@ -350,7 +368,6 @@
   }
 }
 
-
 // --- Desplegable flotante perfil móvil ---
 .user-dropdown-wrapper.mobile-only {
   position: absolute;
@@ -385,64 +402,120 @@
     gap: 1rem;
 
     .user-header.centered {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
-  padding-bottom: 0.8rem;
-  border-bottom: 1px solid #d8c69b;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      padding-bottom: 0.8rem;
+      border-bottom: 1px solid #d8c69b;
 
-  .user-avatar-large {
-    width: 64px;
-    height: 64px;
-    border-radius: 8px;
-    border: 2px solid #ffda6a;
-  }
+      .user-avatar-large {
+        width: 64px;
+        height: 64px;
+        border-radius: 8px;
+        border: 2px solid #ffda6a;
+      }
 
-  // --- Estilos de nombre de usuario con rango en el perfil móvil ---
-.username-big {
-  font-size: 1.1rem;
-  font-weight: bold;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
+      // nombre del jugador (el color lo pone .nombre-colored)
+      .username-big {
+        font-size: 1.1rem;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+      }
 
-  // NO se establece color base para no pisar el color del rango
-}
-    .level-text {
-      background: linear-gradient(to right, #ffde59, #fcb900);
-      color: #3e2b1a;
-      font-weight: bold;
-      padding: 2px 6px;
-      border-radius: 8px;
-      font-size: 0.85rem;
-      box-shadow: 0 0 6px rgba(255, 220, 80, 0.3);
+      // NUEVO bloque de nivel (pill + número)
+      .user-level-row {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        margin-top: 0.2rem;
+      }
+
+      .user-level-pill {
+        padding: 2px 8px;
+        border-radius: 999px;
+        background: linear-gradient(to right, #ffde59, #fcb900);
+        color: #3e2b1a;
+        font-size: 0.78rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        box-shadow: 0 0 6px rgba(255, 220, 80, 0.35);
+      }
+
+      .user-level-value {
+        min-width: 1.8rem;
+        padding: 2px 8px;
+        border-radius: 999px;
+        background: #3b2a24;
+        color: #ffe9b0;
+        font-size: 0.82rem;
+        font-weight: 700;
+        box-shadow: 0 0 6px rgba(0, 0, 0, 0.35);
+      }
     }
-  }
-}
 
-
+    // BLOQUE XP MOBILE (misma lógica que desktop)
+    .xp-navbar-block {
+      width: 100%;
+      margin-top: 0.2rem;
+    }
 
     .xp-bar-profile {
       width: 100%;
       height: 8px;
-      background: #e0cda3;
+      background: #111725;
       border-radius: 999px;
       overflow: hidden;
+      border: 1px solid #1e2d44;
+      box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.5);
 
       .xp-fill {
         height: 100%;
-        background: linear-gradient(to right, #ffe65a, #ffcc00);
-        transition: width 0.3s ease;
+        background: linear-gradient(
+          90deg,
+          #26e7ff 0%,
+          #00c1ff 35%,
+          #009be4 70%,
+          #4bfbff 100%
+        );
+        box-shadow: 0 0 10px rgba(64, 224, 255, 0.6);
+        transition: width 0.3s ease-out;
+      }
+    }
+
+    .xp-text-row {
+      margin-top: 0.35rem;
+      display: flex;
+      justify-content: center;
+      align-items: baseline;
+      gap: 0.22rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #3e2b1a;
+
+      .xp-actual {
+        color: #26c6ff;
+        text-shadow: 0 0 4px rgba(0, 174, 255, 0.5);
+      }
+
+      .xp-sep {
+        opacity: 0.7;
+      }
+
+      .xp-total {
+        opacity: 0.9;
       }
     }
 
     .balance-wrapper {
       width: 100%;
-      margin-top: -0.4rem;
+      margin-top: -0.2rem;
       margin-bottom: 0.8rem;
 
       .balance-item {
@@ -465,7 +538,9 @@
         img.eco-icon-navbar {
           width: 20px;
           height: 25px;
-          filter: drop-shadow(0 0 2px rgba(255, 215, 0, 0.6));
+          filter: drop-shadow(
+            0 0 2px rgba(255, 215, 0, 0.6)
+          );
         }
 
         &:hover {
@@ -475,47 +550,47 @@
       }
     }
 
-.dropdown-link,
-.logout-button {
-  width: 100%;
-  padding: 0.7rem 1.2rem;
-  border-radius: 12px;
-  font-weight: bold;
-  font-size: 0.95rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  background: linear-gradient(to bottom, #fbe68c, #e4c465);
-  border: 2px solid #a17a3d;
-  color: #3b2f1e;
-  box-shadow: 0 3px 0 #b1863c;
-  box-sizing: border-box;
-  text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.4);
-  transition: all 0.15s ease;
-  cursor: pointer;
+    .dropdown-link,
+    .logout-button {
+      width: 100%;
+      padding: 0.7rem 1.2rem;
+      border-radius: 12px;
+      font-weight: bold;
+      font-size: 0.95rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      background: linear-gradient(to bottom, #fbe68c, #e4c465);
+      border: 2px solid #a17a3d;
+      color: #3b2f1e;
+      box-shadow: 0 3px 0 #b1863c;
+      box-sizing: border-box;
+      text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.4);
+      transition: all 0.15s ease;
+      cursor: pointer;
 
-  i {
-    color: #7f5c26;
-  }
+      i {
+        color: #7f5c26;
+      }
 
-  &:hover {
-    background: linear-gradient(to bottom, #fcd75a, #e4b634);
-    transform: translateY(1px);
-    box-shadow: 0 1px 0 #9d742f;
-  }
+      &:hover {
+        background: linear-gradient(to bottom, #fcd75a, #e4b634);
+        transform: translateY(1px);
+        box-shadow: 0 1px 0 #9d742f;
+      }
 
-  &:active {
-    transform: translateY(2px);
-    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
-  }
+      &:active {
+        transform: translateY(2px);
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+      }
 
-  &.active {
-    background: linear-gradient(to bottom, #ffecc0, #f5d889);
-    box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.15), 0 2px 0 #b1863c;
-  }
-}
-
+      &.active {
+        background: linear-gradient(to bottom, #ffecc0, #f5d889);
+        box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.15),
+          0 2px 0 #b1863c;
+      }
+    }
 
     .logout-button {
       background: #eed3c3;
@@ -532,14 +607,14 @@
       }
     }
   }
+}
 
 // --- Colores de rangos para nombre del perfil en móvil ---
 .nombre-colored {
   padding: 0.1rem 0.5rem;
   border-radius: 6px;
   font-weight: 700;
-  text-shadow:
-    0 0 3px rgba(0, 0, 0, 0.35),
+  text-shadow: 0 0 3px rgba(0, 0, 0, 0.35),
     0 1px 1px rgba(0, 0, 0, 0.3);
   transition: filter 0.2s ease;
 }
@@ -554,38 +629,37 @@
 
 .nombre-colored.rango-nova {
   color: #b5ff6b !important;
-  text-shadow:
-    0 0 4px #6bdf3e,
+  text-shadow: 0 0 4px #6bdf3e,
     0 0 6px rgba(0, 0, 0, 0.4);
   font-size: 1.05rem;
 }
 
 .nombre-colored.rango-alpha {
   color: #58d4ff !important;
-  text-shadow:
-    0 0 4px #30bdee,
+  text-shadow: 0 0 4px #30bdee,
     0 0 6px rgba(0, 0, 0, 0.4);
   font-size: 1.08rem;
 }
 
 .nombre-colored.rango-inmortal {
   color: #ff5c33 !important;
-  text-shadow:
-    0 0 4px #d14810,
+  text-shadow: 0 0 4px #d14810,
     0 0 6px rgba(0, 0, 0, 0.4);
   font-size: 1.12rem;
   animation: glowPulse 2.4s infinite ease-in-out;
 }
 
-
 @keyframes glowPulse {
-  0%, 100% {
+  0%,
+  100% {
     text-shadow: 0 0 4px #ff8000, 0 0 10px #ff4b2b;
   }
   50% {
     text-shadow: 0 0 8px #ff4b2b, 0 0 12px #ff8000;
   }
 }
+
+// --- Ajustes tablet ---
 @media only screen and (min-width: vars.$break-tablet-min) and (max-width: vars.$break-tablet-max) {
   .mobile-only {
     padding: 0.8rem 1.4rem;
@@ -617,13 +691,22 @@
     }
   }
 }
+
 // Navbar visibility control (reacts to useIsMobile @ 1025px)
 @media (min-width: 1025px) {
-  .mobile-only { display: none !important; }
-  .desktop-only { display: flex !important; }
+  .mobile-only {
+    display: none !important;
+  }
+  .desktop-only {
+    display: flex !important;
+  }
 }
 
 @media (max-width: 1024px) {
-  .desktop-only { display: none !important; }
-  .mobile-only { display: flex !important; }
+  .desktop-only {
+    display: none !important;
+  }
+  .mobile-only {
+    display: flex !important;
+  }
 }

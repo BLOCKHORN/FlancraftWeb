@@ -19,6 +19,13 @@ const NavbarMobile = ({
   const [loginModalOpen, setLoginModalOpen] = useState(false);
   const [rangoDatos, setRangoDatos] = useState(null);
 
+  // XP específica para navbar mobile
+  const [xpNavbar, setXpNavbar] = useState({
+    level: null,
+    actual: 0,
+    requerida: 1,
+  });
+
   const navIconStyle = {
     width: "22px",
     height: "22px",
@@ -28,6 +35,7 @@ const NavbarMobile = ({
     flexShrink: 0,
   };
 
+  // Cerrar dropdown al tocar fuera (mobile)
   useEffect(() => {
     const handleTapOutside = (event) => {
       if (
@@ -47,24 +55,49 @@ const NavbarMobile = ({
     };
   }, [profileOpen, setProfileOpen]);
 
+  // Rango + XP usando la MISMA lógica que Dashboard / NavbarDesktop
   useEffect(() => {
-    const fetchRangoUsuario = async () => {
-      if (isLoggedIn && userData?.uuid) {
-        try {
-          const res = await fetch(
+    const fetchDatosUsuarioMobile = async () => {
+      if (!isLoggedIn || !userData?.uuid) return;
+
+      try {
+        const [usuarioRes, xpRes] = await Promise.all([
+          fetch(
             `https://flancraft-backend.onrender.com/api/usuarios/${userData.uuid}`
-          );
-          const data = await res.json();
-          setRangoDatos({
-            rango: data.rango_usuario?.toLowerCase() || null,
-            premium: data.es_premium === true,
-          });
-        } catch (err) {
-          console.error("Error al obtener datos de usuario:", err);
+          ),
+          fetch(
+            `https://flancraft-backend.onrender.com/api/usuarios/${userData.uuid}/xp`
+          ),
+        ]);
+
+        if (!usuarioRes.ok || !xpRes.ok) {
+          throw new Error("Error al obtener datos de usuario/XP (mobile)");
         }
+
+        const usuario = await usuarioRes.json();
+        const xpData = await xpRes.json();
+
+        setRangoDatos({
+          rango: usuario.rango_usuario?.toLowerCase() || null,
+          premium: usuario.es_premium === true,
+        });
+
+        const nivelInfo = xpData?.niveles?.find(
+          (n) => n.nivel === usuario.nivel
+        );
+        const xpDelNivelActual = nivelInfo?.xp_requerida || 1;
+
+        setXpNavbar({
+          level: usuario.nivel,
+          actual: usuario.xp_actual,
+          requerida: xpDelNivelActual,
+        });
+      } catch (err) {
+        console.error("[NAVBAR MOBILE] Error al obtener datos:", err);
       }
     };
-    fetchRangoUsuario();
+
+    fetchDatosUsuarioMobile();
   }, [isLoggedIn, userData?.uuid]);
 
   const getRangoColorClass = () => {
@@ -74,9 +107,10 @@ const NavbarMobile = ({
     return `rango-${raw}`;
   };
 
+  // Cerrar dropdown al hacer click fuera (fallback)
   useEffect(() => {
     const closeOnClick = (event) => {
-      const dropdown = document.querySelector(".user-dropdown-wrapper");
+      const dropdown = document.querySelector(".user-dropdown-wrapper.mobile-only");
       const profileBtn = profileButtonRef.current;
 
       if (
@@ -93,8 +127,20 @@ const NavbarMobile = ({
     return () => document.removeEventListener("click", closeOnClick);
   }, [setProfileOpen]);
 
+  // Cálculos de XP para la barra mobile
+  const xpActualNavbar = xpNavbar.actual ?? 0;
+  const xpRequeridaNavbar = xpNavbar.requerida || 1;
+  const xpPercent =
+    xpRequeridaNavbar > 0
+      ? Math.min(100, (xpActualNavbar / xpRequeridaNavbar) * 100)
+      : 0;
+
+  const nivelNavbar =
+    xpNavbar.level != null ? xpNavbar.level : userData?.userLevel ?? 1;
+
   return (
     <>
+      {/* BARRA SUPERIOR MOBILE */}
       <div className="navbar-inner mobile-only">
         <div className="left-wrapper">
           <button className="burger" onClick={() => setMenuOpen(!menuOpen)}>
@@ -152,6 +198,7 @@ const NavbarMobile = ({
         )}
       </div>
 
+      {/* DROPDOWN PERFIL MOBILE */}
       {isLoggedIn && !isUserLoading && (
         <div
           ref={wrapperRef}
@@ -170,24 +217,34 @@ const NavbarMobile = ({
                 <span className={`nombre-colored ${getRangoColorClass()}`}>
                   {userData.username}
                 </span>
-                <span className="level-text">Nv. {userData.userLevel}</span>
               </p>
+
+              <div className="user-level-row">
+                <span className="user-level-pill">NIVEL</span>
+                <span className="user-level-value">{nivelNavbar}</span>
+              </div>
             </div>
 
-            <div className="xp-bar-profile">
-              <div
-                className="xp-fill"
-                style={{
-                  width: `${
-                    (userData.userXP / userData.userXPMax) * 100
-                  }%`,
-                }}
-              />
+            {/* BLOQUE XP MOBILE: misma barra azul que desktop */}
+            <div className="xp-navbar-block">
+              <div className="xp-bar-profile">
+                <div
+                  className="xp-fill"
+                  style={{
+                    width: `${xpPercent}%`,
+                  }}
+                />
+              </div>
+              <div className="xp-text-row">
+                <span className="xp-actual">{xpActualNavbar}</span>
+                <span className="xp-sep">/</span>
+                <span className="xp-total">{xpRequeridaNavbar} XP</span>
+              </div>
             </div>
 
             <div className="balance-wrapper">
               <div className="balance-item">
-                <span> ECOS: {userData.ecos}</span>
+                <span>{userData.ecos} ECOS</span>
                 <img
                   src="/assets/eco.webp"
                   alt="ECOS"
@@ -256,11 +313,13 @@ const NavbarMobile = ({
         </div>
       )}
 
+      {/* OVERLAY para cerrar menú lateral */}
       <div
         className="mobile-menu-overlay"
         onClick={() => setMenuOpen(false)}
       ></div>
 
+      {/* MENÚ LATERAL MOBILE */}
       <div className={`mobile-menu ${menuOpen ? "open" : ""}`}>
         <div className="mobile-logo-header">
           <i

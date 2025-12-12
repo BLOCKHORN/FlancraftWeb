@@ -453,10 +453,8 @@ const NoticiasAdmin = () => {
     <div className="noticias-admin">
       <header className="noticias-admin__header">
         <div className="noticias-admin__title-block">
-          <div className="noticias-admin__title-main">Gestor de noticias</div>
-          <p className="noticias-admin__subtitle">
-            Redacta y organiza las noticias que verán los jugadores en la Taberna.
-          </p>
+          <div className="noticias-admin__title-main">CREA UNA NUEVA NOTICIA</div>
+
         </div>
 
         {form.id && (

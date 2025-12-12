@@ -3,49 +3,100 @@
 .dashboard-epic {
   position: relative;
   min-height: calc(100vh - 80px);
-  padding: 0 1.5rem 4rem;
+  padding: 0 1.5rem 0rem;
   color: #fbe8c5;
-  font-family: "IM Fell English SC", system-ui, -apple-system, BlinkMacSystemFont,
-    "Segoe UI", sans-serif;
+  font-family: "IM Fell English SC", system-ui, -apple-system,
+    BlinkMacSystemFont, "Segoe UI", sans-serif;
   overflow-x: hidden;
 }
 
-/* =========================
-   HERO POSADA (IMAGEN + OVERLAY)
-   ========================= */
+/* =========================================================
+   CONTENEDOR UNIFICADO (HEADER + PERFIL + RECOMPENSAS + LOGROS)
+   - max-width 1300px
+   - borde lateral exterior
+   - border-radius máximo 3px
+   ========================================================= */
 
-.hero-posada {
-  position: relative;
-  max-width: 100%;
+.dashboard-wrap {
+  width: 100%;
+  max-width: 1300px;
   margin: 0 auto;
-  border-radius: 1.4rem;
-  overflow: hidden;
-  box-shadow: 0 28px 60px rgba(0, 0, 0, 0.9);
 }
 
-.hero-posada-bg {
-  position: absolute;
-  inset: 0;
-  background-image: url("/assets/posada.webp");
-  background-size: cover;
-  background-position: center top;
-  filter: brightness(1);
-  transform: scale(1.02);
-}
-
-.hero-posada-content {
+.dashboard-frame {
   position: relative;
-  padding: 5rem 1.8rem 5rem;
-  background: radial-gradient(
-      circle at top,
-      rgba(0, 0, 0, 0.5),
-      rgba(0, 0, 0, 0.8)
-    )
-    transparent;
+  overflow: hidden;
+  border-radius: 3px;
+
+  background:
+    radial-gradient(circle at 18% 8%, rgba(0, 201, 255, 0.10), transparent 0%),
+    radial-gradient(circle at 85% 18%, rgba(255, 210, 120, 0.06), transparent 0%),
+    radial-gradient(circle at 45% 110%, rgba(120, 70, 25, 0.35), transparent 0%),
+    linear-gradient(
+      180deg,
+      rgba(44, 26, 14, 0.92) 0%,
+      rgba(26, 14, 7, 0.96) 45%,
+      rgba(12, 7, 4, 0.98) 100%
+    );
+
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 225, 170, 0.05),
+    inset 0 14px 26px rgba(0, 0, 0, 0.55),
+    inset 0 -22px 40px rgba(0, 0, 0, 0.65),
+    0 28px 60px rgba(0, 0, 0, 0.9);
+
+  border: 1px solid rgba(0, 0, 0, 0.75);
+  padding: 2.2rem 2.2rem 2.6rem;
+}
+
+
+/* Borde lateral exterior (por fuera) */
+.dashboard-frame::before,
+.dashboard-frame::after {
+  content: "";
+  position: absolute;
+  top: 0;
+   z-index: 3;
+  bottom: 0;
+  width: 10px;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02)),
+    linear-gradient(180deg, #3b2217, #1b0f08);
+  opacity: 0.9;
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.85),
+    0 0 0 1px rgba(255, 255, 255, 0.03);
+}
+
+.dashboard-frame::before {
+  left: 0;
+}
+
+.dashboard-frame::after {
+  right: 0;
+}
+
+/* Contenido interior con padding para no pisar los laterales */
+.dashboard-frame > * {
+  position: relative;
+  z-index: 2;
+}
+
+.dashboard-frame {
+  padding: 2.2rem 2.2rem 2.6rem;
+}
+
+/* Forzamos radio máximo 3px a elementos interactivos dentro del wrap */
+.dashboard-frame button,
+.dashboard-frame a,
+.dashboard-frame input,
+.dashboard-frame select {
+  border-radius: 3px !important;
 }
 
 /* =========================
-   CABECERA DENTRO DEL HERO
+   CABECERA
    ========================= */
 
 .epic-header-dashboard {
@@ -55,8 +106,8 @@
 }
 
 .epic-header-text {
-  max-width: 620px;
-  margin: 0 auto 0.7rem auto;
+  max-width: 720px;
+  margin: 0 auto;
 }
 
 .epic-title {
@@ -76,32 +127,124 @@
 
 /* =========================
    TARJETA DEL JUGADOR
+   (con banner posada integrado)
+   ========================= */
+
+/* =========================
+   TARJETA DEL JUGADOR
+   (posada detrás + overlay oscuro + panel degradado marrón)
    ========================= */
 
 .dashboard-player-card {
-  margin: 2.4rem auto 0;
-  border-radius: 1.2rem;
-  padding: 1.8rem 2.1rem 1.9rem;
-  background: radial-gradient(
-      circle at top,
-      rgba(255, 255, 255, 0.04),
-      rgba(0, 0, 0, 0.65)
-    ),
-    linear-gradient(135deg, #3a2413, #241409);
+  position: relative;
+  margin: 1.6rem auto 0;
+  border-radius: 3px;
+  overflow: hidden;
+
+  /* Base oscura por si la imagen tarda en cargar */
+  background: linear-gradient(135deg, #2a170c, #140a05);
+
   box-shadow:
-    0 0 0 2px rgba(0, 0, 0, 0.6),
-    0 24px 40px rgba(0, 0, 0, 0.85);
-  display: flex;
-  flex-direction: column;
-  gap: 1.3rem;
+    0 0 0 1px rgba(0, 0, 0, 0.75),
+    0 22px 44px rgba(0, 0, 0, 0.88);
+}
+
+/* Imagen posada como fondo de TODA la card */
+.dashboard-player-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: url("/assets/posada.webp") center top / cover no-repeat;
+  transform: scale(1.04);
+  filter: brightness(0.95) contrast(1.06) saturate(1.05);
+  opacity: 0.95;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Overlay oscuro global (para que el texto siempre lea) */
+.dashboard-player-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(0, 0, 0, 0.05) 0%,
+      rgba(12, 7, 3, 0.62) 42%,
+      rgba(14, 8, 4, 0.88) 100%
+    );
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Todo el contenido por encima */
+.dashboard-player-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Mantén el banner como “aire” superior, pero sin duplicar fondos */
+.player-card-banner {
+  position: relative;
+  height: 210px;
+  overflow: hidden;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.7);
+  background: transparent;
+}
+
+/* Anulamos los fondos del banner anterior (ahora lo hace la card entera) */
+.player-card-banner-bg,
+.player-card-banner-overlay {
+  display: none;
 }
 
 .player-main-layout {
+  margin-top: -92px; /* un pelín más para que la posada se vea debajo */
+  padding: 1.35rem 1.4rem 0;
   display: grid;
   grid-template-columns: 210px minmax(0, 1fr);
   gap: 2rem;
   align-items: center;
+
+  position: relative;
 }
+
+/* Panel marrón degradado SEMI-transparente detrás del contenido
+   (esto arregla la franja rara y deja ver la posada por debajo) */
+.player-main-layout::before {
+  content: "";
+  position: absolute;
+  left: 1.1rem;
+  right: 1.1rem;
+  top: 0.55rem;
+  bottom: -0.75rem;
+
+  border-radius: 3px;
+  pointer-events: none;
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(18, 10, 6, 0.35) 0%,
+      rgba(28, 16, 10, 0.72) 38%,
+      rgba(20, 12, 7, 0.90) 100%
+    ),
+    radial-gradient(circle at 18% 12%, rgba(0, 201, 255, 0.10), transparent 55%);
+
+  border: 1px solid rgba(0, 0, 0, 0.65);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 10px 22px rgba(0, 0, 0, 0.65);
+
+  backdrop-filter: blur(1.4px);
+}
+
+.player-main-layout > * {
+  position: relative;
+  z-index: 1;
+}
+
 
 /* =========================
    COLUMNA IZQUIERDA: AVATAR
@@ -116,23 +259,21 @@
   position: relative;
   width: 190px;
   height: 220px;
-  border-radius: 0.9rem;
+  border-radius: 3px;
   padding: 0.45rem;
   background: radial-gradient(circle at top, #4b321b, #241409);
   box-shadow:
-    0 0 0 2px rgba(0, 0, 0, 0.65),
+    0 0 0 1px rgba(0, 0, 0, 0.75),
     0 12px 20px rgba(0, 0, 0, 0.7);
   overflow: visible;
 }
-
-/* Interior del marco */
 
 .avatar-inner {
   position: relative;
   z-index: 0;
   width: 100%;
   height: 100%;
-  border-radius: 0.75rem;
+  border-radius: 3px;
   overflow: hidden;
   background: #1a1a1a;
 }
@@ -151,11 +292,9 @@
   z-index: 1;
   width: 100%;
   height: 100%;
-  border-radius: 0.75rem;
+  border-radius: 3px;
   object-fit: contain;
 }
-
-/* icono de rango flotando sobre el marco */
 
 .avatar-rango-badge {
   position: absolute;
@@ -174,7 +313,7 @@
 .player-info-column {
   display: flex;
   flex-direction: column;
-  gap: 1.2rem;
+  gap: 1.1rem;
 }
 
 .player-identidad {
@@ -201,16 +340,16 @@
   align-items: center;
 }
 
-/* badge staff */
-
 .badge-staff {
   padding: 0.15rem 0.7rem;
-  border-radius: 999px;
+  border-radius: 3px;
   font-size: 0.7rem;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   border: 1px solid rgba(0, 0, 0, 0.75);
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
+  background: linear-gradient(135deg, #3c2a1b, #20120a);
+  color: #fbe8c5;
 }
 
 .badge-owner {
@@ -218,37 +357,31 @@
   color: #fff9e2;
 }
 
-/* premium */
-
 .badge-premium {
   height: 26px;
   filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.9));
 }
 
 .player-tagline {
-  margin-top: 0.4rem;
+  margin-top: 0.35rem;
   font-size: 0.8rem;
   opacity: 0.9;
 }
 
-/* fila de stats: solo saldo */
-
 .player-stats-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 1.4rem;
+  gap: 1.2rem;
   align-items: flex-end;
 }
 
 .stat-block {
   background: rgba(12, 7, 3, 0.9);
-  border-radius: 0.9rem;
+  border-radius: 3px;
   padding: 0.9rem 1rem;
-  border: 1px solid rgba(0, 0, 0, 0.8);
+  border: 1px solid rgba(0, 0, 0, 0.85);
   box-shadow: 0 10px 22px rgba(0, 0, 0, 0.75);
 }
-
-/* saldo */
 
 .saldo-block .stat-label {
   font-size: 0.8rem;
@@ -281,8 +414,6 @@
   height: 25px;
 }
 
-/* pequeño pulso en la gema */
-
 .pulse {
   animation: ecoPulse 1.6s ease-in-out infinite;
 }
@@ -305,7 +436,7 @@
 .btn-primario {
   margin-left: auto;
   padding: 0.45rem 0.95rem;
-  border-radius: 0.6rem;
+  border-radius: 3px;
   font-size: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 0.12em;
@@ -337,14 +468,13 @@
    ========================= */
 
 .nivel-global-wrapper {
-  margin: 0.8rem 0 0.4rem;
-  padding: 0.9rem 1.3rem 1.1rem;
-  border-radius: 0.9rem;
-  width: 100%;
-  max-width: 100%;
+  margin: 1rem 1.4rem 1.2rem;
+  padding: 0.9rem 1.1rem 1.05rem;
+  border-radius: 3px;
+  width: calc(100% - 2.8rem);
   background: radial-gradient(circle at top, #2c1c0f, #1a0f08);
   box-shadow:
-    0 0 0 1px rgba(0, 0, 0, 0.7),
+    0 0 0 1px rgba(0, 0, 0, 0.75),
     0 14px 26px rgba(0, 0, 0, 0.8);
 }
 
@@ -362,13 +492,12 @@
   opacity: 0.9;
 }
 
-/* >>> CHIP DEL NIVEL <<< */
 .nivel-global-valor {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   padding: 0.18rem 0.7rem;
-  border-radius: 999px;
+  border-radius: 3px;
   background: linear-gradient(135deg, #382015, #8b4a24);
   border: 1px solid rgba(255, 207, 120, 0.7);
   font-size: 1.05rem;
@@ -383,7 +512,7 @@
 .nivel-global-bar {
   position: relative;
   height: 12px;
-  border-radius: 999px;
+  border-radius: 3px;
   background: rgba(0, 0, 0, 0.75);
   overflow: hidden;
   box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.8);
@@ -407,7 +536,7 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
   padding: 0.18rem 0.7rem;
-  border-radius: 999px;
+  border-radius: 3px;
   background: rgba(0, 0, 0, 0.65);
   color: #f5f1df;
   box-shadow: 0 3px 8px rgba(0, 0, 0, 0.8);
@@ -419,11 +548,11 @@
 }
 
 /* =========================
-   PANEL DEL CONTROL INTEGRADO
+   PANEL ADMIN
    ========================= */
 
 .player-card-separator {
-  margin: 1.2rem 0 0.8rem;
+  margin: 1.2rem 1.4rem 0.9rem;
   height: 1px;
   background: linear-gradient(
     90deg,
@@ -431,11 +560,11 @@
     rgba(200, 230, 255, 0.9),
     transparent
   );
-  opacity: 0.7;
+  opacity: 0.55;
 }
 
 .player-admin-panel {
-  padding: 0 0.4rem 0.2rem;
+  padding: 0 1.4rem 1.4rem;
   text-align: center;
 }
 
@@ -463,8 +592,8 @@
 .admin-btn {
   width: 100%;
   padding: 0.55rem 1rem;
-  border-radius: 0.7rem;
-  border: 1px solid rgba(0, 0, 0, 0.8);
+  border-radius: 3px;
+  border: 1px solid rgba(0, 0, 0, 0.85);
   background: linear-gradient(135deg, #3c2a1b, #20120a);
   color: #fbe8c5;
   font-size: 0.78rem;
@@ -494,18 +623,16 @@
 .dashboard-epic-body {
   width: 100%;
   max-width: 100%;
-  margin: 2.5rem 0 0;
+  margin: 1.6rem 0 0;
 }
 
-/* separador mágico */
-
 .separador-magico {
-  margin: 2.6rem auto;
+  margin: 1.8rem auto 1.9rem;
   height: 2px;
   max-width: 760px;
   position: relative;
   background: radial-gradient(circle at center, #35d5ff, transparent);
-  opacity: 0.45;
+  opacity: 0.38;
 }
 
 .separador-magico::before {
@@ -521,16 +648,22 @@
   filter: blur(1px);
 }
 
-/* wrapper secciones inferiores */
-
 .dashboard-secciones {
   display: flex;
   flex-direction: column;
-  gap: 2.6rem;
+  gap: 1.6rem;
+}
+
+/* Subpaneles integrados: suavizamos sombras y dejamos todo dentro del mismo frame */
+.dashboard-frame .reward-pass,
+.dashboard-frame .logros-epic {
+  margin-top: 0;
+  max-width: 100%;
+  border-radius: 3px;
 }
 
 /* =========================
-   LOADING / ERRORES
+   LOADING / ERRORES (se mantiene)
    ========================= */
 
 .loading-overlay {
@@ -584,8 +717,6 @@
   height: 40px;
   animation: gemSpin 1.5s ease-in-out infinite;
 }
-
-/* órbitas mágicas alrededor */
 
 .loading-orbit {
   position: absolute;
@@ -642,20 +773,14 @@
 .error-msg {
   text-align: center;
   padding: 1.5rem;
-  border-radius: 0.8rem;
+  border-radius: 3px;
   background: rgba(80, 10, 10, 0.9);
   border: 1px solid rgba(255, 90, 90, 0.9);
 }
 
-/* pequeña entrada suave del contenido */
-
 .fade-slide-in {
   animation: fadeSlideIn 0.6s ease-out both;
 }
-
-/* =========================
-   ANIMACIONES
-   ========================= */
 
 @keyframes fadeSlideIn {
   0% {
@@ -705,7 +830,6 @@
    RESPONSIVE
    ========================= */
 
-/* Tablet y móvil grande */
 @media (max-width: 900px) {
   .dashboard-epic {
     padding-inline: 1rem;
@@ -713,19 +837,9 @@
     flex-direction: column;
     align-items: center;
   }
-  .player-nombre-row {
-    justify-content: center;
-    text-align: center;
-  }
-  .hero-posada {
-    border-radius: 1rem;
-    width: 100%;
-    max-width: 480px;
-    margin: 0 auto;
-  }
 
-  .hero-posada-content {
-    padding: 3rem 1.4rem 2.4rem;
+  .dashboard-frame {
+    padding: 1.6rem 1.2rem 2rem;
   }
 
   .epic-title {
@@ -734,14 +848,10 @@
   }
 
   .player-main-layout {
+    margin-top: -56px;
     grid-template-columns: 1fr;
-    padding-bottom: 0.4rem;
-  }
-
-  .dashboard-player-card {
-    padding-inline: 1.4rem;
-    max-width: 480px;
-    width: 100%;
+    gap: 1.4rem;
+    padding: 1.15rem 1.1rem 0;
   }
 
   .player-info-column {
@@ -758,11 +868,15 @@
     }
   }
 
-  /* ⚠️ Ajuste de nombre para que no se salga */
+  .player-nombre-row {
+    justify-content: center;
+    text-align: center;
+  }
+
   .player-nombre {
     font-size: 1.6rem;
     letter-spacing: 0.11em;
-    overflow-wrap: anywhere; // permite partir palabras largas
+    overflow-wrap: anywhere;
   }
 
   .btn-primario {
@@ -772,7 +886,8 @@
   }
 
   .nivel-global-wrapper {
-    max-width: 100%;
+    margin-inline: 1.1rem;
+    width: calc(100% - 2.2rem);
   }
 
   .nivel-global-text {
@@ -783,33 +898,11 @@
   .player-admin-actions {
     grid-template-columns: 1fr;
   }
-
-  .admin-btn {
-    font-size: 0.76rem;
-  }
-
-  .dashboard-secciones {
-    align-items: center;
-
-    > * {
-      width: 100%;
-      max-width: 480px;
-    }
-  }
 }
 
-/* Móvil más pequeño */
 @media (max-width: 600px) {
   .dashboard-epic {
     padding: 0 0.9rem 3rem;
-  }
-
-  .hero-posada {
-    border-radius: 0.8rem;
-  }
-
-  .hero-posada-content {
-    padding: 2.4rem 1.1rem 2.1rem;
   }
 
   .epic-title {
@@ -817,9 +910,12 @@
     letter-spacing: 0.12em;
   }
 
-  .dashboard-player-card {
-    max-width: 100%;
-    padding-inline: 1.2rem;
+  .player-card-banner {
+    height: 160px;
+  }
+
+  .player-main-layout {
+    margin-top: -48px;
   }
 
   .avatar-frame {
@@ -827,7 +923,6 @@
     height: 200px;
   }
 
-  /* nombre aún más controlado en móviles pequeños */
   .player-nombre {
     font-size: 1.4rem;
     letter-spacing: 0.1em;

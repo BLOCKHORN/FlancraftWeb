@@ -226,80 +226,84 @@ const AllNews = () => {
       </div>
 
       <div className="news-scroll-bg">
-        <div className="news-scroll-top-decor">
-          <img src="/assets/topborder.webp" alt="" className="border-main" />
-          <img src="/assets/borde2.webp" alt="" className="border-corner" />
-        </div>
+        <div className="news-scroll-inner">
+          <div className="news-scroll-top-decor">
+            <img src="/assets/topborder.webp" alt="" className="border-main" />
+            <img src="/assets/borde2.webp" alt="" className="border-corner" />
+          </div>
 
-        <h3 className="scroll-title">Últimos artículos</h3>
-        <div className="floating-news-hero">
-          <img
-            src="/assets/avioneta.webp"
-            alt="Repartidor de noticias Flancraft"
-          />
-        </div>
-        <hr className="news-section-divider" />
+          <h3 className="scroll-title">Últimos artículos</h3>
 
-        <div className="news-list">
-          {!imagesLoaded || loading ? (
-            Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="news-list-item loading-skeleton">
-                <div className="hover-wrapper">
-                  <div className="skeleton-image" />
-                  <div className="text">
-                    <div className="skeleton-title" />
-                    <div className="skeleton-paragraph" />
-                    <div className="skeleton-date" />
+          <div className="floating-news-hero">
+            <img
+              src="/assets/avioneta.png"
+              alt="Repartidor de noticias Flancraft"
+            />
+          </div>
+
+          <hr className="news-section-divider" />
+
+          <div className="news-list">
+            {!imagesLoaded || loading ? (
+              Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="news-list-item loading-skeleton">
+                  <div className="hover-wrapper">
+                    <div className="skeleton-image" />
+                    <div className="text">
+                      <div className="skeleton-title" />
+                      <div className="skeleton-paragraph" />
+                      <div className="skeleton-date" />
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))
-          ) : (
-            rest.map((item, index) => {
-              const { subtitulo, descripcion } =
-                extractSubtitleAndDescription(item.contenido);
+              ))
+            ) : (
+              rest.map((item, index) => {
+                const { subtitulo, descripcion } =
+                  extractSubtitleAndDescription(item.contenido);
 
-              return (
-                <Motion.div
-                  key={item.id}
-                  custom={index}
-                  variants={listItemVariants}
-                  initial="hidden"
-                  animate="visible"
-                >
-                  <Link
-                    to={`/news/${item.slug}`}
-                    className="news-list-item clickable"
+                return (
+                  <Motion.div
+                    key={item.id}
+                    custom={index}
+                    variants={listItemVariants}
+                    initial="hidden"
+                    animate="visible"
                   >
-                    <div className="hover-wrapper">
-                      <img
-                        src={item.portada || "/assets/placeholder.png"}
-                        alt={item.titulo}
-                        loading="lazy"
-                      />
-                      <div className="text">
-                        <h4>{item.titulo}</h4>
-                        {subtitulo && (
-                          <h5 className="subtitulo">{subtitulo}</h5>
-                        )}
-                        <p>{descripcion}</p>
-                        <div className="date">
-                          {formatDaysAgo(item.fecha)}
+                    <Link
+                      to={`/news/${item.slug}`}
+                      className="news-list-item clickable"
+                    >
+                      <div className="hover-wrapper">
+                        <img
+                          src={item.portada || "/assets/placeholder.png"}
+                          alt={item.titulo}
+                          loading="lazy"
+                        />
+                        <div className="text">
+                          <h4>{item.titulo}</h4>
+                          {subtitulo && (
+                            <h5 className="subtitulo">{subtitulo}</h5>
+                          )}
+                          <p>{descripcion}</p>
+                          <div className="date">
+                            {formatDaysAgo(item.fecha)}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </Link>
-                </Motion.div>
-              );
-            })
+                    </Link>
+                  </Motion.div>
+                );
+              })
+            )}
+          </div>
+
+          {newsData.length > visibleCount + 1 && !loading && (
+            <div className="load-more">
+              <button onClick={showMore}>Mostrar más</button>
+            </div>
           )}
         </div>
-
-        {newsData.length > visibleCount + 1 && !loading && (
-          <div className="load-more">
-            <button onClick={showMore}>Mostrar más</button>
-          </div>
-        )}
       </div>
     </section>
   );

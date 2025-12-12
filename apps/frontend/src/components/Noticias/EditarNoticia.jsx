@@ -14,6 +14,212 @@ import "../../styles/components/Noticias/_editarnoticia.scss";
 
 const API_URL = "https://flancraft-backend.onrender.com";
 
+// ===== TOOLBAR =====
+const MenuBar = ({ editor }) => {
+  if (!editor) return null;
+
+  const setLink = () => {
+    const previousUrl = editor.getAttributes("link").href;
+    const url = window.prompt("URL del enlace:", previousUrl || "https://");
+
+    if (url === null) return; // cancelado
+    if (url === "") {
+      editor.chain().focus().unsetLink().run();
+      return;
+    }
+
+    editor
+      .chain()
+      .focus()
+      .extendMarkRange("link")
+      .setLink({ href: url })
+      .run();
+  };
+
+  const addImage = () => {
+    const url = window.prompt("URL de la imagen:");
+    if (!url) return;
+    editor.chain().focus().setImage({ src: url }).run();
+  };
+
+  const addIframe = () => {
+    const url = window.prompt("URL del vídeo (YouTube, TikTok, Instagram):");
+    if (!url) return;
+    editor.chain().focus().setIframe({ src: url }).run();
+  };
+
+  const setTextColor = (color) => {
+    editor.chain().focus().setColor(color).run();
+  };
+
+  return (
+    <div className="editor-toolbar">
+      {/* Texto básico */}
+      <div className="editor-toolbar__group">
+        <button
+          type="button"
+          className={`editor-toolbar__button ${
+            editor.isActive("bold") ? "is-active" : ""
+          }`}
+          onClick={() => editor.chain().focus().toggleBold().run()}
+        >
+          B
+        </button>
+        <button
+          type="button"
+          className={`editor-toolbar__button ${
+            editor.isActive("italic") ? "is-active" : ""
+          }`}
+          onClick={() => editor.chain().focus().toggleItalic().run()}
+        >
+          I
+        </button>
+        <button
+          type="button"
+          className={`editor-toolbar__button ${
+            editor.isActive("strike") ? "is-active" : ""
+          }`}
+          onClick={() => editor.chain().focus().toggleStrike().run()}
+        >
+          S
+        </button>
+        <button
+          type="button"
+          className={`editor-toolbar__button ${
+            editor.isActive("bulletList") ? "is-active" : ""
+          }`}
+          onClick={() => editor.chain().focus().toggleBulletList().run()}
+        >
+          ••
+        </button>
+        <button
+          type="button"
+          className={`editor-toolbar__button ${
+            editor.isActive("orderedList") ? "is-active" : ""
+          }`}
+          onClick={() => editor.chain().focus().toggleOrderedList().run()}
+        >
+          1.
+        </button>
+      </div>
+
+      {/* Encabezados / cita */}
+      <div className="editor-toolbar__group">
+        <button
+          type="button"
+          className={`editor-toolbar__button ${
+            editor.isActive("heading", { level: 2 }) ? "is-active" : ""
+          }`}
+          onClick={() =>
+            editor.chain().focus().toggleHeading({ level: 2 }).run()
+          }
+        >
+          H2
+        </button>
+        <button
+          type="button"
+          className={`editor-toolbar__button ${
+            editor.isActive("heading", { level: 3 }) ? "is-active" : ""
+          }`}
+          onClick={() =>
+            editor.chain().focus().toggleHeading({ level: 3 }).run()
+          }
+        >
+          H3
+        </button>
+        <button
+          type="button"
+          className={`editor-toolbar__button ${
+            editor.isActive("blockquote") ? "is-active" : ""
+          }`}
+          onClick={() => editor.chain().focus().toggleBlockquote().run()}
+        >
+          &ldquo;
+        </button>
+      </div>
+
+      {/* Alineación */}
+      <div className="editor-toolbar__group">
+        <button
+          type="button"
+          className={`editor-toolbar__button ${
+            editor.isActive({ textAlign: "left" }) ? "is-active" : ""
+          }`}
+          onClick={() => editor.chain().focus().setTextAlign("left").run()}
+        >
+          ⬅
+        </button>
+        <button
+          type="button"
+          className={`editor-toolbar__button ${
+            editor.isActive({ textAlign: "center" }) ? "is-active" : ""
+          }`}
+          onClick={() => editor.chain().focus().setTextAlign("center").run()}
+        >
+          ⬌
+        </button>
+        <button
+          type="button"
+          className={`editor-toolbar__button ${
+            editor.isActive({ textAlign: "right" }) ? "is-active" : ""
+          }`}
+          onClick={() => editor.chain().focus().setTextAlign("right").run()}
+        >
+          ➡
+        </button>
+      </div>
+
+      {/* Links / media */}
+      <div className="editor-toolbar__group">
+        <button
+          type="button"
+          className={`editor-toolbar__button ${
+            editor.isActive("link") ? "is-active" : ""
+          }`}
+          onClick={setLink}
+        >
+          🔗
+        </button>
+        <button
+          type="button"
+          className="editor-toolbar__button"
+          onClick={addImage}
+        >
+          Img
+        </button>
+        <button
+          type="button"
+          className="editor-toolbar__button"
+          onClick={addIframe}
+        >
+          Vid
+        </button>
+      </div>
+
+      {/* Color */}
+      <div className="editor-toolbar__group editor-toolbar__group--color">
+        <span className="editor-toolbar__label">Color</span>
+        <input
+          type="color"
+          className="editor-toolbar__color-input"
+          onChange={(e) => setTextColor(e.target.value)}
+        />
+      </div>
+
+      {/* Limpiar formato */}
+      <div className="editor-toolbar__group">
+        <button
+          type="button"
+          className="editor-toolbar__button"
+          onClick={() => editor.chain().focus().unsetAllMarks().run()}
+        >
+          CLR
+        </button>
+      </div>
+    </div>
+  );
+};
+
 const EditarNoticia = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -27,7 +233,10 @@ const EditarNoticia = () => {
   const editor = useEditor({
     extensions: [
       StarterKit,
-      Link,
+      Link.configure({
+        openOnClick: true,
+        linkOnPaste: true,
+      }),
       Image,
       TextAlign.configure({ types: ["heading", "paragraph"] }),
       TextStyle,
@@ -74,8 +283,7 @@ const EditarNoticia = () => {
         setTitulo(data.titulo || "");
         setPortada(data.portada || "");
         setFecha(
-          data.fecha?.slice(0, 16) ||
-            new Date().toISOString().slice(0, 16)
+          data.fecha?.slice(0, 16) || new Date().toISOString().slice(0, 16)
         );
         setSlug(data.slug || "");
 
@@ -152,35 +360,52 @@ const EditarNoticia = () => {
     <div className="editar-noticia">
       <h2>Editar Noticia</h2>
 
-      <label>Título</label>
-      <input
-        type="text"
-        value={titulo}
-        onChange={(e) => setTitulo(e.target.value)}
-      />
+      <div className="editar-noticia__grid">
+        <div className="editar-noticia__meta">
+          <label>Título</label>
+          <input
+            type="text"
+            value={titulo}
+            onChange={(e) => setTitulo(e.target.value)}
+          />
 
-      <label>Portada (URL)</label>
-      <input
-        type="text"
-        value={portada}
-        onChange={(e) => setPortada(e.target.value)}
-      />
+          <label>Portada (URL)</label>
+          <input
+            type="text"
+            value={portada}
+            onChange={(e) => setPortada(e.target.value)}
+          />
 
-      <label>Fecha</label>
-      <input
-        type="datetime-local"
-        value={fecha}
-        onChange={(e) => setFecha(e.target.value)}
-      />
+          <label>Fecha</label>
+          <input
+            type="datetime-local"
+            value={fecha}
+            onChange={(e) => setFecha(e.target.value)}
+          />
 
-      <label>Contenido</label>
-      <div className="editor-wrapper">
-        <EditorContent editor={editor} />
+          <label>Slug (URL amigable)</label>
+          <input
+            type="text"
+            value={slug}
+            onChange={(e) => setSlug(e.target.value)}
+            placeholder="mi-noticia-epica"
+          />
+        </div>
+
+        <div className="editar-noticia__editor">
+          <label>Contenido</label>
+          <div className="editor-wrapper">
+            <MenuBar editor={editor} />
+            <EditorContent editor={editor} />
+          </div>
+        </div>
       </div>
 
-      <button className="guardar-btn" onClick={guardarCambios}>
-        Guardar Cambios
-      </button>
+      <div className="editar-noticia__acciones">
+        <button className="guardar-btn" onClick={guardarCambios}>
+          Guardar cambios
+        </button>
+      </div>
     </div>
   );
 };

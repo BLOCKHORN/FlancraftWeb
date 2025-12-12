@@ -85,177 +85,194 @@ export default function DashboardPage() {
 
   return (
     <section className="dashboard-epic">
-      {/* HERO POSADA CON ILUSTRACIÓN */}
-      <div className="hero-posada">
-        <div className="hero-posada-bg" />
-        <div className="hero-posada-content">
-          <header className="epic-header-dashboard">
-            <div className="epic-header-text">
-              <h1 className="epic-title">Tu Posada</h1>
-              <p className="epic-subtitle">
-                Explora tu progreso, logros y riquezas acumuladas en el mundo de
-                FlanCraft.
-              </p>
-            </div>
+      {/* CONTENEDOR UNIFICADO (HERO + PERFIL + RECOMPENSAS + LOGROS) */}
+      {!loading && !error && user && (
+        <div className="dashboard-wrap fade-slide-in">
+          <div className="dashboard-frame">
+            <header className="epic-header-dashboard">
+              <div className="epic-header-text">
+                <h1 className="epic-title">Tu Posada</h1>
+                <p className="epic-subtitle">
+                  Explora tu progreso, logros y riquezas acumuladas en el mundo
+                  de FlanCraft.
+                </p>
+              </div>
+            </header>
 
-            {user && (
-              <div className="dashboard-player-card">
-                {/* BLOQUE PRINCIPAL: AVATAR + INFO */}
-                <div className="player-main-layout">
-                  {/* AVATAR + FONDO PROFILE + RANGO */}
-                  <div className="player-avatar-column">
-                    <div className="avatar-frame">
-                      <div className="avatar-inner">
-                        <img
-                          src="/assets/profile.webp"
-                          alt="Fondo del perfil"
-                          className="avatar-bg"
-                        />
-                        {avatarUrl && (
-                          <img
-                            src={avatarUrl}
-                            alt={`Skin de ${user.uid}`}
-                            className="skin-jugador"
-                          />
-                        )}
-                      </div>
+            <div className="dashboard-player-card">
+              {/* Banner posada integrado en la tarjeta */}
+              <div className="player-card-banner" aria-hidden="true">
+                <div className="player-card-banner-bg" />
+                <div className="player-card-banner-overlay" />
+              </div>
 
-                      {user.rango_usuario && (
+              {/* BLOQUE PRINCIPAL: AVATAR + INFO */}
+              <div className="player-main-layout">
+                {/* AVATAR + FONDO PROFILE + RANGO */}
+                <div className="player-avatar-column">
+                  <div className="avatar-frame">
+                    <div className="avatar-inner">
+                      <img
+                        src="/assets/profile.webp"
+                        alt="Fondo del perfil"
+                        className="avatar-bg"
+                      />
+                      {avatarUrl && (
                         <img
-                          src={`/assets/etiquetas/${user.rango_usuario.toLowerCase()}.webp`}
-                          alt={user.rango_usuario}
-                          className="avatar-rango-badge"
+                          src={avatarUrl}
+                          alt={`Skin de ${user.uid}`}
+                          className="skin-jugador"
                         />
                       )}
                     </div>
-                  </div>
 
-                  {/* INFO JUGADOR */}
-                  <div className="player-info-column">
-                    <div className="player-identidad">
-                      <div className="player-nombre-row">
-                        <h2 className="player-nombre">{user.uid}</h2>
-
-                        <div className="player-badges">
-                          {user.rol_admin && (
-                            <span
-                              className={`badge-staff badge-${user.rol_admin.toLowerCase()}`}
-                            >
-                              {user.rol_admin.toUpperCase()}
-                            </span>
-                          )}
-
-                          {user.es_premium && (
-                            <img
-                              src="/assets/premium.webp"
-                              alt="Cuenta premium"
-                              className="badge-premium"
-                            />
-                          )}
-                        </div>
-                      </div>
-
-                      <p className="player-tagline">
-                        Aventura en curso. Tu leyenda en FlanCraft sigue
-                        escribiéndose.
-                      </p>
-                    </div>
-
-                    <div className="player-stats-row">
-                      <div className="stat-block saldo-block">
-                        <p className="stat-label">Saldo de FlanCraft</p>
-                        <div className="stat-saldo">
-                          <div className="saldo-info">
-                            <span
-                              className="saldo-cantidad"
-                              ref={ecosRef}
-                              id="contador-ecos"
-                            >
-                              {user.monedas?.ecos || 0}
-                            </span>
-                            <img
-                              src="/assets/eco.webp"
-                              alt="Gema ECOS"
-                              className="icono-eco pulse"
-                            />
-                          </div>
-                          <a href="/rangos" className="btn-primario">
-                            Comprar rangos
-                          </a>
-                        </div>
-                      </div>
-                    </div>
+                    {user.rango_usuario && (
+                      <img
+                        src={`/assets/etiquetas/${user.rango_usuario.toLowerCase()}.webp`}
+                        alt={user.rango_usuario}
+                        className="avatar-rango-badge"
+                      />
+                    )}
                   </div>
                 </div>
 
-                {/* BARRA DE NIVEL GLOBAL */}
-                <div className="nivel-global-wrapper">
-                  <div className="nivel-global-header">
-                    <span className="nivel-global-label">Nivel</span>
-                    <span className="nivel-global-valor">{user.nivel}</span>
-                  </div>
+                {/* INFO JUGADOR */}
+                <div className="player-info-column">
+                  <div className="player-identidad">
+                    <div className="player-nombre-row">
+                      <h2 className="player-nombre">{user.uid}</h2>
 
-                  <div className="nivel-global-bar">
-                    <div
-                      className="nivel-global-fill"
-                      style={{ width: `${porcentajeNivel}%` }}
-                    />
-                  </div>
+                      <div className="player-badges">
+                        {user.rol_admin && (
+                          <span
+                            className={`badge-staff badge-${user.rol_admin.toLowerCase()}`}
+                          >
+                            {user.rol_admin.toUpperCase()}
+                          </span>
+                        )}
 
-                  <div className="nivel-global-text">
-                    <span className="nivel-global-actual">
-                      {user.xp_actual}
-                    </span>
-                    <span className="nivel-global-separador">/</span>
-                    <span className="nivel-global-total">
-                      {xpDelNivelActual} XP
-                    </span>
-                  </div>
-                </div>
-
-                {/* PANEL DEL CONTROL INTEGRADO */}
-                {user.rol_admin && (
-                  <>
-                    <div className="player-card-separator" />
-                    <div className="player-admin-panel">
-                      <h3 className="panel-title">Panel del Control</h3>
-                      <p className="panel-desc">
-                        Accesos rápidos a las salas de gestión del reino.
-                      </p>
-
-                      <div className="player-admin-actions">
-                        <button
-                          className="admin-btn"
-                          onClick={() => navigate("/tribunal/admin")}
-                        >
-                          Tribunal
-                        </button>
-
-                        {user.rol_admin.toLowerCase() === "owner" && (
-                          <>
-                            <button
-                              className="admin-btn"
-                              onClick={() => navigate("/admin")}
-                            >
-                              Gestión de staff
-                            </button>
-                            <button
-                              className="admin-btn"
-                              onClick={() => navigate("/admin/noticias")}
-                            >
-                              Panel de noticias
-                            </button>
-                          </>
+                        {user.es_premium && (
+                          <img
+                            src="/assets/premium.webp"
+                            alt="Cuenta premium"
+                            className="badge-premium"
+                          />
                         )}
                       </div>
                     </div>
-                  </>
-                )}
+
+                    <p className="player-tagline">
+                      Aventura en curso. Tu leyenda en FlanCraft sigue
+                      escribiéndose.
+                    </p>
+                  </div>
+
+                  <div className="player-stats-row">
+                    <div className="stat-block saldo-block">
+                      <p className="stat-label">Saldo de FlanCraft</p>
+                      <div className="stat-saldo">
+                        <div className="saldo-info">
+                          <span
+                            className="saldo-cantidad"
+                            ref={ecosRef}
+                            id="contador-ecos"
+                          >
+                            {user.monedas?.ecos || 0}
+                          </span>
+                          <img
+                            src="/assets/eco.webp"
+                            alt="Gema ECOS"
+                            className="icono-eco pulse"
+                          />
+                        </div>
+                        <a href="/rangos" className="btn-primario">
+                          Comprar rangos
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
-            )}
-          </header>
+
+              {/* BARRA DE NIVEL GLOBAL */}
+              <div className="nivel-global-wrapper">
+                <div className="nivel-global-header">
+                  <span className="nivel-global-label">Nivel</span>
+                  <span className="nivel-global-valor">{user.nivel}</span>
+                </div>
+
+                <div className="nivel-global-bar">
+                  <div
+                    className="nivel-global-fill"
+                    style={{ width: `${porcentajeNivel}%` }}
+                  />
+                </div>
+
+                <div className="nivel-global-text">
+                  <span className="nivel-global-actual">{user.xp_actual}</span>
+                  <span className="nivel-global-separador">/</span>
+                  <span className="nivel-global-total">
+                    {xpDelNivelActual} XP
+                  </span>
+                </div>
+              </div>
+
+              {/* PANEL DEL CONTROL INTEGRADO */}
+              {user.rol_admin && (
+                <>
+                  <div className="player-card-separator" />
+                  <div className="player-admin-panel">
+                    <h3 className="panel-title">Panel del Control</h3>
+                    <p className="panel-desc">
+                      Accesos rápidos a las salas de gestión del reino.
+                    </p>
+
+                    <div className="player-admin-actions">
+                      <button
+                        className="admin-btn"
+                        onClick={() => navigate("/tribunal/admin")}
+                      >
+                        Tribunal
+                      </button>
+
+                      {user.rol_admin.toLowerCase() === "owner" && (
+                        <>
+                          <button
+                            className="admin-btn"
+                            onClick={() => navigate("/admin")}
+                          >
+                            Gestión de staff
+                          </button>
+                          <button
+                            className="admin-btn"
+                            onClick={() => navigate("/admin/noticias")}
+                          >
+                            Panel de noticias
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+
+            <div className="dashboard-epic-body">
+
+              <div className="dashboard-secciones">
+                <RewardList
+                  user={user}
+                  xpData={xpData}
+                  ecosRef={ecosRef}
+                  onActualizarMonedas={actualizarMonedas}
+                />
+
+                <LogroList user={user} />
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* CAPA DE CARGA / ERROR */}
       {loading && (
@@ -286,23 +303,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* CONTENIDO PRINCIPAL */}
-      {!loading && !error && user && (
-        <div className="dashboard-epic-body fade-slide-in">
-          <div className="separador-magico" />
-
-          <div className="dashboard-secciones">
-            <RewardList
-              user={user}
-              xpData={xpData}
-              ecosRef={ecosRef}
-              onActualizarMonedas={actualizarMonedas}
-            />
-
-            <LogroList user={user} />
-          </div>
-        </div>
-      )}
+      {/* Nota: el contenido principal ahora vive dentro del contenedor unificado */}
     </section>
   );
 }

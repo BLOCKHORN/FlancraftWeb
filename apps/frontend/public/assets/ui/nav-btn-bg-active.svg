@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="140" height="40" viewBox="0 0 104 30" preserveAspectRatio="none">
+  <defs>
+    <style>
+      .base{fill:#836e5d;}
+      .hi{fill:#efe3d4;}
+      .sh{fill:#5b4337;}
+
+      .ol{fill:none;stroke:#2B1712;stroke-width:2.25;stroke-linejoin:round;}
+
+      .il{fill:none;stroke:rgba(255,255,255,.26);stroke-width:1.05;stroke-linejoin:round;}
+      .id{fill:none;stroke:rgba(0,0,0,.22);stroke-width:1.05;stroke-linejoin:round;}
+
+      .chipD{fill:#2B1712;opacity:.28;}
+      .chipL{fill:#ffffff;opacity:.11;}
+    </style>
+
+    <clipPath id="cut">
+      <polygon points="4,0 100,0 104,4 104,26 100,30 4,30 0,26 0,4"/>
+    </clipPath>
+  </defs>
+
+  <g clip-path="url(#cut)">
+    <polygon class="base" points="4,0 100,0 104,4 104,26 100,30 4,30 0,26 0,4"/>
+    <polygon class="hi" points="0,22 12,6 76,0 4,0 0,4" opacity="0.62"/>
+    <polygon class="sh" points="104,8 92,25 20,30 100,30 104,26" opacity="0.96"/>
+
+    <!-- chips mismos puntos (más marcados en active) -->
+    <polygon class="chipD" points="18,0 25,0 22.2,2.6"/>
+    <polygon class="chipL" points="18.7,0.8 24.2,0.8 22.2,2.1"/>
+
+    <polygon class="chipD" points="49,0 56.5,0 53.8,2.3"/>
+    <polygon class="chipL" points="49.8,0.8 55.7,0.8 53.8,2.0"/>
+
+    <polygon class="chipD" points="78,0 85.8,0 82.6,2.8"/>
+    <polygon class="chipL" points="78.9,0.8 84.9,0.8 82.6,2.3"/>
+
+    <polygon class="chipD" points="0,9.5 0,15.3 2.8,12.4"/>
+    <polygon class="chipL" points="0.8,10.2 0.8,14.6 2.2,12.4"/>
+
+    <polygon class="chipD" points="104,11 104,16.8 101.0,13.7"/>
+    <polygon class="chipL" points="103.2,11.7 103.2,16.1 101.7,13.7"/>
+
+    <polygon class="chipD" points="30,30 38.2,30 34.6,27.2"/>
+    <polygon class="chipL" points="30.9,29.2 37.3,29.2 34.6,27.8"/>
+
+    <polygon class="chipD" points="61,30 69.2,30 65.9,27.5"/>
+    <polygon class="chipL" points="61.9,29.2 68.3,29.2 65.9,28.0"/>
+
+    <!-- sombreado de “pressed” -->
+    <rect x="0" y="0" width="104" height="30" fill="#000000" opacity="0.06"/>
+  </g>
+
+  <polygon class="ol" points="4,0 100,0 104,4 104,26 100,30 4,30 0,26 0,4"/>
+
+  <path class="il" d="M4,1.2 H100 L102.8,4" />
+  <path class="il" d="M1.2,26 L1.2,4 L4,1.2" />
+
+  <path class="id" d="M100,28.8 H4 L1.2,26" />
+  <path class="id" d="M102.8,4 V26 L100,28.8" />
+</svg>

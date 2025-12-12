@@ -1,165 +1,487 @@
-.editar-noticia {
-  width: 100%;
-  box-sizing: border-box;
-  padding: 5rem 3rem;
-  margin: 0 auto;
-  position: relative;
-  z-index: 1;
-  background: url("/assets/papertexture.jpeg") center top / cover no-repeat;
-  min-height: 100vh;
+@use "../../base/_variables" as *;
 
-  h2 {
-    font-family: 'IM Fell English SC', serif;
-    font-size: 2.2rem;
-    color: #3e2f1c;
-    margin-bottom: 1.5rem;
-    text-align: center;
+/* ===============================
+   ESTADO CARGANDO
+   =============================== */
+
+.cargando {
+  min-height: 60vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: "IM Fell English SC", serif;
+  font-size: 1.4rem;
+  color: #fdf6dd;
+}
+
+/* ===============================
+   CONTENEDOR PRINCIPAL
+   =============================== */
+
+.editar-noticia {
+  max-width: 1180px;
+  margin: 0rem auto;
+  padding: 2.2rem 2rem 2.4rem;
+  background:
+    radial-gradient(circle at 10% 0%, rgba(255, 255, 255, 0.14), transparent 55%),
+    #efdfb7; // pergamino suave y cálido
+  border: 4px solid #3b2217;
+  box-shadow:
+    0 0 0 3px #6b4933,
+    0 22px 40px rgba(0, 0, 0, 0.85);
+  color: #2b190e;
+  font-family: "IM Fell English SC", system-ui, -apple-system, "Segoe UI",
+    sans-serif;
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    mix-blend-mode: multiply;
+    opacity: 0.12;
+    background:
+      radial-gradient(circle at 0 0, rgba(0, 0, 0, 0.35), transparent 55%),
+      radial-gradient(circle at 100% 0, rgba(0, 0, 0, 0.25), transparent 55%),
+      radial-gradient(circle at 0 100%, rgba(0, 0, 0, 0.25), transparent 55%),
+      radial-gradient(circle at 100% 100%, rgba(0, 0, 0, 0.3), transparent 60%);
+    pointer-events: none;
   }
 
-  // por si lo envuelves en un form o en un div
-  form,
-  .editar-noticia-inner {
-    max-width: 900px;
-    margin: 0 auto;
+  > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* CABECERA */
+
+    h2 {
+    font-size: 2rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    text-align: center;
+    margin-bottom: 1.6rem;
+    color: #2b190e;
+    text-shadow: 0 2px 3px rgba(0, 0, 0, 0.25);
+
+    &::after {
+      content: "";
+      display: block;
+      width: 260px;
+      height: 3px;
+      margin: 0.6rem auto 0;
+      /* Separador estilo “Minecraft Network”: dorado suave con brillo central */
+
+      box-shadow:
+        0 0 6px rgba(255, 200, 90, 0.65),
+        0 0 14px rgba(0, 0, 0, 0.55);
+      border-radius: 999px;
+    }
+  }
+
+
+  /* GRID META + EDITOR */
+
+  .editar-noticia__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 340px) minmax(0, 1fr);
+    gap: 1.8rem;
+  }
+
+  .editar-noticia__meta {
+    background:
+      linear-gradient(
+        180deg,
+        rgba(255, 252, 244, 0.96),
+        rgba(244, 218, 172, 0.98)
+      );
+    border: 3px solid #5a3b1d;
+    box-shadow: 0 8px 0 #2e1d0f;
+    padding: 1.1rem 1.1rem 1.2rem;
   }
 
   label {
     display: block;
-    margin-top: 1rem;
-    font-weight: bold;
-    color: #3a2b1a;
+    font-size: 1.02rem;
+    letter-spacing: 0.04em;
+    margin: 0.9rem 0 0.3rem;
+    text-transform: uppercase;
+    color: #3b2217;
   }
 
   input[type="text"],
   input[type="datetime-local"] {
     width: 100%;
-    padding: 0.7rem;
-    margin-top: 0.5rem;
-    border-radius: 8px;
-    border: 1px solid #c1a374;
-    font-size: 1rem;
-    background-color: #fefaf4;
-    color: #3a2b1a;
-    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
-  }
+    padding: 0.55rem 0.7rem;
+    border-radius: 3px;
+    border: 2px solid #8a5b35;
+    background:
+      linear-gradient(
+        180deg,
+        #fffaf2,
+        #f6dbaf
+      );
+    font-family: inherit;
+    font-size: 0.95rem;
+    color: #2b190e;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.85),
+      0 2px 0 rgba(0, 0, 0, 0.24);
 
-  .editor-toolbar {
-    margin-top: 1rem;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
+    &::placeholder {
+      color: rgba(43, 25, 14, 0.55);
+    }
 
-    button,
-    .color-picker {
-      padding: 0.4rem 0.6rem;
-      font-size: 0.9rem;
-      background-color: #e9dbc3;
-      border: 1px solid #b49a76;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      display: flex;
-      align-items: center;
-      gap: 0.3rem;
-
-      &.is-active {
-        background-color: #d1b58b;
-        font-weight: bold;
-      }
-
-      &:hover {
-        background-color: #f5ecd9;
-      }
-
-      input[type="color"] {
-        border: none;
-        background: transparent;
-        padding: 0;
-        height: 1.2rem;
-        width: 1.2rem;
-        cursor: pointer;
-      }
+    &:focus {
+      outline: none;
+      border-color: #ffc654;
+      box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.9),
+        0 0 0 3px rgba(0, 155, 228, 0.6);
     }
   }
+
+  .editar-noticia__editor {
+    display: flex;
+    flex-direction: column;
+
+    label {
+      margin-top: 0;
+    }
+  }
+
+  /* ===============================
+     EDITOR TIPTAP
+     =============================== */
 
   .editor-wrapper {
-    margin-top: 1rem;
-    background: #f0f0f0;
-    border: 1px solid #d2b79c;
-    border-radius: 12px;
-    padding: 1rem;
-    min-height: 400px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    margin-top: 0.4rem;
+    border-radius: 3px;
+    border: 3px solid #5a3b1d;
+    background:
+      linear-gradient(
+        180deg,
+        #fffaf0 0%,
+        #f5ddb3 100%
+      );
+    box-shadow:
+      0 8px 0 #2e1d0f,
+      0 16px 30px rgba(0, 0, 0, 0.55);
+    overflow: hidden;
+  }
 
-    .ProseMirror {
-      outline: none;
-      font-size: 1.1rem;
-      line-height: 1.6;
-      font-family: 'Georgia', serif;
-      color: #2f2a25;
+  /* TOOLBAR – LOOK MÁS WARCRAFT */
+
+  .editor-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    padding: 0.45rem 0.5rem;
+    border-bottom: 2px solid rgba(59, 34, 23, 0.4);
+    background:
+      linear-gradient(
+        180deg,
+        #f8edd1 0%,
+        #f1d59d 100%
+      );
+  }
+
+  .editor-toolbar__group {
+    display: flex;
+    align-items: center;
+    gap: 0.2rem;
+    padding-right: 0.45rem;
+    border-right: 1px solid rgba(90, 59, 29, 0.3);
+    box-shadow: 1px 0 0 rgba(255, 255, 255, 0.07);
+
+    &:last-child {
+      border-right: none;
+      padding-right: 0;
+      box-shadow: none;
     }
+  }
+
+  .editor-toolbar__group--color {
+    background: rgba(255, 255, 255, 0.22);
+    padding: 0.3rem 0.45rem;
+    border-radius: 3px;
+    border: 1px solid rgba(90, 59, 29, 0.25);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.6),
+      0 1px 0 rgba(0, 0, 0, 0.15);
+  }
+
+  .editor-toolbar__label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-right: 0.3rem;
+    color: #2b190e;
+  }
+
+  .editor-toolbar__button {
+    min-width: 30px;
+    height: 28px;
+    padding: 0 0.4rem;
+    border-radius: 3px;
+    border: 2px solid #4b3222;
+    /* Dorado más neutro, menos naranja cantoso */
+    background:
+      linear-gradient(
+        180deg,
+        #ffe7b2 0%,
+        #f1c474 45%,
+        #e39a43 100%
+      );
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #2b190e;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.9),
+      0 2px 0 #2e1d0f;
+    transition:
+      transform 0.06s ease,
+      box-shadow 0.06s ease,
+      filter 0.1s ease;
+
+    &:hover {
+      filter: brightness(1.06);
+      transform: translateY(-1px);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.95),
+        0 3px 0 #2e1d0f;
+    }
+
+    &.is-active {
+      background:
+        linear-gradient(
+          180deg,
+          #fff0c9 0%,
+          #ffd26a 45%,
+          #f19b39 100%
+        );
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.85),
+        0 2px 0 #1f1109,
+        0 0 0 2px rgba(0, 155, 228, 0.6);
+    }
+
+    &:active {
+      transform: translateY(1px);
+      box-shadow:
+        inset 0 1px 0 rgba(0, 0, 0, 0.25),
+        0 1px 0 #1f1109;
+    }
+  }
+
+  .editor-toolbar__color-input {
+    width: 32px;
+    height: 24px;
+    border-radius: 3px;
+    border: 2px solid #4b3222;
+    padding: 0;
+    cursor: pointer;
+    background: #fff;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.8),
+      0 2px 0 #2e1d0f;
+  }
+
+  /* AREA DE EDICIÓN */
+
+  .tiptap-editor {
+    padding: 0.9rem 1.1rem 1.1rem;
+    min-height: 320px;
+    max-height: 640px;
+    overflow-y: auto;
+    font-family: "IM Fell English SC", system-ui, -apple-system, "Segoe UI",
+      sans-serif;
+    font-size: 1.02rem;
+    line-height: 1.6;
+    color: #2b190e;
+
+    p.is-editor-empty:first-of-type::before {
+      content: "Escribe aquí el contenido de la noticia...";
+      color: rgba(43, 25, 14, 0.5);
+      float: left;
+      pointer-events: none;
+      height: 0;
+    }
+
+    h1,
+    h2,
+    h3 {
+      margin: 0.6rem 0 0.35rem;
+      font-weight: 400;
+    }
+
+    h1 {
+      font-size: 1.6rem;
+    }
+
+    h2 {
+      font-size: 1.4rem;
+    }
+
+    h3 {
+      font-size: 1.25rem;
+    }
+
+    p {
+      margin: 0.32rem 0;
+    }
+
+    ul,
+    ol {
+      padding-left: 1.6rem;
+      margin: 0.4rem 0;
+    }
+
+    a {
+      color: #0b71b6;
+      text-decoration: underline;
+      text-decoration-thickness: 2px;
+      text-underline-offset: 3px;
+
+      &:hover {
+        color: #004d86;
+      }
+    }
+
+    img {
+      max-width: 100%;
+      height: auto;
+      margin: 0.6rem auto;
+      display: block;
+      border-radius: 3px;
+      border: 3px solid #4b3222;
+      box-shadow:
+        0 0 0 2px rgba(255, 255, 255, 0.35),
+        0 6px 16px rgba(0, 0, 0, 0.6);
+    }
+
+    iframe {
+      max-width: 100%;
+      display: block;
+      margin: 0.9rem auto;
+      border-radius: 3px;
+      border: 3px solid #4b3222;
+      box-shadow:
+        0 0 0 2px rgba(255, 255, 255, 0.4),
+        0 10px 24px rgba(0, 0, 0, 0.75);
+    }
+
+    blockquote {
+      margin: 0.6rem 0;
+      padding: 0.5rem 0.8rem;
+      border-left: 4px solid #8a5b35;
+      background: rgba(255, 255, 255, 0.4);
+      font-style: italic;
+    }
+  }
+
+  /* ===============================
+     BOTÓN GUARDAR – VERDE CARTOON
+     =============================== */
+
+  .editar-noticia__acciones {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 1.4rem;
   }
 
   .guardar-btn {
-    margin-top: 1.5rem;
-    background-color: #7b4f2a;
-    color: #fff8e7;
-    font-weight: bold;
-    padding: 0.8rem 1.5rem;
-    border: none;
-    border-radius: 8px;
-    font-size: 1rem;
+    border-radius: 3px;
+    border: 3px solid #1f5f2b;
+    background: linear-gradient(
+      180deg,
+      #8af0a7 0%,
+      #44c86b 45%,
+      #1f8a3e 100%
+    );
+    padding: 0.7rem 2.2rem;
+    font-family: "IM Fell English SC", system-ui, -apple-system, "Segoe UI",
+      sans-serif;
+    font-size: 1.02rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #0f2616;
     cursor: pointer;
-    transition: all 0.2s ease;
-    display: inline-block;
+    box-shadow:
+      0 6px 0 #12351a,
+      0 12px 18px rgba(0, 0, 0, 0.7);
+    position: relative;
+    transition:
+      transform 0.06s ease,
+      box-shadow 0.06s ease,
+      filter 0.1s ease;
 
     &:hover {
-      background-color: #a66c3f;
+      filter: brightness(1.06);
+      transform: translateY(-1px);
+      box-shadow:
+        0 7px 0 #12351a,
+        0 14px 22px rgba(0, 0, 0, 0.8);
+    }
+
+    &:active {
+      transform: translateY(1px);
+      box-shadow:
+        0 3px 0 #12351a,
+        0 6px 10px rgba(0, 0, 0, 0.7);
     }
   }
 
-  .cargando {
-    text-align: center;
-    font-size: 1.2rem;
-    padding: 2rem;
-    color: #5e4630;
-  }
+  /* ===============================
+     RESPONSIVE
+     =============================== */
 
-  /* ---------- RESPONSIVE ---------- */
-
-  /* Tablets / portátiles pequeños */
-  @media (max-width: 1024px) {
-    padding: 4rem 2rem;
-
-    h2 {
-      font-size: 2rem;
+  @media (max-width: 900px) {
+    .editar-noticia__grid {
+      grid-template-columns: minmax(0, 1fr);
     }
 
-    .editor-wrapper {
-      min-height: 360px;
+    .editar-noticia__meta {
+      box-shadow:
+        0 6px 0 #2e1d0f,
+        0 10px 20px rgba(0, 0, 0, 0.6);
     }
   }
 
-  /* Tablets verticales y móviles grandes */
   @media (max-width: 768px) {
-    padding: 3rem 1.5rem;
+    margin: 2.5rem 1rem;
+    padding: 1.8rem 1.2rem 2.1rem;
+    border-width: 3px;
 
     h2 {
-      font-size: 1.8rem;
+      font-size: 1.7rem;
     }
 
-    form,
-    .editar-noticia-inner {
-      max-width: 100%;
+    .tiptap-editor {
+      min-height: 260px;
+      max-height: 520px;
+      font-size: 0.98rem;
+      padding: 0.8rem 0.9rem 1rem;
     }
 
     .editor-toolbar {
-      justify-content: center;
+      gap: 0.25rem;
     }
 
-    .editor-wrapper {
-      padding: 0.7rem;
-      min-height: 320px;
+    .editor-toolbar__button {
+      min-width: 28px;
+      height: 26px;
+      padding: 0 0.3rem;
+      font-size: 0.8rem;
+    }
+
+    .editar-noticia__acciones {
+      justify-content: center;
     }
 
     .guardar-btn {
@@ -168,25 +490,18 @@
     }
   }
 
-  /* Smartphones */
   @media (max-width: 480px) {
-    padding: 2.5rem 1rem;
+    margin: 2rem 0.6rem;
+    padding: 1.5rem 0.9rem 1.9rem;
 
-    h2 {
-      font-size: 1.6rem;
+    label {
+      font-size: 0.96rem;
     }
 
-    .editor-wrapper {
-      padding: 0.6rem;
-      min-height: 280px;
-
-      .ProseMirror {
-        font-size: 1rem;
-      }
-    }
-
-    .editor-toolbar {
-      gap: 0.4rem;
+    input[type="text"],
+    input[type="datetime-local"] {
+      font-size: 0.88rem;
+      padding: 0.5rem 0.65rem;
     }
   }
 }

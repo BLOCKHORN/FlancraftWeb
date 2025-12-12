@@ -2,6 +2,41 @@ import { NavLink, Link, useLocation } from "react-router-dom";
 import LogoutButton from "../Auth/LogoutButton";
 import { useEffect, useRef, useState } from "react";
 
+/**
+ * Icono tintado con currentColor usando mask.
+ * - Esto hace que el icono tenga el mismo color que el texto del botón.
+ * - Funciona muy bien con PNGs con transparencia o SVGs.
+ */
+const NavIcon = ({ src, alt, size = 22, className = "" }) => {
+  const s = `${size}px`;
+  return (
+    <span
+      className={`nav-icon ${className}`}
+      aria-hidden="true"
+      title={alt}
+      style={{
+        width: s,
+        height: s,
+        marginRight: "0.45rem",
+        display: "inline-block",
+        verticalAlign: "middle",
+        flexShrink: 0,
+
+        // Tintado = mismo color que el texto del botón
+        backgroundColor: "currentColor",
+
+        // Máscara (Chrome/Edge/Safari + Firefox moderno)
+        WebkitMask: `url(${src}) center / contain no-repeat`,
+        mask: `url(${src}) center / contain no-repeat`,
+
+        // Un pelín de profundidad (se integra mejor con tu SVG)
+        filter: "drop-shadow(0 1px 0 rgba(0,0,0,0.28))",
+        opacity: 0.95,
+      }}
+    />
+  );
+};
+
 const NavbarDesktop = ({
   isLoggedIn,
   isUserLoading,
@@ -16,6 +51,12 @@ const NavbarDesktop = ({
   handleProfileLeave,
 }) => {
   const [rangoDatos, setRangoDatos] = useState(null);
+  const [xpNavbar, setXpNavbar] = useState({
+    level: null,
+    actual: 0,
+    requerida: 1,
+  });
+
   const triggerRef = useRef();
   const dropdownRef = useRef();
 
@@ -39,25 +80,49 @@ const NavbarDesktop = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [setProfileOpen]);
 
-  // Obtener datos de rango al loguearse
+  // Obtener rango + datos de XP con la MISMA lógica que el Dashboard
   useEffect(() => {
-    const fetchRangoUsuario = async () => {
-      if (isLoggedIn && userData?.uuid) {
-        try {
-          const res = await fetch(
+    const fetchDatosNavbar = async () => {
+      if (!isLoggedIn || !userData?.uuid) return;
+
+      try {
+        const [usuarioRes, xpRes] = await Promise.all([
+          fetch(
             `https://flancraft-backend.onrender.com/api/usuarios/${userData.uuid}`
-          );
-          const data = await res.json();
-          setRangoDatos({
-            rango: data.rango_usuario?.toLowerCase() || null,
-            premium: data.es_premium === true,
-          });
-        } catch (err) {
-          console.error("Error al obtener datos de usuario:", err);
+          ),
+          fetch(
+            `https://flancraft-backend.onrender.com/api/usuarios/${userData.uuid}/xp`
+          ),
+        ]);
+
+        if (!usuarioRes.ok || !xpRes.ok) {
+          throw new Error("Error al obtener datos de usuario/XP");
         }
+
+        const usuario = await usuarioRes.json();
+        const xpData = await xpRes.json();
+
+        // Rango + premium
+        setRangoDatos({
+          rango: usuario.rango_usuario?.toLowerCase() || null,
+          premium: usuario.es_premium === true,
+        });
+
+        // === LÓGICA DE XP IGUAL QUE EN EL DASHBOARD ===
+        const nivelInfo = xpData?.niveles?.find((n) => n.nivel === usuario.nivel);
+        const xpDelNivelActual = nivelInfo?.xp_requerida || 1;
+
+        setXpNavbar({
+          level: usuario.nivel,
+          actual: usuario.xp_actual,
+          requerida: xpDelNivelActual,
+        });
+      } catch (err) {
+        console.error("Error al obtener datos para navbar:", err);
       }
     };
-    fetchRangoUsuario();
+
+    fetchDatosNavbar();
   }, [isLoggedIn, userData?.uuid]);
 
   const getRangoColorClass = () => {
@@ -67,13 +132,16 @@ const NavbarDesktop = ({
     return `rango-${raw}`;
   };
 
-  const navIconStyle = {
-    width: "22px",
-    height: "22px",
-    marginRight: "0.45rem",
-    display: "inline-block",
-    verticalAlign: "middle",
-  };
+  // XP para la barra del dropdown
+  const xpActualNavbar = xpNavbar.actual ?? 0;
+  const xpRequeridaNavbar = xpNavbar.requerida || 1;
+  const xpPercent =
+    xpRequeridaNavbar > 0
+      ? Math.min(100, (xpActualNavbar / xpRequeridaNavbar) * 100)
+      : 0;
+
+  const nivelNavbar =
+    xpNavbar.level != null ? xpNavbar.level : userData?.userLevel ?? 1;
 
   return (
     <div className="navbar-content desktop-only">
@@ -89,41 +157,33 @@ const NavbarDesktop = ({
 
       <div className="nav-center">
         <NavLink to="/">
-          <img src="/botones/home.webp" alt="Inicio" style={navIconStyle} />
+          <NavIcon src="/botones/home.webp" alt="Inicio" />
           Inicio
         </NavLink>
 
         <NavLink to="/news">
-          <img src="/botones/noticias.webp" alt="Noticias" style={navIconStyle} />
+          <NavIcon src="/botones/noticias.webp" alt="Noticias" />
           Noticias
         </NavLink>
 
         <NavLink to="/leaderboards">
-          <img
-            src="/botones/estadisticas.webp"
-            alt="Estadísticas"
-            style={navIconStyle}
-          />
+          <NavIcon src="/botones/estadisticas.webp" alt="Estadísticas" />
           Estadísticas
         </NavLink>
 
-        {/* 👇 AQUÍ el cambio: clase nav-store para aplicar el estilo dorado */}
+        {/* Tienda con estilo especial */}
         <NavLink to="/tienda" className="nav-store">
-          <img src="/botones/tienda.webp" alt="Mercado" style={navIconStyle} />
+          <NavIcon src="/botones/tienda.webp" alt="Tienda" />
           Tienda
         </NavLink>
 
         <NavLink to="/rangos">
-          <img src="/botones/rangos.webp" alt="Rangos" style={navIconStyle} />
+          <NavIcon src="/botones/rangos.webp" alt="Rangos" />
           Rangos
         </NavLink>
 
         <NavLink to="/tribunal">
-          <img
-            src="/botones/tribunal.webp"
-            alt="Tribunal"
-            style={navIconStyle}
-          />
+          <NavIcon src="/botones/tribunal.webp" alt="Tribunal" />
           Tribunal
         </NavLink>
       </div>
@@ -149,7 +209,7 @@ const NavbarDesktop = ({
                 alt="avatar"
                 className="user-avatar"
               />
-            <span className="username-saludo">
+              <span className="username-saludo">
                 Hola,&nbsp;
                 <span className={`nombre-colored ${getRangoColorClass()}`}>
                   {userData.username}
@@ -169,29 +229,33 @@ const NavbarDesktop = ({
                       alt="avatar"
                       className="user-avatar-large"
                     />
-                    <div>
+                    <div className="user-core">
                       <p className="username-big">
-                        <span
-                          className={`nombre-colored ${getRangoColorClass()}`}
-                        >
+                        <span className={`nombre-colored ${getRangoColorClass()}`}>
                           {userData.username}
                         </span>
-                        <span className="level-text">
-                          Lvl. {userData.userLevel}
-                        </span>
                       </p>
-                    </div>
-                  </div>
 
-                  <div className="xp-bar-profile">
-                    <div
-                      className="xp-fill"
-                      style={{
-                        width: `${
-                          (userData.userXP / userData.userXPMax) * 100
-                        }%`,
-                      }}
-                    />
+                      <div className="user-level-row">
+                        <span className="user-level-pill">NIVEL</span>
+                        <span className="user-level-value">{nivelNavbar}</span>
+                      </div>
+
+                      {/* BLOQUE XP EN NAVBAR (MISMA LÓGICA QUE DASHBOARD) */}
+                      <div className="xp-navbar-block">
+                        <div className="xp-bar-profile">
+                          <div
+                            className="xp-fill"
+                            style={{ width: `${xpPercent}%` }}
+                          />
+                        </div>
+                        <div className="xp-text-row">
+                          <span className="xp-actual">{xpActualNavbar}</span>
+                          <span className="xp-sep">/</span>
+                          <span className="xp-total">{xpRequeridaNavbar} XP</span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
 
                   <div className="balance-wrapper">
