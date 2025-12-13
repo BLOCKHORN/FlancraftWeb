@@ -125,7 +125,6 @@
     font-size: 3.5rem;
     color: #fff3cc;
     text-shadow: 0 3px 10px rgba(0,0,0,0.55);
-    letter-spacing: 1px;
   }
 
   .lb-subtitle {
@@ -273,7 +272,7 @@
     border-top: 1px dashed rgba(0,0,0,0.14);
 
     .pod-stat__k { opacity: .78; font-size: 1.02rem; }
-    .pod-stat__v { color: #2b190e; font-size: 1.12rem; letter-spacing: .25px; }
+    .pod-stat__v { color: #2b190e; font-size: 1.12rem;}
   }
 }
 
@@ -421,7 +420,6 @@
     outline: none;
     color: rgba(43,25,14,0.92);
     font-size: 1.05rem;
-    letter-spacing: .2px;
 
     &::placeholder { color: rgba(43,25,14,0.52); }
   }
@@ -533,7 +531,6 @@
   span {
     color: rgba(43,25,14,0.86);
     font-size: 1.02rem;
-    letter-spacing: .15px;
   }
 
   &:hover { transform: translateY(-1px); }
@@ -646,7 +643,6 @@
     padding: clamp(.55rem, .9vw, .9rem) clamp(.45rem, .75vw, .85rem);
     border-bottom: 2px solid rgba(0,0,0,0.30);
     font-size: clamp(.95rem, 1.05vw, 1.14rem);
-    letter-spacing: .2px;
 
     transition: transform .16s ease, filter .16s ease, box-shadow .16s ease;
     will-change: transform;
@@ -807,7 +803,6 @@
     margin-top: .1rem;
     font-size: .98rem;
     color: rgba(43,25,14,0.64);
-    letter-spacing: .15px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
