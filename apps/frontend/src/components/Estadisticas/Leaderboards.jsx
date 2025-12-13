@@ -460,7 +460,7 @@ export default function Leaderboards() {
                     <table className="lb-table">
                       <thead>
                         <tr>
-                          <th className="col-pos">Pos</th>
+                          <th className="col-pos">Top</th>
                           <th className="col-player">Jugador</th>
 
                           {STATS.map((st) => (
