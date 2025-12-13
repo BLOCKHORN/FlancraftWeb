@@ -71,6 +71,8 @@ const Home = () => {
   const lastRoarIndexRef = useRef(0); // 0 => roar1, 1 => roar2
   const timeoutsRef = useRef([]);
 
+  const mensajeIndexRef = useRef(0);
+
   const isDragonPresent = dragonPhase !== "hidden";
 
   const pushTimeout = (id) => {
@@ -97,16 +99,21 @@ const Home = () => {
     };
   }, []);
 
-  // Rotar mensajes de carga
+  // ✅ Rotar mensajes SOLO mientras está la pantalla de carga
   useEffect(() => {
+    if (isLoaded) return;
+
+    mensajeIndexRef.current = 0;
+    setMensajeCarga(mensajesCarga[0]);
+
     const interval = setInterval(() => {
-      setMensajeCarga((prev) => {
-        const index = mensajesCarga.indexOf(prev);
-        return mensajesCarga[(index + 1) % mensajesCarga.length];
-      });
+      mensajeIndexRef.current =
+        (mensajeIndexRef.current + 1) % mensajesCarga.length;
+      setMensajeCarga(mensajesCarga[mensajeIndexRef.current]);
     }, 2000);
+
     return () => clearInterval(interval);
-  }, []);
+  }, [isLoaded]);
 
   // Cuando la página está lista -> mostrar contenido
   useEffect(() => {
@@ -127,21 +134,50 @@ const Home = () => {
     }
   }, []);
 
-  // Detectar si estamos dentro de la zona HERO + MAPRPG
+  // ✅ Detectar si estamos dentro de la zona HERO + MAPRPG (sin scroll listener)
   useEffect(() => {
-    const handleScrollZone = () => {
-      if (!heroMapSectionRef.current) return;
-      const rect = heroMapSectionRef.current.getBoundingClientRect();
-      const viewportHeight =
-        window.innerHeight || document.documentElement.clientHeight;
+    const el = heroMapSectionRef.current;
+    if (!el) return;
 
-      // dentro mientras parte del contenedor está en pantalla
-      const inside = rect.bottom > 0 && rect.top < viewportHeight;
-      setIsInHeroMapZone(inside);
+    // Preferible: IntersectionObserver (cero spam de re-renders)
+    if ("IntersectionObserver" in window) {
+      const obs = new IntersectionObserver(
+        (entries) => {
+          const entry = entries[0];
+          setIsInHeroMapZone(Boolean(entry?.isIntersecting));
+        },
+        {
+          root: null,
+          threshold: 0,
+        }
+      );
+
+      obs.observe(el);
+      return () => obs.disconnect();
+    }
+
+    // Fallback: scroll + raf (por si un navegador raro)
+    let ticking = false;
+
+    const handleScrollZone = () => {
+      if (ticking) return;
+      ticking = true;
+
+      window.requestAnimationFrame(() => {
+        ticking = false;
+        if (!heroMapSectionRef.current) return;
+
+        const rect = heroMapSectionRef.current.getBoundingClientRect();
+        const viewportHeight =
+          window.innerHeight || document.documentElement.clientHeight;
+
+        const inside = rect.bottom > 0 && rect.top < viewportHeight;
+        setIsInHeroMapZone(inside);
+      });
     };
 
     handleScrollZone();
-    window.addEventListener("scroll", handleScrollZone);
+    window.addEventListener("scroll", handleScrollZone, { passive: true });
     return () => window.removeEventListener("scroll", handleScrollZone);
   }, []);
 
@@ -162,14 +198,17 @@ const Home = () => {
     return () => clearTimeout(timer);
   }, [isLoaded, user]);
 
-  // Cargar nombre real del jugador desde backend
+  // Cargar nombre real del jugador desde backend (con abort)
   useEffect(() => {
+    const controller = new AbortController();
+
     const fetchPlayerName = async () => {
       if (!user?.loggedIn || !user?.uuid) return;
 
       try {
         const res = await fetch(
-          `https://flancraft-backend.onrender.com/api/usuarios/${user.uuid}`
+          `https://flancraft-backend.onrender.com/api/usuarios/${user.uuid}`,
+          { signal: controller.signal }
         );
         if (!res.ok) throw new Error("Respuesta no OK");
         const data = await res.json();
@@ -181,12 +220,15 @@ const Home = () => {
             "aventurero"
         );
       } catch (err) {
+        if (err?.name === "AbortError") return;
         console.error("Error al obtener nombre de jugador en Home:", err);
         setPlayerName("aventurero");
       }
     };
 
     fetchPlayerName();
+
+    return () => controller.abort();
   }, [user?.loggedIn, user?.uuid]);
 
   // Scroll suave a game-modes si viene desde la navbar

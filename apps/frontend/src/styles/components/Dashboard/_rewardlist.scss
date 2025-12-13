@@ -70,7 +70,7 @@
   position: absolute;
   left: 0;
   right: 0;
-  top: 17rem; // tú aquí ya lo tenías ajustado; se mantiene
+  top: 17rem;
   height: 0;
   pointer-events: none;
 }
@@ -109,7 +109,7 @@
 .reward-box {
   position: relative;
   min-width: 170px;
-  height: 210px; // ALTURA FIJA PARA TODAS LAS CARTAS
+  height: 210px;
   padding: 1.1rem 1rem 1.2rem;
   border-radius: 3px;
   background: radial-gradient(
@@ -176,7 +176,7 @@
 
   img {
     width: 40px;
-    height: 40px;
+    height: 50px;
     filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.9));
   }
 

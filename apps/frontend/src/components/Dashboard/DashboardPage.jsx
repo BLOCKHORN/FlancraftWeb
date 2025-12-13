@@ -247,7 +247,7 @@ export default function DashboardPage() {
                             className="admin-btn"
                             onClick={() => navigate("/admin/noticias")}
                           >
-                            Panel de noticias
+                            Crear noticia
                           </button>
                         </>
                       )}

@@ -5,6 +5,9 @@ import "../../styles/components/Dashboard/_logrolist.scss";
 // 🔗 BASE API: configurable vía .env (VITE_BACKEND_URL)
 const API_BASE = import.meta.env.VITE_BACKEND_URL || "http://localhost:10000";
 
+// ✅ Paginación
+const PAGE_SIZE = 10;
+
 // Tabs superiores: tipo de misión
 const TABS_MISION = [
   {
@@ -140,7 +143,11 @@ function LogroList({ user, onXpClaimed }) {
   const [cargando, setCargando] = useState(true);
   const [tiempoRestante, setTiempoRestante] = useState(null);
 
+  // ✅ paginación
+  const [pagina, setPagina] = useState(1);
+
   const buttonRefs = useRef({});
+  const listaTopRef = useRef(null);
 
   // ==========================
   // CAMBIO DE PESTAÑA
@@ -365,6 +372,41 @@ function LogroList({ user, onXpClaimed }) {
       : "Retos épicos que rotan semanalmente.";
 
   // ==========================
+  // PAGINACIÓN (10 por página)
+  // ==========================
+  const totalPaginas = Math.max(1, Math.ceil(logrosOrdenados.length / PAGE_SIZE));
+
+  // reset a página 1 cuando cambias filtros/orden/tipo
+  useEffect(() => {
+    setPagina(1);
+  }, [tipoMision, servidorActivo, criterio, user.uuid]);
+
+  // si el total baja, clamp
+  useEffect(() => {
+    setPagina((p) => Math.min(p, totalPaginas));
+  }, [totalPaginas]);
+
+  const inicio = (pagina - 1) * PAGE_SIZE;
+  const logrosPagina = logrosOrdenados.slice(inicio, inicio + PAGE_SIZE);
+
+  const paginasVisibles = (() => {
+    const max = 5;
+    let start = Math.max(1, pagina - 2);
+    let end = Math.min(totalPaginas, start + max - 1);
+    start = Math.max(1, end - max + 1);
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+  })();
+
+  const irPagina = (p) => {
+    const next = Math.min(totalPaginas, Math.max(1, p));
+    if (next === pagina) return;
+    setPagina(next);
+    requestAnimationFrame(() => {
+      listaTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  };
+
+  // ==========================
   // RENDER
   // ==========================
   return (
@@ -522,128 +564,184 @@ function LogroList({ user, onXpClaimed }) {
 
       {/* LISTA + OVERLAY DE CARGA */}
       <div className="logros-list-wrapper">
+        <div ref={listaTopRef} />
+
         {!error && hayLogros && (
-          <ul
-            className={[
-              "logros-lista",
-              cargando ? "logros-lista-saliente" : "logros-lista-entrante",
-            ]
-              .filter(Boolean)
-              .join(" ")}
-          >
-            {logrosOrdenados.map((logro, index) => {
-              const progresoPercent = Math.min(
-                100,
-                (logro.progreso_actual / logro.objetivo) * 100
-              );
+          <>
+            <ul
+              className={[
+                "logros-lista",
+                cargando ? "logros-lista-saliente" : "logros-lista-entrante",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+            >
+              {logrosPagina.map((logro, index) => {
+                const progresoPercent = Math.min(
+                  100,
+                  (logro.progreso_actual / logro.objetivo) * 100
+                );
 
-              const esCompletado = !!logro.completado;
-              const esReclamado = !!logro.reclamado || logro.id === reclamadoId;
-              const claimable = esClaimable(logro);
+                const esCompletado = !!logro.completado;
+                const esReclamado = !!logro.reclamado || logro.id === reclamadoId;
+                const claimable = esClaimable(logro);
 
-              const imagenServidor =
-                logro.servidor && MAPA_SERVIDOR_IMAGEN[logro.servidor];
+                const imagenServidor =
+                  logro.servidor && MAPA_SERVIDOR_IMAGEN[logro.servidor];
 
-              return (
-                <li
-                  key={logro.id}
-                  className={[
-                    "logro-row",
-                    esCompletado ? "logro-completado" : "logro-progreso",
-                    esReclamado ? "logro-reclamado" : "",
-                    claimable ? "logro-claimable" : "",
-                  ]
-                    .filter(Boolean)
-                    .join(" ")}
-                  style={{ "--delay": `${index * 45}ms` }}
-                >
-                  <span className="logro-acento" />
+                return (
+                  <li
+                    key={logro.id}
+                    className={[
+                      "logro-row",
+                      esCompletado ? "logro-completado" : "logro-progreso",
+                      esReclamado ? "logro-reclamado" : "",
+                      claimable ? "logro-claimable" : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
+                    style={{ "--delay": `${index * 45}ms` }}
+                  >
+                    <span className="logro-acento" />
 
-                  <div className="logro-main">
-                    {/* TÍTULO + XP */}
-                    <div className="logro-top">
-                      <div className="logro-top-left">
-                        <h3 className="logro-nombre">
-                          {logro.nombre || logro.tipo || "Logro"}
-                        </h3>
-                        <p className="logro-descripcion">
-                          {logro.descripcion || "Progreso de logro en este servidor."}
-                        </p>
-                      </div>
+                    <div className="logro-main">
+                      {/* TÍTULO + XP */}
+                      <div className="logro-top">
+                        <div className="logro-top-left">
+                          <h3 className="logro-nombre">
+                            {logro.nombre || logro.tipo || "Logro"}
+                          </h3>
+                          <p className="logro-descripcion">
+                            {logro.descripcion ||
+                              "Progreso de logro en este servidor."}
+                          </p>
+                        </div>
 
-                      <div className="logro-top-right">
-                        {/* ✅ SOLO 1 ICONO, a la IZQUIERDA del XP */}
-                        <div className="logro-xp-wrap">
-                          <img
-                            src={
-                              esReclamado
-                                ? "/assets/logros/estado-reclamado.webp"
-                                : esCompletado
-                                ? "/assets/logros/estado-reclamar.webp"
-                                : "/assets/logros/estado-progreso.webp"
-                            }
-                            alt={
-                              esReclamado
-                                ? "Reclamado"
-                                : esCompletado
-                                ? "Listo para reclamar"
-                                : "En progreso"
-                            }
-                            className="logro-xp-status-img"
-                            draggable="false"
-                          />
-                          <span className="logro-xp-chip">{logro.xp_otorgada} XP</span>
+                        <div className="logro-top-right">
+                          {/* ✅ SOLO 1 ICONO, a la IZQUIERDA del XP */}
+                          <div className="logro-xp-wrap">
+                            <img
+                              src={
+                                esReclamado
+                                  ? "/assets/logros/estado-reclamado.webp"
+                                  : esCompletado
+                                  ? "/assets/logros/estado-reclamar.webp"
+                                  : "/assets/logros/estado-progreso.webp"
+                              }
+                              alt={
+                                esReclamado
+                                  ? "Reclamado"
+                                  : esCompletado
+                                  ? "Listo para reclamar"
+                                  : "En progreso"
+                              }
+                              className="logro-xp-status-img"
+                              draggable="false"
+                            />
+                            <span className="logro-xp-chip">
+                              {logro.xp_otorgada} XP
+                            </span>
+                          </div>
                         </div>
                       </div>
+
+                      {/* PROGRESO */}
+                      <div className="logro-progress">
+                        <div className="logro-progress-track">
+                          <div
+                            className="logro-progress-fill"
+                            style={{ width: `${progresoPercent}%` }}
+                          />
+                        </div>
+                        <div className="logro-progress-meta">
+                          <span className="logro-progress-texto">
+                            {logro.progreso_actual} / {logro.objetivo}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* FOOTER */}
+                      <div className="logro-footer">
+                        {/* Botón reclamar (solo permanentes) */}
+                        {tipoMision === "permanente" &&
+                          esCompletado &&
+                          !esReclamado && (
+                            <button
+                              ref={(el) => (buttonRefs.current[logro.id] = el)}
+                              type="button"
+                              className="logro-claim-btn"
+                              onClick={() => reclamarLogro(logro.id, logro.xp_otorgada)}
+                              disabled={cargandoId === logro.id}
+                            >
+                              {cargandoId === logro.id
+                                ? "Reclamando..."
+                                : "Reclamar XP"}
+                            </button>
+                          )}
+                      </div>
                     </div>
 
-                    {/* PROGRESO */}
-                    <div className="logro-progress">
-                      <div className="logro-progress-track">
-                        <div
-                          className="logro-progress-fill"
-                          style={{ width: `${progresoPercent}%` }}
+                    {/* FRANJA OSCURA CON ICONO DEL REINO */}
+                    {imagenServidor && (
+                      <div className="logro-reino-overlay">
+                        <div className="logro-reino-glow" />
+                        <img
+                          src={imagenServidor}
+                          alt={logro.servidor}
+                          className="logro-reino-img"
                         />
                       </div>
-                      <div className="logro-progress-meta">
-                        <span className="logro-progress-texto">
-                          {logro.progreso_actual} / {logro.objetivo}
-                        </span>
-                      </div>
-                    </div>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
 
-                    {/* FOOTER (sin iconos duplicados) */}
-                    <div className="logro-footer">
-                      {/* Botón reclamar (solo permanentes) */}
-                      {tipoMision === "permanente" && esCompletado && !esReclamado && (
-                        <button
-                          ref={(el) => (buttonRefs.current[logro.id] = el)}
-                          type="button"
-                          className="logro-claim-btn"
-                          onClick={() => reclamarLogro(logro.id, logro.xp_otorgada)}
-                          disabled={cargandoId === logro.id}
-                        >
-                          {cargandoId === logro.id ? "Reclamando..." : "Reclamar XP"}
-                        </button>
-                      )}
-                    </div>
-                  </div>
+            {/* ✅ PAGINACIÓN */}
+            {!cargando && totalPaginas > 1 && (
+              <nav className="logros-paginacion" aria-label="Paginación de logros">
+                <button
+                  type="button"
+                  className="logros-pag-btn"
+                  onClick={() => irPagina(pagina - 1)}
+                  disabled={pagina === 1}
+                >
+                  Anterior
+                </button>
 
-                  {/* FRANJA OSCURA CON ICONO DEL REINO */}
-                  {imagenServidor && (
-                    <div className="logro-reino-overlay">
-                      <div className="logro-reino-glow" />
-                      <img
-                        src={imagenServidor}
-                        alt={logro.servidor}
-                        className="logro-reino-img"
-                      />
-                    </div>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
+                <div className="logros-pag-numeros">
+                  {paginasVisibles.map((n) => (
+                    <button
+                      key={n}
+                      type="button"
+                      className={[
+                        "logros-pag-num",
+                        n === pagina ? "activo" : "",
+                      ]
+                        .filter(Boolean)
+                        .join(" ")}
+                      onClick={() => irPagina(n)}
+                    >
+                      {n}
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  type="button"
+                  className="logros-pag-btn"
+                  onClick={() => irPagina(pagina + 1)}
+                  disabled={pagina === totalPaginas}
+                >
+                  Siguiente
+                </button>
+
+                <span className="logros-pag-info">
+                  Página {pagina} / {totalPaginas}
+                </span>
+              </nav>
+            )}
+          </>
         )}
 
         {/* OVERLAY DE CARGA */}

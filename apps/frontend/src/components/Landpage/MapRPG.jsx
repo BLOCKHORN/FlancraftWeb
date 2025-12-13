@@ -4,6 +4,8 @@ import React, {
   useMemo,
   useRef,
   useState,
+  useCallback,
+  memo,
 } from 'react'
 import { motion as Motion, AnimatePresence } from 'framer-motion'
 import { Howl } from 'howler'
@@ -109,21 +111,30 @@ const MapRPG = () => {
   // Estado para luciérnagas "asustadas"
   const [firefliesScared, setFirefliesScared] = useState(false)
   const scareTimeoutRef = useRef(null)
+  const scareActiveRef = useRef(false)
+
+  // Preload (evita “micro-cortes” al cambiar de destino)
+  const preloadedRef = useRef(false)
 
   // slug del perfil público
   useEffect(() => {
+    let alive = true
+
     const fetchPlayerSlug = async () => {
       if (!user?.uuid) {
-        setPlayerSlug(null)
+        if (alive) setPlayerSlug(null)
         return
       }
 
       try {
+        // Solo necesitamos uid (evita traer un * entero)
         const { data, error } = await supabase
           .from('usuarios')
-          .select('*')
+          .select('uid')
           .eq('uuid', user.uuid)
           .single()
+
+        if (!alive) return
 
         if (error) {
           console.error('Error al obtener usuario para MapRPG:', error)
@@ -131,38 +142,83 @@ const MapRPG = () => {
           return
         }
 
-        if (data?.uid) {
-          setPlayerSlug(data.uid)
-        } else {
-          setPlayerSlug(null)
-        }
+        setPlayerSlug(data?.uid || null)
       } catch (err) {
+        if (!alive) return
         console.error('Error inesperado al cargar usuario en MapRPG:', err)
         setPlayerSlug(null)
       }
     }
 
     fetchPlayerSlug()
+
+    return () => {
+      alive = false
+    }
   }, [user?.uuid])
+
+  // Preload de imágenes del carrusel + portal (en idle si existe)
+  useEffect(() => {
+    if (preloadedRef.current) return
+    preloadedRef.current = true
+
+    // precarga también sonidos para evitar el “lag” del primer play
+    try {
+      clickSound.load()
+      teleportSound.load()
+    } catch (_) {}
+
+    const assets = [
+      ...baseZones.flatMap((z) => [z.image, z.runeImage]),
+      // assets css “críticos” del MapRPG (evita primer paint tardío)
+      '/assets/maprpg/nether-portal-frame.webp',
+      '/assets/maprpg/ground-rock.webp',
+    ].filter(Boolean)
+
+    const preload = () => {
+      assets.forEach((src) => {
+        const img = new Image()
+        img.decoding = 'async'
+        img.loading = 'eager'
+        img.src = src
+      })
+    }
+
+    // intenta hacerlo cuando el navegador esté libre
+    if ('requestIdleCallback' in window) {
+      window.requestIdleCallback(preload, { timeout: 1200 })
+    } else {
+      const id = window.setTimeout(preload, 0)
+      return () => window.clearTimeout(id)
+    }
+  }, [])
 
   useEffect(() => {
     return () => {
       if (scareTimeoutRef.current) {
         clearTimeout(scareTimeoutRef.current)
       }
+      scareActiveRef.current = false
     }
   }, [])
 
-  const triggerFirefliesScare = () => {
-    // reiniciamos la animación cada vez que pasas/clickas por la zona
+  const triggerFirefliesScare = useCallback(() => {
+    // Evita spam de setState en pointermove/mousemove
+    if (scareActiveRef.current) return
+
+    scareActiveRef.current = true
+
     if (scareTimeoutRef.current) {
       clearTimeout(scareTimeoutRef.current)
     }
+
     setFirefliesScared(true)
+
     scareTimeoutRef.current = setTimeout(() => {
       setFirefliesScared(false)
-    }, 350) // ~0.35s de "salida" rápida
-  }
+      scareActiveRef.current = false
+    }, 350)
+  }, [])
 
   const zones = useMemo(
     () =>
@@ -181,75 +237,96 @@ const MapRPG = () => {
   const nextIndex = (currentIndex + 1) % len
 
   // navegación con flechas
-  const moveCarousel = (side) => {
-    const dirNum = side === 'left' ? -1 : 1
-    setDirection(dirNum)
+  const moveCarousel = useCallback(
+    (side) => {
+      const dirNum = side === 'left' ? -1 : 1
+      setDirection(dirNum)
 
-    setCurrentIndex((prev) => {
-      const next =
-        side === 'left' ? (prev - 1 + len) % len : (prev + 1) % len
-      return next
-    })
+      setCurrentIndex((prev) => {
+        const next =
+          side === 'left' ? (prev - 1 + len) % len : (prev + 1) % len
+        return next
+      })
 
-    // SFX de cambio de selección
-    clickSound.play()
-  }
+      // SFX de cambio de selección
+      clickSound.play()
+    },
+    [len]
+  )
 
   // entrar al portal
-  const handlePortalClick = () => {
+  const handlePortalClick = useCallback(() => {
     if (!selectedZone?.route) return
     teleportSound.play()
     navigate(selectedZone.route)
-  }
+  }, [navigate, selectedZone?.route])
 
-  const handlePortalKeyDown = (e) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault()
-      handlePortalClick()
-    }
-  }
+  const handlePortalKeyDown = useCallback(
+    (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault()
+        handlePortalClick()
+      }
+    },
+    [handlePortalClick]
+  )
 
   // click en runas
-  const handleRuneClick = (index) => {
-    if (index === currentIndex) return
+  const handleRuneClick = useCallback(
+    (index) => {
+      if (index === currentIndex) return
 
-    let dirNum = 1
-    if (index === prevIndex) dirNum = -1
-    if (index === nextIndex) dirNum = 1
+      let dirNum = 1
+      if (index === prevIndex) dirNum = -1
+      if (index === nextIndex) dirNum = 1
 
-    setDirection(dirNum)
-    clickSound.play()
-    setCurrentIndex(index)
-  }
+      setDirection(dirNum)
+      clickSound.play()
+      setCurrentIndex(index)
+    },
+    [currentIndex, prevIndex, nextIndex]
+  )
 
-  const handleRuneKeyDown = (e, index) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault()
-      handleRuneClick(index)
-    }
-  }
+  const handleRuneKeyDown = useCallback(
+    (e, index) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault()
+        handleRuneClick(index)
+      }
+    },
+    [handleRuneClick]
+  )
 
   // click en puntitos
-  const handleDotClick = (index) => {
-    if (index === currentIndex) return
-    setDirection(0)
-    clickSound.play()
-    setCurrentIndex(index)
-  }
+  const handleDotClick = useCallback(
+    (index) => {
+      if (index === currentIndex) return
+      setDirection(0)
+      clickSound.play()
+      setCurrentIndex(index)
+    },
+    [currentIndex]
+  )
 
-  const handleDotKeyDown = (e, index) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault()
-      handleDotClick(index)
-    }
-  }
+  const handleDotKeyDown = useCallback(
+    (e, index) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault()
+        handleDotClick(index)
+      }
+    },
+    [handleDotClick]
+  )
 
   // trío visible: izquierda / centro / derecha
-  const carouselZones = [
-    { zone: zones[prevIndex], index: prevIndex, position: 'left' },
-    { zone: selectedZone, index: currentIndex, position: 'center' },
-    { zone: zones[nextIndex], index: nextIndex, position: 'right' },
-  ]
+  const carouselZones = useMemo(
+    () => [
+      { zone: zones[prevIndex], index: prevIndex, position: 'left' },
+      { zone: selectedZone, index: currentIndex, position: 'center' },
+      { zone: zones[nextIndex], index: nextIndex, position: 'right' },
+    ],
+    [zones, prevIndex, selectedZone, currentIndex, nextIndex]
+  )
 
   return (
     <section className="maprpg-wrapper">
@@ -263,8 +340,9 @@ const MapRPG = () => {
               className={`maprpg-portal-frame ${
                 firefliesScared ? 'maprpg-portal-frame--scared' : ''
               }`}
-              onMouseMove={triggerFirefliesScare}
-              onClick={triggerFirefliesScare}
+              // ✅ cambia mousemove “spam” por eventos más controlados + guard
+              onPointerEnter={triggerFirefliesScare}
+              onPointerDown={triggerFirefliesScare}
               onTouchStart={triggerFirefliesScare}
             >
               <div className="maprpg-portal-frame-image" />
@@ -296,9 +374,7 @@ const MapRPG = () => {
                   aria-label={`Entrar en ${selectedZone.title}`}
                 >
                   <div className="maprpg-portal-content">
-                    <h3 className="maprpg-portal-title">
-                      {selectedZone.title}
-                    </h3>
+                    <h3 className="maprpg-portal-title">{selectedZone.title}</h3>
                     <p className="maprpg-portal-desc">
                       {selectedZone.shortDescription}
                     </p>
@@ -402,4 +478,5 @@ const MapRPG = () => {
   )
 }
 
-export default MapRPG
+// ✅ CLAVE: si Home re-renderiza por animaciones/estados, MapRPG no se recalcula
+export default memo(MapRPG)

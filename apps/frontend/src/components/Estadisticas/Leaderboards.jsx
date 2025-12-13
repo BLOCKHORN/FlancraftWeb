@@ -1,40 +1,19 @@
-import { useEffect, useState, useCallback } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Search, SlidersHorizontal, X, ChevronDown } from "lucide-react";
+
 import { getLeaderboards } from "../../api/getLeaderboards";
-import classNames from "classnames";
 import "../../styles/components/Estadisticas/_leaderboards.scss";
 
+const API_BASE = import.meta.env.VITE_BACKEND_URL || "http://localhost:10000";
+
 const SERVIDORES = [
-  {
-    id: "survival_clasico",
-    nombre: "Survival Clásico",
-    imagen: "/assets/reinos/survival-clasico.webp",
-  },
-  {
-    id: "survival_anarquico",
-    nombre: "Survival Anárquico",
-    imagen: "/assets/reinos/survival-anarquico.webp",
-  },
-  {
-    id: "survival_hardcore",
-    nombre: "Survival Hardcore",
-    imagen: "/assets/reinos/survival-hardcore.webp",
-  },
-  {
-    id: "oneblock",
-    nombre: "OneBlock",
-    imagen: "/assets/reinos/oneblock.webp",
-  },
-  {
-    id: "chunklock",
-    nombre: "ChunkLock",
-    imagen: "/assets/reinos/chunklock.webp",
-  },
-  {
-    id: "parkour",
-    nombre: "Parkour",
-    imagen: "/assets/reinos/parkour.webp",
-  },
+  { id: "survival_clasico", nombre: "Survival Clásico", imagen: "/assets/reinos/survival-clasico.webp" },
+  { id: "survival_anarquico", nombre: "Survival Anárquico", imagen: "/assets/reinos/survival-anarquico.webp" },
+  { id: "survival_hardcore", nombre: "Survival Hardcore", imagen: "/assets/reinos/survival-hardcore.webp" },
+  { id: "oneblock", nombre: "OneBlock", imagen: "/assets/reinos/oneblock.webp" },
+  { id: "chunklock", nombre: "ChunkLock", imagen: "/assets/reinos/chunklock.webp" },
+  { id: "parkour", nombre: "Parkour", imagen: "/assets/reinos/parkour.webp" },
 ];
 
 const STATS = [
@@ -52,426 +31,655 @@ const LABELS = {
   mobs_matados: "Mobs",
   kills_pvp: "Kills PvP",
   muertes: "Muertes",
-  tiempo_jugado: "Tiempo (h)",
+  tiempo_jugado: "Tiempo",
 };
 
-const TOOLTIP_DESCRIPCIONES = {
-  bloques_minados: "Cantidad total de bloques rotos con herramientas.",
-  bloques_colocados: "Número de bloques colocados en el mundo.",
-  mobs_matados: "Mobs (hostiles y pasivos) eliminados.",
-  kills_pvp: "Jugadores eliminados en combate.",
-  muertes: "Número total de veces que has muerto.",
-  tiempo_jugado: "Horas totales jugadas en este servidor.",
+const MEDALLAS = {
+  1: "/assets/oro.webp",
+  2: "/assets/plata.webp",
+  3: "/assets/bronce.webp",
+};
+
+const cn = (...args) =>
+  args
+    .flatMap((a) => {
+      if (!a) return [];
+      if (typeof a === "string") return [a];
+      if (typeof a === "object") return Object.keys(a).filter((k) => !!a[k]);
+      return [];
+    })
+    .join(" ");
+
+const isNombreValido = (nombre) => {
+  const n = (nombre || "").trim();
+  if (!n) return false;
+  const low = n.toLowerCase();
+  if (low === "desconocido" || low === "unknown") return false;
+  return true;
 };
 
 export default function Leaderboards() {
-  const [servidor, setServidor] = useState(SERVIDORES[0].id);
-  const [datosVisibles, setDatosVisibles] = useState([]);
-  const [orden, setOrden] = useState("tiempo_jugado");
-  const [ordenAscendente, setOrdenAscendente] = useState(false);
-  const [offset, setOffset] = useState(0);
-  const [filaSeleccionada, setFilaSeleccionada] = useState(null);
-  const [animacion, setAnimacion] = useState("");
-  const [usuariosVinculados, setUsuariosVinculados] = useState({});
-  const [filaEnTransicion, setFilaEnTransicion] = useState(null);
-  const [closing, setClosing] = useState(false);
+  const navigate = useNavigate();
 
+  const [servidor, setServidor] = useState(SERVIDORES[2].id);
+  const [orden, setOrden] = useState("tiempo_jugado");
+  const [ordenAsc, setOrdenAsc] = useState(false);
+
+  const [datos, setDatos] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [errorTabla, setErrorTabla] = useState("");
+
+  const [offset, setOffset] = useState(0);
   const limit = 10;
   const paginasTotales = 10;
 
-  const navigate = useNavigate();
+  const [query, setQuery] = useState("");
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [soloVinculados, setSoloVinculados] = useState(false);
+  const [soloPremium, setSoloPremium] = useState(false);
 
-  // Mapa de usuarios vinculados (rango + premium + nivel web)
-  useEffect(() => {
-    fetch("https://flancraft-backend.onrender.com/api/usuarios")
-      .then((res) => res.json())
-      .then((usuarios) => {
-        const mapa = usuarios.reduce((acc, u) => {
-          if (u.uuid) {
-            acc[u.uuid] = {
-              rango: u.rango_usuario?.toLowerCase() || null,
-              premium: u.es_premium === true,
-              nivel: typeof u.nivel === "number" ? u.nivel : null,
-            };
-          }
-          return acc;
-        }, {});
-        setUsuariosVinculados(mapa);
-      })
-      .catch((err) => console.error("Error al obtener usuarios:", err));
-  }, []);
+  const [usuariosVinculados, setUsuariosVinculados] = useState({});
+  const tableWrapRef = useRef(null);
 
-  // Carga del ranking
-  useEffect(() => {
-    let cancelado = false;
-    setAnimacion("fade-out");
+  const servidorSeleccionado = useMemo(
+    () => SERVIDORES.find((s) => s.id === servidor),
+    [servidor]
+  );
 
-    const timeout = setTimeout(() => {
-      if (cancelado) return;
+  const paginaActual = useMemo(() => Math.floor(offset / limit) + 1, [offset]);
 
-      getLeaderboards({ tipo: orden, servidor, limit, offset }).then((res) => {
-        if (cancelado) return;
-
-        const lista = res.resultados || [];
-        const ordenada = ordenAscendente
-          ? [...lista].sort((a, b) => (a[orden] || 0) - (b[orden] || 0))
-          : [...lista].sort((a, b) => (b[orden] || 0) - (a[orden] || 0));
-
-        setTimeout(() => {
-          if (cancelado) return;
-          setDatosVisibles(ordenada);
-          setAnimacion("fade-in");
-          setTimeout(() => setAnimacion(""), 1000);
-        }, 10);
-      });
-    }, 400);
-
-    return () => {
-      cancelado = true;
-      clearTimeout(timeout);
-    };
-  }, [orden, servidor, offset, ordenAscendente]);
-
-  // Reset de fila seleccionada al cambiar de servidor/página
-  useEffect(() => {
-    setFilaSeleccionada(null);
-    setFilaEnTransicion(null);
-    setClosing(false);
-  }, [servidor, offset]);
-
-  const formatearTiempo = (ticks) => {
+  const formatearTiempo = useCallback((ticks) => {
     const totalSegundos = Math.floor((ticks || 0) / 20);
     const horas = Math.floor(totalSegundos / 3600);
     const minutos = Math.floor((totalSegundos % 3600) / 60);
     return `${horas}h ${minutos}m`;
-  };
-
-  const formatValue = useCallback((key, value) => {
-    if (key === "tiempo_jugado") return formatearTiempo(value || 0);
-    return (value || 0).toLocaleString("es-ES");
   }, []);
+
+  const formatValue = useCallback(
+    (key, value) => {
+      if (key === "tiempo_jugado") return formatearTiempo(value || 0);
+      return (value || 0).toLocaleString("es-ES");
+    },
+    [formatearTiempo]
+  );
+
+  useEffect(() => {
+    const controller = new AbortController();
+    (async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/usuarios`, { signal: controller.signal });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const usuarios = await res.json();
+
+        const mapa = (usuarios || []).reduce((acc, u) => {
+          if (u?.uuid) {
+            acc[u.uuid] = {
+              rango: u.rango_usuario?.toLowerCase() || null,
+              premium: u.es_premium === true,
+              // nivel: typeof u.nivel === "number" ? u.nivel : null, // ⛔ ya no se usa
+            };
+          }
+          return acc;
+        }, {});
+
+        setUsuariosVinculados(mapa);
+      } catch (err) {
+        if (err?.name === "AbortError") return;
+        console.error("Error usuarios:", err);
+      }
+    })();
+
+    return () => controller.abort();
+  }, []);
+
+  useEffect(() => {
+    let alive = true;
+    setLoading(true);
+    setErrorTabla("");
+
+    (async () => {
+      try {
+        const res = await getLeaderboards({ tipo: orden, servidor, limit, offset });
+        if (!alive) return;
+
+        const lista = (res?.resultados || []).filter((p) => isNombreValido(p?.nombre_minecraft));
+
+        const ordenada = ordenAsc
+          ? [...lista].sort((a, b) => (a?.[orden] || 0) - (b?.[orden] || 0))
+          : [...lista].sort((a, b) => (b?.[orden] || 0) - (a?.[orden] || 0));
+
+        setDatos(ordenada);
+
+        requestAnimationFrame(() => {
+          if (tableWrapRef.current) tableWrapRef.current.scrollLeft = 0;
+        });
+      } catch (err) {
+        if (!alive) return;
+        console.error(err);
+        setErrorTabla("No se pudo cargar el ranking.");
+        setDatos([]);
+      } finally {
+        if (!alive) return;
+        setLoading(false);
+      }
+    })();
+
+    return () => {
+      alive = false;
+    };
+  }, [orden, ordenAsc, servidor, offset]);
 
   const cambiarOrden = useCallback((stat) => {
     setOrden((prev) => {
       if (prev === stat) {
-        setOrdenAscendente((asc) => !asc);
+        setOrdenAsc((v) => !v);
         return prev;
-      } else {
-        setOrdenAscendente(false);
-        return stat;
       }
+      setOrdenAsc(false);
+      return stat;
     });
+    setOffset(0);
   }, []);
 
-  const cambiarPagina = (nuevaPagina) => {
-    setOffset(nuevaPagina * limit);
-  };
-
-  const servidorSeleccionado = SERVIDORES.find((s) => s.id === servidor);
-
-  // Click en la fila -> animación + navegación al perfil
-  const handleRowClick = useCallback(
-    (player) => {
-      if (!player?.nombre_minecraft || closing) return;
-
-      setFilaSeleccionada(player.uuid);
-      setFilaEnTransicion(player.uuid);
-      setClosing(true);
-
-      // Duración sincronizada con @keyframes filaExpandToPerfil / leaderboardClosing
-      setTimeout(() => {
-        navigate(`/perfil/${player.nombre_minecraft}`);
-      }, 550);
-    },
-    [navigate, closing]
+  const getMeta = useCallback(
+    (uuid) => usuariosVinculados[uuid] || null,
+    [usuariosVinculados]
   );
 
-  return (
-    <section className="leaderboard-epic">
-      <div className="leaderboard-shell">
-        <div
-          className={classNames("leaderboard-frame", {
-            "leaderboard-frame--closing": closing,
-          })}
-        >
-          {/* CABECERA */}
-          <header className="epic-header">
-            <h1>RANKING DE FLANCRAFT</h1>
-            <p>Top jugadores por servidor.</p>
-          </header>
+  const irPerfil = useCallback(
+    (player) => {
+      if (!player?.nombre_minecraft) return;
+      navigate(`/perfil/${player.nombre_minecraft}`);
+    },
+    [navigate]
+  );
 
-          {/* SERVIDORES */}
-          <section className="server-section">
+  const datosFiltrados = useMemo(() => {
+    const q = query.trim().toLowerCase();
+
+    return (datos || []).filter((p) => {
+      if (!isNombreValido(p?.nombre_minecraft)) return false;
+
+      const nombre = (p?.nombre_minecraft || "").toLowerCase();
+      const matchNombre = !q || nombre.includes(q);
+
+      const meta = getMeta(p?.uuid);
+      const vinc = !!meta;
+      const prem = meta?.premium === true;
+
+      const okVinc = !soloVinculados || vinc;
+      const okPrem = !soloPremium || prem;
+
+      return matchNombre && okVinc && okPrem;
+    });
+  }, [datos, query, soloVinculados, soloPremium, getMeta]);
+
+  const top3 = useMemo(() => {
+    const list = (datosFiltrados.length ? datosFiltrados : datos).filter((p) =>
+      isNombreValido(p?.nombre_minecraft)
+    );
+    return (list || []).slice(0, 3);
+  }, [datos, datosFiltrados]);
+
+  const cambiarPagina = (pageIndex) => setOffset(pageIndex * limit);
+
+  return (
+    <section className="lb-page">
+      <div className="lb-shell">
+        <div className="lb-frame">
+          {/* ✅ SOLO el rectángulo superior (hasta la rayita) */}
+          <div className="lb-topHeader">
+            <header className="lb-header">
+              <div className="lb-header__center">
+                <h1 className="lb-title">Ranking Flancraft</h1>
+                <h2 className="lb-subtitle">
+                  <span className="lb-subtitle__server">{servidorSeleccionado?.nombre}</span>
+                  <span className="lb-dot">•</span>
+                  <span className="lb-subtitle__order">
+                    {LABELS[orden]} {ordenAsc ? "▲" : "▼"}
+                  </span>
+                </h2>
+              </div>
+
+              <div className="lb-header__right">
+                <div className="lb-pagePill">
+                  <span>Página</span>
+                  <b>
+                    {paginaActual}/{paginasTotales}
+                  </b>
+                </div>
+              </div>
+            </header>
+          </div>
+
+          {/* TOP 3 */}
+          <section className="lb-podium">
+            {top3.map((p, idx) => {
+              const absPos = offset + idx + 1;
+              const medal = MEDALLAS[absPos] || MEDALLAS[idx + 1];
+              const meta = getMeta(p.uuid);
+              const name = p?.nombre_minecraft;
+
+              return (
+                <button
+                  key={p.uuid}
+                  type="button"
+                  className={cn("pod-card", `pod-card--${idx + 1}`)}
+                  onClick={() => irPerfil(p)}
+                  title="Abrir perfil"
+                >
+                  <div className="pod-card__medal">
+                    <img src={medal} alt={`Top ${idx + 1}`} />
+                  </div>
+
+                  <div className="pod-card__main">
+                    <img
+                      className="pod-head"
+                      src={`https://mc-heads.net/avatar/${name}/44`}
+                      alt=""
+                      loading="lazy"
+                      onError={(e) => (e.currentTarget.src = "/assets/default-head.png")}
+                    />
+
+                    <div className="pod-card__info">
+                      <div className="pod-nameLine">
+                        <span className="pod-name">{name}</span>
+                        <span className="pod-badges">
+                          {meta?.rango && (
+                            <img
+                              src={`/assets/rangos/${meta.rango}.webp`}
+                              alt={`Rango ${meta.rango}`}
+                              className="lb-badge-rango"
+                              loading="lazy"
+                            />
+                          )}
+                          {meta?.premium && (
+                            <img
+                              src="/assets/premium.webp"
+                              alt="Premium"
+                              className="lb-badge-premium"
+                              loading="lazy"
+                            />
+                          )}
+                        </span>
+                      </div>
+
+                      <div className="pod-stat">
+                        <span className="pod-stat__k">{LABELS[orden]}</span>
+                        <span className="pod-stat__v">{formatValue(orden, p?.[orden])}</span>
+                      </div>
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </section>
+
+          {/* SERVERS */}
+          <section className="lb-servers" aria-label="Servidores">
             <div className="server-grid">
               {SERVIDORES.map((s) => {
-                const activo = servidor === s.id;
+                const active = servidor === s.id;
                 return (
                   <button
                     key={s.id}
                     type="button"
-                    className={classNames(
-                      "server-card",
-                      `server-card--${s.id}`,
-                      {
-                        "server-card--active": activo,
-                      }
-                    )}
+                    className={cn("server-pill", { active })}
                     onClick={() => {
-                      if (closing) return;
                       setServidor(s.id);
                       setOffset(0);
                     }}
-                    aria-label={`Cambiar a ${s.nombre}`}
+                    aria-pressed={active}
+                    title={s.nombre}
                   >
-                    <div className="server-card-inner">
-                      <div className="server-card-image-wrap">
-                        <img
-                          src={s.imagen}
-                          alt={s.nombre}
-                          className="server-card-image"
-                        />
-                      </div>
-                      <span className="server-card-label">{s.nombre}</span>
-                    </div>
+                    <span className="server-pill__iconWrap" aria-hidden="true">
+                      <img className="server-pill__icon" src={s.imagen} alt="" loading="lazy" />
+                    </span>
+                    <span className="server-pill__label">{s.nombre}</span>
+                    <span className="server-pill__underline" aria-hidden="true" />
                   </button>
                 );
               })}
             </div>
           </section>
 
-          {/* TABLA */}
-          <section className="tabla-section">
-            <div className="tabla-titulo">
-              {servidorSeleccionado && (
-                <div className="tabla-titulo-main">
-                  <span className="tabla-titulo-servidor">
-                    {servidorSeleccionado.nombre}
-                  </span>
-                  <span className="tabla-titulo-stat">
-                    {" · "}
-                    {LABELS[orden]}
-                    {orden === "tiempo_jugado" && " (h)"}
-                    <span className="flecha-orden">
-                      {ordenAscendente ? "▲" : "▼"}
-                    </span>
-                  </span>
-                </div>
+          {/* TOOLBAR */}
+          <section className="lb-toolbar">
+            <div className="lb-search">
+              <Search size={18} />
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Buscar jugador…"
+                spellCheck={false}
+              />
+              {query && (
+                <button className="lb-clear" onClick={() => setQuery("")} type="button" aria-label="Limpiar">
+                  <X size={18} />
+                </button>
               )}
+            </div>
 
-              <div className="tabla-separator">
-                <span className="tabla-separator-line" />
-                <span className="tabla-separator-dot" />
-                <span className="tabla-separator-line" />
+            <button
+              type="button"
+              className={cn("lb-filterBtn", { active: filtersOpen })}
+              onClick={() => setFiltersOpen((v) => !v)}
+              title="Filtros"
+            >
+              <SlidersHorizontal size={18} />
+              <span>Filtros</span>
+            </button>
+
+            <div className="lb-mobileOrder">
+              <div className="lb-select">
+                <span className="lb-select__k">Orden</span>
+                <select
+                  value={orden}
+                  onChange={(e) => {
+                    setOrden(e.target.value);
+                    setOrdenAsc(false);
+                    setOffset(0);
+                  }}
+                >
+                  {STATS.map((st) => (
+                    <option key={st} value={st}>
+                      {LABELS[st]}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown size={16} />
               </div>
             </div>
 
-            <div className="table-container">
-              <table className="tabla-epica">
-                <thead>
-                  <tr>
-                    <th>Posición</th>
-                    <th>Jugador</th>
-                    <th className="col-nivel" title="Nivel de la web">
-                      Nivel
-                    </th>
-                    {STATS.map((s) => (
-                      <th
-                        key={s}
-                        className={classNames("ordenable", {
-                          activo: orden === s,
-                        })}
-                        onClick={() => !closing && cambiarOrden(s)}
-                        title={`${LABELS[s]} — ${TOOLTIP_DESCRIPCIONES[s]}`}
-                      >
-                        {LABELS[s]}
-                        {orden === s && (
-                          <span className="flecha-orden">
-                            {ordenAscendente ? "▲" : "▼"}
-                          </span>
-                        )}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
+            {filtersOpen && (
+              <div className="lb-filtersPanel">
+                <label className={cn("lb-toggle", { on: soloVinculados })}>
+                  <input
+                    type="checkbox"
+                    checked={soloVinculados}
+                    onChange={(e) => setSoloVinculados(e.target.checked)}
+                  />
+                  <span>Solo vinculados</span>
+                </label>
 
-                <tbody
-                  className={classNames({
-                    "tbody-animado-salida": animacion === "fade-out",
-                    "tbody-animado-entrada": animacion === "fade-in",
-                  })}
-                >
-                  {datosVisibles.length === 0 && (
-                    <tr className="fila fila-vacia">
-                      <td
-                        className="mensaje-vacio"
-                        colSpan={3 + STATS.length}
-                      >
-                        Todavía no hay datos registrados para este servidor.
-                        Conéctate y empieza a escribir tu nombre en el Hall de
-                        la Fama.
-                      </td>
-                    </tr>
-                  )}
+                <label className={cn("lb-toggle", { on: soloPremium })}>
+                  <input
+                    type="checkbox"
+                    checked={soloPremium}
+                    onChange={(e) => setSoloPremium(e.target.checked)}
+                  />
+                  <span>Solo premium</span>
+                </label>
 
-                  {datosVisibles.map((player, i) => {
-                    const posicion = offset + i;
-                    const esSeleccionado = filaSeleccionada === player.uuid;
-                    const datosUsuario = usuariosVinculados[player.uuid] || {};
-                    const medalla =
-                      posicion === 0
-                        ? "/assets/oro.webp"
-                        : posicion === 1
-                        ? "/assets/plata.webp"
-                        : posicion === 2
-                        ? "/assets/bronce.webp"
-                        : null;
-
-                    const tieneRango = !!datosUsuario.rango;
-                    const clasesNombre = classNames(
-                      "nombre-colored",
-                      datosUsuario.rango && `rango-${datosUsuario.rango}`,
-                      {
-                        "nombre-colored--con-rango": tieneRango,
-                        "nombre-colored--premium-sin-rango":
-                          !tieneRango && datosUsuario.premium,
-                      }
-                    );
-
-                    return (
-                      <tr
-                        key={`${player.uuid}-${orden}-${offset}`}
-                        className={classNames(
-                          `fila fila-${posicion + 1} anim-row`,
-                          { seleccionada: esSeleccionado },
-                          {
-                            "fila--transition":
-                              filaEnTransicion === player.uuid,
-                            "fila--fade-out":
-                              closing &&
-                              filaEnTransicion &&
-                              filaEnTransicion !== player.uuid,
-                          }
-                        )}
-                        onClick={() => handleRowClick(player)}
-                        style={{ animationDelay: `${i * 120}ms` }}
-                      >
-                        <td data-label="Posición">
-                          {medalla ? (
-                            <img
-                              src={medalla}
-                              alt={`Top ${posicion + 1}`}
-                              className="medalla"
-                            />
-                          ) : (
-                            <span className="numero-rango">
-                              {posicion + 1}
-                            </span>
-                          )}
-                        </td>
-
-                        <td data-label="Jugador">
-                          <div className="jugador-info">
-                            <img
-                              src={`https://mc-heads.net/avatar/${
-                                player.nombre_minecraft || "Steve"
-                              }/32`}
-                              onError={(e) =>
-                                (e.currentTarget.src =
-                                  "/assets/default-head.png")
-                              }
-                              alt={`Avatar de ${
-                                player.nombre_minecraft || "Desconocido"
-                              }`}
-                              className="avatar-head"
-                            />
-                            <span className={clasesNombre}>
-                              <span className="nombre-colored-label">
-                                {player.nombre_minecraft || "Desconocido"}
-                              </span>
-
-                              {tieneRango && (
-                                <img
-                                  src={`/assets/rangos/${datosUsuario.rango}.webp`}
-                                  alt={`Rango ${datosUsuario.rango}`}
-                                  className="badge-rango"
-                                />
-                              )}
-
-                              {datosUsuario.premium && (
-                                <img
-                                  src="/assets/premium.webp"
-                                  alt="Premium"
-                                  className="icono-premium"
-                                />
-                              )}
-                            </span>
-                          </div>
-                        </td>
-
-                        <td data-label="Nivel" className="col-nivel-td">
-                          {datosUsuario.nivel != null
-                            ? datosUsuario.nivel
-                            : "—"}
-                        </td>
-
-                        {STATS.map((stat) => (
-                          <td key={stat} data-label={LABELS[stat]}>
-                            {formatValue(stat, player[stat])}
-                          </td>
-                        ))}
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="epic-pagination paginador-numerico">
-              <button
-                onClick={() => cambiarPagina(0)}
-                disabled={offset === 0 || closing}
-                aria-label="Primera página"
-              >
-                «
-              </button>
-              <button
-                onClick={() =>
-                  cambiarPagina(Math.max(0, Math.floor(offset / limit) - 1))
-                }
-                disabled={offset === 0 || closing}
-                aria-label="Anterior"
-              >
-                ‹
-              </button>
-
-              {[...Array(paginasTotales)].map((_, index) => (
                 <button
-                  key={index}
-                  className={offset === index * limit ? "activo" : ""}
-                  onClick={() => !closing && cambiarPagina(index)}
+                  type="button"
+                  className="lb-reset"
+                  onClick={() => {
+                    setQuery("");
+                    setSoloPremium(false);
+                    setSoloVinculados(false);
+                  }}
                 >
-                  {index + 1}
+                  Reset
                 </button>
-              ))}
 
-              <button
-                onClick={() =>
-                  cambiarPagina(Math.floor(offset / limit) + 1)
-                }
-                disabled={offset + limit >= paginasTotales * limit || closing}
-                aria-label="Siguiente"
-              >
-                ›
-              </button>
-              <button
-                onClick={() => cambiarPagina(paginasTotales - 1)}
-                disabled={
-                  offset + limit >= paginasTotales * limit || closing
-                }
-                aria-label="Última página"
-              >
-                »
-              </button>
+                <div className="lb-count">
+                  <span className="lb-count__k">Resultados</span>
+                  <span className="lb-count__v">{datosFiltrados.length}</span>
+                </div>
+              </div>
+            )}
+          </section>
+
+          {/* TABLA */}
+          <section className="lb-content">
+            <div className="lb-tableCard">
+              <div className="lb-tableTop">
+                <div className="lb-tableTitle">
+                  <span className="lb-tableTitle__server">{servidorSeleccionado?.nombre}</span>
+                  <span className="lb-sep">•</span>
+                  <span className="lb-tableTitle__stat">
+                    {LABELS[orden]} {ordenAsc ? "▲" : "▼"}
+                  </span>
+                </div>
+              </div>
+
+              {errorTabla ? (
+                <div className="lb-error">
+                  <div className="lb-error__title">Error</div>
+                  <div className="lb-error__text">{errorTabla}</div>
+                </div>
+              ) : (
+                <>
+                  <div className="lb-tableWrap" ref={tableWrapRef}>
+                    <div className="lb-scrollHint" aria-hidden="true">
+                      <span className="lb-scrollHint__arrow">→</span>
+                      <span className="lb-scrollHint__text">Desliza para ver más</span>
+                    </div>
+
+                    <table className="lb-table">
+                      <thead>
+                        <tr>
+                          <th className="col-pos">Pos</th>
+                          <th className="col-player">Jugador</th>
+
+                          {STATS.map((st) => (
+                            <th
+                              key={st}
+                              className={cn("th-sort", { active: orden === st })}
+                              onClick={() => cambiarOrden(st)}
+                              title={`Ordenar por ${LABELS[st]}`}
+                            >
+                              <span>{LABELS[st]}</span>
+                              {orden === st && <i className="th-sort__arrow">{ordenAsc ? "▲" : "▼"}</i>}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+
+                      <tbody>
+                        {loading &&
+                          [...Array(limit)].map((_, i) => (
+                            <tr key={`sk-${i}`} className="lb-row sk-row">
+                              <td><span className="sk sk--pos" /></td>
+                              <td>
+                                <div className="lb-player">
+                                  <span className="sk sk--head" />
+                                  <div className="sk-col">
+                                    <span className="sk sk--name" />
+                                    <span className="sk sk--mini" />
+                                  </div>
+                                </div>
+                              </td>
+                              {STATS.map((st) => (
+                                <td key={st}><span className="sk sk--num" /></td>
+                              ))}
+                            </tr>
+                          ))}
+
+                        {!loading && datosFiltrados.length === 0 && (
+                          <tr className="lb-row empty">
+                            <td colSpan={2 + STATS.length}>No hay resultados con los filtros actuales.</td>
+                          </tr>
+                        )}
+
+                        {!loading &&
+                          datosFiltrados.map((p, i) => {
+                            const absPos = offset + i + 1;
+                            const meta = getMeta(p.uuid);
+                            const medal = MEDALLAS[absPos] || null;
+                            const name = p?.nombre_minecraft;
+
+                            return (
+                              <tr
+                                key={`${p.uuid}-${absPos}-${orden}`}
+                                className={cn("lb-row", {
+                                  top1: absPos === 1,
+                                  top2: absPos === 2,
+                                  top3: absPos === 3,
+                                })}
+                                onClick={() => irPerfil(p)}
+                                tabIndex={0}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") irPerfil(p);
+                                }}
+                                title="Abrir perfil"
+                              >
+                                <td className="td-pos">
+                                  {medal ? (
+                                    <img src={medal} alt={`Top ${absPos}`} className="lb-medal" loading="lazy" />
+                                  ) : (
+                                    <span className="lb-rank">{absPos}</span>
+                                  )}
+                                </td>
+
+                                <td className="td-player">
+                                  <div className="lb-player">
+                                    <img
+                                      className="lb-head"
+                                      src={`https://mc-heads.net/avatar/${name}/32`}
+                                      alt=""
+                                      loading="lazy"
+                                      onError={(e) => (e.currentTarget.src = "/assets/default-head.png")}
+                                    />
+                                    <div className="lb-player__text">
+                                      <div className="lb-nameRow">
+                                        <span className="lb-name">{name}</span>
+                                        <span className="lb-badges">
+                                          {meta?.rango && (
+                                            <img
+                                              src={`/assets/rangos/${meta.rango}.webp`}
+                                              alt=""
+                                              className="lb-badge-rango"
+                                              loading="lazy"
+                                            />
+                                          )}
+                                          {meta?.premium && (
+                                            <img
+                                              src="/assets/premium.webp"
+                                              alt=""
+                                              className="lb-badge-premium"
+                                              loading="lazy"
+                                            />
+                                          )}
+                                        </span>
+                                      </div>
+                                      <div className="lb-player__sub">
+                                        {meta?.rango ? meta.rango : "—"} · {meta?.premium ? "Premium" : "Normal"}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </td>
+
+                                {STATS.map((st) => (
+                                  <td key={st} className={cn("td-stat", { active: orden === st })}>
+                                    <span className="num">{formatValue(st, p?.[st] || 0)}</span>
+                                  </td>
+                                ))}
+                              </tr>
+                            );
+                          })}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* CARDS MOBILE */}
+                  <div className="lb-cards">
+                    {loading &&
+                      [...Array(limit)].map((_, i) => (
+                        <div key={`csk-${i}`} className="lb-card sk-card">
+                          <div className="lb-card__top">
+                            <span className="sk sk--head" />
+                            <div className="sk-col">
+                              <span className="sk sk--name" />
+                              <span className="sk sk--mini" />
+                            </div>
+                          </div>
+                          <div className="lb-card__grid">
+                            {[...Array(6)].map((__, j) => (
+                              <span key={j} className="sk sk--num" />
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+
+                    {!loading && datosFiltrados.map((p, i) => {
+                      const absPos = offset + i + 1;
+                      const meta = getMeta(p.uuid);
+                      const name = p?.nombre_minecraft;
+                      const medal = MEDALLAS[absPos] || null;
+
+                      return (
+                        <button
+                          key={`m-${p.uuid}-${absPos}`}
+                          type="button"
+                          className={cn("lb-card", {
+                            top1: absPos === 1,
+                            top2: absPos === 2,
+                            top3: absPos === 3,
+                          })}
+                          onClick={() => irPerfil(p)}
+                          title="Abrir perfil"
+                        >
+                          <div className="lb-card__top">
+                            <div className="lb-card__pos">
+                              {medal ? <img src={medal} alt="" /> : <span>#{absPos}</span>}
+                            </div>
+
+                            <img
+                              className="lb-card__head"
+                              src={`https://mc-heads.net/avatar/${name}/40`}
+                              alt=""
+                              loading="lazy"
+                              onError={(e) => (e.currentTarget.src = "/assets/default-head.png")}
+                            />
+
+                            <div className="lb-card__who">
+                              <div className="lb-nameRow">
+                                <span className="lb-name">{name}</span>
+                                <span className="lb-badges">
+                                  {meta?.rango && (
+                                    <img
+                                      src={`/assets/rangos/${meta.rango}.webp`}
+                                      alt=""
+                                      className="lb-badge-rango"
+                                      loading="lazy"
+                                    />
+                                  )}
+                                  {meta?.premium && (
+                                    <img
+                                      src="/assets/premium.webp"
+                                      alt=""
+                                      className="lb-badge-premium"
+                                      loading="lazy"
+                                    />
+                                  )}
+                                </span>
+                              </div>
+                              <div className="lb-card__sub">
+                                {LABELS[orden]} {ordenAsc ? "▲" : "▼"} · {meta?.premium ? "Premium" : "Normal"}
+                              </div>
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+
+              <div className="lb-pagination">
+                {[...Array(paginasTotales)].map((_, idx) => (
+                  <button
+                    key={idx}
+                    className={offset === idx * limit ? "active" : ""}
+                    onClick={() => cambiarPagina(idx)}
+                    aria-label={`Página ${idx + 1}`}
+                  >
+                    {idx + 1}
+                  </button>
+                ))}
+              </div>
             </div>
           </section>
         </div>

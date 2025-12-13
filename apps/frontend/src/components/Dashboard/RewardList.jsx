@@ -272,7 +272,7 @@ export default function RewardList({
       <h2 className="titulo-reward">Camino al Prestigio</h2>
 
       <div className="recompensas-subtitulo">
-        Completa aventuras, sube de nivel y reclama hasta 35.000 ECOS
+        Completa aventuras, sube de nivel y consigue ECOS
         en tu camino al Prestigio.
       </div>
 
