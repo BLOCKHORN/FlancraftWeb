@@ -1,108 +1,270 @@
-// apps/frontend/src/styles/components/Tienda/tienda-modal-jugador.scss
-@use "../../base/_variables" as *;
+/* Modal estilo Wynncraft/Tebex - Elegir cuenta */
 
-.modal-login-overlay {
+.tc-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(5, 3, 1, 0.85);
+  z-index: 9999;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+
+  background: rgba(0, 0, 0, 0.58);
+  backdrop-filter: blur(3px);
+}
+
+.tc-modal {
+  width: min(860px, 100%);
+  border-radius: 10px;
+  overflow: hidden;
+
+  background: #f7e2b2;
+  border: 2px solid #d2b071;
+
+  box-shadow:
+    0 0 0 1px rgba(90, 59, 23, 0.35),
+    0 18px 44px rgba(0, 0, 0, 0.55);
+
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #2f1f12;
+}
+
+/* ===== Header ===== */
+
+.tc-modal-head {
+  padding: 18px 20px 14px;
+  background: rgba(0, 0, 0, 0.05);
+  border-bottom: 2px solid rgba(0, 0, 0, 0.14);
+}
+
+.tc-modal-title {
   display: flex;
   align-items: center;
-  justify-content: center;
-  z-index: 50;
-  padding: 1rem;
+  gap: 10px;
+
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  font-size: 18px;
 }
 
-.modal-login {
-  max-width: 420px;
+.tc-modal-ico {
+  font-size: 18px;
+  opacity: 0.9;
+}
+
+.tc-modal-desc {
+  margin-top: 6px;
+  font-size: 13.5px;
+  line-height: 1.35;
+  opacity: 0.9;
+}
+
+/* ===== Body ===== */
+
+.tc-modal-body {
+  padding: 16px 20px 10px;
+}
+
+.tc-row {
+  display: grid;
+  grid-template-columns: 1fr 170px;
+  gap: 14px;
+  align-items: start;
+}
+
+.tc-field {
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.06);
+  border: 2px solid rgba(0, 0, 0, 0.18);
+  padding: 12px 12px 10px;
+}
+
+.tc-label {
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.85;
+  margin-bottom: 8px;
+}
+
+/* ✅ input con preview skin */
+.tc-inputwrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tc-headimg {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  border: 2px solid rgba(0, 0, 0, 0.22);
+  background: rgba(0, 0, 0, 0.10);
+  image-rendering: pixelated;
+  flex: 0 0 auto;
+}
+
+.tc-input {
   width: 100%;
-  background: radial-gradient(circle at top, #2a1b11 0, #100806 60%);
-  border-radius: 1rem;
-  border: 1px solid rgba(248, 228, 175, 0.65);
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.95);
-  padding: 1.4rem 1.5rem 1.2rem;
-  color: #fbe8c5;
+  height: 42px;
+  border-radius: 7px;
+  padding: 0 12px;
+
+  background: rgba(255, 255, 255, 0.55);
+  border: 2px solid rgba(0, 0, 0, 0.22);
+  outline: none;
+
+  font-weight: 800;
+  color: #2b180c;
 }
 
-.modal-contenido {
-  h2 {
-    font-size: 1.35rem;
-    margin-bottom: 0.9rem;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-  }
-
-  input {
-    width: 100%;
-    border-radius: 0.55rem;
-    border: 1px solid rgba(248, 228, 175, 0.7);
-    background: #1a1009;
-    color: #fbe8c5;
-    padding: 0.5rem 0.7rem;
-    font-size: 0.95rem;
-    outline: none;
-    margin-bottom: 0.6rem;
-
-    &::placeholder {
-      color: rgba(251, 232, 197, 0.5);
-    }
-  }
-
-  .error {
-    font-size: 0.85rem;
-    color: #ffbebe;
-    margin-bottom: 0.5rem;
-  }
-
-  .acciones {
-    display: flex;
-    justify-content: flex-end;
-    gap: 0.5rem;
-    margin-top: 0.2rem;
-
-    button {
-      border-radius: 999px;
-      padding: 0.4rem 0.9rem;
-      font-size: 0.9rem;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      border: none;
-      cursor: pointer;
-      transition: background 0.16s ease, transform 0.1s ease,
-        box-shadow 0.16s ease;
-    }
-
-    button:not(.cerrar) {
-      background: linear-gradient(135deg, #3c8f47, #1e5f29);
-      color: #f8f5e2;
-      box-shadow: 0 0 16px rgba(104, 255, 131, 0.5);
-
-      &:hover {
-        background: linear-gradient(135deg, #51a85c, #247334);
-        transform: translateY(-1px);
-        box-shadow: 0 0 20px rgba(148, 255, 173, 0.7);
-      }
-    }
-
-    .cerrar {
-      background: linear-gradient(135deg, #8f3838, #5c1919);
-      color: #fbe8e8;
-      box-shadow: 0 0 16px rgba(255, 148, 148, 0.5);
-
-      &:hover {
-        background: linear-gradient(135deg, #b24a4a, #742121);
-        transform: translateY(-1px);
-        box-shadow: 0 0 20px rgba(255, 189, 189, 0.7);
-      }
-    }
-  }
+.tc-input:focus {
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.08);
 }
 
-@media (max-width: 480px) {
-  .modal-login {
-    padding: 1.2rem 1.1rem 1rem;
-  }
+.tc-hint {
+  margin-top: 8px;
+  font-size: 12px;
+  opacity: 0.85;
+}
 
-  .modal-contenido h2 {
-    font-size: 1.15rem;
+.tc-field.is-error {
+  border-color: rgba(160, 35, 35, 0.55);
+}
+
+.tc-error {
+  margin-top: 8px;
+  font-size: 12px;
+  font-weight: 800;
+  color: rgba(150, 25, 25, 0.95);
+}
+
+/* =========================================================
+   ✅ BOTÓN IGUAL AL CHECKOUT (.basket-checkout)
+   ========================================================= */
+
+.tc-btn-continue {
+  position: relative;
+  width: 100%;
+  height: 62px;
+  border-radius: 0.35rem;
+
+  border: 2px solid #0a3f12;
+  background: #198c28;
+
+  color: #ffffff;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-size: 1rem;
+
+  box-shadow: 0 4px 0 #06270b;
+  cursor: pointer;
+  overflow: hidden;
+
+  transition: transform 0.08s ease, box-shadow 0.08s ease, filter 0.12s ease, opacity 0.12s ease;
+}
+
+.tc-btn-continue::before {
+  content: "";
+  position: absolute;
+  top: -45%;
+  left: -55%;
+  width: 28%;
+  height: 210%;
+
+  background: linear-gradient(
+    115deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.55) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+
+  transform: translate3d(-200%, 0, 0);
+  opacity: 0;
+  will-change: transform, opacity;
+  pointer-events: none;
+  animation: tcCheckoutShine 3.2s infinite ease-in-out;
+}
+
+@keyframes tcCheckoutShine {
+  0%   { transform: translate3d(-200%, 0, 0); opacity: 0; }
+  10%  { opacity: 0.55; }
+  30%  { transform: translate3d(430%, 0, 0); opacity: 0; }
+  100% { transform: translate3d(430%, 0, 0); opacity: 0; }
+}
+
+.tc-btn-continue:hover:not(:disabled) {
+  filter: brightness(1.05);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 0 #06270b;
+}
+
+.tc-btn-continue:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 #06270b;
+}
+
+.tc-btn-continue:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: none;
+  transform: none;
+  box-shadow: 0 4px 0 #06270b;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tc-btn-continue::before { animation: none !important; }
+}
+
+/* ===== Footer ===== */
+
+.tc-modal-foot {
+  padding: 10px 20px 16px;
+  display: flex;
+  justify-content: flex-end;
+
+  border-top: 2px solid rgba(0, 0, 0, 0.12);
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.tc-btn-close {
+  height: 42px;
+  padding: 0 14px;
+  border-radius: 8px;
+
+  border: 2px solid rgba(60, 34, 18, 0.8);
+  background: #6b5847;
+  color: #fef7e5;
+
+  font-weight: 900;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+
+  box-shadow: 0 3px 0 rgba(60, 34, 18, 0.85);
+  cursor: pointer;
+
+  transition: transform 0.08s ease, filter 0.12s ease, box-shadow 0.08s ease;
+}
+
+.tc-btn-close:hover {
+  filter: brightness(1.05);
+  transform: translateY(-1px);
+}
+
+.tc-btn-close:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 0 rgba(60, 34, 18, 0.85);
+}
+
+/* ===== Responsive ===== */
+
+@media (max-width: 640px) {
+  .tc-row { grid-template-columns: 1fr; }
+
+  .tc-btn-continue {
+    height: 52px;
+    letter-spacing: 0.14em;
   }
 }

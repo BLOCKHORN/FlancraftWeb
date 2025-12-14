@@ -4,10 +4,8 @@ import { supabase } from "../../lib/supabaseClient";
 import "../../styles/components/Estadisticas/_perfiljugador.scss";
 
 const SERVER_INFO = {
-  global: {
-    label: "Global",
-    icon: "/assets/reinos/global.webp",
-  },
+  global: { label: "Global", icon: "/assets/reinos/global.webp" },
+
   "survival-clasico": {
     label: "Survival Clásico",
     icon: "/assets/reinos/survival-clasico.webp",
@@ -20,6 +18,7 @@ const SERVER_INFO = {
     label: "Survival Clásico",
     icon: "/assets/reinos/survival-clasico.webp",
   },
+
   "survival-anarquico": {
     label: "Survival Anárquico",
     icon: "/assets/reinos/survival-anarquico.webp",
@@ -32,6 +31,7 @@ const SERVER_INFO = {
     label: "Survival Anárquico",
     icon: "/assets/reinos/survival-anarquico.webp",
   },
+
   "survival-hardcore": {
     label: "Survival Hardcore",
     icon: "/assets/reinos/survival-hardcore.webp",
@@ -44,18 +44,10 @@ const SERVER_INFO = {
     label: "Survival Hardcore",
     icon: "/assets/reinos/survival-hardcore.webp",
   },
-  oneblock: {
-    label: "OneBlock",
-    icon: "/assets/reinos/oneblock.webp",
-  },
-  chunklock: {
-    label: "ChunkLock",
-    icon: "/assets/reinos/chunklock.webp",
-  },
-  parkour: {
-    label: "Parkour",
-    icon: "/assets/reinos/parkour.webp",
-  },
+
+  oneblock: { label: "OneBlock", icon: "/assets/reinos/oneblock.webp" },
+  chunklock: { label: "ChunkLock", icon: "/assets/reinos/chunklock.webp" },
+  parkour: { label: "Parkour", icon: "/assets/reinos/parkour.webp" },
 };
 
 export default function PerfilJugador() {
@@ -77,7 +69,6 @@ export default function PerfilJugador() {
       setSinEstadisticas(false);
 
       try {
-        // Buscar en `usuarios` por uid (nick)
         const { data: userMeta, error: userError } = await supabase
           .from("usuarios")
           .select("uuid, uid, nivel, xp_actual, rango_usuario, es_premium")
@@ -88,9 +79,7 @@ export default function PerfilJugador() {
         let statsData = [];
         let sancionesData = [];
 
-        if (userError) {
-          console.error("Error al obtener usuario:", userError);
-        }
+        if (userError) console.error("Error al obtener usuario:", userError);
 
         if (userMeta) {
           jugador = {
@@ -107,10 +96,8 @@ export default function PerfilJugador() {
             .select("*")
             .eq("uuid", jugador.uuid);
 
-          if (statsError) {
+          if (statsError)
             console.error("Error al obtener estadísticas:", statsError);
-          }
-
           statsData = statsByUuid || [];
 
           if (jugador.uuid) {
@@ -119,19 +106,15 @@ export default function PerfilJugador() {
               .select("*")
               .eq("uuid", jugador.uuid);
 
-            if (jailsError) {
+            if (jailsError)
               console.error("Error al obtener sanciones:", jailsError);
-            }
-
             sancionesData = jailsData || [];
           }
         } else {
-          // Fallback: buscar en estadísticas por nombre
-          const { data: statsByName, error: statsByNameError } =
-            await supabase
-              .from("estadisticas_agrupadas")
-              .select("*")
-              .eq("nombre_minecraft", nombre);
+          const { data: statsByName, error: statsByNameError } = await supabase
+            .from("estadisticas_agrupadas")
+            .select("*")
+            .eq("nombre_minecraft", nombre);
 
           if (statsByNameError) {
             console.error(
@@ -157,7 +140,6 @@ export default function PerfilJugador() {
             uuid: statsByName[0].uuid,
           };
 
-          // Completar con meta de `usuarios` si existe por uuid
           if (jugador.uuid) {
             const { data: metaFromUuid, error: metaUuidError } = await supabase
               .from("usuarios")
@@ -165,9 +147,8 @@ export default function PerfilJugador() {
               .eq("uuid", jugador.uuid)
               .maybeSingle();
 
-            if (metaUuidError) {
+            if (metaUuidError)
               console.error("Error al obtener meta por uuid:", metaUuidError);
-            }
 
             if (metaFromUuid) {
               jugador = {
@@ -186,10 +167,8 @@ export default function PerfilJugador() {
               .select("*")
               .eq("uuid", jugador.uuid);
 
-            if (jailsError) {
+            if (jailsError)
               console.error("Error al obtener sanciones:", jailsError);
-            }
-
             sancionesData = jailsData || [];
           }
         }
@@ -214,7 +193,6 @@ export default function PerfilJugador() {
     fetchData();
   }, [nombre]);
 
-  // XP para la barra
   useEffect(() => {
     const fetchXpData = async () => {
       if (!usuario?.uuid) return;
@@ -250,7 +228,6 @@ export default function PerfilJugador() {
     tiempo_jugado: "Tiempo jugado",
   };
 
-  // Iconos para cada estadística
   const statIcons = {
     bloques_minados: "/assets/statsperfil/mining.webp",
     bloques_colocados: "/assets/statsperfil/build.webp",
@@ -344,14 +321,8 @@ export default function PerfilJugador() {
   );
 
   const featuredStats = [
-    {
-      label: "Tiempo jugado total",
-      value: formatearTiempo(totalTiempoTicks),
-    },
-    {
-      label: "Antigüedad",
-      value: antiguedadTexto,
-    },
+    { label: "Tiempo jugado total", value: formatearTiempo(totalTiempoTicks) },
+    { label: "Antigüedad", value: antiguedadTexto },
     {
       label: "Bloques minados",
       value: totalBloquesMinados.toLocaleString("es-ES"),
@@ -360,10 +331,7 @@ export default function PerfilJugador() {
       label: "Mobs matados",
       value: totalMobsMatados.toLocaleString("es-ES"),
     },
-    {
-      label: "Kills PvP",
-      value: totalKillsPvp.toLocaleString("es-ES"),
-    },
+    { label: "Kills PvP", value: totalKillsPvp.toLocaleString("es-ES") },
   ];
 
   const getServerInfo = (servidor) => {
@@ -378,15 +346,36 @@ export default function PerfilJugador() {
     );
   };
 
-  const rangoLower = (usuario.rango_usuario || "").toLowerCase();
+  // =========================
+  // ✅ RANGO + FONDO AVATAR
+  // =========================
+  const normalizarRango = (r) => {
+    const s = (r || "").toLowerCase().trim();
+    if (s.includes("nova")) return "nova";
+    if (s.includes("alpha")) return "alpha";
+    if (s.includes("inmortal")) return "inmortal";
+    return "unrank";
+  };
+
+  const rangoKey = normalizarRango(usuario.rango_usuario);
+
   const nombreClaseRango =
-    rangoLower === "nova"
+    rangoKey === "nova"
       ? "nombre-nova"
-      : rangoLower === "alpha"
+      : rangoKey === "alpha"
       ? "nombre-alpha"
-      : rangoLower === "inmortal"
+      : rangoKey === "inmortal"
       ? "nombre-inmortal"
       : "";
+
+  const avatarBgByRango = {
+    unrank: "/assets/profileunrank.webp",
+    nova: "/assets/profilenova.webp",
+    alpha: "/assets/profilealpha.webp",
+    inmortal: "/assets/profileinmortal.webp",
+  };
+
+  const avatarBgUrl = avatarBgByRango[rangoKey] || avatarBgByRango.unrank;
 
   return (
     <div className="perfiljugador-page">
@@ -396,7 +385,13 @@ export default function PerfilJugador() {
           {/* AVATAR */}
           <div className="perfiljugador-avatar-wrapper">
             <div className="perfiljugador-avatar-frame">
-              <div className="perfiljugador-avatar-bg" />
+              <div
+                className="perfiljugador-avatar-bg"
+                style={{
+                  backgroundImage: `url(${avatarBgUrl})`,
+                  backgroundColor: "#3b2518",
+                }}
+              />
               <img
                 src={`https://mc-heads.net/body/${usuario.nombre_minecraft}/180`}
                 alt={`Skin de ${usuario.nombre_minecraft}`}
@@ -414,11 +409,11 @@ export default function PerfilJugador() {
               <header className="perfiljugador-header">
                 <div className="perfiljugador-name-block">
                   <div className="perfiljugador-name-row">
-                    {rangoLower && (
+                    {rangoKey !== "unrank" && (
                       <div className="perfiljugador-rankicon-wrap">
                         <img
-                          src={`/assets/rangos/${rangoLower}.webp`}
-                          alt={usuario.rango_usuario}
+                          src={`/assets/rangos/${rangoKey}.webp`}
+                          alt={usuario.rango_usuario || "Rango"}
                           className="perfiljugador-rankicon"
                         />
                       </div>
@@ -462,13 +457,8 @@ export default function PerfilJugador() {
             {/* STATS PRINCIPALES */}
             <section className="perfiljugador-featured">
               <div className="perfiljugador-featured-wrapper">
-                <div
-                  className="featured-header"
-                  style={{ textAlign: "center" }}
-                >
-                  <span className="featured-title">
-                    Estadísticas destacadas
-                  </span>
+                <div className="featured-header" style={{ textAlign: "center" }}>
+                  <span className="featured-title">Estadísticas destacadas</span>
                 </div>
                 <div className="featured-grid">
                   {featuredStats.map((stat, idx) => (
@@ -525,9 +515,7 @@ export default function PerfilJugador() {
                               />
                             </span>
                           )}
-                          <span className="server-pill-label">
-                            {info.label}
-                          </span>
+                          <span className="server-pill-label">{info.label}</span>
                         </button>
                       );
                     })}

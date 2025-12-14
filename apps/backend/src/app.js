@@ -52,6 +52,7 @@ const statsRoutes = require("./routes/stats.routes");
 const rangosRoutes = require("./routes/rangos.routes");
 const noticiasRoutes = require("./routes/noticias.routes");
 const tiendaTebexRoutes = require("./routes/tiendatebex.routes");
+const minecraftRoutes = require("./routes/minecraft.routes");
 
 // ping sencillo
 app.use("/ping", pingRoute);
@@ -76,6 +77,7 @@ app.use("/api/stats", statsRoutes);
 app.use("/api/rangos", rangosRoutes);
 app.use("/api/noticias", noticiasRoutes);
 app.use("/api/tebex", tiendaTebexRoutes);
+app.use("/api/minecraft", minecraftRoutes);
 
 /* ===== Tareas programadas ===== */
 // Limpieza automática de rangos expirados

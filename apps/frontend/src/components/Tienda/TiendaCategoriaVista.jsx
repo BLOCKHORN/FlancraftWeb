@@ -1,20 +1,20 @@
+// apps/frontend/src/components/Tienda/TiendaCategoriaVista.jsx
 import React, { useEffect, useMemo, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
+
 import TiendaProductosVista from "./TiendaProductosVista";
 import {
   API_URL,
-  SUBCATS_PER_TILE,
   pickSubcatsFromApi,
-  filterPackagesBySubcats,
+  findCategoryBySlug,
+  filterPackagesByCategoryId,
+  SUBCATS_PER_TILE,
 } from "./tiendaHelpers";
+
+import { ANTES_DE_COMPRAR } from "./data/antesDeComprarData";
+
 import "../../styles/components/Tienda/tienda-categoria.scss";
 
-/**
- * Vista de una categoría concreta de la tienda:
- * 1) Lee :server y :categoria
- * 2) Pide /api/tebex/datos?sv=:server
- * 3) Genera categoría sintética con subcategorías reales
- */
 const TiendaCategoriaVista = ({ carrito, toggleProducto }) => {
   const { server, categoria, subcategoria } = useParams();
   const navigate = useNavigate();
@@ -24,11 +24,9 @@ const TiendaCategoriaVista = ({ carrito, toggleProducto }) => {
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState(null);
   const [error, setError] = useState("");
 
-  // Mapa server+slug → lista de subcategorías reales que deben verse
-  const mapKey = `${(server || "").toLowerCase()}|${(
-    categoria || ""
-  ).toLowerCase()}`;
-  const nombresPermitidos = SUBCATS_PER_TILE[mapKey] || [];
+  const mapKey = `${(server || "").toLowerCase()}|${(categoria || "").toLowerCase()}`;
+  const tileNamesAllowed = useMemo(() => SUBCATS_PER_TILE[mapKey] ?? null, [mapKey]);
+  const isTile = tileNamesAllowed !== null;
 
   useEffect(() => {
     let cancel = false;
@@ -39,28 +37,71 @@ const TiendaCategoriaVista = ({ carrito, toggleProducto }) => {
 
       try {
         const r = await fetch(`${API_URL}/api/tebex/datos?sv=${server}`);
-        if (!r.ok) {
-          throw new Error("No se pudo cargar la tienda para este servidor.");
-        }
+        if (!r.ok) throw new Error("No se pudo cargar la tienda para este servidor.");
         const data = await r.json();
 
-        const subcats = pickSubcatsFromApi(
-          data.categorias || [],
-          nombresPermitidos
-        );
+        const apiCats = data.categorias || [];
+
+        if (isTile) {
+          let subcats = pickSubcatsFromApi(apiCats, tileNamesAllowed);
+
+          // Dedupe por slug
+          const seen = new Set();
+          subcats = subcats.filter((s) => {
+            const key = String(s?.slug || s?.name || "").toLowerCase();
+            if (!key) return false;
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+          });
+
+          // Orden según SUBCATS_PER_TILE
+          if (Array.isArray(tileNamesAllowed) && tileNamesAllowed.length) {
+            const order = new Map(tileNamesAllowed.map((n, i) => [String(n).toLowerCase(), i]));
+            subcats.sort((a, b) => {
+              const ai = order.get(String(a.name).toLowerCase());
+              const bi = order.get(String(b.name).toLowerCase());
+              return (ai ?? 999) - (bi ?? 999);
+            });
+          }
+
+          const active =
+            (subcategoria &&
+              subcats.find((s) => s.slug === String(subcategoria).toLowerCase())) ||
+            (subcats.length === 1 ? subcats[0] : null);
+
+          const catObj = {
+            mode: "tile",
+            name:
+              (categoria === "survival-clasico" && "SURVIVAL CLÁSICO") ||
+              (categoria === "oneblock" && "ONEBLOCK") ||
+              (categoria === "rangos" && "RANGOS") ||
+              (categoria === "premium" && "PREMIUM") ||
+              (categoria === "chunklock" && "CHUNKLOCK") ||
+              (categoria === "antes-de-comprar" && "¡ANTES DE COMPRAR!") ||
+              (categoria && categoria.toUpperCase()) ||
+              "CATEGORÍA",
+            slug: categoria,
+            subcategorias: subcats,
+            activeSubcat: active || null,
+          };
+
+          if (!cancel) {
+            setPaquetes(data.paquetes || []);
+            setCategoriaSeleccionada(catObj);
+          }
+          return;
+        }
+
+        // categoría real directa (por si alguna ruta llega con slug real)
+        const catReal = findCategoryBySlug(apiCats, categoria);
 
         const catObj = {
-          name:
-            (categoria === "survival-clasico" && "SURVIVAL CLÁSICO") ||
-            (categoria === "oneblock" && "ONEBLOCK") ||
-            (categoria === "rangos" && "RANGOS") ||
-            (categoria === "premium" && "PREMIUM") ||
-            (categoria === "chunklock" && "CHUNKLOCK") ||
-            (categoria === "antes-de-comprar" && "¡ANTES DE COMPRAR!") ||
-            (categoria && categoria.toUpperCase()) ||
-            "CATEGORÍA",
+          mode: "real",
+          name: catReal?.name ?? (categoria ? categoria.toUpperCase() : "CATEGORÍA"),
           slug: categoria,
-          subcategorias: subcats,
+          activeSubcat: catReal || null,
+          subcategorias: [],
         };
 
         if (!cancel) {
@@ -78,36 +119,30 @@ const TiendaCategoriaVista = ({ carrito, toggleProducto }) => {
     return () => {
       cancel = true;
     };
-  }, [server, categoria, nombresPermitidos]);
+  }, [server, categoria, subcategoria, isTile, tileNamesAllowed]);
 
   const productosFiltrados = useMemo(() => {
     if (!categoriaSeleccionada) return [];
-    return filterPackagesBySubcats(
-      paquetes,
-      categoriaSeleccionada.subcategorias || []
-    );
+    const active = categoriaSeleccionada.activeSubcat;
+    if (!active?.id) return [];
+    return filterPackagesByCategoryId(paquetes, active.id);
   }, [paquetes, categoriaSeleccionada]);
 
-// -----------------------------
-// ESTADO: CARGANDO (F NEÓN)
-// -----------------------------
-if (loading) {
-  return (
-    <div className="tienda-tebex tienda-tebex--loading">
-      <div className="tienda-loading-inner">
-        <div className="logo-f-loader">
-          <span>F</span>
+  // Loading
+  if (loading) {
+    return (
+      <div className="tienda-tebex tienda-tebex--loading">
+        <div className="tienda-loading-inner">
+          <div className="logo-f-loader">
+            <span>F</span>
+          </div>
+          <p className="tienda-loading-text">CARGANDO LA TIENDA...</p>
         </div>
-        <p className="tienda-loading-text">CARGANDO LA TIENDA...</p>
       </div>
-    </div>
-  );
-}
+    );
+  }
 
-
-  // -----------------------------
-  // ESTADO: ERROR
-  // -----------------------------
+  // Error
   if (error) {
     return (
       <div className="tienda-tebex">
@@ -120,19 +155,53 @@ if (loading) {
     );
   }
 
-  // -----------------------------
-  // ESTADO: SIN CATEGORÍA
-  // -----------------------------
-  if (!categoriaSeleccionada) {
+  // Antes de comprar (con data)
+  if (categoria === "antes-de-comprar") {
     return (
       <div className="tienda-tebex">
         <div className="tienda-contenido">
-          <div className="error-box">
-            <strong>No se encontró la categoría.</strong>
-            <div style={{ marginTop: ".6rem" }}>
-              <button onClick={() => navigate("/tienda")}>
-                Volver a categorías
+          <div className="tienda-wc">
+            <div className="tienda-wc-head">
+              <h1 className="tienda-wc-title">{ANTES_DE_COMPRAR.titulo}</h1>
+
+              <button className="tienda-wc-close" onClick={() => navigate("/tienda")}>
+                Volver
               </button>
+            </div>
+
+            <div className="tienda-doc">
+              {ANTES_DE_COMPRAR.intro.map((p, i) => (
+                <p key={`intro-${i}`}>{p}</p>
+              ))}
+
+              <div className="tienda-doc-divider" />
+
+              <h2>Información importante</h2>
+              <ul>
+                {ANTES_DE_COMPRAR.avisos.map((t, i) => (
+                  <li key={`aviso-${i}`}>{t}</li>
+                ))}
+              </ul>
+
+              <div className="tienda-doc-divider" />
+
+              <h2>{ANTES_DE_COMPRAR.soporte.titulo}</h2>
+              <p>{ANTES_DE_COMPRAR.soporte.texto}</p>
+
+              <div className="tienda-doc-links">
+                {ANTES_DE_COMPRAR.soporte.links.map((l) => (
+                  <a key={l.href} href={l.href} target="_blank" rel="noreferrer">
+                    {l.label}
+                  </a>
+                ))}
+              </div>
+
+              <div className="tienda-doc-divider" />
+
+              <h2>{ANTES_DE_COMPRAR.reembolso.titulo}</h2>
+              {ANTES_DE_COMPRAR.reembolso.bloques.map((p, i) => (
+                <p key={`reb-${i}`}>{p}</p>
+              ))}
             </div>
           </div>
         </div>
@@ -140,172 +209,67 @@ if (loading) {
     );
   }
 
-  // -----------------------------
-  // VISTA ESPECIAL: ANTES DE COMPRAR
-  // -----------------------------
-  if (categoria === "antes-de-comprar" && productosFiltrados.length === 0) {
+  // Selector Wynncraft-style si estamos en tile y no hay subcat activa
+  if (
+    categoriaSeleccionada?.mode === "tile" &&
+    !categoriaSeleccionada.activeSubcat &&
+    (categoriaSeleccionada.subcategorias || []).length > 1
+  ) {
     return (
       <div className="tienda-tebex">
-        <div className="tienda-contenido tienda-antes-comprar">
-          <button className="volver" onClick={() => navigate("/tienda")}>
-            Volver a categorías
-          </button>
+        <div className="tienda-contenido">
+          <div className="tienda-wc">
+            <div className="tienda-wc-head">
+              <div className="tienda-wc-hero">
+                <div className="tienda-wc-hero-icon" aria-hidden="true" />
+                <div className="tienda-wc-hero-text">
+                  <h1 className="tienda-wc-title">{categoriaSeleccionada.name}</h1>
+                  <p className="tienda-wc-subtitle">
+                    Selecciona una categoría para ver los productos disponibles.
+                  </p>
+                </div>
+              </div>
 
-          <h2 className="tienda-antes-comprar-titulo">
-            {categoriaSeleccionada.name}
-          </h2>
+              <button className="tienda-wc-close" onClick={() => navigate("/tienda")}>
+                Cerrar
+              </button>
+            </div>
 
-          <div className="antes-comprar-texto">
-            <p>
-              Antes de realizar cualquier compra en la tienda de FlanCraft, es
-              importante que revises con calma esta información. Queremos evitar
-              problemas, cobros en la cuenta equivocada y, sobre todo,
-              asegurarnos de que tienes la mejor experiencia posible.
-            </p>
+            <div className="tienda-wc-grid">
+              {categoriaSeleccionada.subcategorias.map((sc) => (
+                <article key={sc.id} className="tienda-wc-card">
+                  <div className="tienda-wc-card-top">
+                    <div className="tienda-wc-card-icon" aria-hidden="true" />
+                    <div className="tienda-wc-card-title">{sc.name}</div>
+                  </div>
 
-            <h3>1. Asegúrate de entrar con la cuenta correcta</h3>
-            <ul>
-              <li>
-                Conéctate al servidor de Minecraft con la cuenta con la que
-                juegas habitualmente.
-              </li>
-              <li>
-                Utiliza exactamente el mismo nombre de jugador que aparece en el
-                servidor (incluyendo mayúsculas/minúsculas).
-              </li>
-              <li>
-                Si escribes mal tu nick, el paquete puede entregarse a otro
-                jugador o perderse, y eso no se puede corregir fácilmente.
-              </li>
-            </ul>
-
-            <h3>2. Cómo funcionan las compras en FlanCraft</h3>
-            <ul>
-              <li>
-                Los pagos son gestionados de forma segura por Tebex (la
-                plataforma oficial para tiendas de servidores de Minecraft).
-              </li>
-              <li>
-                Una vez confirmado el pago, los paquetes se entregan en el juego
-                cuando entras al servidor correspondiente.
-              </li>
-              <li>
-                Algunos productos pueden requerir que tengas espacio en el
-                inventario o que estés en un servidor concreto (por ejemplo,
-                llaves de OneBlock o rangos del servidor Clásico).
-              </li>
-            </ul>
-
-            <h3>3. Rangos y ECOS</h3>
-            <p>
-              En esta sección de la web verás principalmente paquetes especiales
-              (rangos, llaves, objetos únicos, etc.). Ten en cuenta:
-            </p>
-            <ul>
-              <li>
-                Los <strong>rangos</strong> y paquetes permanentes se asocian a
-                tu cuenta de Minecraft y no son transferibles.
-              </li>
-              <li>
-                Los <strong>ECOS</strong> (moneda exclusiva de FlanCraft) no se
-                pueden comprar con dinero real desde la tienda; se obtienen
-                únicamente a través de misiones, eventos y sistemas web
-                especiales.
-              </li>
-              <li>
-                En resumen:{" "}
-                <strong>
-                  los rangos de esta sección se pagan con dinero real
-                </strong>
-                ; los ECOS se usan para otras secciones internas de la web
-                (como el sistema de rangos por ECOS y recompensas de misiones).
-              </li>
-            </ul>
-
-            <h3>4. Compras automáticas y renovaciones</h3>
-            <p>
-              Algunos paquetes pueden indicar una duración (por ejemplo, 30 días
-              en el caso de ciertos rangos temporales). En esos casos:
-            </p>
-            <ul>
-              <li>
-                La duración empezará a contar desde el momento en que el rango
-                se aplique a tu cuenta dentro del servidor.
-              </li>
-              <li>
-                Si el paquete indica que es una suscripción, se renovará de
-                forma automática según las condiciones que se muestren en el
-                propio producto. Asegúrate de leer bien la descripción antes de
-                comprar.
-              </li>
-              <li>
-                Si ya no quieres que un paquete se renueve, deberás cancelar la
-                suscripción desde el panel de Tebex o la plataforma de pago
-                asociada (por ejemplo, tu cuenta de PayPal).
-              </li>
-            </ul>
-
-            <h3>5. Problemas con compras o entregas</h3>
-            <p>
-              Si crees que algo no ha ido bien con tu compra, antes de abrir un
-              ticket prepara esta información:
-            </p>
-            <ul>
-              <li>Nombre de tu cuenta de Minecraft.</li>
-              <li>Correo electrónico usado en el pago.</li>
-              <li>ID del pago o recibo (PayPal, tarjeta, etc.).</li>
-              <li>
-                Fecha y hora aproximada de la compra y qué paquete intentabas
-                adquirir.
-              </li>
-            </ul>
-            <p>
-              Con esos datos podremos revisar tu caso mucho más rápido y darte
-              una solución.
-            </p>
-
-            <h3>6. Normas y reembolsos</h3>
-            <p>
-              Al comprar en la tienda de FlanCraft aceptas nuestras normas y
-              términos de uso. Los reembolsos no están garantizados, especialmente
-              en casos de:
-            </p>
-            <ul>
-              <li>Uso indebido o compartido de cuentas.</li>
-              <li>Sanciones por incumplir las normas del servidor.</li>
-              <li>Errores al escribir el nombre del jugador.</li>
-            </ul>
-            <p>
-              Queremos que la experiencia sea justa y transparente tanto para ti
-              como para el resto de la comunidad.
-            </p>
-
-            <p className="antes-comprar-cierre">
-              Si después de leer todo esto sigues teniendo dudas, te recomendamos
-              preguntar en nuestro Discord antes de hacer la compra. ¡Así te
-              aseguras de elegir el paquete perfecto para ti!
-            </p>
+                  <button
+                    className="tienda-wc-card-btn"
+                    onClick={() => navigate(`/tienda/${server}/${categoria}/${sc.slug}`)}
+                  >
+                    Ver productos
+                  </button>
+                </article>
+              ))}
+            </div>
           </div>
         </div>
       </div>
     );
   }
 
-  // -----------------------------
-  // VISTA NORMAL DE CATEGORÍA
-  // -----------------------------
+  // Vista normal de productos (cuando ya hay subcat activa)
   return (
     <div className="tienda-tebex">
       <div className="tienda-contenido">
         <TiendaProductosVista
-          key={`${server}-${categoria}-${subcategoria || "root"}`}
           server={server}
           productos={productosFiltrados}
           categoria={categoriaSeleccionada}
           carrito={carrito}
           toggleProducto={toggleProducto}
           subcategoriaSeleccionadaURL={subcategoria}
-          permitidas={nombresPermitidos}
+          permitidas={[]}
           onVolver={() => navigate("/tienda")}
         />
       </div>

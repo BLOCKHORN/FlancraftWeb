@@ -210,10 +210,14 @@
 .perfiljugador-avatar-bg {
   position: absolute;
   inset: 0;
-  background: #3b2518 url("/assets/bgprofile.webp") center center / cover
-    no-repeat;
+  background-color: #3b2518;
+  background-position: center center;
+  background-size: cover;
+  background-repeat: no-repeat;
   z-index: 0;
 }
+
+
 
 .perfiljugador-avatar-img {
   position: absolute;

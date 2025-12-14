@@ -1,46 +1,39 @@
-// apps/frontend/src/styles/components/Tienda/tienda-layout.scss
 @use "../../base/_variables" as *;
 
-/* =========================================
-   LAYOUT GENERAL
-   ========================================= */
-
 .tienda-layout {
+  --sidebar-w: clamp(300px, 26vw, 360px);
+  --gap-x: 1.75rem;
+  --pad-x: 1.75rem;
+  --pad-y: 1.25rem;
+
+  /* se setea desde JS (TiendaLayout.jsx) */
+  --top-offset: var(--app-header-h, 0px);
+
   position: relative;
-  min-height: calc(100vh - 66px); // altura navbar
-  padding: 1.5rem 0 2rem;
   display: flex;
-  justify-content: stretch;   // que ocupe todo el ancho
+  justify-content: stretch;
+
   background-color: #050302;
   color: #fbe8c5;
+
+  /* DESKTOP: sin scroll de página */
+  height: calc(100dvh - var(--top-offset));
+  min-height: calc(100dvh - var(--top-offset));
+  overflow: hidden;
 }
 
-/* -----------------------------------------
-   IMAGEN DE LA TABERNA
-   - pegada a la izquierda
-   - ocupando TODO el ancho de la columna de contenido
-   - sin recortarse (no max-width)
-   ----------------------------------------- */
-
+/* Fondo taberna (recorta el área del sidebar) */
 .tienda-layout::before {
   content: "";
   position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-
-  /* dejamos libre exactamente el ancho del sidebar */
-  right: 340px; // mismo ancho que la columna del carrito
-
-  background-image: url("/assets/tienda.webp"); // tu imagen
-  background-size: cover;        // se adapta sin dejar huecos
-  background-position: left top; // anclada a la izquierda
-  background-repeat: no-repeat;
+  inset: 0;
+  right: var(--sidebar-w);
+  background: url("/assets/tienda.webp") left top / cover no-repeat;
   pointer-events: none;
   z-index: 0;
 }
 
-/* Vignette suave encima para integrar */
+/* Vignette global */
 .tienda-layout::after {
   content: "";
   position: absolute;
@@ -54,104 +47,197 @@
   z-index: 0;
 }
 
-/* =========================================
-   CONTENEDOR PRINCIPAL (GRID)
-   ========================================= */
-
 .tienda-layout-main {
   position: relative;
   z-index: 1;
-  width: 100%;
-  max-width: 100%;               // ocupa todo el ancho
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 340px; // contenido + carrito
-  column-gap: 1.75rem;
-  align-items: stretch;
-  padding: 0 1.75rem 0 1.75rem;  // margen interior simétrico
-  box-sizing: border-box;
-}
 
-/* =========================================
-   COLUMNA IZQUIERDA (contenido tienda)
-   ========================================= */
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--sidebar-w);
+  column-gap: var(--gap-x);
+  align-items: stretch;
+
+  padding: var(--pad-y) var(--pad-x);
+  box-sizing: border-box;
+
+  overflow: hidden;
+}
 
 .tienda-layout-left {
   min-width: 0;
+  min-height: 0;
   display: flex;
-  align-items: stretch;
 }
 
 .tienda-shelf-frame {
-  width: 100%;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+
   display: flex;
   justify-content: center;
-  align-items: stretch;
-  padding: 1.2rem 1.5rem 1.8rem;
+
+  padding: 0;
+  background: transparent;
   box-sizing: border-box;
-  background: transparent; // no tapa la ilustración
+}
+
+/* Portada centrada */
+.tienda-layout.is-portada .tienda-shelf-frame {
+  align-items: center;
+}
+
+/* Contenido: arriba */
+.tienda-layout.is-contenido .tienda-shelf-frame {
+  align-items: stretch;
 }
 
 .tienda-shelf-inner {
   width: 100%;
   max-width: 900px;
-  margin: 0 auto;
+  min-width: 0;
+  min-height: 0;
 }
 
-.tienda-shelf-portada {}
-.tienda-shelf-contenido {}
+/* Desktop: scroll interno solo en páginas largas */
+.tienda-layout.is-contenido .tienda-shelf-inner {
+  height: 100%;
+  overflow: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding-right: 0.25rem;
+}
 
-/* =========================================
-   COLUMNA DERECHA (carrito)
-   ========================================= */
+.tienda-layout.is-portada .tienda-shelf-inner {
+  height: auto;
+  overflow: hidden;
+}
 
 .tienda-layout-sidebar {
-  position: relative;
+  min-width: 0;
+  min-height: 0;
+
   display: flex;
-  justify-content: flex-end; // pegado a la derecha
+  justify-content: flex-end;
   align-items: stretch;
 }
 
 .tienda-sidebar-card {
   width: 100%;
-  max-width: 340px;
+  max-width: var(--sidebar-w);
+  height: 100%;
+  min-height: 0;
+
+  box-sizing: border-box;
   background: rgba(17, 9, 4, 0.96);
   border-radius: 1.15rem;
-  padding: 1.25rem 1.3rem 1.5rem;
+  padding: 1.1rem 1.15rem 1.25rem;
+
   box-shadow:
     0 0 0 2px rgba(0, 0, 0, 0.7),
     0 18px 40px rgba(0, 0, 0, 0.95);
-  box-sizing: border-box;
+
+  overflow: hidden;
 }
 
-/* =========================================
-   RESPONSIVE
-   ========================================= */
-
+/* =========================
+   MOBILE/TABLET
+   - scroll de página
+   - layout rellena viewport
+   - sidebar arriba (no sticky)
+   ========================= */
 @media (max-width: 960px) {
   .tienda-layout {
-    padding: 1rem 0 1.5rem;
+    --sidebar-w: 100%;
+    --gap-x: 0;
+    --pad-x: 0.9rem;
+    --pad-y: 0.9rem;
+
+    height: auto;
+    min-height: calc(100dvh - var(--top-offset));
+    overflow: visible;
   }
 
+  /* Fondo real (imagen) */
   .tienda-layout::before {
-    left: 0;
-    right: 0;              // en móvil la imagen ocupa todo
+    right: 0;
+    background: url("/assets/tienda.webp") center top / cover no-repeat;
+    opacity: 1;
   }
+
+  /* Tinte pergamino por encima (semi-transparente) */
+  .tienda-layout::after {
+    background:
+      linear-gradient(
+        rgba(230, 210, 170, 0.10),
+        rgba(230, 210, 170, 0.10)
+      ),
+      radial-gradient(
+        circle at center,
+        rgba(0, 0, 0, 0.08),
+        rgba(0, 0, 0, 0.25)
+      );
+  }
+
 
   .tienda-layout-main {
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+
     grid-template-columns: 1fr;
-    row-gap: 1.5rem;
-    padding: 0 1rem;
+    grid-template-rows: auto auto;
+    row-gap: 0.75rem;
+
+    padding: var(--pad-y) var(--pad-x) calc(var(--pad-y) + 0.35rem);
   }
 
   .tienda-layout-sidebar {
+    order: -1;
     justify-content: center;
+    align-items: stretch;
   }
 
   .tienda-sidebar-card {
-    max-width: 380px;
+    max-width: 560px;
+    height: auto;
+
+    background: rgba(239, 224, 192, 0.94);
+    color: #2b190e;
+
+    border-radius: 0.85rem;
+    padding: 0.9rem 0.95rem;
+
+    box-shadow:
+      0 0 0 2px rgba(0, 0, 0, 0.18),
+      0 14px 26px rgba(0, 0, 0, 0.22);
+
+    overflow: visible; /* nada de scroll interno */
   }
 
-  .tienda-shelf-frame {
-    padding: 1rem 0.5rem 1.5rem;
+  .tienda-layout-left {
+    overflow: visible;
+  }
+
+  .tienda-shelf-inner {
+    max-width: 560px;
+    height: auto;
+    overflow: visible;
+    padding-right: 0;
+  }
+
+  .tienda-layout.is-contenido .tienda-shelf-inner {
+    height: auto;
+    overflow: visible;
+    padding-right: 0;
+  }
+}
+
+@media (max-height: 760px) {
+  .tienda-layout {
+    --pad-y: 0.75rem;
   }
 }

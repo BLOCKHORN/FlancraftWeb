@@ -1,84 +1,179 @@
-// src/components/Tienda/TiendaModalJugador.jsx
-import React, { useState, useEffect, useRef } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import "../../styles/components/Tienda/tienda-modal-jugador.scss";
 
-const TiendaModalJugador = ({ onConfirmar, onCerrar }) => {
-  const [jugador, setJugador] = useState("");
+const API_BASE = import.meta.env.VITE_BACKEND_URL || "http://localhost:10000";
+
+export default function TiendaModalJugador({ onConfirmar, onCerrar }) {
+  const [nombre, setNombre] = useState("");
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState("");
 
-  const modalRef = useRef(null);
+  // preview
+  const [previewUuid, setPreviewUuid] = useState("");
+  const [previewLoading, setPreviewLoading] = useState(false);
+
+  const inputRef = useRef(null);
+  const debounceRef = useRef(null);
 
   useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === "Escape") onCerrar();
-    };
+    inputRef.current?.focus();
+  }, []);
 
-    const handleClickOutside = (e) => {
-      if (modalRef.current && !modalRef.current.contains(e.target)) {
-        onCerrar();
+  const nombreLimpio = useMemo(() => String(nombre || "").trim(), [nombre]);
+  const nombreValido = useMemo(() => {
+    // usernames MC: 3-16 chars, letras/números/_ (clásico)
+    return /^[A-Za-z0-9_]{3,16}$/.test(nombreLimpio);
+  }, [nombreLimpio]);
+
+  // Misma lógica visual que el carrito: si hay uuid -> crafatar, si no -> minotar por nombre, si no -> Steve
+  const previewUrl = useMemo(() => {
+    if (!nombreLimpio) return "https://minotar.net/helm/Steve/64.png";
+    if (previewUuid && String(previewUuid).trim().length > 10) {
+      return `https://crafatar.com/avatars/${previewUuid}?size=64&overlay`;
+    }
+    return `https://minotar.net/helm/${encodeURIComponent(nombreLimpio)}/64.png`;
+  }, [nombreLimpio, previewUuid]);
+
+  // 🔎 Preview suave (debounce) para enseñar la skin mientras escribes
+  useEffect(() => {
+    setError("");
+
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    if (!nombreValido) {
+      setPreviewUuid("");
+      setPreviewLoading(false);
+      return;
+    }
+
+    debounceRef.current = setTimeout(async () => {
+      const controller = new AbortController();
+      setPreviewLoading(true);
+
+      try {
+        const res = await fetch(
+          `${API_BASE}/api/minecraft/uuid/${encodeURIComponent(nombreLimpio)}`,
+          { signal: controller.signal }
+        );
+
+        if (!res.ok) {
+          setPreviewUuid("");
+          return;
+        }
+
+        const data = await res.json();
+        const uuid = String(data?.uuid || "").trim();
+        setPreviewUuid(uuid);
+      } catch {
+        // silencio: si falla preview, seguimos con minotar por nombre
+        setPreviewUuid("");
+      } finally {
+        setPreviewLoading(false);
       }
-    };
 
-    document.addEventListener("keydown", handleKeyDown);
-    document.addEventListener("mousedown", handleClickOutside);
+      return () => controller.abort();
+    }, 260);
+
     return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      document.removeEventListener("mousedown", handleClickOutside);
+      if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [onCerrar]);
+  }, [nombreLimpio, nombreValido]);
 
-  const confirmarNombre = async () => {
-    if (!jugador || jugador.length < 3) {
-      setError("Ingresa un nombre válido.");
+  const resolverUuid = async (username) => {
+    const res = await fetch(
+      `${API_BASE}/api/minecraft/uuid/${encodeURIComponent(username)}`
+    );
+    if (!res.ok) return "";
+    const data = await res.json();
+    return String(data?.uuid || "").trim();
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+
+    if (!nombreValido) {
+      setError("Introduce un nombre válido (3-16, letras/números/_).");
       return;
     }
 
     setCargando(true);
-    setError("");
-
     try {
-      const res = await fetch(
-        `https://corsproxy.io/?https://api.mojang.com/users/profiles/minecraft/${jugador}`
-      );
-      if (!res.ok) throw new Error("Jugador no encontrado");
-      const data = await res.json();
-      const uuid = data.id;
-      onConfirmar(jugador, uuid);
+      // Intentamos resolver UUID “real”
+      const uuid = await resolverUuid(nombreLimpio);
+
+      // Si no hay uuid, no bloqueamos: minotar seguirá mostrando skin por nombre
+      onConfirmar?.(nombreLimpio, uuid || "");
+
+      setNombre("");
+      setError("");
     } catch {
-      setError("No se pudo encontrar ese jugador.");
+      setError("No se pudo validar el usuario. Inténtalo de nuevo.");
     } finally {
       setCargando(false);
     }
   };
 
   return (
-    <div className="modal-login-overlay">
-      <div className="modal-login" ref={modalRef}>
-        <div className="modal-contenido">
-          <h2>Ingresa tu nombre de jugador</h2>
-          <input
-            type="text"
-            placeholder="Tu nombre de Minecraft"
-            value={jugador}
-            onChange={(e) => setJugador(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && confirmarNombre()}
-          />
-          {error && <p className="error">{error}</p>}
-          {cargando ? (
-            <p>Cargando...</p>
-          ) : (
-            <div className="acciones">
-              <button onClick={confirmarNombre}>Confirmar</button>
-              <button className="cerrar" onClick={onCerrar}>
-                Cancelar
-              </button>
+    <div className="tc-modal-overlay" onMouseDown={onCerrar}>
+      <div className="tc-modal" onMouseDown={(e) => e.stopPropagation()}>
+        <div className="tc-modal-head">
+          <div className="tc-modal-title">
+            <span className="tc-modal-ico">🎫</span>
+            Elegir cuenta
+          </div>
+          <div className="tc-modal-desc">
+            Escribe tu nombre de Minecraft para comprar en la tienda.
+          </div>
+        </div>
+
+        <form className="tc-modal-body" onSubmit={handleSubmit}>
+          <div className="tc-row">
+            <div className={"tc-field " + (error ? "is-error" : "")}>
+              <div className="tc-label">Nombre de Minecraft</div>
+
+              <div className="tc-inputwrap">
+                <img
+                  className="tc-headimg"
+                  src={previewUrl}
+                  alt="skin"
+                  draggable={false}
+                  style={{ opacity: previewLoading ? 0.75 : 1 }}
+                />
+                <input
+                  ref={inputRef}
+                  className="tc-input"
+                  value={nombre}
+                  onChange={(e) => setNombre(e.target.value)}
+                  placeholder="Ej: Steve"
+                  autoComplete="off"
+                  spellCheck={false}
+                />
+              </div>
+
+              <div className="tc-hint">
+                Tip: usa exactamente el mismo nombre que en Minecraft.
+              </div>
+
+              {error ? <div className="tc-error">{error}</div> : null}
             </div>
-          )}
+
+            <button
+              type="submit"
+              className="tc-btn-continue"
+              disabled={cargando || !nombreValido}
+            >
+              {cargando ? "VALIDANDO..." : "INICIAR"}
+            </button>
+          </div>
+        </form>
+
+        <div className="tc-modal-foot">
+          <button type="button" className="tc-btn-close" onClick={onCerrar}>
+            Cerrar
+          </button>
         </div>
       </div>
     </div>
   );
-};
-
-export default TiendaModalJugador;
+}

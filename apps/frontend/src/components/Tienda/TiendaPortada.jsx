@@ -12,37 +12,33 @@ const TiendaPortada = () => {
 
   return (
     <div className="tienda-portada-wrapper">
-      <header className="tienda-portada-header">
-        <p className="tienda-portada-subtitle">Taberna de la tienda</p>
-        <h1 className="tienda-portada-title">Empieza a comprar</h1>
-        <p className="tienda-portada-description">
-          Elige una categoría para ver rangos, llaves y objetos especiales en
-          los distintos mundos de FlanCraft.
-        </p>
-      </header>
+      {/* SIN CABECERA (sin textos) */}
 
       <ul className="tienda-portada-grid">
         {PORTADA_TILES.map((tile) => (
-          <li key={tile.slug} className="tienda-portada-item">
+          <li className="tienda-portada-item" key={`${tile.server}-${tile.slug}`}>
             <button
               type="button"
               className="tienda-portada-btn"
+              data-kind={tile.slug}
               onClick={() => go(tile)}
+              aria-label={`Abrir ${tile.name}`}
             >
               <div className="tienda-portada-icon">
                 <img
-                  src={tile.image || "/tienda/imagenes/default-categoria.png"}
+                  src={tile.image}
                   alt={tile.name}
+                  loading="lazy"
                   onError={(e) => {
+                    e.currentTarget.onerror = null;
                     e.currentTarget.src =
-                      "/tienda/imagenes/default-categoria.png";
+                      "/assets/tienda/producto-placeholder.png";
                   }}
                 />
               </div>
 
-              <span className="tienda-portada-label">
-                {tile.name}
-              </span>
+              {/* Mantengo label porque es el selector real de categorías */}
+              <div className="tienda-portada-label">{tile.name}</div>
             </button>
           </li>
         ))}

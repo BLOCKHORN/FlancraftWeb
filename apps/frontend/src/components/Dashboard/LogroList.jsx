@@ -660,25 +660,22 @@ function LogroList({ user, onXpClaimed }) {
                         </div>
                       </div>
 
-                      {/* FOOTER */}
-                      <div className="logro-footer">
-                        {/* Botón reclamar (solo permanentes) */}
-                        {tipoMision === "permanente" &&
-                          esCompletado &&
-                          !esReclamado && (
-                            <button
-                              ref={(el) => (buttonRefs.current[logro.id] = el)}
-                              type="button"
-                              className="logro-claim-btn"
-                              onClick={() => reclamarLogro(logro.id, logro.xp_otorgada)}
-                              disabled={cargandoId === logro.id}
-                            >
-                              {cargandoId === logro.id
-                                ? "Reclamando..."
-                                : "Reclamar XP"}
-                            </button>
-                          )}
-                      </div>
+                      {/* ✅ BOTÓN ABAJO CENTRADO */}
+                      {tipoMision === "permanente" && esCompletado && !esReclamado && (
+                        <div className="logro-footer">
+                          <button
+                            ref={(el) => (buttonRefs.current[logro.id] = el)}
+                            type="button"
+                            className="logro-claim-btn"
+                            onClick={() => reclamarLogro(logro.id, logro.xp_otorgada)}
+                            disabled={cargandoId === logro.id}
+                          >
+                            <span className="claim-btn-inner">
+                              {cargandoId === logro.id ? "Reclamando..." : "Reclamar XP"}
+                            </span>
+                          </button>
+                        </div>
+                      )}
                     </div>
 
                     {/* FRANJA OSCURA CON ICONO DEL REINO */}
@@ -714,10 +711,7 @@ function LogroList({ user, onXpClaimed }) {
                     <button
                       key={n}
                       type="button"
-                      className={[
-                        "logros-pag-num",
-                        n === pagina ? "activo" : "",
-                      ]
+                      className={["logros-pag-num", n === pagina ? "activo" : ""]
                         .filter(Boolean)
                         .join(" ")}
                       onClick={() => irPagina(n)}

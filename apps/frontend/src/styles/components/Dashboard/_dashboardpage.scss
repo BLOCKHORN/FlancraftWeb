@@ -69,13 +69,8 @@
     0 0 0 1px rgba(255, 255, 255, 0.03);
 }
 
-.dashboard-frame::before {
-  left: 0;
-}
-
-.dashboard-frame::after {
-  right: 0;
-}
+.dashboard-frame::before { left: 0; }
+.dashboard-frame::after { right: 0; }
 
 /* Contenido interior con padding para no pisar los laterales */
 .dashboard-frame > * {
@@ -123,7 +118,6 @@
 
 /* =========================
    TARJETA DEL JUGADOR
-   (posada detrás + overlay oscuro + panel degradado marrón)
    ========================= */
 
 .dashboard-player-card {
@@ -168,10 +162,7 @@
   z-index: 0;
 }
 
-.dashboard-player-card > * {
-  position: relative;
-  z-index: 1;
-}
+.dashboard-player-card > * { position: relative; z-index: 1; }
 
 /* Banner superior */
 .player-card-banner {
@@ -184,9 +175,7 @@
 
 /* Anulamos fondos antiguos del banner */
 .player-card-banner-bg,
-.player-card-banner-overlay {
-  display: none;
-}
+.player-card-banner-overlay { display: none; }
 
 .player-main-layout {
   margin-top: -92px;
@@ -227,10 +216,7 @@
   backdrop-filter: blur(1.4px);
 }
 
-.player-main-layout > * {
-  position: relative;
-  z-index: 1;
-}
+.player-main-layout > * { position: relative; z-index: 1; }
 
 /* =========================
    COLUMNA IZQUIERDA: AVATAR
@@ -254,6 +240,50 @@
   overflow: visible;
 }
 
+/* ✅ Aura por rango (fino, pro y consistente) */
+.avatar-frame::after {
+  content: "";
+  position: absolute;
+  inset: -7px;
+  border-radius: 3px;
+  pointer-events: none;
+  opacity: 0;
+  filter: blur(0.2px);
+  transition: opacity 0.25s ease;
+}
+
+/* Sin rango */
+.avatar-frame--none::after {
+  opacity: 0.18;
+  background:
+    radial-gradient(circle at 50% 30%, rgba(255, 220, 150, 0.18), transparent 55%),
+    radial-gradient(circle at 20% 80%, rgba(255, 255, 255, 0.08), transparent 58%);
+}
+
+/* Nova (verde) */
+.avatar-frame--nova::after {
+  opacity: 0.34;
+  background:
+    radial-gradient(circle at 55% 35%, rgba(80, 255, 140, 0.28), transparent 58%),
+    radial-gradient(circle at 15% 85%, rgba(180, 255, 210, 0.10), transparent 62%);
+}
+
+/* Alpha (azul) */
+.avatar-frame--alpha::after {
+  opacity: 0.36;
+  background:
+    radial-gradient(circle at 55% 35%, rgba(90, 170, 255, 0.30), transparent 58%),
+    radial-gradient(circle at 15% 85%, rgba(170, 220, 255, 0.10), transparent 62%);
+}
+
+/* Inmortal (rojo fuego) */
+.avatar-frame--inmortal::after {
+  opacity: 0.40;
+  background:
+    radial-gradient(circle at 55% 35%, rgba(255, 90, 60, 0.34), transparent 60%),
+    radial-gradient(circle at 35% 85%, rgba(255, 190, 90, 0.12), transparent 64%);
+}
+
 .avatar-inner {
   position: relative;
   z-index: 0;
@@ -270,7 +300,8 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  filter: brightness(0.95);
+  filter: brightness(0.95) contrast(1.05) saturate(1.08);
+  transform: scale(1.02);
 }
 
 .skin-jugador {
@@ -302,9 +333,7 @@
   gap: 1.1rem;
 }
 
-.player-identidad {
-  text-align: left;
-}
+.player-identidad { text-align: left; }
 
 .player-nombre-row {
   display: flex;
@@ -395,28 +424,14 @@
   font-weight: 600;
 }
 
-.icono-eco {
-  width: 20px;
-  height: 25px;
-}
+.icono-eco { width: 20px; height: 25px; }
 
-.pulse {
-  animation: ecoPulse 1.6s ease-in-out infinite;
-}
+.pulse { animation: ecoPulse 1.6s ease-in-out infinite; }
 
 @keyframes ecoPulse {
-  0% {
-    transform: scale(1);
-    filter: drop-shadow(0 0 0 rgba(0, 255, 255, 0));
-  }
-  50% {
-    transform: scale(1.1);
-    filter: drop-shadow(0 0 12px rgba(0, 255, 255, 0.7));
-  }
-  100% {
-    transform: scale(1);
-    filter: drop-shadow(0 0 0 rgba(0, 255, 255, 0));
-  }
+  0% { transform: scale(1); filter: drop-shadow(0 0 0 rgba(0, 255, 255, 0)); }
+  50% { transform: scale(1.1); filter: drop-shadow(0 0 12px rgba(0, 255, 255, 0.7)); }
+  100% { transform: scale(1); filter: drop-shadow(0 0 0 rgba(0, 255, 255, 0)); }
 }
 
 .btn-primario {
@@ -437,10 +452,7 @@
   transition: transform 0.1s ease, box-shadow 0.1s ease, filter 0.15s ease;
 }
 
-.btn-primario:hover {
-  transform: translateY(-1px);
-  filter: brightness(1.05);
-}
+.btn-primario:hover { transform: translateY(-1px); filter: brightness(1.05); }
 
 .btn-primario:active {
   transform: translateY(1px);
@@ -474,9 +486,7 @@
   font-size: 0.78rem;
 }
 
-.nivel-global-label {
-  opacity: 0.9;
-}
+.nivel-global-label { opacity: 0.9; }
 
 .nivel-global-valor {
   display: inline-flex;
@@ -529,9 +539,7 @@
   margin-left: auto;
 }
 
-.nivel-global-separador {
-  opacity: 0.7;
-}
+.nivel-global-separador { opacity: 0.7; }
 
 /* =========================
    PANEL ADMIN
@@ -725,11 +733,7 @@
   transform: translateX(-50%);
 }
 
-.loading-orbit-1 {
-  width: 92px;
-  height: 92px;
-}
-
+.loading-orbit-1 { width: 92px; height: 92px; }
 .loading-orbit-2 {
   width: 110px;
   height: 110px;
@@ -764,19 +768,11 @@
   border: 1px solid rgba(255, 90, 90, 0.9);
 }
 
-.fade-slide-in {
-  animation: fadeSlideIn 0.6s ease-out both;
-}
+.fade-slide-in { animation: fadeSlideIn 0.6s ease-out both; }
 
 @keyframes fadeSlideIn {
-  0% {
-    opacity: 0;
-    transform: translateY(18px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  0% { opacity: 0; transform: translateY(18px); }
+  100% { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes gemSpin {
@@ -786,15 +782,8 @@
   100% { transform: scale(1) rotate(0deg); }
 }
 
-@keyframes ringSpin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-@keyframes orbitRotate {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
+@keyframes ringSpin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+@keyframes orbitRotate { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
 /* =========================
    RESPONSIVE BASE
@@ -808,14 +797,9 @@
     align-items: center;
   }
 
-  .dashboard-frame {
-    padding: 1.6rem 1.2rem 2rem;
-  }
+  .dashboard-frame { padding: 1.6rem 1.2rem 2rem; }
 
-  .epic-title {
-    font-size: 2.4rem;
-    letter-spacing: 0.14em;
-  }
+  .epic-title { font-size: 2.4rem; letter-spacing: 0.14em; }
 
   .player-main-layout {
     margin-top: -56px;
@@ -828,9 +812,7 @@
     align-items: center;
     text-align: center;
 
-    .player-identidad {
-      text-align: center;
-    }
+    .player-identidad { text-align: center; }
 
     .player-stats-row {
       grid-template-columns: 1fr;
@@ -838,10 +820,7 @@
     }
   }
 
-  .player-nombre-row {
-    justify-content: center;
-    text-align: center;
-  }
+  .player-nombre-row { justify-content: center; text-align: center; }
 
   .player-nombre {
     font-size: 1.6rem;
@@ -865,61 +844,33 @@
     justify-content: center;
   }
 
-  .player-admin-actions {
-    grid-template-columns: 1fr;
-  }
+  .player-admin-actions { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 600px) {
-  .dashboard-epic {
-    padding: 0 0.9rem 3rem;
-  }
+  .dashboard-epic { padding: 0 0.9rem 3rem; }
 
-  .epic-title {
-    font-size: 2.1rem;
-    letter-spacing: 0.12em;
-  }
+  .epic-title { font-size: 2.1rem; letter-spacing: 0.12em; }
 
-  .player-card-banner {
-    height: 160px;
-  }
+  .player-card-banner { height: 160px; }
 
-  .player-main-layout {
-    margin-top: -48px;
-  }
+  .player-main-layout { margin-top: -48px; }
 
-  .avatar-frame {
-    width: 170px;
-    height: 200px;
-  }
+  .avatar-frame { width: 170px; height: 200px; }
 
-  .player-nombre {
-    font-size: 1.4rem;
-    letter-spacing: 0.1em;
-  }
+  .player-nombre { font-size: 1.4rem; letter-spacing: 0.1em; }
 }
 
-
-
 @media (max-width: 520px) and (orientation: portrait) {
-  /* el frame debe tocar borde pantalla */
   .dashboard-epic {
     padding-left: env(safe-area-inset-left);
     padding-right: env(safe-area-inset-right);
     padding-bottom: 3rem;
   }
 
-  .dashboard-wrap {
-    max-width: 100%;
-  }
+  .dashboard-wrap { max-width: 100%; }
 
-  /* NO quitamos ancho de bordes */
-  /* (se quedan en 10px por defecto) */
-
-  /* pero sí damos espacio interno real para que no quede pegado */
-  .dashboard-frame {
-    padding: 1.15rem 1.05rem 1.6rem;
-  }
+  .dashboard-frame { padding: 1.15rem 1.05rem 1.6rem; }
 
   .epic-header-dashboard { max-width: 100%; }
 
@@ -1012,36 +963,15 @@
   .dashboard-secciones { gap: 1.25rem; }
 }
 
-/* Extra: móviles MUY estrechos en portrait */
 @media (max-width: 380px) and (orientation: portrait) {
-  .dashboard-frame { padding: 1.05rem 0.95rem 1.45rem; }
-  .player-card-banner { height: 130px; }
-  .avatar-frame { width: 148px; height: 178px; }
-  .player-nombre { font-size: 1.14rem; }
-}
-
-
-/* Extra: móviles MUY estrechos en portrait */
-@media (max-width: 380px) and (orientation: portrait) {
-  .dashboard-frame {
-    padding: 1.05rem 0.8rem 1.45rem;
-  }
+  .dashboard-frame { padding: 1.05rem 0.8rem 1.45rem; }
 
   .dashboard-frame::before,
-  .dashboard-frame::after {
-    width: 5px;
-  }
+  .dashboard-frame::after { width: 5px; }
 
-  .player-card-banner {
-    height: 130px;
-  }
+  .player-card-banner { height: 130px; }
 
-  .avatar-frame {
-    width: 148px;
-    height: 178px;
-  }
+  .avatar-frame { width: 148px; height: 178px; }
 
-  .player-nombre {
-    font-size: 1.14rem;
-  }
+  .player-nombre { font-size: 1.14rem; }
 }

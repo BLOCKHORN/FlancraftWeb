@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import RewardList from "./RewardList";
 import LogroList from "./LogroList";
@@ -22,15 +22,9 @@ export default function DashboardPage() {
     const cargarDatos = async () => {
       try {
         const [usuarioRes, monedasRes, xpRes, usuariosRes] = await Promise.all([
-          fetch(
-            `https://flancraft-backend.onrender.com/api/usuarios/${parsed.uuid}`
-          ),
-          fetch(
-            `https://flancraft-backend.onrender.com/api/monedas/${parsed.uuid}`
-          ),
-          fetch(
-            `https://flancraft-backend.onrender.com/api/usuarios/${parsed.uuid}/xp`
-          ),
+          fetch(`https://flancraft-backend.onrender.com/api/usuarios/${parsed.uuid}`),
+          fetch(`https://flancraft-backend.onrender.com/api/monedas/${parsed.uuid}`),
+          fetch(`https://flancraft-backend.onrender.com/api/usuarios/${parsed.uuid}/xp`),
           fetch(`https://flancraft-backend.onrender.com/api/usuarios`),
         ]);
 
@@ -73,15 +67,38 @@ export default function DashboardPage() {
     }
   };
 
-  const avatarUrl = user
-    ? `https://minotar.net/armor/body/${user.uid}/160.png`
-    : null;
+  const avatarUrl = user ? `https://minotar.net/armor/body/${user.uid}/160.png` : null;
 
   const nivelInfo = xpData?.niveles.find((n) => n.nivel === user?.nivel);
   const xpDelNivelActual = nivelInfo?.xp_requerida || 1;
   const porcentajeNivel = user
     ? Math.min(100, (user.xp_actual / xpDelNivelActual) * 100)
     : 0;
+
+  // =========================
+  // FONDO DINÁMICO POR RANGO
+  // =========================
+  const rangoKey = useMemo(() => {
+    const r = (user?.rango_usuario || "").toString().trim().toLowerCase();
+    if (!r) return "none";
+    if (r.includes("nova")) return "nova";
+    if (r.includes("alpha")) return "alpha";
+    if (r.includes("inmortal")) return "inmortal";
+    return "none";
+  }, [user?.rango_usuario]);
+
+  const avatarBg = useMemo(() => {
+    switch (rangoKey) {
+      case "nova":
+        return "/assets/backnova.webp";
+      case "alpha":
+        return "/assets/backalpha.webp";
+      case "inmortal":
+        return "/assets/backinmortal.webp";
+      default:
+        return "/assets/backunrank.webp";
+    }
+  }, [rangoKey]);
 
   return (
     <section className="dashboard-epic">
@@ -110,18 +127,24 @@ export default function DashboardPage() {
               <div className="player-main-layout">
                 {/* AVATAR + FONDO PROFILE + RANGO */}
                 <div className="player-avatar-column">
-                  <div className="avatar-frame">
+                  <div className={`avatar-frame avatar-frame--${rangoKey}`}>
                     <div className="avatar-inner">
+                      {/* ✅ FONDO DINÁMICO POR RANGO */}
                       <img
-                        src="/assets/profile.webp"
-                        alt="Fondo del perfil"
+                        src={avatarBg}
+                        alt="Fondo del rango"
                         className="avatar-bg"
+                        loading="eager"
+                        decoding="async"
                       />
+
                       {avatarUrl && (
                         <img
                           src={avatarUrl}
                           alt={`Skin de ${user.uid}`}
                           className="skin-jugador"
+                          loading="eager"
+                          decoding="async"
                         />
                       )}
                     </div>
@@ -131,6 +154,8 @@ export default function DashboardPage() {
                         src={`/assets/etiquetas/${user.rango_usuario.toLowerCase()}.webp`}
                         alt={user.rango_usuario}
                         className="avatar-rango-badge"
+                        loading="eager"
+                        decoding="async"
                       />
                     )}
                   </div>
@@ -156,6 +181,8 @@ export default function DashboardPage() {
                             src="/assets/premium.webp"
                             alt="Cuenta premium"
                             className="badge-premium"
+                            loading="eager"
+                            decoding="async"
                           />
                         )}
                       </div>
@@ -183,6 +210,8 @@ export default function DashboardPage() {
                             src="/assets/eco.webp"
                             alt="Gema ECOS"
                             className="icono-eco pulse"
+                            loading="eager"
+                            decoding="async"
                           />
                         </div>
                         <a href="/rangos" className="btn-primario">
@@ -211,9 +240,7 @@ export default function DashboardPage() {
                 <div className="nivel-global-text">
                   <span className="nivel-global-actual">{user.xp_actual}</span>
                   <span className="nivel-global-separador">/</span>
-                  <span className="nivel-global-total">
-                    {xpDelNivelActual} XP
-                  </span>
+                  <span className="nivel-global-total">{xpDelNivelActual} XP</span>
                 </div>
               </div>
 
@@ -258,7 +285,6 @@ export default function DashboardPage() {
             </div>
 
             <div className="dashboard-epic-body">
-
               <div className="dashboard-secciones">
                 <RewardList
                   user={user}
@@ -302,8 +328,6 @@ export default function DashboardPage() {
           <p className="error-msg">Error al cargar perfil: {error}</p>
         </div>
       )}
-
-      {/* Nota: el contenido principal ahora vive dentro del contenedor unificado */}
     </section>
   );
 }

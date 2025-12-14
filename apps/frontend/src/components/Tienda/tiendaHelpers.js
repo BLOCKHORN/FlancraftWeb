@@ -21,11 +21,65 @@ export function slugify(str = "") {
     .replace(/^\-|\-$/g, "");
 }
 
-/** Total del carrito (suma price * qty=1). Tolera strings y nulls. */
+function toNumber(v, fallback = 0) {
+  const n = typeof v === "string" ? Number.parseFloat(v) : Number(v);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+/** Obtiene id de paquete de forma robusta (id / package_id). */
+export function getPackageId(pkg) {
+  return pkg?.id ?? pkg?.package_id ?? null;
+}
+
+/** Obtiene nombre de paquete de forma robusta. */
+export function getPackageName(pkg) {
+  return pkg?.name ?? pkg?.nombre ?? pkg?.package_name ?? pkg?.title ?? "Producto";
+}
+
+/** Obtiene precio final (ya con rebajas si backend las aplica). */
+export function getPackagePrice(pkg) {
+  return toNumber(pkg?.price ?? pkg?.precio ?? 0, 0);
+}
+
+/** Precio original (para mostrar tachado), si existe. */
+export function getPackageOriginalPrice(pkg) {
+  const v = pkg?.original_price ?? pkg?.precio_original ?? null;
+  if (v === null || v === undefined) return null;
+  const n = toNumber(v, NaN);
+  return Number.isFinite(n) ? n : null;
+}
+
+/** Imagen del paquete (best-effort). */
+export function getPackageImage(pkg) {
+  return (
+    pkg?.image_url ||
+    pkg?.image ||
+    pkg?.imageUrl ||
+    pkg?.img ||
+    "/assets/tienda/producto-placeholder.png"
+  );
+}
+
+/** Normaliza un paquete a la forma que necesita el carrito (id/name/price + cantidad). */
+export function normalizeProductForCart(pkg, cantidad = 1) {
+  const id = getPackageId(pkg);
+  return {
+    ...pkg,
+    id: id !== null ? Number(id) : id,
+    name: getPackageName(pkg),
+    price: getPackagePrice(pkg),
+    original_price: getPackageOriginalPrice(pkg),
+    image_url: getPackageImage(pkg),
+    cantidad: toNumber(pkg?.cantidad ?? cantidad ?? 1, 1),
+  };
+}
+
+/** Total del carrito (suma price * cantidad). Tolera strings y nulls. */
 export function calcularTotal(carrito = []) {
   const total = carrito.reduce((acc, it) => {
-    const n = Number.parseFloat(it?.price ?? 0);
-    return acc + (Number.isFinite(n) ? n : 0);
+    const price = toNumber(it?.price ?? it?.precio ?? 0, 0);
+    const qty = toNumber(it?.cantidad ?? it?.quantity ?? 1, 1);
+    return acc + price * qty;
   }, 0);
   return total.toFixed(2);
 }
@@ -52,7 +106,7 @@ export const PORTADA_TILES = [
     name: "ONEBLOCK",
     slug: "oneblock",
     image:
-      "https://images.minecraft-heads.com/render3d/head/f6/f6e95558abc321fe69c191cada67f973.webp",
+      "https://i.imgur.com/BacoUrt.png",
   },
   {
     server: "clasico",
@@ -65,7 +119,7 @@ export const PORTADA_TILES = [
     name: "CHUNKLOCK",
     slug: "chunklock",
     image:
-      "https://images.minecraft-heads.com/render3d/head/cc/ccdd3e1ee43ae910f35d3cbf50a03a8f.webp",
+      "https://i.imgur.com/NJbyiQs.png",
   },
   {
     server: "lobby",
@@ -83,7 +137,7 @@ export const PORTADA_TILES = [
 export const SUBCATS_PER_TILE = {
   // Lobby
   "lobby|premium": ["PREMIUM"],
-  "lobby|rangos": ["RANGOS", "Rangos Permanentes"],
+  "lobby|rangos": ["RANGOS"],
   "lobby|antes-de-comprar": [],
 
   // Oneblock
@@ -106,23 +160,38 @@ export const SUBCATS_PER_TILE = {
 
 /**
  * Cruza categorías de la API con una lista permitida por nombre.
- * Devuelve [{id,name}, ...] existentes.
+ * Devuelve [{id,name,slug}, ...] existentes.
+ * Si namesAllowed está vacío, devuelve todas las categorías normalizadas.
  */
 export function pickSubcatsFromApi(apiCategories = [], namesAllowed = []) {
-  const allowedLower = new Set(namesAllowed.map((n) => n.toLowerCase()));
+  const allowed = Array.isArray(namesAllowed) ? namesAllowed : [];
+  const allowedLower = new Set(allowed.map((n) => String(n).toLowerCase()));
   const out = [];
+
   for (const c of apiCategories) {
     const name = c?.name || c?.category_name || "";
     const id = c?.id ?? c?.category_id ?? null;
     if (!id || !name) continue;
-    if (allowedLower.has(name.toLowerCase())) out.push({ id, name });
+
+    if (allowedLower.size === 0 || allowedLower.has(String(name).toLowerCase())) {
+      out.push({ id, name, slug: slugify(name) });
+    }
   }
+
   return out;
 }
+/** Encuentra una categoría real por slug (slugify(name) === slug) */
+export function findCategoryBySlug(apiCategories = [], slug = "") {
+  const cats = pickSubcatsFromApi(apiCategories, []); // [] => todas normalizadas
+  const target = String(slug || "").toLowerCase();
+  return cats.find((c) => String(c.slug).toLowerCase() === target) || null;
+}
 
-/** Filtra paquetes por subcategorías (array de {id,name}) */
-export function filterPackagesBySubcats(paquetes = [], subcats = []) {
-  const subcatIds = new Set(subcats.map((s) => s.id));
+/** Filtra paquetes por UNA categoría (id) */
+export function filterPackagesByCategoryId(paquetes = [], categoryId) {
+  if (!categoryId) return [];
+  const wanted = String(categoryId);
+
   return paquetes.filter((p) => {
     const cid =
       p?.category?.id ??
@@ -130,6 +199,22 @@ export function filterPackagesBySubcats(paquetes = [], subcats = []) {
       p?.categories?.[0]?.id ??
       p?.categories?.[0]?.category_id ??
       null;
-    return cid && subcatIds.has(cid);
+
+    return cid !== null && String(cid) === wanted;
+  });
+}
+
+
+/** Filtra paquetes por subcategorías (array de {id,name,slug}) */
+export function filterPackagesBySubcats(paquetes = [], subcats = []) {
+  const subcatIds = new Set(subcats.map((s) => String(s.id)));
+  return paquetes.filter((p) => {
+    const cid =
+      p?.category?.id ??
+      p?.category_id ??
+      p?.categories?.[0]?.id ??
+      p?.categories?.[0]?.category_id ??
+      null;
+    return cid && subcatIds.has(String(cid));
   });
 }
