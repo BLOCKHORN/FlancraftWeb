@@ -1,6 +1,6 @@
 // apps/frontend/src/components/Tienda/TiendaCategoriaVista.jsx
-import React, { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Outlet, useNavigate, useParams } from "react-router-dom";
 
 import TiendaProductosVista from "./TiendaProductosVista";
 import {
@@ -9,13 +9,73 @@ import {
   findCategoryBySlug,
   filterPackagesByCategoryId,
   SUBCATS_PER_TILE,
+  PORTADA_TILES,
 } from "./tiendaHelpers";
 
 import { ANTES_DE_COMPRAR } from "./data/antesDeComprarData";
-
 import "../../styles/components/Tienda/tienda-categoria.scss";
 
-const TiendaCategoriaVista = ({ carrito, toggleProducto }) => {
+/* =========================================================
+   Iconos
+   ========================================================= */
+const FALLBACK_ICONS = {
+  protecciones: "/assets/tienda/categorias/protecciones.webp",
+  "items-op": "/assets/tienda/categorias/items-op.webp",
+  items_op: "/assets/tienda/categorias/items-op.webp",
+  "llaves-survival": "/assets/tienda/categorias/llaves-survival.webp",
+  llaves_survival: "/assets/tienda/categorias/llaves-survival.webp",
+  // genera uno genérico si no cuadra ninguno
+  default: "/assets/tienda/categorias/default.webp",
+};
+
+function normKey(v) {
+  return String(v || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "-");
+}
+
+function resolveIconForSubcat(sc) {
+  if (!sc) return null;
+
+  const slugRaw = sc.slug || "";
+  const nameRaw = sc.name || "";
+
+  const slug = normKey(slugRaw);
+  const name = normKey(nameRaw);
+
+  // 1) PORTADA_TILES (si lo tienes configurado)
+  const fromPortada =
+    (PORTADA_TILES && (PORTADA_TILES[slug] || PORTADA_TILES[name])) || null;
+
+  if (typeof fromPortada === "string" && fromPortada) return fromPortada;
+  if (fromPortada && typeof fromPortada === "object") {
+    const maybe =
+      fromPortada.imagen ||
+      fromPortada.icon ||
+      fromPortada.image ||
+      fromPortada.src ||
+      fromPortada.url;
+    if (maybe) return maybe;
+  }
+
+  // 2) Fallbacks a partir de slug/name
+  const candidates = [
+    slug,
+    name,
+    slug.split("-")[0], // ej: "protecciones-survival-clasico" → "protecciones"
+    name.split("-")[0],
+  ];
+
+  for (const key of candidates) {
+    if (key && FALLBACK_ICONS[key]) return FALLBACK_ICONS[key];
+  }
+
+  // 3) Genérico
+  return FALLBACK_ICONS.default || null;
+}
+
+export default function TiendaCategoriaVista({ carrito, toggleProducto }) {
   const { server, categoria, subcategoria } = useParams();
   const navigate = useNavigate();
 
@@ -24,10 +84,54 @@ const TiendaCategoriaVista = ({ carrito, toggleProducto }) => {
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState(null);
   const [error, setError] = useState("");
 
-  const mapKey = `${(server || "").toLowerCase()}|${(categoria || "").toLowerCase()}`;
-  const tileNamesAllowed = useMemo(() => SUBCATS_PER_TILE[mapKey] ?? null, [mapKey]);
+  // animaciones
+  const [routeFx, setRouteFx] = useState("idle"); // idle | out | in
+  const [swapFx, setSwapFx] = useState(false); // animación al cambiar subcategoria
+
+  const navLockRef = useRef(false);
+  const didRouteMountRef = useRef(false);
+  const didSwapMountRef = useRef(false);
+
+  // ======= hooks / memos =======
+  const mapKey = useMemo(
+    () => `${(server || "").toLowerCase()}|${(categoria || "").toLowerCase()}`,
+    [server, categoria]
+  );
+
+  const tileNamesAllowed = useMemo(
+    () => SUBCATS_PER_TILE[mapKey] ?? null,
+    [mapKey]
+  );
   const isTile = tileNamesAllowed !== null;
 
+  const subcats = useMemo(
+    () => categoriaSeleccionada?.subcategorias || [],
+    [categoriaSeleccionada]
+  );
+  const activeSubcat = useMemo(
+    () => categoriaSeleccionada?.activeSubcat || null,
+    [categoriaSeleccionada]
+  );
+
+  const hasChooser = useMemo(() => {
+    return (
+      categoriaSeleccionada?.mode === "tile" &&
+      !activeSubcat &&
+      (subcats || []).length > 1
+    );
+  }, [categoriaSeleccionada, activeSubcat, subcats]);
+
+  const hasActive = useMemo(() => {
+    return categoriaSeleccionada?.mode === "tile" && !!activeSubcat;
+  }, [categoriaSeleccionada, activeSubcat]);
+
+  const productosFiltrados = useMemo(() => {
+    const active = categoriaSeleccionada?.activeSubcat;
+    if (!active?.id) return [];
+    return filterPackagesByCategoryId(paquetes, active.id);
+  }, [paquetes, categoriaSeleccionada]);
+
+  // ======= 1) Fetch SOLO cuando cambia server/categoria (NO subcategoria) =======
   useEffect(() => {
     let cancel = false;
 
@@ -37,17 +141,19 @@ const TiendaCategoriaVista = ({ carrito, toggleProducto }) => {
 
       try {
         const r = await fetch(`${API_URL}/api/tebex/datos?sv=${server}`);
-        if (!r.ok) throw new Error("No se pudo cargar la tienda para este servidor.");
+        if (!r.ok)
+          throw new Error("No se pudo cargar la tienda para este servidor.");
         const data = await r.json();
 
         const apiCats = data.categorias || [];
+        const packs = data.paquetes || [];
 
         if (isTile) {
-          let subcats = pickSubcatsFromApi(apiCats, tileNamesAllowed);
+          let subcatsLocal = pickSubcatsFromApi(apiCats, tileNamesAllowed);
 
-          // Dedupe por slug
+          // dedupe
           const seen = new Set();
-          subcats = subcats.filter((s) => {
+          subcatsLocal = subcatsLocal.filter((s) => {
             const key = String(s?.slug || s?.name || "").toLowerCase();
             if (!key) return false;
             if (seen.has(key)) return false;
@@ -55,20 +161,25 @@ const TiendaCategoriaVista = ({ carrito, toggleProducto }) => {
             return true;
           });
 
-          // Orden según SUBCATS_PER_TILE
+          // orden
           if (Array.isArray(tileNamesAllowed) && tileNamesAllowed.length) {
-            const order = new Map(tileNamesAllowed.map((n, i) => [String(n).toLowerCase(), i]));
-            subcats.sort((a, b) => {
+            const order = new Map(
+              tileNamesAllowed.map((n, i) => [String(n).toLowerCase(), i])
+            );
+            subcatsLocal.sort((a, b) => {
               const ai = order.get(String(a.name).toLowerCase());
               const bi = order.get(String(b.name).toLowerCase());
               return (ai ?? 999) - (bi ?? 999);
             });
           }
 
+          const subParam = String(subcategoria || "").toLowerCase();
           const active =
-            (subcategoria &&
-              subcats.find((s) => s.slug === String(subcategoria).toLowerCase())) ||
-            (subcats.length === 1 ? subcats[0] : null);
+            (subParam &&
+              subcatsLocal.find(
+                (s) => String(s?.slug || "").toLowerCase() === subParam
+              )) ||
+            (subcatsLocal.length === 1 ? subcatsLocal[0] : null);
 
           const catObj = {
             mode: "tile",
@@ -82,30 +193,31 @@ const TiendaCategoriaVista = ({ carrito, toggleProducto }) => {
               (categoria && categoria.toUpperCase()) ||
               "CATEGORÍA",
             slug: categoria,
-            subcategorias: subcats,
+            subcategorias: subcatsLocal,
             activeSubcat: active || null,
           };
 
           if (!cancel) {
-            setPaquetes(data.paquetes || []);
+            setPaquetes(packs);
             setCategoriaSeleccionada(catObj);
           }
           return;
         }
 
-        // categoría real directa (por si alguna ruta llega con slug real)
+        // modo real (por si lo usas)
         const catReal = findCategoryBySlug(apiCats, categoria);
 
         const catObj = {
           mode: "real",
-          name: catReal?.name ?? (categoria ? categoria.toUpperCase() : "CATEGORÍA"),
+          name:
+            catReal?.name ?? (categoria ? categoria.toUpperCase() : "CATEGORÍA"),
           slug: categoria,
           activeSubcat: catReal || null,
           subcategorias: [],
         };
 
         if (!cancel) {
-          setPaquetes(data.paquetes || []);
+          setPaquetes(packs);
           setCategoriaSeleccionada(catObj);
         }
       } catch (e) {
@@ -119,16 +231,84 @@ const TiendaCategoriaVista = ({ carrito, toggleProducto }) => {
     return () => {
       cancel = true;
     };
-  }, [server, categoria, subcategoria, isTile, tileNamesAllowed]);
+    // ⚠️ NO depende de subcategoria
+  }, [server, categoria, isTile, tileNamesAllowed, subcategoria]);
 
-  const productosFiltrados = useMemo(() => {
-    if (!categoriaSeleccionada) return [];
-    const active = categoriaSeleccionada.activeSubcat;
-    if (!active?.id) return [];
-    return filterPackagesByCategoryId(paquetes, active.id);
-  }, [paquetes, categoriaSeleccionada]);
+  // ======= 2) Cuando cambia subcategoria: actualizar activeSubcat + animación swap =======
+  useEffect(() => {
+    if (!categoriaSeleccionada || categoriaSeleccionada?.mode !== "tile") return;
 
-  // Loading
+    const list = categoriaSeleccionada.subcategorias || [];
+    const subParam = String(subcategoria || "").toLowerCase();
+
+    const newActive =
+      (subParam &&
+        list.find(
+          (s) => String(s.slug || "").toLowerCase() === subParam
+        )) ||
+      (list.length === 1 ? list[0] : null);
+
+    const currentSlug = String(
+      categoriaSeleccionada?.activeSubcat?.slug || ""
+    ).toLowerCase();
+    const nextSlug = String(newActive?.slug || "").toLowerCase();
+
+    if (currentSlug === nextSlug) {
+      if (!didSwapMountRef.current) didSwapMountRef.current = true;
+      return;
+    }
+
+    setCategoriaSeleccionada((prev) =>
+      prev ? { ...prev, activeSubcat: newActive || null } : prev
+    );
+
+    // swap solo después del primer set “real”
+    if (didSwapMountRef.current) {
+      setSwapFx(true);
+      const t = setTimeout(() => setSwapFx(false), 420);
+      return () => clearTimeout(t);
+    }
+    didSwapMountRef.current = true;
+  }, [subcategoria, categoriaSeleccionada?.subcategorias]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ======= animación route IN SOLO al cambiar server/categoria (NO subcategoria) =======
+  useEffect(() => {
+    if (!didRouteMountRef.current) {
+      didRouteMountRef.current = true;
+      return;
+    }
+    setRouteFx("in");
+    const t = setTimeout(() => setRouteFx("idle"), 420);
+    return () => clearTimeout(t);
+  }, [server, categoria]); // 👈 quitamos subcategoria
+
+  // ======= helpers navegación (anim OUT solo para salir/cambiar categoría grande) =======
+  const navAnimated = (to) => {
+    if (!to) return;
+    if (navLockRef.current) return;
+    if (to === window.location.pathname) return;
+
+    navLockRef.current = true;
+    setRouteFx("out");
+
+    setTimeout(() => {
+      navigate(to);
+      setTimeout(() => {
+        navLockRef.current = false;
+      }, 140);
+    }, 220);
+  };
+
+  const goClose = () => navAnimated("/tienda");
+
+  // 👇 subcategorías SIN animación de ruta, solo anim_SWAP productos
+  const goSubcat = (scSlug) =>
+    navigate(`/tienda/${server}/${categoria}/${scSlug}`);
+
+  // =========================================================
+  // RENDER
+  // =========================================================
+
   if (loading) {
     return (
       <div className="tienda-tebex tienda-tebex--loading">
@@ -142,7 +322,6 @@ const TiendaCategoriaVista = ({ carrito, toggleProducto }) => {
     );
   }
 
-  // Error
   if (error) {
     return (
       <div className="tienda-tebex">
@@ -155,7 +334,6 @@ const TiendaCategoriaVista = ({ carrito, toggleProducto }) => {
     );
   }
 
-  // Antes de comprar (con data)
   if (categoria === "antes-de-comprar") {
     return (
       <div className="tienda-tebex">
@@ -163,8 +341,7 @@ const TiendaCategoriaVista = ({ carrito, toggleProducto }) => {
           <div className="tienda-wc">
             <div className="tienda-wc-head">
               <h1 className="tienda-wc-title">{ANTES_DE_COMPRAR.titulo}</h1>
-
-              <button className="tienda-wc-close" onClick={() => navigate("/tienda")}>
+              <button className="tienda-wc-close" onClick={goClose}>
                 Volver
               </button>
             </div>
@@ -209,72 +386,169 @@ const TiendaCategoriaVista = ({ carrito, toggleProducto }) => {
     );
   }
 
-  // Selector Wynncraft-style si estamos en tile y no hay subcat activa
-  if (
-    categoriaSeleccionada?.mode === "tile" &&
-    !categoriaSeleccionada.activeSubcat &&
-    (categoriaSeleccionada.subcategorias || []).length > 1
-  ) {
-    return (
-      <div className="tienda-tebex">
-        <div className="tienda-contenido">
-          <div className="tienda-wc">
-            <div className="tienda-wc-head">
-              <div className="tienda-wc-hero">
-                <div className="tienda-wc-hero-icon" aria-hidden="true" />
-                <div className="tienda-wc-hero-text">
-                  <h1 className="tienda-wc-title">{categoriaSeleccionada.name}</h1>
-                  <p className="tienda-wc-subtitle">
-                    Selecciona una categoría para ver los productos disponibles.
-                  </p>
-                </div>
+  // FUSIÓN (grid + sidebar + productos)
+  return (
+    <div
+      className={[
+        "tienda-tebex",
+        "tienda-tebex--fusion",
+        hasActive ? "is-active" : "is-chooser",
+        routeFx === "out" ? "tc-route-out" : "",
+        routeFx === "in" ? "tc-route-in" : "",
+      ].join(" ")}
+    >
+      <div className="tienda-contenido">
+        <div className="tienda-wc">
+          {/* CABECERA FIJA */}
+          <div className="tienda-wc-head">
+            <div className="tienda-wc-hero">
+              <div className="tienda-wc-hero-icon" aria-hidden="true" />
+              <div className="tienda-wc-hero-text">
+                <h1 className="tienda-wc-title">
+                  {categoriaSeleccionada?.name}
+                </h1>
+                <p className="tienda-wc-subtitle">
+                  {hasActive
+                    ? "Cambia de categoría en el lateral y explora los productos."
+                    : "Selecciona una categoría para los productos disponibles."}
+                </p>
               </div>
+            </div>
 
-              <button className="tienda-wc-close" onClick={() => navigate("/tienda")}>
+            <div className="tc-head-actions">
+              <button
+                className="tienda-wc-close"
+                type="button"
+                onClick={goClose}
+              >
                 Cerrar
               </button>
             </div>
+          </div>
 
-            <div className="tienda-wc-grid">
-              {categoriaSeleccionada.subcategorias.map((sc) => (
-                <article key={sc.id} className="tienda-wc-card">
-                  <div className="tienda-wc-card-top">
-                    <div className="tienda-wc-card-icon" aria-hidden="true" />
-                    <div className="tienda-wc-card-title">{sc.name}</div>
+          {/* BODY: sidebar fijo + main fijo (scroll solo productos) */}
+          <div className="tc-fusion-body">
+            {/* SIDEBAR */}
+            <aside className="tc-side" aria-hidden={!hasActive}>
+              <div className="tc-side-title">Categorías</div>
+
+              <div className="tc-side-scroll">
+                <div className="tc-side-list">
+                  {subcats.map((sc) => {
+                    const icon = resolveIconForSubcat(sc);
+                    const isActiveItem =
+                      String(sc.slug || "").toLowerCase() ===
+                      String(activeSubcat?.slug || "").toLowerCase();
+
+                    return (
+                      <button
+                        key={sc.id}
+                        type="button"
+                        className={`tc-side-item ${
+                          isActiveItem ? "is-active" : ""
+                        }`}
+                        onClick={() => goSubcat(sc.slug)}
+                        title={sc.name}
+                      >
+                        {icon ? (
+                          <img
+                            className="tc-side-item-ico"
+                            src={icon}
+                            alt=""
+                            draggable="false"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <span
+                            className="tc-side-item-ico-fallback"
+                            aria-hidden="true"
+                          />
+                        )}
+
+                        <span className="tc-side-item-label">{sc.name}</span>
+                        <span
+                          className="tc-side-item-shine"
+                          aria-hidden="true"
+                        />
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="tc-side-hint">
+                Tip: cambia de categoría sin volver atrás.
+              </div>
+            </aside>
+
+            {/* MAIN */}
+            <main className="tc-main">
+              {/* GRID GRANDE (vista selección) */}
+              {hasChooser && (
+                <div className="tc-chooser">
+                  <div className="tc-grid">
+                    {subcats.map((sc) => {
+                      const icon = resolveIconForSubcat(sc);
+                      return (
+                        <article
+                          key={sc.id}
+                          className="tc-card"
+                          onClick={() => goSubcat(sc.slug)}
+                        >
+                          <div className="tc-card-inner">
+                            <div className="tc-card-media">
+                              {icon ? (
+                                <img
+                                  src={icon}
+                                  alt=""
+                                  draggable="false"
+                                  loading="lazy"
+                                />
+                              ) : (
+                                <span
+                                  className="tc-card-media-fallback"
+                                  aria-hidden="true"
+                                />
+                              )}
+                            </div>
+                            <div className="tc-card-title">{sc.name}</div>
+                          </div>
+                        </article>
+                      );
+                    })}
                   </div>
+                </div>
+              )}
 
-                  <button
-                    className="tienda-wc-card-btn"
-                    onClick={() => navigate(`/tienda/${server}/${categoria}/${sc.slug}`)}
-                  >
-                    Ver productos
-                  </button>
-                </article>
-              ))}
-            </div>
+              {/* PRODUCTOS: scroll SOLO aquí */}
+              {hasActive && (
+                <div className={`tc-products ${swapFx ? "is-swap" : ""}`}>
+                  <div className="tc-products-scroll">
+                    <TiendaProductosVista
+                      server={server}
+                      productos={productosFiltrados}
+                      categoria={categoriaSeleccionada}
+                      carrito={carrito}
+                      toggleProducto={toggleProducto}
+                      subcategoriaSeleccionadaURL={subcategoria}
+                      embedMode
+                    />
+                  </div>
+                </div>
+              )}
+
+              {!hasChooser && !hasActive && (
+                <div className="tc-empty">
+                  No hay categorías disponibles para mostrar.
+                </div>
+              )}
+
+              {/* ruta anidada “dummy” */}
+              <Outlet />
+            </main>
           </div>
         </div>
       </div>
-    );
-  }
-
-  // Vista normal de productos (cuando ya hay subcat activa)
-  return (
-    <div className="tienda-tebex">
-      <div className="tienda-contenido">
-        <TiendaProductosVista
-          server={server}
-          productos={productosFiltrados}
-          categoria={categoriaSeleccionada}
-          carrito={carrito}
-          toggleProducto={toggleProducto}
-          subcategoriaSeleccionadaURL={subcategoria}
-          permitidas={[]}
-          onVolver={() => navigate("/tienda")}
-        />
-      </div>
     </div>
   );
-};
-
-export default TiendaCategoriaVista;
+}

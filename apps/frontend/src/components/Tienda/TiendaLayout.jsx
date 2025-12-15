@@ -1,62 +1,66 @@
 // apps/frontend/src/components/Tienda/TiendaLayout.jsx
-import React, { useContext, useLayoutEffect, useMemo, useRef, useState, useEffect } from "react";
-import { Routes, Route, useLocation } from "react-router-dom";
+import React, { useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { Route, Routes, useLocation } from "react-router-dom";
 
+import "../../styles/components/Tienda/tienda-layout.scss";
+
+import { UserContext } from "../../context/UserContext";
 import TiendaPortada from "./TiendaPortada";
 import TiendaCategoriaVista from "./TiendaCategoriaVista";
 import TiendaCarritoLateral from "./TiendaCarritoLateral";
 import TiendaModalJugador from "./TiendaModalJugador";
-import { useTiendaCarrito } from "./useTiendaCarrito";
+import useTiendaCarrito from "./useTiendaCarrito";
 
-import { UserContext } from "../../context/UserContext";
-import "../../styles/components/Tienda/tienda-layout.scss";
-
-function readWebUser() {
+const readWebUser = () => {
   try {
     const raw = localStorage.getItem("flan_user");
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    if (!parsed?.loggedIn) return null;
-    // LoginModal guarda { uuid, username, loggedIn:true }
-    return {
-      uuid: String(parsed.uuid || "").trim(),
-      username: String(parsed.username || "").trim(),
-      loggedIn: true,
-    };
+    return raw ? JSON.parse(raw) : null;
   } catch {
     return null;
   }
-}
+};
 
 const TiendaLayout = () => {
   const rootRef = useRef(null);
+
   const { user, setUser } = useContext(UserContext);
 
   const [mostrarLogin, setMostrarLogin] = useState(false);
+  const [nombreConfirmado, setNombreConfirmado] = useState(
+    () => localStorage.getItem("nombreJugador") || ""
+  );
+  const [uuidConfirmado, setUuidConfirmado] = useState(
+    () => localStorage.getItem("uuidJugador") || ""
+  );
 
-  // Cuenta tienda (puede venir de web login o de elección manual)
-  const [nombreConfirmado, setNombreConfirmado] = useState(() => {
-    const web = readWebUser();
-    if (web?.loggedIn && web?.username) return web.username;
-    return localStorage.getItem("nombreJugador") || "";
-  });
+  const [moneda, setMoneda] = useState(
+    () => localStorage.getItem("monedaSeleccionada") || "EUR"
+  );
 
-  const [uuidConfirmado, setUuidConfirmado] = useState(() => {
-    const web = readWebUser();
-    if (web?.loggedIn && web?.uuid) return web.uuid;
-    return localStorage.getItem("uuidJugador") || "";
-  });
-
-  const [moneda, setMoneda] = useState(() => localStorage.getItem("monedaSeleccionada") || "EUR");
-
-  const { carrito, toggleProducto, eliminar, vaciar, total } = useTiendaCarrito(nombreConfirmado);
+  const { carrito, toggleProducto, eliminar, vaciar, total } =
+    useTiendaCarrito(nombreConfirmado);
 
   const location = useLocation();
+
   const esPortada = useMemo(() => {
     return location.pathname === "/tienda" || location.pathname === "/tienda/";
   }, [location.pathname]);
 
-  // ✅ altura real header
+  // ✅ Estado "expandiendo" para animación solo cuando pasas de portada -> contenido
+  const prevEsPortadaRef = useRef(esPortada);
+  const [expandiendo, setExpandiendo] = useState(false);
+
+  useEffect(() => {
+    const prev = prevEsPortadaRef.current;
+    if (prev === true && esPortada === false) {
+      setExpandiendo(true);
+      const t = setTimeout(() => setExpandiendo(false), 420);
+      return () => clearTimeout(t);
+    }
+    prevEsPortadaRef.current = esPortada;
+  }, [esPortada]);
+
+  // ✅ altura real header (para que no choque con navbar)
   useLayoutEffect(() => {
     const host = rootRef.current;
     if (!host) return;
@@ -91,9 +95,7 @@ const TiendaLayout = () => {
 
     if (!username) return;
 
-    // Si ya está igual, no tocar
     if (String(nombreConfirmado).trim() === username) {
-      // si falta uuid tienda y tenemos uuid web, rellena
       if (!uuidConfirmado && uuid) {
         localStorage.setItem("uuidJugador", uuid);
         setUuidConfirmado(uuid);
@@ -101,7 +103,6 @@ const TiendaLayout = () => {
       return;
     }
 
-    // Autodetecta SOLO si estás logueado en web
     if (ctxLogged || web?.loggedIn) {
       localStorage.setItem("nombreJugador", username);
       if (uuid) localStorage.setItem("uuidJugador", uuid);
@@ -129,29 +130,30 @@ const TiendaLayout = () => {
   const abrirModalCuenta = () => setMostrarLogin(true);
 
   const cambiarCuenta = () => {
-    // Requisito: si estás logueado en web, al cambiar cuenta desde carrito -> logout global
     const web = readWebUser();
     const isLoggedWeb = Boolean(user?.loggedIn || web?.loggedIn);
 
     if (isLoggedWeb) {
-      // limpia storage del login global
       localStorage.removeItem("flan_user");
-      // limpia context
       setUser?.(null);
     }
 
-    // limpia cuenta de tienda
     localStorage.removeItem("nombreJugador");
     localStorage.removeItem("uuidJugador");
     setNombreConfirmado("");
     setUuidConfirmado("");
-
-    // abre modal para elegir
     setMostrarLogin(true);
   };
 
   return (
-    <div ref={rootRef} className={`tienda-layout ${esPortada ? "is-portada" : "is-contenido"}`}>
+    <div
+      ref={rootRef}
+      className={[
+        "tienda-layout",
+        esPortada ? "is-portada" : "is-contenido",
+        expandiendo ? "is-expanding" : "",
+      ].join(" ")}
+    >
       {mostrarLogin && (
         <TiendaModalJugador
           onConfirmar={confirmarNombre}
@@ -162,19 +164,27 @@ const TiendaLayout = () => {
       <main className="tienda-layout-main">
         <section className="tienda-layout-left">
           <div className="tienda-shelf-frame">
-            <div className={"tienda-shelf-inner " + (esPortada ? "tienda-shelf-portada" : "tienda-shelf-contenido")}>
+            <div
+              className={
+                "tienda-shelf-inner " +
+                (esPortada ? "tienda-shelf-portada" : "tienda-shelf-contenido")
+              }
+            >
               <Routes>
                 <Route path="/" element={<TiendaPortada />} />
 
+                {/* ✅ Ruta anidada: NO se remonta el componente al entrar a subcategoria */}
                 <Route
                   path="/:server/:categoria"
-                  element={<TiendaCategoriaVista carrito={carrito} toggleProducto={toggleProducto} />}
-                />
-
-                <Route
-                  path="/:server/:categoria/:subcategoria"
-                  element={<TiendaCategoriaVista carrito={carrito} toggleProducto={toggleProducto} />}
-                />
+                  element={
+                    <TiendaCategoriaVista
+                      carrito={carrito}
+                      toggleProducto={toggleProducto}
+                    />
+                  }
+                >
+                  <Route path=":subcategoria" element={<></>} />
+                </Route>
               </Routes>
             </div>
           </div>

@@ -102,3 +102,4 @@ export function useTiendaCarrito(nombreJugador) {
 
   return { carrito, toggleProducto, eliminar, vaciar, total };
 }
+export default useTiendaCarrito;

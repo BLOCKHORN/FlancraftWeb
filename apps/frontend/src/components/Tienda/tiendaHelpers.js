@@ -33,7 +33,13 @@ export function getPackageId(pkg) {
 
 /** Obtiene nombre de paquete de forma robusta. */
 export function getPackageName(pkg) {
-  return pkg?.name ?? pkg?.nombre ?? pkg?.package_name ?? pkg?.title ?? "Producto";
+  return (
+    pkg?.name ??
+    pkg?.nombre ??
+    pkg?.package_name ??
+    pkg?.title ??
+    "Producto"
+  );
 }
 
 /** Obtiene precio final (ya con rebajas si backend las aplica). */
@@ -105,8 +111,7 @@ export const PORTADA_TILES = [
     server: "oneblock",
     name: "ONEBLOCK",
     slug: "oneblock",
-    image:
-      "https://i.imgur.com/BacoUrt.png",
+    image: "https://i.imgur.com/BacoUrt.png",
   },
   {
     server: "clasico",
@@ -118,8 +123,7 @@ export const PORTADA_TILES = [
     server: "clasico",
     name: "CHUNKLOCK",
     slug: "chunklock",
-    image:
-      "https://i.imgur.com/NJbyiQs.png",
+    image: "https://i.imgur.com/NJbyiQs.png",
   },
   {
     server: "lobby",
@@ -151,11 +155,21 @@ export const SUBCATS_PER_TILE = {
     "TICKETS KOTH",
   ],
 
-  // Survival clásico
-  "clasico|survival-clasico": ["Protecciones", "Items OP", "Llaves", "Dinero"],
+  // Survival clásico (ojo a los nombres exactos en Tebex)
+  "clasico|survival-clasico": [
+    "Protecciones",
+    "Items OP",
+    "Llaves Survival",
+    "Dinero",
+  ],
 
   // Chunklock (misma conexión Tebex que Clásico)
-  "clasico|chunklock": ["Items OP", "Dinero", "Experiencia"],
+  "clasico|chunklock": [
+    "Items OP",
+    "Dinero",
+    "Experiencia",
+    "Llaves Chunklock",
+  ],
 };
 
 /**
@@ -180,6 +194,7 @@ export function pickSubcatsFromApi(apiCategories = [], namesAllowed = []) {
 
   return out;
 }
+
 /** Encuentra una categoría real por slug (slugify(name) === slug) */
 export function findCategoryBySlug(apiCategories = [], slug = "") {
   const cats = pickSubcatsFromApi(apiCategories, []); // [] => todas normalizadas
@@ -203,7 +218,6 @@ export function filterPackagesByCategoryId(paquetes = [], categoryId) {
     return cid !== null && String(cid) === wanted;
   });
 }
-
 
 /** Filtra paquetes por subcategorías (array de {id,name,slug}) */
 export function filterPackagesBySubcats(paquetes = [], subcats = []) {
