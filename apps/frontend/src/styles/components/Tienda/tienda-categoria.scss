@@ -27,36 +27,18 @@
    Animaciones base
    ========================================================= */
 @keyframes tebexPanelIn {
-  0% {
-    transform: translateY(10px) scale(0.985);
-    opacity: 0.86;
-  }
-  100% {
-    transform: translateY(0) scale(1);
-    opacity: 1;
-  }
+  0% { transform: translateY(10px) scale(0.985); opacity: 0.86; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
 }
 
 @keyframes tcSideIn {
-  0% {
-    transform: translateX(-10px);
-    opacity: 0;
-  }
-  100% {
-    transform: translateX(0);
-    opacity: 1;
-  }
+  0% { transform: translateX(-10px); opacity: 0; }
+  100% { transform: translateX(0); opacity: 1; }
 }
 
 @keyframes tcMainIn {
-  0% {
-    transform: translateY(8px);
-    opacity: 0;
-  }
-  100% {
-    transform: translateY(0);
-    opacity: 1;
-  }
+  0% { transform: translateY(8px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
 }
 
 /* =========================================================
@@ -81,13 +63,11 @@
 }
 
 @media (max-width: 768px) {
-  .tienda-tebex .tienda-contenido {
-    padding: 1rem 0.9rem 1.2rem;
-  }
+  .tienda-tebex .tienda-contenido { padding: 1rem 0.9rem 1.2rem; }
 }
 
 /* =========================================================
-   Loading overlay SUAVE (ya no quita el contenido)
+   Loading overlay SUAVE
    ========================================================= */
 .tienda-loading-overlay {
   position: absolute;
@@ -97,7 +77,6 @@
   justify-content: center;
   z-index: 5;
 
-  /* Mucho más suave y transparente */
   background:
     radial-gradient(
       circle at center,
@@ -114,14 +93,7 @@
   animation: tiendaOverlayIn 220ms ease-out forwards;
 }
 
-@keyframes tiendaOverlayIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
+@keyframes tiendaOverlayIn { from { opacity: 0; } to { opacity: 1; } }
 
 .tienda-loading-inner {
   text-align: center;
@@ -132,14 +104,8 @@
 }
 
 @keyframes tiendaOverlayContentIn {
-  from {
-    opacity: 0;
-    transform: translateY(4px) scale(0.98);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
+  from { opacity: 0; transform: translateY(4px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .logo-f-loader {
@@ -149,8 +115,7 @@
 }
 
 .logo-f-loader span {
-  font-family: "IM Fell English SC", system-ui, -apple-system,
-    BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: "IM Fell English SC", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-size: clamp(4.2rem, 7vw, 6rem);
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -164,15 +129,9 @@
 }
 
 @keyframes fLogoPulse {
-  0% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-2px);
-  }
-  100% {
-    transform: translateY(0);
-  }
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+  100% { transform: translateY(0); }
 }
 
 .tienda-loading-text {
@@ -196,7 +155,7 @@
 }
 
 /* =========================================================
-   Panel principal (como carrito)
+   Panel principal
    ========================================================= */
 .tienda-wc {
   position: relative;
@@ -213,10 +172,13 @@
   animation: tebexPanelIn 520ms cubic-bezier(0.2, 0.9, 0.2, 1) both;
 }
 
+/* =========================================================
+   CABECERA (CENTRADA)
+   ========================================================= */
 .tienda-wc-head {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr; /* centro REAL */
   align-items: center;
-  justify-content: space-between;
   gap: 1rem;
 
   padding: 0.9rem 1rem;
@@ -226,23 +188,44 @@
   color: #fff;
 }
 
-.tienda-wc-hero {
-  display: flex;
+.tc-head-spacer {
+  min-width: 1px;
+}
+
+.tc-head-actions {
+  display: inline-flex;
   align-items: center;
-  gap: 0.85rem;
+  justify-content: flex-end;
+  gap: 0.55rem;
+}
+
+.tienda-wc-hero {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.9rem;
   min-width: 0;
+  justify-self: center;
+  text-align: center;
+}
+
+@media (max-width: 680px) {
+  .tienda-wc-head {
+    grid-template-columns: 1fr;
+    gap: 0.7rem;
+    text-align: center;
+  }
+  .tc-head-spacer { display: none; }
+  .tc-head-actions { justify-content: center; }
 }
 
 /* Icono grande de cabecera */
 .tienda-wc-hero-icon {
-  width: 52px;
-  height: 52px;
-  border-radius: 0.5rem;
-  background: radial-gradient(
-    circle at 30% 20%,
-    rgba(255, 255, 255, 0.25),
-    rgba(0, 0, 0, 0.45)
-  );
+  width: 56px;
+  height: 56px;
+  border-radius: 0.55rem;
+
+  background: radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.25), rgba(0, 0, 0, 0.45));
   border: 2px solid rgba(0, 0, 0, 0.45);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.2),
@@ -251,12 +234,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: visible;
+  overflow: hidden;
 }
 
 .tienda-wc-hero-icon img {
-  max-width: 110%;
-  max-height: 110%;
+  width: 56px;
+  height: 56px;
   object-fit: contain;
   image-rendering: pixelated;
   filter: drop-shadow(0 3px 0 rgba(0, 0, 0, 0.6));
@@ -268,8 +251,7 @@
 
 .tienda-wc-title {
   margin: 0;
-  font-family: "IM Fell English SC", system-ui, -apple-system,
-    BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: "IM Fell English SC", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-weight: 700;
   font-size: clamp(1.5rem, 2.2vw, 2rem);
   letter-spacing: 0.08em;
@@ -283,8 +265,7 @@
   color: rgba(255, 255, 255, 0.86);
   font-size: 0.95rem;
   line-height: 1.25;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-    sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 .tienda-wc-close {
@@ -295,33 +276,20 @@
   padding: 0.55rem 0.75rem;
   cursor: pointer;
 
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-    sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-weight: 900;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   font-size: 0.75rem;
 
   box-shadow: 0 3px 0 rgba(0, 0, 0, 0.35);
-  transition:
-    transform 0.08s ease,
-    box-shadow 0.08s ease,
-    filter 0.12s ease;
+  transition: transform 0.08s ease, box-shadow 0.08s ease, filter 0.12s ease;
 }
 
-.tienda-wc-close:hover {
-  filter: brightness(1.05);
-}
-
+.tienda-wc-close:hover { filter: brightness(1.05); }
 .tienda-wc-close:active {
   transform: translateY(2px);
   box-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
-}
-
-.tc-head-actions {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.55rem;
 }
 
 /* =========================================================
@@ -331,7 +299,8 @@
   border-right: 2px solid rgba(0, 0, 0, 0.15);
   background: rgba(0, 0, 0, 0.04);
   padding: 0.9rem 0.85rem 0.95rem;
-  overflow: hidden;
+
+  overflow: hidden; /* evita desbordes visuales */
 }
 
 .tienda-tebex--fusion .tc-side {
@@ -354,48 +323,57 @@
   margin-bottom: 0.65rem;
 }
 
+/* IMPORTANTE: no permitir scroll horizontal (shine) */
 .tc-side-scroll {
   flex: 1 1 auto;
   min-height: 0;
   max-height: 100%;
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
   padding-right: 0.2rem;
 }
 
 .tc-side-list {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-auto-rows: auto;
   gap: 0.55rem;
 }
 
-/* ============================
-   Botón tipo "Cambiar cuenta"
-   ============================ */
+/* Auto-fit: cuando hay pocas categorías, se estira y reparte */
+.tc-side-list--fit {
+  height: 100%;
+  align-content: stretch;
+  grid-auto-rows: 1fr;
+}
+
+/* =========================================================
+   Botón sidebar
+   ========================================================= */
 .tc-side-item {
   position: relative;
   width: 100%;
-  border-radius: 0.45rem;
+  border-radius: 0.5rem;
   border: 2px solid var(--btnBorder);
-
   background: var(--btn);
   color: #f6efe6;
 
   box-shadow: 0 3px 0 rgba(0, 0, 0, 0.35);
-  padding: 0.5rem 0.5rem;
+  padding: 0.55rem 0.55rem;
 
   display: grid;
-  grid-template-columns: 40px 1fr;
+  grid-template-columns: 56px 1fr;
   align-items: center;
-  column-gap: 0.55rem;
+  column-gap: 0.65rem;
 
-  /* Hereda la fuente global de la web */
   font-family: inherit;
-
   font-size: 0.78rem;
   font-weight: 900;
   text-transform: uppercase;
 
   cursor: pointer;
+  overflow: hidden; /* recorta el shine dentro del botón */
+  contain: paint;   /* evita que “pinte” fuera */
+
   transition:
     transform 0.08s ease,
     box-shadow 0.08s ease,
@@ -422,25 +400,36 @@
   border-color: var(--greenBorder);
 }
 
-/* icono */
-.tc-side-item-ico {
-  width: 43px;
-  height: 43px;
-  object-fit: contain;
-  image-rendering: pixelated;
-  filter: drop-shadow(0 2px 0 rgba(0, 0, 0, 0.4));
+/* placa para que el icono se lea mejor */
+.tc-side-item-icoWrap {
+  width: 56px;
+  height: 56px;
+  border-radius: 0.55rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.18), rgba(0, 0, 0, 0.35));
+  border: 2px solid rgba(0, 0, 0, 0.42);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    0 3px 0 rgba(0, 0, 0, 0.45);
 }
 
-/* por si no hay icono */
+/* icono más grande y nítido */
+.tc-side-item-ico {
+  width: 52px;
+  height: 52px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 3px 0 rgba(0, 0, 0, 0.55)) contrast(1.05) saturate(1.06);
+}
+
 .tc-side-item-ico-fallback {
-  width: 38px;
-  height: 38px;
+  width: 42px;
+  height: 42px;
   border-radius: 999px;
-  background: radial-gradient(
-    circle at 30% 30%,
-    rgba(255, 255, 255, 0.35),
-    rgba(255, 255, 255, 0.06)
-  );
+  background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0.06));
   box-shadow: 0 2px 0 rgba(0, 0, 0, 0.35);
 }
 
@@ -450,46 +439,37 @@
   color: #f6efe6;
   font-weight: 900;
   text-transform: uppercase;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   line-height: 1.1;
   font-family: inherit;
 }
 
-/* brillo diagonal */
+/* shine recortado */
 .tc-side-item-shine {
-  content: "";
   position: absolute;
-  top: -40%;
-  left: -60%;
-  width: 30%;
-  height: 200%;
+  top: -30%;
+  left: -70%;
+  width: 38%;
+  height: 180%;
   background: linear-gradient(
     115deg,
     rgba(255, 255, 255, 0),
-    rgba(255, 255, 255, 0.35),
+    rgba(255, 255, 255, 0.28),
     rgba(255, 255, 255, 0)
   );
-  transform: translateX(-200%);
+  transform: translateX(-220%);
   opacity: 0;
   pointer-events: none;
 }
 
 .tc-side-item:hover .tc-side-item-shine {
-  animation: tcShine 1.25s ease forwards;
+  animation: tcShine 1.15s ease forwards;
 }
 
 @keyframes tcShine {
-  0% {
-    transform: translateX(-200%);
-    opacity: 0;
-  }
-  20% {
-    opacity: 0.45;
-  }
-  100% {
-    transform: translateX(500%);
-    opacity: 0;
-  }
+  0% { transform: translateX(-220%); opacity: 0; }
+  18% { opacity: 0.45; }
+  100% { transform: translateX(520%); opacity: 0; }
 }
 
 .tc-side-hint {
@@ -513,110 +493,7 @@
 }
 
 /* =========================================================
-   GRID (no se usa, lo dejamos por si acaso)
-   ========================================================= */
-.tc-chooser {
-  height: 100%;
-}
-
-.tc-grid {
-  padding: 0.2rem 0.2rem 0.35rem;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.9rem;
-}
-
-@media (max-width: 1050px) {
-  .tc-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-@media (max-width: 560px) {
-  .tc-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-.tc-card {
-  background: var(--paper2);
-  border-radius: 0.7rem;
-  overflow: hidden;
-  border: 2px solid rgba(0, 0, 0, 0.14);
-  box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.18),
-    0 4px 10px rgba(0, 0, 0, 0.35);
-  min-height: 170px;
-
-  display: flex;
-  align-items: stretch;
-  justify-content: stretch;
-
-  transition:
-    transform 0.12s ease,
-    box-shadow 0.12s ease,
-    filter 0.12s ease;
-  cursor: pointer;
-}
-
-.tc-card:hover {
-  transform: translateY(-2px);
-  box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.2),
-    0 10px 20px rgba(0, 0, 0, 0.5);
-  filter: brightness(1.02);
-}
-
-.tc-card-inner {
-  width: 100%;
-  padding: 0.9rem 0.9rem 1rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.65rem;
-}
-
-.tc-card-media {
-  width: 96px;
-  height: 96px;
-  margin-bottom: 0.1rem;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.tc-card-media img {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
-  filter: drop-shadow(0 3px 0 rgba(0, 0, 0, 0.45));
-}
-
-.tc-card-media-fallback {
-  width: 72px;
-  height: 72px;
-  border-radius: 999px;
-  background: radial-gradient(
-    circle at 30% 30%,
-    rgba(255, 255, 255, 0.4),
-    rgba(255, 255, 255, 0.06)
-  );
-  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.4);
-}
-
-.tc-card-title {
-  font-weight: 900;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: #3a2816;
-  font-size: 1rem;
-  text-align: center;
-  line-height: 1.15;
-}
-
-/* =========================================================
-   Sin categorías / mensaje central
+   Empty
    ========================================================= */
 .tc-empty {
   padding: 1rem;
@@ -632,9 +509,7 @@
   text-align: center;
 }
 
-.tc-empty-inner {
-  max-width: 420px;
-}
+.tc-empty-inner { max-width: 420px; }
 
 .tc-empty-title {
   margin-bottom: 0.3rem;
@@ -668,15 +543,10 @@
 }
 
 /* =========================================================
-   FUSIÓN: layout fijo + scroll interno + animaciones
+   FUSIÓN: layout fijo + scroll interno
    ========================================================= */
-.tienda-tebex--fusion {
-  height: 100%;
-}
-
-.tienda-tebex--fusion .tienda-contenido {
-  height: 100%;
-}
+.tienda-tebex--fusion { height: 100%; }
+.tienda-tebex--fusion .tienda-contenido { height: 100%; }
 
 .tienda-tebex--fusion .tienda-wc {
   height: 100%;
@@ -685,11 +555,9 @@
 }
 
 /* CABECERA fija */
-.tienda-tebex--fusion .tienda-wc-head {
-  flex: 0 0 auto;
-}
+.tienda-tebex--fusion .tienda-wc-head { flex: 0 0 auto; }
 
-/* BODY ocupa todo lo restante */
+/* BODY */
 .tienda-tebex--fusion .tc-fusion-body {
   flex: 1 1 auto;
   min-height: 0;
@@ -700,7 +568,7 @@
 
 /* SIDEBAR fijo + scroll propio */
 .tienda-tebex--fusion .tc-side {
-  width: clamp(210px, 18vw, 270px);
+  width: clamp(220px, 18vw, 285px);
   flex: 0 0 auto;
   min-height: 0;
   display: flex;
@@ -708,10 +576,8 @@
   overflow: hidden;
 }
 
-/* En modo real (rangos) ocultamos sidebar */
-.tienda-tebex--fusion.is-real .tc-side {
-  display: none;
-}
+/* En modo real ocultamos sidebar */
+.tienda-tebex--fusion.is-real .tc-side { display: none; }
 
 /* MAIN fijo */
 .tienda-tebex--fusion .tc-main {
@@ -722,7 +588,7 @@
   position: relative;
 }
 
-/* Productos: contenedor fijo */
+/* Productos fijo */
 .tienda-tebex--fusion .tc-products {
   height: 100%;
   min-height: 0;
@@ -738,17 +604,20 @@
   padding-right: 0.35rem;
 }
 
-/* Modo real: un pelín más de margen */
-.tienda-tebex--fusion .tc-products--real .tc-products-scroll {
-  padding-top: 0.4rem;
-}
+.tienda-tebex--fusion .tc-products--real .tc-products-scroll { padding-top: 0.4rem; }
 
-/* Cuando cambiamos de subcategoria: efecto build desde centro */
+/* swap subcategoria */
 .tienda-tebex--fusion .tc-products.is-swap {
   animation: tcSwap 420ms cubic-bezier(0.25, 0.85, 0.25, 1.05) both;
 }
 
-/* route out/in: apertura/cierre desde el centro */
+@keyframes tcSwap {
+  0% { opacity: 0; transform: scaleX(0.9) scaleY(0.98) translateY(4px); filter: blur(1px); }
+  55% { opacity: 1; transform: scaleX(1.03) scaleY(1); filter: none; }
+  100% { opacity: 1; transform: scaleX(1) scaleY(1) translateY(0); filter: none; }
+}
+
+/* route out/in */
 .tienda-tebex--fusion.tc-route-out .tc-fusion-body,
 .tienda-tebex--fusion.tc-route-out .tienda-wc-head,
 .tienda-tebex--fusion.tc-route-in .tc-fusion-body,
@@ -757,80 +626,12 @@
   animation-fill-mode: both;
 }
 
-/* =========================================================
-   Keyframes de transiciones
-   ========================================================= */
-@keyframes tcFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes tcFadeOut {
-  from {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  to {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-}
-
-/* swap subcategoria -> build desde centro */
-@keyframes tcSwap {
-  0% {
-    opacity: 0;
-    transform: scaleX(0.9) scaleY(0.98) translateY(4px);
-    transform-origin: center center;
-    filter: blur(1px);
-  }
-  55% {
-    opacity: 1;
-    transform: scaleX(1.03) scaleY(1);
-    transform-origin: center center;
-    filter: none;
-  }
-  100% {
-    opacity: 1;
-    transform: scaleX(1) scaleY(1) translateY(0);
-    transform-origin: center center;
-    filter: none;
-  }
-}
-
-/* route out/in -> se abre/cierra desde el centro */
 @keyframes tcRouteOut {
-  from {
-    opacity: 1;
-    transform: scaleX(1) scaleY(1);
-    transform-origin: center center;
-    filter: none;
-  }
-  to {
-    opacity: 0;
-    transform: scaleX(0.85) scaleY(0.96);
-    transform-origin: center center;
-    filter: blur(1px);
-  }
+  from { opacity: 1; transform: scaleX(1) scaleY(1); filter: none; }
+  to { opacity: 0; transform: scaleX(0.85) scaleY(0.96); filter: blur(1px); }
 }
 
 @keyframes tcRouteIn {
-  from {
-    opacity: 0;
-    transform: scaleX(0.8) scaleY(0.96);
-    transform-origin: center center;
-    filter: blur(1px);
-  }
-  to {
-    opacity: 1;
-    transform: scaleX(1) scaleY(1);
-    transform-origin: center center;
-    filter: none;
-  }
+  from { opacity: 0; transform: scaleX(0.8) scaleY(0.96); filter: blur(1px); }
+  to { opacity: 1; transform: scaleX(1) scaleY(1); filter: none; }
 }

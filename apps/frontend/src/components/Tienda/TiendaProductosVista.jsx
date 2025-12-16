@@ -1,4 +1,6 @@
+// apps/frontend/src/components/Tienda/TiendaProductosVista.jsx
 import React, { useMemo, useState } from "react";
+import PRODUCT_DATA from "./data/productos";
 import "../../styles/components/Tienda/tienda-productos.scss";
 
 /* ===========================
@@ -222,6 +224,46 @@ function calcDiscountPct(original, current) {
   return pct > 0 ? pct : null;
 }
 
+/* ===========================
+   DATA de productos (PRODUCT_DATA)
+   =========================== */
+
+/**
+ * Genera posibles claves para buscar en PRODUCT_DATA
+ * Puedes usar en el data:
+ *  - el id de Tebex (ej: "123456")
+ *  - el slug del nombre base (ej: "pico-way")
+ *  - "categoriaSlug/slug" (ej: "items-op/pico-way")
+ */
+function getProductData(pkg, categoria) {
+  if (!PRODUCT_DATA) return null;
+
+  const id = pkg?.id || pkg?.package_id;
+  const rawName = pkg?.name || pkg?.nombre || "";
+  const baseName = normalizeBaseName(rawName);
+
+  const slugName = stripDiacritics(baseName)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  const catSlug = (categoria?.slug || "").toLowerCase();
+
+  const candidates = [];
+  if (id) candidates.push(String(id));
+  if (slugName) candidates.push(slugName);
+  if (catSlug && slugName) candidates.push(`${catSlug}/${slugName}`);
+
+  for (const key of candidates) {
+    if (PRODUCT_DATA[key]) return PRODUCT_DATA[key];
+  }
+  return null;
+}
+
+/* ===========================
+   COMPONENTE
+   =========================== */
+
 const TiendaProductosVista = ({
   server,
   productos = [],
@@ -239,8 +281,8 @@ const TiendaProductosVista = ({
     [productos]
   );
 
-  // Agrupar por nombre base (manteniendo orden)
-  const secciones = useMemo(() => {
+  // Agrupar por nombre base y separar en simples / complejas
+  const { secciones, seccionesSimples, seccionesComplejas } = useMemo(() => {
     const map = new Map();
 
     productosOrdenTebex.forEach((pkg, idx) => {
@@ -282,7 +324,30 @@ const TiendaProductosVista = ({
       }
     });
 
-    return arr;
+    const simples = [];
+    const complejas = [];
+
+    arr.forEach((sec) => {
+      const variantsCount = sec.items.length;
+      const numConCantidad = sec.items.filter(
+        (it) => typeof it.qtyNum === "number"
+      ).length;
+
+      const isStackSection = numConCantidad >= 3 && variantsCount >= 4;
+      const extended = { ...sec, isStackSection };
+
+      if (!isStackSection && variantsCount === 1) {
+        simples.push(extended);
+      } else {
+        complejas.push(extended);
+      }
+    });
+
+    return {
+      secciones: arr,
+      seccionesSimples: simples,
+      seccionesComplejas: complejas,
+    };
   }, [productosOrdenTebex]);
 
   const pickSectionImage = (sec) => {
@@ -298,12 +363,10 @@ const TiendaProductosVista = ({
     return carrito.some((p) => String(p?.id) === String(id));
   };
 
-  // Acordeón por sección
-  const [openSectionKey, setOpenSectionKey] = useState(null);
-
-  const toggleSection = (key) => {
-    setOpenSectionKey((prev) => (prev === key ? null : key));
-  };
+  // Detalles por producto (no por sección)
+  const [openDetailsKey, setOpenDetailsKey] = useState(null);
+  const toggleDetails = (key) =>
+    setOpenDetailsKey((prev) => (prev === key ? null : key));
 
   return (
     <div
@@ -322,98 +385,228 @@ const TiendaProductosVista = ({
             </div>
           </div>
         ) : (
-          <div className="tp-sections">
-            {secciones.map((sec) => {
-              const secImg = pickSectionImage(sec);
-              const variantsCount = sec.items.length;
+          <>
+            {/* ===========================
+                SECCIONES COMPLEJAS
+               =========================== */}
+            {seccionesComplejas.length > 0 && (
+              <div className="tp-sections">
+                {seccionesComplejas.map((sec) => {
+                  const secImg = pickSectionImage(sec);
+                  const variantsCount = sec.items.length;
+                  const isStackSection = sec.isStackSection;
 
-              let sectionClasses = "tp-section";
-              let gridClasses = "tp-section__grid";
+                  let sectionClasses = "tp-section";
+                  let gridClasses = "tp-section__grid";
 
-              if (variantsCount === 1) {
-                sectionClasses += " tp-section--single";
-                gridClasses += " tp-section__grid--one";
-              } else if (variantsCount === 2) {
-                gridClasses += " tp-section__grid--two";
-              } else {
-                gridClasses += " tp-section__grid--three";
-              }
+                  if (variantsCount === 1) {
+                    sectionClasses += " tp-section--single";
+                    gridClasses += " tp-section__grid--one";
+                  } else if (variantsCount === 2) {
+                    gridClasses += " tp-section__grid--two";
+                  } else {
+                    gridClasses += " tp-section__grid--three";
+                  }
 
-              const isOpen = openSectionKey === sec.key;
-
-              // Descripción común de la sección (del primer paquete)
-              const firstPkg = sec.items[0]?.pkg || {};
-              const rawDesc =
-                firstPkg.description ||
-                firstPkg.descripcion ||
-                firstPkg.long_description ||
-                firstPkg.longDescription ||
-                "";
-              const descHtml = rawDesc
-                ? sanitizeTebexHtml(rawDesc)
-                : sanitizeTebexHtml(
-                    "Este paquete se entregará automáticamente en el servidor correspondiente al completar el pago."
-                  );
-
-              // ¿Es una sección tipo "stacks" (Dinero, XP, etc.)?
-              const numConCantidad = sec.items.filter(
-                (it) => typeof it.qtyNum === "number"
-              ).length;
-              const isStackSection = numConCantidad >= 3 && variantsCount >= 4;
-
-              /* ===========================
-                 STACK SECTION (dinero / xp)
-                 =========================== */
-              if (isStackSection) {
-                return (
-                  <article
-                    className={`${sectionClasses} tp-section--stack`}
-                    key={sec.key}
-                  >
-                    <div className="tp-stack-layout">
-                      {/* HERO IZQUIERDA */}
-                      <div
-                        className={`tp-stack-hero ${
-                          isOpen ? "is-open" : ""
-                        }`}
+                  // ============ STACK (dinero / xp) ============
+                  if (isStackSection) {
+                    return (
+                      <article
+                        className={`${sectionClasses} tp-section--stack`}
+                        key={sec.key}
                       >
-                        <div className="tp-stack-hero__imgwrap">
-                          <img
-                            src={secImg}
-                            alt={sec.title}
-                            loading="lazy"
-                            onError={(e) => {
-                              e.currentTarget.onerror = null;
-                              e.currentTarget.src = imgFallback;
-                            }}
-                          />
-                          <span
-                            className="tp-stack-hero__glow"
-                            aria-hidden="true"
-                          />
+                        <div className="tp-stack-layout">
+                          {/* HERO IZQUIERDA */}
+                          <div className="tp-stack-hero">
+                            <div className="tp-stack-hero__imgwrap">
+                              <img
+                                src={secImg}
+                                alt={sec.title}
+                                loading="lazy"
+                                onError={(e) => {
+                                  e.currentTarget.onerror = null;
+                                  e.currentTarget.src = imgFallback;
+                                }}
+                              />
+                              <span
+                                className="tp-stack-hero__glow"
+                                aria-hidden="true"
+                              />
+                            </div>
+
+                            <div className="tp-stack-hero__title">
+                              {sec.title}
+                            </div>
+                          </div>
+
+                          {/* GRID DE STACKS */}
+                          <div className="tp-stack-grid">
+                            {sec.items.map((it) => {
+                              const pkg = it.pkg;
+                              const id =
+                                pkg?.id ||
+                                pkg?.package_id ||
+                                `${sec.key}-${it.idx}`;
+                              const rawName =
+                                pkg?.name ||
+                                pkg?.nombre ||
+                                it.rawName ||
+                                "Producto";
+
+                              const precio = Number(
+                                pkg?.precio ?? pkg?.price ?? 0
+                              );
+                              const precioOriginal =
+                                pkg?.precio_original ??
+                                pkg?.original_price ??
+                                null;
+                              const originalNum =
+                                typeof precioOriginal === "number"
+                                  ? precioOriginal
+                                  : null;
+
+                              const pct = originalNum
+                                ? calcDiscountPct(originalNum, precio)
+                                : null;
+                              const precioFmt = `${precio.toFixed(2)} €`;
+                              const originalFmt =
+                                originalNum != null
+                                  ? `${originalNum.toFixed(2)} €`
+                                  : null;
+
+                              const enCarrito = estaEnCarrito(pkg);
+
+                              const qtyLabel =
+                                it.qtyLabel ||
+                                (typeof it.qtyNum === "number"
+                                  ? `x${it.qtyNum}`
+                                  : rawName);
+
+                              const data = getProductData(pkg, categoria);
+                              const descHtml = data?.html
+                                ? sanitizeTebexHtml(data.html)
+                                : data?.descripcion
+                                ? sanitizeTebexHtml(data.descripcion)
+                                : "";
+                              const hasDetails = !!descHtml;
+                              const detailsKey = `stack-${id}`;
+                              const isOpen = openDetailsKey === detailsKey;
+
+                              return (
+                                <article
+                                  key={id}
+                                  className={`tp-stack-card ${
+                                    enCarrito ? "is-in-cart" : ""
+                                  }`}
+                                  title={rawName}
+                                >
+                                  {pct ? (
+                                    <div className="tp-stack-card__pct">
+                                      -{pct}%
+                                    </div>
+                                  ) : null}
+
+                                  <div className="tp-stack-card__qty">
+                                    {qtyLabel}
+                                  </div>
+
+                                  {originalFmt && (
+                                    <div className="tp-stack-card__old">
+                                      Antes {originalFmt}
+                                    </div>
+                                  )}
+
+                                  <div className="tp-stack-card__price">
+                                    {precioFmt}
+                                  </div>
+
+                                  <button
+                                    type="button"
+                                    className="tp-variant__buy tp-stack-card__btn"
+                                    data-state={enCarrito ? "in" : "out"}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      toggleProducto(pkg);
+                                    }}
+                                  >
+                                    <span
+                                      className="tp-variant__shine"
+                                      aria-hidden="true"
+                                    />
+                                    {enCarrito
+                                      ? "Quitar del carrito"
+                                      : "Comprar"}
+                                  </button>
+
+                                  {hasDetails && (
+                                    <>
+                                      <button
+                                        type="button"
+                                        className="tp-card__details tp-stack-card__details"
+                                        onClick={() =>
+                                          toggleDetails(detailsKey)
+                                        }
+                                      >
+                                        <span className="tp-card__details-label">
+                                          {isOpen
+                                            ? "Ocultar detalles"
+                                            : "Ver detalles"}
+                                        </span>
+                                        <span
+                                          className="tp-card__chevron"
+                                          aria-hidden="true"
+                                        />
+                                      </button>
+
+                                      <div
+                                        className={`tp-details tp-details--stack ${
+                                          isOpen ? "tp-details--open" : ""
+                                        }`}
+                                      >
+                                        <div
+                                          className="tp-details__inner"
+                                          dangerouslySetInnerHTML={{
+                                            __html: descHtml,
+                                          }}
+                                        />
+                                      </div>
+                                    </>
+                                  )}
+                                </article>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </article>
+                    );
+                  }
+
+                  // ============ SECCIÓN NORMAL (protecciones, etc.) ============
+                  return (
+                    <article className={sectionClasses} key={sec.key}>
+                      <div className={gridClasses}>
+                        {/* MEDIA IZQUIERDA */}
+                        <div className="tp-media">
+                          <div className="tp-media__imgwrap">
+                            <img
+                              src={secImg}
+                              alt={sec.title}
+                              loading="lazy"
+                              onError={(e) => {
+                                e.currentTarget.onerror = null;
+                                e.currentTarget.src = imgFallback;
+                              }}
+                            />
+                            <span
+                              className="tp-media__glow"
+                              aria-hidden="true"
+                            />
+                          </div>
+
+                          <div className="tp-media__title">{sec.title}</div>
                         </div>
 
-                        <div className="tp-stack-hero__title">
-                          {sec.title}
-                        </div>
-
-                        <button
-                          type="button"
-                          className="tp-stack-hero__details"
-                          onClick={() => toggleSection(sec.key)}
-                        >
-                          <span className="tp-stack-hero__details-label">
-                            {isOpen ? "Ocultar detalles" : "Ver detalles"}
-                          </span>
-                          <span
-                            className="tp-stack-hero__chevron"
-                            aria-hidden="true"
-                          />
-                        </button>
-                      </div>
-
-                      {/* GRID DE STACKS A LA DERECHA */}
-                      <div className="tp-stack-grid">
+                        {/* VARIANTES */}
                         {sec.items.map((it) => {
                           const pkg = it.pkg;
                           const id =
@@ -421,7 +614,10 @@ const TiendaProductosVista = ({
                             pkg?.package_id ||
                             `${sec.key}-${it.idx}`;
                           const rawName =
-                            pkg?.name || pkg?.nombre || it.rawName || "Producto";
+                            pkg?.name ||
+                            pkg?.nombre ||
+                            it.rawName ||
+                            "Producto";
 
                           const precio = Number(
                             pkg?.precio ?? pkg?.price ?? 0
@@ -446,218 +642,232 @@ const TiendaProductosVista = ({
 
                           const enCarrito = estaEnCarrito(pkg);
 
-                          const qtyLabel =
-                            it.qtyLabel ||
-                            (typeof it.qtyNum === "number"
-                              ? `x${it.qtyNum}`
-                              : rawName);
+                          const data = getProductData(pkg, categoria);
+                          const descHtml = data?.html
+                            ? sanitizeTebexHtml(data.html)
+                            : data?.descripcion
+                            ? sanitizeTebexHtml(data.descripcion)
+                            : "";
+                          const hasDetails = !!descHtml;
+                          const detailsKey = `variant-${id}`;
+                          const isOpen = openDetailsKey === detailsKey;
 
                           return (
-                            <article
+                            <div
                               key={id}
-                              className={`tp-stack-card ${
+                              className={`tp-variant ${
                                 enCarrito ? "is-in-cart" : ""
                               }`}
                               title={rawName}
                             >
                               {pct ? (
-                                <div className="tp-stack-card__pct">
+                                <div className="tp-variant__pct">
                                   -{pct}%
                                 </div>
                               ) : null}
 
-                              <div className="tp-stack-card__qty">
-                                {qtyLabel}
+                              <div className="tp-variant__center">
+                                <div className="tp-variant__name">
+                                  {rawName}
+                                </div>
+                                {originalFmt && (
+                                  <div className="tp-variant__oldline">
+                                    Antes {originalFmt}
+                                  </div>
+                                )}
                               </div>
 
-                              {originalFmt && (
-                                <div className="tp-stack-card__old">
-                                  Antes {originalFmt}
+                              <div className="tp-variant__actions">
+                                <button
+                                  type="button"
+                                  className="tp-variant__buy"
+                                  data-state={enCarrito ? "in" : "out"}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleProducto(pkg);
+                                  }}
+                                >
+                                  <span
+                                    className="tp-variant__shine"
+                                    aria-hidden="true"
+                                  />
+                                  {enCarrito
+                                    ? "Quitar del carrito"
+                                    : `Comprar por ${precioFmt}`}
+                                </button>
+
+                                {hasDetails && (
+                                  <button
+                                    type="button"
+                                    className="tp-card__details tp-variant__details-btn"
+                                    onClick={() => toggleDetails(detailsKey)}
+                                  >
+                                    <span className="tp-card__details-label">
+                                      {isOpen
+                                        ? "Ocultar detalles"
+                                        : "Ver detalles"}
+                                    </span>
+                                    <span
+                                      className="tp-card__chevron"
+                                      aria-hidden="true"
+                                    />
+                                  </button>
+                                )}
+                              </div>
+
+                              {hasDetails && (
+                                <div
+                                  className={`tp-details tp-details--variant ${
+                                    isOpen ? "tp-details--open" : ""
+                                  }`}
+                                >
+                                  <div
+                                    className="tp-details__inner"
+                                    dangerouslySetInnerHTML={{
+                                      __html: descHtml,
+                                    }}
+                                  />
                                 </div>
                               )}
-
-                              <div className="tp-stack-card__price">
-                                {precioFmt}
-                              </div>
-
-                              <button
-                                type="button"
-                                className="tp-variant__buy tp-stack-card__btn"
-                                data-state={enCarrito ? "in" : "out"}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  toggleProducto(pkg);
-                                }}
-                              >
-                                <span
-                                  className="tp-variant__shine"
-                                  aria-hidden="true"
-                                />
-                                {enCarrito
-                                  ? "Quitar del carrito"
-                                  : "Comprar"}
-                              </button>
-                            </article>
+                            </div>
                           );
                         })}
                       </div>
-                    </div>
+                    </article>
+                  );
+                })}
+              </div>
+            )}
 
-                    {/* DESCRIPCIÓN / ACORDEÓN */}
-                    <div
-                      className={`tp-section__accordion ${
-                        isOpen ? "tp-section__accordion--open" : ""
-                      }`}
-                      aria-hidden={!isOpen}
+            {/* ===========================
+                SECCIONES SIMPLES -> GRID CARDS
+               =========================== */}
+            {seccionesSimples.length > 0 && (
+              <section className="tp-card-grid">
+                {seccionesSimples.map((sec) => {
+                  const it = sec.items[0];
+                  const pkg = it.pkg;
+                  const secImg = pickSectionImage(sec);
+
+                  const id =
+                    pkg?.id || pkg?.package_id || `${sec.key}-${it.idx}`;
+                  const rawName =
+                    pkg?.name || pkg?.nombre || it.rawName || sec.title;
+
+                  const precio = Number(pkg?.precio ?? pkg?.price ?? 0);
+                  const precioOriginal =
+                    pkg?.precio_original ?? pkg?.original_price ?? null;
+                  const originalNum =
+                    typeof precioOriginal === "number"
+                      ? precioOriginal
+                      : null;
+
+                  const pct = originalNum
+                    ? calcDiscountPct(originalNum, precio)
+                    : null;
+                  const precioFmt = `${precio.toFixed(2)} €`;
+                  const originalFmt =
+                    originalNum != null
+                      ? `${originalNum.toFixed(2)} €`
+                      : null;
+
+                  const enCarrito = estaEnCarrito(pkg);
+
+                  const data = getProductData(pkg, categoria);
+                  const descHtml = data?.html
+                    ? sanitizeTebexHtml(data.html)
+                    : data?.descripcion
+                    ? sanitizeTebexHtml(data.descripcion)
+                    : "";
+                  const hasDetails = !!descHtml;
+                  const detailsKey = `card-${id}`;
+                  const isOpen = openDetailsKey === detailsKey;
+
+                  return (
+                    <article
+                      key={id}
+                      className={`tp-card ${enCarrito ? "is-in-cart" : ""}`}
                     >
-                      <div
-                        className="tp-section__descHTML"
-                        dangerouslySetInnerHTML={{ __html: descHtml }}
-                      />
-                    </div>
-                  </article>
-                );
-              }
+                      {pct ? (
+                        <div className="tp-card__pct">-{pct}%</div>
+                      ) : null}
 
-              /* ===========================
-                 SECCIÓN NORMAL
-                 =========================== */
-              return (
-                <article className={sectionClasses} key={sec.key}>
-                  <div className={gridClasses}>
-                    {/* COLUMNA MEDIA: imagen + título + botón detalles */}
-                    <div className={`tp-media ${isOpen ? "is-open" : ""}`}>
-                      <div className="tp-media__imgwrap">
+                      <div className="tp-card__imgwrap">
                         <img
                           src={secImg}
-                          alt={sec.title}
+                          alt={rawName}
                           loading="lazy"
                           onError={(e) => {
                             e.currentTarget.onerror = null;
                             e.currentTarget.src = imgFallback;
                           }}
                         />
-                        <span
-                          className="tp-media__glow"
-                          aria-hidden="true"
-                        />
                       </div>
 
-                      <div className="tp-media__title">{sec.title}</div>
+                      <div className="tp-card__body">
+                        <div className="tp-card__name">{rawName}</div>
+                        {originalFmt && (
+                          <div className="tp-card__old">
+                            Antes {originalFmt}
+                          </div>
+                        )}
+                        <div className="tp-card__price">{precioFmt}</div>
+                      </div>
 
-                      <button
-                        type="button"
-                        className="tp-media__details"
-                        onClick={() => toggleSection(sec.key)}
-                      >
-                        <span className="tp-media__details-label">
-                          {isOpen ? "Ocultar detalles" : "Ver detalles"}
-                        </span>
-                        <span
-                          className="tp-media__chevron"
-                          aria-hidden="true"
-                        />
-                      </button>
-                    </div>
-
-                    {/* VARIANTES */}
-                    {sec.items.map((it) => {
-                      const pkg = it.pkg;
-                      const id =
-                        pkg?.id ||
-                        pkg?.package_id ||
-                        `${sec.key}-${it.idx}`;
-                      const rawName =
-                        pkg?.name || pkg?.nombre || it.rawName || "Producto";
-
-                      const precio = Number(
-                        pkg?.precio ?? pkg?.price ?? 0
-                      );
-                      const precioOriginal =
-                        pkg?.precio_original ??
-                        pkg?.original_price ??
-                        null;
-                      const originalNum =
-                        typeof precioOriginal === "number"
-                          ? precioOriginal
-                          : null;
-
-                      const pct = originalNum
-                        ? calcDiscountPct(originalNum, precio)
-                        : null;
-                      const precioFmt = `${precio.toFixed(2)} €`;
-                      const originalFmt =
-                        originalNum != null
-                          ? `${originalNum.toFixed(2)} €`
-                          : null;
-
-                      const enCarrito = estaEnCarrito(pkg);
-
-                      return (
-                        <div
-                          key={id}
-                          className={`tp-variant ${
-                            enCarrito ? "is-in-cart" : ""
-                          }`}
-                          title={rawName}
+                      <div className="tp-card__actions">
+                        <button
+                          type="button"
+                          className="tp-variant__buy tp-card__buy"
+                          data-state={enCarrito ? "in" : "out"}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleProducto(pkg);
+                          }}
                         >
-                          {pct ? (
-                            <div className="tp-variant__pct">
-                              -{pct}%
-                            </div>
-                          ) : null}
+                          <span
+                            className="tp-variant__shine"
+                            aria-hidden="true"
+                          />
+                          {enCarrito
+                            ? "Quitar del carrito"
+                            : `Comprar por ${precioFmt}`}
+                        </button>
 
-                          <div className="tp-variant__center">
-                            <div className="tp-variant__name">
-                              {rawName}
-                            </div>
-                            {originalFmt && (
-                              <div className="tp-variant__oldline">
-                                Antes {originalFmt}
-                              </div>
-                            )}
-                          </div>
+                        {hasDetails && (
+                          <button
+                            type="button"
+                            className="tp-card__details"
+                            onClick={() => toggleDetails(detailsKey)}
+                          >
+                            <span className="tp-card__details-label">
+                              {isOpen ? "Ocultar detalles" : "Ver detalles"}
+                            </span>
+                            <span
+                              className="tp-card__chevron"
+                              aria-hidden="true"
+                            />
+                          </button>
+                        )}
+                      </div>
 
-                          <div className="tp-variant__actions">
-                            <button
-                              type="button"
-                              className="tp-variant__buy"
-                              data-state={enCarrito ? "in" : "out"}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                toggleProducto(pkg);
-                              }}
-                            >
-                              <span
-                                className="tp-variant__shine"
-                                aria-hidden="true"
-                              />
-                              {enCarrito
-                                ? "Quitar del carrito"
-                                : `Comprar por ${precioFmt}`}
-                            </button>
-                          </div>
+                      {hasDetails && (
+                        <div
+                          className={`tp-details tp-details--card ${
+                            isOpen ? "tp-details--open" : ""
+                          }`}
+                        >
+                          <div
+                            className="tp-details__inner"
+                            dangerouslySetInnerHTML={{ __html: descHtml }}
+                          />
                         </div>
-                      );
-                    })}
-                  </div>
-
-                  {/* DESPLEGABLE DE LA SECCIÓN (debajo de todo el artículo) */}
-                  <div
-                    className={`tp-section__accordion ${
-                      isOpen ? "tp-section__accordion--open" : ""
-                    }`}
-                    aria-hidden={!isOpen}
-                  >
-                    <div
-                      className="tp-section__descHTML"
-                      dangerouslySetInnerHTML={{ __html: descHtml }}
-                    />
-                  </div>
-                </article>
-              );
-            })}
-          </div>
+                      )}
+                    </article>
+                  );
+                })}
+              </section>
+            )}
+          </>
         )}
       </section>
     </div>
