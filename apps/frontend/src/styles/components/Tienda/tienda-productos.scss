@@ -1,33 +1,10 @@
 @use "../../base/_variables" as *;
 
 @keyframes tpShine {
-  0% {
-    transform: translate3d(-200%, 0, 0);
-    opacity: 0;
-  }
-  10% {
-    opacity: 0.55;
-  }
-  30% {
-    transform: translate3d(430%, 0, 0);
-    opacity: 0;
-  }
-  100% {
-    transform: translate3d(430%, 0, 0);
-    opacity: 0;
-  }
-}
-
-@keyframes tpFloat {
-  0% {
-    transform: translateY(0) scale(1);
-  }
-  50% {
-    transform: translateY(-3px) scale(1.02);
-  }
-  100% {
-    transform: translateY(0) scale(1);
-  }
+  0% { transform: translate3d(-200%, 0, 0); opacity: 0; }
+  10% { opacity: 0.55; }
+  30% { transform: translate3d(430%, 0, 0); opacity: 0; }
+  100% { transform: translate3d(430%, 0, 0); opacity: 0; }
 }
 
 /* ======================================
@@ -39,10 +16,6 @@
   --paper: #f7e2b2;
   --basket: rgba(250, 230, 188, 0.96);
 
-  --brownTop: #8b7a67;
-  --brownBtn: #7a6a5b;
-  --brownBtn2: #6f6053;
-
   --ink: #3a2816;
   --inkSoft: rgba(58, 40, 22, 0.72);
 
@@ -50,7 +23,9 @@
   --goodBorder: #0a3f12;
   --goodShadow: #06270b;
 
-  --bad: #c53a2a;
+  --discountBg: #8f2f27;
+  --discountBorder: rgba(0, 0, 0, 0.38);
+  --discountText: #fff2d6;
 
   width: 100%;
   height: 100%;
@@ -69,58 +44,109 @@
   box-sizing: border-box;
   color: var(--ink);
   overflow: hidden;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-    sans-serif;
+
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
-/* BODY: zona scrolleable */
+.tienda-productos--discount-green {
+  --discountBg: #0a9147;
+  --discountBorder: rgba(0, 0, 0, 0.38);
+  --discountText: #fff2d6;
+}
 
+/* BODY */
 .tienda-productos__body {
   flex: 1 1 auto;
   min-height: 0;
-
   padding: 0.75rem;
   overflow-y: auto;
 
   scrollbar-width: thin;
   scrollbar-color: #b1834b transparent;
 
-  &::-webkit-scrollbar {
-    width: 9px;
-  }
-  &::-webkit-scrollbar-track {
-    background: rgba(212, 183, 135, 0.8);
-  }
+  &::-webkit-scrollbar { width: 9px; }
+  &::-webkit-scrollbar-track { background: rgba(212, 183, 135, 0.8); }
   &::-webkit-scrollbar-thumb {
     background: #a37843;
     border-radius: 999px;
   }
-  &::-webkit-scrollbar-thumb:hover {
-    background: #c18d53;
-  }
-}
-
-/* VACÍO */
-
-.tienda-productos__empty {
-  padding: 1.2rem;
-  border-radius: 0.55rem;
-  background: rgba(250, 230, 188, 0.96);
-  box-shadow: inset 0 0 0 1px rgba(134, 93, 40, 0.35);
-  border: 2px solid rgba(0, 0, 0, 0.15);
-}
-
-.tienda-productos__empty-title {
-  font-weight: 950;
-}
-.tienda-productos__empty-sub {
-  margin-top: 0.35rem;
-  color: rgba(0, 0, 0, 0.55);
-  font-weight: 700;
+  &::-webkit-scrollbar-thumb:hover { background: #c18d53; }
 }
 
 /* ======================================
-   SECCIONES COMPLEJAS
+   BADGE DESCUENTO
+   ====================================== */
+
+.tp-discount-badge {
+  position: absolute;
+  left: 8px;
+  top: 8px;
+  padding: 0.18rem 0.45rem;
+  border-radius: 0.4rem;
+  border: 2px solid var(--discountBorder);
+  background: var(--discountBg);
+  color: var(--discountText);
+  font-weight: 950;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.3);
+  text-transform: uppercase;
+  z-index: 2;
+}
+
+/* ======================================
+   “ANTES”
+   ====================================== */
+
+.tp-pricebox {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 30px;
+  margin-top: 0.15rem;
+}
+
+.tp-pricebox__old {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+
+  padding: 0.28rem 0.55rem;
+  border-radius: 0.5rem;
+
+  background: rgba(197, 58, 42, 0.10);
+  border: 1px solid rgba(197, 58, 42, 0.35);
+
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    0 1px 0 rgba(0, 0, 0, 0.08);
+
+  color: rgba(40, 20, 12, 0.85);
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-size: 0.76rem;
+}
+
+.tp-pricebox__label {
+  color: rgba(0, 0, 0, 0.55);
+  font-weight: 950;
+}
+
+.tp-pricebox__value {
+  color: #8f2f27;
+  font-weight: 950;
+  text-decoration: line-through;
+  text-decoration-thickness: 2px;
+  text-decoration-color: rgba(197, 58, 42, 0.9);
+}
+
+.tp-pricebox__spacer {
+  height: 30px;
+}
+
+/* ======================================
+   SECCIONES / GRIDS
    ====================================== */
 
 .tp-sections {
@@ -135,8 +161,6 @@
   gap: 0.4rem;
 }
 
-/* Grid base: media + variantes (hasta 3) */
-
 .tp-section__grid {
   border-radius: 0.55rem;
   padding: 0.65rem;
@@ -150,62 +174,33 @@
   grid-template-columns: clamp(160px, 18vw, 220px) repeat(3, minmax(0, 1fr));
 }
 
-/* 1 sola variante: media + 1 */
-.tp-section__grid--one {
-  grid-template-columns: clamp(180px, 20vw, 260px) minmax(0, 1.5fr);
-}
-
-/* 2 variantes: media + 2 */
 .tp-section__grid--two {
   grid-template-columns: clamp(160px, 18vw, 220px) repeat(2, minmax(0, 1fr));
 }
 
-/* 3+ variantes: media + 3 (default) */
 .tp-section__grid--three {
   grid-template-columns: clamp(160px, 18vw, 220px) repeat(3, minmax(0, 1fr));
 }
-
-/* sección con solo una variante: rellena mejor el espacio */
-.tp-section--single .tp-section__grid {
-  align-items: center;
-}
-
-.tp-section--single .tp-media {
-  max-width: 260px;
-  margin-inline: auto;
-}
-
-/* RESPONSIVE grid */
 
 @media (max-width: 980px) {
   .tp-section__grid,
   .tp-section__grid--three {
     grid-template-columns: clamp(150px, 22vw, 200px) repeat(2, minmax(0, 1fr));
   }
-
   .tp-section__grid--two {
-    grid-template-columns: clamp(150px, 22vw, 200px) repeat(
-        2,
-        minmax(0, 1fr)
-      );
-  }
-
-  .tp-section__grid--one {
-    grid-template-columns: clamp(150px, 22vw, 200px) minmax(0, 1.3fr);
+    grid-template-columns: clamp(150px, 22vw, 200px) repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 640px) {
   .tp-section__grid,
-  .tp-section__grid--one,
   .tp-section__grid--two,
   .tp-section__grid--three {
     grid-template-columns: 1fr;
   }
 }
 
-/* MEDIA: imagen + título */
-
+/* MEDIA */
 .tp-media {
   position: relative;
   border-radius: 0.65rem;
@@ -216,9 +211,7 @@
 
   display: flex;
   flex-direction: column;
-  align-items: stretch;
   gap: 0.4rem;
-
   padding: 0.6rem;
 }
 
@@ -237,20 +230,13 @@
   display: block;
   transform: scale(1.02);
   filter: saturate(1.05);
-  transition:
-    transform 0.18s ease-out,
-    filter 0.18s ease-out,
-    box-shadow 0.18s ease-out;
+  transition: transform 0.18s ease-out, filter 0.18s ease-out, box-shadow 0.18s ease-out;
 }
 
 .tp-media__glow {
   position: absolute;
   inset: -30%;
-  background: radial-gradient(
-    circle at 50% 50%,
-    rgba(255, 220, 165, 0.26),
-    transparent 60%
-  );
+  background: radial-gradient(circle at 50% 50%, rgba(255, 220, 165, 0.26), transparent 60%);
   opacity: 0.8;
   pointer-events: none;
 }
@@ -260,36 +246,20 @@
   font-weight: 950;
   font-size: 0.92rem;
   letter-spacing: 0.04em;
-  color: #2a1a10;
-  font-family: "Press Start 2P", system-ui, -apple-system, BlinkMacSystemFont,
-    "Segoe UI", sans-serif;
+
+  font-family: "Press Start 2P", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 
   padding: 0.25rem 0.35rem 0.3rem;
   border-radius: 0.4rem;
-  background: linear-gradient(
-    180deg,
-    rgba(35, 111, 201, 0.98),
-    rgba(12, 74, 153, 0.98)
-  );
+  background: linear-gradient(180deg, rgba(35, 111, 201, 0.98), rgba(12, 74, 153, 0.98));
   color: #fdf4ce;
-  text-shadow:
-    0 1px 0 rgba(0, 0, 0, 0.6),
-    0 0 6px rgba(15, 23, 42, 0.5);
-  box-shadow:
-    0 2px 0 rgba(0, 0, 0, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.25);
-}
 
-/* Hover animado imagen media */
-
-.tp-media:hover img {
-  transform: translateY(-4px) scale(1.06) rotate(-2deg);
-  filter: saturate(1.2)
-    drop-shadow(0 8px 14px rgba(0, 0, 0, 0.45));
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6), 0 0 6px rgba(15, 23, 42, 0.5);
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 
 /* ======================================
-   VARIANTE (packs tipo protecciones)
+   VARIANTE
    ====================================== */
 
 .tp-variant {
@@ -305,16 +275,13 @@
   gap: 0.55rem;
   min-height: 150px;
 
+  overflow: visible;
+
   transition: transform 0.08s ease, filter 0.12s ease, box-shadow 0.12s ease;
 }
 
-.tp-variant:hover {
-  filter: brightness(1.03);
-  transform: translateY(-1px);
-}
-.tp-variant:active {
-  transform: translateY(1px);
-}
+.tp-variant:hover { filter: brightness(1.03); transform: translateY(-1px); }
+.tp-variant:active { transform: translateY(1px); }
 
 .tp-variant.is-in-cart {
   border-color: rgba(25, 140, 40, 0.55);
@@ -323,27 +290,14 @@
     0 0 0 2px rgba(47, 225, 122, 0.18);
 }
 
-.tp-variant__pct {
-  position: absolute;
-  left: 8px;
-  top: 8px;
-  padding: 0.18rem 0.45rem;
-  border-radius: 0.4rem;
-  border: 2px solid rgba(0, 0, 0, 0.38);
-  background: #8f2f27;
-  color: #fff2d6;
-  font-weight: 950;
-  font-size: 0.72rem;
-  letter-spacing: 0.06em;
-  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.3);
-}
+.tp-variant.is-details-open { z-index: 30; }
 
 .tp-variant__center {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 0.25rem;
-  min-height: 80px;
+  gap: 0.2rem;
+  min-height: 86px;
   padding: 0.15rem 0.15rem 0;
   flex: 1 1 auto;
 }
@@ -354,31 +308,16 @@
   text-align: center;
   font-size: 0.9rem;
   line-height: 1.2;
-  font-family: "Press Start 2P", system-ui, -apple-system, BlinkMacSystemFont,
-    "Segoe UI", sans-serif;
+  font-family: "Press Start 2P", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   letter-spacing: 0.05em;
-
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.2);
 
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
-
   overflow: hidden;
 }
 
-.tp-variant__oldline {
-  text-align: center;
-  font-weight: 900;
-  font-size: 0.82rem;
-  color: rgba(0, 0, 0, 0.6);
-  text-decoration: line-through;
-  text-decoration-thickness: 2px;
-  text-decoration-color: rgba(197, 58, 42, 0.85);
-}
-
 /* Acciones */
-
 .tp-variant__actions {
   display: flex;
   flex-direction: column;
@@ -386,7 +325,9 @@
   margin-top: auto;
 }
 
-/* Botón tipo checkout */
+/* ======================================
+   BOTÓN CTA
+   ====================================== */
 
 .tp-variant__buy {
   position: relative;
@@ -398,20 +339,19 @@
   background: var(--good);
 
   color: #ffffff;
+
+  font-family: "Montserrat", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-weight: 900;
-  letter-spacing: 0.12em;
+
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  font-size: 0.82rem;
+  font-size: 0.86rem;
 
   box-shadow: 0 4px 0 var(--goodShadow);
   cursor: pointer;
   overflow: hidden;
 
-  transition:
-    transform 0.08s ease,
-    box-shadow 0.08s ease,
-    filter 0.12s ease,
-    opacity 0.12s ease;
+  transition: transform 0.08s ease, box-shadow 0.08s ease, filter 0.12s ease, opacity 0.12s ease;
 }
 
 .tp-variant__buy:hover:not(:disabled) {
@@ -451,14 +391,54 @@
   animation: tpShine 3.2s infinite ease-in-out;
 }
 
-/* Botón detalles de variante */
-
-.tp-variant__details-btn {
+/* Botón detalles */
+.tp-card__details {
   height: 40px;
+  border-radius: 0.5rem;
+  border: 2px solid rgba(54, 38, 24, 0.9);
+  background: linear-gradient(180deg, #7a6a5b 0%, #6a5a4c 40%, #5a4c40 100%);
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0 0.8rem;
+
+  color: #f5e2c5;
+  font-weight: 900;
+  font-size: 0.73rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+
+  box-shadow: 0 3px 0 rgba(37, 26, 18, 0.95), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+
+  transition: transform 0.08s ease, box-shadow 0.08s ease, filter 0.12s ease, background 0.12s ease;
+}
+
+.tp-card__details:hover {
+  filter: brightness(1.03);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 0 rgba(37, 26, 18, 0.95), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.tp-card__details:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 0 rgba(37, 26, 18, 0.95), inset 0 0px 0 rgba(255, 255, 255, 0.2);
+}
+
+.tp-card__chevron {
+  width: 8px;
+  height: 8px;
+  border-style: solid;
+  border-width: 0 2px 2px 0;
+  border-color: rgba(244, 226, 199, 0.95);
+  transform: rotate(45deg);
+  transition: transform 0.18s ease;
 }
 
 /* ======================================
-   STACK LAYOUT (Dinero / XP con muchos tiers)
+   STACK (DINERO/XP) - FIX VISUAL
    ====================================== */
 
 .tp-section--stack .tp-stack-layout {
@@ -469,12 +449,10 @@
   border: 2px solid rgba(0, 0, 0, 0.15);
 
   display: grid;
-  grid-template-columns: clamp(180px, 22vw, 260px) minmax(0, 1fr);
+  grid-template-columns: clamp(200px, 24vw, 300px) minmax(0, 1fr);
   gap: 0.75rem;
 
-  @media (max-width: 780px) {
-    grid-template-columns: minmax(0, 1fr);
-  }
+  @media (max-width: 780px) { grid-template-columns: minmax(0, 1fr); }
 }
 
 .tp-stack-hero {
@@ -487,9 +465,7 @@
 
   display: flex;
   flex-direction: column;
-  align-items: stretch;
-  gap: 0.4rem;
-
+  gap: 0.45rem;
   padding: 0.6rem;
 }
 
@@ -497,38 +473,24 @@
   position: relative;
   display: grid;
   place-items: center;
-  padding: 0.2rem;
-  min-height: 170px;
+  min-height: 210px;
+  padding: 0.15rem;
 }
 
 .tp-stack-hero__imgwrap img {
   width: 100%;
-  height: 160px;
+  height: 220px;
   object-fit: contain;
   display: block;
-  transform: rotate(-6deg) scale(1.04);
-  filter: saturate(1.05);
-  transition:
-    transform 0.18s ease-out,
-    filter 0.18s ease-out,
-    box-shadow 0.18s ease-out;
-}
-
-.tp-stack-hero__imgwrap:hover img {
-  transform: translateY(-5px) rotate(-8deg) scale(1.09);
-  filter: saturate(1.25)
-    drop-shadow(0 10px 16px rgba(0, 0, 0, 0.5));
+  transform: scale(1.03);
+  filter: saturate(1.08) drop-shadow(0 12px 18px rgba(0,0,0,.35));
 }
 
 .tp-stack-hero__glow {
   position: absolute;
-  inset: -30%;
-  background: radial-gradient(
-    circle at 50% 50%,
-    rgba(255, 220, 165, 0.26),
-    transparent 60%
-  );
-  opacity: 0.8;
+  inset: -35%;
+  background: radial-gradient(circle at 50% 50%, rgba(255, 220, 165, 0.28), transparent 62%);
+  opacity: 0.85;
   pointer-events: none;
 }
 
@@ -537,31 +499,25 @@
   font-weight: 950;
   font-size: 0.92rem;
   letter-spacing: 0.04em;
-  color: #2a1a10;
-  font-family: "Press Start 2P", system-ui, -apple-system, BlinkMacSystemFont,
-    "Segoe UI", sans-serif;
+  font-family: "Press Start 2P", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 
   padding: 0.25rem 0.35rem 0.3rem;
   border-radius: 0.4rem;
-  background: linear-gradient(
-    180deg,
-    rgba(35, 111, 201, 0.98),
-    rgba(12, 74, 153, 0.98)
-  );
+  background: linear-gradient(180deg, rgba(35, 111, 201, 0.98), rgba(12, 74, 153, 0.98));
   color: #fdf4ce;
-  text-shadow:
-    0 1px 0 rgba(0, 0, 0, 0.6),
-    0 0 6px rgba(15, 23, 42, 0.5);
-  box-shadow:
-    0 2px 0 rgba(0, 0, 0, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6), 0 0 6px rgba(15, 23, 42, 0.5);
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 
 .tp-stack-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr)); /* 3 y 3 con 6 items */
   gap: 0.55rem;
   align-content: flex-start;
+
+  @media (max-width: 880px) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  @media (max-width: 520px) { grid-template-columns: 1fr; }
 }
 
 .tp-stack-card {
@@ -577,13 +533,12 @@
   align-items: stretch;
   gap: 0.35rem;
 
+  overflow: visible;
+
   transition: transform 0.08s ease, filter 0.12s ease, box-shadow 0.12s ease;
 }
 
-.tp-stack-card:hover {
-  filter: brightness(1.03);
-  transform: translateY(-1px);
-}
+.tp-stack-card:hover { filter: brightness(1.03); transform: translateY(-1px); }
 
 .tp-stack-card.is-in-cart {
   border-color: rgba(25, 140, 40, 0.55);
@@ -592,57 +547,21 @@
     0 0 0 2px rgba(47, 225, 122, 0.18);
 }
 
-.tp-stack-card__pct {
-  position: absolute;
-  left: 8px;
-  top: 8px;
-  padding: 0.18rem 0.45rem;
-  border-radius: 0.4rem;
-  border: 2px solid rgba(0, 0, 0, 0.38);
-  background: #8f2f27;
-  color: #fff2d6;
-  font-weight: 950;
-  font-size: 0.72rem;
-  letter-spacing: 0.06em;
-  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.3);
-}
+.tp-stack-card.is-details-open { z-index: 30; }
 
 .tp-stack-card__qty {
   font-weight: 950;
   font-size: 1rem;
   text-align: center;
   color: #2a1a10;
-  font-family: "Press Start 2P", system-ui, -apple-system, BlinkMacSystemFont,
-    "Segoe UI", sans-serif;
+  font-family: "Press Start 2P", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
-.tp-stack-card__old {
-  text-align: center;
-  font-weight: 900;
-  font-size: 0.78rem;
-  color: rgba(0, 0, 0, 0.55);
-  text-decoration: line-through;
-  text-decoration-thickness: 2px;
-  text-decoration-color: rgba(197, 58, 42, 0.85);
-}
-
-.tp-stack-card__price {
-  text-align: center;
-  font-weight: 900;
-  font-size: 0.9rem;
-  color: #1b5c27;
-}
-
-.tp-stack-card__btn {
-  margin-top: 0.2rem;
-}
-
-.tp-stack-card__details {
-  margin-top: 0.25rem;
-}
+.tp-stack-card__btn { margin-top: 0.2rem; }
+.tp-stack-card__details { margin-top: 0.25rem; }
 
 /* ======================================
-   GRID DE CARDS (secciones simples)
+   CARD GRID (RANGOS)
    ====================================== */
 
 .tp-card-grid {
@@ -665,35 +584,13 @@
   flex-direction: column;
   gap: 0.45rem;
 
+  overflow: visible;
+
   transition: transform 0.08s ease, filter 0.12s ease, box-shadow 0.12s ease;
 }
 
-.tp-card:hover {
-  filter: brightness(1.03);
-  transform: translateY(-1px);
-}
-
-.tp-card.is-in-cart {
-  border-color: rgba(25, 140, 40, 0.55);
-  box-shadow:
-    inset 0 0 0 1px rgba(134, 93, 40, 0.35),
-    0 0 0 2px rgba(47, 225, 122, 0.18);
-}
-
-.tp-card__pct {
-  position: absolute;
-  left: 8px;
-  top: 8px;
-  padding: 0.18rem 0.45rem;
-  border-radius: 0.4rem;
-  border: 2px solid rgba(0, 0, 0, 0.38);
-  background: #8f2f27;
-  color: #fff2d6;
-  font-weight: 950;
-  font-size: 0.72rem;
-  letter-spacing: 0.06em;
-  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.3);
-}
+.tp-card:hover { filter: brightness(1.03); transform: translateY(-1px); }
+.tp-card.is-details-open { z-index: 30; }
 
 .tp-card__imgwrap {
   position: relative;
@@ -710,16 +607,12 @@
   display: block;
   transform: scale(1.02);
   filter: saturate(1.04);
-  transition:
-    transform 0.18s ease-out,
-    filter 0.18s ease-out,
-    box-shadow 0.18s ease-out;
+  transition: transform 0.18s ease-out, filter 0.18s ease-out, box-shadow 0.18s ease-out;
 }
 
 .tp-card:hover .tp-card__imgwrap img {
   transform: translateY(-5px) scale(1.08) rotate(-3deg);
-  filter: saturate(1.25)
-    drop-shadow(0 10px 16px rgba(0, 0, 0, 0.55));
+  filter: saturate(1.25) drop-shadow(0 10px 16px rgba(0, 0, 0, 0.55));
 }
 
 .tp-card__body {
@@ -736,28 +629,10 @@
   font-size: 0.98rem;
   text-align: center;
   color: #2a1a10;
-  font-family: "Press Start 2P", system-ui, -apple-system, BlinkMacSystemFont,
-    "Segoe UI", sans-serif;
+  font-family: "Press Start 2P", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   letter-spacing: 0.04em;
   line-height: 1.2;
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.2);
-}
-
-.tp-card__old {
-  text-align: center;
-  font-weight: 900;
-  font-size: 0.8rem;
-  color: rgba(0, 0, 0, 0.6);
-  text-decoration: line-through;
-  text-decoration-thickness: 2px;
-  text-decoration-color: rgba(197, 58, 42, 0.85);
-}
-
-.tp-card__price {
-  text-align: center;
-  font-weight: 900;
-  font-size: 0.95rem;
-  color: #1b5c27;
 }
 
 .tp-card__actions {
@@ -767,133 +642,70 @@
   margin-top: auto;
 }
 
-.tp-card__buy {
-  /* hereda de .tp-variant__buy */
-}
-
-.tp-card__details {
-  height: 40px;
-
-  border-radius: 0.5rem;
-  border: 2px solid rgba(54, 38, 24, 0.9);
-  background: linear-gradient(
-    180deg,
-    #7a6a5b 0%,
-    #6a5a4c 40%,
-    #5a4c40 100%
-  );
-
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.45rem;
-
-  padding: 0 0.8rem;
-
-  color: #f5e2c5;
-  font-weight: 900;
-  font-size: 0.73rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-
-  box-shadow:
-    0 3px 0 rgba(37, 26, 18, 0.95),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  cursor: pointer;
-
-  transition:
-    transform 0.08s ease,
-    box-shadow 0.08s ease,
-    filter 0.12s ease,
-    background 0.12s ease;
-}
-
-.tp-card__details:hover {
-  filter: brightness(1.03);
-  transform: translateY(-1px);
-  box-shadow:
-    0 2px 0 rgba(37, 26, 18, 0.95),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
-}
-
-.tp-card__details:active {
-  transform: translateY(1px);
-  box-shadow:
-    0 1px 0 rgba(37, 26, 18, 0.95),
-    inset 0 0px 0 rgba(255, 255, 255, 0.2);
-}
-
-.tp-card__details-label {
-  white-space: nowrap;
-}
-
-.tp-card__chevron {
-  width: 8px;
-  height: 8px;
-  border-style: solid;
-  border-width: 0 2px 2px 0;
-  border-color: rgba(244, 226, 199, 0.95);
-  transform: rotate(45deg);
-  transition: transform 0.18s ease;
-}
-
 /* ======================================
-   DETALLES (acordeón interno por producto)
+   DETAILS = POPOVER OVERLAY (NO REFLOW)
    ====================================== */
 
 .tp-details {
-  margin-top: 0.35rem;
-  border-radius: 0.45rem;
-  background: rgba(248, 234, 204, 0.98);
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  top: calc(100% - 6px);
+  z-index: 50;
+
+  border-radius: 0.55rem;
+  background: rgba(248, 234, 204, 0.99);
   border: 1px solid rgba(139, 112, 70, 0.85);
+
   box-shadow:
     inset 0 0 0 1px rgba(255, 255, 255, 0.45),
-    0 2px 0 rgba(0, 0, 0, 0.12);
+    0 14px 26px rgba(0, 0, 0, 0.35);
 
   max-height: 0;
   opacity: 0;
-  transform: translateY(-4px);
+  transform: translateY(-10px) scale(0.98);
   overflow: hidden;
+  pointer-events: none;
 
-  transition:
-    max-height 0.22s ease,
-    opacity 0.22s ease,
-    transform 0.22s ease;
+  transition: max-height 0.22s ease, opacity 0.22s ease, transform 0.22s ease;
 }
 
 .tp-details--open {
-  max-height: 260px;
+  max-height: 520px;
   opacity: 1;
-  transform: translateY(0);
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
 }
 
 .tp-details__inner {
-  padding: 0.55rem 0.75rem 0.6rem;
-  font-size: 0.8rem;
+  padding: 0.7rem 0.85rem 0.85rem;
+  font-size: 0.82rem;
   line-height: 1.35;
   color: var(--inkSoft);
 
-  p {
-    margin: 0 0 0.35rem;
-  }
+  max-height: 470px;
+  overflow: auto;
 
-  ul,
-  ol {
-    margin: 0.2rem 0 0.45rem 1.1rem;
-    padding: 0;
-  }
+  scrollbar-width: thin;
+  scrollbar-color: #b1834b transparent;
 
-  li {
-    margin-bottom: 0.15rem;
+  &::-webkit-scrollbar { width: 9px; }
+  &::-webkit-scrollbar-track { background: rgba(212, 183, 135, 0.7); }
+  &::-webkit-scrollbar-thumb {
+    background: #a37843;
+    border-radius: 999px;
   }
+  &::-webkit-scrollbar-thumb:hover { background: #c18d53; }
 
+  p { margin: 0 0 0.35rem; }
+  ul, ol { margin: 0.2rem 0 0.45rem 1.1rem; padding: 0; }
+  li { margin-bottom: 0.15rem; }
   a {
     color: #87602f;
     font-weight: 700;
     text-decoration: underline;
     text-decoration-thickness: 1px;
   }
-
   img {
     max-width: 100%;
     height: auto;
@@ -902,7 +714,203 @@
   }
 }
 
-/* EMBED */
+/* ======================================
+   PRODUCT_DATA (TU HTML) -> “SUPER CURRADO”
+   ====================================== */
+
+.tp-details__inner {
+  .prod-desc {
+    border-radius: 0.65rem;
+    border: 2px solid rgba(90, 59, 23, 0.35);
+    background: linear-gradient(180deg, rgba(255,255,255,0.40), rgba(255,255,255,0.06));
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.55),
+      0 10px 18px rgba(0,0,0,0.18);
+    padding: 0.8rem;
+  }
+
+  .prod-hero {
+    border-radius: 0.65rem;
+    border: 1px solid rgba(120, 86, 44, 0.45);
+    background:
+      radial-gradient(circle at 30% 0%, rgba(255, 220, 165, 0.25), transparent 60%),
+      linear-gradient(180deg, rgba(58, 40, 22, 0.07), rgba(58, 40, 22, 0.02));
+    padding: 0.7rem 0.75rem;
+    margin-bottom: 0.7rem;
+  }
+
+  .prod-hero__top {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-bottom: 0.45rem;
+  }
+
+  .prod-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.22rem 0.5rem;
+    border-radius: 999px;
+    border: 1px solid rgba(54, 38, 24, 0.45);
+    background: rgba(255, 255, 255, 0.35);
+    font-weight: 900;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-size: 0.68rem;
+    color: rgba(42, 26, 16, 0.9);
+  }
+
+  .prod-pill--rank {
+    background: rgba(35, 111, 201, 0.14);
+    border-color: rgba(35, 111, 201, 0.45);
+  }
+
+  .prod-pill--hot {
+    background: rgba(143, 47, 39, 0.16);
+    border-color: rgba(143, 47, 39, 0.55);
+    color: rgba(120, 20, 12, 0.95);
+  }
+
+  .prod-hero__title {
+    margin: 0.1rem 0 0.2rem;
+    font-family: "Press Start 2P", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 1.05rem;
+    letter-spacing: 0.06em;
+    color: #2a1a10;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.25);
+  }
+
+  .prod-hero__subtitle {
+    margin: 0;
+    color: rgba(58, 40, 22, 0.78);
+    font-weight: 650;
+    line-height: 1.35;
+  }
+
+  .prod-kpis {
+    margin-top: 0.65rem;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.45rem;
+  }
+
+  .prod-kpi {
+    border-radius: 0.55rem;
+    border: 1px solid rgba(90, 59, 23, 0.28);
+    background: rgba(255, 255, 255, 0.28);
+    padding: 0.45rem 0.55rem;
+  }
+
+  .prod-kpi__label {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: rgba(0,0,0,0.55);
+    font-weight: 900;
+  }
+
+  .prod-kpi__value {
+    font-size: 0.9rem;
+    font-weight: 950;
+    color: #2a1a10;
+    margin-top: 0.12rem;
+  }
+
+  .prod-section {
+    margin-top: 0.65rem;
+    padding-top: 0.55rem;
+    border-top: 1px dashed rgba(90, 59, 23, 0.35);
+  }
+
+  .prod-section__title {
+    margin: 0 0 0.35rem;
+    font-weight: 950;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.74rem;
+    color: rgba(42, 26, 16, 0.92);
+  }
+
+  .prod-list {
+    margin: 0.25rem 0 0;
+    padding-left: 1.05rem;
+  }
+
+  .prod-cmds {
+    margin: 0.25rem 0 0;
+    padding-left: 1.05rem;
+
+    li {
+      margin-bottom: 0.3rem;
+    }
+
+    code {
+      display: inline-block;
+      padding: 0.12rem 0.35rem;
+      border-radius: 0.35rem;
+      border: 1px solid rgba(0,0,0,0.22);
+      background: rgba(0,0,0,0.06);
+      font-weight: 900;
+      color: rgba(42, 26, 16, 0.92);
+    }
+  }
+
+  .prod-cmds__sep {
+    opacity: 0.7;
+    margin: 0 0.25rem;
+  }
+
+  .prod-cooldown {
+    font-style: normal;
+    font-weight: 900;
+    color: rgba(143, 47, 39, 0.9);
+    margin-left: 0.25rem;
+  }
+
+  .prod-note {
+    margin: 0.25rem 0 0.35rem;
+    border-radius: 0.55rem;
+    padding: 0.5rem 0.6rem;
+    border: 1px solid rgba(35, 111, 201, 0.35);
+    background: rgba(35, 111, 201, 0.10);
+    color: rgba(42, 26, 16, 0.86);
+    font-weight: 650;
+  }
+
+  .prod-kit {
+    margin: 0.25rem 0 0;
+    padding-left: 1.05rem;
+
+    li {
+      margin-bottom: 0.22rem;
+    }
+  }
+
+  .prod-footer {
+    margin-top: 0.75rem;
+    padding-top: 0.6rem;
+    border-top: 1px dashed rgba(90, 59, 23, 0.35);
+  }
+
+  .prod-footer__tip {
+    border-radius: 0.55rem;
+    border: 1px solid rgba(25, 140, 40, 0.35);
+    background: rgba(25, 140, 40, 0.09);
+    padding: 0.55rem 0.6rem;
+    font-weight: 750;
+    color: rgba(42, 26, 16, 0.85);
+  }
+
+  /* Colores por rango (toque dopamina) */
+  .prod-desc--nova .prod-hero { box-shadow: 0 0 0 2px rgba(35,111,201,.12) inset; }
+  .prod-desc--alpha .prod-hero { box-shadow: 0 0 0 2px rgba(112,45,175,.12) inset; }
+  .prod-desc--inmortal .prod-hero { box-shadow: 0 0 0 2px rgba(143,47,39,.12) inset; }
+}
+
+/* ======================================
+   EMBED
+   ====================================== */
 
 .tienda-productos.tp-embed {
   height: 100%;
@@ -910,7 +918,6 @@
   display: flex;
   flex-direction: column;
 }
-
 .tienda-productos.tp-embed .tienda-productos__body {
   flex: 1 1 auto;
   min-height: 0;
@@ -918,7 +925,5 @@
 
 /* Reduce motion */
 @media (prefers-reduced-motion: reduce) {
-  .tp-variant__shine {
-    animation: none !important;
-  }
+  .tp-variant__shine { animation: none !important; }
 }
