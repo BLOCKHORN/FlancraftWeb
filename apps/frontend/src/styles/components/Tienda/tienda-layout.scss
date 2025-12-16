@@ -14,15 +14,27 @@
 }
 
 /* flotación de la flecha cuando está contraído */
-@keyframes footerArrowFloat {
+/* Animaciones de la flecha (botón) */
+@keyframes footerToggleFloatClosed {
   0%,
   100% {
-    transform: translateY(0);
+    transform: translate(-50%, 0);
   }
   50% {
-    transform: translateY(-3px);
+    transform: translate(-50%, -6px);
   }
 }
+
+@keyframes footerToggleFloatOpen {
+  0%,
+  100% {
+    transform: translate(-50%, 0);
+  }
+  50% {
+    transform: translate(-50%, -3px);
+  }
+}
+
 
 /* =========================================================
    LAYOUT TIENDA (2 columnas)
@@ -244,14 +256,15 @@
 }
 
 /* Flecha minimalista, sin fondo ni borde */
+/* Botón de la flecha, ahora por ENCIMA del borde de roca */
 .tienda-footer-toggle {
   position: absolute;
   left: 50%;
-  top: 10px;
-  transform: translateX(-50%);
+  top: -26px;               /* lo saca por encima del borde */
+  transform: translate(-50%, 0);
 
-  width: 40px;
-  height: 26px;
+  width: 48px;
+  height: 32px;
   padding: 0;
   border: none;
   background: transparent;
@@ -261,28 +274,37 @@
   justify-content: center;
 
   cursor: pointer;
+  z-index: 4;               /* por encima de la roca siempre */
 }
 
+/* Triángulo de la flecha, más grande y con glow */
 .tienda-footer-toggle-arrow {
   width: 0;
   height: 0;
-  border-left: 7px solid transparent;
-  border-right: 7px solid transparent;
-  border-bottom: 10px solid #fbe8c5; // flecha ↑
+  border-left: 11px solid transparent;
+  border-right: 11px solid transparent;
+  border-bottom: 16px solid #fbe8c5; // flecha ↑
 
-  transition: transform 180ms ease-out;
+  transition: transform 180ms ease-out, filter 180ms ease-out;
   transform-origin: center;
+  filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.7));
 }
 
 /* Flecha mirando hacia abajo cuando está abierto */
 .tienda-footer.is-open .tienda-footer-toggle-arrow {
   transform: rotate(180deg);
+  filter: drop-shadow(0 0 6px rgba(0, 0, 0, 0.9));
 }
 
-/* Flotación suave sólo en cerrado */
-.tienda-footer.is-closed .tienda-footer-toggle-arrow {
-  animation: footerArrowFloat 2.4s ease-in-out infinite;
+/* Animaciones del botón (no del triángulo) */
+.tienda-footer.is-closed .tienda-footer-toggle {
+  animation: footerToggleFloatClosed 2.3s ease-in-out infinite;
 }
+
+.tienda-footer.is-open .tienda-footer-toggle {
+  animation: footerToggleFloatOpen 1.8s ease-in-out infinite;
+}
+
 
 /* PANEL DEL FOOTER: aquí va AHORA el fondo marrón
    y nunca pasará por encima de la roca */
