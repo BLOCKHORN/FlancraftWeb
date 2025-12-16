@@ -224,13 +224,9 @@
   transform: translateY(var(--footer-offset, 0px));
   transition: transform 260ms cubic-bezier(0.22, 0.61, 0.36, 1);
 
-  /* Fondo marrón que sube desde abajo y casi llega a la roca */
-  background: linear-gradient(
-    to top,
-    #1b0e06 0%,
-    #1b0e06 140px,
-    rgba(27, 14, 6, 0.993) 200px
-  );
+  /* OJO: aquí ya NO hay background,
+     solo lo tendrá el panel inferior */
+  background: none;
 }
 
 /* Abierto: todo visible */
@@ -288,7 +284,8 @@
   animation: footerArrowFloat 2.4s ease-in-out infinite;
 }
 
-/* PANEL DEL FOOTER: ocupa todo el ancho, puede tapar el carrito */
+/* PANEL DEL FOOTER: aquí va AHORA el fondo marrón
+   y nunca pasará por encima de la roca */
 .tienda-footer-panel {
   margin-left: 0;
   margin-right: 0;
@@ -298,6 +295,14 @@
   display: flex;
   justify-content: center;
   position: relative;
+
+  /* Fondo tipo suelo/taberna, solo bajo el texto */
+  background: linear-gradient(
+    to top,
+    #1b0e06 0%,
+    #1b0e06 140px,
+    rgba(27, 14, 6, 0.993) 200px
+  );
 }
 
 /* Caja del footer SIN borde duro: texto sobre suelo */
@@ -429,6 +434,64 @@
   width: auto;
   display: block;
 }
+
+/* MOBILE: se queda como lo tenías, sólo mantén
+   que .tienda-footer-inner no vuelva a poner background */
+
+@media (max-width: 960px) {
+  .tienda-footer {
+    position: static;
+    pointer-events: auto;
+    margin-top: 0.5rem;
+    z-index: 1;
+  }
+
+  .tienda-footer-backdrop {
+    display: none;
+  }
+
+  .tienda-footer-inner {
+    transform: none !important;
+    background: #1b0e06;
+  }
+
+  .tienda-footer-strip {
+    position: static;
+    height: 60px;
+    background-size: auto 60px;
+  }
+
+  .tienda-footer-toggle {
+    display: none;
+  }
+
+  .tienda-footer-panel {
+    position: static;
+    padding: 0.6rem 0.2rem 0.5rem;
+    background: #1b0e06;
+  }
+
+  .tienda-footer-bar {
+    max-width: 560px;
+    margin: 0 auto;
+    padding: 0.8rem 0.85rem 0.6rem;
+  }
+
+  .tienda-footer-main {
+    flex-direction: column;
+    gap: 0.65rem;
+  }
+
+  .tienda-footer-col {
+    text-align: left;
+  }
+
+  .tienda-footer-bottom {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
 
 /* =========================================================
    MOBILE
