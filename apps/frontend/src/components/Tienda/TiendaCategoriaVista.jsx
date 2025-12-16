@@ -1,4 +1,3 @@
-// src/components/Tienda/TiendaCategoriaVista.jsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Outlet, useNavigate, useParams } from "react-router-dom";
 
@@ -196,6 +195,8 @@ export default function TiendaCategoriaVista({ carrito, toggleProducto }) {
     [categoriaSeleccionada, categoria]
   );
 
+  const showSidebar = !isRealMode && subcats.length > 1;
+
   // ======= 1) Fetch SOLO cuando cambia server/categoria (NO subcategoria) =======
   useEffect(() => {
     let cancel = false;
@@ -242,7 +243,7 @@ export default function TiendaCategoriaVista({ carrito, toggleProducto }) {
               subcatsLocal.find(
                 (s) => String(s?.slug || "").toLowerCase() === subParam
               )) ||
-            null; // al entrar no seleccionamos nada
+            null; // al entrar no seleccionamos nada (lo auto-seleccionaremos abajo si solo hay 1)
 
           const catObj = {
             mode: "tile",
@@ -331,6 +332,24 @@ export default function TiendaCategoriaVista({ carrito, toggleProducto }) {
     }
     didSwapMountRef.current = true;
   }, [subcategoria, categoriaSeleccionada?.subcategorias]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ======= 3) AUTO-SELECCIONAR cuando solo hay 1 subcategoría (RANGOS, etc.) =======
+  useEffect(() => {
+    if (!categoriaSeleccionada || categoriaSeleccionada.mode !== "tile") return;
+
+    const list = categoriaSeleccionada.subcategorias || [];
+    if (list.length !== 1) return; // solo nos importa cuando hay EXACTAMENTE 1
+
+    if (subcategoria) return; // ya estamos en la URL de la subcat
+
+    const only = list[0];
+    if (!only?.slug) return;
+
+    const targetPath = `/tienda/${server}/${categoria}/${only.slug}`;
+    if (window.location.pathname !== targetPath) {
+      navigate(targetPath, { replace: true });
+    }
+  }, [categoriaSeleccionada, subcategoria, server, categoria, navigate]);
 
   // ======= animación route IN SOLO al cambiar server/categoria =======
   useEffect(() => {
@@ -489,8 +508,8 @@ export default function TiendaCategoriaVista({ carrito, toggleProducto }) {
 
           {/* BODY: sidebar + main */}
           <div className="tc-fusion-body">
-            {/* SIDEBAR (siempre que haya subcategorías) */}
-            {!isRealMode && (
+            {/* SIDEBAR (solo si hay >1 subcategoría) */}
+            {showSidebar && (
               <aside className="tc-side">
                 <div className="tc-side-title">Categorías</div>
 
@@ -563,7 +582,7 @@ export default function TiendaCategoriaVista({ carrito, toggleProducto }) {
                 </div>
               )}
 
-              {/* Modo real (sin subcategorías, tipo RANGOS) */}
+              {/* Modo real (sin subcategorías, tipo RANGOS si lo quisieras así) */}
               {isRealMode && (
                 <div className="tc-products tc-products--real">
                   <div className="tc-products-scroll">
@@ -579,8 +598,8 @@ export default function TiendaCategoriaVista({ carrito, toggleProducto }) {
                 </div>
               )}
 
-              {/* Mensaje central cuando no hay categoría activa */}
-              {!hasActive && !isRealMode && (
+              {/* Mensaje central solo cuando hay varias subcats y aún no se ha elegido ninguna */}
+              {!hasActive && !isRealMode && subcats.length > 1 && (
                 <div className="tc-empty tc-empty--hint">
                   <div className="tc-empty-inner">
                     <h2 className="tc-empty-title">Selecciona una categoría</h2>
