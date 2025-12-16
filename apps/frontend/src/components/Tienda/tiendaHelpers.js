@@ -93,81 +93,64 @@ export function calcularTotal(carrito = []) {
 /**
  * Tiles principales de la tienda (portada).
  * Aquí definimos manualmente nombre, slug, servidor y la IMAGEN.
+ *
+ * 👉 SOLO CATEGORÍAS “GORDAS” (3 tiles simétricas).
  */
 export const PORTADA_TILES = [
   {
     server: "lobby",
-    name: "PREMIUM",
-    slug: "premium",
-    image: "https://i.imgur.com/YCwSI87.png",
-  },
-  {
-    server: "lobby",
     name: "RANGOS",
     slug: "rangos",
-    image: "/tienda/categorias/rangos.webp",
-  },
-  {
-    server: "oneblock",
-    name: "ONEBLOCK",
-    slug: "oneblock",
-    image: "https://i.imgur.com/BacoUrt.png",
+    image: "https://i.ibb.co/k6yZSyN4/rangos.webp",
   },
   {
     server: "clasico",
     name: "SURVIVAL CLASICO",
     slug: "survival-clasico",
-    image: "https://i.imgur.com/m0naATb.png",
+    image: "https://i.ibb.co/rfT6fp5k/survival-clasico.webp",
   },
   {
     server: "clasico",
     name: "CHUNKLOCK",
     slug: "chunklock",
-    image: "https://i.imgur.com/NJbyiQs.png",
-  },
-  {
-    server: "lobby",
-    name: "¡ANTES DE COMPRAR!",
-    slug: "antes-de-comprar",
-    image: "https://i.imgur.com/6HSMUZu.png",
+    image: "https://i.ibb.co/yB8dyZD4/chunklock.png",
   },
 ];
 
 /**
- * Subcategorías REALES que deben verse dentro de cada tile sintético.
+ * Tile ESPECÍFICA para el aviso a padres.
+ */
+export const AVISO_PADRES_TILE = {
+  server: "lobby",
+  name: "ANTES DE COMPRAR",
+  slug: "antes-de-comprar",
+  image: "https://i.imgur.com/6HSMUZu.png",
+};
+
+/**
+ * Subcategorías REALES que deben verse dentro de cada tile sintética.
  * La clave es `${server}|${slugCategoria}`.
  * Los nombres deben coincidir con los de Tebex (case-insensitive).
  */
 export const SUBCATS_PER_TILE = {
   // Lobby
-  "lobby|premium": ["PREMIUM"],
   "lobby|rangos": ["RANGOS"],
   "lobby|antes-de-comprar": [],
 
-  // Oneblock
-  "oneblock|oneblock": [
-    "Keys",
-    "Items OP",
-    "Minions",
-    "Experiencia",
-    "Kits",
-    "Pase de Batalla",
-    "TICKETS KOTH",
-  ],
-
-  // Survival clásico (ojo a los nombres exactos en Tebex)
+  // Survival clásico (5 categorías)
   "clasico|survival-clasico": [
     "Protecciones",
     "Items OP",
     "Llaves Survival",
-    "Dinero",
+    "Dinero Survival",
+    "Experiencia Survival",
   ],
 
-  // Chunklock (misma conexión Tebex que Clásico)
+  // Chunklock (4 categorías)
   "clasico|chunklock": [
     "Items OP",
-    "Dinero",
-    "Experiencia",
+    "Dinero Chunklock",
+    "Experiencia Chunklock",
     "Llaves Chunklock",
   ],
 };
@@ -187,7 +170,10 @@ export function pickSubcatsFromApi(apiCategories = [], namesAllowed = []) {
     const id = c?.id ?? c?.category_id ?? null;
     if (!id || !name) continue;
 
-    if (allowedLower.size === 0 || allowedLower.has(String(name).toLowerCase())) {
+    if (
+      allowedLower.size === 0 ||
+      allowedLower.has(String(name).toLowerCase())
+    ) {
       out.push({ id, name, slug: slugify(name) });
     }
   }
