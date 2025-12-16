@@ -1,5 +1,11 @@
-// apps/frontend/src/components/Tienda/TiendaLayout.jsx
-import React, { useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { Route, Routes, useLocation } from "react-router-dom";
 
 import "../../styles/components/Tienda/tienda-layout.scss";
@@ -10,6 +16,7 @@ import TiendaCategoriaVista from "./TiendaCategoriaVista";
 import TiendaCarritoLateral from "./TiendaCarritoLateral";
 import TiendaModalJugador from "./TiendaModalJugador";
 import useTiendaCarrito from "./useTiendaCarrito";
+import TiendaFooter from "./TiendaFooter";
 
 const readWebUser = () => {
   try {
@@ -73,7 +80,11 @@ const TiendaLayout = () => {
 
       const visible = candidates.find((el) => {
         const cs = window.getComputedStyle(el);
-        return cs.display !== "none" && cs.visibility !== "hidden" && el.offsetHeight > 0;
+        return (
+          cs.display !== "none" &&
+          cs.visibility !== "hidden" &&
+          el.offsetHeight > 0
+        );
       });
 
       const h = visible ? Math.ceil(visible.getBoundingClientRect().height) : 0;
@@ -161,6 +172,7 @@ const TiendaLayout = () => {
         />
       )}
 
+      {/* ZONA PRINCIPAL: se queda exactamente igual de alta que antes */}
       <main className="tienda-layout-main">
         <section className="tienda-layout-left">
           <div className="tienda-shelf-frame">
@@ -209,6 +221,9 @@ const TiendaLayout = () => {
           </div>
         </aside>
       </main>
+
+      {/* Footer tipo Tebex: debajo, sin alterar la composición */}
+      <TiendaFooter />
     </div>
   );
 };

@@ -1,4 +1,3 @@
-// src/styles/components/Tienda/tienda-categoria.scss
 @use "../../base/_variables" as *;
 
 /* =========================================================
@@ -88,9 +87,9 @@
 }
 
 /* =========================================================
-   Loading overlay (versión suave)
+   Loading overlay SUAVE (ya no quita el contenido)
    ========================================================= */
-.tienda-tebex--loading {
+.tienda-loading-overlay {
   position: absolute;
   inset: 0;
   display: flex;
@@ -102,9 +101,9 @@
   background:
     radial-gradient(
       circle at center,
-      rgba(0, 0, 0, 0.45) 0%,
-      rgba(0, 0, 0, 0.35) 35%,
-      rgba(0, 0, 0, 0.2) 70%,
+      rgba(0, 0, 0, 0.40) 0%,
+      rgba(0, 0, 0, 0.30) 35%,
+      rgba(0, 0, 0, 0.15) 70%,
       transparent 100%
     );
 
@@ -200,6 +199,7 @@
    Panel principal (como carrito)
    ========================================================= */
 .tienda-wc {
+  position: relative;
   width: 100%;
   border-radius: 0.7rem;
   overflow: hidden;

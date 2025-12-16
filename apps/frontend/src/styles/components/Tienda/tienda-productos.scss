@@ -57,7 +57,8 @@
   box-sizing: border-box;
   color: var(--ink);
   overflow: hidden;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
 }
 
 /* BODY: zona scrolleable */
@@ -171,7 +172,10 @@
   }
 
   .tp-section__grid--two {
-    grid-template-columns: clamp(150px, 22vw, 200px) repeat(2, minmax(0, 1fr));
+    grid-template-columns: clamp(150px, 22vw, 200px) repeat(
+        2,
+        minmax(0, 1fr)
+      );
   }
 
   .tp-section__grid--one {
@@ -219,7 +223,7 @@
   height: 160px;
   object-fit: contain;
   display: block;
-  transform: rotate(-6deg) scale(1.04);
+  transform: rotate(-0deg) scale(1.04);
   filter: saturate(1.05);
 }
 
@@ -483,6 +487,241 @@
   will-change: transform, opacity;
   pointer-events: none;
   animation: tpShine 3.2s infinite ease-in-out;
+}
+
+/* ======================================
+   STACK LAYOUT (Dinero / XP con muchos tiers)
+   ====================================== */
+
+.tp-section--stack .tp-stack-layout {
+  border-radius: 0.55rem;
+  padding: 0.65rem;
+  background: var(--basket);
+  box-shadow: inset 0 0 0 1px rgba(134, 93, 40, 0.35);
+  border: 2px solid rgba(0, 0, 0, 0.15);
+
+  display: grid;
+  grid-template-columns: clamp(180px, 22vw, 260px) minmax(0, 1fr);
+  gap: 0.75rem;
+
+  @media (max-width: 780px) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.tp-stack-hero {
+  position: relative;
+  border-radius: 0.65rem;
+  border: 2px solid rgba(0, 0, 0, 0.25);
+  background: rgba(0, 0, 0, 0.03);
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.18);
+  overflow: hidden;
+
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.4rem;
+
+  padding: 0.6rem;
+}
+
+.tp-stack-hero__imgwrap {
+  position: relative;
+  display: grid;
+  place-items: center;
+  padding: 0.2rem;
+  min-height: 170px;
+}
+
+.tp-stack-hero__imgwrap img {
+  width: 100%;
+  height: 160px;
+  object-fit: contain;
+  display: block;
+  transform: rotate(-6deg) scale(1.04);
+  filter: saturate(1.05);
+}
+
+.tp-stack-hero__glow {
+  position: absolute;
+  inset: -30%;
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(255, 220, 165, 0.26),
+    transparent 60%
+  );
+  opacity: 0.8;
+  pointer-events: none;
+}
+
+.tp-stack-hero__title {
+  text-align: center;
+  font-weight: 950;
+  font-size: 0.92rem;
+  letter-spacing: 0.03em;
+  color: #2a1a10;
+
+  padding: 0.18rem 0.35rem 0.22rem;
+  border-radius: 0.4rem;
+  background: linear-gradient(
+    180deg,
+    rgba(35, 111, 201, 0.98),
+    rgba(12, 74, 153, 0.98)
+  );
+  color: #fdf4ce;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.4);
+  box-shadow:
+    0 2px 0 rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+.tp-stack-hero__details {
+  margin-top: 0.15rem;
+  height: 40px;
+
+  border-radius: 0.5rem;
+  border: 2px solid rgba(54, 38, 24, 0.9);
+  background: linear-gradient(
+    180deg,
+    #7a6a5b 0%,
+    #6a5a4c 40%,
+    #5a4c40 100%
+  );
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+
+  padding: 0 0.8rem;
+
+  color: #f5e2c5;
+  font-weight: 900;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+
+  box-shadow:
+    0 3px 0 rgba(37, 26, 18, 0.95),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+
+  transition:
+    transform 0.08s ease,
+    box-shadow 0.08s ease,
+    filter 0.12s ease,
+    background 0.12s ease;
+}
+
+.tp-stack-hero__details:hover {
+  filter: brightness(1.03);
+  transform: translateY(-1px);
+  box-shadow:
+    0 2px 0 rgba(37, 26, 18, 0.95),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.tp-stack-hero__details:active {
+  transform: translateY(1px);
+  box-shadow:
+    0 1px 0 rgba(37, 26, 18, 0.95),
+    inset 0 0px 0 rgba(255, 255, 255, 0.2);
+}
+
+.tp-stack-hero__details-label {
+  white-space: nowrap;
+}
+
+.tp-stack-hero__chevron {
+  width: 8px;
+  height: 8px;
+  border-style: solid;
+  border-width: 0 2px 2px 0;
+  border-color: rgba(244, 226, 199, 0.95);
+  transform: rotate(45deg);
+  transition: transform 0.18s ease;
+}
+
+.tp-stack-hero.is-open .tp-stack-hero__chevron {
+  transform: rotate(-135deg);
+}
+
+.tp-stack-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.55rem;
+  align-content: flex-start;
+}
+
+.tp-stack-card {
+  position: relative;
+  border-radius: 0.65rem;
+  border: 2px solid rgba(0, 0, 0, 0.25);
+  background: rgba(0, 0, 0, 0.03);
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.18);
+  padding: 0.6rem 0.55rem 0.7rem;
+
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.35rem;
+
+  transition: transform 0.08s ease, filter 0.12s ease, box-shadow 0.12s ease;
+}
+
+.tp-stack-card:hover {
+  filter: brightness(1.03);
+  transform: translateY(-1px);
+}
+
+.tp-stack-card.is-in-cart {
+  border-color: rgba(25, 140, 40, 0.55);
+  box-shadow:
+    0 2px 0 rgba(0, 0, 0, 0.18),
+    0 0 0 2px rgba(47, 225, 122, 0.18);
+}
+
+.tp-stack-card__pct {
+  position: absolute;
+  left: 8px;
+  top: 8px;
+  padding: 0.18rem 0.45rem;
+  border-radius: 0.4rem;
+  border: 2px solid rgba(0, 0, 0, 0.38);
+  background: #8f2f27;
+  color: #fff2d6;
+  font-weight: 950;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.3);
+}
+
+.tp-stack-card__qty {
+  font-weight: 950;
+  font-size: 1rem;
+  text-align: center;
+  color: #2a1a10;
+}
+
+.tp-stack-card__old {
+  text-align: center;
+  font-weight: 900;
+  font-size: 0.78rem;
+  color: rgba(0, 0, 0, 0.55);
+  text-decoration: line-through;
+  text-decoration-thickness: 2px;
+  text-decoration-color: rgba(197, 58, 42, 0.85);
+}
+
+.tp-stack-card__price {
+  text-align: center;
+  font-weight: 900;
+  font-size: 0.9rem;
+  color: #1b5c27;
+}
+
+.tp-stack-card__btn {
+  margin-top: 0.2rem;
 }
 
 /* ======================================

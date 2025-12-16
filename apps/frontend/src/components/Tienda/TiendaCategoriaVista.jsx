@@ -1,3 +1,4 @@
+// src/components/Tienda/TiendaCategoriaVista.jsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Outlet, useNavigate, useParams } from "react-router-dom";
 
@@ -195,6 +196,7 @@ export default function TiendaCategoriaVista({ carrito, toggleProducto }) {
     [categoriaSeleccionada, categoria]
   );
 
+  // Sidebar solo si hay más de una subcategoría
   const showSidebar = !isRealMode && subcats.length > 1;
 
   // ======= 1) Fetch SOLO cuando cambia server/categoria (NO subcategoria) =======
@@ -242,8 +244,7 @@ export default function TiendaCategoriaVista({ carrito, toggleProducto }) {
             (subParam &&
               subcatsLocal.find(
                 (s) => String(s?.slug || "").toLowerCase() === subParam
-              )) ||
-            null; // al entrar no seleccionamos nada (lo auto-seleccionaremos abajo si solo hay 1)
+              )) || null; // al entrar no seleccionamos nada (lo auto-seleccionaremos abajo si solo hay 1)
 
           const catObj = {
             mode: "tile",
@@ -295,7 +296,8 @@ export default function TiendaCategoriaVista({ carrito, toggleProducto }) {
     return () => {
       cancel = true;
     };
-  }, [server, categoria, isTile, tileNamesAllowed, subcategoria]);
+    // 👇 OJO: aquí *no* ponemos subcategoria para no refetchear al cambiar de subcat
+  }, [server, categoria, isTile, tileNamesAllowed]);
 
   // ======= 2) Cuando cambia subcategoria: actualizar activeSubcat + animación swap =======
   useEffect(() => {
@@ -385,21 +387,8 @@ export default function TiendaCategoriaVista({ carrito, toggleProducto }) {
     navigate(`/tienda/${server}/${categoria}/${scSlug}`);
 
   // =========================================================
-  // RENDER
+  // ERRORES / PÁGINA ESPECIAL
   // =========================================================
-
-  if (loading) {
-    return (
-      <div className="tienda-tebex tienda-tebex--loading">
-        <div className="tienda-loading-inner">
-          <div className="logo-f-loader">
-            <span>F</span>
-          </div>
-          <p className="tienda-loading-text">CARGANDO LA TIENDA...</p>
-        </div>
-      </div>
-    );
-  }
 
   if (error) {
     return (
@@ -479,6 +468,18 @@ export default function TiendaCategoriaVista({ carrito, toggleProducto }) {
     <div className={rootClasses}>
       <div className="tienda-contenido">
         <div className="tienda-wc">
+          {/* OVERLAY DE CARGA SUAVE: ya no rompe el layout */}
+          {loading && (
+            <div className="tienda-loading-overlay" aria-hidden="true">
+              <div className="tienda-loading-inner">
+                <div className="logo-f-loader">
+                  <span>F</span>
+                </div>
+                <p className="tienda-loading-text">CARGANDO LA TIENDA...</p>
+              </div>
+            </div>
+          )}
+
           {/* CABECERA FIJA */}
           <div className="tienda-wc-head">
             <div className="tienda-wc-hero">
