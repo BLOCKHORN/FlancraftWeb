@@ -1,7 +1,7 @@
 // src/components/Tienda/TiendaFooter.jsx
-import React, { useLayoutEffect, useRef, useState } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 
-const STRIP_HEIGHT = 35; // debe coincidir con --footer-strip-h en el SCSS (desktop)
+const STRIP_HEIGHT = 35; // altura visible de la roca cuando está contraído
 
 const TiendaFooter = () => {
   const [abierto, setAbierto] = useState(false);
@@ -26,6 +26,29 @@ const TiendaFooter = () => {
     return () => window.removeEventListener("resize", calcOffset);
   }, []);
 
+  // CERRAR AL HACER CLICK FUERA DEL FOOTER
+  useEffect(() => {
+    if (!abierto) return;
+
+    const handleClickOutside = (event) => {
+      const el = innerRef.current;
+      if (!el) return;
+
+      // Si el click NO está dentro del bloque deslizante, cerramos
+      if (!el.contains(event.target)) {
+        setAbierto(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
+  }, [abierto]);
+
   return (
     <footer
       className={[
@@ -33,15 +56,6 @@ const TiendaFooter = () => {
         abierto ? "is-open" : "is-closed",
       ].join(" ")}
     >
-      {/* BACKDROP: clic fuera = cerrar */}
-      {abierto && (
-        <div
-          className="tienda-footer-backdrop"
-          onClick={cerrar}
-          aria-hidden="true"
-        />
-      )}
-
       {/* BLOQUE DESLIZANTE: ROCA + TEXTO */}
       <div
         ref={innerRef}
