@@ -7,29 +7,45 @@ const cors = require("cors");
 const app = express();
 
 /* ===== CORS ===== */
-const allowedOrigins = [
-  "http://localhost:5173",               // Vite local
-  "https://flancraftweb.vercel.app",     // NUEVA web en Vercel
-  "https://flancraft.com",               // dominio principal (cuando lo uses)
-  // Si quieres seguir permitiendo el viejo:
-  // "https://flancraftv3.vercel.app",
-];
+const allowedOriginsExact = new Set([
+  "http://localhost:5173",
+  "https://flancraftweb.vercel.app",
+  "https://flancraft.com",
+  "https://www.flancraft.com",
+]);
+
+function isAllowedOrigin(origin) {
+  if (!origin) return true; // curl / server-to-server / healthchecks
+
+  if (allowedOriginsExact.has(origin)) return true;
+
+  // Permite previews de Vercel: *.vercel.app
+  if (/^https:\/\/([a-z0-9-]+\.)*vercel\.app$/i.test(origin)) return true;
+
+  // Permite subdominios de tu dominio: *.flancraft.com
+  if (/^https:\/\/([a-z0-9-]+\.)*flancraft\.com$/i.test(origin)) return true;
+
+  return false;
+}
 
 const corsOptions = {
   origin(origin, callback) {
-    // Permitir:
-    //  - llamadas sin origin (curl, cron, plugins, Render, etc.)
-    //  - origins listados arriba
-    if (!origin || allowedOrigins.includes(origin)) {
-      return callback(null, true);
+    // Log útil para ver cuál te falta exactamente en Render
+    // (puedes dejarlo unos días y luego quitarlo)
+    if (!isAllowedOrigin(origin)) {
+      console.log("[CORS] Bloqueado origin:", origin);
+      return callback(new Error("Not allowed by CORS"));
     }
-    return callback(new Error("Not allowed by CORS"));
+    return callback(null, true);
   },
   credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
 };
 
 app.use(cors(corsOptions));
-app.options("*", cors(corsOptions)); // 👉 preflight para POST/DELETE/etc
+app.options("*", cors(corsOptions));
+
 
 /* ===== Body parsing ===== */
 app.use(express.json({ limit: "5mb" }));
