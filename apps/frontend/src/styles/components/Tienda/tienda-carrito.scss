@@ -4,15 +4,20 @@
 .carrito-lateral {
   width: 100%;
   height: 100%;
+  min-height: 0; /* ✅ */
   display: flex;
   align-items: stretch;
   justify-content: stretch;
   background: transparent;
+
+  /* ✅ permite que el carrito sea “el bloque flexible” del sidebar */
+  flex: 1 1 auto;
 }
 
 .carrito-panel {
   width: 100%;
   height: 100%;
+  min-height: 0; /* ✅ */
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
@@ -31,15 +36,86 @@
   color: #3a2816;
 
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+
+  --btnLift: -7px;
+  --btnPress: 4px;
+
+  --btnShadowRest: 0 4px 0 rgba(0,0,0,0.42);
+  --btnShadowHover:
+    0 9px 0 rgba(0,0,0,0.55),
+    0 16px 32px rgba(0,0,0,0.22);
+  --btnShadowPress: 0 1px 0 rgba(0,0,0,0.62);
+
+  --tFast: 160ms;
+  --tMed: 220ms;
+  --easeLift: cubic-bezier(0.16, 1, 0.3, 1);
+  --easePress: cubic-bezier(0.2, 0.9, 0.2, 1);
 }
 
-/* CUENTA */
+/* ===========================
+   MIXIN “BOTÓN FÍSICO”
+   =========================== */
+@mixin btnPhysics($bg: #7a6a5b, $border: rgba(0,0,0,0.38), $color: #f6efe6) {
+  position: relative;
+  border-radius: 0.45rem;
+  border: 2px solid $border;
+
+  background: $bg;
+  color: $color;
+
+  transform: translateY(0) translateZ(0);
+  box-shadow: var(--btnShadowRest);
+  filter: saturate(1.02);
+
+  cursor: pointer;
+
+  will-change: transform, box-shadow, filter;
+  transition:
+    transform var(--tMed) var(--easeLift),
+    box-shadow var(--tMed) var(--easeLift),
+    filter var(--tFast) ease,
+    background var(--tFast) ease,
+    border-color var(--tFast) ease,
+    opacity var(--tFast) ease;
+
+  &:hover:not(:disabled) {
+    transform: translateY(var(--btnLift)) translateZ(0);
+    box-shadow: var(--btnShadowHover);
+    filter: brightness(1.06);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(var(--btnPress)) translateZ(0);
+    box-shadow: var(--btnShadowPress);
+    filter: brightness(0.98);
+  }
+
+  &:focus { outline: none; }
+
+  &:focus-visible {
+    outline: 2px solid rgba(210, 176, 113, 0.65);
+    outline-offset: 2px;
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none;
+    filter: none;
+    box-shadow: var(--btnShadowRest);
+  }
+}
+
+/* =========================================================
+   CUENTA
+   ========================================================= */
 .carrito-cuenta {
   border-radius: 0.55rem;
   overflow: hidden;
   background: #8b7a67;
   border: 2px solid rgba(0, 0, 0, 0.25);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  flex: 0 0 auto;
 }
 
 .cuenta-top {
@@ -125,15 +201,8 @@
   border-top: 2px solid rgba(0, 0, 0, 0.18);
 }
 
+/* BOTONES CUENTA */
 .cuenta-btn {
-  position: relative;
-  border-radius: 0.45rem;
-  border: 2px solid rgba(0, 0, 0, 0.38);
-
-  background: #7a6a5b;
-  color: #f6efe6;
-
-  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.35);
   padding: 0.55rem 0.6rem;
 
   font-size: 0.75rem;
@@ -141,12 +210,8 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
 
-  cursor: pointer;
-  transition: transform 0.08s ease, box-shadow 0.08s ease, filter 0.12s ease;
+  @include btnPhysics(#7a6a5b, rgba(0,0,0,0.38), #f6efe6);
 }
-
-.cuenta-btn:hover { filter: brightness(1.05); }
-.cuenta-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0, 0, 0, 0.35); }
 
 .cuenta-btn-account { text-align: center; }
 
@@ -157,6 +222,18 @@
   gap: 0.5rem;
   padding-right: 0.45rem;
   background: #6f6053;
+
+  &:focus-within {
+    transform: translateY(var(--btnPress)) translateZ(0);
+    box-shadow: var(--btnShadowPress);
+    filter: brightness(1.02);
+  }
+
+  &:focus-within:hover {
+    transform: translateY(var(--btnPress)) translateZ(0);
+    box-shadow: var(--btnShadowPress);
+    filter: brightness(1.05);
+  }
 }
 
 .currency-left {
@@ -188,80 +265,12 @@
   cursor: pointer;
 }
 
-/* MANUAL */
-.cuenta-manual {
-  grid-column: 1 / -1;
-  border-radius: 0.5rem;
-  border: 2px solid rgba(0, 0, 0, 0.25);
-  background: rgba(255, 255, 255, 0.08);
-  padding: 0.55rem;
-
-  display: flex;
-  flex-direction: column;
-  gap: 0.45rem;
-}
-
-.manual-label {
-  font-size: 0.7rem;
-  font-weight: 900;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.88);
-}
-
-.manual-row { display: flex; gap: 0.45rem; }
-
-.manual-input {
-  flex: 1;
-  height: 36px;
-  border-radius: 0.45rem;
-  border: 2px solid rgba(0, 0, 0, 0.35);
-  background: rgba(255, 255, 255, 0.14);
-  color: #fff;
-  padding: 0 0.6rem;
-  font-weight: 800;
-  letter-spacing: 0.02em;
-  outline: none;
-
-  &::placeholder { color: rgba(255, 255, 255, 0.65); font-weight: 700; }
-  &:focus { box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.18); }
-}
-
-.manual-ok {
-  width: 56px;
-  height: 36px;
-  border-radius: 0.45rem;
-  border: 2px solid rgba(0, 0, 0, 0.38);
-  background: #7a6a5b;
-  color: #fff;
-  font-weight: 900;
-  letter-spacing: 0.06em;
-  cursor: pointer;
-  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.35);
-  transition: transform 0.08s ease, box-shadow 0.08s ease, filter 0.12s ease;
-
-  &:hover { filter: brightness(1.05); }
-  &:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0, 0, 0, 0.35); }
-  &:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
-}
-
-.manual-cancel {
-  align-self: flex-end;
-  background: transparent;
-  border: 0;
-  color: rgba(255, 255, 255, 0.85);
-  font-weight: 800;
-  cursor: pointer;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  opacity: 0.9;
-
-  &:hover { opacity: 1; }
-}
-
-/* CARRITO */
+/* =========================================================
+   CARRITO
+   ========================================================= */
 .carrito-basket {
-  flex: 1;
+  flex: 1 1 auto;
+  min-height: 0; /* ✅ */
   display: flex;
   flex-direction: column;
   border-radius: 0.55rem;
@@ -272,6 +281,7 @@
 }
 
 .basket-header {
+  flex: 0 0 auto;
   display: flex;
   align-items: baseline;
   justify-content: space-between;
@@ -295,7 +305,8 @@
 }
 
 .basket-scroll {
-  flex: 1;
+  flex: 1 1 auto;
+  min-height: 0; /* ✅ */
   padding: 0.55rem 0.7rem;
   overflow-y: auto;
 
@@ -383,25 +394,28 @@
 .basket-item-right { display: flex; align-items: center; gap: 0.35rem; }
 .basket-item-qty { border-radius: 0.45rem; padding: 0.1rem 0.45rem; font-size: 0.8rem; background: #4b3a2b; color: #fefaf2; font-weight: 900; }
 
+/* REMOVE */
 .basket-item-remove {
-  border: none;
-  border-radius: 0.45rem;
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
   display: grid;
   place-items: center;
-  background: #4b2b2b;
-  color: #fef7e5;
-  cursor: pointer;
-  transition: transform 0.08s ease, filter 0.08s ease;
+
+  border-radius: 0.45rem;
+  border: 2px solid rgba(0,0,0,0.42);
+  padding: 0;
+
+  @include btnPhysics(#4b2b2b, rgba(0,0,0,0.42), #fef7e5);
+
+  --btnLift: -4px;
+  --btnPress: 3px;
 
   svg { font-size: 1.05rem; }
 }
-.basket-item-remove:hover { transform: translateY(-1px); filter: brightness(1.1); }
-.basket-item-remove:active { transform: translateY(1px); }
 
 /* Footer */
 .basket-footer {
+  flex: 0 0 auto;
   padding: 0.55rem 0.7rem 0.65rem;
   border-top: 2px solid rgba(0, 0, 0, 0.15);
   display: flex;
@@ -413,7 +427,7 @@
 .basket-total { display: flex; justify-content: space-between; font-size: 0.9rem; }
 .basket-total-label, .basket-total-value { font-weight: 900; }
 
-/* ✅ BOTÓN EXACTO TIPO TEBEX + SHINE SIN BUG */
+/* CHECKOUT */
 .basket-checkout {
   position: relative;
   width: 100%;
@@ -429,11 +443,43 @@
   text-transform: uppercase;
   font-size: 1rem;
 
-  box-shadow: 0 4px 0 #06270b;
+  transform: translateY(0) translateZ(0);
+  box-shadow: var(--btnShadowRest);
   cursor: pointer;
   overflow: hidden;
 
-  transition: transform 0.08s ease, box-shadow 0.08s ease, filter 0.12s ease, opacity 0.12s ease;
+  will-change: transform, box-shadow, filter;
+  transition:
+    transform var(--tMed) var(--easeLift),
+    box-shadow var(--tMed) var(--easeLift),
+    filter var(--tFast) ease,
+    opacity var(--tFast) ease;
+
+  &:hover:not(:disabled) {
+    transform: translateY(var(--btnLift)) translateZ(0);
+    box-shadow: var(--btnShadowHover);
+    filter: brightness(1.05);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(var(--btnPress)) translateZ(0);
+    box-shadow: var(--btnShadowPress);
+    filter: brightness(0.98);
+  }
+
+  &:focus { outline: none; }
+  &:focus-visible {
+    outline: 2px solid rgba(210, 176, 113, 0.65);
+    outline-offset: 2px;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    filter: none;
+    transform: none;
+    box-shadow: var(--btnShadowRest);
+  }
 }
 
 .basket-checkout::before {
@@ -465,25 +511,6 @@
   100% { transform: translate3d(430%, 0, 0); opacity: 0; }
 }
 
-.basket-checkout:hover:not(:disabled) {
-  filter: brightness(1.05);
-  transform: translateY(-1px);
-  box-shadow: 0 2px 0 #06270b;
-}
-
-.basket-checkout:active:not(:disabled) {
-  transform: translateY(2px);
-  box-shadow: 0 1px 0 #06270b;
-}
-
-.basket-checkout:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  filter: none;
-  transform: none;
-  box-shadow: 0 4px 0 #06270b;
-}
-
 .basket-hint {
   font-size: 0.74rem;
   font-weight: 800;
@@ -494,6 +521,10 @@
 /* Reduce motion */
 @media (prefers-reduced-motion: reduce) {
   .basket-checkout::before { animation: none !important; }
+  .cuenta-btn,
+  .manual-ok,
+  .basket-item-remove,
+  .basket-checkout { transition: none !important; }
 }
 
 /* RESPONSIVE */

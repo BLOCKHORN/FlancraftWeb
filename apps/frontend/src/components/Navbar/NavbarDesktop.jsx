@@ -3,7 +3,7 @@ import LogoutButton from "../Auth/LogoutButton";
 import { useEffect, useRef, useState } from "react";
 import "../../styles/components/Navbar/navbarDesktop.scss";
 
-const NavIcon = ({ src, alt, size = 28, className = "" }) => {
+const NavIcon = ({ src, alt, size = 24, className = "" }) => {
   return (
     <img
       className={`nav-icon-img ${className}`}
@@ -239,32 +239,32 @@ const NavbarDesktop = ({
       <div className="nav-center">
         <NavLink to="/" className={navCls("nav-home")}>
           <NavIcon src="/botones/home.svg" alt="Inicio" />
-          Inicio
+          <span className="nav-label">Inicio</span>
         </NavLink>
 
         <NavLink to="/news" className={navCls("nav-news")}>
           <NavIcon src="/botones/noticias.svg" alt="Noticias" />
-          Noticias
+          <span className="nav-label">Noticias</span>
         </NavLink>
 
         <NavLink to="/leaderboards" className={navCls("nav-stats")}>
           <NavIcon src="/botones/estadisticas.svg" alt="Estadísticas" />
-          Ranking
+          <span className="nav-label">Ranking</span>
         </NavLink>
 
         <NavLink to="/tienda" className={navCls("nav-store")}>
           <NavIcon src="/botones/tienda.svg" alt="Tienda" />
-          Tienda
+          <span className="nav-label">Tienda</span>
         </NavLink>
 
         <NavLink to="/rangos" className={navCls("nav-ranks")}>
           <NavIcon src="/botones/rangos.svg" alt="Rangos" />
-          Rangos
+          <span className="nav-label">Rangos</span>
         </NavLink>
 
         <NavLink to="/tribunal" className={navCls("nav-tribunal")}>
           <NavIcon src="/botones/tribunal.svg" alt="Tribunal" />
-          Tribunal
+          <span className="nav-label">Tribunal</span>
         </NavLink>
       </div>
 
@@ -290,10 +290,11 @@ const NavbarDesktop = ({
               onClick={() => setProfileOpen((v) => !v)}
               aria-haspopup="menu"
               aria-expanded={profileOpen ? "true" : "false"}
+              title={userData?.username || ""}
             >
               <span className="user-avatar-wrap" aria-hidden="true">
                 <img
-                  src={`https://mc-heads.net/avatar/${userData.username}/32`}
+                  src={`https://mc-heads.net/avatar/${userData.username}/28`}
                   alt=""
                   className="user-avatar"
                   draggable="false"
@@ -326,16 +327,12 @@ const NavbarDesktop = ({
                     />
 
                     <div className="user-core">
-                      
                       <div className="user-topline">
-                        
                         <p className="username-big">
                           <span className={`nombre-colored ${getRangoColorClass()}`}>
                             {userData.username}
                           </span>
                         </p>
-
-                        
                       </div>
 
                       <div className="user-level-row">
@@ -368,7 +365,7 @@ const NavbarDesktop = ({
                             style={{ width: `${xpPercent}%` }}
                           />
                         </div>
-                        
+
                         <div className="xp-text-row">
                           <span className="xp-actual">{xpActualNavbar}</span>
                           <span className="xp-sep">/</span>

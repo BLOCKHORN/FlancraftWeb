@@ -2,6 +2,37 @@ export const API_URL =
   import.meta.env.VITE_BACKEND_URL ||
   "https://flancraft-backend.onrender.com";
 
+/* =========================
+   BASE + Tebex endpoints (robusto)
+   - Primero prueba /api/tebex
+   - Si da 404, prueba /tebex
+   ========================= */
+export const API_BASE = String(API_URL || "").replace(/\/$/, "");
+
+// Si quieres forzarlo desde .env: VITE_TEBEX_PATH=/api/tebex  (o /tebex)
+export const TEBEX_PATH = import.meta.env.VITE_TEBEX_PATH || "/api/tebex";
+export const TEBEX_URL = `${API_BASE}${TEBEX_PATH}`;
+
+// Fallback automático (por si tu backend lo montó sin /api)
+export const TEBEX_URL_FALLBACK = `${API_BASE}/tebex`;
+
+/**
+ * Fetch robusto para endpoints Tebex.
+ * - Intenta TEBEX_URL + path
+ * - Si 404, intenta TEBEX_URL_FALLBACK + path
+ */
+export async function fetchTebex(path, options) {
+  const p = String(path || "");
+  const safePath = p.startsWith("/") ? p : `/${p}`;
+
+  const r1 = await fetch(`${TEBEX_URL}${safePath}`, options);
+  if (r1.status !== 404) return r1;
+
+  // Fallback si el router está montado como /tebex
+  const r2 = await fetch(`${TEBEX_URL_FALLBACK}${safePath}`, options);
+  return r2;
+}
+
 /** Quita acentos SIN tocar mayúsculas/espacios (compat con código viejo) */
 export function stripAccents(str = "") {
   return String(str).normalize("NFD").replace(/[\u0300-\u036f]/g, "");
@@ -92,7 +123,7 @@ export function calcularTotal(carrito = []) {
  * Tiles principales de la tienda (portada).
  * Aquí definimos manualmente nombre, slug, servidor y la IMAGEN.
  *
- * 👉 SOLO CATEGORÍAS “GORDAS” (3 tiles simétricas).
+ * SOLO CATEGORÍAS “GORDAS” (3 tiles simétricas).
  */
 export const PORTADA_TILES = [
   {

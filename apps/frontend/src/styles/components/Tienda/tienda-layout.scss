@@ -1,3 +1,4 @@
+// src/styles/components/Tienda/tienda-layout.scss
 @use "../../base/_variables" as *;
 
 @keyframes shelfExpandIn {
@@ -13,7 +14,6 @@
   }
 }
 
-/* flotación de la flecha cuando está contraído */
 /* Animaciones de la flecha (botón) */
 @keyframes footerToggleFloatClosed {
   0%,
@@ -35,7 +35,6 @@
   }
 }
 
-
 /* =========================================================
    LAYOUT TIENDA (2 columnas)
    ========================================================= */
@@ -47,6 +46,10 @@
   --pad-y: 1.25rem;
 
   --top-offset: var(--app-header-h, 0px);
+
+  /* ✅ IMPORTANTE: este es el alto VISIBLE del footer cuando está cerrado.
+     Tiene que coincidir con STRIP_HEIGHT de TiendaFooter.jsx (35). */
+  --footer-visible-h: 35px;
 
   position: relative;
   display: flex;
@@ -85,12 +88,14 @@
   z-index: 0;
 }
 
+/* ✅ Aquí está el arreglo: el main mide 100% - 35px
+   para que el footer cerrado NO se coma el carrito */
 .tienda-layout-main {
   position: relative;
   z-index: 1;
 
   width: 100%;
-  height: 100%;
+  height: calc(100% - var(--footer-visible-h));
   min-height: 0;
 
   display: grid;
@@ -105,7 +110,6 @@
 }
 
 /* LEFT (contenido) */
-
 .tienda-layout-left {
   min-width: 0;
   min-height: 0;
@@ -156,7 +160,7 @@
   opacity: 1;
 }
 
-/* Contenido: ocupa todo, sin scroll propio (lo hacen los productos) */
+/* Contenido */
 .tienda-layout.is-contenido .tienda-shelf-inner {
   max-width: 100%;
   height: 100%;
@@ -170,7 +174,6 @@
 }
 
 /* SIDEBAR (carrito) */
-
 .tienda-layout-sidebar {
   min-width: 0;
   min-height: 0;
@@ -182,7 +185,7 @@
 
 .tienda-sidebar-card {
   position: relative;
-  z-index: 2; /* siempre por encima del footer cuando está cerrado */
+  z-index: 2; /* por encima del fondo */
 
   width: 100%;
   max-width: var(--sidebar-w);
@@ -197,10 +200,21 @@
   box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.7), 0 18px 40px rgba(0, 0, 0, 0.95);
 
   overflow: hidden;
+
+  /* ✅ Para que el widget quede arriba y el carrito se ajuste sin cortes */
+  display: flex;
+  flex-direction: column;
+  gap: 0.95rem;
+}
+
+/* ✅ El carrito debe poder encogerse y scroll interno */
+.tienda-sidebar-card > .carrito-lateral {
+  flex: 1;
+  min-height: 0;
 }
 
 /* =========================================================
-   FOOTER CON BORDE DE ROCA
+   FOOTER CON BORDE DE ROCA (NO CAMBIADO DE LÓGICA)
    ========================================================= */
 
 .tienda-footer {
@@ -211,42 +225,25 @@
   right: 0;
   bottom: 0;
 
-  z-index: 3; // por encima del carrito cuando está abierto
+  z-index: 3;
   pointer-events: none;
 }
 
-/* BACKDROP: zona clicable para cerrar al hacer clic fuera */
-.tienda-footer-backdrop {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: var(--footer-strip-h);
-  top: 0;
-  pointer-events: auto;
-  cursor: pointer;
-}
-
-/* BLOQUE DESLIZANTE: roca + footer */
 .tienda-footer-inner {
   position: relative;
   width: 100%;
   pointer-events: auto;
 
-  /* Cerrado: desplazamos hacia abajo todo menos la roca */
   transform: translateY(var(--footer-offset, 0px));
   transition: transform 260ms cubic-bezier(0.22, 0.61, 0.36, 1);
 
-  /* OJO: aquí ya NO hay background,
-     solo lo tendrá el panel inferior */
   background: none;
 }
 
-/* Abierto: todo visible */
 .tienda-footer.is-open .tienda-footer-inner {
   transform: translateY(0);
 }
 
-/* Imagen de roca, pegada al borde inferior del bloque */
 .tienda-footer-strip {
   position: relative;
   height: var(--footer-strip-h);
@@ -255,12 +252,11 @@
   cursor: pointer;
 }
 
-/* Flecha minimalista, sin fondo ni borde */
-/* Botón de la flecha, ahora por ENCIMA del borde de roca */
+/* Botón flecha por encima de la roca */
 .tienda-footer-toggle {
   position: absolute;
   left: 50%;
-  top: -26px;               /* lo saca por encima del borde */
+  top: -26px;
   transform: translate(-50%, 0);
 
   width: 48px;
@@ -274,29 +270,26 @@
   justify-content: center;
 
   cursor: pointer;
-  z-index: 4;               /* por encima de la roca siempre */
+  z-index: 4;
 }
 
-/* Triángulo de la flecha, más grande y con glow */
 .tienda-footer-toggle-arrow {
   width: 0;
   height: 0;
   border-left: 11px solid transparent;
   border-right: 11px solid transparent;
-  border-bottom: 16px solid #fbe8c5; // flecha ↑
+  border-bottom: 16px solid #fbe8c5;
 
   transition: transform 180ms ease-out, filter 180ms ease-out;
   transform-origin: center;
   filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.7));
 }
 
-/* Flecha mirando hacia abajo cuando está abierto */
 .tienda-footer.is-open .tienda-footer-toggle-arrow {
   transform: rotate(180deg);
   filter: drop-shadow(0 0 6px rgba(0, 0, 0, 0.9));
 }
 
-/* Animaciones del botón (no del triángulo) */
 .tienda-footer.is-closed .tienda-footer-toggle {
   animation: footerToggleFloatClosed 2.3s ease-in-out infinite;
 }
@@ -305,9 +298,6 @@
   animation: footerToggleFloatOpen 1.8s ease-in-out infinite;
 }
 
-
-/* PANEL DEL FOOTER: aquí va AHORA el fondo marrón
-   y nunca pasará por encima de la roca */
 .tienda-footer-panel {
   margin-left: 0;
   margin-right: 0;
@@ -318,7 +308,6 @@
   justify-content: center;
   position: relative;
 
-  /* Fondo tipo suelo/taberna, solo bajo el texto */
   background: linear-gradient(
     to top,
     #1b0e06 0%,
@@ -327,7 +316,6 @@
   );
 }
 
-/* Caja del footer SIN borde duro: texto sobre suelo */
 .tienda-footer-bar {
   position: relative;
   z-index: 1;
@@ -457,64 +445,6 @@
   display: block;
 }
 
-/* MOBILE: se queda como lo tenías, sólo mantén
-   que .tienda-footer-inner no vuelva a poner background */
-
-@media (max-width: 960px) {
-  .tienda-footer {
-    position: static;
-    pointer-events: auto;
-    margin-top: 0.5rem;
-    z-index: 1;
-  }
-
-  .tienda-footer-backdrop {
-    display: none;
-  }
-
-  .tienda-footer-inner {
-    transform: none !important;
-    background: #1b0e06;
-  }
-
-  .tienda-footer-strip {
-    position: static;
-    height: 60px;
-    background-size: auto 60px;
-  }
-
-  .tienda-footer-toggle {
-    display: none;
-  }
-
-  .tienda-footer-panel {
-    position: static;
-    padding: 0.6rem 0.2rem 0.5rem;
-    background: #1b0e06;
-  }
-
-  .tienda-footer-bar {
-    max-width: 560px;
-    margin: 0 auto;
-    padding: 0.8rem 0.85rem 0.6rem;
-  }
-
-  .tienda-footer-main {
-    flex-direction: column;
-    gap: 0.65rem;
-  }
-
-  .tienda-footer-col {
-    text-align: left;
-  }
-
-  .tienda-footer-bottom {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-}
-
-
 /* =========================================================
    MOBILE
    ========================================================= */
@@ -545,6 +475,7 @@
       radial-gradient(circle at center, rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0.25));
   }
 
+  /* En móvil NO restamos footer, porque el footer se vuelve bloque normal abajo */
   .tienda-layout-main {
     height: auto;
     min-height: 0;
@@ -596,16 +527,12 @@
     padding-right: 0;
   }
 
-  /* Footer en móvil: sin overlay, bloque normal debajo */
+  /* Footer en móvil: bloque normal debajo */
   .tienda-footer {
     position: static;
     pointer-events: auto;
     margin-top: 0.5rem;
     z-index: 1;
-  }
-
-  .tienda-footer-backdrop {
-    display: none;
   }
 
   .tienda-footer-inner {
@@ -626,6 +553,7 @@
   .tienda-footer-panel {
     position: static;
     padding: 0.6rem 0.2rem 0.5rem;
+    background: #1b0e06;
   }
 
   .tienda-footer-bar {

@@ -1,7 +1,7 @@
 // src/components/Tienda/TiendaFooter.jsx
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 
-const STRIP_HEIGHT = 35; // altura visible de la roca cuando está contraído
+const STRIP_HEIGHT = 20; // altura visible de la roca cuando está contraído
 
 const TiendaFooter = () => {
   const [abierto, setAbierto] = useState(false);

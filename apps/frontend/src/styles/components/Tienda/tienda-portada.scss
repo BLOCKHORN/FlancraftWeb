@@ -14,9 +14,12 @@
    ========================= */
 
 .tienda-portada-wrapper {
+  /* ✅ ancho maestro compartido por OFERTA y GRID (simetría real) */
+  --portadaW: min(720px, 100%);
+
   width: 100%;
   margin: 5rem auto;
-  padding: 3.5rem 1rem 3.5rem;
+  padding: 3.5rem 1rem 3.2rem;
   border-radius: 0.7rem;
 
   background:
@@ -31,7 +34,6 @@
   text-align: center;
 
   position: relative;
-  /* que los iconos puedan sobresalir al subir */
   overflow: visible;
 
   &::before {
@@ -48,14 +50,45 @@
   }
 }
 
+/* ✅ panel (por si quieres usarlo en JSX) */
+.tienda-portada-panel {
+  position: relative;
+  z-index: 1;
+}
+
+/* =========================
+   SLOT OFERTA (simétrico)
+   ========================= */
+
+.tienda-portada-oferta-slot {
+  width: var(--portadaW);
+  margin: 0 auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  /* Reserva espacio para que NO invada */
+  min-height: clamp(56px, 6vw, 78px);
+
+  /* separación con el grid */
+  margin-bottom: clamp(10px, 1.4vw, 18px);
+
+  /* “sube un pelín” de forma responsiva (no hardcode fijo) */
+  & > * {
+    transform: translateY(calc(-1 * clamp(4px, 0.7vw, 12px)));
+  }
+}
+
 /* =========================
    GRID
    ========================= */
 
 .tienda-portada-grid {
+  width: var(--portadaW);
+  margin: 0 auto;
   list-style: none;
-  margin: 0;
   padding: 0;
+
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1.25rem 1.65rem;
@@ -107,18 +140,16 @@
   transform: translateZ(0);
   overflow: visible;
 
-  /* subida muy fluida */
   transition:
     transform 0.45s cubic-bezier(0.22, 0.61, 0.36, 1),
     box-shadow 0.35s ease-out;
 
-  /* halo que nace del centro y se expande */
   &::before {
     content: "";
     position: absolute;
     inset: 0;
     pointer-events: none;
-    border-radius: 999px; /* aprox forma orgánica */
+    border-radius: 999px;
     background: radial-gradient(
       circle,
       rgba(255, 255, 255, 0.95) 0%,
@@ -148,30 +179,21 @@
     filter 0.35s cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 
-/* Hover: subida suave + borde blanco gordito desde el centro */
-
-.tienda-portada-btn:hover .tienda-portada-icon,
-.tienda-portada-btn:active .tienda-portada-icon {
+.tienda-portada-btn:hover .tienda-portada-icon {
   transform: translateY(-8px);
 }
-
-.tienda-portada-btn:hover .tienda-portada-icon::before,
-.tienda-portada-btn:active .tienda-portada-icon::before {
+.tienda-portada-btn:hover .tienda-portada-icon::before {
   opacity: 0.95;
-  transform: scale(1.18); /* se expande hacia afuera */
+  transform: scale(1.18);
 }
-
-.tienda-portada-btn:hover .tienda-portada-icon img,
-.tienda-portada-btn:active .tienda-portada-icon img {
+.tienda-portada-btn:hover .tienda-portada-icon img {
   transform: translateY(-12px) scale(1.06) rotate(-2deg);
   filter:
     brightness(1.18)
-    /* contorno blanco simétrico alrededor del sprite */
     drop-shadow(0 0 0 #ffffff)
     drop-shadow(0 0 4px #ffffff)
     drop-shadow(0 0 10px rgba(255, 255, 255, 0.95))
     drop-shadow(0 0 20px rgba(255, 255, 255, 0.75))
-    /* sombra hacia abajo para que “pese” en la tablilla */
     drop-shadow(0 12px 18px rgba(0, 0, 0, 0.95));
 }
 
@@ -203,7 +225,6 @@
   font-size: 0.88rem;
   font-weight: 600;
   letter-spacing: 0.03em;
-  text-transform: none;
   white-space: nowrap;
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
 
@@ -217,30 +238,15 @@
     font-size: 0.9em;
     opacity: 0.9;
   }
-
-  &::before {
-    margin-right: 0.35rem;
-  }
-
-  &::after {
-    margin-left: 0.35rem;
-  }
+  &::before { margin-right: 0.35rem; }
+  &::after { margin-left: 0.35rem; }
 }
 
 .tienda-portada-btn:hover .tienda-portada-label {
   transform: translateY(-1px);
-  box-shadow:
-    0 4px 0 rgba(0, 0, 0, 0.55),
-    0 0 0 1px rgba(0, 0, 0, 0.45),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.5);
 }
-
 .tienda-portada-btn:active .tienda-portada-label {
   transform: translateY(1px);
-  box-shadow:
-    0 2px 0 rgba(0, 0, 0, 0.55),
-    0 0 0 1px rgba(0, 0, 0, 0.45),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.4);
 }
 
 /* =========================
@@ -248,7 +254,8 @@
    ========================= */
 
 .tienda-portada-footnote {
-  margin-top: 1.1rem;
+  width: var(--portadaW);
+  margin: 1.05rem auto 0;
   font-size: 0.82rem;
   color: #f3ddc4;
   opacity: 0.9;
@@ -276,16 +283,11 @@
   border-radius: 3px;
   cursor: pointer;
 
-  transition: color 0.15s ease-out, text-decoration-color 0.15s ease-out;
+  transition: color 0.15s ease-out;
 }
 
 .tienda-portada-footnote-link:hover {
   color: #ffffff;
-}
-
-.tienda-portada-footnote-link:focus-visible {
-  outline: 1px solid rgba(255, 233, 194, 0.9);
-  outline-offset: 2px;
 }
 
 /* =========================
@@ -293,13 +295,10 @@
    ========================= */
 
 @media (max-width: 1024px) {
-  .tienda-portada-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 1rem 1.1rem;
-  }
+  .tienda-portada-wrapper { --portadaW: min(660px, 100%); }
+  .tienda-portada-grid { gap: 1rem 1.1rem; }
 }
 
-/* Móvil/tablet */
 @media (max-width: 960px) {
   .tienda-portada-wrapper {
     margin: 0 auto;
@@ -319,10 +318,9 @@
     }
   }
 
-  .tienda-portada-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 0.7rem 0.7rem;
-  }
+  .tienda-portada-wrapper { --portadaW: min(520px, 100%); }
+
+  .tienda-portada-grid { gap: 0.7rem 0.7rem; }
 
   .tienda-portada-btn {
     gap: 0.45rem;
@@ -355,12 +353,10 @@
   }
 }
 
-/* Ultra estrecho: si no cabe, 2 columnas */
 @media (max-width: 360px) {
   .tienda-portada-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-
   .tienda-portada-icon img {
     max-width: 80px;
     max-height: 80px;

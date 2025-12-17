@@ -1,3 +1,4 @@
+// apps/frontend/src/components/Tienda/TiendaLayout.jsx
 import React, {
   useContext,
   useEffect,
@@ -17,6 +18,8 @@ import TiendaCarritoLateral from "./TiendaCarritoLateral";
 import TiendaModalJugador from "./TiendaModalJugador";
 import useTiendaCarrito from "./useTiendaCarrito";
 import TiendaFooter from "./TiendaFooter";
+import TiendaTopDonator from "./TiendaTopDonator";
+import TiendaOfertaCountdown from "./TiendaOfertaCountdown";
 
 const readWebUser = () => {
   try {
@@ -51,6 +54,14 @@ const TiendaLayout = () => {
 
   const esPortada = useMemo(() => {
     return location.pathname === "/tienda" || location.pathname === "/tienda/";
+  }, [location.pathname]);
+
+  // ✅ Server actual desde URL (para Top Donator por servidor)
+  const serverFromPath = useMemo(() => {
+    const parts = String(location.pathname || "").split("/").filter(Boolean);
+    // /tienda/:server/:categoria...
+    if (parts[0] !== "tienda") return "global";
+    return parts[1] || "global";
   }, [location.pathname]);
 
   // ✅ Estado "expandiendo" para animación solo cuando pasas de portada -> contenido
@@ -172,7 +183,7 @@ const TiendaLayout = () => {
         />
       )}
 
-      {/* ZONA PRINCIPAL: se queda exactamente igual de alta que antes */}
+      {/* ZONA PRINCIPAL */}
       <main className="tienda-layout-main">
         <section className="tienda-layout-left">
           <div className="tienda-shelf-frame">
@@ -204,6 +215,10 @@ const TiendaLayout = () => {
 
         <aside className="tienda-layout-sidebar">
           <div className="tienda-sidebar-card">
+            {/* ✅ TOP DONATOR arriba */}
+            <TiendaTopDonator server={serverFromPath} />
+
+            {/* ✅ Carrito ocupa el resto sin ser comido por el footer */}
             <TiendaCarritoLateral
               carrito={carrito}
               onAgregar={toggleProducto}
@@ -222,7 +237,7 @@ const TiendaLayout = () => {
         </aside>
       </main>
 
-      {/* Footer tipo Tebex: debajo, sin alterar la composición */}
+      {/* Footer: NO se toca */}
       <TiendaFooter />
     </div>
   );

@@ -1,31 +1,66 @@
-'use strict';
-const express = require('express');
+"use strict";
+
+const express = require("express");
 const router = express.Router();
 
 const {
-  crearPedidoTebex,
   obtenerDatosTienda,
-  obtenerDescripcionProducto,
   forzarActualizarCache,
+  obtenerDescripcionProducto,
+  crearPedidoTebex,
+  obtenerSaleActiva,
+  obtenerTopDonator,
+  obtenerGoal,
+  obtenerPagosRecientes,
+  obtenerSidebarRaw,
+  webhookPing,
+  webhookHandler,
   health,
-} = require('../controllers/tiendatebex.controller');
+} = require("../controllers/tiendatebex.controller");
 
-// Health
-router.get('/health', health);
+/* =========================
+   Health / Debug
+   ========================= */
+router.get("/health", health);
+router.get("/sidebar-raw", obtenerSidebarRaw);
 
-// Datos (server opcional)
-router.get('/datos', obtenerDatosTienda);
-router.get('/:server/datos', obtenerDatosTienda);
+/* =========================
+   Headless sidebar modules
+   ========================= */
+router.get("/top-donator", obtenerTopDonator);
+router.get("/goal", obtenerGoal);
+router.get("/recent-payments", obtenerPagosRecientes);
 
-// Descripción de producto
-router.get('/descripcion/:id', obtenerDescripcionProducto);
-router.get('/:server/descripcion/:id', obtenerDescripcionProducto);
+/* =========================
+   Sales
+   ========================= */
+router.get("/sale", obtenerSaleActiva);
+router.get("/sale/:server", obtenerSaleActiva);
 
-// Forzar caché
-router.post('/actualizar-cache', forzarActualizarCache);
-router.post('/:server/actualizar-cache', forzarActualizarCache);
+/* =========================
+   Packages / categorías (plugin.tebex.io)
+   ========================= */
+router.get("/", obtenerDatosTienda);
+router.get("/:server", obtenerDatosTienda);
 
-// Checkout
-router.post('/crear-pedido', crearPedidoTebex);
+router.post("/cache/refresh", forzarActualizarCache);
+router.post("/cache/refresh/:server", forzarActualizarCache);
+
+/* =========================
+   Package detail
+   ========================= */
+router.get("/package/:id", obtenerDescripcionProducto);
+router.get("/:server/package/:id", obtenerDescripcionProducto);
+
+/* =========================
+   Checkout
+   ========================= */
+router.post("/checkout", crearPedidoTebex);
+
+/* =========================
+   Webhook Tebex
+   ========================= */
+router.get("/webhook", webhookPing);
+router.post("/webhook", webhookHandler);
 
 module.exports = router;

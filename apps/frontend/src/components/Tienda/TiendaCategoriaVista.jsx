@@ -45,7 +45,7 @@ const FALLBACK_ICONS = {
 };
 
 /* =========================================================
-   Icono grande de cabecera (reinos / categorías)
+   Icono grande / emblema (se usará junto al H1)
    ========================================================= */
 const HERO_ICONS = {
   "survival-clasico": "/assets/reinos/survival-clasico.webp",
@@ -190,6 +190,8 @@ export default function TiendaCategoriaVista({ carrito, toggleProducto }) {
 
   // Auto-fit sidebar cuando hay pocas categorías (rellena alto y reparte)
   const fitSidebar = showSidebar && subcats.length > 0 && subcats.length <= 6;
+
+  const isEmptyHint = !hasActive && !isRealMode && subcats.length > 1;
 
   // ======= 1) Fetch SOLO cuando cambia server/categoria =======
   useEffect(() => {
@@ -388,47 +390,58 @@ export default function TiendaCategoriaVista({ carrito, toggleProducto }) {
       <div className="tienda-tebex">
         <div className="tienda-contenido">
           <div className="tienda-wc">
-            <div className="tienda-wc-head">
-              <div className="tc-head-spacer" aria-hidden="true" />
-              <h1 className="tienda-wc-title">{ANTES_DE_COMPRAR.titulo}</h1>
-              <button className="tienda-wc-close" onClick={goClose}>
-                Volver
-              </button>
-            </div>
-
-            <div className="tienda-doc">
-              {ANTES_DE_COMPRAR.intro.map((p, i) => (
-                <p key={`intro-${i}`}>{p}</p>
-              ))}
-
-              <div className="tienda-doc-divider" />
-
-              <h2>Información importante</h2>
-              <ul>
-                {ANTES_DE_COMPRAR.avisos.map((t, i) => (
-                  <li key={`aviso-${i}`}>{t}</li>
-                ))}
-              </ul>
-
-              <div className="tienda-doc-divider" />
-
-              <h2>{ANTES_DE_COMPRAR.soporte.titulo}</h2>
-              <p>{ANTES_DE_COMPRAR.soporte.texto}</p>
-
-              <div className="tienda-doc-links">
-                {ANTES_DE_COMPRAR.soporte.links.map((l) => (
-                  <a key={l.href} href={l.href} target="_blank" rel="noreferrer">
-                    {l.label}
-                  </a>
-                ))}
+            <div className="tienda-wc-frame" aria-hidden="true" />
+            <div className="tienda-wc-inner">
+              <div className="tc-head tc-head--doc">
+                <div className="tc-head-spacer" aria-hidden="true" />
+                <div className="tc-head-center">
+                  <div className="tc-head-row">
+                    <h1 className="tienda-wc-title">{ANTES_DE_COMPRAR.titulo}</h1>
+                  </div>
+                  <div className="tc-head-divider" aria-hidden="true" />
+                  <p className="tienda-wc-subtitle">Información importante antes de comprar.</p>
+                </div>
+                <div className="tc-head-actions">
+                  <button className="tienda-wc-close" onClick={goClose} type="button">
+                    Volver
+                  </button>
+                </div>
               </div>
 
-              <div className="tienda-doc-divider" />
+              <div className="tienda-doc">
+                {ANTES_DE_COMPRAR.intro.map((p, i) => (
+                  <p key={`intro-${i}`}>{p}</p>
+                ))}
 
-              <h2>{ANTES_DE_COMPRAR.reembolso.titulo}</h2>
-              {ANTES_DE_COMPRAR.reembolso.bloques.map((p, i) => (
-                <p key={`reb-${i}`}>{p}</p>
-              ))}
+                <div className="tienda-doc-divider" />
+
+                <h2>Información importante</h2>
+                <ul>
+                  {ANTES_DE_COMPRAR.avisos.map((t, i) => (
+                    <li key={`aviso-${i}`}>{t}</li>
+                  ))}
+                </ul>
+
+                <div className="tienda-doc-divider" />
+
+                <h2>{ANTES_DE_COMPRAR.soporte.titulo}</h2>
+                <p>{ANTES_DE_COMPRAR.soporte.texto}</p>
+
+                <div className="tienda-doc-links">
+                  {ANTES_DE_COMPRAR.soporte.links.map((l) => (
+                    <a key={l.href} href={l.href} target="_blank" rel="noreferrer">
+                      {l.label}
+                    </a>
+                  ))}
+                </div>
+
+                <div className="tienda-doc-divider" />
+
+                <h2>{ANTES_DE_COMPRAR.reembolso.titulo}</h2>
+                {ANTES_DE_COMPRAR.reembolso.bloques.map((p, i) => (
+                  <p key={`reb-${i}`}>{p}</p>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -450,142 +463,143 @@ export default function TiendaCategoriaVista({ carrito, toggleProducto }) {
     <div className={rootClasses}>
       <div className="tienda-contenido">
         <div className="tienda-wc">
-          {/* OVERLAY DE CARGA SUAVE */}
-          {loading && (
-            <div className="tienda-loading-overlay" aria-hidden="true">
-              <div className="tienda-loading-inner">
-                <div className="logo-f-loader">
-                  <span>F</span>
-                </div>
-                <p className="tienda-loading-text">CARGANDO LA TIENDA...</p>
-              </div>
-            </div>
-          )}
+          {/* Marco (borde.jpeg) */}
+          <div className="tienda-wc-frame" aria-hidden="true" />
 
-          {/* CABECERA FIJA (CENTRADA) */}
-          <div className="tienda-wc-head">
-            <div className="tc-head-spacer" aria-hidden="true" />
-
-            <div className="tienda-wc-hero">
-              <div className="tienda-wc-hero-icon" aria-hidden="true">
-                {heroIcon && (
-                  <img src={heroIcon} alt="" draggable="false" loading="lazy" />
-                )}
-              </div>
-
-              <div className="tienda-wc-hero-text">
-                <h1 className="tienda-wc-title">{categoriaSeleccionada?.name}</h1>
-                <p className="tienda-wc-subtitle">{heroDescription}</p>
-              </div>
-            </div>
-
-            <div className="tc-head-actions">
-              <button className="tienda-wc-close" type="button" onClick={goClose}>
-                Cerrar
-              </button>
-            </div>
-          </div>
-
-          {/* BODY: sidebar + main */}
-          <div className="tc-fusion-body">
-            {/* SIDEBAR */}
-            {showSidebar && (
-              <aside className="tc-side">
-                <div className="tc-side-title">Categorías</div>
-
-                <div className="tc-side-scroll">
-                  <div className={`tc-side-list ${fitSidebar ? "tc-side-list--fit" : ""}`}>
-                    {subcats.map((sc) => {
-                      const icon = resolveIconForSubcat(sc);
-                      const isActiveItem =
-                        String(sc.slug || "").toLowerCase() ===
-                        String(activeSubcat?.slug || "").toLowerCase();
-
-                      return (
-                        <button
-                          key={sc.id}
-                          type="button"
-                          className={`tc-side-item ${isActiveItem ? "is-active" : ""}`}
-                          onClick={() => goSubcat(sc.slug)}
-                          title={sc.name}
-                        >
-                          <span className="tc-side-item-icoWrap" aria-hidden="true">
-                            {icon ? (
-                              <img
-                                className="tc-side-item-ico"
-                                src={icon}
-                                alt=""
-                                draggable="false"
-                                loading="lazy"
-                              />
-                            ) : (
-                              <span
-                                className="tc-side-item-ico-fallback"
-                                aria-hidden="true"
-                              />
-                            )}
-                          </span>
-
-                          <span className="tc-side-item-label">{sc.name}</span>
-
-                          {/* Shine recortado dentro del botón */}
-                          <span className="tc-side-item-shine" aria-hidden="true" />
-                        </button>
-                      );
-                    })}
+          <div className="tienda-wc-inner">
+            {/* OVERLAY DE CARGA SUAVE */}
+            {loading && (
+              <div className="tienda-loading-overlay" aria-hidden="true">
+                <div className="tienda-loading-inner">
+                  <div className="logo-f-loader">
+                    <span>F</span>
                   </div>
+                  <p className="tienda-loading-text">CARGANDO LA TIENDA...</p>
                 </div>
-
-                <div className="tc-side-hint">Tip: cambia de categoría sin volver atrás.</div>
-              </aside>
+              </div>
             )}
 
-            {/* MAIN */}
-            <main className="tc-main">
-              {hasActive && !isRealMode && (
-                <div className={`tc-products ${swapFx ? "is-swap" : ""}`}>
-                  <div className="tc-products-scroll">
-                    <TiendaProductosVista
-                      server={server}
-                      productos={productosFiltrados}
-                      categoria={categoriaSeleccionada}
-                      carrito={carrito}
-                      toggleProducto={toggleProducto}
-                      subcategoriaSeleccionadaURL={subcategoria}
-                      embedMode
-                    />
-                  </div>
+            {/* CABECERA: color más oscuro + icono al lado del H1 */}
+            <div className="tc-head">
+              <div className="tc-head-spacer" aria-hidden="true" />
+
+              <div className="tc-head-center">
+                <div className="tc-head-row">
+                  {heroIcon && (
+                    <span className="tc-head-icoWrap" aria-hidden="true">
+                      <img src={heroIcon} alt="" draggable="false" loading="lazy" />
+                    </span>
+                  )}
+                  <h1 className="tienda-wc-title">{categoriaSeleccionada?.name}</h1>
                 </div>
+
+                <div className="tc-head-divider" aria-hidden="true" />
+                <p className="tienda-wc-subtitle">{heroDescription}</p>
+              </div>
+
+              <div className="tc-head-actions">
+                <button className="tienda-wc-close" type="button" onClick={goClose}>
+                  Cerrar
+                </button>
+              </div>
+            </div>
+
+            {/* BODY: sidebar + main */}
+            <div className="tc-fusion-body">
+              {/* SIDEBAR */}
+              {showSidebar && (
+                <aside className="tc-side">
+                  <div className="tc-side-title">Categorías</div>
+
+                  <div className="tc-side-scroll">
+                    <div className={`tc-side-list ${fitSidebar ? "tc-side-list--fit" : ""}`}>
+                      {subcats.map((sc) => {
+                        const icon = resolveIconForSubcat(sc);
+                        const isActiveItem =
+                          String(sc.slug || "").toLowerCase() ===
+                          String(activeSubcat?.slug || "").toLowerCase();
+
+                        return (
+                          <button
+                            key={sc.id}
+                            type="button"
+                            className={`tc-side-item ${isActiveItem ? "is-active" : ""}`}
+                            onClick={() => goSubcat(sc.slug)}
+                            title={sc.name}
+                          >
+                            <span className="tc-side-item-icoWrap" aria-hidden="true">
+                              {icon ? (
+                                <img
+                                  className="tc-side-item-ico"
+                                  src={icon}
+                                  alt=""
+                                  draggable="false"
+                                  loading="lazy"
+                                />
+                              ) : (
+                                <span className="tc-side-item-ico-fallback" aria-hidden="true" />
+                              )}
+                            </span>
+
+                            <span className="tc-side-item-label">{sc.name}</span>
+                            <span className="tc-side-item-shine" aria-hidden="true" />
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="tc-side-hint">Tip: cambia de categoría sin volver atrás.</div>
+                </aside>
               )}
 
-              {isRealMode && (
-                <div className="tc-products tc-products--real">
-                  <div className="tc-products-scroll">
-                    <TiendaProductosVista
-                      server={server}
-                      productos={paquetes}
-                      categoria={categoriaSeleccionada}
-                      carrito={carrito}
-                      toggleProducto={toggleProducto}
-                      embedMode
-                    />
+              {/* MAIN */}
+              <main className={`tc-main ${isEmptyHint ? "is-empty" : ""}`}>
+                {hasActive && !isRealMode && (
+                  <div className={`tc-products ${swapFx ? "is-swap" : ""}`}>
+                    <div className="tc-products-scroll">
+                      <TiendaProductosVista
+                        server={server}
+                        productos={productosFiltrados}
+                        categoria={categoriaSeleccionada}
+                        carrito={carrito}
+                        toggleProducto={toggleProducto}
+                        subcategoriaSeleccionadaURL={subcategoria}
+                        embedMode
+                      />
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {!hasActive && !isRealMode && subcats.length > 1 && (
-                <div className="tc-empty tc-empty--hint">
-                  <div className="tc-empty-inner">
-                    <h2 className="tc-empty-title">Selecciona una categoría</h2>
-                    <p className="tc-empty-text">
-                      Elige una categoría del panel izquierdo para ver los productos disponibles.
-                    </p>
+                {isRealMode && (
+                  <div className="tc-products tc-products--real">
+                    <div className="tc-products-scroll">
+                      <TiendaProductosVista
+                        server={server}
+                        productos={paquetes}
+                        categoria={categoriaSeleccionada}
+                        carrito={carrito}
+                        toggleProducto={toggleProducto}
+                        embedMode
+                      />
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              <Outlet />
-            </main>
+                {!hasActive && !isRealMode && subcats.length > 1 && (
+                  <div className="tc-empty tc-empty--hint">
+                    <div className="tc-empty-inner">
+                      <h2 className="tc-empty-title">Selecciona una categoría</h2>
+                      <p className="tc-empty-text">
+                        Elige una categoría del panel izquierdo para ver los productos disponibles.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                <Outlet />
+              </main>
+            </div>
           </div>
         </div>
       </div>

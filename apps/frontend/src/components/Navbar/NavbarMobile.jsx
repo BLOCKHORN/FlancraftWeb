@@ -31,8 +31,8 @@ const NavbarMobile = ({
   isUserLoading,
   userData,
 }) => {
-  const wrapperRef = useRef();
-  const profileButtonRef = useRef();
+  const dropdownRef = useRef(null);
+  const profileButtonRef = useRef(null);
   const location = useLocation();
   const isHome = location.pathname === "/";
   const [loginModalOpen, setLoginModalOpen] = useState(false);
@@ -43,41 +43,52 @@ const NavbarMobile = ({
   const [hasClaimables, setHasClaimables] = useState(false);
   const [claimablesCount, setClaimablesCount] = useState(0);
 
+  // ✅ Cierra menú/perfil al navegar
   useEffect(() => {
-    const handleTapOutside = (event) => {
-      if (
-        profileOpen &&
-        wrapperRef.current &&
-        !wrapperRef.current.contains(event.target) &&
-        profileButtonRef.current &&
-        !profileButtonRef.current.contains(event.target)
-      ) {
-        setProfileOpen(false);
-      }
+    setMenuOpen(false);
+    setProfileOpen(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
+
+  // ✅ Bloquea scroll de fondo cuando el menú lateral está abierto
+  useEffect(() => {
+    if (!menuOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [menuOpen]);
+
+  // ✅ Tap outside (solo uno) + ESC
+  useEffect(() => {
+    const onPointerDown = (e) => {
+      if (!profileOpen) return;
+
+      const dd = dropdownRef.current;
+      const btn = profileButtonRef.current;
+
+      const clickedInsideDropdown = dd && dd.contains(e.target);
+      const clickedProfileBtn = btn && btn.contains(e.target);
+
+      if (!clickedInsideDropdown && !clickedProfileBtn) setProfileOpen(false);
     };
 
-    document.addEventListener("pointerdown", handleTapOutside);
-    return () => document.removeEventListener("pointerdown", handleTapOutside);
-  }, [profileOpen, setProfileOpen]);
-
-  useEffect(() => {
-    const closeOnClick = (event) => {
-      const dropdown = document.querySelector(".user-dropdown-wrapper.mobile-only");
-      const profileBtn = profileButtonRef.current;
-
-      if (
-        dropdown &&
-        !dropdown.contains(event.target) &&
-        profileBtn &&
-        !profileBtn.contains(event.target)
-      ) {
-        setProfileOpen(false);
-      }
+    const onKeyDown = (e) => {
+      if (e.key !== "Escape") return;
+      if (profileOpen) setProfileOpen(false);
+      if (menuOpen) setMenuOpen(false);
+      if (loginModalOpen) setLoginModalOpen(false);
     };
 
-    document.addEventListener("click", closeOnClick);
-    return () => document.removeEventListener("click", closeOnClick);
-  }, [setProfileOpen]);
+    document.addEventListener("pointerdown", onPointerDown, { passive: true });
+    document.addEventListener("keydown", onKeyDown);
+
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [profileOpen, menuOpen, loginModalOpen, setProfileOpen, setMenuOpen]);
 
   useEffect(() => {
     const fetchDatosUsuarioMobile = async () => {
@@ -206,6 +217,8 @@ const NavbarMobile = ({
             className={`burger ${menuOpen ? "open" : ""}`}
             onClick={() => setMenuOpen(!menuOpen)}
             aria-label="Abrir menú"
+            aria-expanded={menuOpen ? "true" : "false"}
+            aria-controls="mobile-menu"
           >
             <span />
             <span />
@@ -235,6 +248,8 @@ const NavbarMobile = ({
               className={`profile-button full ${hasClaimables ? "has-claimables" : ""}`}
               ref={profileButtonRef}
               onClick={() => setProfileOpen((prev) => !prev)}
+              aria-expanded={profileOpen ? "true" : "false"}
+              aria-controls="mobile-profile-dropdown"
               title={
                 hasClaimables ? `Tienes ${claimablesCount} recompensa(s) por reclamar` : undefined
               }
@@ -262,7 +277,8 @@ const NavbarMobile = ({
 
       {isLoggedIn && !isUserLoading && (
         <div
-          ref={wrapperRef}
+          ref={dropdownRef}
+          id="mobile-profile-dropdown"
           className={`user-dropdown-wrapper mobile-only ${profileOpen ? "open" : ""}`}
         >
           <div className="user-dropdown" onClick={(e) => e.stopPropagation()}>
@@ -289,11 +305,7 @@ const NavbarMobile = ({
                     />
                   )}
                   {rangoDatos?.premium && (
-                    <img
-                      className="badge badge-premium"
-                      src="/assets/premium.webp"
-                      alt="Premium"
-                    />
+                    <img className="badge badge-premium" src="/assets/premium.webp" alt="Premium" />
                   )}
                 </div>
               </div>
@@ -329,11 +341,7 @@ const NavbarMobile = ({
               onClick={() => setProfileOpen(false)}
             >
               <span className="left-pack">
-                <NavIcon
-                  src="/botones/recompensas.svg"
-                  alt="Recompensas"
-                  className="dropdown-icon"
-                />
+                <NavIcon src="/botones/recompensas.svg" alt="Recompensas" className="dropdown-icon" />
                 <span>Mis Recompensas</span>
               </span>
 
@@ -353,11 +361,7 @@ const NavbarMobile = ({
               onClick={() => setProfileOpen(false)}
             >
               <span className="left-pack">
-                <NavIcon
-                  src="/botones/estadisticas.svg"
-                  alt="Estadísticas"
-                  className="dropdown-icon"
-                />
+                <NavIcon src="/botones/estadisticas.svg" alt="Estadísticas" className="dropdown-icon" />
                 <span>Mis estadísticas</span>
               </span>
             </NavLink>
@@ -382,22 +386,15 @@ const NavbarMobile = ({
         onClick={() => setMenuOpen(false)}
       />
 
-      <div className={`mobile-menu ${menuOpen ? "open" : ""}`}>
+      <div id="mobile-menu" className={`mobile-menu ${menuOpen ? "open" : ""}`}>
         <div className="mobile-logo-header">
-          <i
-            className="fas fa-times close-menu-button"
-            onClick={() => setMenuOpen(false)}
-          />
+          <i className="fas fa-times close-menu-button" onClick={() => setMenuOpen(false)} />
 
           <img src="/assets/blockhorn.webp" alt="Blockhorn" className="blockhorn-logo" />
           <div className="logo-divider" />
 
           <div className="logo-glow-wrapper">
-            <img
-              src="/assets/flancraftlogo.webp"
-              alt="Flancraft"
-              className="flancraft-logo"
-            />
+            <img src="/assets/flancraftlogo.webp" alt="Flancraft" className="flancraft-logo" />
           </div>
         </div>
 

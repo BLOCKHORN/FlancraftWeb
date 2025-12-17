@@ -1,0 +1,261 @@
+@use "../../base/_variables" as *;
+
+.tienda-oferta-banner {
+  /* 👌 mismo ancho maestro que la portada */
+  width: 100%;
+  max-width: var(--portadaW, 720px);
+  margin: 0 auto;
+  padding: 0;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+
+  .tienda-oferta-artWrap {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+  }
+
+  .tienda-oferta-image {
+    width: 100%;
+    max-width: 260px; // 🔽 más pequeña para respirar
+    height: auto;
+    image-rendering: crisp-edges;
+    filter: drop-shadow(0 4px 14px rgba(0, 0, 0, 0.55));
+    animation: oferta-banner-levitate 3s ease-in-out infinite;
+  }
+
+  /* ===========================
+     Panel fino debajo del banner
+     =========================== */
+  .tienda-oferta-panel {
+    width: 100%;
+    max-width: 520px;
+    padding: 0.65rem 0.9rem 0.8rem;
+    border-radius: 3px; // <= 3px
+
+    background:
+      radial-gradient(circle at 30% 0%, rgba(255, 220, 150, 0.2), transparent 55%),
+      linear-gradient(180deg, rgba(24, 18, 12, 0.96), rgba(10, 7, 4, 0.9));
+
+    border: 1px solid rgba(255, 220, 160, 0.38);
+    box-shadow:
+      0 10px 22px rgba(0, 0, 0, 0.6),
+      inset 0 1px 0 rgba(255, 255, 255, 0.08);
+
+    backdrop-filter: blur(3px);
+  }
+
+  .tienda-oferta-header {
+    display: flex;
+    align-items: center;
+    justify-content: center; // ⭐ cluster centrado
+    column-gap: 0.7rem;
+    row-gap: 0.3rem;
+    margin-bottom: 0.35rem;
+    flex-wrap: wrap;
+  }
+
+  /* TIMER CENTRADO */
+  .tienda-oferta-timer-inline {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+  }
+
+  .timer-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 48px;
+  }
+
+  .timer-value {
+    font-family: "Press Start 2P", system-ui, -apple-system, BlinkMacSystemFont,
+      "Segoe UI", sans-serif;
+    font-size: 1.05rem; // 🔥 un pelín más grande
+    letter-spacing: 0.14em;
+    font-variant-numeric: tabular-nums;
+    color: #fffbe8;
+    text-shadow: 0 3px 8px rgba(0, 0, 0, 0.8);
+  }
+
+  .timer-unit {
+    font-family: "IM Fell English SC", serif;
+    font-size: 0.55rem;
+    letter-spacing: 0.14em;
+    color: rgba(255, 235, 200, 0.9);
+  }
+
+  .timer-sep {
+    font-family: "Press Start 2P", system-ui, -apple-system, BlinkMacSystemFont,
+      "Segoe UI", sans-serif;
+    font-size: 0.8rem;
+    color: rgba(255, 235, 200, 0.8);
+    margin-top: 0.1rem;
+  }
+
+  /* BADGE DESCUENTO ROJO, PEGADO PERO SIMÉTRICO */
+  .tienda-oferta-percent {
+    font-family: "IM Fell English SC", serif;
+    font-size: 0.9rem;
+    letter-spacing: 0.06em;
+    color: #ffe9c7;
+
+    padding: 0.22rem 0.65rem;
+    border-radius: 3px;
+    background: linear-gradient(
+      180deg,
+      #f46a3a 0%,
+      #d8472e 45%,
+      #8f261f 100%
+    );
+    border: 1px solid rgba(0, 0, 0, 0.75);
+    box-shadow:
+      0 4px 10px rgba(0, 0, 0, 0.55),
+      inset 0 1px 0 rgba(255, 230, 190, 0.7);
+  }
+
+  .tienda-oferta-sub {
+    margin-top: 0.05rem;
+    margin-bottom: 0.4rem;
+    text-align: center;
+    font-size: 0.78rem;
+    color: rgba(255, 244, 220, 0.9);
+    letter-spacing: 0.04em;
+  }
+
+  .tienda-oferta-bar {
+    position: relative;
+    width: 100%;
+    height: 8px;
+    border-radius: 3px;
+    overflow: hidden;
+    background: rgba(255, 235, 200, 0.12);
+    border: 1px solid rgba(255, 220, 160, 0.3);
+    box-shadow: inset 0 1px 0 rgba(0, 0, 0, 0.55);
+  }
+
+  .tienda-oferta-barFill {
+    display: block;
+    height: 100%;
+    border-radius: 3px;
+    background: linear-gradient(
+      90deg,
+      #ffb347 0%,
+      #ffcc33 25%,
+      #ffee88 50%,
+      #ffcc33 75%,
+      #ff9a3c 100%
+    );
+    box-shadow:
+      0 0 16px rgba(255, 214, 140, 0.7),
+      0 0 24px rgba(255, 140, 60, 0.55);
+    transition: width 0.6s ease-out;
+  }
+
+  .tienda-oferta-barPattern {
+    position: absolute;
+    inset: -4px 0;
+    background-image: linear-gradient(
+      45deg,
+      rgba(255, 255, 255, 0.18) 25%,
+      transparent 25%,
+      transparent 50%,
+      rgba(255, 255, 255, 0.18) 50%,
+      rgba(255, 255, 255, 0.18) 75%,
+      transparent 75%,
+      transparent
+    );
+    background-size: 18px 18px;
+    mix-blend-mode: soft-light;
+    animation: oferta-bar-stripes 1.4s linear infinite;
+    pointer-events: none;
+  }
+
+  .tienda-oferta-barShine {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0),
+      rgba(255, 255, 255, 0.28),
+      rgba(255, 255, 255, 0)
+    );
+    transform: translateX(-70%);
+    animation: oferta-bar-shine 2s ease-in-out infinite;
+    pointer-events: none;
+  }
+}
+
+/* Animación de levitación */
+@keyframes oferta-banner-levitate {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+/* Animaciones barra */
+@keyframes oferta-bar-shine {
+  0% {
+    transform: translateX(-80%);
+    opacity: 0;
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(120%);
+    opacity: 0;
+  }
+}
+
+@keyframes oferta-bar-stripes {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 36px 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tienda-oferta-banner .tienda-oferta-image,
+  .tienda-oferta-banner .tienda-oferta-barShine,
+  .tienda-oferta-banner .tienda-oferta-barPattern {
+    animation: none !important;
+  }
+}
+
+@media (max-width: 720px) {
+  .tienda-oferta-banner {
+    gap: 0.35rem;
+  }
+
+  .tienda-oferta-banner .tienda-oferta-image {
+    max-width: 230px;
+  }
+
+  .tienda-oferta-banner .tienda-oferta-panel {
+    padding-inline: 0.6rem;
+  }
+
+  .tienda-oferta-banner .timer-block {
+    min-width: 42px;
+  }
+
+  .tienda-oferta-banner .timer-value {
+    font-size: 0.95rem;
+  }
+
+  .tienda-oferta-banner .timer-unit {
+    font-size: 0.5rem;
+  }
+}

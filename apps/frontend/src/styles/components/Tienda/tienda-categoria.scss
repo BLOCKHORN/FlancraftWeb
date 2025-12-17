@@ -10,12 +10,33 @@
   --ink: #3a2816;
 
   --stone: #8b7a67;
+  --stoneHead: #746556; /* header más oscuro (pedido) */
+
   --btn: #7a6a5b;
   --btnBorder: rgba(0, 0, 0, 0.38);
 
   --green: #198c28;
   --greenBorder: #0a3f12;
   --greenShadow: #06270b;
+
+  /* marco */
+  --frameSize: 14px;
+  --frameRadius: 0.85rem;
+
+  /* “física” de botones */
+  --btnLift: -7px;      /* hover: sube MUY marcado */
+  --btnPress: 4px;      /* press: baja */
+  --btnShadowRest: 0 4px 0 rgba(0,0,0,0.42);
+  --btnShadowHover:
+    0 9px 0 rgba(0,0,0,0.55),
+    0 16px 32px rgba(0,0,0,0.22);
+  --btnShadowPress: 0 1px 0 rgba(0,0,0,0.62);
+
+  /* suavidad */
+  --tFast: 160ms;
+  --tMed: 220ms;
+  --easeLift: cubic-bezier(0.16, 1, 0.3, 1);     /* súper fluido */
+  --easePress: cubic-bezier(0.2, 0.9, 0.2, 1);
 
   --shadowOuter:
     0 0 0 1px rgba(90, 59, 23, 0.35),
@@ -39,6 +60,13 @@
 @keyframes tcMainIn {
   0% { transform: translateY(8px); opacity: 0; }
   100% { transform: translateY(0); opacity: 1; }
+}
+
+/* rebote SOLO para close (suave) */
+@keyframes btnCloseReleaseBounce {
+  0%   { transform: translateY(var(--btnPress)); }
+  55%  { transform: translateY(-1px); }
+  100% { transform: translateY(0); }
 }
 
 /* =========================================================
@@ -89,7 +117,6 @@
   backdrop-filter: blur(1.5px);
   opacity: 0;
   pointer-events: none;
-
   animation: tiendaOverlayIn 220ms ease-out forwards;
 }
 
@@ -155,17 +182,49 @@
 }
 
 /* =========================================================
-   Panel principal
+   Panel principal + marco
    ========================================================= */
 .tienda-wc {
   position: relative;
   width: 100%;
-  border-radius: 0.7rem;
+  border-radius: var(--frameRadius);
+  background: transparent;
+  box-shadow: var(--shadowOuter);
+
+  padding: var(--frameSize);
+  overflow: visible;
+  color: var(--ink);
+}
+
+.tienda-wc-frame {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+
+  border-radius: var(--frameRadius);
+  border: var(--frameSize) solid transparent;
+
+  border-image: url("/assets/borde.jpeg") 60 round;
+  filter: drop-shadow(0 10px 22px rgba(0, 0, 0, 0.55));
+}
+
+.tienda-wc-inner {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+
+  border-radius: calc(var(--frameRadius) - 0.35rem);
   overflow: hidden;
+
   background: var(--paper);
   border: 2px solid var(--gold);
-  box-shadow: var(--shadowOuter);
   color: var(--ink);
+
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .tienda-tebex.is-anim .tienda-wc {
@@ -173,101 +232,121 @@
 }
 
 /* =========================================================
-   CABECERA (CENTRADA)
+   Header
    ========================================================= */
-.tienda-wc-head {
+.tc-head {
+  position: relative;
+  flex: 0 0 auto;
+
   display: grid;
-  grid-template-columns: 1fr auto 1fr; /* centro REAL */
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
   gap: 1rem;
 
-  padding: 0.9rem 1rem;
-  background: var(--stone);
+  padding: 0.95rem 1rem;
+  background: linear-gradient(
+    to bottom,
+    rgba(0,0,0,0.14),
+    rgba(0,0,0,0.06)
+  ), var(--stoneHead);
+
   border-bottom: 2px solid rgba(0, 0, 0, 0.18);
   box-shadow: var(--shadowInner);
   color: #fff;
 }
 
-.tc-head-spacer {
-  min-width: 1px;
+.tc-head--doc { grid-template-columns: 1fr auto 1fr; }
+.tc-head-spacer { min-width: 1px; }
+
+.tc-head-center {
+  justify-self: center;
+  text-align: center;
+  min-width: 0;
 }
 
 .tc-head-actions {
+  justify-self: end;
   display: inline-flex;
   align-items: center;
   justify-content: flex-end;
   gap: 0.55rem;
 }
 
-.tienda-wc-hero {
+.tc-head-row {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.9rem;
+  gap: 0.65rem;
   min-width: 0;
-  justify-self: center;
-  text-align: center;
 }
 
-@media (max-width: 680px) {
-  .tienda-wc-head {
-    grid-template-columns: 1fr;
-    gap: 0.7rem;
-    text-align: center;
-  }
-  .tc-head-spacer { display: none; }
-  .tc-head-actions { justify-content: center; }
-}
-
-/* Icono grande de cabecera */
-.tienda-wc-hero-icon {
-  width: 56px;
-  height: 56px;
+.tc-head-icoWrap {
+  width: 44px;
+  height: 44px;
   border-radius: 0.55rem;
 
-  background: radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.25), rgba(0, 0, 0, 0.45));
-  border: 2px solid rgba(0, 0, 0, 0.45);
+  background: radial-gradient(circle at 30% 20%, rgba(255,255,255,0.22), rgba(0,0,0,0.45));
+  border: 2px solid rgba(0,0,0,0.55);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.2),
-    0 3px 0 rgba(0, 0, 0, 0.55);
+    inset 0 1px 0 rgba(255,255,255,0.18),
+    0 3px 0 rgba(0,0,0,0.55);
 
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
+
   overflow: hidden;
+  flex: 0 0 auto;
 }
 
-.tienda-wc-hero-icon img {
-  width: 56px;
-  height: 56px;
+.tc-head-icoWrap img {
+  width: 44px;
+  height: 44px;
   object-fit: contain;
   image-rendering: pixelated;
-  filter: drop-shadow(0 3px 0 rgba(0, 0, 0, 0.6));
-}
-
-.tienda-wc-hero-text {
-  min-width: 0;
+  filter: drop-shadow(0 3px 0 rgba(0,0,0,0.55));
 }
 
 .tienda-wc-title {
   margin: 0;
   font-family: "IM Fell English SC", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  font-weight: 700;
-  font-size: clamp(1.5rem, 2.2vw, 2rem);
-  letter-spacing: 0.08em;
-  color: #ffffff;
+  font-weight: 900;
+  font-size: clamp(1.55rem, 2.2vw, 2.15rem);
+  letter-spacing: 0.10em;
+  color: #fff;
   line-height: 1.05;
   text-transform: uppercase;
+  text-shadow:
+    0 2px 0 rgba(0,0,0,0.35),
+    0 6px 16px rgba(0,0,0,0.28);
+}
+
+.tc-head-divider {
+  width: min(620px, 78%);
+  height: 1px;
+  margin: 0.55rem auto 0.45rem;
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,0),
+    rgba(255,255,255,0.48),
+    rgba(255,255,255,0.22),
+    rgba(255,255,255,0)
+  );
+  opacity: 0.8;
 }
 
 .tienda-wc-subtitle {
-  margin: 0.25rem 0 0;
-  color: rgba(255, 255, 255, 0.86);
-  font-size: 0.95rem;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 0.98rem;
   line-height: 1.25;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  text-shadow: 0 1px 0 rgba(0,0,0,0.25);
 }
 
+/* =========================================================
+   BOTÓN CLOSE (único con rebote)
+   ========================================================= */
 .tienda-wc-close {
   border: 2px solid var(--btnBorder);
   background: var(--btn);
@@ -282,14 +361,49 @@
   text-transform: uppercase;
   font-size: 0.75rem;
 
-  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.35);
-  transition: transform 0.08s ease, box-shadow 0.08s ease, filter 0.12s ease;
+  transform: translateY(0) translateZ(0);
+  box-shadow: var(--btnShadowRest);
+  filter: saturate(1.02);
+
+  will-change: transform, box-shadow, filter;
+  transition:
+    transform var(--tMed) var(--easeLift),
+    box-shadow var(--tMed) var(--easeLift),
+    filter var(--tFast) ease,
+    background var(--tFast) ease,
+    border-color var(--tFast) ease;
 }
 
-.tienda-wc-close:hover { filter: brightness(1.05); }
+.tienda-wc-close:hover {
+  transform: translateY(var(--btnLift)) translateZ(0);
+  box-shadow: var(--btnShadowHover);
+  filter: brightness(1.06);
+}
+
 .tienda-wc-close:active {
-  transform: translateY(2px);
-  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
+  transform: translateY(var(--btnPress)) translateZ(0);
+  box-shadow: var(--btnShadowPress);
+  filter: brightness(0.98);
+}
+
+/* rebote al soltar (solo close) */
+.tienda-wc-close:not(:active):focus {
+  animation: btnCloseReleaseBounce 240ms var(--easeLift) both;
+}
+
+.tienda-wc-close:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.35);
+  outline-offset: 2px;
+}
+
+@media (max-width: 680px) {
+  .tc-head {
+    grid-template-columns: 1fr;
+    gap: 0.7rem;
+    text-align: center;
+  }
+  .tc-head-actions { justify-self: center; }
+  .tc-head-spacer { display: none; }
 }
 
 /* =========================================================
@@ -299,8 +413,7 @@
   border-right: 2px solid rgba(0, 0, 0, 0.15);
   background: rgba(0, 0, 0, 0.04);
   padding: 0.9rem 0.85rem 0.95rem;
-
-  overflow: hidden; /* evita desbordes visuales */
+  overflow: hidden;
 }
 
 .tienda-tebex--fusion .tc-side {
@@ -323,7 +436,6 @@
   margin-bottom: 0.65rem;
 }
 
-/* IMPORTANTE: no permitir scroll horizontal (shine) */
 .tc-side-scroll {
   flex: 1 1 auto;
   min-height: 0;
@@ -339,7 +451,6 @@
   gap: 0.55rem;
 }
 
-/* Auto-fit: cuando hay pocas categorías, se estira y reparte */
 .tc-side-list--fit {
   height: 100%;
   align-content: stretch;
@@ -347,7 +458,11 @@
 }
 
 /* =========================================================
-   Botón sidebar
+   BOTÓN CATEGORÍA (SIN rebote, con “segundo reposo hundido”)
+   - reposo
+   - hover: sube
+   - click: hunde
+   - al soltar: SE QUEDA HUNDIDO gracias a :focus (y/o .is-active)
    ========================================================= */
 .tc-side-item {
   position: relative;
@@ -357,7 +472,6 @@
   background: var(--btn);
   color: #f6efe6;
 
-  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.35);
   padding: 0.55rem 0.55rem;
 
   display: grid;
@@ -371,36 +485,60 @@
   text-transform: uppercase;
 
   cursor: pointer;
-  overflow: hidden; /* recorta el shine dentro del botón */
-  contain: paint;   /* evita que “pinte” fuera */
+  overflow: hidden;
+  contain: paint;
 
+  transform: translateY(0) translateZ(0);
+  box-shadow: var(--btnShadowRest);
+
+  will-change: transform, box-shadow, filter;
   transition:
-    transform 0.08s ease,
-    box-shadow 0.08s ease,
-    filter 0.12s ease,
-    border-color 0.12s ease,
-    background 0.12s ease;
+    transform var(--tMed) var(--easeLift),
+    box-shadow var(--tMed) var(--easeLift),
+    filter var(--tFast) ease,
+    border-color var(--tFast) ease,
+    background var(--tFast) ease;
 }
 
+/* hover (solo cuando NO está hundido) */
 .tc-side-item:hover {
-  transform: translateY(-1px);
-  filter: brightness(1.05);
-  box-shadow:
-    0 0 0 1px rgba(90, 59, 23, 0.3),
-    0 5px 0 rgba(0, 0, 0, 0.5);
+  transform: translateY(var(--btnLift)) translateZ(0);
+  box-shadow: var(--btnShadowHover);
+  filter: brightness(1.06);
 }
 
-.tc-side-item:active,
+/* mouse down */
+.tc-side-item:active {
+  transform: translateY(var(--btnPress)) translateZ(0);
+  box-shadow: var(--btnShadowPress);
+  filter: brightness(0.98);
+}
+
+/* “segundo reposo hundido”: inmediato al soltar por FOCUS + estado real por .is-active */
+.tc-side-item:focus,
 .tc-side-item.is-active {
-  transform: translateY(2px);
-  box-shadow:
-    0 0 0 1px rgba(0, 0, 0, 0.4),
-    0 1px 0 rgba(0, 0, 0, 0.6);
+  transform: translateY(var(--btnPress)) translateZ(0);
+  box-shadow: var(--btnShadowPress);
   background: #655548;
   border-color: var(--greenBorder);
+  filter: brightness(1.02);
 }
 
-/* placa para que el icono se lea mejor */
+/* si está hundido, NO debe levantar al hover */
+.tc-side-item:focus:hover,
+.tc-side-item.is-active:hover {
+  transform: translateY(var(--btnPress)) translateZ(0);
+  box-shadow: var(--btnShadowPress);
+  filter: brightness(1.05);
+}
+
+/* quitamos outline feo al focus normal, dejamos solo accesible */
+.tc-side-item:focus { outline: none; }
+.tc-side-item:focus-visible {
+  outline: 2px solid rgba(210, 176, 113, 0.65);
+  outline-offset: 2px;
+}
+
 .tc-side-item-icoWrap {
   width: 56px;
   height: 56px;
@@ -416,7 +554,6 @@
     0 3px 0 rgba(0, 0, 0, 0.45);
 }
 
-/* icono más grande y nítido */
 .tc-side-item-ico {
   width: 52px;
   height: 52px;
@@ -433,7 +570,6 @@
   box-shadow: 0 2px 0 rgba(0, 0, 0, 0.35);
 }
 
-/* texto */
 .tc-side-item-label {
   align-self: center;
   color: #f6efe6;
@@ -444,7 +580,6 @@
   font-family: inherit;
 }
 
-/* shine recortado */
 .tc-side-item-shine {
   position: absolute;
   top: -30%;
@@ -486,6 +621,15 @@
   padding: 1rem;
   min-width: 0;
   overflow: hidden;
+  position: relative;
+}
+
+.tc-main.is-empty::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(25, 16, 8, 0.06);
+  pointer-events: none;
 }
 
 .tienda-tebex--fusion .tc-main {
@@ -497,8 +641,10 @@
    ========================================================= */
 .tc-empty {
   padding: 1rem;
-  color: rgba(58, 40, 22, 0.75);
+  color: rgba(58, 40, 22, 0.78);
   font-weight: 700;
+  position: relative;
+  z-index: 1;
 }
 
 .tc-empty--hint {
@@ -509,10 +655,20 @@
   text-align: center;
 }
 
-.tc-empty-inner { max-width: 420px; }
+.tc-empty-inner {
+  max-width: 460px;
+  padding: 1.05rem 1.1rem;
+
+  background: rgba(25, 16, 8, 0.10);
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  border-radius: 0.75rem;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 10px 22px rgba(0, 0, 0, 0.18);
+}
 
 .tc-empty-title {
-  margin-bottom: 0.3rem;
+  margin-bottom: 0.35rem;
   font-size: 1.15rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -554,10 +710,12 @@
   flex-direction: column;
 }
 
-/* CABECERA fija */
-.tienda-tebex--fusion .tienda-wc-head { flex: 0 0 auto; }
+.tienda-tebex--fusion .tienda-wc-inner {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
 
-/* BODY */
 .tienda-tebex--fusion .tc-fusion-body {
   flex: 1 1 auto;
   min-height: 0;
@@ -566,7 +724,6 @@
   overflow: hidden;
 }
 
-/* SIDEBAR fijo + scroll propio */
 .tienda-tebex--fusion .tc-side {
   width: clamp(220px, 18vw, 285px);
   flex: 0 0 auto;
@@ -576,19 +733,15 @@
   overflow: hidden;
 }
 
-/* En modo real ocultamos sidebar */
 .tienda-tebex--fusion.is-real .tc-side { display: none; }
 
-/* MAIN fijo */
 .tienda-tebex--fusion .tc-main {
   flex: 1 1 auto;
   min-width: 0;
   min-height: 0;
   overflow: hidden;
-  position: relative;
 }
 
-/* Productos fijo */
 .tienda-tebex--fusion .tc-products {
   height: 100%;
   min-height: 0;
@@ -596,7 +749,6 @@
   transform-origin: center center;
 }
 
-/* SCROLL SOLO AQUÍ */
 .tienda-tebex--fusion .tc-products-scroll {
   height: 100%;
   min-height: 0;
@@ -606,7 +758,6 @@
 
 .tienda-tebex--fusion .tc-products--real .tc-products-scroll { padding-top: 0.4rem; }
 
-/* swap subcategoria */
 .tienda-tebex--fusion .tc-products.is-swap {
   animation: tcSwap 420ms cubic-bezier(0.25, 0.85, 0.25, 1.05) both;
 }
@@ -617,11 +768,10 @@
   100% { opacity: 1; transform: scaleX(1) scaleY(1) translateY(0); filter: none; }
 }
 
-/* route out/in */
 .tienda-tebex--fusion.tc-route-out .tc-fusion-body,
-.tienda-tebex--fusion.tc-route-out .tienda-wc-head,
+.tienda-tebex--fusion.tc-route-out .tc-head,
 .tienda-tebex--fusion.tc-route-in .tc-fusion-body,
-.tienda-tebex--fusion.tc-route-in .tienda-wc-head {
+.tienda-tebex--fusion.tc-route-in .tc-head {
   transform-origin: center center;
   animation-fill-mode: both;
 }

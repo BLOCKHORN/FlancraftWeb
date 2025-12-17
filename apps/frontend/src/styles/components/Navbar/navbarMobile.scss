@@ -20,6 +20,9 @@
   100% { opacity: 1; transform: translateY(0); }
 }
 
+/* ✅ variable compartida (dropdown ya no depende de top fijo) */
+.mobile-only { --mobile-nav-h: 56px; }
+
 .mobile-only {
   @media (min-width: 1025px) { display: none !important; }
 }
@@ -34,10 +37,14 @@
   top: 0;
   z-index: 1200;
 
-  padding: 0.7rem 1rem;
+  /* ✅ safe-area y padding responsive */
+  padding: calc(0.7rem + env(safe-area-inset-top)) 1rem 0.7rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
+
+  /* ✅ altura consistente para dropdown */
+  min-height: var(--mobile-nav-h);
 
   background:
     radial-gradient(circle at 50% -30%, rgba(255, 220, 165, 0.22), transparent 58%),
@@ -52,6 +59,7 @@
     display: flex;
     align-items: center;
     gap: 0.75rem;
+    min-width: 0;
   }
 
   .burger {
@@ -61,6 +69,7 @@
     flex-direction: column;
     gap: 5px;
     cursor: pointer;
+    touch-action: manipulation;
 
     span {
       width: 26px;
@@ -71,6 +80,12 @@
         0 1px 0 rgba(0, 0, 0, 0.6),
         0 0 10px rgba(255, 214, 110, 0.12);
       transition: transform 0.18s ease, opacity 0.18s ease;
+    }
+
+    &:focus-visible {
+      outline: 2px solid rgba(255, 214, 110, 0.55);
+      outline-offset: 3px;
+      border-radius: 10px;
     }
 
     &.open {
@@ -110,6 +125,7 @@
   border-radius: 10px;
   cursor: pointer;
   user-select: none;
+  touch-action: manipulation;
 
   background:
     radial-gradient(circle at 12% 10%, rgba(255,255,255,0.18), transparent 55%),
@@ -138,6 +154,11 @@
       inset 0 2px 0 rgba(0,0,0,0.22),
       0 2px 0 rgba(0,0,0,0.55),
       0 9px 14px rgba(0,0,0,0.40);
+  }
+
+  &:focus-visible {
+    outline: 2px solid rgba(255, 214, 110, 0.55);
+    outline-offset: 2px;
   }
 
   .user-avatar {
@@ -187,7 +208,8 @@
 /* Dropdown perfil */
 .user-dropdown-wrapper.mobile-only {
   position: fixed;
-  top: 56px;
+  /* ✅ sin hardcode: usa altura navbar + safe-area */
+  top: calc(var(--mobile-nav-h) + env(safe-area-inset-top) + 6px);
   left: 10px;
   right: 10px;
   z-index: 1300;
@@ -315,9 +337,7 @@
     }
   }
 
-  .xp-navbar-block {
-    margin-top: 0.15rem;
-  }
+  .xp-navbar-block { margin-top: 0.15rem; }
 
   .xp-bar-profile {
     width: 100%;
@@ -575,7 +595,10 @@
   top: 0;
   left: 0;
   height: 100vh;
-  width: 285px;
+
+  /* ✅ mejor en móviles muy estrechos */
+  width: min(285px, 86vw);
+
   z-index: 1250;
 
   background:
@@ -596,7 +619,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 1rem 0.8rem 0.6rem;
+    padding: calc(1rem + env(safe-area-inset-top)) 0.8rem 0.6rem;
 
     .close-menu-button {
       align-self: flex-start;
@@ -635,7 +658,7 @@
       --accent2: #d7a84c;
 
       position: relative;
-      isolation: isolate; /* FIX: stacking propio */
+      isolation: isolate;
       display: flex;
       align-items: center;
       gap: 0.7rem;
@@ -662,11 +685,7 @@
 
       transition: transform 0.16s ease, box-shadow 0.16s ease, filter 0.16s ease, color 0.16s ease;
 
-      /* FIX: contenido por encima del color */
-      > * {
-        position: relative;
-        z-index: 2;
-      }
+      > * { position: relative; z-index: 2; }
 
       &::after {
         content: "";
@@ -678,7 +697,7 @@
           linear-gradient(90deg, var(--accent), var(--accent2));
         opacity: 0.18;
         pointer-events: none;
-        z-index: 0; /* FIX: abajo */
+        z-index: 0;
       }
 
       &::before {
@@ -696,7 +715,7 @@
         );
         transform: translateX(-130%);
         opacity: 0;
-        z-index: 1; /* shine entre color y contenido */
+        z-index: 1;
       }
 
       &:hover::before {
@@ -712,8 +731,6 @@
           drop-shadow(0 1px 0 rgba(0,0,0,0.88))
           drop-shadow(0 0 10px rgba(255,255,255,0.10));
         opacity: 0.98;
-        position: relative;
-        z-index: 2;
       }
 
       &:hover {
@@ -724,17 +741,12 @@
 
       &:active {
         transform: translateY(1px);
-        color: #ffffff;
-        text-shadow:
-          0 1px 0 rgba(0,0,0,0.92),
-          0 0 14px rgba(255,255,255,0.22);
-
         box-shadow:
           inset 0 2px 0 rgba(0,0,0,0.30),
           inset 0 0 0 999px rgba(0,0,0,0.14),
           0 8px 14px rgba(0,0,0,0.45);
 
-        &::after { opacity: 0.85; } /* ahora no tapa */
+        &::after { opacity: 0.85; }
       }
 
       &.active {
@@ -749,7 +761,7 @@
           0 2px 0 rgba(0, 0, 0, 0.80),
           0 10px 16px rgba(0, 0, 0, 0.66);
 
-        &::after { opacity: 0.92; } /* ahora no tapa */
+        &::after { opacity: 0.92; }
       }
     }
 
@@ -805,6 +817,19 @@
   }
 }
 
+/* ✅ Ultra-compact: si no cabe, solo head visible */
+@media (max-width: 380px) {
+  .profile-button.full {
+    padding: 0.28rem 0.5rem;
+    gap: 0.45rem;
+
+    .profile-greeting { display: none; } /* solo avatar + quest + chevron */
+    .user-avatar { width: 28px; height: 28px; }
+  }
+
+  .navbar-inner.mobile-only .burger span { width: 24px; }
+}
+
 /* Rangos */
 .nombre-colored {
   padding: 0.1rem 0.5rem;
@@ -825,4 +850,17 @@
 .nombre-colored.rango-inmortal {
   color: #ff5c33 !important;
   text-shadow: 0 0 4px #d14810, 0 0 6px rgba(0, 0, 0, 0.35);
+}
+
+/* ✅ Accesibilidad: respeta reduced motion sin “matar” el estilo */
+@media (prefers-reduced-motion: reduce) {
+  .mobile-menu,
+  .mobile-menu-overlay,
+  .user-dropdown-wrapper.mobile-only,
+  .profile-button.full,
+  .mobile-links .mobile-nav-item {
+    transition: none !important;
+    animation: none !important;
+  }
+  .quest-qm { animation: none !important; }
 }
