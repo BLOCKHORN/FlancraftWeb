@@ -785,3 +785,190 @@
   from { opacity: 0; transform: scaleX(0.8) scaleY(0.96); filter: blur(1px); }
   to { opacity: 1; transform: scaleX(1) scaleY(1); filter: none; }
 }
+/* =========================
+   CUPÓN (carrito)
+   ========================= */
+
+.basket-coupon {
+  margin: 0.65rem 0 0.75rem;
+  border-radius: 0.75rem;
+  overflow: hidden;
+
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.18);
+
+  .coupon-toggle {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.9rem;
+
+    padding: 0.85rem 0.9rem;
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+    text-align: left;
+
+    .coupon-toggle-left {
+      min-width: 0;
+      display: grid;
+      gap: 0.25rem;
+    }
+
+    .coupon-title {
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      font-size: 0.78rem;
+      opacity: 0.95;
+    }
+
+    .coupon-sub {
+      font-size: 0.82rem;
+      opacity: 0.78;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      min-width: 0;
+    }
+
+    .coupon-chevron {
+      display: grid;
+      place-items: center;
+      opacity: 0.9;
+      transform: rotate(0deg);
+      transition: transform 0.25s ease;
+    }
+  }
+
+  &.is-open .coupon-toggle .coupon-chevron {
+    transform: rotate(180deg);
+  }
+
+  .coupon-panel {
+    padding: 0 0.9rem 0.95rem;
+  }
+
+  .coupon-row {
+    display: flex;
+    align-items: stretch;
+    gap: 0.55rem;
+    margin-top: 0.15rem;
+  }
+
+  .coupon-input {
+    flex: 1;
+    min-width: 0;
+    height: 40px;
+    padding: 0 0.85rem;
+
+    border-radius: 0.65rem;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(0, 0, 0, 0.22);
+
+    outline: none;
+    color: inherit;
+  }
+
+  .coupon-input:focus {
+    border-color: rgba(255, 255, 255, 0.24);
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.06);
+  }
+
+  .coupon-apply {
+    height: 40px;
+    padding: 0 0.95rem;
+
+    border-radius: 0.65rem;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.08);
+
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+
+  .coupon-apply:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  .coupon-msg {
+    margin-top: 0.6rem;
+    font-size: 0.82rem;
+    line-height: 1.25rem;
+    padding: 0.55rem 0.7rem;
+    border-radius: 0.6rem;
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    background: rgba(0, 0, 0, 0.18);
+  }
+
+  .coupon-msg.is-error {
+    border-color: rgba(255, 100, 100, 0.26);
+    background: rgba(255, 70, 70, 0.08);
+  }
+
+  .coupon-msg.is-ok {
+    border-color: rgba(120, 255, 170, 0.18);
+    background: rgba(120, 255, 170, 0.06);
+  }
+
+  .coupon-note {
+    margin-top: 0.55rem;
+    font-size: 0.78rem;
+    opacity: 0.7;
+  }
+
+  .coupon-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    max-width: 100%;
+
+    padding: 0.25rem 0.45rem;
+    border-radius: 0.55rem;
+    background: rgba(0, 0, 0, 0.26);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+  }
+
+  .coupon-chip-text {
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-size: 0.78rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 180px;
+  }
+
+  .coupon-chip-remove {
+    width: 26px;
+    height: 26px;
+    display: grid;
+    place-items: center;
+    border-radius: 0.5rem;
+
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    background: rgba(255, 255, 255, 0.06);
+    cursor: pointer;
+  }
+
+  .coupon-chip-remove:hover {
+    background: rgba(255, 255, 255, 0.10);
+  }
+}
+
+/* Responsive mini */
+@media (max-width: 420px) {
+  .basket-coupon .coupon-row {
+    flex-direction: column;
+  }
+  .basket-coupon .coupon-apply,
+  .basket-coupon .coupon-input {
+    width: 100%;
+  }
+}

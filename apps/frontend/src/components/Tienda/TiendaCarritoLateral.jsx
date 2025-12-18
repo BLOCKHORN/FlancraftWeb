@@ -1,28 +1,39 @@
-// TiendaCarritoLateral.jsx
+// src/components/Tienda/TiendaCarritoLateral.jsx
 import React, { useMemo, useState } from "react";
 import useMinecraftProfile from "./useMinecraftProfile";
-
-// ⚠️ Ajusta el import a tu ruta real (usa el SCSS que ya tenías con estas clases)
 import "../../styles/components/Tienda/tienda-carrito.scss";
 
 const API_BASE = import.meta.env.VITE_BACKEND_URL || "http://localhost:10000";
 
+function normalizeCoupon(s) {
+  return String(s || "")
+    .trim()
+    .replace(/\s+/g, "")
+    .toUpperCase();
+}
+
 export default function TiendaCarritoLateral({
   carrito = [],
-  onAgregar,        // toggle
-  eliminarItem,     // opcional
-  vaciarCarrito,    // opcional
+  onAgregar, // toggle
+  eliminarItem, // opcional
+  vaciarCarrito, // opcional
   total: totalFromHook,
 
   nombreConfirmado,
   monedaSeleccionada,
   onMonedaChange,
 
-  onAbrirLogin,     // abre modal
-  onCambiarCuenta,  // cambia cuenta (logout global si aplica + modal)
+  onAbrirLogin,
+  onCambiarCuenta,
   isWebLoggedIn = false,
 }) {
   const [loadingCheckout, setLoadingCheckout] = useState(false);
+
+  // Cupón inline
+  const [couponInput, setCouponInput] = useState("");
+  const [couponApplied, setCouponApplied] = useState("");
+  const [couponError, setCouponError] = useState("");
+  const [couponOk, setCouponOk] = useState("");
 
   const profile = useMinecraftProfile(nombreConfirmado);
 
@@ -49,23 +60,42 @@ export default function TiendaCarritoLateral({
     if (!canCheckout) return;
 
     setLoadingCheckout(true);
+    setCouponError("");
+    setCouponOk("");
+
     try {
       const items = carrito.map((it) => ({
         id: Number(it.id),
         quantity: Number(it.quantity || 1),
       }));
 
-      const r = await fetch(`${API_BASE}/api/tebex/crear-pedido`, {
+      const couponToSend = normalizeCoupon(couponApplied || couponInput);
+
+      const r = await fetch(`${API_BASE}/api/tebex/checkout`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           jugador: nombreConfirmado,
           items,
+          codigoDescuento: couponToSend || "",
         }),
       });
 
       const data = await r.json().catch(() => ({}));
-      if (!r.ok) throw new Error(data?.error || "No se pudo generar el checkout.");
+
+      if (!r.ok) {
+        const msg = data?.error || "No se pudo generar el checkout.";
+
+        // si es cupón, mensaje inline y no alert feo
+        if (/cup[oó]n|coupon|c[oó]digo/i.test(msg)) {
+          setCouponError(msg);
+          setLoadingCheckout(false);
+          return;
+        }
+
+        throw new Error(msg);
+      }
+
       if (!data?.url) throw new Error("Respuesta inválida del servidor (sin URL).");
 
       window.location.href = data.url;
@@ -86,16 +116,35 @@ export default function TiendaCarritoLateral({
     else onAbrirLogin?.();
   };
 
+  const onApplyCoupon = () => {
+    setCouponError("");
+    setCouponOk("");
+
+    const code = normalizeCoupon(couponInput);
+    if (!code) {
+      setCouponApplied("");
+      setCouponOk("");
+      return;
+    }
+    if (code.length < 3) {
+      setCouponError("Código demasiado corto.");
+      return;
+    }
+    if (!/^[A-Z0-9_-]+$/.test(code)) {
+      setCouponError("Formato inválido.");
+      return;
+    }
+
+    setCouponApplied(code);
+    setCouponOk(`Código preparado: ${code}`);
+  };
+
   return (
     <div className="carrito-lateral">
       <div className="carrito-panel">
-        {/* =========================
-            CUENTA
-           ========================= */}
+        {/* CUENTA */}
         <div className="carrito-cuenta">
           <div className="cuenta-top">
-            <div className="cuenta-label">Comprando para</div>
-
             <div className="cuenta-identidad">
               <div className={`cuenta-avatar ${!nombreConfirmado ? "is-guest" : ""}`}>
                 {nombreConfirmado ? (
@@ -120,14 +169,13 @@ export default function TiendaCarritoLateral({
                     ? isWebLoggedIn
                       ? "Cuenta vinculada"
                       : "Cuenta del servidor"
-                    : "No has elegido cuenta"}
+                    : "Elige cuenta para continuar"}
                 </div>
               </div>
             </div>
           </div>
 
           <div className="cuenta-actions">
-            {/* ✅ ÚNICO botón de cuenta (NO duplicados) */}
             <button
               className="cuenta-btn cuenta-btn-account"
               type="button"
@@ -136,7 +184,6 @@ export default function TiendaCarritoLateral({
               {nombreConfirmado ? "Cambiar cuenta" : "Elegir cuenta"}
             </button>
 
-            {/* Moneda con overlay select (estilo tuyo) */}
             <div className="cuenta-btn cuenta-btn-currency">
               <div className="currency-left">
                 <div className="currency-icon">$</div>
@@ -162,24 +209,21 @@ export default function TiendaCarritoLateral({
           </div>
         </div>
 
-        {/* =========================
-            CARRITO
-           ========================= */}
+        {/* CARRITO */}
         <div className="carrito-basket">
           <div className="basket-header">
             <div className="basket-title">Carrito</div>
-            <div className="basket-meta">
-              {count > 0 ? `(${count})` : "(vacío)"}
-            </div>
+            <div className="basket-meta">{count > 0 ? `(${count})` : "(vacío)"}</div>
           </div>
 
-          {/* ✅ scroll SOLO dentro del carrito */}
           <div className="basket-scroll">
             {count === 0 ? (
               <div className="basket-empty-state">
                 <div className="basket-empty-icon" />
                 <div className="basket-empty-text">
-                  {nombreConfirmado ? "Añade productos para empezar." : "Elige una cuenta para comprar."}
+                  {nombreConfirmado
+                    ? "Añade productos para empezar."
+                    : "Elige una cuenta para comprar."}
                 </div>
               </div>
             ) : (
@@ -218,7 +262,6 @@ export default function TiendaCarritoLateral({
                         onClick={() => handleRemove(it)}
                         aria-label="Quitar"
                       >
-                        {/* SVG simple para que tu SCSS lo trate */}
                         <svg
                           width="16"
                           height="16"
@@ -242,6 +285,47 @@ export default function TiendaCarritoLateral({
           </div>
 
           <div className="basket-footer">
+            {/* CUPÓN */}
+            <div className="basket-coupon-inline">
+              <div className="coupon-inline-label">Código de descuento</div>
+
+              <div className="coupon-inline-row">
+                <input
+                  className="coupon-inline-input"
+                  value={couponInput}
+                  onChange={(e) => {
+                    setCouponInput(e.target.value);
+                    setCouponError("");
+                    setCouponOk("");
+                    setCouponApplied("");
+                  }}
+                  placeholder="Introduce tu código"
+                  autoComplete="off"
+                  spellCheck={false}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") onApplyCoupon();
+                  }}
+                />
+
+                <button
+                  className="coupon-inline-btn"
+                  type="button"
+                  onClick={onApplyCoupon}
+                  disabled={!couponInput.trim()}
+                >
+                  Aplicar
+                </button>
+              </div>
+
+              {couponError ? (
+                <div className="coupon-inline-msg is-error">{couponError}</div>
+              ) : null}
+
+              {couponOk && couponApplied ? (
+                <div className="coupon-inline-msg is-ok">{couponOk}</div>
+              ) : null}
+            </div>
+
             <div className="basket-total">
               <div className="basket-total-label">Total:</div>
               <div className="basket-total-value">{total.toFixed(2)} €</div>

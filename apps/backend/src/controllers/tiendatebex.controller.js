@@ -12,7 +12,7 @@ const ONLY_VISIBLE = String(process.env.TEBEX_ONLY_VISIBLE || 'true').toLowerCas
 // Aplica rebajas si TEBEX_APPLY_SALES=true
 const APPLY_SALES = String(process.env.TEBEX_APPLY_SALES || 'false').toLowerCase() === 'true';
 
-// Headless (Top Donator / módulos sidebar)
+// Headless (Top Donator / módulos sidebar / cupones basket)
 const WEBSTORE_TOKEN =
   process.env.TEBEX_WEBSTORE_TOKEN ||
   process.env.TEBEX_ACCOUNT_TOKEN ||
@@ -29,6 +29,23 @@ const WEBHOOK_SECRET = String(process.env.TEBEX_WEBHOOK_SECRET || '').trim();
    ========================= */
 const nowSec = () => Math.floor(Date.now() / 1000);
 const isExpired = (c) => !c.cacheAt || nowSec() - c.cacheAt >= CACHE_TTL;
+const DEBUG_TEBEX =
+  String(process.env.DEBUG_TEBEX || '').toLowerCase() === 'true' ||
+  String(process.env.DEBUG_TEBEX || '') === '1';
+
+function tlog(rid, ...args) {
+  if (DEBUG_TEBEX) console.log(`[TEBEX][${rid}]`, ...args);
+}
+
+function getClientIPv4(req) {
+  const xf = String(req.headers['x-forwarded-for'] || '')
+    .split(',')[0]
+    .trim();
+
+  const raw = xf || req.socket?.remoteAddress || '';
+  const m = raw.match(/(\d{1,3}\.){3}\d{1,3}/);
+  return m ? m[0] : null;
+}
 
 function safeParseJSON(raw) {
   if (!raw) return null;
@@ -82,10 +99,11 @@ function loadServerKeys() {
 }
 
 const SERVER_KEYS = loadServerKeys();
+
+// Store Secret (checkout clásico) — si no lo usas, lo puedes dejar
 const STORE_SECRET = process.env.TEBEX_STORE_SECRET || process.env.TEBEX_STORE_PRIVATE_KEY || '';
 
 function getServerKey(req) {
-  // ✅ soporta ?sv= y también ?server= (tu frontend usa server)
   const sv = (req.params.server || req.query.sv || req.query.server || '').toLowerCase();
   if (['oneblock', 'lobby', 'clasico'].includes(sv)) return sv;
   return 'oneblock';
@@ -114,7 +132,6 @@ const headlessCache = {
   sidebar: { data: null, cacheAt: 0 },
   topDonator: { data: null, cacheAt: 0 },
   recentPayments: { data: null, cacheAt: 0 },
-  goal: { data: null, cacheAt: 0 },
   sidebarRaw: { data: null, cacheAt: 0 },
 };
 
@@ -253,12 +270,21 @@ async function tebexFetchPlugin(secret, path) {
 }
 
 /* =========================
-   Headless fetcher (/sidebar)
+   Headless fetcher (/accounts/{token}/...)
    ========================= */
-async function tebexFetchHeadless(path) {
+async function tebexFetchHeadless(path, init = {}) {
   if (!WEBSTORE_TOKEN) throw new Error('Falta TEBEX_WEBSTORE_TOKEN (Headless API).');
   const url = `https://headless.tebex.io/api/accounts/${WEBSTORE_TOKEN}/${path}`;
-  const res = await fetch(url, { headers: { 'User-Agent': 'FlanCraftStore/1.0' } });
+
+  const res = await fetch(url, {
+    method: init.method || 'GET',
+    headers: {
+      'User-Agent': 'FlanCraftStore/1.0',
+      ...(init.headers || {}),
+    },
+    body: init.body,
+  });
+
   if (!res.ok) {
     const text = await res.text().catch(() => '');
     const err = new Error(`[TEBEX headless ${path}] HTTP ${res.status} ${res.statusText} ${text}`);
@@ -268,6 +294,9 @@ async function tebexFetchHeadless(path) {
   return res.json();
 }
 
+/* =========================
+   Headless cached
+   ========================= */
 async function getSidebarModulesCached(force = false) {
   const c = headlessCache.sidebar;
   if (!force && c.cacheAt && !isExpired(c) && c.data) return c.data;
@@ -278,7 +307,6 @@ async function getSidebarModulesCached(force = false) {
 }
 
 function sidebarArray(sidebar) {
-  // Headless docs => { data: [ ... ] }
   return Array.isArray(sidebar?.data) ? sidebar.data : Array.isArray(sidebar) ? sidebar : [];
 }
 
@@ -288,19 +316,16 @@ function sidebarArray(sidebar) {
 function pickTopCustomerModule(sidebar) {
   const arr = sidebarArray(sidebar);
   if (!arr.length) return null;
-
   return arr.find((m) => String(m?.type || '').toLowerCase() === 'top_customer') || null;
 }
 
 /* =========================
-   ✅ PARSEO NÚMEROS (ARREGLADO)
-   - evitamos interpretar "4%" como dinero
+   PARSEO NÚMEROS
    ========================= */
 function parseNumberFromString(str) {
   const s = String(str ?? '').trim();
   if (!s) return NaN;
 
-  // deja solo dígitos, coma, punto y signo
   let c = s.replace(/[^\d.,-]/g, '');
   if (!c) return NaN;
 
@@ -309,12 +334,12 @@ function parseNumberFromString(str) {
 
   if (lastComma > -1 && lastDot > -1) {
     if (lastComma > lastDot) {
-      c = c.replace(/\./g, '').replace(',', '.'); // coma decimal
+      c = c.replace(/\./g, '').replace(',', '.');
     } else {
-      c = c.replace(/,/g, ''); // punto decimal
+      c = c.replace(/,/g, '');
     }
   } else if (lastComma > -1 && lastDot === -1) {
-    c = c.replace(',', '.'); // solo coma => decimal
+    c = c.replace(',', '.');
   }
 
   const n = Number(c);
@@ -332,11 +357,9 @@ function hasPercentHint(v) {
 }
 
 function toMoneyNumberStrict(v) {
-  // ✅ si huele a %, NO es dinero
   if (hasPercentHint(v)) return NaN;
 
   if (v && typeof v === 'object') {
-    // preferimos raw si existe y NO es percent
     const raw = v.raw ?? v.value ?? v.amount;
     if (typeof raw === 'number' && Number.isFinite(raw)) return raw;
 
@@ -347,22 +370,10 @@ function toMoneyNumberStrict(v) {
     return parseNumberFromString(raw);
   }
 
-  // strings/números
   const s = String(v ?? '').trim();
   if (s.includes('%')) return NaN;
   if (typeof v === 'number' && Number.isFinite(v)) return v;
   return parseNumberFromString(s);
-}
-
-function toLooseNumber(v) {
-  if (typeof v === 'number' && Number.isFinite(v)) return v;
-  if (v && typeof v === 'object') {
-    const raw = v.raw ?? v.value ?? v.amount ?? v.total ?? v.current ?? v.target;
-    if (typeof raw === 'number' && Number.isFinite(raw)) return raw;
-    const formatted = v.formatted ?? v.text ?? v.label ?? v.display ?? raw;
-    return parseNumberFromString(formatted);
-  }
-  return parseNumberFromString(v);
 }
 
 function normalizeTopDonatorFromModule(module) {
@@ -380,117 +391,6 @@ function normalizeTopDonatorFromModule(module) {
     currency: String(d.currency || TEBEX_CURRENCY || 'EUR').toUpperCase(),
     periodLabel: String(d.header || 'TOP DONATOR').trim() || 'TOP DONATOR',
     serverLabel: 'GLOBAL',
-  };
-}
-
-/* =========================
-   GOAL (desde sidebar)
-   ========================= */
-function pickGoalModule(sidebar) {
-  const arr = sidebarArray(sidebar);
-  if (!arr.length) return null;
-
-  return (
-    arr.find((m) => {
-      const t = String(m?.type || '').toLowerCase();
-      return t === 'community_goal' || t === 'payment_goal';
-    }) || null
-  );
-}
-
-function normalizeGoalFromModule(module) {
-  const d = module?.data || {};
-
-  // ✅ dinero estricto (ignora "4%")
-  const totalNum = toMoneyNumberStrict(
-    d.total ??
-      d.current ??
-      d.raised ??
-      d.amount ??
-      d.current_amount ??
-      d.currentAmount ??
-      d.progress_amount ??
-      d.progressAmount
-  );
-
-  // ✅ target estricto (NO usamos "goal" genérico porque a veces viene como %)
-  const targetNum = toMoneyNumberStrict(
-    d.target ??
-      d.objective ??
-      d.target_amount ??
-      d.targetAmount ??
-      d.goal_amount ??
-      d.goalAmount ??
-      d.targetPrice ??
-      d.target_price
-  );
-
-  // ✅ porcentaje (loose)
-  const pctNum = toLooseNumber(d.percentage ?? d.percent ?? d.progress_percentage ?? d.progressPercent);
-
-  let total = Number.isFinite(totalNum) ? totalNum : 0;
-  let target = Number.isFinite(targetNum) ? targetNum : 0;
-  let percentage = Number.isFinite(pctNum) ? pctNum : 0;
-
-  // ✅ Heurística de consistencia:
-  // si (total/target*100) no cuadra con percentage, recalculamos target con total*100/percentage
-  if (total > 0 && percentage > 0) {
-    const impliedTarget = total * (100 / percentage);
-    const impliedPctFromTarget = target > 0 ? (total / target) * 100 : NaN;
-
-    const mismatch =
-      !Number.isFinite(impliedPctFromTarget) || Math.abs(impliedPctFromTarget - percentage) > 1.5 || target < total;
-
-    if ((target <= 0 || mismatch) && Number.isFinite(impliedTarget) && impliedTarget >= total) {
-      target = impliedTarget;
-    }
-  }
-
-  // si tenemos target y % pero total no, lo derivamos
-  if (target > 0 && total <= 0 && percentage > 0) {
-    total = target * (percentage / 100);
-  }
-
-  // si tenemos total y target pero % no, lo derivamos
-  if (target > 0 && total >= 0) {
-    const p = (total / target) * 100;
-    if (!Number.isFinite(percentage) || percentage <= 0) percentage = p;
-  }
-
-  // clamps + redondeos
-  if (!Number.isFinite(total) || total < 0) total = 0;
-  if (!Number.isFinite(target) || target < 0) target = 0;
-
-  if (target > 0) {
-    const p = (total / target) * 100;
-    if (Number.isFinite(p)) percentage = p;
-  }
-
-  percentage = Math.max(0, Math.min(100, Number(percentage.toFixed(2))));
-  total = Number(total.toFixed(2));
-  target = Number(target.toFixed(2));
-
-  const displayAmount =
-    truthy(d.displayAmount) ||
-    truthy(d.display_amount) ||
-    String(d.displayAmount || d.display_amount || '').toLowerCase() === 'true';
-
-  const barStyle = String(d?.bar?.style || d?.bar_style || 'default');
-  const barAnimated =
-    d?.bar?.animated === true || String(d?.bar?.animated || d?.bar_animated || '').toLowerCase() === 'true';
-
-  const header = String(d.header || 'META').trim() || 'META';
-
-  return {
-    header,
-    total,
-    target,
-    percentage,
-    displayAmount,
-    bar: { style: barStyle, animated: barAnimated },
-    currency: String(d.currency || TEBEX_CURRENCY || 'EUR').toUpperCase(),
-    _type: String(module?.type || ''),
-    _moduleId: module?.id ?? null,
   };
 }
 
@@ -745,51 +645,239 @@ const obtenerDescripcionProducto = async (req, res) => {
   }
 };
 
+/* =========================
+   Crear checkout (HEADLESS)
+   ========================= */
 const crearPedidoTebex = async (req, res) => {
-  const { productoId, jugador, items } = req.body || {};
-  if (!jugador) return res.status(400).json({ error: 'Falta "jugador".' });
+  const rid = crypto.randomBytes(4).toString('hex');
+
+  const body = req.body || {};
+  const jugador = String(body.jugador || '').trim();
+
+  const codigoDescuentoRaw = body.codigoDescuento ?? body.coupon ?? body.codigo_descuento ?? '';
+  const coupon = String(codigoDescuentoRaw || '').trim();
+
+  if (!jugador) return res.status(400).json({ ok: false, error: 'Falta "jugador".' });
+
+  // Normaliza basket (carrito)
+  let basket = [];
+  if (Array.isArray(body.items) && body.items.length) {
+    basket = body.items.map((it) => ({
+      id: Number(it.id),
+      quantity: Number(it.quantity || 1),
+    }));
+  } else if (body.productoId) {
+    basket = [{ id: Number(body.productoId), quantity: 1 }];
+  } else {
+    return res.status(400).json({ ok: false, error: 'Faltan "items" o "productoId".' });
+  }
+
+  basket = basket.filter(
+    (it) => Number.isFinite(it.id) && it.id > 0 && Number.isFinite(it.quantity) && it.quantity > 0
+  );
+
+  if (!basket.length) {
+    return res.status(400).json({ ok: false, error: 'Carrito inválido (ids/cantidades).' });
+  }
+
+  // Headless keys
+  const token = String(WEBSTORE_TOKEN || '').trim();
+  if (!token) {
+    return res.status(500).json({ ok: false, error: 'Falta TEBEX_WEBSTORE_TOKEN (webstore identifier).' });
+  }
+
+  // Basic Auth (Public Token : Private Key)
+  const HEADLESS_PUBLIC = String(process.env.TEBEX_HEADLESS_PUBLIC_TOKEN || '').trim();
+  const HEADLESS_PRIVATE = String(process.env.TEBEX_HEADLESS_PRIVATE_KEY || '').trim();
+  const BASIC =
+    HEADLESS_PUBLIC && HEADLESS_PRIVATE
+      ? Buffer.from(`${HEADLESS_PUBLIC}:${HEADLESS_PRIVATE}`).toString('base64')
+      : '';
+
+  if (!BASIC) {
+    return res.status(500).json({
+      ok: false,
+      error: 'Faltan credenciales Basic Auth para Headless (TEBEX_HEADLESS_PUBLIC_TOKEN / TEBEX_HEADLESS_PRIVATE_KEY).',
+    });
+  }
+
+  const ipv4 = getClientIPv4(req);
+  tlog(rid, 'checkout req:', { jugador, coupon, items: basket, ipv4 });
+
+  async function fetchJson(url, options = {}) {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 15000);
+
+    try {
+      const r = await fetch(url, {
+        ...options,
+        signal: ctrl.signal,
+        headers: {
+          'User-Agent': 'FlanCraftStore/1.0',
+          Accept: 'application/json',
+          Authorization: `Basic ${BASIC}`,
+          ...(options.headers || {}),
+        },
+      });
+
+      const text = await r.text().catch(() => '');
+      let data = null;
+      try {
+        data = text ? JSON.parse(text) : null;
+      } catch {
+        data = null;
+      }
+
+      tlog(rid, 'HTTP', r.status, url, data || text?.slice(0, 200));
+
+      if (!r.ok) {
+        const err = new Error(`HTTP ${r.status} ${r.statusText}`);
+        err.status = r.status;
+        err.data = data;
+        err.raw = (text || '').slice(0, 800);
+        throw err;
+      }
+
+      return data;
+    } finally {
+      clearTimeout(t);
+    }
+  }
 
   try {
-    if (!STORE_SECRET) return res.status(500).json({ error: 'Falta TEBEX_STORE_SECRET' });
+    // 1) Crear basket
+    const createBasketUrl = `https://headless.tebex.io/api/accounts/${encodeURIComponent(token)}/baskets`;
 
-    let basket;
-    if (Array.isArray(items) && items.length) {
-      basket = items.map((it) => ({ id: Number(it.id), quantity: Number(it.quantity || 1) }));
-    } else if (productoId) {
-      basket = [{ id: Number(productoId), quantity: 1 }];
-    } else {
-      return res.status(400).json({ error: 'Faltan "items" o "productoId".' });
-    }
+    const createBody = {
+      complete_url: 'https://flancraft.com/tienda?gracias=true',
+      cancel_url: 'https://flancraft.com/tienda',
+      complete_auto_redirect: true,
 
-    const r = await fetch('https://checkout.tebex.io/api/checkout', {
-      method: 'POST',
-      headers: {
-        'X-Tebex-Secret': STORE_SECRET,
-        'Content-Type': 'application/json',
-        'User-Agent': 'FlanCraftStore/1.0',
+      // Minecraft stores requieren username
+      username: jugador,
+
+      ...(ipv4 ? { ip_address: ipv4 } : {}),
+
+      custom: {
+        mc_username: jugador,
+        source: 'flancraft-web',
+        ts: Date.now(),
       },
-      body: JSON.stringify({
-        return_url: 'https://flancraft.com/tienda',
-        complete_url: 'https://flancraft.com/tienda?gracias=true',
-        basket,
-        purchaser: { username: jugador },
-      }),
+    };
+
+    const created = await fetchJson(createBasketUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(createBody),
     });
 
-    const data = await r.json().catch(() => ({}));
-    if (!r.ok || !data?.data?.checkout_url) {
-      console.error('[Tebex checkout] Error', data);
-      return res.status(502).json({ error: 'No se pudo generar el checkout.' });
+    const ident = created?.data?.ident;
+    const username_id = created?.data?.username_id;
+
+    if (!ident) {
+      return res.status(502).json({
+        ok: false,
+        error: 'No se pudo crear el basket (sin ident).',
+        detail: created || null,
+      });
     }
-    res.json({ ok: true, url: data.data.checkout_url });
+
+    tlog(rid, 'basket created:', { ident, username_id });
+
+    // 2) Añadir paquetes
+    for (const it of basket) {
+      const addUrl = `https://headless.tebex.io/api/baskets/${encodeURIComponent(ident)}/packages`;
+
+      await fetchJson(addUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          package_id: it.id,
+          quantity: it.quantity,
+          ...(username_id ? { variable_data: { username_id } } : {}),
+        }),
+      });
+    }
+
+    // 3) Aplicar cupón (si hay)
+    if (coupon) {
+      const couponUrl = `https://headless.tebex.io/api/accounts/${encodeURIComponent(
+        token
+      )}/baskets/${encodeURIComponent(ident)}/coupons`;
+
+      try {
+        await fetchJson(couponUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ coupon_code: coupon }),
+        });
+      } catch (e) {
+        const status = e?.status || 500;
+        if (status === 422 || status === 400) {
+          return res.status(400).json({
+            ok: false,
+            error: 'Código de descuento inválido o no aplicable.',
+            detail: e?.data || e?.raw || e?.message,
+          });
+        }
+        throw e;
+      }
+    }
+
+    // 4) Obtener checkout link
+    const getBasketUrl = `https://headless.tebex.io/api/accounts/${encodeURIComponent(
+      token
+    )}/baskets/${encodeURIComponent(ident)}`;
+
+    const finalBasket = await fetchJson(getBasketUrl, { method: 'GET' });
+
+    const checkoutUrl = finalBasket?.data?.links?.checkout || created?.data?.links?.checkout;
+
+    if (!checkoutUrl) {
+      return res.status(502).json({
+        ok: false,
+        error: 'Basket creado, pero no se encontró links.checkout.',
+        detail: finalBasket?.data?.links || created?.data?.links || null,
+      });
+    }
+
+    tlog(rid, 'checkout url:', checkoutUrl);
+    return res.json({ ok: true, url: checkoutUrl });
   } catch (err) {
-    console.error('[Tebex Exception]', err);
-    res.status(500).json({ error: 'Error interno del servidor.' });
+    const data = err?.data || null;
+
+    // Mensaje más útil para el caso “username no verificable”
+    const title = String(data?.title || '').toLowerCase();
+    if (err?.status === 400 && title.includes('unable to verify your username')) {
+      return res.status(400).json({
+        ok: false,
+        error:
+          'Tebex no puede verificar ese nombre como cuenta válida para esta tienda. Si tu servidor acepta nicks no-premium/offline, Tebex los rechazará. Usa un username premium (NameMC) o cambia el proyecto a Universal Store.',
+        detail: data,
+      });
+    }
+
+    console.error(
+      `[TEBEX][${rid}] Checkout error`,
+      err?.status || '',
+      err?.message || err,
+      err?.data || err?.raw || ''
+    );
+
+    const upstreamStatus = err?.status;
+    const status = upstreamStatus >= 400 && upstreamStatus < 600 ? upstreamStatus : 500;
+
+    return res.status(status).json({
+      ok: false,
+      error: 'No se pudo generar el checkout.',
+      status,
+      detail: err?.data || err?.raw || err?.message || 'unknown',
+    });
   }
 };
 
 /* =========================
-   ✅ SIDEBAR RAW (debug)
+   SIDEBAR RAW (debug)
    ========================= */
 const obtenerSidebarRaw = async (req, res) => {
   try {
@@ -823,7 +911,7 @@ const obtenerSidebarRaw = async (req, res) => {
 };
 
 /* =========================
-   ✅ TOP DONATOR (GLOBAL) vía Headless Sidebar
+   TOP DONATOR (GLOBAL) vía Headless Sidebar
    ========================= */
 const obtenerTopDonator = async (req, res) => {
   try {
@@ -861,47 +949,7 @@ const obtenerTopDonator = async (req, res) => {
 };
 
 /* =========================
-   ✅ GOAL (GLOBAL) vía Headless Sidebar (FIX MONEY)
-   ========================= */
-const obtenerGoal = async (req, res) => {
-  try {
-    const force = String(req.query.refresh || '').toLowerCase() === '1';
-
-    const c = headlessCache.goal;
-    if (!force && c.cacheAt && !isExpired(c) && c.data) {
-      return res.json({ ok: true, ...c.data, cacheado: new Date(c.cacheAt * 1000).toISOString() });
-    }
-
-    const sidebar = await getSidebarModulesCached(force);
-    const modGoal = pickGoalModule(sidebar);
-    const goal = modGoal ? normalizeGoalFromModule(modGoal) : null;
-
-    const payload =
-      goal || {
-        header: 'META',
-        total: 0,
-        target: 0,
-        percentage: 0,
-        displayAmount: true,
-        bar: { style: 'default', animated: false },
-        currency: TEBEX_CURRENCY,
-        _missingModule: true,
-      };
-
-    headlessCache.goal = { data: payload, cacheAt: nowSec() };
-
-    return res.json({ ok: true, ...payload, cacheado: new Date(headlessCache.goal.cacheAt * 1000).toISOString() });
-  } catch (e) {
-    return res.status(500).json({
-      ok: false,
-      error: 'No se pudo obtener el Goal (Headless).',
-      detail: e?.message || 'unknown',
-    });
-  }
-};
-
-/* =========================
-   ✅ RECENT PAYMENTS
+   RECENT PAYMENTS
    ========================= */
 const obtenerPagosRecientes = async (req, res) => {
   try {
@@ -930,7 +978,7 @@ const obtenerPagosRecientes = async (req, res) => {
 };
 
 /* =========================
-   ✅ WEBHOOK (validación + firma)
+   WEBHOOK (validación + firma)
    ========================= */
 const webhookPing = (_req, res) => {
   res.status(200).send('ok');
@@ -988,7 +1036,6 @@ module.exports = {
 
   obtenerSidebarRaw,
   obtenerTopDonator,
-  obtenerGoal,
   obtenerPagosRecientes,
 
   webhookPing,

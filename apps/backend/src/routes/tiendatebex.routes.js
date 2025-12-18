@@ -10,7 +10,6 @@ const {
   crearPedidoTebex,
   obtenerSaleActiva,
   obtenerTopDonator,
-  obtenerGoal,
   obtenerPagosRecientes,
   obtenerSidebarRaw,
   webhookPing,
@@ -18,49 +17,30 @@ const {
   health,
 } = require("../controllers/tiendatebex.controller");
 
-/* =========================
-   Health / Debug
-   ========================= */
 router.get("/health", health);
 router.get("/sidebar-raw", obtenerSidebarRaw);
 
-/* =========================
-   Headless sidebar modules
-   ========================= */
 router.get("/top-donator", obtenerTopDonator);
-router.get("/goal", obtenerGoal);
 router.get("/recent-payments", obtenerPagosRecientes);
 
-/* =========================
-   Sales
-   ========================= */
 router.get("/sale", obtenerSaleActiva);
 router.get("/sale/:server", obtenerSaleActiva);
 
-/* =========================
-   Packages / categorías (plugin.tebex.io)
-   ========================= */
-router.get("/", obtenerDatosTienda);
-router.get("/:server", obtenerDatosTienda);
+// ✅ Package detail (ANTES del "/:server")
+router.get("/package/:id", obtenerDescripcionProducto);
+router.get("/:server/package/:id", obtenerDescripcionProducto);
+
+router.post("/checkout", crearPedidoTebex);
 
 router.post("/cache/refresh", forzarActualizarCache);
 router.post("/cache/refresh/:server", forzarActualizarCache);
 
-/* =========================
-   Package detail
-   ========================= */
-router.get("/package/:id", obtenerDescripcionProducto);
-router.get("/:server/package/:id", obtenerDescripcionProducto);
-
-/* =========================
-   Checkout
-   ========================= */
-router.post("/checkout", crearPedidoTebex);
-
-/* =========================
-   Webhook Tebex
-   ========================= */
+// ✅ Webhook ANTES de "/" y "/:server" (si no, lo pisa)
 router.get("/webhook", webhookPing);
 router.post("/webhook", webhookHandler);
+
+// ✅ Datos tienda al final (para no pisar rutas)
+router.get("/", obtenerDatosTienda);
+router.get("/:server", obtenerDatosTienda);
 
 module.exports = router;

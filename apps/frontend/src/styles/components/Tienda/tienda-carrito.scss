@@ -526,6 +526,91 @@
   .basket-item-remove,
   .basket-checkout { transition: none !important; }
 }
+/* =========================
+   CUPÓN inline (sutil)
+   ========================= */
+
+.basket-coupon-inline {
+  margin: 0.55rem 0 0.65rem;
+}
+
+.coupon-inline-label {
+  font-size: 0.74rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 800;
+  opacity: 0.85;
+  margin-bottom: 0.35rem;
+}
+
+.coupon-inline-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: stretch;
+}
+
+.coupon-inline-input {
+  flex: 1;
+  min-width: 0;
+  height: 36px;
+  padding: 0 0.75rem;
+
+  border-radius: 0.6rem;
+  border: 1px solid rgba(0, 0, 0, 0.14);
+  background: rgba(255, 255, 255, 0.55);
+  color: #2b1a08;
+  outline: none;
+}
+
+.coupon-inline-input:focus {
+  border-color: rgba(0, 0, 0, 0.22);
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.06);
+}
+
+.coupon-inline-btn {
+  height: 36px;
+  padding: 0 0.9rem;
+
+  border-radius: 0.6rem;
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  background: rgba(0, 0, 0, 0.08);
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.coupon-inline-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.coupon-inline-msg {
+  margin-top: 0.35rem;
+  font-size: 0.78rem;
+  line-height: 1.15rem;
+  opacity: 0.9;
+}
+
+.coupon-inline-msg.is-error {
+  color: #8a1f1f;
+  font-weight: 700;
+}
+
+.coupon-inline-msg.is-ok {
+  color: #1f6b3d;
+  font-weight: 700;
+}
+
+@media (max-width: 420px) {
+  .coupon-inline-row {
+    flex-direction: column;
+  }
+  .coupon-inline-btn,
+  .coupon-inline-input {
+    width: 100%;
+  }
+}
 
 /* RESPONSIVE */
 @media (max-width: 900px) {
