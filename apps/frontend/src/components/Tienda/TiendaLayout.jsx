@@ -1,4 +1,4 @@
-// apps/frontend/src/components/Tienda/TiendaLayout.jsx
+// src/components/Tienda/TiendaLayout.jsx
 import React, {
   useContext,
   useEffect,
@@ -16,10 +16,10 @@ import TiendaPortada from "./TiendaPortada";
 import TiendaCategoriaVista from "./TiendaCategoriaVista";
 import TiendaCarritoLateral from "./TiendaCarritoLateral";
 import TiendaModalJugador from "./TiendaModalJugador";
+import TiendaCheckoutModal from "./TiendaCheckoutModal"; // ✅ NUEVO: componente aparte
 import useTiendaCarrito from "./useTiendaCarrito";
 import TiendaFooter from "./TiendaFooter";
-import TiendaTopDonator from "./TiendaTopDonator";
-import TiendaOfertaCountdown from "./TiendaOfertaCountdown";
+import TiendaTopDonatorPip from "./TiendaTopDonatorPip";
 
 const readWebUser = () => {
   try {
@@ -30,9 +30,10 @@ const readWebUser = () => {
   }
 };
 
+const uid = () => Math.random().toString(16).slice(2);
+
 const TiendaLayout = () => {
   const rootRef = useRef(null);
-
   const { user, setUser } = useContext(UserContext);
 
   const [mostrarLogin, setMostrarLogin] = useState(false);
@@ -47,8 +48,17 @@ const TiendaLayout = () => {
     () => localStorage.getItem("monedaSeleccionada") || "EUR"
   );
 
-  const { carrito, toggleProducto, eliminar, vaciar, total } =
-    useTiendaCarrito(nombreConfirmado);
+  // ✅ Hook carrito (actualizado con cantidades)
+  const {
+    carrito,
+    toggleProducto,
+    eliminar,
+    vaciar,
+    total,
+    cambiarCantidad,
+    setCantidad,
+    agregar, // (opcional, por si lo quieres usar luego)
+  } = useTiendaCarrito(nombreConfirmado);
 
   const location = useLocation();
 
@@ -56,15 +66,27 @@ const TiendaLayout = () => {
     return location.pathname === "/tienda" || location.pathname === "/tienda/";
   }, [location.pathname]);
 
-  // ✅ Server actual desde URL (para Top Donator por servidor)
   const serverFromPath = useMemo(() => {
     const parts = String(location.pathname || "").split("/").filter(Boolean);
-    // /tienda/:server/:categoria...
     if (parts[0] !== "tienda") return "global";
     return parts[1] || "global";
   }, [location.pathname]);
 
-  // ✅ Estado "expandiendo" para animación solo cuando pasas de portada -> contenido
+  // ✅ webUser en state (no parse en cada render)
+  const [webUser, setWebUser] = useState(() => readWebUser());
+
+  useEffect(() => {
+    const onStorage = (e) => {
+      if (e.key === "flan_user") setWebUser(readWebUser());
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
+
+  const isWebLoggedIn = useMemo(() => {
+    return Boolean(user?.loggedIn || webUser?.loggedIn);
+  }, [user?.loggedIn, webUser?.loggedIn]);
+
   const prevEsPortadaRef = useRef(esPortada);
   const [expandiendo, setExpandiendo] = useState(false);
 
@@ -78,18 +100,18 @@ const TiendaLayout = () => {
     prevEsPortadaRef.current = esPortada;
   }, [esPortada]);
 
-  // ✅ altura real header (para que no choque con navbar)
+  // ✅ Medición robusta de navbar (ResizeObserver + repick)
   useLayoutEffect(() => {
     const host = rootRef.current;
     if (!host) return;
 
-    const compute = () => {
+    const pick = () => {
       const candidates = [
         document.querySelector(".navbar-content"),
         document.querySelector(".mobile-only"),
       ].filter(Boolean);
 
-      const visible = candidates.find((el) => {
+      return candidates.find((el) => {
         const cs = window.getComputedStyle(el);
         return (
           cs.display !== "none" &&
@@ -97,23 +119,49 @@ const TiendaLayout = () => {
           el.offsetHeight > 0
         );
       });
-
-      const h = visible ? Math.ceil(visible.getBoundingClientRect().height) : 0;
-      host.style.setProperty("--top-offset", `${h}px`);
     };
 
-    compute();
-    window.addEventListener("resize", compute);
-    return () => window.removeEventListener("resize", compute);
+    let el = pick();
+    if (!el) return;
+
+    const apply = () => {
+      host.style.setProperty("--navH", `${el?.offsetHeight || 0}px`);
+    };
+
+    apply();
+
+    const ro = new ResizeObserver(() => apply());
+    ro.observe(el);
+
+    const onResize = () => {
+      const next = pick();
+      if (next && next !== el) {
+        ro.unobserve(el);
+        el = next;
+        ro.observe(el);
+      }
+      apply();
+    };
+
+    window.addEventListener("resize", onResize);
+
+    const t1 = window.setTimeout(apply, 120);
+    const t2 = window.setTimeout(apply, 400);
+
+    return () => {
+      window.removeEventListener("resize", onResize);
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
+      ro.disconnect();
+    };
   }, []);
 
-  // Si el user global está logueado, auto-set cuenta tienda
+  // Auto-set cuenta tienda desde user web
   useEffect(() => {
-    const web = readWebUser();
     const ctxLogged = Boolean(user?.loggedIn && user?.username);
 
-    const username = (user?.username || web?.username || "").trim();
-    const uuid = (user?.uuid || web?.uuid || "").trim();
+    const username = (user?.username || webUser?.username || "").trim();
+    const uuid = (user?.uuid || webUser?.uuid || "").trim();
 
     if (!username) return;
 
@@ -125,7 +173,7 @@ const TiendaLayout = () => {
       return;
     }
 
-    if (ctxLogged || web?.loggedIn) {
+    if (ctxLogged || webUser?.loggedIn) {
       localStorage.setItem("nombreJugador", username);
       if (uuid) localStorage.setItem("uuidJugador", uuid);
 
@@ -133,7 +181,7 @@ const TiendaLayout = () => {
       setUuidConfirmado(uuid);
       setMostrarLogin(false);
     }
-  }, [user, nombreConfirmado, uuidConfirmado]);
+  }, [user, webUser, nombreConfirmado, uuidConfirmado]);
 
   const confirmarNombre = (nombre, uuid) => {
     localStorage.setItem("nombreJugador", nombre);
@@ -152,12 +200,12 @@ const TiendaLayout = () => {
   const abrirModalCuenta = () => setMostrarLogin(true);
 
   const cambiarCuenta = () => {
-    const web = readWebUser();
-    const isLoggedWeb = Boolean(user?.loggedIn || web?.loggedIn);
+    const isLoggedWeb = Boolean(user?.loggedIn || webUser?.loggedIn);
 
     if (isLoggedWeb) {
       localStorage.removeItem("flan_user");
       setUser?.(null);
+      setWebUser(null);
     }
 
     localStorage.removeItem("nombreJugador");
@@ -165,6 +213,70 @@ const TiendaLayout = () => {
     setNombreConfirmado("");
     setUuidConfirmado("");
     setMostrarLogin(true);
+  };
+
+  // =========================================================
+  // ✅ FX: Fly-to-basket + basket pulse
+  // =========================================================
+  const [flyers, setFlyers] = useState([]);
+  const [basketPulse, setBasketPulse] = useState(false);
+
+  useEffect(() => {
+    const onFly = (ev) => {
+      const d = ev?.detail || {};
+      const img = d.img;
+      const rect = d.rect;
+      if (!img || !rect) return;
+
+      const basket = document.getElementById("tienda-basket");
+      const br = basket?.getBoundingClientRect?.();
+      if (!br) return;
+
+      // rect viene como centro (x,y). Ajustamos a top-left del flyer (52px)
+      const fromX = (Number(rect.x) || 0) - 26;
+      const fromY = (Number(rect.y) || 0) - 26;
+
+      const toX = br.left + br.width * 0.82;
+      const toY = br.top + br.height * 0.16;
+
+      const id = uid();
+      const dx = toX - fromX;
+      const dy = toY - fromY;
+
+      setFlyers((prev) => [...prev, { id, img, fromX, fromY, dx, dy }]);
+
+      // ✅ Fallback: si no hay animationend (CSS / reduce motion), lo limpiamos igual
+      window.setTimeout(() => {
+        setFlyers((prev) => prev.filter((f) => f.id !== id));
+      }, 900);
+
+      setBasketPulse(true);
+      window.clearTimeout(onFly.__t);
+      onFly.__t = window.setTimeout(() => setBasketPulse(false), 320);
+    };
+
+    document.addEventListener("tienda:fly", onFly);
+    return () => document.removeEventListener("tienda:fly", onFly);
+  }, []);
+
+  const removeFlyer = (id) => {
+    setFlyers((prev) => prev.filter((f) => f.id !== id));
+  };
+
+  // =========================================================
+  // ✅ Checkout modal (usando componente aparte)
+  // =========================================================
+  const [checkoutUrl, setCheckoutUrl] = useState("");
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
+
+  const openCheckoutModal = (url) => {
+    setCheckoutUrl(String(url || ""));
+    setCheckoutOpen(true);
+  };
+
+  const closeCheckoutModal = () => {
+    setCheckoutOpen(false);
+    setCheckoutUrl("");
   };
 
   return (
@@ -183,6 +295,33 @@ const TiendaLayout = () => {
         />
       )}
 
+      {/* ✅ Flyers layer */}
+      <div className="tienda-fly-layer" aria-hidden="true">
+        {flyers.map((f) => (
+          <img
+            key={f.id}
+            className="tienda-flyer"
+            src={f.img}
+            alt=""
+            style={{
+              left: `${f.fromX}px`,
+              top: `${f.fromY}px`,
+              "--dx": `${f.dx}px`,
+              "--dy": `${f.dy}px`,
+            }}
+            onAnimationEnd={() => removeFlyer(f.id)}
+            draggable={false}
+          />
+        ))}
+      </div>
+
+      {/* ✅ Checkout modal (componente aparte) */}
+      <TiendaCheckoutModal
+        open={checkoutOpen}
+        url={checkoutUrl}
+        onClose={closeCheckoutModal}
+      />
+
       {/* ZONA PRINCIPAL */}
       <main className="tienda-layout-main">
         <section className="tienda-layout-left">
@@ -195,14 +334,14 @@ const TiendaLayout = () => {
             >
               <Routes>
                 <Route path="/" element={<TiendaPortada />} />
-
-                {/* ✅ Ruta anidada: NO se remonta el componente al entrar a subcategoria */}
                 <Route
                   path="/:server/:categoria"
                   element={
                     <TiendaCategoriaVista
                       carrito={carrito}
                       toggleProducto={toggleProducto}
+                      // Si luego quieres cambiar a “sumar +1”:
+                      // agregarProducto={agregar}
                     />
                   }
                 >
@@ -215,29 +354,35 @@ const TiendaLayout = () => {
 
         <aside className="tienda-layout-sidebar">
           <div className="tienda-sidebar-card">
-            {/* ✅ TOP DONATOR arriba */}
-            <TiendaTopDonator server={serverFromPath} />
+            {/* ✅ Wrap para anclar el pip al carrito (no a toda la sidebar) */}
+            <div className="tienda-cart-wrap">
+              <TiendaTopDonatorPip server={serverFromPath} />
 
-            {/* ✅ Carrito ocupa el resto sin ser comido por el footer */}
-            <TiendaCarritoLateral
-              carrito={carrito}
-              onAgregar={toggleProducto}
-              eliminarItem={eliminar}
-              vaciarCarrito={vaciar}
-              total={total}
-              nombreConfirmado={nombreConfirmado}
-              uuidConfirmado={uuidConfirmado}
-              monedaSeleccionada={moneda}
-              onMonedaChange={handleMonedaChange}
-              onAbrirLogin={abrirModalCuenta}
-              onCambiarCuenta={cambiarCuenta}
-              isWebLoggedIn={Boolean(user?.loggedIn || readWebUser()?.loggedIn)}
-            />
+              <TiendaCarritoLateral
+                carrito={carrito}
+                onAgregar={toggleProducto}
+                eliminarItem={eliminar}
+                vaciarCarrito={vaciar}
+                total={total}
+                // ✅ NUEVO: stepper cantidades
+                onCambiarCantidad={cambiarCantidad}
+                onSetCantidad={setCantidad}
+                nombreConfirmado={nombreConfirmado}
+                uuidConfirmado={uuidConfirmado}
+                monedaSeleccionada={moneda}
+                onMonedaChange={handleMonedaChange}
+                onAbrirLogin={abrirModalCuenta}
+                onCambiarCuenta={cambiarCuenta}
+                isWebLoggedIn={isWebLoggedIn}
+                onCheckoutUrl={openCheckoutModal}
+                basketPulse={basketPulse}
+                esPortada={esPortada}
+              />
+            </div>
           </div>
         </aside>
       </main>
 
-      {/* Footer: NO se toca */}
       <TiendaFooter />
     </div>
   );

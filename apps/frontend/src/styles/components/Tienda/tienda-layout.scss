@@ -1,4 +1,3 @@
-// src/styles/components/Tienda/tienda-layout.scss
 @use "../../base/_variables" as *;
 
 @keyframes shelfExpandIn {
@@ -14,25 +13,14 @@
   }
 }
 
-/* Animaciones de la flecha (botón) */
 @keyframes footerToggleFloatClosed {
-  0%,
-  100% {
-    transform: translate(-50%, 0);
-  }
-  50% {
-    transform: translate(-50%, -6px);
-  }
+  0%, 100% { transform: translate(-50%, 0); }
+  50% { transform: translate(-50%, -6px); }
 }
 
 @keyframes footerToggleFloatOpen {
-  0%,
-  100% {
-    transform: translate(-50%, 0);
-  }
-  50% {
-    transform: translate(-50%, -3px);
-  }
+  0%, 100% { transform: translate(-50%, 0); }
+  50% { transform: translate(-50%, -3px); }
 }
 
 /* =========================================================
@@ -45,11 +33,11 @@
   --pad-x: 1.75rem;
   --pad-y: 1.25rem;
 
-  --top-offset: var(--app-header-h, 0px);
+  /* ✅ usa nav medida si existe */
+  --top-offset: var(--navH, var(--app-header-h, 0px));
 
-  /* ✅ IMPORTANTE: este es el alto VISIBLE del footer cuando está cerrado.
-     Tiene que coincidir con STRIP_HEIGHT de TiendaFooter.jsx (35). */
-  --footer-visible-h: 35px;
+  /* Footer visible cuando está cerrado (si lo usas) */
+  --footer-visible-h: 0px;
 
   position: relative;
   display: flex;
@@ -58,8 +46,9 @@
   background-color: #050302;
   color: #fbe8c5;
 
-  height: calc(99.85dvh - var(--top-offset));
-  min-height: calc(99.85dvh - var(--top-offset));
+  /* ✅ fuera magic number */
+  height: calc(100dvh - var(--top-offset));
+  min-height: calc(100dvh - var(--top-offset));
   overflow: hidden;
 }
 
@@ -74,28 +63,36 @@
   z-index: 0;
 }
 
-/* Vignette */
+/* Vignette (por defecto) */
 .tienda-layout::after {
   content: "";
   position: absolute;
   inset: 0;
   background: radial-gradient(
     circle at center,
-    rgba(0, 0, 0, 0.12),
-    rgba(0, 0, 0, 0.85)
+    rgba(0, 0, 0, 0.10),
+    rgba(0, 0, 0, 0.78)
   );
   pointer-events: none;
   z-index: 0;
 }
 
-/* ✅ Aquí está el arreglo: el main mide 100% - 35px
-   para que el footer cerrado NO se coma el carrito */
+/* ✅ En portada baja un poco la “oscuridad” para legibilidad */
+.tienda-layout.is-portada::after {
+  background: radial-gradient(
+    circle at center,
+    rgba(0, 0, 0, 0.06),
+    rgba(0, 0, 0, 0.68)
+  );
+}
+
+/* MAIN */
 .tienda-layout-main {
   position: relative;
   z-index: 1;
 
   width: 100%;
-  height: calc(100% - var(--footer-visible-h));
+  height: 100%;
   min-height: 0;
 
   display: grid;
@@ -103,7 +100,9 @@
   column-gap: var(--gap-x);
   align-items: stretch;
 
+  /* ✅ reservar hueco footer sin trucos de height */
   padding: var(--pad-y) var(--pad-x);
+  padding-bottom: calc(var(--pad-y) + var(--footer-visible-h));
   box-sizing: border-box;
 
   overflow: hidden;
@@ -141,7 +140,6 @@
   justify-content: stretch;
 }
 
-/* wrap interno */
 .tienda-shelf-inner {
   width: 100%;
   min-width: 0;
@@ -173,7 +171,7 @@
   animation: shelfExpandIn 420ms cubic-bezier(0.2, 0.9, 0.2, 1) both;
 }
 
-/* SIDEBAR (carrito) */
+/* SIDEBAR */
 .tienda-layout-sidebar {
   min-width: 0;
   min-height: 0;
@@ -182,10 +180,14 @@
   justify-content: flex-end;
   align-items: stretch;
 }
-
+.tienda-cart-wrap {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
 .tienda-sidebar-card {
   position: relative;
-  z-index: 2; /* por encima del fondo */
+  z-index: 2;
 
   width: 100%;
   max-width: var(--sidebar-w);
@@ -199,22 +201,23 @@
 
   box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.7), 0 18px 40px rgba(0, 0, 0, 0.95);
 
-  overflow: hidden;
+  /* ✅ importante: no “cortar” sombras internas */
+  overflow: visible;
 
-  /* ✅ Para que el widget quede arriba y el carrito se ajuste sin cortes */
   display: flex;
   flex-direction: column;
   gap: 0.95rem;
 }
 
-/* ✅ El carrito debe poder encogerse y scroll interno */
+/* ✅ Scroll interno real para el carrito (sin romper altura del sidebar) */
 .tienda-sidebar-card > .carrito-lateral {
   flex: 1;
   min-height: 0;
+  overflow: auto;
 }
 
 /* =========================================================
-   FOOTER CON BORDE DE ROCA (NO CAMBIADO DE LÓGICA)
+   FOOTER
    ========================================================= */
 
 .tienda-footer {
@@ -252,7 +255,6 @@
   cursor: pointer;
 }
 
-/* Botón flecha por encima de la roca */
 .tienda-footer-toggle {
   position: absolute;
   left: 50%;
@@ -335,116 +337,6 @@
   color: #f9e8c7;
 }
 
-.tienda-footer-main {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1.6rem;
-  margin-bottom: 0.4rem;
-}
-
-.tienda-footer-col {
-  flex: 1;
-}
-
-.tienda-footer-about {
-  flex: 1.5;
-}
-
-.tienda-footer-links ul {
-  list-style: none;
-  padding: 0;
-  margin: 0.15rem 0 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.12rem;
-}
-
-.tienda-footer-links a {
-  text-decoration: none;
-  color: #fbe2b5;
-  transition: color 160ms ease, text-shadow 160ms ease;
-}
-
-.tienda-footer-links a:hover {
-  color: #ffffff;
-  text-shadow: 0 0 4px rgba(255, 227, 173, 0.9);
-}
-
-.tienda-footer-contact p {
-  margin-bottom: 0.3rem;
-}
-
-.tienda-footer-title {
-  font-weight: 700;
-  font-size: 0.8rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  margin: 0 0 0.2rem;
-  color: #ffe3b0;
-}
-
-.tienda-footer-highlight {
-  color: #ffeabf;
-}
-
-.tienda-footer-discord-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-
-  padding: 0.25rem 0.75rem;
-  border-radius: 3px;
-  border: 1px solid rgba(0, 0, 0, 0.85);
-
-  background: linear-gradient(180deg, #f09a2a, #c46a12);
-  box-shadow: 0 5px 12px rgba(0, 0, 0, 0.9);
-
-  font-weight: 600;
-  font-size: 0.78rem;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-
-  color: #fdfcff;
-  text-decoration: none;
-
-  transition: transform 120ms ease, box-shadow 120ms ease, filter 120ms ease;
-}
-
-.tienda-footer-discord-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 7px 16px rgba(0, 0, 0, 0.95);
-  filter: brightness(1.05);
-}
-
-.tienda-footer-bottom {
-  margin-top: 0.25rem;
-  padding-top: 0.3rem;
-
-  border-top: 1px solid rgba(249, 229, 191, 0.25);
-
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.45rem 1rem;
-  align-items: center;
-  justify-content: space-between;
-
-  font-size: 0.7rem;
-  opacity: 0.96;
-}
-
-.tienda-footer-designed {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-}
-
-.tienda-footer-logo {
-  height: 18px;
-  width: auto;
-  display: block;
-}
-
 /* =========================================================
    MOBILE
    ========================================================= */
@@ -467,7 +359,8 @@
     opacity: 1;
   }
 
-  .tienda-layout::after {
+  .tienda-layout::after,
+  .tienda-layout.is-portada::after {
     background: linear-gradient(
         rgba(230, 210, 170, 0.1),
         rgba(230, 210, 170, 0.1)
@@ -475,7 +368,6 @@
       radial-gradient(circle at center, rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0.25));
   }
 
-  /* En móvil NO restamos footer, porque el footer se vuelve bloque normal abajo */
   .tienda-layout-main {
     height: auto;
     min-height: 0;
@@ -527,7 +419,6 @@
     padding-right: 0;
   }
 
-  /* Footer en móvil: bloque normal debajo */
   .tienda-footer {
     position: static;
     pointer-events: auto;
@@ -561,20 +452,171 @@
     margin: 0 auto;
     padding: 0.8rem 0.85rem 0.6rem;
   }
+}
 
-  .tienda-footer-main {
-    flex-direction: column;
-    gap: 0.65rem;
-  }
+/* =========================
+   FX: Fly-to-basket
+   ========================= */
+.tienda-fly-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9990;
+}
 
-  .tienda-footer-col {
-    text-align: left;
+@keyframes flyToBasket {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.95;
+    filter: drop-shadow(0 10px 12px rgba(0, 0, 0, 0.35));
   }
+  65% { opacity: 0.95; }
+  100% {
+    transform: translate(var(--dx), var(--dy)) scale(0.18);
+    opacity: 0;
+    filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.15));
+  }
+}
 
-  .tienda-footer-bottom {
-    flex-direction: column;
-    align-items: flex-start;
-  }
+.tienda-flyer {
+  position: fixed;
+  width: 52px;
+  height: 52px;
+  object-fit: contain;
+  transform-origin: center;
+  animation: flyToBasket 680ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+/* =========================
+   Checkout Modal (tu bloque tal cual)
+   ========================= */
+.tienda-checkout-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(10, 8, 5, 0.72);
+  backdrop-filter: blur(6px);
+  display: grid;
+  place-items: center;
+  padding: 16px;
+}
+
+.tienda-checkout-modal {
+  width: min(980px, 100%);
+  height: min(760px, 92vh);
+  border-radius: 14px;
+  overflow: hidden;
+  background: radial-gradient(circle at 30% 10%, rgba(255,255,255,0.08), transparent 55%),
+              rgba(22, 16, 10, 0.92);
+  border: 1px solid rgba(255, 220, 150, 0.18);
+  box-shadow: 0 30px 70px rgba(0,0,0,0.55);
+  display: flex;
+  flex-direction: column;
+}
+
+.tcm-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.tcm-title {
+  font-family: "IM Fell English SC", serif;
+  letter-spacing: 0.08em;
+  color: #fbe8c5;
+  font-size: 18px;
+}
+
+.tcm-close {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(0,0,0,0.25);
+  color: #f7e7c7;
+  cursor: pointer;
+}
+
+.tcm-sub {
+  padding: 10px 16px 0;
+  color: rgba(255,255,255,0.75);
+  font-size: 13px;
+}
+
+.tcm-body {
+  position: relative;
+  flex: 1;
+  padding: 12px 16px 14px;
+}
+
+.tcm-loading {
+  position: absolute;
+  top: 14px;
+  left: 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 2;
+  background: rgba(0,0,0,0.25);
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 12px;
+  padding: 8px 10px;
+  backdrop-filter: blur(8px);
+}
+
+.tcm-spinner {
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  border: 2px solid rgba(255,255,255,0.25);
+  border-top-color: rgba(255,255,255,0.9);
+  animation: tcmSpin 900ms linear infinite;
+}
+
+@keyframes tcmSpin { to { transform: rotate(360deg); } }
+
+.tcm-loading-text {
+  color: rgba(255,255,255,0.82);
+  font-size: 13px;
+}
+
+.tcm-iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  border-radius: 12px;
+  background: rgba(0,0,0,0.18);
+}
+
+.tcm-actions {
+  display: flex;
+  gap: 10px;
+  padding: 12px 16px 16px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.tcm-btn {
+  border-radius: 12px;
+  padding: 10px 12px;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(0,0,0,0.22);
+  color: rgba(255,255,255,0.9);
+  cursor: pointer;
+}
+
+.tcm-btn--primary {
+  background: linear-gradient(180deg, rgba(0,155,228,0.85), rgba(0,155,228,0.55));
+  border-color: rgba(0,155,228,0.65);
+  color: #07121a;
+  font-weight: 700;
+}
+
+.tcm-btn--ghost {
+  background: transparent;
 }
 
 @media (max-height: 760px) {

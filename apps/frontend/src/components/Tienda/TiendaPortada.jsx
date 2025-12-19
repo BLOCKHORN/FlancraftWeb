@@ -1,4 +1,3 @@
-// src/components/Tienda/TiendaPortada.jsx
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { PORTADA_TILES, AVISO_PADRES_TILE } from "./tiendaHelpers";
@@ -17,19 +16,22 @@ const TiendaPortada = () => {
     return tile.image || tile.fallbackImage || "/assets/tienda/producto-placeholder.png";
   };
 
-  const handleFootnoteKey = (e) => {
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      go(AVISO_PADRES_TILE);
-    }
-  };
-
   return (
     <div className="tienda-portada-wrapper">
       <section className="tienda-portada-panel" aria-label="Portada de la tienda">
-        {/* ✅ SLOT SIMÉTRICO (no overlay) */}
-        <div className="tienda-portada-oferta-slot">
-          <TiendaOfertaCountdown />
+        {/* CONTEXTO (selector de servidor/modo) */}
+        <header className="tienda-portada-head">
+          <h1 className="tienda-portada-title">Elige el servidor</h1>
+          <p className="tienda-portada-subtitle">
+            Compra rangos y extras para el modo de juego que uses.
+          </p>
+        </header>
+
+        {/* OFERTA (menos protagonista) */}
+        <div className="tienda-portada-oferta-slot" aria-label="Ofertas activas">
+          <div className="tienda-portada-oferta">
+            <TiendaOfertaCountdown />
+          </div>
         </div>
 
         {/* GRID PRINCIPAL */}
@@ -69,9 +71,8 @@ const TiendaPortada = () => {
             type="button"
             className="tienda-portada-footnote-link"
             onClick={() => go(AVISO_PADRES_TILE)}
-            onKeyDown={handleFootnoteKey}
           >
-            Información para madres, padres y tutores
+            Información para padres y tutores
           </button>
         </p>
       </section>

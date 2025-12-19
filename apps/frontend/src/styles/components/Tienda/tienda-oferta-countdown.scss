@@ -1,7 +1,19 @@
 @use "../../base/_variables" as *;
 
+/* Utilidad accesible */
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
 .tienda-oferta-banner {
-  /* 👌 mismo ancho maestro que la portada */
   width: 100%;
   max-width: var(--portadaW, 720px);
   margin: 0 auto;
@@ -10,7 +22,9 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.35rem;
+
+  position: relative;
 
   .tienda-oferta-artWrap {
     width: 100%;
@@ -18,32 +32,39 @@
     justify-content: center;
   }
 
+  /* ✅ menos prota: sin levitación infinita y con sombra más discreta */
   .tienda-oferta-image {
     width: 100%;
-    max-width: 260px; // 🔽 más pequeña para respirar
+    max-width: 220px;
     height: auto;
     image-rendering: crisp-edges;
-    filter: drop-shadow(0 4px 14px rgba(0, 0, 0, 0.55));
-    animation: oferta-banner-levitate 3s ease-in-out infinite;
+    opacity: 0.92;
+    filter: drop-shadow(0 3px 10px rgba(0, 0, 0, 0.45));
+    transform: translateY(0);
+    transition: transform 0.22s ease-out, opacity 0.22s ease-out;
   }
 
-  /* ===========================
-     Panel fino debajo del banner
-     =========================== */
+  /* si quieres un toque sin “ruido” constante */
+  &:hover .tienda-oferta-image {
+    transform: translateY(-2px);
+    opacity: 0.98;
+  }
+
   .tienda-oferta-panel {
     width: 100%;
     max-width: 520px;
-    padding: 0.65rem 0.9rem 0.8rem;
-    border-radius: 3px; // <= 3px
+    padding: 0.62rem 0.85rem 0.78rem;
+    border-radius: 3px;
 
+    /* ✅ menos contraste y menos brillo */
     background:
-      radial-gradient(circle at 30% 0%, rgba(255, 220, 150, 0.2), transparent 55%),
-      linear-gradient(180deg, rgba(24, 18, 12, 0.96), rgba(10, 7, 4, 0.9));
+      radial-gradient(circle at 30% 0%, rgba(255, 220, 150, 0.14), transparent 55%),
+      linear-gradient(180deg, rgba(24, 18, 12, 0.92), rgba(10, 7, 4, 0.86));
 
-    border: 1px solid rgba(255, 220, 160, 0.38);
+    border: 1px solid rgba(255, 220, 160, 0.28);
     box-shadow:
-      0 10px 22px rgba(0, 0, 0, 0.6),
-      inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      0 8px 16px rgba(0, 0, 0, 0.46),
+      inset 0 1px 0 rgba(255, 255, 255, 0.06);
 
     backdrop-filter: blur(3px);
   }
@@ -51,14 +72,13 @@
   .tienda-oferta-header {
     display: flex;
     align-items: center;
-    justify-content: center; // ⭐ cluster centrado
-    column-gap: 0.7rem;
+    justify-content: center;
+    column-gap: 0.65rem;
     row-gap: 0.3rem;
-    margin-bottom: 0.35rem;
+    margin-bottom: 0.32rem;
     flex-wrap: wrap;
   }
 
-  /* TIMER CENTRADO */
   .tienda-oferta-timer-inline {
     display: flex;
     align-items: center;
@@ -70,62 +90,56 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    min-width: 48px;
+    min-width: 46px;
   }
 
   .timer-value {
-    font-family: "Press Start 2P", system-ui, -apple-system, BlinkMacSystemFont,
-      "Segoe UI", sans-serif;
-    font-size: 1.05rem; // 🔥 un pelín más grande
-    letter-spacing: 0.14em;
+    font-family: "Press Start 2P", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 1rem;
+    letter-spacing: 0.12em;
     font-variant-numeric: tabular-nums;
     color: #fffbe8;
-    text-shadow: 0 3px 8px rgba(0, 0, 0, 0.8);
+    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.75);
   }
 
   .timer-unit {
     font-family: "IM Fell English SC", serif;
     font-size: 0.55rem;
     letter-spacing: 0.14em;
-    color: rgba(255, 235, 200, 0.9);
+    color: rgba(255, 235, 200, 0.88);
   }
 
   .timer-sep {
-    font-family: "Press Start 2P", system-ui, -apple-system, BlinkMacSystemFont,
-      "Segoe UI", sans-serif;
-    font-size: 0.8rem;
-    color: rgba(255, 235, 200, 0.8);
+    font-family: "Press Start 2P", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 0.78rem;
+    color: rgba(255, 235, 200, 0.75);
     margin-top: 0.1rem;
   }
 
-  /* BADGE DESCUENTO ROJO, PEGADO PERO SIMÉTRICO */
   .tienda-oferta-percent {
     font-family: "IM Fell English SC", serif;
     font-size: 0.9rem;
     letter-spacing: 0.06em;
     color: #ffe9c7;
 
-    padding: 0.22rem 0.65rem;
+    padding: 0.2rem 0.6rem;
     border-radius: 3px;
-    background: linear-gradient(
-      180deg,
-      #f46a3a 0%,
-      #d8472e 45%,
-      #8f261f 100%
-    );
-    border: 1px solid rgba(0, 0, 0, 0.75);
+
+    /* ✅ menos “agresivo” */
+    background: linear-gradient(180deg, #e96a45 0%, #c54633 55%, #7f231f 100%);
+    border: 1px solid rgba(0, 0, 0, 0.7);
     box-shadow:
-      0 4px 10px rgba(0, 0, 0, 0.55),
-      inset 0 1px 0 rgba(255, 230, 190, 0.7);
+      0 3px 8px rgba(0, 0, 0, 0.45),
+      inset 0 1px 0 rgba(255, 230, 190, 0.55);
   }
 
   .tienda-oferta-sub {
     margin-top: 0.05rem;
-    margin-bottom: 0.4rem;
+    margin-bottom: 0.38rem;
     text-align: center;
     font-size: 0.78rem;
-    color: rgba(255, 244, 220, 0.9);
-    letter-spacing: 0.04em;
+    color: rgba(255, 244, 220, 0.86);
+    letter-spacing: 0.03em;
   }
 
   .tienda-oferta-bar {
@@ -134,46 +148,43 @@
     height: 8px;
     border-radius: 3px;
     overflow: hidden;
-    background: rgba(255, 235, 200, 0.12);
-    border: 1px solid rgba(255, 220, 160, 0.3);
-    box-shadow: inset 0 1px 0 rgba(0, 0, 0, 0.55);
+    background: rgba(255, 235, 200, 0.10);
+    border: 1px solid rgba(255, 220, 160, 0.22);
+    box-shadow: inset 0 1px 0 rgba(0, 0, 0, 0.5);
   }
 
   .tienda-oferta-barFill {
     display: block;
     height: 100%;
     border-radius: 3px;
-    background: linear-gradient(
-      90deg,
-      #ffb347 0%,
-      #ffcc33 25%,
-      #ffee88 50%,
-      #ffcc33 75%,
-      #ff9a3c 100%
-    );
+
+    /* ✅ menos glow */
+    background: linear-gradient(90deg, #ffb347 0%, #ffcc33 50%, #ff9a3c 100%);
     box-shadow:
-      0 0 16px rgba(255, 214, 140, 0.7),
-      0 0 24px rgba(255, 140, 60, 0.55);
+      0 0 10px rgba(255, 214, 140, 0.35);
+
     transition: width 0.6s ease-out;
   }
 
+  /* ✅ Animaciones más suaves/lentas (y menos opacas) */
   .tienda-oferta-barPattern {
     position: absolute;
     inset: -4px 0;
     background-image: linear-gradient(
       45deg,
-      rgba(255, 255, 255, 0.18) 25%,
+      rgba(255, 255, 255, 0.10) 25%,
       transparent 25%,
       transparent 50%,
-      rgba(255, 255, 255, 0.18) 50%,
-      rgba(255, 255, 255, 0.18) 75%,
+      rgba(255, 255, 255, 0.10) 50%,
+      rgba(255, 255, 255, 0.10) 75%,
       transparent 75%,
       transparent
     );
     background-size: 18px 18px;
     mix-blend-mode: soft-light;
-    animation: oferta-bar-stripes 1.4s linear infinite;
+    animation: oferta-bar-stripes 2.2s linear infinite;
     pointer-events: none;
+    opacity: 0.75;
   }
 
   .tienda-oferta-barShine {
@@ -182,52 +193,32 @@
     background: linear-gradient(
       90deg,
       rgba(255, 255, 255, 0),
-      rgba(255, 255, 255, 0.28),
+      rgba(255, 255, 255, 0.18),
       rgba(255, 255, 255, 0)
     );
     transform: translateX(-70%);
-    animation: oferta-bar-shine 2s ease-in-out infinite;
+    animation: oferta-bar-shine 3.2s ease-in-out infinite;
     pointer-events: none;
+    opacity: 0.85;
   }
 }
 
-/* Animación de levitación */
-@keyframes oferta-banner-levitate {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-6px);
-  }
-}
-
-/* Animaciones barra */
 @keyframes oferta-bar-shine {
-  0% {
-    transform: translateX(-80%);
-    opacity: 0;
-  }
-  25% {
-    opacity: 1;
-  }
-  100% {
-    transform: translateX(120%);
-    opacity: 0;
-  }
+  0%   { transform: translateX(-80%); opacity: 0; }
+  22%  { opacity: 1; }
+  100% { transform: translateX(120%); opacity: 0; }
 }
 
 @keyframes oferta-bar-stripes {
-  0% {
-    background-position: 0 0;
-  }
-  100% {
-    background-position: 36px 0;
-  }
+  0%   { background-position: 0 0; }
+  100% { background-position: 36px 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .tienda-oferta-banner .tienda-oferta-image,
+  .tienda-oferta-banner:hover .tienda-oferta-image {
+    transform: none;
+  }
+
   .tienda-oferta-banner .tienda-oferta-barShine,
   .tienda-oferta-banner .tienda-oferta-barPattern {
     animation: none !important;
@@ -236,11 +227,11 @@
 
 @media (max-width: 720px) {
   .tienda-oferta-banner {
-    gap: 0.35rem;
+    gap: 0.32rem;
   }
 
   .tienda-oferta-banner .tienda-oferta-image {
-    max-width: 230px;
+    max-width: 200px;
   }
 
   .tienda-oferta-banner .tienda-oferta-panel {
@@ -252,7 +243,7 @@
   }
 
   .tienda-oferta-banner .timer-value {
-    font-size: 0.95rem;
+    font-size: 0.92rem;
   }
 
   .tienda-oferta-banner .timer-unit {

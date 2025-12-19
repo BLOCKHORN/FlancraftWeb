@@ -5,8 +5,13 @@
   50% { transform: translateY(-2px); }
 }
 
+/* ✅ Reduced motion SOLO para este componente */
 @media (prefers-reduced-motion: reduce) {
-  * { animation: none !important; transition: none !important; }
+  .tienda-portada-wrapper * {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* =========================
@@ -14,12 +19,11 @@
    ========================= */
 
 .tienda-portada-wrapper {
-  /* ✅ ancho maestro compartido por OFERTA y GRID (simetría real) */
   --portadaW: min(720px, 100%);
 
   width: 100%;
   margin: 5rem auto;
-  padding: 3.5rem 1rem 3.2rem;
+  padding: 2.6rem 1rem 2.2rem;
   border-radius: 0.7rem;
 
   background:
@@ -46,18 +50,41 @@
       radial-gradient(circle at 90% 10%, rgba(255, 120, 200, 0.06), transparent 44%);
     pointer-events: none;
     mix-blend-mode: screen;
-    opacity: 0.9;
+    opacity: 0.85;
   }
 }
 
-/* ✅ panel (por si quieres usarlo en JSX) */
 .tienda-portada-panel {
   position: relative;
   z-index: 1;
 }
 
 /* =========================
-   SLOT OFERTA (simétrico)
+   HEAD (contexto)
+   ========================= */
+
+.tienda-portada-head {
+  width: var(--portadaW);
+  margin: 0 auto 0.9rem;
+}
+
+.tienda-portada-title {
+  margin: 0;
+  font-size: clamp(1.15rem, 2.2vw, 1.6rem);
+  letter-spacing: 0.02em;
+  text-shadow: 0 1px 0 rgba(0,0,0,0.55);
+}
+
+.tienda-portada-subtitle {
+  margin: 0.35rem 0 0;
+  font-size: 0.92rem;
+  color: rgba(251, 232, 197, 0.90);
+  opacity: 0.95;
+  text-shadow: 0 1px 0 rgba(0,0,0,0.55);
+}
+
+/* =========================
+   SLOT OFERTA (menos protagonista)
    ========================= */
 
 .tienda-portada-oferta-slot {
@@ -67,16 +94,18 @@
   justify-content: center;
   align-items: center;
 
-  /* Reserva espacio para que NO invada */
-  min-height: clamp(56px, 6vw, 78px);
+  min-height: clamp(52px, 6vw, 74px);
+  margin-bottom: clamp(12px, 1.6vw, 20px);
+}
 
-  /* separación con el grid */
-  margin-bottom: clamp(10px, 1.4vw, 18px);
+.tienda-portada-oferta {
+  width: 100%;
+  display: grid;
+  place-items: center;
 
-  /* “sube un pelín” de forma responsiva (no hardcode fijo) */
-  & > * {
-    transform: translateY(calc(-1 * clamp(4px, 0.7vw, 12px)));
-  }
+  /* Baja protagonismo: menos brillo/contraste */
+  opacity: 0.92;
+  filter: saturate(0.92) contrast(0.96);
 }
 
 /* =========================
@@ -91,7 +120,7 @@
 
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 1.25rem 1.65rem;
+  gap: 1.1rem 1.35rem;
   justify-items: center;
   position: relative;
   z-index: 1;
@@ -100,12 +129,16 @@
 .tienda-portada-item {
   display: flex;
   justify-content: center;
+  width: 100%;
 }
 
+/* =========================
+   BOTÓN/TILE (área clicable clara)
+   ========================= */
+
 .tienda-portada-btn {
+  width: 100%;
   border: none;
-  background: none;
-  padding: 0;
   color: inherit;
   font: inherit;
   cursor: pointer;
@@ -113,23 +146,48 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.55rem;
+  gap: 0.6rem;
 
-  animation: shelfFloat 2.6s ease-in-out infinite;
+  padding: 0.85rem 0.9rem 0.95rem;
+  border-radius: 12px;
+
+  background: rgba(0, 0, 0, 0.16);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.06),
+    0 10px 18px rgba(0, 0, 0, 0.18);
+
+  transition:
+    transform 0.22s ease-out,
+    background 0.22s ease-out,
+    box-shadow 0.22s ease-out;
+
+  /* ❌ ya no animación infinita */
+  animation: none;
 
   &:focus-visible {
     outline: none;
-  }
-
-  &:focus-visible .tienda-portada-icon {
     box-shadow:
-      0 0 0 3px rgba(255, 255, 255, 0.20),
-      0 0 0 6px rgba(64, 200, 255, 0.18);
+      0 0 0 3px rgba(255, 255, 255, 0.18),
+      0 0 0 6px rgba(64, 200, 255, 0.16),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.06),
+      0 10px 18px rgba(0, 0, 0, 0.18);
   }
 }
 
+.tienda-portada-btn:hover {
+  transform: translateY(-2px);
+  background: rgba(0, 0, 0, 0.24);
+
+  /* ✅ animación solo cuando interactúas */
+  animation: shelfFloat 1.15s ease-in-out;
+}
+
+.tienda-portada-btn:active {
+  transform: translateY(-1px);
+}
+
 /* =========================
-   ICONO (NO ENCAPSULADO)
+   ICONO (mantienes tu “glow”, pero controlado)
    ========================= */
 
 .tienda-portada-icon {
@@ -141,8 +199,8 @@
   overflow: visible;
 
   transition:
-    transform 0.45s cubic-bezier(0.22, 0.61, 0.36, 1),
-    box-shadow 0.35s ease-out;
+    transform 0.40s cubic-bezier(0.22, 0.61, 0.36, 1),
+    box-shadow 0.30s ease-out;
 
   &::before {
     content: "";
@@ -152,16 +210,16 @@
     border-radius: 999px;
     background: radial-gradient(
       circle,
-      rgba(255, 255, 255, 0.95) 0%,
-      rgba(255, 255, 255, 0.65) 28%,
-      rgba(255, 255, 255, 0.0) 65%
+      rgba(255, 255, 255, 0.92) 0%,
+      rgba(255, 255, 255, 0.55) 30%,
+      rgba(255, 255, 255, 0.0) 66%
     );
     opacity: 0;
-    transform: scale(0.7);
+    transform: scale(0.78);
     mix-blend-mode: screen;
     transition:
-      opacity 0.45s ease-out,
-      transform 0.45s cubic-bezier(0.22, 0.61, 0.36, 1);
+      opacity 0.40s ease-out,
+      transform 0.40s cubic-bezier(0.22, 0.61, 0.36, 1);
   }
 }
 
@@ -175,34 +233,28 @@
   filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.85));
 
   transition:
-    transform 0.45s cubic-bezier(0.22, 0.61, 0.36, 1),
-    filter 0.35s cubic-bezier(0.22, 0.61, 0.36, 1);
+    transform 0.40s cubic-bezier(0.22, 0.61, 0.36, 1),
+    filter 0.30s cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 
 .tienda-portada-btn:hover .tienda-portada-icon {
-  transform: translateY(-8px);
+  transform: translateY(-6px);
 }
 .tienda-portada-btn:hover .tienda-portada-icon::before {
-  opacity: 0.95;
-  transform: scale(1.18);
+  opacity: 0.85;
+  transform: scale(1.12);
 }
 .tienda-portada-btn:hover .tienda-portada-icon img {
-  transform: translateY(-12px) scale(1.06) rotate(-2deg);
+  transform: translateY(-10px) scale(1.05) rotate(-2deg);
   filter:
-    brightness(1.18)
-    drop-shadow(0 0 0 #ffffff)
-    drop-shadow(0 0 4px #ffffff)
-    drop-shadow(0 0 10px rgba(255, 255, 255, 0.95))
-    drop-shadow(0 0 20px rgba(255, 255, 255, 0.75))
-    drop-shadow(0 12px 18px rgba(0, 0, 0, 0.95));
-}
-
-.tienda-portada-btn:active .tienda-portada-icon {
-  transform: translateY(-3px);
+    brightness(1.14)
+    drop-shadow(0 0 4px rgba(255, 255, 255, 0.55))
+    drop-shadow(0 0 12px rgba(255, 255, 255, 0.55))
+    drop-shadow(0 10px 16px rgba(0, 0, 0, 0.90));
 }
 
 /* =========================
-   BOTÓN TIPO "RANKS"
+   LABEL tipo “ranks”
    ========================= */
 
 .tienda-portada-label {
@@ -229,8 +281,8 @@
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
 
   transition:
-    transform 0.22s ease-out,
-    box-shadow 0.22s ease-out;
+    transform 0.18s ease-out,
+    box-shadow 0.18s ease-out;
 
   &::before,
   &::after {
@@ -258,7 +310,7 @@
   margin: 1.05rem auto 0;
   font-size: 0.82rem;
   color: #f3ddc4;
-  opacity: 0.9;
+  opacity: 0.92;
   position: relative;
   z-index: 1;
   text-shadow: 0 1px 0 rgba(0, 0, 0, 0.55);
@@ -284,6 +336,11 @@
   cursor: pointer;
 
   transition: color 0.15s ease-out;
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(64, 200, 255, 0.25);
+  }
 }
 
 .tienda-portada-footnote-link:hover {
@@ -296,7 +353,7 @@
 
 @media (max-width: 1024px) {
   .tienda-portada-wrapper { --portadaW: min(660px, 100%); }
-  .tienda-portada-grid { gap: 1rem 1.1rem; }
+  .tienda-portada-grid { gap: 0.95rem 1.05rem; }
 }
 
 @media (max-width: 960px) {
@@ -320,11 +377,19 @@
 
   .tienda-portada-wrapper { --portadaW: min(520px, 100%); }
 
+  .tienda-portada-subtitle {
+    color: rgba(43, 25, 14, 0.82);
+    text-shadow: none;
+  }
+
   .tienda-portada-grid { gap: 0.7rem 0.7rem; }
 
   .tienda-portada-btn {
-    gap: 0.45rem;
-    animation-duration: 3.0s;
+    gap: 0.5rem;
+    background: rgba(0, 0, 0, 0.06);
+    box-shadow:
+      inset 0 0 0 1px rgba(0, 0, 0, 0.06),
+      0 10px 18px rgba(0, 0, 0, 0.12);
   }
 
   .tienda-portada-icon img {
@@ -350,6 +415,11 @@
 
   .tienda-portada-footnote-link {
     font-size: 0.76rem;
+    color: rgba(43, 25, 14, 0.92);
+  }
+
+  .tienda-portada-footnote-link:hover {
+    color: rgba(0, 0, 0, 0.92);
   }
 }
 

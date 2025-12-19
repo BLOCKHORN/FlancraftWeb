@@ -1026,6 +1026,200 @@ const webhookHandler = async (req, res) => {
     }
   }
 })();
+/* =========================
+   Headless: Basic Auth helpers (NUEVO)
+   ========================= */
+function getHeadlessBasic() {
+  const HEADLESS_PUBLIC = String(process.env.TEBEX_HEADLESS_PUBLIC_TOKEN || "").trim();
+  const HEADLESS_PRIVATE = String(process.env.TEBEX_HEADLESS_PRIVATE_KEY || "").trim();
+
+  const BASIC =
+    HEADLESS_PUBLIC && HEADLESS_PRIVATE
+      ? Buffer.from(`${HEADLESS_PUBLIC}:${HEADLESS_PRIVATE}`).toString("base64")
+      : "";
+
+  if (!BASIC) {
+    const err = new Error(
+      "Faltan credenciales Headless Basic Auth (TEBEX_HEADLESS_PUBLIC_TOKEN / TEBEX_HEADLESS_PRIVATE_KEY)."
+    );
+    err.status = 500;
+    throw err;
+  }
+
+  return BASIC;
+}
+
+async function headlessFetchJson({ rid, url, method = "GET", body = null }) {
+  const BASIC = getHeadlessBasic();
+
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), 15000);
+
+  try {
+    const res = await fetch(url, {
+      method,
+      signal: ctrl.signal,
+      headers: {
+        "User-Agent": "FlanCraftStore/1.0",
+        Accept: "application/json",
+        Authorization: `Basic ${BASIC}`,
+        ...(body ? { "Content-Type": "application/json" } : {}),
+      },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+
+    const text = await res.text().catch(() => "");
+    let data = null;
+    try {
+      data = text ? JSON.parse(text) : null;
+    } catch {
+      data = null;
+    }
+
+    if (!res.ok) {
+      const err = new Error(`HTTP ${res.status} ${res.statusText}`);
+      err.status = res.status;
+      err.data = data;
+      err.raw = (text || "").slice(0, 800);
+      throw err;
+    }
+
+    return data;
+  } finally {
+    clearTimeout(t);
+  }
+}
+
+/* =========================
+   Basket: aplicar / quitar códigos (NUEVO)
+   ========================= */
+const obtenerBasketHeadless = async (req, res) => {
+  const rid = crypto.randomBytes(4).toString("hex");
+  try {
+    const token = String(WEBSTORE_TOKEN || "").trim();
+    if (!token) return res.status(500).json({ ok: false, error: "Falta TEBEX_WEBSTORE_TOKEN." });
+
+    const ident = String(req.params.ident || "").trim();
+    if (!ident) return res.status(400).json({ ok: false, error: "Falta basket ident." });
+
+    const url = `https://headless.tebex.io/api/accounts/${encodeURIComponent(token)}/baskets/${encodeURIComponent(
+      ident
+    )}`;
+
+    const data = await headlessFetchJson({ rid, url });
+    return res.json({ ok: true, basket: data?.data || data });
+  } catch (e) {
+    return res.status(e?.status || 500).json({
+      ok: false,
+      error: "No se pudo obtener el basket.",
+      detail: e?.data || e?.raw || e?.message || "unknown",
+    });
+  }
+};
+
+const aplicarCodigoBasket = async (req, res) => {
+  const rid = crypto.randomBytes(4).toString("hex");
+
+  try {
+    const token = String(WEBSTORE_TOKEN || "").trim();
+    if (!token) return res.status(500).json({ ok: false, error: "Falta TEBEX_WEBSTORE_TOKEN." });
+
+    const ident = String(req.params.ident || "").trim();
+    if (!ident) return res.status(400).json({ ok: false, error: "Falta basket ident." });
+
+    const tipo = String(req.body?.tipo || "").toLowerCase().trim(); // "creator" | "coupon" | "giftcard"
+    const codigo = String(req.body?.codigo || "").trim();
+
+    if (!["creator", "coupon", "giftcard"].includes(tipo)) {
+      return res.status(400).json({ ok: false, error: 'Tipo inválido. Usa "creator", "coupon" o "giftcard".' });
+    }
+    if (!codigo) return res.status(400).json({ ok: false, error: "Falta código." });
+
+    let path = "";
+    let body = null;
+
+    if (tipo === "creator") {
+      path = "creator-codes"; // ✅ plural (Headless)
+      body = { creator_code: codigo };
+    } else if (tipo === "coupon") {
+      path = "coupons";
+      body = { coupon_code: codigo };
+    } else if (tipo === "giftcard") {
+      path = "giftcards";
+      body = { card_number: codigo };
+    }
+
+    const url = `https://headless.tebex.io/api/accounts/${encodeURIComponent(token)}/baskets/${encodeURIComponent(
+      ident
+    )}/${path}`;
+
+    const data = await headlessFetchJson({ rid, url, method: "POST", body });
+    return res.json({ ok: true, basket: data?.data || data });
+  } catch (e) {
+    const status = e?.status || 500;
+
+    // 422/400 suelen ser "código inválido/no aplicable"
+    if (status === 422 || status === 400) {
+      return res.status(400).json({
+        ok: false,
+        error: "Código inválido o no aplicable.",
+        detail: e?.data || e?.raw || e?.message || "unknown",
+      });
+    }
+
+    return res.status(status).json({
+      ok: false,
+      error: "No se pudo aplicar el código.",
+      detail: e?.data || e?.raw || e?.message || "unknown",
+    });
+  }
+};
+
+const quitarCodigoBasket = async (req, res) => {
+  const rid = crypto.randomBytes(4).toString("hex");
+
+  try {
+    const token = String(WEBSTORE_TOKEN || "").trim();
+    if (!token) return res.status(500).json({ ok: false, error: "Falta TEBEX_WEBSTORE_TOKEN." });
+
+    const ident = String(req.params.ident || "").trim();
+    if (!ident) return res.status(400).json({ ok: false, error: "Falta basket ident." });
+
+    const tipo = String(req.body?.tipo || "").toLowerCase().trim(); // "creator" | "coupon" | "giftcard"
+    const codigo = String(req.body?.codigo || "").trim(); // solo necesario en giftcard (remove requiere card_number)
+
+    if (!["creator", "coupon", "giftcard"].includes(tipo)) {
+      return res.status(400).json({ ok: false, error: 'Tipo inválido. Usa "creator", "coupon" o "giftcard".' });
+    }
+
+    let path = "";
+    let body = null;
+
+    if (tipo === "creator") {
+      path = "creator-codes/remove";
+    } else if (tipo === "coupon") {
+      path = "coupons/remove";
+    } else if (tipo === "giftcard") {
+      path = "giftcards/remove";
+      if (!codigo) return res.status(400).json({ ok: false, error: "Para quitar giftcard hace falta el card_number." });
+      body = { card_number: codigo };
+    }
+
+    const url = `https://headless.tebex.io/api/accounts/${encodeURIComponent(token)}/baskets/${encodeURIComponent(
+      ident
+    )}/${path}`;
+
+    await headlessFetchJson({ rid, url, method: "POST", body });
+
+    return res.json({ ok: true });
+  } catch (e) {
+    return res.status(e?.status || 500).json({
+      ok: false,
+      error: "No se pudo quitar el código.",
+      detail: e?.data || e?.raw || e?.message || "unknown",
+    });
+  }
+};
 
 module.exports = {
   obtenerDatosTienda,
@@ -1041,4 +1235,7 @@ module.exports = {
   webhookPing,
   webhookHandler,
   health,
+    obtenerBasketHeadless,
+  aplicarCodigoBasket,
+  quitarCodigoBasket,
 };

@@ -12,34 +12,38 @@ const {
   obtenerTopDonator,
   obtenerPagosRecientes,
   obtenerSidebarRaw,
+  obtenerBasketHeadless,
+  aplicarCodigoBasket,
+  quitarCodigoBasket,
   webhookPing,
   webhookHandler,
   health,
 } = require("../controllers/tiendatebex.controller");
 
 router.get("/health", health);
-router.get("/sidebar-raw", obtenerSidebarRaw);
 
+router.get("/sidebar-raw", obtenerSidebarRaw);
 router.get("/top-donator", obtenerTopDonator);
 router.get("/recent-payments", obtenerPagosRecientes);
 
 router.get("/sale", obtenerSaleActiva);
 router.get("/sale/:server", obtenerSaleActiva);
 
-// ✅ Package detail (ANTES del "/:server")
 router.get("/package/:id", obtenerDescripcionProducto);
 router.get("/:server/package/:id", obtenerDescripcionProducto);
 
 router.post("/checkout", crearPedidoTebex);
 
+router.get("/basket/:ident", obtenerBasketHeadless);
+router.post("/basket/:ident/code", aplicarCodigoBasket);
+router.post("/basket/:ident/code/remove", quitarCodigoBasket);
+
 router.post("/cache/refresh", forzarActualizarCache);
 router.post("/cache/refresh/:server", forzarActualizarCache);
 
-// ✅ Webhook ANTES de "/" y "/:server" (si no, lo pisa)
 router.get("/webhook", webhookPing);
 router.post("/webhook", webhookHandler);
 
-// ✅ Datos tienda al final (para no pisar rutas)
 router.get("/", obtenerDatosTienda);
 router.get("/:server", obtenerDatosTienda);
 

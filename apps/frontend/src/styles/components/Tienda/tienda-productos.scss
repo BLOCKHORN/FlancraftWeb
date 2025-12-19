@@ -43,6 +43,8 @@
 
   box-sizing: border-box;
   color: var(--ink);
+
+  /* ✅ evita que nada “pinte” fuera del panel */
   overflow: hidden;
 
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -59,7 +61,13 @@
   flex: 1 1 auto;
   min-height: 0;
   padding: 0.75rem;
+
+  /* ✅ scroll solo vertical, nunca horizontal */
   overflow-y: auto;
+  overflow-x: hidden;
+
+  /* ✅ evita “scroll fantasma” por overscroll */
+  overscroll-behavior: contain;
 
   scrollbar-width: thin;
   scrollbar-color: #b1834b transparent;
@@ -161,6 +169,7 @@
   gap: 0.4rem;
 }
 
+/* ✅ clave: el grid NO debe provocar overflow horizontal/vertical */
 .tp-section__grid {
   border-radius: 0.55rem;
   padding: 0.65rem;
@@ -172,6 +181,9 @@
   gap: 0.55rem;
 
   grid-template-columns: clamp(160px, 18vw, 220px) repeat(3, minmax(0, 1fr));
+
+  /* ✅ recorta hovers/glows que se salgan y creen scroll fantasma */
+  overflow: hidden;
 }
 
 .tp-section__grid--two {
@@ -207,6 +219,8 @@
   border: 2px solid rgba(0, 0, 0, 0.25);
   background: rgba(0, 0, 0, 0.03);
   box-shadow: 0 2px 0 rgba(0, 0, 0, 0.18);
+
+  /* ✅ ya recorta */
   overflow: hidden;
 
   display: flex;
@@ -221,6 +235,10 @@
   place-items: center;
   padding: 0.2rem;
   min-height: 170px;
+
+  /* ✅ importantísimo para glows/hover */
+  overflow: hidden;
+  border-radius: 0.55rem;
 }
 
 .tp-media img {
@@ -275,7 +293,8 @@
   gap: 0.55rem;
   min-height: 150px;
 
-  overflow: visible;
+  /* ✅ antes estaba visible: eso te crea scroll fantasma */
+  overflow: hidden;
 
   transition: transform 0.08s ease, filter 0.12s ease, box-shadow 0.12s ease;
 }
@@ -289,8 +308,6 @@
     0 2px 0 rgba(0, 0, 0, 0.18),
     0 0 0 2px rgba(47, 225, 122, 0.18);
 }
-
-.tp-variant.is-details-open { z-index: 30; }
 
 .tp-variant__center {
   display: flex;
@@ -349,6 +366,8 @@
 
   box-shadow: 0 4px 0 var(--goodShadow);
   cursor: pointer;
+
+  /* ✅ ya estaba, lo mantenemos */
   overflow: hidden;
 
   transition: transform 0.08s ease, box-shadow 0.08s ease, filter 0.12s ease, opacity 0.12s ease;
@@ -452,6 +471,9 @@
   grid-template-columns: clamp(200px, 24vw, 300px) minmax(0, 1fr);
   gap: 0.75rem;
 
+  /* ✅ recorta overflow que crea scroll fantasma */
+  overflow: hidden;
+
   @media (max-width: 780px) { grid-template-columns: minmax(0, 1fr); }
 }
 
@@ -461,6 +483,7 @@
   border: 2px solid rgba(0, 0, 0, 0.25);
   background: rgba(0, 0, 0, 0.03);
   box-shadow: 0 2px 0 rgba(0, 0, 0, 0.18);
+
   overflow: hidden;
 
   display: flex;
@@ -475,6 +498,9 @@
   place-items: center;
   min-height: 210px;
   padding: 0.15rem;
+
+  overflow: hidden;
+  border-radius: 0.55rem;
 }
 
 .tp-stack-hero__imgwrap img {
@@ -512,7 +538,7 @@
 
 .tp-stack-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr)); /* 3 y 3 con 6 items */
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.55rem;
   align-content: flex-start;
 
@@ -533,7 +559,8 @@
   align-items: stretch;
   gap: 0.35rem;
 
-  overflow: visible;
+  /* ✅ antes visible */
+  overflow: hidden;
 
   transition: transform 0.08s ease, filter 0.12s ease, box-shadow 0.12s ease;
 }
@@ -546,8 +573,6 @@
     0 2px 0 rgba(0, 0, 0, 0.18),
     0 0 0 2px rgba(47, 225, 122, 0.18);
 }
-
-.tp-stack-card.is-details-open { z-index: 30; }
 
 .tp-stack-card__qty {
   font-weight: 950;
@@ -569,6 +594,9 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 0.8rem;
+
+  /* ✅ evita overflow lateral de hovers */
+  overflow: hidden;
 }
 
 .tp-card {
@@ -584,13 +612,13 @@
   flex-direction: column;
   gap: 0.45rem;
 
-  overflow: visible;
+  /* ✅ antes visible: esto era el culpable típico del scroll horizontal/vertical */
+  overflow: hidden;
 
   transition: transform 0.08s ease, filter 0.12s ease, box-shadow 0.12s ease;
 }
 
 .tp-card:hover { filter: brightness(1.03); transform: translateY(-1px); }
-.tp-card.is-details-open { z-index: 30; }
 
 .tp-card__imgwrap {
   position: relative;
@@ -598,6 +626,10 @@
   place-items: center;
   padding: 0.15rem;
   min-height: 150px;
+
+  /* ✅ recorta img cuando rota/escala */
+  overflow: hidden;
+  border-radius: 0.55rem;
 }
 
 .tp-card__imgwrap img {
@@ -643,272 +675,6 @@
 }
 
 /* ======================================
-   DETAILS = POPOVER OVERLAY (NO REFLOW)
-   ====================================== */
-
-.tp-details {
-  position: absolute;
-  left: 10px;
-  right: 10px;
-  top: calc(100% - 6px);
-  z-index: 50;
-
-  border-radius: 0.55rem;
-  background: rgba(248, 234, 204, 0.99);
-  border: 1px solid rgba(139, 112, 70, 0.85);
-
-  box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.45),
-    0 14px 26px rgba(0, 0, 0, 0.35);
-
-  max-height: 0;
-  opacity: 0;
-  transform: translateY(-10px) scale(0.98);
-  overflow: hidden;
-  pointer-events: none;
-
-  transition: max-height 0.22s ease, opacity 0.22s ease, transform 0.22s ease;
-}
-
-.tp-details--open {
-  max-height: 520px;
-  opacity: 1;
-  transform: translateY(0) scale(1);
-  pointer-events: auto;
-}
-
-.tp-details__inner {
-  padding: 0.7rem 0.85rem 0.85rem;
-  font-size: 0.82rem;
-  line-height: 1.35;
-  color: var(--inkSoft);
-
-  max-height: 470px;
-  overflow: auto;
-
-  scrollbar-width: thin;
-  scrollbar-color: #b1834b transparent;
-
-  &::-webkit-scrollbar { width: 9px; }
-  &::-webkit-scrollbar-track { background: rgba(212, 183, 135, 0.7); }
-  &::-webkit-scrollbar-thumb {
-    background: #a37843;
-    border-radius: 999px;
-  }
-  &::-webkit-scrollbar-thumb:hover { background: #c18d53; }
-
-  p { margin: 0 0 0.35rem; }
-  ul, ol { margin: 0.2rem 0 0.45rem 1.1rem; padding: 0; }
-  li { margin-bottom: 0.15rem; }
-  a {
-    color: #87602f;
-    font-weight: 700;
-    text-decoration: underline;
-    text-decoration-thickness: 1px;
-  }
-  img {
-    max-width: 100%;
-    height: auto;
-    display: block;
-    margin: 0.35rem auto;
-  }
-}
-
-/* ======================================
-   PRODUCT_DATA (TU HTML) -> “SUPER CURRADO”
-   ====================================== */
-
-.tp-details__inner {
-  .prod-desc {
-    border-radius: 0.65rem;
-    border: 2px solid rgba(90, 59, 23, 0.35);
-    background: linear-gradient(180deg, rgba(255,255,255,0.40), rgba(255,255,255,0.06));
-    box-shadow:
-      inset 0 1px 0 rgba(255,255,255,0.55),
-      0 10px 18px rgba(0,0,0,0.18);
-    padding: 0.8rem;
-  }
-
-  .prod-hero {
-    border-radius: 0.65rem;
-    border: 1px solid rgba(120, 86, 44, 0.45);
-    background:
-      radial-gradient(circle at 30% 0%, rgba(255, 220, 165, 0.25), transparent 60%),
-      linear-gradient(180deg, rgba(58, 40, 22, 0.07), rgba(58, 40, 22, 0.02));
-    padding: 0.7rem 0.75rem;
-    margin-bottom: 0.7rem;
-  }
-
-  .prod-hero__top {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.35rem;
-    margin-bottom: 0.45rem;
-  }
-
-  .prod-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    padding: 0.22rem 0.5rem;
-    border-radius: 999px;
-    border: 1px solid rgba(54, 38, 24, 0.45);
-    background: rgba(255, 255, 255, 0.35);
-    font-weight: 900;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    font-size: 0.68rem;
-    color: rgba(42, 26, 16, 0.9);
-  }
-
-  .prod-pill--rank {
-    background: rgba(35, 111, 201, 0.14);
-    border-color: rgba(35, 111, 201, 0.45);
-  }
-
-  .prod-pill--hot {
-    background: rgba(143, 47, 39, 0.16);
-    border-color: rgba(143, 47, 39, 0.55);
-    color: rgba(120, 20, 12, 0.95);
-  }
-
-  .prod-hero__title {
-    margin: 0.1rem 0 0.2rem;
-    font-family: "Press Start 2P", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    font-size: 1.05rem;
-    letter-spacing: 0.06em;
-    color: #2a1a10;
-    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.25);
-  }
-
-  .prod-hero__subtitle {
-    margin: 0;
-    color: rgba(58, 40, 22, 0.78);
-    font-weight: 650;
-    line-height: 1.35;
-  }
-
-  .prod-kpis {
-    margin-top: 0.65rem;
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.45rem;
-  }
-
-  .prod-kpi {
-    border-radius: 0.55rem;
-    border: 1px solid rgba(90, 59, 23, 0.28);
-    background: rgba(255, 255, 255, 0.28);
-    padding: 0.45rem 0.55rem;
-  }
-
-  .prod-kpi__label {
-    font-size: 0.68rem;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: rgba(0,0,0,0.55);
-    font-weight: 900;
-  }
-
-  .prod-kpi__value {
-    font-size: 0.9rem;
-    font-weight: 950;
-    color: #2a1a10;
-    margin-top: 0.12rem;
-  }
-
-  .prod-section {
-    margin-top: 0.65rem;
-    padding-top: 0.55rem;
-    border-top: 1px dashed rgba(90, 59, 23, 0.35);
-  }
-
-  .prod-section__title {
-    margin: 0 0 0.35rem;
-    font-weight: 950;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    font-size: 0.74rem;
-    color: rgba(42, 26, 16, 0.92);
-  }
-
-  .prod-list {
-    margin: 0.25rem 0 0;
-    padding-left: 1.05rem;
-  }
-
-  .prod-cmds {
-    margin: 0.25rem 0 0;
-    padding-left: 1.05rem;
-
-    li {
-      margin-bottom: 0.3rem;
-    }
-
-    code {
-      display: inline-block;
-      padding: 0.12rem 0.35rem;
-      border-radius: 0.35rem;
-      border: 1px solid rgba(0,0,0,0.22);
-      background: rgba(0,0,0,0.06);
-      font-weight: 900;
-      color: rgba(42, 26, 16, 0.92);
-    }
-  }
-
-  .prod-cmds__sep {
-    opacity: 0.7;
-    margin: 0 0.25rem;
-  }
-
-  .prod-cooldown {
-    font-style: normal;
-    font-weight: 900;
-    color: rgba(143, 47, 39, 0.9);
-    margin-left: 0.25rem;
-  }
-
-  .prod-note {
-    margin: 0.25rem 0 0.35rem;
-    border-radius: 0.55rem;
-    padding: 0.5rem 0.6rem;
-    border: 1px solid rgba(35, 111, 201, 0.35);
-    background: rgba(35, 111, 201, 0.10);
-    color: rgba(42, 26, 16, 0.86);
-    font-weight: 650;
-  }
-
-  .prod-kit {
-    margin: 0.25rem 0 0;
-    padding-left: 1.05rem;
-
-    li {
-      margin-bottom: 0.22rem;
-    }
-  }
-
-  .prod-footer {
-    margin-top: 0.75rem;
-    padding-top: 0.6rem;
-    border-top: 1px dashed rgba(90, 59, 23, 0.35);
-  }
-
-  .prod-footer__tip {
-    border-radius: 0.55rem;
-    border: 1px solid rgba(25, 140, 40, 0.35);
-    background: rgba(25, 140, 40, 0.09);
-    padding: 0.55rem 0.6rem;
-    font-weight: 750;
-    color: rgba(42, 26, 16, 0.85);
-  }
-
-  /* Colores por rango (toque dopamina) */
-  .prod-desc--nova .prod-hero { box-shadow: 0 0 0 2px rgba(35,111,201,.12) inset; }
-  .prod-desc--alpha .prod-hero { box-shadow: 0 0 0 2px rgba(112,45,175,.12) inset; }
-  .prod-desc--inmortal .prod-hero { box-shadow: 0 0 0 2px rgba(143,47,39,.12) inset; }
-}
-
-/* ======================================
    EMBED
    ====================================== */
 
@@ -918,6 +684,7 @@
   display: flex;
   flex-direction: column;
 }
+
 .tienda-productos.tp-embed .tienda-productos__body {
   flex: 1 1 auto;
   min-height: 0;

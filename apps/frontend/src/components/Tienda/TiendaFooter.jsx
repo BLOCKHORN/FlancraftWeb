@@ -1,78 +1,53 @@
-// src/components/Tienda/TiendaFooter.jsx
-import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
+import "../../styles/components/Tienda/tienda-footer.scss";
 
-const STRIP_HEIGHT = 20; // altura visible de la roca cuando está contraído
+const PEEK_HEIGHT = 20; // lo que se ve cuando está cerrado (coincide con CSS)
 
 const TiendaFooter = () => {
   const [abierto, setAbierto] = useState(false);
-  const [offset, setOffset] = useState(0);
-  const innerRef = useRef(null);
 
   const toggle = () => setAbierto((v) => !v);
-  const cerrar = () => setAbierto(false);
 
-  // Calcula cuánto hay que esconder para que sólo se vea la roca
-  useLayoutEffect(() => {
-    const calcOffset = () => {
-      const el = innerRef.current;
-      if (!el) return;
-      const h = el.getBoundingClientRect().height;
-      const hidden = h - STRIP_HEIGHT;
-      setOffset(hidden > 0 ? hidden : 0);
-    };
-
-    calcOffset();
-    window.addEventListener("resize", calcOffset);
-    return () => window.removeEventListener("resize", calcOffset);
-  }, []);
-
-  // CERRAR AL HACER CLICK FUERA DEL FOOTER
+  // Cerrar al hacer click fuera (solo cuando está abierto)
   useEffect(() => {
     if (!abierto) return;
 
-    const handleClickOutside = (event) => {
-      const el = innerRef.current;
-      if (!el) return;
-
-      // Si el click NO está dentro del bloque deslizante, cerramos
-      if (!el.contains(event.target)) {
-        setAbierto(false);
-      }
+    const onDown = (e) => {
+      const footer = document.querySelector(".tienda-footer");
+      if (!footer) return;
+      if (!footer.contains(e.target)) setAbierto(false);
     };
 
-    document.addEventListener("mousedown", handleClickOutside);
-    document.addEventListener("touchstart", handleClickOutside);
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("touchstart", onDown);
 
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-      document.removeEventListener("touchstart", handleClickOutside);
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("touchstart", onDown);
     };
   }, [abierto]);
 
   return (
     <footer
-      className={[
-        "tienda-footer",
-        abierto ? "is-open" : "is-closed",
-      ].join(" ")}
+      className={["tienda-footer", abierto ? "is-open" : "is-closed"].join(" ")}
+      style={{ "--footer-peek-h": `${PEEK_HEIGHT}px` }}
     >
-      {/* BLOQUE DESLIZANTE: ROCA + TEXTO */}
-      <div
-        ref={innerRef}
-        className="tienda-footer-inner"
-        style={{ "--footer-offset": `${offset}px` }}
-      >
+      <div className="tienda-footer-inner">
         {/* Imagen de roca (clickable) */}
-        <div className="tienda-footer-strip" onClick={toggle}>
+        <div className="tienda-footer-strip" onClick={toggle} role="button" tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              toggle();
+            }
+          }}
+          aria-label={abierto ? "Ocultar información legal" : "Mostrar información legal"}
+        >
           <button
             type="button"
             className="tienda-footer-toggle"
             aria-expanded={abierto}
-            aria-label={
-              abierto
-                ? "Ocultar información legal"
-                : "Mostrar información legal"
-            }
+            aria-label={abierto ? "Ocultar información legal" : "Mostrar información legal"}
             onClick={(e) => {
               e.stopPropagation();
               toggle();
@@ -86,7 +61,6 @@ const TiendaFooter = () => {
         <div className="tienda-footer-panel">
           <div className="tienda-footer-bar">
             <div className="tienda-footer-main">
-              {/* Columna SOBRE NOSOTROS */}
               <div className="tienda-footer-col tienda-footer-about">
                 <h4 className="tienda-footer-title">Sobre nosotros</h4>
                 <p>
@@ -99,28 +73,18 @@ const TiendaFooter = () => {
                 </p>
               </div>
 
-              {/* Columna LINKS */}
               <div className="tienda-footer-col tienda-footer-links">
                 <h4 className="tienda-footer-title">Links</h4>
                 <nav>
                   <ul>
-                    <li>
-                      <a href="/terminos">Términos</a>
-                    </li>
-                    <li>
-                      <a href="/privacidad">Privacidad</a>
-                    </li>
-                    <li>
-                      <a href="/impressum">Impressum</a>
-                    </li>
-                    <li>
-                      <a href="/contacto">Contacta con nosotros</a>
-                    </li>
+                    <li><a href="/terminos">Términos</a></li>
+                    <li><a href="/privacidad">Privacidad</a></li>
+                    <li><a href="/impressum">Impressum</a></li>
+                    <li><a href="/contacto">Contacta con nosotros</a></li>
                   </ul>
                 </nav>
               </div>
 
-              {/* Columna CONTACTO / DISCORD */}
               <div className="tienda-footer-col tienda-footer-contact">
                 <h4 className="tienda-footer-title">Contacta con nosotros</h4>
                 <p>
@@ -139,7 +103,6 @@ const TiendaFooter = () => {
               </div>
             </div>
 
-            {/* Franja inferior: copyright, disclaimer y crédito diseño */}
             <div className="tienda-footer-bottom">
               <span>Todos los derechos reservados. 2025 © FlanCraft</span>
               <span>
