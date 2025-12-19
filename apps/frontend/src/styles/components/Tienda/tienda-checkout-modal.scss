@@ -1,166 +1,116 @@
+/* src/styles/components/Tienda/tienda-checkout-modal.scss */
+
 @media (prefers-reduced-motion: reduce) {
-  .tcm * { animation: none !important; transition: none !important; }
+  .wcc * { animation: none !important; transition: none !important; }
 }
 
-.tcm{
+.wcc{
   position: fixed;
   inset: 0;
-  z-index: 9999;
+  z-index: 99999;
   display: grid;
   place-items: center;
+
+  /* margen exterior como Wynncraft (aire alrededor) */
+  padding: 5vh 4vw;
+
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .18s ease;
 }
 
-.tcm__backdrop{
+.wcc--open{
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.wcc__backdrop{
   position: absolute;
   inset: 0;
-  background:
-    radial-gradient(circle at 50% 35%, rgba(0,0,0,.35), rgba(0,0,0,.78) 55%, rgba(0,0,0,.90));
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-}
-
-.tcm__close{
-  position: absolute;
-  top: 18px;
-  right: 18px;
-  width: 42px;
-  height: 42px;
-  border: 0;
-  background: rgba(0,0,0,.60);
-  border-radius: 10px;
-  cursor: pointer;
-  box-shadow: 0 10px 30px rgba(0,0,0,.45);
-  z-index: 2;
-}
-.tcm__close::before,
-.tcm__close::after{
-  content:"";
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 18px;
-  height: 2px;
-  background: rgba(255,255,255,.80);
-  transform-origin: center;
-}
-.tcm__close::before{ transform: translate(-50%,-50%) rotate(45deg); }
-.tcm__close::after { transform: translate(-50%,-50%) rotate(-45deg); }
-.tcm__close:hover{ background: rgba(0,0,0,.78); }
-
-.tcm__panel{
-  position: relative;
-  width: min(980px, 92vw);
-  height: min(820px, 85vh);
-
   background: rgba(0,0,0,.78);
-  box-shadow: 0 30px 80px rgba(0,0,0,.65);
+  /* Wynncraft no se nota “cristal” fuerte: blur suave */
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+
+/* ✅ ESTA ES LA CLAVE:
+   NO hay panel “nuestro”.
+   Solo un contenedor con tamaño Wynncraft-like y sombra, sin header. */
+.wcc__embed{
+  position: relative;
+
+  /* Ajuste 1:1 tipo Wynncraft (más compacto que tu versión) */
+  --wccW: 840px;
+  --wccH: 760px;
+
+  width: min(var(--wccW), 94vw);
+  height: min(var(--wccH), 88vh);
+
+  /* Wynncraft: bordes casi rectos, sin “card” moderno */
+  border-radius: 0;
   overflow: hidden;
 
-  display: grid;
-  grid-template-rows: 1fr auto;
+  /* sombra exterior como el popup real */
+  box-shadow: 0 28px 80px rgba(0,0,0,.72);
 }
 
-.tcm__frame{
+/* El host ES el popup entero */
+.wcc__host{
   position: relative;
   width: 100%;
   height: 100%;
-  background: rgba(0,0,0,.92);
-}
+  overflow: hidden;
 
-.tcm__iframe{
-  display: block;
-  width: 100%;
-  height: 100%;
-  border: 0;
+  /* No metas fondos ni bordes aquí: que se vea 100% como Tebex/Wynncraft */
   background: transparent;
 }
 
-.tcm__loading{
-  height: 100%;
-  display: grid;
-  place-items: center;
-  gap: .6rem;
-  padding: 2.2rem 1.4rem;
-  text-align: center;
-  color: rgba(255,255,255,.92);
-  background: rgba(0,0,0,.72);
-}
-
-.tcm__loading--overlay{
+/* Loading overlay */
+.wcc__loading{
   position: absolute;
   inset: 0;
-  z-index: 1;
-  background: linear-gradient(to bottom, rgba(0,0,0,.92), rgba(0,0,0,.75));
-  pointer-events: none;
+  display: grid;
+  place-items: center;
+  color: rgba(255,255,255,.72);
+  font-size: 12px;
+  background: rgba(0,0,0,.55);
+  z-index: 2;
 }
 
-.tcm__spinner{
-  width: 44px;
-  height: 44px;
+/* Error simple */
+.wcc__error{
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  z-index: 5;
+
+  padding: 10px 10px;
+  border: 1px solid rgba(255,100,100,.22);
+  background: rgba(255,80,80,.10);
+  color: rgba(255,220,220,.92);
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+/* Scrollbars dark (por si Tebex usa scroll interno) */
+.wcc__embed *::-webkit-scrollbar{
+  width: 10px;
+  height: 10px;
+}
+.wcc__embed *::-webkit-scrollbar-thumb{
+  background: rgba(255,255,255,.16);
+  border: 2px solid rgba(0,0,0,.35);
   border-radius: 999px;
-  border: 3px solid rgba(255,255,255,.18);
-  border-top-color: rgba(255,255,255,.75);
-  animation: tcmSpin .9s linear infinite;
 }
-@keyframes tcmSpin { to { transform: rotate(360deg); } }
-
-.tcm__loadingTitle{
-  font-family: "IM Fell English SC", serif;
-  letter-spacing: .10em;
-  font-size: 1.05rem;
-  text-transform: uppercase;
+.wcc__embed *::-webkit-scrollbar-track{
+  background: rgba(0,0,0,.35);
 }
 
-.tcm__loadingHint{
-  font-size: .9rem;
-  opacity: .85;
-  max-width: 520px;
-  line-height: 1.35;
-}
-
-.tcm__footer{
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: .7rem;
-  padding: .85rem .9rem;
-
-  background: rgba(0,0,0,.85);
-  border-top: 1px solid rgba(255,255,255,.10);
-}
-
-.tcm__btn{
-  appearance: none;
-  border: 1px solid rgba(255,255,255,.18);
-  background: rgba(255,255,255,.10);
-  color: rgba(255,255,255,.92);
-  padding: .6rem .9rem;
-  border-radius: 10px;
-  cursor: pointer;
-  text-decoration: none;
-  font-weight: 600;
-  letter-spacing: .02em;
-}
-.tcm__btn:hover{ background: rgba(255,255,255,.14); }
-
-.tcm__btn--ghost{
-  background: rgba(0,0,0,.10);
-}
-.tcm__btn--ghost:hover{
-  background: rgba(255,255,255,.10);
-}
-
+/* Responsive */
 @media (max-width: 560px){
-  .tcm__panel{
-    width: 94vw;
-    height: 86vh;
-  }
-  .tcm__footer{
-    padding: .75rem .75rem;
-  }
-  .tcm__btn{
-    padding: .55rem .75rem;
-    border-radius: 9px;
-    font-size: .95rem;
+  .wcc__embed{
+    --wccW: 94vw;
+    --wccH: 88vh;
   }
 }

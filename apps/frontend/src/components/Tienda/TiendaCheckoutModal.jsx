@@ -1,179 +1,116 @@
 // src/components/Tienda/TiendaCheckoutModal.jsx
-import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import "../../styles/components/Tienda/tienda-checkout-modal.scss";
 
-function ensureTebexScript() {
-  const ID = "tebex-js-v1";
-  const existing = document.getElementById(ID);
-  if (existing) return Promise.resolve(true);
+export default function TiendaCheckoutModal({ open, ident, onClose }) {
+  const hostRef = useRef(null);
+  const [error, setError] = useState("");
+  const [rendered, setRendered] = useState(false);
 
-  return new Promise((resolve, reject) => {
-    const s = document.createElement("script");
-    s.id = ID;
-    s.src = "https://js.tebex.io/v/1.js";
-    s.defer = true;
-    s.onload = () => resolve(true);
-    s.onerror = () => reject(new Error("No se pudo cargar Tebex.js"));
-    document.head.appendChild(s);
-  });
-}
+  const safeIdent = useMemo(() => String(ident || "").trim(), [ident]);
+  const hasIdent = Boolean(safeIdent);
 
-function extractIdentFromUrl(url) {
-  const raw = String(url || "").trim();
-  if (!raw) return "";
-  try {
-    const u = new URL(raw);
-    const path = (u.pathname || "").replace(/^\/+/, "");
-    const ident = path.split("/")[0] || "";
-    return ident.trim();
-  } catch {
-    const m = raw.match(/pay\.tebex\.io\/([^/?#]+)/i);
-    return (m?.[1] || "").trim();
-  }
-}
+  const close = useCallback(() => {
+    // No tocamos el DOM interno (Tebex lo controla)
+    setError("");
+    setRendered(false);
+    onClose?.();
+  }, [onClose]);
 
-function buildPayUrlFromIdent(ident) {
-  const id = String(ident || "").trim();
-  if (!id) return "";
-  return `https://pay.tebex.io/${encodeURIComponent(id)}`;
-}
-
-export default function TiendaCheckoutModal({
-  open,
-  url,
-  ident,
-  onClose,
-  locale = "es_ES",
-  title = "Checkout",
-}) {
-  const panelRef = useRef(null);
-  const footerRef = useRef(null);
-  const checkoutElRef = useRef(null);
-
-  const [scriptReady, setScriptReady] = useState(false);
-  const [embedHeight, setEmbedHeight] = useState(640);
-
-  const checkoutIdent = useMemo(() => {
-    const direct = String(ident || "").trim();
-    if (direct) return direct;
-    return extractIdentFromUrl(url);
-  }, [ident, url]);
-
-  const fallbackPayUrl = useMemo(() => {
-    const u = String(url || "").trim();
-    if (u) return u;
-    return buildPayUrlFromIdent(checkoutIdent);
-  }, [url, checkoutIdent]);
-
-  useEffect(() => {
-    if (!open) return;
-
-    let alive = true;
-    ensureTebexScript()
-      .then(() => alive && setScriptReady(true))
-      .catch(() => alive && setScriptReady(false));
-
-    return () => {
-      alive = false;
-    };
-  }, [open]);
-
+  // ESC para cerrar (como un modal real)
   useEffect(() => {
     if (!open) return;
     const onKey = (e) => {
-      if (e.key === "Escape") onClose?.();
+      if (e.key === "Escape") close();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
+  }, [open, close]);
 
+  // Bloqueo scroll del body
   useEffect(() => {
     if (!open) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
-      document.body.style.overflow = prev;
+      document.body.style.overflow = prev || "";
     };
   }, [open]);
 
-  useLayoutEffect(() => {
+  const mountCheckout = useCallback(() => {
+    const Tebex = window?.Tebex;
+    if (!Tebex?.checkout?.init || !Tebex?.checkout?.render) {
+      setError(
+        "Tebex.js no está cargado. Revisa index.html (https://js.tebex.io/v/1.js)."
+      );
+      return;
+    }
+
+    const host = hostRef.current;
+    if (!host) return;
+
+    // Tamaño EXACTO del contenedor (sin topbars/paddings nuestros)
+    const rect = host.getBoundingClientRect();
+    const w = Math.max(360, Math.floor(rect.width));
+    const h = Math.max(520, Math.floor(rect.height));
+
+    try {
+      Tebex.checkout.init({
+        ident: safeIdent,
+        theme: "dark",
+        locale: "es_ES",
+        colors: [
+          { name: "primary", color: "#6dbf2a" },
+          { name: "secondary", color: "#009BE4" },
+        ],
+      });
+
+      Tebex.checkout.render(host, w, h, false);
+      setRendered(true);
+    } catch (e) {
+      setError(String(e?.message || "No se pudo renderizar el checkout."));
+    }
+  }, [safeIdent]);
+
+  useEffect(() => {
     if (!open) return;
 
-    const measure = () => {
-      const panel = panelRef.current;
-      if (!panel) return;
+    setError("");
+    setRendered(false);
+    if (!hasIdent) return;
 
-      const panelRect = panel.getBoundingClientRect();
-      const footerH = footerRef.current ? footerRef.current.getBoundingClientRect().height : 0;
+    // Espera a que el layout tenga el tamaño final
+    const raf = requestAnimationFrame(() => {
+      const Tebex = window?.Tebex;
+      if (Tebex?.checkout?.init) {
+        mountCheckout();
+      } else {
+        const onLoad = () => mountCheckout();
+        window.addEventListener("load", onLoad, { once: true });
+      }
+    });
 
-      const h = Math.max(520, Math.floor(panelRect.height - footerH));
-      setEmbedHeight(h);
-    };
-
-    measure();
-
-    const ro = new ResizeObserver(measure);
-    if (panelRef.current) ro.observe(panelRef.current);
-    if (footerRef.current) ro.observe(footerRef.current);
-
-    window.addEventListener("resize", measure);
-    return () => {
-      window.removeEventListener("resize", measure);
-      ro.disconnect();
-    };
-  }, [open]);
-
-  if (!open) return null;
-
-  const canRender = scriptReady && !!checkoutIdent;
+    return () => cancelAnimationFrame(raf);
+  }, [open, hasIdent, mountCheckout]);
 
   return (
-    <div className="tcm" role="dialog" aria-modal="true" aria-label={title}>
-      <div className="tcm__backdrop" onClick={onClose} />
+    <div
+      className={`wcc ${open ? "wcc--open" : ""}`}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Checkout"
+      aria-hidden={!open}
+    >
+      <div className="wcc__backdrop" onClick={open ? close : undefined} />
 
-      <button className="tcm__close" type="button" onClick={onClose} aria-label="Cerrar" />
+      {/* Contenedor estilo Wynncraft: sin header ni padding */}
+      <div className="wcc__embed" onClick={(e) => e.stopPropagation()}>
+        {error ? <div className="wcc__error">{error}</div> : null}
 
-      <div className="tcm__panel" ref={panelRef}>
-        {!canRender ? (
-          <div className="tcm__loading" aria-live="polite">
-            <div className="tcm__spinner" aria-hidden="true" />
-            <div className="tcm__loadingTitle">Cargando checkout…</div>
-            <div className="tcm__loadingHint">
-              Si tarda en cargar, prueba “Abrir en nueva pestaña”.
-            </div>
-
-            {fallbackPayUrl ? (
-              <div className="tcm__loadingActions">
-                <a className="tcm__link" href={fallbackPayUrl} target="_blank" rel="noreferrer noopener">
-                  Abrir en nueva pestaña
-                </a>
-              </div>
-            ) : null}
-          </div>
-        ) : (
-          <tebex-checkout
-            ref={checkoutElRef}
-            inline=""
-            ident={checkoutIdent}
-            theme="dark"
-            locale={locale}
-            height={String(embedHeight)}
-            style={{ width: "100%", height: `${embedHeight}px`, display: "block" }}
-          />
-        )}
-
-        <div className="tcm__footer" ref={footerRef}>
-          {fallbackPayUrl ? (
-            <a className="tcm__btn" href={fallbackPayUrl} target="_blank" rel="noreferrer noopener">
-              Abrir en nueva pestaña
-            </a>
-          ) : (
-            <span />
-          )}
-
-          <button className="tcm__btn tcm__btn--ghost" type="button" onClick={onClose}>
-            Cerrar
-          </button>
+        <div className="wcc__host" ref={hostRef}>
+          {!error && hasIdent && open && !rendered ? (
+            <div className="wcc__loading">Loading…</div>
+          ) : null}
         </div>
       </div>
     </div>

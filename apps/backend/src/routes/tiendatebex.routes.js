@@ -15,6 +15,8 @@ const {
   obtenerBasketHeadless,
   aplicarCodigoBasket,
   quitarCodigoBasket,
+  agregarPaqueteBasket,
+  obtenerRecomendaciones,
   webhookPing,
   webhookHandler,
   health,
@@ -34,9 +36,15 @@ router.get("/:server/package/:id", obtenerDescripcionProducto);
 
 router.post("/checkout", crearPedidoTebex);
 
+// Basket (modal wynncraft-like)
 router.get("/basket/:ident", obtenerBasketHeadless);
 router.post("/basket/:ident/code", aplicarCodigoBasket);
 router.post("/basket/:ident/code/remove", quitarCodigoBasket);
+router.post("/basket/:ident/packages", agregarPaqueteBasket);
+
+// Recomendaciones (upsells)
+router.get("/recommendations", obtenerRecomendaciones);
+router.get("/:server/recommendations", obtenerRecomendaciones);
 
 router.post("/cache/refresh", forzarActualizarCache);
 router.post("/cache/refresh/:server", forzarActualizarCache);

@@ -16,7 +16,6 @@ import TiendaPortada from "./TiendaPortada";
 import TiendaCategoriaVista from "./TiendaCategoriaVista";
 import TiendaCarritoLateral from "./TiendaCarritoLateral";
 import TiendaModalJugador from "./TiendaModalJugador";
-import TiendaCheckoutModal from "./TiendaCheckoutModal"; // ✅ NUEVO: componente aparte
 import useTiendaCarrito from "./useTiendaCarrito";
 import TiendaFooter from "./TiendaFooter";
 import TiendaTopDonatorPip from "./TiendaTopDonatorPip";
@@ -48,7 +47,6 @@ const TiendaLayout = () => {
     () => localStorage.getItem("monedaSeleccionada") || "EUR"
   );
 
-  // ✅ Hook carrito (actualizado con cantidades)
   const {
     carrito,
     toggleProducto,
@@ -57,7 +55,6 @@ const TiendaLayout = () => {
     total,
     cambiarCantidad,
     setCantidad,
-    agregar, // (opcional, por si lo quieres usar luego)
   } = useTiendaCarrito(nombreConfirmado);
 
   const location = useLocation();
@@ -72,7 +69,6 @@ const TiendaLayout = () => {
     return parts[1] || "global";
   }, [location.pathname]);
 
-  // ✅ webUser en state (no parse en cada render)
   const [webUser, setWebUser] = useState(() => readWebUser());
 
   useEffect(() => {
@@ -100,7 +96,6 @@ const TiendaLayout = () => {
     prevEsPortadaRef.current = esPortada;
   }, [esPortada]);
 
-  // ✅ Medición robusta de navbar (ResizeObserver + repick)
   useLayoutEffect(() => {
     const host = rootRef.current;
     if (!host) return;
@@ -216,7 +211,7 @@ const TiendaLayout = () => {
   };
 
   // =========================================================
-  // ✅ FX: Fly-to-basket + basket pulse
+  // FX: Fly-to-basket + basket pulse
   // =========================================================
   const [flyers, setFlyers] = useState([]);
   const [basketPulse, setBasketPulse] = useState(false);
@@ -232,7 +227,6 @@ const TiendaLayout = () => {
       const br = basket?.getBoundingClientRect?.();
       if (!br) return;
 
-      // rect viene como centro (x,y). Ajustamos a top-left del flyer (52px)
       const fromX = (Number(rect.x) || 0) - 26;
       const fromY = (Number(rect.y) || 0) - 26;
 
@@ -245,7 +239,6 @@ const TiendaLayout = () => {
 
       setFlyers((prev) => [...prev, { id, img, fromX, fromY, dx, dy }]);
 
-      // ✅ Fallback: si no hay animationend (CSS / reduce motion), lo limpiamos igual
       window.setTimeout(() => {
         setFlyers((prev) => prev.filter((f) => f.id !== id));
       }, 900);
@@ -261,22 +254,6 @@ const TiendaLayout = () => {
 
   const removeFlyer = (id) => {
     setFlyers((prev) => prev.filter((f) => f.id !== id));
-  };
-
-  // =========================================================
-  // ✅ Checkout modal (usando componente aparte)
-  // =========================================================
-  const [checkoutUrl, setCheckoutUrl] = useState("");
-  const [checkoutOpen, setCheckoutOpen] = useState(false);
-
-  const openCheckoutModal = (url) => {
-    setCheckoutUrl(String(url || ""));
-    setCheckoutOpen(true);
-  };
-
-  const closeCheckoutModal = () => {
-    setCheckoutOpen(false);
-    setCheckoutUrl("");
   };
 
   return (
@@ -295,7 +272,7 @@ const TiendaLayout = () => {
         />
       )}
 
-      {/* ✅ Flyers layer */}
+      {/* Flyers layer */}
       <div className="tienda-fly-layer" aria-hidden="true">
         {flyers.map((f) => (
           <img
@@ -315,13 +292,6 @@ const TiendaLayout = () => {
         ))}
       </div>
 
-      {/* ✅ Checkout modal (componente aparte) */}
-      <TiendaCheckoutModal
-        open={checkoutOpen}
-        url={checkoutUrl}
-        onClose={closeCheckoutModal}
-      />
-
       {/* ZONA PRINCIPAL */}
       <main className="tienda-layout-main">
         <section className="tienda-layout-left">
@@ -340,8 +310,6 @@ const TiendaLayout = () => {
                     <TiendaCategoriaVista
                       carrito={carrito}
                       toggleProducto={toggleProducto}
-                      // Si luego quieres cambiar a “sumar +1”:
-                      // agregarProducto={agregar}
                     />
                   }
                 >
@@ -354,7 +322,6 @@ const TiendaLayout = () => {
 
         <aside className="tienda-layout-sidebar">
           <div className="tienda-sidebar-card">
-            {/* ✅ Wrap para anclar el pip al carrito (no a toda la sidebar) */}
             <div className="tienda-cart-wrap">
               <TiendaTopDonatorPip server={serverFromPath} />
 
@@ -364,7 +331,6 @@ const TiendaLayout = () => {
                 eliminarItem={eliminar}
                 vaciarCarrito={vaciar}
                 total={total}
-                // ✅ NUEVO: stepper cantidades
                 onCambiarCantidad={cambiarCantidad}
                 onSetCantidad={setCantidad}
                 nombreConfirmado={nombreConfirmado}
@@ -374,7 +340,7 @@ const TiendaLayout = () => {
                 onAbrirLogin={abrirModalCuenta}
                 onCambiarCuenta={cambiarCuenta}
                 isWebLoggedIn={isWebLoggedIn}
-                onCheckoutUrl={openCheckoutModal}
+                server={serverFromPath}
                 basketPulse={basketPulse}
                 esPortada={esPortada}
               />
