@@ -13,6 +13,7 @@ const {
   obtenerPagosRecientes,
   obtenerSidebarRaw,
   obtenerBasketHeadless,
+  obtenerCheckoutStatus,
   aplicarCodigoBasket,
   quitarCodigoBasket,
   agregarPaqueteBasket,
@@ -51,6 +52,8 @@ router.post("/cache/refresh/:server", forzarActualizarCache);
 
 router.get("/webhook", webhookPing);
 router.post("/webhook", webhookHandler);
+
+router.get("/checkout-status/:ident", obtenerCheckoutStatus);
 
 router.get("/", obtenerDatosTienda);
 router.get("/:server", obtenerDatosTienda);

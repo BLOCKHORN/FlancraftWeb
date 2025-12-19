@@ -239,7 +239,6 @@
 
 .currency-chevron { font-size: 1.05rem; opacity: 0.9; flex: 0 0 auto; }
 
-/* select invisible encima de todo el botón */
 .currency-select {
   position: absolute;
   inset: 0;
@@ -293,10 +292,9 @@
   &::-webkit-scrollbar-thumb:hover { background: #c18d53; }
 }
 
-/* Vacío */
+/* Vacío (DESKTOP/BASE) */
 .basket-empty-state {
   height: 100%;
-  min-height: 210px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -348,9 +346,7 @@
 
   transition: filter 160ms ease, transform 160ms ease;
 
-  &:hover {
-    filter: brightness(1.03);
-  }
+  &:hover { filter: brightness(1.03); }
 }
 
 .basket-item-left { display: flex; align-items: center; gap: 0.5rem; min-width: 0; }
@@ -384,14 +380,6 @@
 .basket-item-price { font-size: 0.8rem; color: #f4dca3; }
 
 .basket-item-right { display: flex; align-items: center; gap: 0.35rem; }
-.basket-item-qty {
-  border-radius: 0.45rem;
-  padding: 0.1rem 0.45rem;
-  font-size: 0.8rem;
-  background: #4b3a2b;
-  color: #fefaf2;
-  font-weight: 900;
-}
 
 /* REMOVE */
 .basket-item-remove {
@@ -495,50 +483,17 @@
   100% { transform: translate3d(430%, 0, 0); opacity: 0; }
 }
 
-/* Vaciar carrito */
-.basket-clear {
-  height: 44px;
-  width: 100%;
-  font-weight: 900;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  font-size: 0.78rem;
-  @include btnPhysics(#5a3a2f, rgba(0,0,0,0.42), #fff3df);
-
-  &:disabled {
-    opacity: 0.42;
-  }
-}
-
-.basket-hint {
-  font-size: 0.74rem;
-  font-weight: 800;
-  color: rgba(0, 0, 0, 0.55);
-  line-height: 1.25;
-}
-
 /* Pulse al recibir un item */
-.carrito-panel.is-pulse {
-  animation: basketPulse 320ms ease-out;
-}
+.carrito-panel.is-pulse { animation: basketPulse 320ms ease-out; }
 @keyframes basketPulse {
   0%   { transform: translateY(0) scale(1); }
   40%  { transform: translateY(-2px) scale(1.01); }
   100% { transform: translateY(0) scale(1); }
 }
 
-/* Reduce motion */
-@media (prefers-reduced-motion: reduce) {
-  .basket-checkout::before { animation: none !important; }
-  .cuenta-btn,
-  .basket-item-remove,
-  .basket-checkout,
-  .basket-clear { transition: none !important; }
-}
 /* =========================
    STEPPER +/- CANTIDAD
    ========================= */
-
 .qty-stepper {
   display: inline-flex;
   align-items: center;
@@ -563,7 +518,6 @@
 
   @include btnPhysics(#7a6a5b, rgba(0,0,0,0.42), #fef7e5);
 
-  /* más “mini” que el resto */
   --btnLift: -4px;
   --btnPress: 2px;
 
@@ -583,19 +537,80 @@
   text-shadow: 0 2px 0 rgba(0, 0, 0, 0.35);
 }
 
-/* RESPONSIVE */
-@media (max-width: 900px) {
-  .carrito-panel {
-    box-shadow:
-      0 0 0 1px rgba(90, 59, 23, 0.35),
-      0 -10px 25px rgba(0, 0, 0, 0.75);
-  }
-  .cuenta-actions { grid-template-columns: 1fr; }
-  .basket-empty-state { min-height: 180px; }
+/* Reduce motion */
+@media (prefers-reduced-motion: reduce) {
+  .basket-checkout::before { animation: none !important; }
+  .cuenta-btn,
+  .basket-item-remove,
+  .basket-checkout { transition: none !important; }
 }
 
-@media (max-width: 480px) {
-  .cuenta-nombre { font-size: 0.98rem; }
-  .cuenta-btn { font-size: 0.73rem; }
-  .basket-title { font-size: 0.92rem; }
+/* =========================================================
+   MOBILE: carrito “compacto” cuando está vacío
+   ========================================================= */
+@media (max-width: 960px) {
+  /* clave: NO forzar 100% altura en el stack móvil */
+  .carrito-lateral {
+    height: auto;
+    min-height: 0;
+  }
+
+  .carrito-panel {
+    height: auto;
+    min-height: 0;
+    gap: 0.55rem;
+    padding: 0.5rem;
+    box-shadow:
+      0 0 0 1px rgba(90, 59, 23, 0.35),
+      0 12px 26px rgba(0, 0, 0, 0.45);
+  }
+
+  /* basket deja de “rellenar” */
+  .basket {
+    flex: 0 0 auto;
+    min-height: 0;
+  }
+
+  /* Lista con límite suave (para que no se coma toda la pantalla) */
+  .basket-list {
+    flex: 0 0 auto;
+    max-height: min(32vh, 260px);
+  }
+
+  /* Vacío: ocupa mínimo (sin icono grande, sin min-height) */
+  .basket.is-empty .basket-list {
+    max-height: none;
+    overflow: hidden;
+    padding: 0.42rem 0.7rem 0.15rem;
+  }
+
+  .basket.is-empty .basket-empty-state {
+    height: auto;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.15rem 0;
+  }
+
+  .basket.is-empty .basket-empty-icon {
+    width: 18px;
+    height: 18px;
+    border-width: 2px;
+    border-radius: 0.35rem;
+
+    &::after { display: none; }
+  }
+
+  .basket.is-empty .basket-empty-text {
+    font-size: 0.78rem;
+    letter-spacing: 0.14em;
+  }
+
+  /* Checkout algo más compacto en móvil */
+  .basket-checkout {
+    height: 56px;
+    font-size: 0.92rem;
+    letter-spacing: 0.13em;
+  }
 }

@@ -4,6 +4,16 @@
   .wcc * { animation: none !important; transition: none !important; }
 }
 
+@keyframes wccPop {
+  0% { transform: translateY(10px) scale(.985); opacity: 0; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+@keyframes wccShine {
+  0%, 100% { opacity: .35; transform: translateX(-18%); }
+  50% { opacity: .55; transform: translateX(18%); }
+}
+
 .wcc{
   position: fixed;
   inset: 0;
@@ -28,40 +38,31 @@
   position: absolute;
   inset: 0;
   background: rgba(0,0,0,.78);
-  /* Wynncraft no se nota “cristal” fuerte: blur suave */
   backdrop-filter: blur(2px);
   -webkit-backdrop-filter: blur(2px);
 }
 
-/* ✅ ESTA ES LA CLAVE:
-   NO hay panel “nuestro”.
-   Solo un contenedor con tamaño Wynncraft-like y sombra, sin header. */
+/* Contenedor: sin header, solo el iframe/checkout */
 .wcc__embed{
   position: relative;
 
-  /* Ajuste 1:1 tipo Wynncraft (más compacto que tu versión) */
   --wccW: 840px;
   --wccH: 760px;
 
   width: min(var(--wccW), 94vw);
   height: min(var(--wccH), 88vh);
 
-  /* Wynncraft: bordes casi rectos, sin “card” moderno */
   border-radius: 0;
   overflow: hidden;
 
-  /* sombra exterior como el popup real */
   box-shadow: 0 28px 80px rgba(0,0,0,.72);
 }
 
-/* El host ES el popup entero */
 .wcc__host{
   position: relative;
   width: 100%;
   height: 100%;
   overflow: hidden;
-
-  /* No metas fondos ni bordes aquí: que se vea 100% como Tebex/Wynncraft */
   background: transparent;
 }
 
@@ -71,8 +72,12 @@
   inset: 0;
   display: grid;
   place-items: center;
-  color: rgba(255,255,255,.72);
+
+  color: rgba(255,255,255,.78);
   font-size: 12px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+
   background: rgba(0,0,0,.55);
   z-index: 2;
 }
@@ -83,7 +88,7 @@
   top: 12px;
   left: 12px;
   right: 12px;
-  z-index: 5;
+  z-index: 10;
 
   padding: 10px 10px;
   border: 1px solid rgba(255,100,100,.22);
@@ -107,10 +112,316 @@
   background: rgba(0,0,0,.35);
 }
 
+/* =========================
+   ✅ RESULT OVERLAY (SUCCESS / MAYBEPAID)
+   ========================= */
+
+.wcc__result{
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+
+  /* Oscurecer un poco el checkout detrás + blur suave */
+  background: radial-gradient(circle at 50% 35%, rgba(0,0,0,.56), rgba(0,0,0,.72));
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+
+.wcc__resultCard{
+  width: min(680px, 92vw);
+  border-radius: 0;
+  overflow: hidden;
+  animation: wccPop .18s ease-out;
+
+  /* “panel” más acorde tienda */
+  background:
+    linear-gradient(180deg, rgba(28, 22, 16, .96), rgba(14, 11, 8, .96));
+  border: 1px solid rgba(255, 236, 190, .10);
+  box-shadow:
+    0 22px 70px rgba(0,0,0,.75),
+    0 0 0 1px rgba(0,0,0,.55) inset;
+
+  position: relative;
+}
+
+/* brillo sutil tipo “barniz” */
+.wcc__resultCard::before{
+  content: "";
+  position: absolute;
+  inset: -2px;
+  background:
+    linear-gradient(90deg,
+      rgba(255,255,255,0) 0%,
+      rgba(255, 232, 185, .10) 40%,
+      rgba(255,255,255,0) 80%);
+  mix-blend-mode: screen;
+  opacity: .35;
+  pointer-events: none;
+  animation: wccShine 3.2s ease-in-out infinite;
+}
+
+/* ribetes arriba/abajo (estilo “marco”) */
+.wcc__resultCard::after{
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(to bottom, rgba(255, 211, 126, .12), rgba(255,255,255,0) 22%),
+    linear-gradient(to top, rgba(255, 211, 126, .10), rgba(255,255,255,0) 22%);
+  opacity: .65;
+}
+
+.wcc__resultTop{
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+
+  background:
+    linear-gradient(180deg, rgba(0,0,0,.35), rgba(0,0,0,0));
+  border-bottom: 1px solid rgba(255, 236, 190, .10);
+}
+
+.wcc__badge{
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  color: #eaf8e3;
+  box-shadow:
+    0 10px 22px rgba(0,0,0,.45),
+    0 0 0 1px rgba(0,0,0,.55) inset;
+}
+
+.wcc__badge--ok{
+  background: linear-gradient(180deg, rgba(109,191,42,.42), rgba(20,80,18,.55));
+  border: 1px solid rgba(109,191,42,.40);
+  text-shadow: 0 1px 0 rgba(0,0,0,.55);
+  box-shadow:
+    0 0 18px rgba(109,191,42,.18),
+    0 10px 22px rgba(0,0,0,.45),
+    0 0 0 1px rgba(0,0,0,.55) inset;
+}
+
+.wcc__badge--warn{
+  background: linear-gradient(180deg, rgba(255, 186, 85, .35), rgba(80, 50, 10, .60));
+  border: 1px solid rgba(255, 186, 85, .32);
+  color: rgba(255, 238, 210, .95);
+}
+
+.wcc__resultTitles{
+  min-width: 0;
+}
+
+.wcc__resultTitle{
+  font-family: "IM Fell English SC", serif;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: rgba(255, 244, 220, .96);
+  font-size: 14px;
+  line-height: 1.1;
+}
+
+.wcc__resultSub{
+  margin-top: 2px;
+  font-size: 12px;
+  color: rgba(255, 238, 210, .72);
+  line-height: 1.25;
+}
+
+.wcc__resultSub b{
+  color: rgba(255, 248, 230, .92);
+  font-weight: 700;
+}
+
+.wcc__resultBody{
+  padding: 14px 16px 16px;
+}
+
+.wcc__hint{
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+
+  padding: 10px 10px;
+  border: 1px solid rgba(0, 155, 228, .16);
+  background: rgba(0, 155, 228, .07);
+  box-shadow: 0 0 0 1px rgba(0,0,0,.45) inset;
+}
+
+.wcc__hintIcon{
+  color: rgba(175, 225, 255, .92);
+  margin-top: 1px;
+}
+
+.wcc__hintText{
+  color: rgba(230, 248, 255, .86);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+/* resumen */
+.wcc__items{
+  margin-top: 12px;
+  padding: 12px 12px 10px;
+  border: 1px solid rgba(255, 236, 190, .12);
+  background: rgba(0,0,0,.22);
+}
+
+.wcc__itemsTitle{
+  font-family: "IM Fell English SC", serif;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: rgba(255, 244, 220, .92);
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+
+.wcc__itemsList{
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.wcc__itemsList li{
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px dashed rgba(255, 236, 190, .10);
+}
+
+.wcc__itemsList li:last-child{
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.wcc__itemName{
+  color: rgba(255, 244, 220, .86);
+  font-size: 12px;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wcc__itemQty{
+  color: rgba(109,191,42,.90);
+  font-weight: 800;
+  font-size: 12px;
+  letter-spacing: .02em;
+}
+
+.wcc__itemsMore{
+  color: rgba(255, 238, 210, .62);
+  font-size: 12px;
+}
+
+.wcc__itemsFoot{
+  margin-top: 8px;
+  font-size: 11px;
+  color: rgba(255, 238, 210, .60);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+/* actions */
+.wcc__actions{
+  margin-top: 12px;
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.wcc__btn{
+  appearance: none;
+  border: 1px solid rgba(255, 236, 190, .18);
+  background: linear-gradient(180deg, rgba(40, 30, 20, .75), rgba(15, 12, 8, .85));
+  color: rgba(255, 244, 220, .90);
+
+  padding: 10px 12px;
+  min-height: 38px;
+
+  font-family: "IM Fell English SC", serif;
+  letter-spacing: .10em;
+  text-transform: uppercase;
+  font-size: 12px;
+
+  box-shadow:
+    0 10px 22px rgba(0,0,0,.35),
+    0 0 0 1px rgba(0,0,0,.45) inset;
+
+  cursor: pointer;
+  transition: transform .12s ease, filter .12s ease, box-shadow .12s ease;
+}
+
+.wcc__btn:hover{
+  filter: brightness(1.05);
+  transform: translateY(-1px);
+  box-shadow:
+    0 14px 30px rgba(0,0,0,.42),
+    0 0 0 1px rgba(0,0,0,.45) inset;
+}
+
+.wcc__btn:active{
+  transform: translateY(0);
+  filter: brightness(.98);
+}
+
+.wcc__btn:focus-visible{
+  outline: none;
+  box-shadow:
+    0 0 0 2px rgba(0, 155, 228, .26),
+    0 0 0 1px rgba(0,0,0,.45) inset,
+    0 14px 30px rgba(0,0,0,.42);
+}
+
+.wcc__btn--primary{
+  border-color: rgba(109,191,42,.42);
+  background: linear-gradient(180deg, rgba(109,191,42,.46), rgba(18,70,18,.78));
+  color: rgba(240, 255, 232, .96);
+  box-shadow:
+    0 0 22px rgba(109,191,42,.14),
+    0 12px 26px rgba(0,0,0,.45),
+    0 0 0 1px rgba(0,0,0,.45) inset;
+}
+
+.wcc__fineprint{
+  margin-top: 10px;
+  font-size: 11px;
+  color: rgba(255, 238, 210, .58);
+  line-height: 1.35;
+  border-top: 1px solid rgba(255, 236, 190, .10);
+  padding-top: 10px;
+}
+
 /* Responsive */
 @media (max-width: 560px){
   .wcc__embed{
     --wccW: 94vw;
     --wccH: 88vh;
+  }
+
+  .wcc__resultCard{
+    width: min(96vw, 680px);
+  }
+
+  .wcc__actions{
+    justify-content: stretch;
+  }
+
+  .wcc__btn{
+    width: 100%;
+    justify-content: center;
+    text-align: center;
   }
 }

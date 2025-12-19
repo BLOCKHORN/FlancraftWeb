@@ -1,3 +1,7 @@
+/* ======================================================================
+   src/styles/components/Tienda/tienda-tebex.scss
+   (tu "tienda-tebex--fusion" + fixes incluidos)
+   ====================================================================== */
 @use "../../base/_variables" as *;
 
 /* =========================================================
@@ -24,23 +28,19 @@
   --frameRadius: 0.85rem;
 
   /* “física” de botones */
-  --btnLift: -7px;      /* hover: sube MUY marcado */
-  --btnPress: 4px;      /* press: baja */
-  --btnShadowRest: 0 4px 0 rgba(0,0,0,0.42);
-  --btnShadowHover:
-    0 9px 0 rgba(0,0,0,0.55),
-    0 16px 32px rgba(0,0,0,0.22);
-  --btnShadowPress: 0 1px 0 rgba(0,0,0,0.62);
+  --btnLift: -7px; /* hover: sube MUY marcado */
+  --btnPress: 4px; /* press: baja */
+  --btnShadowRest: 0 4px 0 rgba(0, 0, 0, 0.42);
+  --btnShadowHover: 0 9px 0 rgba(0, 0, 0, 0.55), 0 16px 32px rgba(0, 0, 0, 0.22);
+  --btnShadowPress: 0 1px 0 rgba(0, 0, 0, 0.62);
 
   /* suavidad */
   --tFast: 160ms;
   --tMed: 220ms;
-  --easeLift: cubic-bezier(0.16, 1, 0.3, 1);     /* súper fluido */
+  --easeLift: cubic-bezier(0.16, 1, 0.3, 1); /* súper fluido */
   --easePress: cubic-bezier(0.2, 0.9, 0.2, 1);
 
-  --shadowOuter:
-    0 0 0 1px rgba(90, 59, 23, 0.35),
-    0 14px 30px rgba(0, 0, 0, 0.65);
+  --shadowOuter: 0 0 0 1px rgba(90, 59, 23, 0.35), 0 14px 30px rgba(0, 0, 0, 0.65);
   --shadowInner: inset 0 1px 0 rgba(255, 255, 255, 0.18);
 }
 
@@ -48,25 +48,49 @@
    Animaciones base
    ========================================================= */
 @keyframes tebexPanelIn {
-  0% { transform: translateY(10px) scale(0.985); opacity: 0.86; }
-  100% { transform: translateY(0) scale(1); opacity: 1; }
+  0% {
+    transform: translateY(10px) scale(0.985);
+    opacity: 0.86;
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
 }
 
 @keyframes tcSideIn {
-  0% { transform: translateX(-10px); opacity: 0; }
-  100% { transform: translateX(0); opacity: 1; }
+  0% {
+    transform: translateX(-10px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 
 @keyframes tcMainIn {
-  0% { transform: translateY(8px); opacity: 0; }
-  100% { transform: translateY(0); opacity: 1; }
+  0% {
+    transform: translateY(8px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 /* rebote SOLO para close (suave) */
 @keyframes btnCloseReleaseBounce {
-  0%   { transform: translateY(var(--btnPress)); }
-  55%  { transform: translateY(-1px); }
-  100% { transform: translateY(0); }
+  0% {
+    transform: translateY(var(--btnPress));
+  }
+  55% {
+    transform: translateY(-1px);
+  }
+  100% {
+    transform: translateY(0);
+  }
 }
 
 /* =========================================================
@@ -91,7 +115,9 @@
 }
 
 @media (max-width: 768px) {
-  .tienda-tebex .tienda-contenido { padding: 1rem 0.9rem 1.2rem; }
+  .tienda-tebex .tienda-contenido {
+    padding: 1rem 0.9rem 1.2rem;
+  }
 }
 
 /* =========================================================
@@ -105,14 +131,13 @@
   justify-content: center;
   z-index: 5;
 
-  background:
-    radial-gradient(
-      circle at center,
-      rgba(0, 0, 0, 0.40) 0%,
-      rgba(0, 0, 0, 0.30) 35%,
-      rgba(0, 0, 0, 0.15) 70%,
-      transparent 100%
-    );
+  background: radial-gradient(
+    circle at center,
+    rgba(0, 0, 0, 0.40) 0%,
+    rgba(0, 0, 0, 0.30) 35%,
+    rgba(0, 0, 0, 0.15) 70%,
+    transparent 100%
+  );
 
   backdrop-filter: blur(1.5px);
   opacity: 0;
@@ -120,7 +145,14 @@
   animation: tiendaOverlayIn 220ms ease-out forwards;
 }
 
-@keyframes tiendaOverlayIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes tiendaOverlayIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
 
 .tienda-loading-inner {
   text-align: center;
@@ -131,8 +163,14 @@
 }
 
 @keyframes tiendaOverlayContentIn {
-  from { opacity: 0; transform: translateY(4px) scale(0.98); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .logo-f-loader {
@@ -142,23 +180,28 @@
 }
 
 .logo-f-loader span {
-  font-family: "IM Fell English SC", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: "IM Fell English SC", system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
   font-size: clamp(4.2rem, 7vw, 6rem);
   font-weight: 700;
   letter-spacing: 0.06em;
   color: transparent;
   -webkit-text-stroke: 2.5px #fdf9e6;
-  text-shadow:
-    0 0 8px rgba(255, 255, 255, 0.9),
-    0 0 18px rgba(255, 244, 196, 0.85),
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.9), 0 0 18px rgba(255, 244, 196, 0.85),
     0 0 30px rgba(255, 244, 196, 0.7);
   animation: fLogoPulse 2.2s ease-in-out infinite;
 }
 
 @keyframes fLogoPulse {
-  0% { transform: translateY(0); }
-  50% { transform: translateY(-2px); }
-  100% { transform: translateY(0); }
+  0% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+  100% {
+    transform: translateY(0);
+  }
 }
 
 .tienda-loading-text {
@@ -244,19 +287,20 @@
   gap: 1rem;
 
   padding: 0.95rem 1rem;
-  background: linear-gradient(
-    to bottom,
-    rgba(0,0,0,0.14),
-    rgba(0,0,0,0.06)
-  ), var(--stoneHead);
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.14), rgba(0, 0, 0, 0.06)),
+    var(--stoneHead);
 
   border-bottom: 2px solid rgba(0, 0, 0, 0.18);
   box-shadow: var(--shadowInner);
   color: #fff;
 }
 
-.tc-head--doc { grid-template-columns: 1fr auto 1fr; }
-.tc-head-spacer { min-width: 1px; }
+.tc-head--doc {
+  grid-template-columns: 1fr auto 1fr;
+}
+.tc-head-spacer {
+  min-width: 1px;
+}
 
 .tc-head-center {
   justify-self: center;
@@ -285,11 +329,9 @@
   height: 44px;
   border-radius: 0.55rem;
 
-  background: radial-gradient(circle at 30% 20%, rgba(255,255,255,0.22), rgba(0,0,0,0.45));
-  border: 2px solid rgba(0,0,0,0.55);
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.18),
-    0 3px 0 rgba(0,0,0,0.55);
+  background: radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.22), rgba(0, 0, 0, 0.45));
+  border: 2px solid rgba(0, 0, 0, 0.55);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 3px 0 rgba(0, 0, 0, 0.55);
 
   display: inline-flex;
   align-items: center;
@@ -304,21 +346,20 @@
   height: 44px;
   object-fit: contain;
   image-rendering: pixelated;
-  filter: drop-shadow(0 3px 0 rgba(0,0,0,0.55));
+  filter: drop-shadow(0 3px 0 rgba(0, 0, 0, 0.55));
 }
 
 .tienda-wc-title {
   margin: 0;
-  font-family: "IM Fell English SC", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: "IM Fell English SC", system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
   font-weight: 900;
   font-size: clamp(1.55rem, 2.2vw, 2.15rem);
   letter-spacing: 0.10em;
   color: #fff;
   line-height: 1.05;
   text-transform: uppercase;
-  text-shadow:
-    0 2px 0 rgba(0,0,0,0.35),
-    0 6px 16px rgba(0,0,0,0.28);
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.35), 0 6px 16px rgba(0, 0, 0, 0.28);
 }
 
 .tc-head-divider {
@@ -327,10 +368,10 @@
   margin: 0.55rem auto 0.45rem;
   background: linear-gradient(
     90deg,
-    rgba(255,255,255,0),
-    rgba(255,255,255,0.48),
-    rgba(255,255,255,0.22),
-    rgba(255,255,255,0)
+    rgba(255, 255, 255, 0),
+    rgba(255, 255, 255, 0.48),
+    rgba(255, 255, 255, 0.22),
+    rgba(255, 255, 255, 0)
   );
   opacity: 0.8;
 }
@@ -341,7 +382,7 @@
   font-size: 0.98rem;
   line-height: 1.25;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  text-shadow: 0 1px 0 rgba(0,0,0,0.25);
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.25);
 }
 
 /* =========================================================
@@ -366,12 +407,8 @@
   filter: saturate(1.02);
 
   will-change: transform, box-shadow, filter;
-  transition:
-    transform var(--tMed) var(--easeLift),
-    box-shadow var(--tMed) var(--easeLift),
-    filter var(--tFast) ease,
-    background var(--tFast) ease,
-    border-color var(--tFast) ease;
+  transition: transform var(--tMed) var(--easeLift), box-shadow var(--tMed) var(--easeLift),
+    filter var(--tFast) ease, background var(--tFast) ease, border-color var(--tFast) ease;
 }
 
 .tienda-wc-close:hover {
@@ -402,8 +439,12 @@
     gap: 0.7rem;
     text-align: center;
   }
-  .tc-head-actions { justify-self: center; }
-  .tc-head-spacer { display: none; }
+  .tc-head-actions {
+    justify-self: center;
+  }
+  .tc-head-spacer {
+    display: none;
+  }
 }
 
 /* =========================================================
@@ -458,11 +499,7 @@
 }
 
 /* =========================================================
-   BOTÓN CATEGORÍA (SIN rebote, con “segundo reposo hundido”)
-   - reposo
-   - hover: sube
-   - click: hunde
-   - al soltar: SE QUEDA HUNDIDO gracias a :focus (y/o .is-active)
+   BOTÓN CATEGORÍA
    ========================================================= */
 .tc-side-item {
   position: relative;
@@ -492,29 +529,22 @@
   box-shadow: var(--btnShadowRest);
 
   will-change: transform, box-shadow, filter;
-  transition:
-    transform var(--tMed) var(--easeLift),
-    box-shadow var(--tMed) var(--easeLift),
-    filter var(--tFast) ease,
-    border-color var(--tFast) ease,
-    background var(--tFast) ease;
+  transition: transform var(--tMed) var(--easeLift), box-shadow var(--tMed) var(--easeLift),
+    filter var(--tFast) ease, border-color var(--tFast) ease, background var(--tFast) ease;
 }
 
-/* hover (solo cuando NO está hundido) */
 .tc-side-item:hover {
   transform: translateY(var(--btnLift)) translateZ(0);
   box-shadow: var(--btnShadowHover);
   filter: brightness(1.06);
 }
 
-/* mouse down */
 .tc-side-item:active {
   transform: translateY(var(--btnPress)) translateZ(0);
   box-shadow: var(--btnShadowPress);
   filter: brightness(0.98);
 }
 
-/* “segundo reposo hundido”: inmediato al soltar por FOCUS + estado real por .is-active */
 .tc-side-item:focus,
 .tc-side-item.is-active {
   transform: translateY(var(--btnPress)) translateZ(0);
@@ -524,7 +554,6 @@
   filter: brightness(1.02);
 }
 
-/* si está hundido, NO debe levantar al hover */
 .tc-side-item:focus:hover,
 .tc-side-item.is-active:hover {
   transform: translateY(var(--btnPress)) translateZ(0);
@@ -532,8 +561,9 @@
   filter: brightness(1.05);
 }
 
-/* quitamos outline feo al focus normal, dejamos solo accesible */
-.tc-side-item:focus { outline: none; }
+.tc-side-item:focus {
+  outline: none;
+}
 .tc-side-item:focus-visible {
   outline: 2px solid rgba(210, 176, 113, 0.65);
   outline-offset: 2px;
@@ -549,9 +579,7 @@
 
   background: radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.18), rgba(0, 0, 0, 0.35));
   border: 2px solid rgba(0, 0, 0, 0.42);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.16),
-    0 3px 0 rgba(0, 0, 0, 0.45);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16), 0 3px 0 rgba(0, 0, 0, 0.45);
 }
 
 .tc-side-item-ico {
@@ -602,9 +630,17 @@
 }
 
 @keyframes tcShine {
-  0% { transform: translateX(-220%); opacity: 0; }
-  18% { opacity: 0.45; }
-  100% { transform: translateX(520%); opacity: 0; }
+  0% {
+    transform: translateX(-220%);
+    opacity: 0;
+  }
+  18% {
+    opacity: 0.45;
+  }
+  100% {
+    transform: translateX(520%);
+    opacity: 0;
+  }
 }
 
 .tc-side-hint {
@@ -662,9 +698,7 @@
   background: rgba(25, 16, 8, 0.10);
   border: 1px solid rgba(0, 0, 0, 0.18);
   border-radius: 0.75rem;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.18),
-    0 10px 22px rgba(0, 0, 0, 0.18);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 10px 22px rgba(0, 0, 0, 0.18);
 }
 
 .tc-empty-title {
@@ -701,8 +735,12 @@
 /* =========================================================
    FUSIÓN: layout fijo + scroll interno
    ========================================================= */
-.tienda-tebex--fusion { height: 100%; }
-.tienda-tebex--fusion .tienda-contenido { height: 100%; }
+.tienda-tebex--fusion {
+  height: 100%;
+}
+.tienda-tebex--fusion .tienda-contenido {
+  height: 100%;
+}
 
 .tienda-tebex--fusion .tienda-wc {
   height: 100%;
@@ -733,7 +771,9 @@
   overflow: hidden;
 }
 
-.tienda-tebex--fusion.is-real .tc-side { display: none; }
+.tienda-tebex--fusion.is-real .tc-side {
+  display: none;
+}
 
 .tienda-tebex--fusion .tc-main {
   flex: 1 1 auto;
@@ -756,16 +796,30 @@
   padding-right: 0.35rem;
 }
 
-.tienda-tebex--fusion .tc-products--real .tc-products-scroll { padding-top: 0.4rem; }
+.tienda-tebex--fusion .tc-products--real .tc-products-scroll {
+  padding-top: 0.4rem;
+}
 
 .tienda-tebex--fusion .tc-products.is-swap {
   animation: tcSwap 420ms cubic-bezier(0.25, 0.85, 0.25, 1.05) both;
 }
 
 @keyframes tcSwap {
-  0% { opacity: 0; transform: scaleX(0.9) scaleY(0.98) translateY(4px); filter: blur(1px); }
-  55% { opacity: 1; transform: scaleX(1.03) scaleY(1); filter: none; }
-  100% { opacity: 1; transform: scaleX(1) scaleY(1) translateY(0); filter: none; }
+  0% {
+    opacity: 0;
+    transform: scaleX(0.9) scaleY(0.98) translateY(4px);
+    filter: blur(1px);
+  }
+  55% {
+    opacity: 1;
+    transform: scaleX(1.03) scaleY(1);
+    filter: none;
+  }
+  100% {
+    opacity: 1;
+    transform: scaleX(1) scaleY(1) translateY(0);
+    filter: none;
+  }
 }
 
 .tienda-tebex--fusion.tc-route-out .tc-fusion-body,
@@ -777,14 +831,31 @@
 }
 
 @keyframes tcRouteOut {
-  from { opacity: 1; transform: scaleX(1) scaleY(1); filter: none; }
-  to { opacity: 0; transform: scaleX(0.85) scaleY(0.96); filter: blur(1px); }
+  from {
+    opacity: 1;
+    transform: scaleX(1) scaleY(1);
+    filter: none;
+  }
+  to {
+    opacity: 0;
+    transform: scaleX(0.85) scaleY(0.96);
+    filter: blur(1px);
+  }
 }
 
 @keyframes tcRouteIn {
-  from { opacity: 0; transform: scaleX(0.8) scaleY(0.96); filter: blur(1px); }
-  to { opacity: 1; transform: scaleX(1) scaleY(1); filter: none; }
+  from {
+    opacity: 0;
+    transform: scaleX(0.8) scaleY(0.96);
+    filter: blur(1px);
+  }
+  to {
+    opacity: 1;
+    transform: scaleX(1) scaleY(1);
+    filter: none;
+  }
 }
+
 /* =========================
    CUPÓN (carrito)
    ========================= */
@@ -962,13 +1033,208 @@
   }
 }
 
-/* Responsive mini */
-@media (max-width: 420px) {
-  .basket-coupon .coupon-row {
+/* =========================================================
+   RESPONSIVE (PRO-VENTA):
+   - Desktop intacto
+   - Tablet/Móvil: categorías en GRID (columnas)
+   - Sin scroll horizontal (cero exploración)
+   ========================================================= */
+
+.tienda-tebex--fusion {
+  min-height: 100dvh;
+}
+
+.tienda-tebex--fusion .tienda-contenido {
+  min-height: 100dvh;
+  padding-bottom: calc(1.2rem + env(safe-area-inset-bottom));
+}
+
+/* tablet hacia abajo: apilamos (sidebar arriba), pero en GRID */
+@media (max-width: 920px) {
+  .tienda-tebex--fusion .tc-fusion-body {
     flex-direction: column;
+    gap: 0.75rem;
   }
-  .basket-coupon .coupon-apply,
-  .basket-coupon .coupon-input {
+
+  .tienda-tebex--fusion .tc-side {
     width: 100%;
+    padding: 0.8rem 0.85rem 0.85rem;
+    border-right: 0;
+    border-bottom: 2px solid rgba(0, 0, 0, 0.12);
+  }
+
+  /* ✅ quitamos el rail horizontal */
+  .tc-side-scroll {
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding-right: 0;
+
+    /* ✅ alto compacto */
+    max-height: clamp(140px, 22vh, 220px);
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* ✅ GRID: se ven TODAS de golpe */
+  .tc-side-list {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.55rem;
+  }
+
+  .tc-side-list--fit {
+    height: auto;
+    align-content: initial;
+    grid-auto-rows: initial;
+  }
+
+  .tc-side-item {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    flex: initial;
+
+    grid-template-columns: 48px 1fr;
+    padding: 0.55rem 0.55rem;
+  }
+
+  .tc-side-item-icoWrap {
+    width: 48px;
+    height: 48px;
+  }
+
+  .tc-side-item-ico {
+    width: 44px;
+    height: 44px;
+  }
+
+  .tc-side-item-label {
+    font-size: 0.86rem;
+    line-height: 1.05;
+
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .tc-side-hint {
+    margin-top: 0.65rem;
+    font-size: 0.82rem;
+  }
+
+  .tienda-tebex--fusion .tc-main {
+    padding: 0.9rem 0.85rem 1rem;
+  }
+
+  .tienda-tebex--fusion .tc-products-scroll {
+    padding-right: 0;
+  }
+}
+
+/* móvil: 2 columnas */
+@media (max-width: 520px) {
+  .tienda-tebex {
+    --frameSize: 11px;
+    --frameRadius: 0.75rem;
+  }
+
+  .tc-side-scroll {
+    max-height: clamp(150px, 28vh, 260px);
+  }
+
+  .tc-side-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tc-head {
+    padding: 0.85rem 0.85rem;
+  }
+
+  .tc-head-icoWrap,
+  .tc-head-icoWrap img {
+    width: 40px;
+    height: 40px;
+  }
+
+  .tienda-wc-title {
+    font-size: 1.35rem;
+  }
+
+  .tienda-wc-subtitle {
+    font-size: 0.92rem;
+  }
+
+  .tienda-wc-close {
+    width: 100%;
+    padding: 0.6rem 0.75rem;
+  }
+}
+
+/* ultra pequeño: 1 columna */
+@media (max-width: 380px) {
+  .tc-side-list {
+    grid-template-columns: 1fr;
+  }
+
+  .tienda-wc-title {
+    font-size: 1.22rem;
+  }
+}
+
+/* =========================================================
+   FIX “ESPACIOS MUERTOS” (MÓVIL/TABLET)
+   - Igualar huella visual al carrito
+   - Sin tocar desktop
+   ========================================================= */
+@media (max-width: 960px) {
+  .tienda-tebex {
+    justify-content: stretch;
+    align-items: stretch;
+  }
+
+  /* ✅ igual que el carrito: menos padding exterior */
+  .tienda-tebex .tienda-contenido {
+    padding: 0.55rem;
+    width: 100%;
+    max-width: none;
+  }
+
+  /* ✅ que el panel ocupe todo el ancho disponible */
+  .tienda-wc {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* ✅ compactamos el marco */
+  .tienda-tebex {
+    --frameSize: 11px;
+    --frameRadius: 0.75rem;
+  }
+
+  .tienda-wc-frame {
+    border-radius: var(--frameRadius);
+  }
+
+  .tc-main {
+    padding: 0.85rem;
+  }
+
+  .tienda-tebex--fusion .tc-products-scroll {
+    padding-right: 0;
+  }
+}
+
+/* móvil muy estrecho */
+@media (max-width: 520px) {
+  .tienda-tebex .tienda-contenido {
+    padding: 0.5rem;
+  }
+
+  .tienda-tebex {
+    --frameSize: 10px;
+  }
+
+  .tc-main {
+    padding: 0.8rem;
   }
 }

@@ -52,11 +52,9 @@ export default function TiendaOfertaCountdown() {
   const [sale, setSale] = useState(null);
   const [now, setNow] = useState(() => Date.now());
 
-  // Accesibilidad: texto anunciado solo por minuto
   const [announce, setAnnounce] = useState("");
   const lastMinuteRef = useRef(null);
 
-  // 1) Cargar sale una vez
   useEffect(() => {
     let alive = true;
     (async () => {
@@ -69,14 +67,12 @@ export default function TiendaOfertaCountdown() {
     };
   }, []);
 
-  // 2) Tick cada segundo SOLO si hay expire
   useEffect(() => {
     if (!sale?.expire) return;
     const t = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(t);
   }, [sale?.expire]);
 
-  // 3) Cálculos (si no hay sale, devuelven valores “neutros”)
   const msLeft = useMemo(() => {
     const expire = Number(sale?.expire || 0);
     if (!expire) return 0;
@@ -97,15 +93,13 @@ export default function TiendaOfertaCountdown() {
 
   const minutesLeft = useMemo(() => Math.ceil(safeMsLeft / 60000), [safeMsLeft]);
 
-  // 4) Actualiza anuncio SOLO cuando cambian los minutos restantes
   useEffect(() => {
-    if (!sale?.expire) return; // no anuncies nada si no hay oferta
+    if (!sale?.expire) return;
     if (lastMinuteRef.current === minutesLeft) return;
     lastMinuteRef.current = minutesLeft;
     setAnnounce(announceTextFromMinutes(minutesLeft));
   }, [sale?.expire, minutesLeft]);
 
-  // 5) Datos de render
   const shouldRender = Boolean(sale?.expire) && safeMsLeft > 0;
 
   const percent =
@@ -120,7 +114,6 @@ export default function TiendaOfertaCountdown() {
       ? `${d} días, ${pad2(h)}:${pad2(m)}:${pad2(s)}`
       : `${pad2(h)}:${pad2(m)}:${pad2(s)}`;
 
-  // ✅ return null AL FINAL (hooks siempre se ejecutan)
   if (!shouldRender) return null;
 
   return (
@@ -140,10 +133,7 @@ export default function TiendaOfertaCountdown() {
 
       <div className="tienda-oferta-panel" title={`Termina en ${titleText}`}>
         <div className="tienda-oferta-header">
-          <div
-            className="tienda-oferta-timer-inline"
-            aria-label={`Termina en ${titleText}`}
-          >
+          <div className="tienda-oferta-timer-inline" aria-label={`Termina en ${titleText}`}>
             {d > 0 && (
               <>
                 <div className="timer-block">

@@ -966,6 +966,47 @@ const obtenerBasketHeadless = async (req, res) => {
     });
   }
 };
+/* =========================
+   Checkout Status (para UX fallback del modal)
+   GET /api/tebex/checkout-status/:ident
+   ========================= */
+const obtenerCheckoutStatus = async (req, res) => {
+  const rid = crypto.randomBytes(4).toString("hex");
+
+  try {
+    const token = String(WEBSTORE_TOKEN || "").trim();
+    if (!token) return res.status(500).json({ ok: false, error: "Falta TEBEX_WEBSTORE_TOKEN." });
+
+    const ident = String(req.params.ident || "").trim();
+    if (!ident) return res.status(400).json({ ok: false, error: "Falta basket ident." });
+
+    const url = `https://headless.tebex.io/api/accounts/${encodeURIComponent(token)}/baskets/${encodeURIComponent(
+      ident
+    )}`;
+
+    const data = await headlessFetchJson({ rid, url, method: "GET" });
+
+    // Normaliza: a veces viene {data:{...}}
+    const b = data?.data || data || {};
+    const links = b?.links || b?.data?.links || null;
+
+    // Heurística sencilla: si aparece links.payment, suele indicar pagado
+    const paid = Boolean(links?.payment);
+
+    return res.json({
+      ok: true,
+      ident,
+      paid,
+      links,
+    });
+  } catch (e) {
+    return res.status(e?.status || 500).json({
+      ok: false,
+      error: "No se pudo obtener el estado del checkout.",
+      detail: e?.data || e?.raw || e?.message || "unknown",
+    });
+  }
+};
 
 /* =========================
    Basket: aplicar códigos (creator / coupon / giftcard / coupon_giftcard)
@@ -1275,6 +1316,7 @@ module.exports = {
   obtenerPagosRecientes,
 
   obtenerBasketHeadless,
+  obtenerCheckoutStatus,
   aplicarCodigoBasket,
   quitarCodigoBasket,
   agregarPaqueteBasket,

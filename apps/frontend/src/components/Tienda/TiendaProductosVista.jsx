@@ -234,6 +234,16 @@ function sanitizeTebexHtml(input) {
   return doc.body.innerHTML;
 }
 
+function toMoneyNumber(v) {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function toOptionalNumber(v) {
+  const n = Number(v);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
 function calcDiscountPct(original, current) {
   if (!original || !current) return null;
   const o = Number(original);
@@ -380,7 +390,10 @@ const TiendaProductosVista = ({
 
   const estaEnCarrito = (pkg) => {
     const id = pkg?.id || pkg?.package_id;
-    return carrito.some((p) => String(p?.id) === String(id));
+    return carrito.some((p) => {
+      const pid = p?.id || p?.package_id;
+      return String(pid) === String(id);
+    });
   };
 
   // ✅ FX: emitir animación “fly to basket”
@@ -461,11 +474,13 @@ const TiendaProductosVista = ({
       <section className="tienda-productos__body">
         {secciones.length === 0 ? (
           <div className="tienda-productos__empty">
-            <div className="tienda-productos__empty-title">
-              No hay productos disponibles
-            </div>
-            <div className="tienda-productos__empty-sub">
-              Vuelve más tarde o prueba otra subcategoría.
+            <div className="tienda-productos__empty-card">
+              <div className="tienda-productos__empty-title">
+                No hay productos disponibles
+              </div>
+              <div className="tienda-productos__empty-sub">
+                Vuelve más tarde o prueba otra subcategoría.
+              </div>
             </div>
           </div>
         ) : (
@@ -524,11 +539,10 @@ const TiendaProductosVista = ({
                               const rawName =
                                 pkg?.name || pkg?.nombre || it.rawName || "Producto";
 
-                              const precio = Number(pkg?.precio ?? pkg?.price ?? 0);
-                              const precioOriginal =
-                                pkg?.precio_original ?? pkg?.original_price ?? null;
-                              const originalNum =
-                                typeof precioOriginal === "number" ? precioOriginal : null;
+                              const precio = toMoneyNumber(pkg?.precio ?? pkg?.price ?? 0);
+                              const originalNum = toOptionalNumber(
+                                pkg?.precio_original ?? pkg?.original_price ?? null
+                              );
 
                               const pct = originalNum
                                 ? calcDiscountPct(originalNum, precio)
@@ -665,11 +679,10 @@ const TiendaProductosVista = ({
                           const rawName =
                             pkg?.name || pkg?.nombre || it.rawName || "Producto";
 
-                          const precio = Number(pkg?.precio ?? pkg?.price ?? 0);
-                          const precioOriginal =
-                            pkg?.precio_original ?? pkg?.original_price ?? null;
-                          const originalNum =
-                            typeof precioOriginal === "number" ? precioOriginal : null;
+                          const precio = toMoneyNumber(pkg?.precio ?? pkg?.price ?? 0);
+                          const originalNum = toOptionalNumber(
+                            pkg?.precio_original ?? pkg?.original_price ?? null
+                          );
 
                           const pct = originalNum
                             ? calcDiscountPct(originalNum, precio)
@@ -785,11 +798,10 @@ const TiendaProductosVista = ({
                   const rawName =
                     pkg?.name || pkg?.nombre || it.rawName || sec.title;
 
-                  const precio = Number(pkg?.precio ?? pkg?.price ?? 0);
-                  const precioOriginal =
-                    pkg?.precio_original ?? pkg?.original_price ?? null;
-                  const originalNum =
-                    typeof precioOriginal === "number" ? precioOriginal : null;
+                  const precio = toMoneyNumber(pkg?.precio ?? pkg?.price ?? 0);
+                  const originalNum = toOptionalNumber(
+                    pkg?.precio_original ?? pkg?.original_price ?? null
+                  );
 
                   const pct = originalNum
                     ? calcDiscountPct(originalNum, precio)

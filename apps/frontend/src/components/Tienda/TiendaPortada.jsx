@@ -19,7 +19,7 @@ const TiendaPortada = () => {
   return (
     <div className="tienda-portada-wrapper">
       <section className="tienda-portada-panel" aria-label="Portada de la tienda">
-        {/* CONTEXTO (selector de servidor/modo) */}
+        {/* CONTEXTO */}
         <header className="tienda-portada-head">
           <h1 className="tienda-portada-title">Elige el servidor</h1>
           <p className="tienda-portada-subtitle">
@@ -27,14 +27,14 @@ const TiendaPortada = () => {
           </p>
         </header>
 
-        {/* OFERTA (menos protagonista) */}
+        {/* OFERTA */}
         <div className="tienda-portada-oferta-slot" aria-label="Ofertas activas">
           <div className="tienda-portada-oferta">
             <TiendaOfertaCountdown />
           </div>
         </div>
 
-        {/* GRID PRINCIPAL */}
+        {/* GRID */}
         <ul className="tienda-portada-grid">
           {PORTADA_TILES.map((tile) => (
             <li className="tienda-portada-item" key={`${tile.server}-${tile.slug}`}>
@@ -58,15 +58,18 @@ const TiendaPortada = () => {
                   />
                 </div>
 
-                <div className="tienda-portada-label">{tile.name}</div>
+                {/* ✅ texto controlado para que NO se salga */}
+                <div className="tienda-portada-label">
+                  <span className="tienda-portada-labelText">{tile.name}</span>
+                </div>
               </button>
             </li>
           ))}
         </ul>
 
         <p className="tienda-portada-footnote">
-          Los artículos se entregan automáticamente en el servidor correspondiente nada más
-          completar el pago.{" "}
+          Los artículos se entregan automáticamente en el servidor correspondiente nada más completar el
+          pago.{" "}
           <button
             type="button"
             className="tienda-portada-footnote-link"

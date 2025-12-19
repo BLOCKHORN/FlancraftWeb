@@ -3,8 +3,7 @@ import useMinecraftProfile from "./useMinecraftProfile";
 import TiendaCheckoutModal from "./TiendaCheckoutModal";
 import "../../styles/components/Tienda/tienda-carrito.scss";
 
-const API_BASE =
-  import.meta.env.VITE_BACKEND_URL || "http://localhost:10000";
+const API_BASE = import.meta.env.VITE_BACKEND_URL || "http://localhost:10000";
 
 function formatCurrency(amount, currency = "EUR") {
   const n = Number(amount);
@@ -62,7 +61,6 @@ export default function TiendaCarritoLateral({
 }) {
   const [loadingCheckout, setLoadingCheckout] = useState(false);
 
-  // Modal interno (único)
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [checkoutIdent, setCheckoutIdent] = useState("");
 
@@ -74,6 +72,7 @@ export default function TiendaCarritoLateral({
   );
 
   const distinctCount = carrito.length;
+  const isEmpty = distinctCount === 0;
 
   const total = useMemo(() => {
     if (typeof totalFromHook === "number") return totalFromHook;
@@ -128,13 +127,6 @@ export default function TiendaCarritoLateral({
     else onAbrirLogin?.();
   }, [nombreConfirmado, onCambiarCuenta, onAbrirLogin]);
 
-  const handleClear = useCallback(() => {
-    if (typeof vaciarCarrito !== "function") return;
-    if (distinctCount === 0) return;
-    const ok = window.confirm("¿Vaciar el carrito?");
-    if (ok) vaciarCarrito();
-  }, [vaciarCarrito, distinctCount]);
-
   const handleCheckout = useCallback(async () => {
     if (!canCheckout) return;
 
@@ -158,10 +150,7 @@ export default function TiendaCarritoLateral({
       const data = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(data?.error || "No se pudo generar el checkout.");
 
-      const ident = String(
-        data?.ident || data?.basket?.ident || data?.basket_ident || ""
-      ).trim();
-
+      const ident = String(data?.ident || data?.basket?.ident || data?.basket_ident || "").trim();
       if (!ident) throw new Error("Respuesta inválida del servidor (sin ident).");
 
       setCheckoutIdent(ident);
@@ -183,7 +172,11 @@ export default function TiendaCarritoLateral({
   return (
     <>
       <aside className="carrito-lateral" aria-label="Carrito">
-        <div className={`carrito-panel ${basketPulse ? "is-pulse" : ""}`} id="tienda-basket">
+        <div
+          className={`carrito-panel ${basketPulse ? "is-pulse" : ""}`}
+          id="tienda-basket"
+          data-empty={isEmpty ? "true" : "false"}
+        >
           {/* CUENTA */}
           <section className="carrito-cuenta" aria-label="Cuenta">
             <div className="cuenta-top">
@@ -195,12 +188,13 @@ export default function TiendaCarritoLateral({
                       alt={`Avatar de ${nombreConfirmado}`}
                       draggable={false}
                       onError={(e) => {
-                        e.currentTarget.src =
-                          "https://crafthead.net/avatar/Steve?size=64&overlay";
+                        e.currentTarget.src = "https://crafthead.net/avatar/Steve?size=64&overlay";
                       }}
                     />
                   ) : (
-                    <div className="cuenta-quest" aria-hidden="true">?</div>
+                    <div className="cuenta-quest" aria-hidden="true">
+                      ?
+                    </div>
                   )}
                 </div>
 
@@ -228,14 +222,18 @@ export default function TiendaCarritoLateral({
 
               <div className="cuenta-btn cuenta-btn-currency" role="group" aria-label="Cambiar moneda">
                 <div className="currency-left">
-                  <div className="currency-icon" aria-hidden="true">$</div>
+                  <div className="currency-icon" aria-hidden="true">
+                    $
+                  </div>
                   <div className="currency-text">
                     <div className="currency-label">Cambiar moneda</div>
                     <div className="currency-current">{monedaTexto}</div>
                   </div>
                 </div>
 
-                <div className="currency-chevron" aria-hidden="true">▾</div>
+                <div className="currency-chevron" aria-hidden="true">
+                  ▾
+                </div>
 
                 <select
                   className="currency-select"
@@ -252,17 +250,19 @@ export default function TiendaCarritoLateral({
           </section>
 
           {/* BASKET */}
-          <section className="basket" aria-label="Carrito de compra">
+          <section className={`basket ${isEmpty ? "is-empty" : ""}`} aria-label="Carrito de compra">
             <div className="basket-title">CARRITO</div>
 
-            <div className="basket-list" role="list" aria-busy={loadingCheckout}>
-              {distinctCount === 0 ? (
-                <div className="basket-empty-state">
+            <div
+              className={`basket-list ${isEmpty ? "is-empty" : ""}`}
+              role="list"
+              aria-busy={loadingCheckout}
+            >
+              {isEmpty ? (
+                <div className="basket-empty-state" data-kind={nombreConfirmado ? "empty" : "account"}>
                   <div className="basket-empty-icon" aria-hidden="true" />
                   <div className="basket-empty-text">
-                    {nombreConfirmado
-                      ? "Añade productos para empezar."
-                      : "Elige una cuenta para comprar."}
+                    {nombreConfirmado ? "(Vacío)" : "Elige una cuenta"}
                   </div>
                 </div>
               ) : (
@@ -313,7 +313,12 @@ export default function TiendaCarritoLateral({
                             aria-label="Reducir cantidad"
                           >
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                              <path d="M6 12h12" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" />
+                              <path
+                                d="M6 12h12"
+                                stroke="currentColor"
+                                strokeWidth="2.6"
+                                strokeLinecap="round"
+                              />
                             </svg>
                           </button>
 
@@ -327,7 +332,12 @@ export default function TiendaCarritoLateral({
                             aria-label="Aumentar cantidad"
                           >
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                              <path d="M12 6v12M6 12h12" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" />
+                              <path
+                                d="M12 6v12M6 12h12"
+                                stroke="currentColor"
+                                strokeWidth="2.6"
+                                strokeLinecap="round"
+                              />
                             </svg>
                           </button>
                         </div>
@@ -340,7 +350,12 @@ export default function TiendaCarritoLateral({
                           disabled={loadingCheckout}
                         >
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                            <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
+                            <path
+                              d="M18 6L6 18M6 6l12 12"
+                              stroke="currentColor"
+                              strokeWidth="2.4"
+                              strokeLinecap="round"
+                            />
                           </svg>
                         </button>
                       </div>
@@ -369,30 +384,22 @@ export default function TiendaCarritoLateral({
                   {checkoutLabel}
                 </button>
               </div>
-
-              {typeof vaciarCarrito === "function" ? (
-                <button
-                  className="basket-clear"
-                  type="button"
-                  onClick={handleClear}
-                  disabled={distinctCount === 0 || loadingCheckout}
-                >
-                  Vaciar carrito
-                </button>
-              ) : null}
             </div>
           </section>
         </div>
       </aside>
 
-      {/* Modal único */}
       <TiendaCheckoutModal
         open={checkoutOpen}
         ident={checkoutIdent}
         server={server}
+        playerName={nombreConfirmado}
+        cartItems={carrito}
+        currencyHint={currency}
+        onPaid={() => {
+          if (typeof vaciarCarrito === "function") vaciarCarrito();
+        }}
         onClose={() => setCheckoutOpen(false)}
-        cartItems={carrito}      
-        currencyHint={currency} 
       />
     </>
   );

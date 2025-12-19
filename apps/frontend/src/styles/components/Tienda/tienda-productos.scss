@@ -47,6 +47,9 @@
   /* ✅ evita que nada “pinte” fuera del panel */
   overflow: hidden;
 
+  /* ✅ evita overflow por grids hijos */
+  min-width: 0;
+
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
@@ -79,6 +82,40 @@
     border-radius: 999px;
   }
   &::-webkit-scrollbar-thumb:hover { background: #c18d53; }
+}
+
+/* EMPTY */
+.tienda-productos__empty {
+  min-height: 320px;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+
+.tienda-productos__empty-card {
+  width: min(520px, 100%);
+  padding: 1.1rem 1.15rem;
+  border-radius: 0.8rem;
+  background: rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.16);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.25),
+    0 12px 24px rgba(0,0,0,0.12);
+  text-align: center;
+}
+
+.tienda-productos__empty-title {
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 0.95rem;
+  margin-bottom: 0.35rem;
+}
+
+.tienda-productos__empty-sub {
+  color: rgba(58, 40, 22, 0.72);
+  font-size: 0.9rem;
+  line-height: 1.35;
 }
 
 /* ======================================
@@ -167,6 +204,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
+  min-width: 0;
 }
 
 /* ✅ clave: el grid NO debe provocar overflow horizontal/vertical */
@@ -184,6 +222,9 @@
 
   /* ✅ recorta hovers/glows que se salgan y creen scroll fantasma */
   overflow: hidden;
+
+  /* ✅ importantísimo */
+  min-width: 0;
 }
 
 .tp-section__grid--two {
@@ -227,6 +268,8 @@
   flex-direction: column;
   gap: 0.4rem;
   padding: 0.6rem;
+
+  min-width: 0;
 }
 
 .tp-media__imgwrap {
@@ -297,6 +340,7 @@
   overflow: hidden;
 
   transition: transform 0.08s ease, filter 0.12s ease, box-shadow 0.12s ease;
+  min-width: 0;
 }
 
 .tp-variant:hover { filter: brightness(1.03); transform: translateY(-1px); }
@@ -317,6 +361,7 @@
   min-height: 86px;
   padding: 0.15rem 0.15rem 0;
   flex: 1 1 auto;
+  min-width: 0;
 }
 
 .tp-variant__name {
@@ -367,7 +412,6 @@
   box-shadow: 0 4px 0 var(--goodShadow);
   cursor: pointer;
 
-  /* ✅ ya estaba, lo mantenemos */
   overflow: hidden;
 
   transition: transform 0.08s ease, box-shadow 0.08s ease, filter 0.12s ease, opacity 0.12s ease;
@@ -388,6 +432,12 @@
   border-color: #3f2b1f;
   background: #6b5847;
   box-shadow: 0 4px 0 #3f2b1f;
+}
+
+.tp-variant__buy:focus { outline: none; }
+.tp-variant__buy:focus-visible {
+  outline: 2px solid rgba(0, 0, 0, 0.28);
+  outline-offset: 2px;
 }
 
 .tp-variant__shine {
@@ -446,6 +496,12 @@
   box-shadow: 0 1px 0 rgba(37, 26, 18, 0.95), inset 0 0px 0 rgba(255, 255, 255, 0.2);
 }
 
+.tp-card__details:focus { outline: none; }
+.tp-card__details:focus-visible {
+  outline: 2px solid rgba(0, 0, 0, 0.28);
+  outline-offset: 2px;
+}
+
 .tp-card__chevron {
   width: 8px;
   height: 8px;
@@ -471,8 +527,8 @@
   grid-template-columns: clamp(200px, 24vw, 300px) minmax(0, 1fr);
   gap: 0.75rem;
 
-  /* ✅ recorta overflow que crea scroll fantasma */
   overflow: hidden;
+  min-width: 0;
 
   @media (max-width: 780px) { grid-template-columns: minmax(0, 1fr); }
 }
@@ -490,6 +546,8 @@
   flex-direction: column;
   gap: 0.45rem;
   padding: 0.6rem;
+
+  min-width: 0;
 }
 
 .tp-stack-hero__imgwrap {
@@ -541,6 +599,7 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.55rem;
   align-content: flex-start;
+  min-width: 0;
 
   @media (max-width: 880px) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   @media (max-width: 520px) { grid-template-columns: 1fr; }
@@ -559,8 +618,8 @@
   align-items: stretch;
   gap: 0.35rem;
 
-  /* ✅ antes visible */
   overflow: hidden;
+  min-width: 0;
 
   transition: transform 0.08s ease, filter 0.12s ease, box-shadow 0.12s ease;
 }
@@ -597,6 +656,13 @@
 
   /* ✅ evita overflow lateral de hovers */
   overflow: hidden;
+  min-width: 0;
+}
+
+@media (max-width: 520px) {
+  .tp-card-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .tp-card {
@@ -612,13 +678,21 @@
   flex-direction: column;
   gap: 0.45rem;
 
-  /* ✅ antes visible: esto era el culpable típico del scroll horizontal/vertical */
   overflow: hidden;
+  min-width: 0;
 
   transition: transform 0.08s ease, filter 0.12s ease, box-shadow 0.12s ease;
 }
 
 .tp-card:hover { filter: brightness(1.03); transform: translateY(-1px); }
+
+.tp-card.is-in-cart {
+  border-color: rgba(25, 140, 40, 0.55);
+  box-shadow:
+    inset 0 0 0 1px rgba(134, 93, 40, 0.35),
+    0 2px 0 rgba(0, 0, 0, 0.18),
+    0 0 0 2px rgba(47, 225, 122, 0.18);
+}
 
 .tp-card__imgwrap {
   position: relative;
@@ -627,7 +701,6 @@
   padding: 0.15rem;
   min-height: 150px;
 
-  /* ✅ recorta img cuando rota/escala */
   overflow: hidden;
   border-radius: 0.55rem;
 }
@@ -654,6 +727,7 @@
   align-items: center;
   gap: 0.15rem;
   min-height: 70px;
+  min-width: 0;
 }
 
 .tp-card__name {
@@ -665,6 +739,11 @@
   letter-spacing: 0.04em;
   line-height: 1.2;
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.2);
+
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .tp-card__actions {
