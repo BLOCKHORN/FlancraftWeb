@@ -15,14 +15,14 @@
 
 .tienda-oferta-banner {
   width: 100%;
-  max-width: var(--portadaW, 720px);
+  max-width: 100%;
   margin: 0 auto;
   padding: 0;
 
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.22rem;
 
   position: relative;
 
@@ -30,30 +30,35 @@
     width: 100%;
     display: flex;
     justify-content: center;
+    line-height: 0;
   }
 
   .tienda-oferta-image {
     width: 100%;
-    max-width: 220px;
+    max-width: 190px;
     height: auto;
+
     image-rendering: crisp-edges;
     opacity: 0.92;
     filter: drop-shadow(0 3px 10px rgba(0, 0, 0, 0.45));
+
     transform: translateY(0);
-    transition: transform 0.22s ease-out, opacity 0.22s ease-out;
+    transition: transform 0.18s ease-out, opacity 0.18s ease-out;
   }
 
   &:hover .tienda-oferta-image {
-    transform: translateY(-2px);
+    transform: translateY(-1px);
     opacity: 0.98;
   }
 
   .tienda-oferta-panel {
     width: 100%;
-    max-width: 520px;
-    padding: 0.62rem 0.85rem 0.78rem;
-    border-radius: 3px;
+    max-width: 100%;
+    min-width: 0;
 
+    padding: 0.54rem 0.8rem 0.68rem;
+
+    border-radius: 4px;
     background:
       radial-gradient(circle at 30% 0%, rgba(255, 220, 150, 0.14), transparent 55%),
       linear-gradient(180deg, rgba(24, 18, 12, 0.92), rgba(10, 7, 4, 0.86));
@@ -70,9 +75,11 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    column-gap: 0.65rem;
-    row-gap: 0.3rem;
-    margin-bottom: 0.32rem;
+
+    column-gap: 0.55rem;
+    row-gap: 0.28rem;
+
+    margin-bottom: 0.22rem;
     flex-wrap: wrap;
   }
 
@@ -80,19 +87,20 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 0.35rem;
+    gap: 0.30rem;
+    min-width: 0;
   }
 
   .timer-block {
     display: flex;
     flex-direction: column;
     align-items: center;
-    min-width: 46px;
+    min-width: 42px;
   }
 
   .timer-value {
     font-family: "Press Start 2P", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    font-size: 1rem;
+    font-size: 0.92rem;
     letter-spacing: 0.12em;
     font-variant-numeric: tabular-nums;
     color: #fffbe8;
@@ -101,26 +109,26 @@
 
   .timer-unit {
     font-family: "IM Fell English SC", serif;
-    font-size: 0.55rem;
+    font-size: 0.54rem;
     letter-spacing: 0.14em;
     color: rgba(255, 235, 200, 0.88);
   }
 
   .timer-sep {
     font-family: "Press Start 2P", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    font-size: 0.78rem;
+    font-size: 0.74rem;
     color: rgba(255, 235, 200, 0.75);
-    margin-top: 0.1rem;
+    margin-top: 0.08rem;
   }
 
   .tienda-oferta-percent {
     font-family: "IM Fell English SC", serif;
-    font-size: 0.9rem;
+    font-size: 0.86rem;
     letter-spacing: 0.06em;
     color: #ffe9c7;
 
-    padding: 0.2rem 0.6rem;
-    border-radius: 3px;
+    padding: 0.18rem 0.52rem;
+    border-radius: 4px;
 
     background: linear-gradient(180deg, #e96a45 0%, #c54633 55%, #7f231f 100%);
     border: 1px solid rgba(0, 0, 0, 0.7);
@@ -130,10 +138,10 @@
   }
 
   .tienda-oferta-sub {
-    margin-top: 0.05rem;
-    margin-bottom: 0.38rem;
+    margin-top: 0.02rem;
+    margin-bottom: 0.32rem;
     text-align: center;
-    font-size: 0.78rem;
+    font-size: 0.74rem;
     color: rgba(255, 244, 220, 0.86);
     letter-spacing: 0.03em;
   }
@@ -142,7 +150,7 @@
     position: relative;
     width: 100%;
     height: 8px;
-    border-radius: 3px;
+    border-radius: 4px;
     overflow: hidden;
     background: rgba(255, 235, 200, 0.10);
     border: 1px solid rgba(255, 220, 160, 0.22);
@@ -152,7 +160,7 @@
   .tienda-oferta-barFill {
     display: block;
     height: 100%;
-    border-radius: 3px;
+    border-radius: 4px;
 
     background: linear-gradient(90deg, #ffb347 0%, #ffcc33 50%, #ff9a3c 100%);
     box-shadow: 0 0 10px rgba(255, 214, 140, 0.35);
@@ -196,6 +204,41 @@
   }
 }
 
+/* =========================================================
+   ✅ Container queries (la magia): si falta altura, compacta
+   ========================================================= */
+@container portada (max-height: 720px) {
+  .tienda-oferta-banner {
+    gap: 0.14rem;
+
+    .tienda-oferta-image { max-width: 170px; }
+    .tienda-oferta-panel { padding: 0.46rem 0.75rem 0.58rem; }
+    .tienda-oferta-sub { font-size: 0.72rem; margin-bottom: 0.26rem; }
+    .timer-block { min-width: 40px; }
+    .timer-value { font-size: 0.88rem; }
+  }
+}
+
+@container portada (max-height: 660px) {
+  .tienda-oferta-banner {
+    /* fuera imagen: se convierte en “bar” premium */
+    .tienda-oferta-artWrap { display: none !important; }
+    .tienda-oferta-sub { display: none !important; }
+    .tienda-oferta-panel { padding: 0.42rem 0.70rem 0.52rem; }
+    .tienda-oferta-bar { height: 7px; }
+    .timer-unit { display: none; } /* gana altura sin perder info */
+    .timer-sep { margin-top: 0; }
+  }
+}
+
+@container portada (max-height: 610px) {
+  .tienda-oferta-banner {
+    .tienda-oferta-panel { padding: 0.38rem 0.65rem 0.46rem; }
+    .timer-value { font-size: 0.84rem; }
+    .tienda-oferta-percent { font-size: 0.82rem; padding: 0.14rem 0.46rem; }
+  }
+}
+
 @keyframes oferta-bar-shine {
   0%   { transform: translateX(-80%); opacity: 0; }
   22%  { opacity: 1; }
@@ -215,19 +258,14 @@
   }
 }
 
-/* =========================================================
-   MOBILE: quitar imagen, dejar SOLO contador (panel)
-   ========================================================= */
+/* Mobile: como tenías (sin imagen) */
 @media (max-width: 960px) {
   .tienda-oferta-banner {
-    gap: 0.25rem;
+    gap: 0.20rem;
 
-    .tienda-oferta-artWrap {
-      display: none !important;
-    }
+    .tienda-oferta-artWrap { display: none !important; }
 
     .tienda-oferta-panel {
-      /* más compacto y más legible sobre fondo "carrito" */
       max-width: 520px;
       border-radius: 6px;
 
@@ -240,8 +278,8 @@
         inset 0 1px 0 rgba(255, 255, 255, 0.06);
     }
 
-    .timer-block { min-width: 44px; }
-    .timer-value { font-size: 0.95rem; }
+    .timer-block { min-width: 42px; }
+    .timer-value { font-size: 0.92rem; }
     .tienda-oferta-sub { font-size: 0.74rem; }
   }
 }

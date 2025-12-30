@@ -13,13 +13,13 @@
 
 .tienda-productos {
   --gold: #d2b071;
-  --paper: #f7e2b2;
-  --basket: rgba(250, 230, 188, 0.96);
+  --paper: #f6e0b8;
+  --basket: #f3dec0;
 
   --ink: #3a2816;
   --inkSoft: rgba(58, 40, 22, 0.72);
 
-  --good: #198c28;
+  --good: #1a9a35;
   --goodBorder: #0a3f12;
   --goodShadow: #06270b;
 
@@ -34,20 +34,20 @@
   display: flex;
   flex-direction: column;
 
-  border-radius: 0.7rem;
-  border: 2px solid var(--gold);
-  background: var(--paper);
+  border-radius: 0.5rem;
+  border: 3px solid var(--gold);
+  background:
+    radial-gradient(circle at 0% 0%, rgba(255,255,255,0.22), transparent 55%),
+    radial-gradient(circle at 100% 0%, rgba(255,255,255,0.18), transparent 55%),
+    var(--paper);
   box-shadow:
-    0 0 0 1px rgba(90, 59, 23, 0.35),
-    0 14px 30px rgba(0, 0, 0, 0.65);
+    0 0 0 1px rgba(90, 59, 23, 0.32),
+    0 12px 26px rgba(0, 0, 0, 0.65);
 
   box-sizing: border-box;
   color: var(--ink);
 
-  /* ✅ evita que nada “pinte” fuera del panel */
   overflow: hidden;
-
-  /* ✅ evita overflow por grids hijos */
   min-width: 0;
 
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -63,13 +63,10 @@
 .tienda-productos__body {
   flex: 1 1 auto;
   min-height: 0;
-  padding: 0.75rem;
+  padding: clamp(0.55rem, 1.6vw, 0.9rem);
 
-  /* ✅ scroll solo vertical, nunca horizontal */
   overflow-y: auto;
   overflow-x: hidden;
-
-  /* ✅ evita “scroll fantasma” por overscroll */
   overscroll-behavior: contain;
 
   scrollbar-width: thin;
@@ -84,23 +81,29 @@
   &::-webkit-scrollbar-thumb:hover { background: #c18d53; }
 }
 
+@media (max-width: 768px) {
+  .tienda-productos__body {
+    padding: 0.45rem 0.45rem 0.6rem;
+  }
+}
+
 /* EMPTY */
 .tienda-productos__empty {
-  min-height: 320px;
+  min-height: 260px;
   display: grid;
   place-items: center;
   padding: 1rem;
 }
 
 .tienda-productos__empty-card {
-  width: min(520px, 100%);
-  padding: 1.1rem 1.15rem;
+  width: min(480px, 100%);
+  padding: 1rem 1.05rem;
   border-radius: 0.8rem;
-  background: rgba(0, 0, 0, 0.05);
-  border: 1px solid rgba(0, 0, 0, 0.16);
+  background: rgba(255, 255, 255, 0.28);
+  border: 1px solid rgba(0, 0, 0, 0.18);
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,0.25),
-    0 12px 24px rgba(0,0,0,0.12);
+    0 10px 20px rgba(0,0,0,0.12);
   text-align: center;
 }
 
@@ -108,13 +111,13 @@
   font-weight: 950;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  font-size: 0.95rem;
-  margin-bottom: 0.35rem;
+  font-size: 0.93rem;
+  margin-bottom: 0.3rem;
 }
 
 .tienda-productos__empty-sub {
   color: rgba(58, 40, 22, 0.72);
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   line-height: 1.35;
 }
 
@@ -132,11 +135,15 @@
   background: var(--discountBg);
   color: var(--discountText);
   font-weight: 950;
-  font-size: 0.72rem;
+  font-size: 0.74rem;
   letter-spacing: 0.06em;
   box-shadow: 0 3px 0 rgba(0, 0, 0, 0.3);
   text-transform: uppercase;
-  z-index: 2;
+  z-index: 3;
+}
+
+.tp-discount-badge--hero {
+  font-size: 0.78rem;
 }
 
 /* ======================================
@@ -147,8 +154,8 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 30px;
-  margin-top: 0.15rem;
+  min-height: 24px;
+  margin-top: 0.12rem;
 }
 
 .tp-pricebox__old {
@@ -156,7 +163,7 @@
   align-items: center;
   gap: 0.45rem;
 
-  padding: 0.28rem 0.55rem;
+  padding: 0.22rem 0.48rem;
   border-radius: 0.5rem;
 
   background: rgba(197, 58, 42, 0.10);
@@ -170,7 +177,7 @@
   font-weight: 900;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  font-size: 0.76rem;
+  font-size: 0.72rem;
 }
 
 .tp-pricebox__label {
@@ -187,7 +194,7 @@
 }
 
 .tp-pricebox__spacer {
-  height: 30px;
+  height: 24px;
 }
 
 /* ======================================
@@ -197,20 +204,20 @@
 .tp-sections {
   display: flex;
   flex-direction: column;
-  gap: 0.95rem;
+  gap: 0.8rem;
 }
 
 .tp-section {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: 0.35rem;
   min-width: 0;
 }
 
-/* ✅ clave: el grid NO debe provocar overflow horizontal/vertical */
+/* desktop base */
 .tp-section__grid {
   border-radius: 0.55rem;
-  padding: 0.65rem;
+  padding: 0.6rem;
   background: var(--basket);
   box-shadow: inset 0 0 0 1px rgba(134, 93, 40, 0.35);
   border: 2px solid rgba(0, 0, 0, 0.15);
@@ -220,10 +227,7 @@
 
   grid-template-columns: clamp(160px, 18vw, 220px) repeat(3, minmax(0, 1fr));
 
-  /* ✅ recorta hovers/glows que se salgan y creen scroll fantasma */
   overflow: hidden;
-
-  /* ✅ importantísimo */
   min-width: 0;
 }
 
@@ -237,9 +241,7 @@
 
 @media (max-width: 980px) {
   .tp-section__grid,
-  .tp-section__grid--three {
-    grid-template-columns: clamp(150px, 22vw, 200px) repeat(2, minmax(0, 1fr));
-  }
+  .tp-section__grid--three,
   .tp-section__grid--two {
     grid-template-columns: clamp(150px, 22vw, 200px) repeat(2, minmax(0, 1fr));
   }
@@ -250,6 +252,7 @@
   .tp-section__grid--two,
   .tp-section__grid--three {
     grid-template-columns: 1fr;
+    padding: 0.5rem;
   }
 }
 
@@ -261,13 +264,12 @@
   background: rgba(0, 0, 0, 0.03);
   box-shadow: 0 2px 0 rgba(0, 0, 0, 0.18);
 
-  /* ✅ ya recorta */
   overflow: hidden;
 
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
-  padding: 0.6rem;
+  padding: 0.55rem;
 
   min-width: 0;
 }
@@ -277,16 +279,15 @@
   display: grid;
   place-items: center;
   padding: 0.2rem;
-  min-height: 170px;
+  min-height: 150px;
 
-  /* ✅ importantísimo para glows/hover */
   overflow: hidden;
   border-radius: 0.55rem;
 }
 
 .tp-media img {
   width: 100%;
-  height: 160px;
+  height: 145px;
   object-fit: contain;
   display: block;
   transform: scale(1.02);
@@ -305,12 +306,11 @@
 .tp-media__title {
   text-align: center;
   font-weight: 950;
-  font-size: 0.92rem;
+  font-size: 0.9rem;
   letter-spacing: 0.04em;
-
   font-family: "Press Start 2P", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 
-  padding: 0.25rem 0.35rem 0.3rem;
+  padding: 0.22rem 0.32rem 0.28rem;
   border-radius: 0.4rem;
   background: linear-gradient(180deg, rgba(35, 111, 201, 0.98), rgba(12, 74, 153, 0.98));
   color: #fdf4ce;
@@ -329,14 +329,13 @@
   border: 2px solid rgba(0, 0, 0, 0.25);
   background: rgba(0, 0, 0, 0.03);
   box-shadow: 0 2px 0 rgba(0, 0, 0, 0.18);
-  padding: 0.6rem 0.6rem 0.9rem;
+  padding: 0.55rem 0.55rem 0.8rem;
 
   display: flex;
   flex-direction: column;
-  gap: 0.55rem;
-  min-height: 150px;
+  gap: 0.45rem;
+  min-height: 130px;
 
-  /* ✅ antes estaba visible: eso te crea scroll fantasma */
   overflow: hidden;
 
   transition: transform 0.08s ease, filter 0.12s ease, box-shadow 0.12s ease;
@@ -358,8 +357,8 @@
   flex-direction: column;
   justify-content: center;
   gap: 0.2rem;
-  min-height: 86px;
-  padding: 0.15rem 0.15rem 0;
+  min-height: 78px;
+  padding: 0.1rem 0.1rem 0;
   flex: 1 1 auto;
   min-width: 0;
 }
@@ -368,7 +367,7 @@
   font-weight: 900;
   color: #2a1a10;
   text-align: center;
-  font-size: 0.9rem;
+  font-size: 0.86rem;
   line-height: 1.2;
   font-family: "Press Start 2P", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   letter-spacing: 0.05em;
@@ -383,7 +382,7 @@
 .tp-variant__actions {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: 0.28rem;
   margin-top: auto;
 }
 
@@ -394,7 +393,7 @@
 .tp-variant__buy {
   position: relative;
   width: 100%;
-  height: 56px;
+  height: 50px;
 
   border-radius: 0.35rem;
   border: 2px solid var(--goodBorder);
@@ -407,7 +406,7 @@
 
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  font-size: 0.86rem;
+  font-size: 0.82rem;
 
   box-shadow: 0 4px 0 var(--goodShadow);
   cursor: pointer;
@@ -462,7 +461,7 @@
 
 /* Botón detalles */
 .tp-card__details {
-  height: 40px;
+  height: 36px;
   border-radius: 0.5rem;
   border: 2px solid rgba(54, 38, 24, 0.9);
   background: linear-gradient(180deg, #7a6a5b 0%, #6a5a4c 40%, #5a4c40 100%);
@@ -470,12 +469,12 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.45rem;
+  gap: 0.42rem;
   padding: 0 0.8rem;
 
   color: #f5e2c5;
   font-weight: 900;
-  font-size: 0.73rem;
+  font-size: 0.7rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
 
@@ -513,19 +512,19 @@
 }
 
 /* ======================================
-   STACK (DINERO/XP) - FIX VISUAL
+   STACK (DINERO/XP)
    ====================================== */
 
 .tp-section--stack .tp-stack-layout {
   border-radius: 0.55rem;
-  padding: 0.65rem;
+  padding: 0.6rem;
   background: var(--basket);
   box-shadow: inset 0 0 0 1px rgba(134, 93, 40, 0.35);
   border: 2px solid rgba(0, 0, 0, 0.15);
 
   display: grid;
   grid-template-columns: clamp(200px, 24vw, 300px) minmax(0, 1fr);
-  gap: 0.75rem;
+  gap: 0.7rem;
 
   overflow: hidden;
   min-width: 0;
@@ -544,8 +543,8 @@
 
   display: flex;
   flex-direction: column;
-  gap: 0.45rem;
-  padding: 0.6rem;
+  gap: 0.4rem;
+  padding: 0.55rem;
 
   min-width: 0;
 }
@@ -554,7 +553,7 @@
   position: relative;
   display: grid;
   place-items: center;
-  min-height: 210px;
+  min-height: 190px;
   padding: 0.15rem;
 
   overflow: hidden;
@@ -563,7 +562,7 @@
 
 .tp-stack-hero__imgwrap img {
   width: 100%;
-  height: 220px;
+  height: 200px;
   object-fit: contain;
   display: block;
   transform: scale(1.03);
@@ -581,11 +580,11 @@
 .tp-stack-hero__title {
   text-align: center;
   font-weight: 950;
-  font-size: 0.92rem;
+  font-size: 0.9rem;
   letter-spacing: 0.04em;
   font-family: "Press Start 2P", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 
-  padding: 0.25rem 0.35rem 0.3rem;
+  padding: 0.24rem 0.32rem 0.3rem;
   border-radius: 0.4rem;
   background: linear-gradient(180deg, rgba(35, 111, 201, 0.98), rgba(12, 74, 153, 0.98));
   color: #fdf4ce;
@@ -597,7 +596,7 @@
 .tp-stack-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.55rem;
+  gap: 0.5rem;
   align-content: flex-start;
   min-width: 0;
 
@@ -611,12 +610,12 @@
   border: 2px solid rgba(0, 0, 0, 0.25);
   background: rgba(0, 0, 0, 0.03);
   box-shadow: 0 2px 0 rgba(0, 0, 0, 0.18);
-  padding: 0.6rem 0.55rem 0.9rem;
+  padding: 0.55rem 0.52rem 0.8rem;
 
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 0.35rem;
+  gap: 0.3rem;
 
   overflow: hidden;
   min-width: 0;
@@ -635,26 +634,25 @@
 
 .tp-stack-card__qty {
   font-weight: 950;
-  font-size: 1rem;
+  font-size: 0.98rem;
   text-align: center;
   color: #2a1a10;
   font-family: "Press Start 2P", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
-.tp-stack-card__btn { margin-top: 0.2rem; }
-.tp-stack-card__details { margin-top: 0.25rem; }
+.tp-stack-card__btn { margin-top: 0.16rem; }
+.tp-stack-card__details { margin-top: 0.2rem; }
 
 /* ======================================
-   CARD GRID (RANGOS)
+   CARD GRID (RANGOS / ÚNICOS)
    ====================================== */
 
 .tp-card-grid {
-  margin-top: 0.95rem;
+  margin-top: 0.7rem;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 0.8rem;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 0.75rem;
 
-  /* ✅ evita overflow lateral de hovers */
   overflow: hidden;
   min-width: 0;
 }
@@ -662,6 +660,7 @@
 @media (max-width: 520px) {
   .tp-card-grid {
     grid-template-columns: 1fr;
+    gap: 0.6rem;
   }
 }
 
@@ -672,11 +671,11 @@
   background: var(--basket);
   box-shadow: inset 0 0 0 1px rgba(134, 93, 40, 0.35),
     0 2px 0 rgba(0, 0, 0, 0.18);
-  padding: 0.6rem 0.6rem 1rem;
+  padding: 0.55rem 0.55rem 0.85rem;
 
   display: flex;
   flex-direction: column;
-  gap: 0.45rem;
+  gap: 0.38rem;
 
   overflow: hidden;
   min-width: 0;
@@ -699,7 +698,7 @@
   display: grid;
   place-items: center;
   padding: 0.15rem;
-  min-height: 150px;
+  min-height: 130px;
 
   overflow: hidden;
   border-radius: 0.55rem;
@@ -707,7 +706,7 @@
 
 .tp-card__imgwrap img {
   width: 100%;
-  height: 140px;
+  height: 130px;
   object-fit: contain;
   display: block;
   transform: scale(1.02);
@@ -716,8 +715,8 @@
 }
 
 .tp-card:hover .tp-card__imgwrap img {
-  transform: translateY(-5px) scale(1.08) rotate(-3deg);
-  filter: saturate(1.25) drop-shadow(0 10px 16px rgba(0, 0, 0, 0.55));
+  transform: translateY(-4px) scale(1.07) rotate(-2deg);
+  filter: saturate(1.2) drop-shadow(0 9px 14px rgba(0, 0, 0, 0.55));
 }
 
 .tp-card__body {
@@ -725,14 +724,14 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.15rem;
-  min-height: 70px;
+  gap: 0.14rem;
+  min-height: 60px;
   min-width: 0;
 }
 
 .tp-card__name {
   font-weight: 900;
-  font-size: 0.98rem;
+  font-size: 0.94rem;
   text-align: center;
   color: #2a1a10;
   font-family: "Press Start 2P", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -749,7 +748,7 @@
 .tp-card__actions {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: 0.28rem;
   margin-top: auto;
 }
 
@@ -772,4 +771,92 @@
 /* Reduce motion */
 @media (prefers-reduced-motion: reduce) {
   .tp-variant__shine { animation: none !important; }
+}
+
+/* =========================================================
+   STACK MOSAICO MÓVIL
+   ========================================================= */
+
+@media (max-width: 560px) {
+  .tp-section--stack .tp-stack-layout {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.55rem;
+    overflow: hidden;
+  }
+
+  .tp-stack-grid {
+    display: contents;
+  }
+
+  .tp-stack-hero {
+    grid-column: 1;
+    grid-row: 1;
+    padding: 0.48rem;
+  }
+
+  .tp-stack-hero__imgwrap {
+    min-height: 140px;
+  }
+
+  .tp-stack-hero__imgwrap img {
+    height: 150px;
+  }
+
+  .tp-stack-hero__title {
+    display: none;
+  }
+
+  .tp-stack-card:first-of-type {
+    grid-column: 2;
+    grid-row: 1;
+    min-height: 165px;
+  }
+
+  .tp-stack-card {
+    min-height: 145px;
+  }
+
+  .tp-stack-card__qty {
+    font-size: 1.02rem;
+  }
+
+  .tp-variant__buy.tp-stack-card__btn {
+    height: 48px;
+    font-size: 0.8rem;
+    letter-spacing: 0.07em;
+  }
+
+  .tp-stack-card__details {
+    height: 34px;
+    font-size: 0.69rem;
+  }
+
+  .tp-discount-badge--hero {
+    top: 7px;
+    left: 7px;
+  }
+}
+
+@media (max-width: 380px) {
+  .tp-section--stack .tp-stack-layout {
+    gap: 0.5rem;
+  }
+
+  .tp-stack-hero__imgwrap {
+    min-height: 135px;
+  }
+
+  .tp-stack-hero__imgwrap img {
+    height: 145px;
+  }
+
+  .tp-stack-card:first-of-type {
+    min-height: 160px;
+  }
+
+  .tp-variant__buy.tp-stack-card__btn {
+    height: 46px;
+    font-size: 0.78rem;
+  }
 }

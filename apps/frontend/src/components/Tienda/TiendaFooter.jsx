@@ -1,7 +1,8 @@
+// src/components/Tienda/TiendaFooter.jsx
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import "../../styles/components/Tienda/tienda-footer.scss";
 
-const PEEK_HEIGHT = 20; // lo visible cuando está cerrado (coincide con CSS)
+const PEEK_HEIGHT = 20; // lo visible cuando está cerrado
 
 const TiendaFooter = () => {
   const [abierto, setAbierto] = useState(false);
@@ -46,7 +47,7 @@ const TiendaFooter = () => {
       aria-label="Información legal"
     >
       <div className="tienda-footer-inner">
-        {/* Imagen de roca (handle clickable) */}
+        {/* TIRA SUPERIOR (mango) */}
         <div
           className="tienda-footer-strip"
           onClick={toggle}
@@ -58,13 +59,17 @@ const TiendaFooter = () => {
               toggle();
             }
           }}
-          aria-label={abierto ? "Ocultar información legal" : "Mostrar información legal"}
+          aria-label={
+            abierto ? "Ocultar información legal" : "Mostrar información legal"
+          }
         >
           <button
             type="button"
             className="tienda-footer-toggle"
             aria-expanded={abierto}
-            aria-label={abierto ? "Ocultar información legal" : "Mostrar información legal"}
+            aria-label={
+              abierto ? "Ocultar información legal" : "Mostrar información legal"
+            }
             onClick={(e) => {
               e.stopPropagation();
               toggle();
@@ -81,8 +86,9 @@ const TiendaFooter = () => {
               <div className="tienda-footer-col tienda-footer-about">
                 <h4 className="tienda-footer-title">Sobre nosotros</h4>
                 <p>
-                  FlanCraft es la tienda del servidor de Blockhorn, un servidor de Minecraft con una gran
-                  variedad de modos de juego y contenido único.{" "}
+                  FlanCraft es la tienda del servidor de Blockhorn, un servidor
+                  de Minecraft con una gran variedad de modos de juego y
+                  contenido único.{" "}
                   <strong className="tienda-footer-highlight">
                     Únete a FlanCraft y vive la experiencia completa.
                   </strong>
@@ -93,10 +99,18 @@ const TiendaFooter = () => {
                 <h4 className="tienda-footer-title">Links</h4>
                 <nav aria-label="Enlaces legales">
                   <ul>
-                    <li><a href="/terminos">Términos</a></li>
-                    <li><a href="/privacidad">Privacidad</a></li>
-                    <li><a href="/impressum">Impressum</a></li>
-                    <li><a href="/contacto">Contacta con nosotros</a></li>
+                    <li>
+                      <a href="/terminos">Términos</a>
+                    </li>
+                    <li>
+                      <a href="/privacidad">Privacidad</a>
+                    </li>
+                    <li>
+                      <a href="/impressum">Impressum</a>
+                    </li>
+                    <li>
+                      <a href="/contacto">Contacta con nosotros</a>
+                    </li>
                   </ul>
                 </nav>
               </div>
@@ -104,8 +118,9 @@ const TiendaFooter = () => {
               <div className="tienda-footer-col tienda-footer-contact">
                 <h4 className="tienda-footer-title">Contacta con nosotros</h4>
                 <p>
-                  Si tienes alguna duda, inquietud o incidencia con tu compra, puedes ponerte en contacto con
-                  nosotros a través de nuestro servidor de Discord.
+                  Si tienes alguna duda, inquietud o incidencia con tu compra,
+                  puedes ponerte en contacto con nosotros a través de nuestro
+                  servidor de Discord.
                 </p>
                 <a
                   href="https://discord.gg/flancraft"
@@ -121,8 +136,8 @@ const TiendaFooter = () => {
             <div className="tienda-footer-bottom">
               <span>Todos los derechos reservados. 2025 © FlanCraft</span>
               <span>
-                FlanCraft no está afiliado de ninguna manera con Mojang AB, ni debe considerarse respaldado por
-                Mojang AB.
+                FlanCraft no está afiliado de ninguna manera con Mojang AB, ni
+                debe considerarse respaldado por Mojang AB.
               </span>
               <span className="tienda-footer-designed">
                 Diseñado por

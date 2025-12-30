@@ -90,7 +90,7 @@ const TiendaLayout = () => {
     const prev = prevEsPortadaRef.current;
     if (prev === true && esPortada === false) {
       setExpandiendo(true);
-      const t = setTimeout(() => setExpandiendo(false), 420);
+      const t = setTimeout(() => setExpandiendo(false), 520);
       return () => clearTimeout(t);
     }
     prevEsPortadaRef.current = esPortada;

@@ -5,9 +5,14 @@
 
 @keyframes shelfExpandIn {
   0% {
-    transform: translateY(6px) scale(0.985);
-    opacity: 0.85;
-    filter: saturate(0.98) brightness(0.98);
+    transform: translateY(18px) scale(0.9);
+    opacity: 0;
+    filter: blur(1px) saturate(0.92);
+  }
+  55% {
+    transform: translateY(0) scale(1.03);
+    opacity: 1;
+    filter: none;
   }
   100% {
     transform: translateY(0) scale(1);
@@ -41,20 +46,14 @@
    ========================================================= */
 
 .tienda-layout {
-  /* regla: radios nunca > 3px */
   --r: 3px;
-
   --sidebar-w: clamp(300px, 26vw, 360px);
 
-  /* spacing fluido (desktop base) */
   --gap-x: 1.75rem;
   --pad-x: 1.75rem;
   --pad-y: 1.25rem;
 
-  /* nav offset */
   --top-offset: var(--navH, var(--app-header-h, 0px));
-
-  /* Footer visible cuando está cerrado (si lo usas) */
   --footer-visible-h: 0px;
 
   position: relative;
@@ -66,6 +65,7 @@
 
   height: calc(100dvh - var(--top-offset));
   min-height: calc(100dvh - var(--top-offset));
+
   overflow: hidden;
   overflow-x: clip;
 }
@@ -88,7 +88,7 @@
   inset: 0;
   background: radial-gradient(
     circle at center,
-    rgba(0, 0, 0, 0.10),
+    rgba(0, 0, 0, 0.1),
     rgba(0, 0, 0, 0.78)
   );
   pointer-events: none;
@@ -104,7 +104,7 @@
 }
 
 /* =========================================================
-   MAIN (DESKTOP BASE — NO TOCAR ESTÉTICA)
+   MAIN (DESKTOP BASE)
    ========================================================= */
 
 .tienda-layout-main {
@@ -127,11 +127,17 @@
   overflow: hidden;
 }
 
+/* Aire extra arriba solo en portada */
+.tienda-layout.is-portada .tienda-layout-main {
+  padding-top: calc(var(--pad-y) + clamp(10px, 1.6vh, 18px));
+}
+
 /* LEFT */
 .tienda-layout-left {
   min-width: 0;
   min-height: 0;
   display: flex;
+  overflow: hidden;
 }
 
 .tienda-shelf-frame {
@@ -144,12 +150,13 @@
   background: transparent;
   box-sizing: border-box;
 
-  justify-content: center;
+  justify-content: stretch;
+  align-items: stretch;
 }
 
 .tienda-layout.is-portada .tienda-shelf-frame {
-  align-items: center;
-  justify-content: center;
+  align-items: stretch;
+  justify-content: stretch;
 }
 
 .tienda-layout.is-contenido .tienda-shelf-frame {
@@ -165,10 +172,24 @@
     opacity 260ms ease;
 }
 
+/* PORTADA: ocupa alto completo y hace scroll si hace falta */
 .tienda-layout.is-portada .tienda-shelf-inner {
-  max-width: 900px;
-  height: auto;
-  overflow: hidden;
+  max-width: 100%;
+  height: 100%;
+  min-height: 0;
+
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  padding: clamp(8px, 1.4vh, 14px) 0 clamp(16px, 2.2vh, 26px);
+
+  scrollbar-gutter: stable;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+
+  display: flex;
+  justify-content: stretch;
+  align-items: flex-start;
 }
 
 .tienda-layout.is-contenido .tienda-shelf-inner {
@@ -178,7 +199,7 @@
 }
 
 .tienda-layout.is-expanding.is-contenido .tienda-shelf-inner {
-  animation: shelfExpandIn 420ms cubic-bezier(0.2, 0.9, 0.2, 1) both;
+  animation: shelfExpandIn 520ms cubic-bezier(0.2, 0.9, 0.2, 1) both;
 }
 
 /* SIDEBAR (desktop) */
@@ -220,7 +241,7 @@
   gap: 0.95rem;
 }
 
-/* scroll interno real */
+/* scroll interno real del carrito */
 .tienda-sidebar-card > .carrito-lateral {
   flex: 1;
   min-height: 0;
@@ -230,7 +251,7 @@
 }
 
 /* =========================================================
-   TABLET (<= 1024) — layout propio, sticky y compacto
+   TABLET (<= 1024)
    ========================================================= */
 
 @media (max-width: 1023.98px) {
@@ -255,25 +276,25 @@
     position: sticky;
     top: calc(var(--top-offset) + var(--pad-y));
   }
+
+  .tienda-layout.is-portada .tienda-shelf-inner {
+    padding: clamp(8px, 1.2vh, 12px) 0 clamp(14px, 2vh, 22px);
+  }
 }
 
 /* =========================================================
-   MOBILE (<= 768) — MÁS VISIÓN, MENOS MARCOS
+   MOBILE (<= 768)
    ========================================================= */
 
 @media (max-width: 767.98px) {
   .tienda-layout {
-    /* scroll natural en móvil */
     height: auto;
     min-height: calc(100dvh - var(--top-offset));
     overflow: visible;
 
-    /* gutter mínimo */
-    --m-gutter: clamp(8px, 2.6vw, 12px);
-
-    /* adiós a “cards centradas pequeñas”: full width real */
-    --pad-x: var(--m-gutter);
-    --pad-y: clamp(8px, 2.2vw, 12px);
+    --m-gutter: 0px;
+    --pad-x: 0px;
+    --pad-y: clamp(6px, 2vw, 10px);
     --gap-x: 0px;
     --sidebar-w: 100%;
   }
@@ -284,12 +305,11 @@
     opacity: 1;
   }
 
-  /* overlay menos pesado: más aire visual */
   .tienda-layout::after,
   .tienda-layout.is-portada::after {
     background: radial-gradient(
       circle at 50% 25%,
-      rgba(0, 0, 0, 0.10),
+      rgba(0, 0, 0, 0.1),
       rgba(0, 0, 0, 0.34)
     );
   }
@@ -301,44 +321,41 @@
 
     display: flex;
     flex-direction: column;
-    gap: clamp(10px, 2.6vw, 14px);
+    gap: clamp(8px, 2.4vw, 12px);
 
-    padding: var(--pad-y) var(--pad-x) calc(var(--pad-y) + 0.25rem);
+    padding: var(--pad-y) 0 calc(var(--pad-y) + 0.25rem);
   }
 
-  /* Sidebar arriba */
   .tienda-layout-sidebar {
     order: -1;
     justify-content: stretch;
     align-items: stretch;
   }
 
-  /* CARCASA MINIMAL: sin marco pesado ni “doble pergamino” */
   .tienda-sidebar-card {
     width: 100%;
     max-width: 100%;
     height: auto;
 
-    /* piel ligera para no duplicar marcos internos */
     background: rgba(239, 224, 192, 0.92);
     color: #2b190e;
 
-    border-radius: var(--r);
-    padding: clamp(8px, 2.4vw, 12px);
+    border-radius: 0;
+    padding: clamp(6px, 2vw, 10px);
 
-    /* borde fino, sombra mínima */
     box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
-    border: 1px solid rgba(0, 0, 0, 0.18);
+    border-top: 1px solid rgba(0, 0, 0, 0.18);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.18);
+    border-left: none;
+    border-right: none;
 
     overflow: hidden;
 
-    /* basket estilo Tebex: accesible sin tapar media tienda */
     position: sticky;
     top: calc(var(--top-offset) + var(--pad-y));
     z-index: 20;
   }
 
-  /* Control de altura del basket: más visión de tienda */
   .tienda-sidebar-card > .carrito-lateral {
     max-height: min(
       44vh,
@@ -350,7 +367,6 @@
     -webkit-overflow-scrolling: touch;
   }
 
-  /* Contenido debajo: full width, sin “marco extra” */
   .tienda-layout-left {
     overflow: visible;
     justify-content: stretch;
@@ -365,6 +381,7 @@
     max-width: 100%;
     height: auto;
     overflow: visible;
+    padding: 0;
   }
 
   .tienda-layout.is-contenido .tienda-shelf-inner {
@@ -372,10 +389,6 @@
     overflow: visible;
   }
 
-  /* =========================================================
-     FIX: Tebex alineado al carrito (full width real)
-     - evita el centrado y reduce "marcos" que comen laterales
-     ========================================================= */
   .tienda-layout-left,
   .tienda-shelf-frame,
   .tienda-shelf-inner {
@@ -383,30 +396,30 @@
     align-items: stretch !important;
   }
 
+  /* Tebex embed a ancho completo en mobile */
   .tienda-shelf-inner .tienda-tebex {
     width: 100%;
     max-width: 100%;
+    margin: 0;
     justify-content: stretch !important;
     align-items: stretch !important;
+    --frameSize: 11px;
+    --frameRadius: 0.75rem;
   }
 
   .tienda-shelf-inner .tienda-tebex .tienda-contenido {
-    padding: 0.55rem !important; /* mismo "feel" que el carrito */
+    /* sin márgenes laterales extras, el marco pega al viewport */
+    padding: 0.5rem 0 !important;
     width: 100%;
     max-width: none;
     box-sizing: border-box;
   }
-
-  .tienda-shelf-inner .tienda-tebex {
-    --frameSize: 11px; /* reduce "espacios muertos" por borde-image */
-    --frameRadius: 0.75rem;
-  }
-} /* ✅ CIERRE correcto del @media móvil */
+}
 
 /* micro-ajuste móvil pequeño */
 @media (max-width: 479.98px) {
   .tienda-layout {
-    --m-gutter: 8px;
+    --m-gutter: 0px;
   }
 
   .tienda-sidebar-card > .carrito-lateral {
@@ -414,7 +427,7 @@
   }
 
   .tienda-shelf-inner .tienda-tebex .tienda-contenido {
-    padding: 0.5rem !important;
+    padding: 0.45rem 0 !important;
   }
 
   .tienda-shelf-inner .tienda-tebex {
@@ -459,7 +472,7 @@
 }
 
 /* =========================================================
-   Checkout Modal (sin cambios funcionales, radio <= 3px)
+   Checkout Modal
    ========================================================= */
 
 .tienda-checkout-overlay {

@@ -80,7 +80,6 @@ export default function TiendaOfertaCountdown() {
   }, [sale?.expire, now]);
 
   const safeMsLeft = useMemo(() => Math.max(0, msLeft), [msLeft]);
-
   const { d, h, m, s } = useMemo(() => partsFromMs(safeMsLeft), [safeMsLeft]);
 
   const progress = useMemo(() => {
@@ -101,6 +100,7 @@ export default function TiendaOfertaCountdown() {
   }, [sale?.expire, minutesLeft]);
 
   const shouldRender = Boolean(sale?.expire) && safeMsLeft > 0;
+  if (!shouldRender) return null;
 
   const percent =
     typeof sale?.percentage === "number"
@@ -113,8 +113,6 @@ export default function TiendaOfertaCountdown() {
     d > 0
       ? `${d} días, ${pad2(h)}:${pad2(m)}:${pad2(s)}`
       : `${pad2(h)}:${pad2(m)}:${pad2(s)}`;
-
-  if (!shouldRender) return null;
 
   return (
     <div className="tienda-oferta-banner" aria-label="Oferta activa">

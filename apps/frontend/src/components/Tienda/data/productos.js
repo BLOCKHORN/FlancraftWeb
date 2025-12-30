@@ -1,434 +1,370 @@
 // apps/frontend/src/components/Tienda/data/productos.js
+// SOLO INMORTAL — estilo “Minecraft cartoon + texturepack + shaders” (SVG inline)
 
-// Icono check (el que usabas en Tebex)
-const CHECK_ICON =
-  "https://dunb17ur4ymx4.cloudfront.net/wysiwyg/1017961/bff0f71f471bacf2e7be369dac44ebee7edd8fa2.png";
-
-// Banners / imágenes (CloudFront Tebex)
-const IMG = {
-  COMMON_HEADER:
-    "https://dunb17ur4ymx4.cloudfront.net/wysiwyg/1447273/158e00eb0695d0f283aa45b85921365a539e0016.png",
-
-  // Nova / Alpha (banners principales)
-  NOVA_BANNER:
-    "https://dunb17ur4ymx4.cloudfront.net/wysiwyg/1447273/445b6490887da0bc017009f863e124bd77182526.png",
-  ALPHA_BANNER:
-    "https://dunb17ur4ymx4.cloudfront.net/wysiwyg/1447273/1b2adc73bf0c086c8b9f9cc12042c55da07964c6.png",
-
-  // Prefix images
-  PREFIX_NOVA_INM:
-    "https://dunb17ur4ymx4.cloudfront.net/wysiwyg/1447273/42ca6ec9013c283d6265fb583b6d8c9bd88cc051.png",
-  PREFIX_ALPHA:
-    "https://dunb17ur4ymx4.cloudfront.net/wysiwyg/1447273/ff375cc6fdecaa80b083b2ccc8b79ac903b1d000.png",
-
-  // “Separadores”/banners extra (los que salen en tu HTML viejo)
-  BANNER_MID_1:
-    "https://dunb17ur4ymx4.cloudfront.net/wysiwyg/1447273/f041acb0ce25a5ba83dc8057bae74a75e43218d4.png",
-  BANNER_MID_2:
-    "https://dunb17ur4ymx4.cloudfront.net/wysiwyg/1447273/539a379082120787e5261329ad578e435837a1a7.png",
-  BANNER_MID_3:
-    "https://dunb17ur4ymx4.cloudfront.net/wysiwyg/1447273/627d52c34624dd7f384c12412a33677edd28b545.png",
-  BANNER_DUPE:
-    "https://dunb17ur4ymx4.cloudfront.net/wysiwyg/1447273/a7607d4fd694f11bfac9f6d285bbfd13c36743d4.png",
-
-  // Materiales
-  MATERIALS_ALPHA:
-    "https://dunb17ur4ymx4.cloudfront.net/wysiwyg/1447273/f28a9986700cb79ba31e9903612fa8d7d6b8e0dc.png",
-  MATERIALS_INM:
-    "https://dunb17ur4ymx4.cloudfront.net/wysiwyg/1447273/7ed282c4e00ffc53c24047ca9dfd319948d47046.png",
-
-  // Kit/Galería Alpha
-  ALPHA_KIT_HEAD_1:
-    "https://dunb17ur4ymx4.cloudfront.net/wysiwyg/1447273/b71767b84247a0c2087b792234ce842eee7449e2.png",
-  ALPHA_KIT_HEAD_2:
-    "https://dunb17ur4ymx4.cloudfront.net/wysiwyg/1447273/dab85a8e96067c6287b302908ec11cda42679284.png",
-  ALPHA_KIT_IMG_1:
-    "https://dunb17ur4ymx4.cloudfront.net/wysiwyg/1447273/80a3c3d60c42a37fc3c9775c8a64fbc7066b036a.png",
-  ALPHA_KIT_IMG_2:
-    "https://dunb17ur4ymx4.cloudfront.net/wysiwyg/1447273/a01c26eb07fff1d04d39334448cacf8667b9a037.png",
-
-  // Kit/Galería Inmortal
-  INM_KIT_HEAD_1:
-    "https://dunb17ur4ymx4.cloudfront.net/wysiwyg/1447273/51aa8afc6ee8888b19024dab7963c2e58a40ac2e.png",
-  INM_KIT_HEAD_2:
-    "https://dunb17ur4ymx4.cloudfront.net/wysiwyg/1447273/43f8396348290da1bbc4c02d05b5bbb5082d391c.png",
-  INM_KIT_IMG_1:
-    "https://dunb17ur4ymx4.cloudfront.net/wysiwyg/1447273/05ad88fecd7016bd6bb372b20aac183ed1c88523.png",
-  INM_KIT_IMG_2:
-    "https://dunb17ur4ymx4.cloudfront.net/wysiwyg/1447273/daf3d9c42c7bd5883d9c00f3767229bc0a4afe19.png",
+const SVG = {
+  chest: `
+<svg class="mcx-svg" viewBox="0 0 64 64" aria-hidden="true">
+  <defs>
+    <linearGradient id="gChest" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#ffcf66"/>
+      <stop offset="1" stop-color="#d8842f"/>
+    </linearGradient>
+    <linearGradient id="gChestWood" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#8a5a2b"/>
+      <stop offset="1" stop-color="#5b3516"/>
+    </linearGradient>
+  </defs>
+  <rect x="10" y="18" width="44" height="34" rx="6" fill="url(#gChestWood)" stroke="#2b1507" stroke-width="3"/>
+  <rect x="12" y="20" width="40" height="12" rx="5" fill="#6a3f18" opacity=".65"/>
+  <rect x="10" y="30" width="44" height="22" rx="6" fill="#7b4a20" opacity=".85"/>
+  <rect x="28" y="28" width="8" height="20" rx="4" fill="url(#gChest)" stroke="#2b1507" stroke-width="3"/>
+  <rect x="23" y="30" width="18" height="10" rx="5" fill="url(#gChest)" stroke="#2b1507" stroke-width="3"/>
+  <circle cx="32" cy="36" r="3" fill="#2b1507" opacity=".7"/>
+  <path d="M14 40c7-8 29-8 36 0" fill="none" stroke="#ffffff" stroke-opacity=".18" stroke-width="3" stroke-linecap="round"/>
+</svg>`,
+  star: `
+<svg class="mcx-svg" viewBox="0 0 64 64" aria-hidden="true">
+  <defs>
+    <linearGradient id="gStar" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#ffeaa6"/>
+      <stop offset="1" stop-color="#f2b33a"/>
+    </linearGradient>
+  </defs>
+  <path d="M32 6l7 16 18 2-13 12 4 18-16-9-16 9 4-18L7 24l18-2z"
+        fill="url(#gStar)" stroke="#6a3a05" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M20 28c8-7 16-7 24 0" fill="none" stroke="#fff" stroke-opacity=".25" stroke-width="3" stroke-linecap="round"/>
+</svg>`,
+  pick: `
+<svg class="mcx-svg" viewBox="0 0 64 64" aria-hidden="true">
+  <defs>
+    <linearGradient id="gPick" x1="0" x2="1">
+      <stop offset="0" stop-color="#a7f0ff"/>
+      <stop offset="1" stop-color="#2bc0ff"/>
+    </linearGradient>
+  </defs>
+  <path d="M10 18c10-10 22-8 32 2l8-8 6 6-8 8c10 10 12 22 2 32l-6-6c6-7 4-16-4-24l-6 6-6-6 6-6c-8-8-17-10-24-4z"
+        fill="url(#gPick)" stroke="#0e3a55" stroke-width="3" stroke-linejoin="round"/>
+  <rect x="28" y="28" width="10" height="30" rx="5" fill="#7a4a20" stroke="#2a1608" stroke-width="3"/>
+  <path d="M30 34h6" stroke="#fff" stroke-opacity=".25" stroke-width="3" stroke-linecap="round"/>
+</svg>`,
+  home: `
+<svg class="mcx-svg" viewBox="0 0 64 64" aria-hidden="true">
+  <defs>
+    <linearGradient id="gHome" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#bff6ff"/>
+      <stop offset="1" stop-color="#3bd1ff"/>
+    </linearGradient>
+  </defs>
+  <path d="M12 30L32 14l20 16v22a6 6 0 0 1-6 6H18a6 6 0 0 1-6-6V30z"
+        fill="url(#gHome)" stroke="#0f3c52" stroke-width="3" stroke-linejoin="round"/>
+  <rect x="26" y="38" width="12" height="20" rx="4" fill="#7a4a20" stroke="#2a1608" stroke-width="3"/>
+  <path d="M20 34h24" stroke="#fff" stroke-opacity=".25" stroke-width="3" stroke-linecap="round"/>
+</svg>`,
+  wings: `
+<svg class="mcx-svg" viewBox="0 0 64 64" aria-hidden="true">
+  <defs>
+    <linearGradient id="gWing" x1="0" x2="1">
+      <stop offset="0" stop-color="#d7b6ff"/>
+      <stop offset="1" stop-color="#7f57ff"/>
+    </linearGradient>
+  </defs>
+  <path d="M32 30c-9-16-22-16-26-9 6 3 10 8 11 14-5 0-9 2-11 6 9 6 18 2 26-11z"
+        fill="url(#gWing)" stroke="#2b1a55" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M32 30c9-16 22-16 26-9-6 3-10 8-11 14 5 0 9 2 11 6-9 6-18 2-26-11z"
+        fill="url(#gWing)" stroke="#2b1a55" stroke-width="3" stroke-linejoin="round"/>
+  <circle cx="32" cy="32" r="5" fill="#ffeaa6" stroke="#6a3a05" stroke-width="3"/>
+</svg>`,
+  coin: `
+<svg class="mcx-svg" viewBox="0 0 64 64" aria-hidden="true">
+  <defs>
+    <linearGradient id="gCoin" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#fff2b8"/>
+      <stop offset="1" stop-color="#f0b13a"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="32" cy="22" rx="18" ry="10" fill="url(#gCoin)" stroke="#6a3a05" stroke-width="3"/>
+  <path d="M14 22v16c0 6 8 10 18 10s18-4 18-10V22"
+        fill="url(#gCoin)" stroke="#6a3a05" stroke-width="3"/>
+  <path d="M22 30c6-4 14-4 20 0" fill="none" stroke="#fff" stroke-opacity=".25" stroke-width="3" stroke-linecap="round"/>
+</svg>`,
+  heal: `
+<svg class="mcx-svg" viewBox="0 0 64 64" aria-hidden="true">
+  <defs>
+    <linearGradient id="gHeal" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#ffb6b6"/>
+      <stop offset="1" stop-color="#ff4a4a"/>
+    </linearGradient>
+  </defs>
+  <path d="M32 56s-22-12-22-28c0-8 6-14 14-14 5 0 8 2 8 2s3-2 8-2c8 0 14 6 14 14 0 16-22 28-22 28z"
+        fill="url(#gHeal)" stroke="#5a0f0f" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M22 30h20M32 20v20" stroke="#fff" stroke-opacity=".35" stroke-width="6" stroke-linecap="round"/>
+</svg>`,
+  anvil: `
+<svg class="mcx-svg" viewBox="0 0 64 64" aria-hidden="true">
+  <defs>
+    <linearGradient id="gAnvil" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#cfd6db"/>
+      <stop offset="1" stop-color="#6a717a"/>
+    </linearGradient>
+  </defs>
+  <path d="M10 24c2-10 14-16 22-16s20 6 22 16H10z"
+        fill="url(#gAnvil)" stroke="#1c232b" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M18 24h28l-4 14H22l-4-14z"
+        fill="#8e97a1" stroke="#1c232b" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M16 38h32v6c0 3-3 6-6 6H22c-3 0-6-3-6-6v-6z"
+        fill="#737c86" stroke="#1c232b" stroke-width="3" stroke-linejoin="round"/>
+</svg>`,
+  portal: `
+<svg class="mcx-svg" viewBox="0 0 64 64" aria-hidden="true">
+  <defs>
+    <linearGradient id="gPortal" x1="0" x2="1">
+      <stop offset="0" stop-color="#61e6ff"/>
+      <stop offset="1" stop-color="#2b65ff"/>
+    </linearGradient>
+  </defs>
+  <rect x="18" y="10" width="28" height="44" rx="8" fill="url(#gPortal)" stroke="#0b1e4a" stroke-width="3"/>
+  <path d="M26 18c10-6 18 2 12 10-6 8-2 16 10 18"
+        fill="none" stroke="#fff" stroke-opacity=".22" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="24" cy="48" r="3" fill="#ffeaa6" stroke="#6a3a05" stroke-width="2"/>
+</svg>`,
+  dupe: `
+<svg class="mcx-svg" viewBox="0 0 64 64" aria-hidden="true">
+  <defs>
+    <linearGradient id="gDupe" x1="0" x2="1">
+      <stop offset="0" stop-color="#ff6b6b"/>
+      <stop offset="1" stop-color="#ff2d2d"/>
+    </linearGradient>
+  </defs>
+  <rect x="14" y="18" width="24" height="26" rx="6" fill="url(#gDupe)" stroke="#4a0b0b" stroke-width="3"/>
+  <rect x="26" y="26" width="24" height="26" rx="6" fill="url(#gDupe)" opacity=".85" stroke="#4a0b0b" stroke-width="3"/>
+  <path d="M22 31h10M27 26v10" stroke="#fff" stroke-opacity=".35" stroke-width="5" stroke-linecap="round"/>
+</svg>`,
 };
 
 const subscriptionBlock = (cancelUrl = "#") => `
-  <div class="prod-subscription">
-    <div class="prod-subscription__row">📆 <strong>Duración: 1 Mes</strong></div>
-    <div class="prod-subscription__row">🔁 <em>Este paquete se renovará automáticamente cada 30 días (solo si eliges suscripción)</em></div>
-    <div class="prod-subscription__row">🔗 <a class="prod-link" href="${cancelUrl}" target="_blank" rel="noreferrer">Haz clic aquí para cancelar la suscripción</a></div>
+  <div class="mcx-note" role="note" aria-label="Suscripción">
+    <div class="mcx-note__row">
+      <span class="mcx-note__dot"></span>
+      <strong>30 días</strong> · Renovación opcional en modo suscripción
+    </div>
+    <a class="mcx-note__link" href="${cancelUrl}" target="_blank" rel="noreferrer">Cancelar suscripción</a>
   </div>
 `;
 
 const legalBlock = () => `
-  <div class="prod-legal">
-    <p class="prod-legal__warn"><strong>Para poder obtener el paquete debes disponer de slots disponibles en tu inventario y estar dentro del servidor.</strong></p>
-    <p class="prod-legal__warn prod-legal__warn--red"><strong>¡Esta compra es de un único uso, así que si pierdes esta protección de cualquier modo, no podrá volver a ser entregada!</strong></p>
-    <p class="prod-legal__fine prod-legal__warn--red"><strong>FlanCraft no está afiliado de ninguna forma con Mojang, AB. Tampoco debe considerarse respaldado por Mojang, AB.</strong></p>
+  <div class="mcx-legal" role="note" aria-label="Avisos">
+    <div class="mcx-legal__line"><strong>Importante:</strong> necesitas slots libres y estar dentro del servidor para recibir el paquete.</div>
+    <div class="mcx-legal__line mcx-legal__danger"><strong>Único uso:</strong> si se pierde el beneficio/ítem, no se reentrega.</div>
+    <div class="mcx-legal__fine">FlanCraft no está afiliado ni respaldado por Mojang AB.</div>
   </div>
 `;
-
-/* =========================
-   NOVA
-========================= */
-
-const NOVA_HTML = `
-<div class="prod-desc prod-desc--rango prod-desc--nova" data-check-icon="${CHECK_ICON}">
-  ${subscriptionBlock("#")}
-
-  <header class="prod-hero">
-    <div class="prod-hero__head">
-      <img class="prod-banner" src="${IMG.COMMON_HEADER}" alt="Rangos" loading="lazy"/>
-      <div class="prod-hero__titleRow">
-        <img class="prod-banner prod-banner--rank" src="${IMG.NOVA_BANNER}" alt="NOVA" loading="lazy"/>
-      </div>
-      <p class="prod-prefix">
-        Prefijo <img class="prod-prefix__img" src="${IMG.PREFIX_NOVA_INM}" alt="Prefijo" loading="lazy"/> en el chat y en Tab
-      </p>
-    </div>
-
-    <div class="prod-kpis">
-      <div class="prod-kpi"><div class="prod-kpi__label">Trabajos</div><div class="prod-kpi__value">4</div></div>
-      <div class="prod-kpi"><div class="prod-kpi__label">Sethomes</div><div class="prod-kpi__value">10</div></div>
-      <div class="prod-kpi"><div class="prod-kpi__label">Dinero</div><div class="prod-kpi__value">+5.000$</div></div>
-      <div class="prod-kpi"><div class="prod-kpi__label">Kit</div><div class="prod-kpi__value">Cada 6h</div></div>
-    </div>
-
-    <p class="prod-hero__subtitle">
-      La entrada al mundo premium: utilidades clave, kit recurrente y ventajas pensadas para farmear y avanzar más rápido.
-    </p>
-  </header>
-
-  <div class="prod-grid">
-    <section class="prod-section">
-      <h3 class="prod-section__title">Beneficios principales</h3>
-      <ul class="prod-list">
-        <li>Acceso a los beneficios de rangos anteriores.</li>
-        <li>¡Podrás acceder al servidor cuando esté lleno!</li>
-        <li>Acceso a tener <strong>4 trabajos</strong> al mismo tiempo.</li>
-        <li>Establece hasta <strong>10 sethome</strong>.</li>
-        <li>Incluye <strong>+5.000$</strong> del servidor.</li>
-      </ul>
-    </section>
-
-    <section class="prod-section">
-      <h3 class="prod-section__title">Comandos incluidos</h3>
-      <ul class="prod-cmds">
-        <li><code>/back</code> <span class="prod-cmds__sep">→</span> Vuelve a tu última posición.</li>
-        <li><code>/compass</code> <span class="prod-cmds__sep">→</span> Muestra hacia dónde estás mirando.</li>
-        <li><code>/disposal</code> / <code>/trash</code> <span class="prod-cmds__sep">→</span> Basura portátil.</li>
-        <li><code>/loom</code> <span class="prod-cmds__sep">→</span> Abre el telar.</li>
-        <li><code>/tpahere</code> <span class="prod-cmds__sep">→</span> Solicitud de teleport hacia ti.</li>
-        <li><code>/hat</code> <span class="prod-cmds__sep">→</span> Coloca un objeto en tu cabeza.</li>
-        <li><code>/smithtable</code> <span class="prod-cmds__sep">→</span> Abre la mesa de herrería.</li>
-        <li><code>/near</code> <em class="prod-cooldown">(30s)</em> <span class="prod-cmds__sep">→</span> Jugadores cercanos.</li>
-      </ul>
-    </section>
-  </div>
-
-  <details class="prod-details" open>
-    <summary class="prod-details__summary">
-      <span>Kit NOVA <em class="prod-muted">(cada 6 horas)</em></span>
-      <span class="prod-details__meta">ver contenido</span>
-    </summary>
-    <div class="prod-details__content">
-      <ul class="prod-kit">
-        <li>Casco de Diamante (Respiración 3, Protección 3, Irrompibilidad 3, Reparación 1)</li>
-        <li>Pechera de Diamante (Protección 3, Irrompibilidad 3, Reparación 1)</li>
-        <li>Pantalones de Diamante (Protección 3, Irrompibilidad 3, Reparación 1)</li>
-        <li>Botas de Diamante (Protección 3, Irrompibilidad 3, Reparación 1)</li>
-        <li>Espada de Diamante (Filo 3, Botín 3, Irrompibilidad 3, Reparación 1)</li>
-        <li>Pico de Diamante (Eficiencia 2, Fortuna 2, Irrompibilidad 2, Reparación 2)</li>
-        <li>Hacha de Diamante (Eficiencia 2, Irrompibilidad 2, Reparación 1)</li>
-        <li>Pala de Diamante (Eficiencia 2, Irrompibilidad 2, Reparación 1)</li>
-        <li>Azada de Diamante (Eficiencia 2, Irrompibilidad 2, Reparación 1)</li>
-        <li>16 Zanahorias Doradas</li>
-      </ul>
-    </div>
-  </details>
-
-  <details class="prod-details">
-    <summary class="prod-details__summary">
-      <span>Extras y ventajas avanzadas</span>
-      <span class="prod-details__meta">ver extras</span>
-    </summary>
-    <div class="prod-details__content">
-      <ul class="prod-list">
-        <li>Hasta <strong>30 subastas</strong> y <strong>15 warps personales</strong>.</li>
-        <li>Hasta <strong>20 tiendas personales</strong>.</li>
-        <li>Incluye <strong>+50.000$</strong> (según modalidad/servidor).</li>
-        <li><strong>Keys OneBlock:</strong> x8 Básica, x3 Épica.</li>
-        <li><strong>/dupe</strong>: multiplica x6 el ítem en mano.</li>
-      </ul>
-    </div>
-  </details>
-
-  ${legalBlock()}
-</div>
-`;
-
-/* =========================
-   ALPHA
-========================= */
-
-const ALPHA_HTML = `
-<div class="prod-desc prod-desc--rango prod-desc--alpha" data-check-icon="${CHECK_ICON}">
-  ${subscriptionBlock("#")}
-
-  <header class="prod-hero">
-    <div class="prod-hero__head">
-      <img class="prod-banner" src="${IMG.COMMON_HEADER}" alt="Rangos" loading="lazy"/>
-      <div class="prod-hero__titleRow">
-        <img class="prod-banner prod-banner--rank" src="${IMG.ALPHA_BANNER}" alt="ALPHA" loading="lazy"/>
-      </div>
-      <p class="prod-prefix">
-        Prefijo <img class="prod-prefix__img" src="${IMG.PREFIX_ALPHA}" alt="Prefijo" loading="lazy"/> en el chat y en Tab
-      </p>
-    </div>
-
-    <div class="prod-kpis">
-      <div class="prod-kpi"><div class="prod-kpi__label">Trabajos</div><div class="prod-kpi__value">5</div></div>
-      <div class="prod-kpi"><div class="prod-kpi__label">Sethomes</div><div class="prod-kpi__value">20</div></div>
-      <div class="prod-kpi"><div class="prod-kpi__label">Dinero</div><div class="prod-kpi__value">+15.000$</div></div>
-      <div class="prod-kpi"><div class="prod-kpi__label">Kit</div><div class="prod-kpi__value">Cada 6h</div></div>
-    </div>
-
-    <p class="prod-hero__subtitle">
-      Una mejora seria: más utilidades, kit Netherita recurrente y ventajas de economía/tiendas para dominar el mid-game.
-    </p>
-  </header>
-
-  <div class="prod-grid">
-    <section class="prod-section">
-      <h3 class="prod-section__title">Beneficios principales</h3>
-      <ul class="prod-list">
-        <li>Acceso a beneficios de rangos anteriores.</li>
-        <li>¡Podrás acceder al servidor cuando esté lleno!</li>
-        <li>Acceso a tener <strong>5 trabajos</strong> al mismo tiempo.</li>
-        <li>Incluye <strong>+15.000$</strong> del servidor.</li>
-      </ul>
-    </section>
-
-    <section class="prod-section">
-      <h3 class="prod-section__title">Comandos incluidos</h3>
-      <ul class="prod-cmds">
-        <li><code>/repair</code> <em class="prod-cooldown">(30s)</em> <span class="prod-cmds__sep">→</span> Repara el objeto en tu mano.</li>
-        <li><code>/feed</code> <em class="prod-cooldown">(5min)</em> <span class="prod-cmds__sep">→</span> Rellena tu barra de comida.</li>
-        <li><code>/workbench</code> / <code>/craft</code> <span class="prod-cmds__sep">→</span> Abre la mesa de crafteo.</li>
-        <li><code>/stonecutter</code> <span class="prod-cmds__sep">→</span> Abre el cortapiedras.</li>
-        <li><code>/enderchest</code> <span class="prod-cmds__sep">→</span> Accede a tu cofre del End.</li>
-        <li><code>/condense</code> <span class="prod-cmds__sep">→</span> Convierte minerales en bloques automáticamente.</li>
-        <li><code>/vision</code> <span class="prod-cmds__sep">→</span> Activa/desactiva visión nocturna.</li>
-      </ul>
-    </section>
-  </div>
-
-  <details class="prod-details" open>
-    <summary class="prod-details__summary">
-      <span>Kit ALPHA <em class="prod-muted">(cada 6 horas)</em></span>
-      <span class="prod-details__meta">ver kit</span>
-    </summary>
-    <div class="prod-details__content">
-      <div class="prod-gallery">
-        <img src="${IMG.ALPHA_KIT_HEAD_1}" alt="Kit Alpha" loading="lazy"/>
-        <img src="${IMG.ALPHA_KIT_HEAD_2}" alt="Kit Alpha" loading="lazy"/>
-        <img src="${IMG.ALPHA_KIT_IMG_1}" alt="Kit Alpha" loading="lazy"/>
-        <img src="${IMG.ALPHA_KIT_IMG_2}" alt="Kit Alpha" loading="lazy"/>
-      </div>
-
-      <ul class="prod-kit">
-        <li>Casco de Netherita (Respiración 5, Protección 5, Irrompibilidad 5, Reparación 1, Espinas 3)</li>
-        <li>Pechera de Netherita (Protección 5, Irrompibilidad 5, Reparación 1, Espinas 3)</li>
-        <li>Pantalones de Netherita (Protección 5, Irrompibilidad 5, Reparación 1, Espinas 3)</li>
-        <li>Botas de Netherita (Protección 5, Irrompibilidad 5, Reparación 1, Espinas 3)</li>
-        <li>Espada de Netherita (Filo 5, Barrido 2, Aspecto Ígneo 2, Botín 5, Irrompibilidad 5, Reparación 1)</li>
-        <li>Pico de Netherita (Eficiencia 5, Fortuna 5, Irrompibilidad 5, Reparación 1)</li>
-        <li>Pico de Netherita (Eficiencia 5, Toque de Seda 1, Irrompibilidad 5, Reparación 1)</li>
-        <li>Hacha de Netherita (Eficiencia 5, Irrompibilidad 5, Reparación 1)</li>
-        <li>Pala de Netherita (Eficiencia 5, Irrompibilidad 5, Reparación 1)</li>
-        <li>Azada de Netherita (Eficiencia 5, Irrompibilidad 5, Reparación 1)</li>
-        <li>64 Manzanas Doradas</li>
-      </ul>
-    </div>
-  </details>
-
-  <details class="prod-details">
-    <summary class="prod-details__summary">
-      <span>Economía, keys y utilidades</span>
-      <span class="prod-details__meta">ver extras</span>
-    </summary>
-    <div class="prod-details__content">
-      <div class="prod-inlineImg">
-        <img src="${IMG.MATERIALS_ALPHA}" alt="Materiales Alpha" loading="lazy"/>
-      </div>
-
-      <ul class="prod-list">
-        <li>Hasta <strong>40 subastas</strong>, <strong>20 warps personales</strong> y <strong>30 tiendas personales</strong>.</li>
-        <li>Hasta <strong>20 sethome</strong>.</li>
-        <li>Incluye <strong>+110.000$</strong> (según modalidad/servidor).</li>
-        <li><strong>Keys:</strong> x20 Básica, x8 Épica.</li>
-        <li>Acceso a utilidades: <code>/afk</code>, <code>/compass</code>, <code>/feed</code>, <code>/hat</code>.</li>
-        <li><strong>/dupe</strong>: multiplica x8 el ítem en mano.</li>
-      </ul>
-    </div>
-  </details>
-
-  ${legalBlock()}
-</div>
-`;
-
-/* =========================
-   INMORTAL
-========================= */
 
 const INMORTAL_HTML = `
-<div class="prod-desc prod-desc--rango prod-desc--inmortal" data-check-icon="${CHECK_ICON}">
+<div class="mcx mcx--inmortal">
+
   ${subscriptionBlock("#")}
 
-  <header class="prod-hero">
-    <div class="prod-hero__head">
-      <img class="prod-banner" src="${IMG.COMMON_HEADER}" alt="Rangos" loading="lazy"/>
-      <div class="prod-hero__titleRow">
-        <div class="prod-rankTitle">
-          <span class="prod-rankTitle__pill">MÁXIMO TIER</span>
-          <h2 class="prod-rankTitle__text">INMORTAL</h2>
+  <div class="mcx-modal" role="region" aria-label="Detalle del rango Inmortal">
+    <div class="mcx-skyGlow" aria-hidden="true"></div>
+
+    <header class="mcx-header">
+      <div class="mcx-ribbon">
+        <div class="mcx-ribbon__chest">${SVG.chest}</div>
+        <div class="mcx-ribbon__text">LOBBY</div>
+        <div class="mcx-ribbon__chest">${SVG.chest}</div>
+      </div>
+
+      <div class="mcx-rankCard">
+        <div class="mcx-rankCard__tag">${SVG.star}<span>MÁXIMO TIER</span></div>
+        <div class="mcx-rankCard__title">INMORTAL</div>
+        <div class="mcx-rankCard__sub">30 DÍAS</div>
+
+        <div class="mcx-rankCard__lead">
+          Prefijo <span class="mcx-badgeWord">INMORTAL</span> en chat y TAB ·
+          Vuelo, curación, reparación total, kit recurrente y ventajas por modalidad.
         </div>
       </div>
 
-      <p class="prod-prefix">
-        Prefijo <img class="prod-prefix__img" src="${IMG.PREFIX_NOVA_INM}" alt="Prefijo" loading="lazy"/> en el chat y en Tab
-      </p>
+      <div class="mcx-quick">
+        <div class="mcx-q">${SVG.pick}<div class="mcx-q__k">TRABAJOS</div><div class="mcx-q__v">6</div><div class="mcx-q__d">Más farmeo</div></div>
+        <div class="mcx-q">${SVG.home}<div class="mcx-q__k">SETHOMES</div><div class="mcx-q__v">50</div><div class="mcx-q__d">Movilidad</div></div>
+        <div class="mcx-q">${SVG.wings}<div class="mcx-q__k">VUELO</div><div class="mcx-q__v">/fly</div><div class="mcx-q__d">Sin límites</div></div>
+        <div class="mcx-q">${SVG.coin}<div class="mcx-q__k">DINERO</div><div class="mcx-q__v">+20k</div><div class="mcx-q__d">Impulso</div></div>
+        <div class="mcx-q">${SVG.chest}<div class="mcx-q__k">KIT</div><div class="mcx-q__v">6h</div><div class="mcx-q__d">Recurrente</div></div>
+        <div class="mcx-q mcx-q--danger">${SVG.dupe}<div class="mcx-q__k">ANÁRQUICO</div><div class="mcx-q__v">x10</div><div class="mcx-q__d">/dupe</div></div>
+      </div>
+
+      <nav class="mcx-tabs" aria-label="Secciones">
+        <a class="mcx-tab" href="#mcx-info">${SVG.star}<span>INFO</span></a>
+        <a class="mcx-tab" href="#mcx-utilidades">${SVG.heal}<span>UTILIDADES</span></a>
+        <a class="mcx-tab" href="#mcx-kit">${SVG.chest}<span>KIT</span></a>
+        <a class="mcx-tab mcx-tab--accent" href="#mcx-modalidades">${SVG.portal}<span>MODALIDADES</span></a>
+      </nav>
+    </header>
+
+    <div class="mcx-body">
+
+      <section id="mcx-info" class="mcx-section">
+        <h3 class="mcx-h3">Resumen rápido</h3>
+        <div class="mcx-cards">
+          <div class="mcx-card">
+            <div class="mcx-card__top">${SVG.star}<div><div class="mcx-card__k">TIER</div><div class="mcx-card__v">Máximo</div></div></div>
+            <div class="mcx-card__d">Acceso a ventajas “élite”.</div>
+          </div>
+          <div class="mcx-card">
+            <div class="mcx-card__top">${SVG.wings}<div><div class="mcx-card__k">COMODIDAD</div><div class="mcx-card__v">Alta</div></div></div>
+            <div class="mcx-card__d">Vuelo, curación y reparación total.</div>
+          </div>
+          <div class="mcx-card mcx-card--danger">
+            <div class="mcx-card__top">${SVG.dupe}<div><div class="mcx-card__k">ANÁRQUICO</div><div class="mcx-card__v">/dupe x10</div></div></div>
+            <div class="mcx-card__d">Ventaja exclusiva por modalidad.</div>
+          </div>
+        </div>
+
+        <ul class="mcx-list">
+          <li><span class="mcx-check" aria-hidden="true"></span> Acceso a beneficios de rangos anteriores.</li>
+          <li><span class="mcx-check" aria-hidden="true"></span> Entra aunque el servidor esté lleno.</li>
+          <li><span class="mcx-check" aria-hidden="true"></span> Kit recurrente cada 6 horas + dinero inicial.</li>
+          <li><span class="mcx-check" aria-hidden="true"></span> Ventajas separadas por modalidad (abajo).</li>
+        </ul>
+      </section>
+
+      <section id="mcx-utilidades" class="mcx-section">
+        <h3 class="mcx-h3">Hechizos y utilidades</h3>
+
+        <div class="mcx-cmdGrid">
+          <article class="mcx-cmd">
+            <div class="mcx-cmd__head">${SVG.heal}<div><code>/heal</code><span class="mcx-pill">5 min</span></div></div>
+            <div class="mcx-cmd__txt">Cura tu vida al instante.</div>
+          </article>
+
+          <article class="mcx-cmd">
+            <div class="mcx-cmd__head">${SVG.pick}<div><code>/repairall</code><span class="mcx-pill mcx-pill--cyan">30 s</span></div></div>
+            <div class="mcx-cmd__txt">Repara todo tu inventario.</div>
+          </article>
+
+          <article class="mcx-cmd">
+            <div class="mcx-cmd__head">${SVG.wings}<div><code>/fly</code><span class="mcx-pill mcx-pill--free">libre</span></div></div>
+            <div class="mcx-cmd__txt">Vuelo donde esté permitido.</div>
+          </article>
+
+          <article class="mcx-cmd">
+            <div class="mcx-cmd__head">${SVG.anvil}<div><code>/anvil</code><span class="mcx-pill mcx-pill--free">libre</span></div></div>
+            <div class="mcx-cmd__txt">Abre el yunque donde estés.</div>
+          </article>
+
+          <article class="mcx-cmd">
+            <div class="mcx-cmd__head">${SVG.star}<div><code>/kittycannon</code><span class="mcx-pill">3 min</span></div></div>
+            <div class="mcx-cmd__txt">Efecto divertido.</div>
+          </article>
+
+          <article class="mcx-cmd">
+            <div class="mcx-cmd__head">${SVG.portal}<div><code>/respirar</code><span class="mcx-pill mcx-pill--free">libre</span></div></div>
+            <div class="mcx-cmd__txt">Respira bajo el agua.</div>
+          </article>
+
+          <article class="mcx-cmd">
+            <div class="mcx-cmd__head">${SVG.portal}<div><code>/canal</code> <span class="mcx-or">o</span> <code>/canalizador</code><span class="mcx-pill mcx-pill--free">libre</span></div></div>
+            <div class="mcx-cmd__txt">Visión submarina tipo conduit.</div>
+          </article>
+        </div>
+      </section>
+
+      <section id="mcx-kit" class="mcx-section">
+        <h3 class="mcx-h3">Kit INMORTAL</h3>
+
+        <div class="mcx-kitMeta">
+          <div class="mcx-bubble">${SVG.coin}<div><div class="mcx-bubble__k">DINERO</div><div class="mcx-bubble__v">+20.000$</div></div></div>
+          <div class="mcx-bubble">${SVG.chest}<div><div class="mcx-bubble__k">COOLDOWN</div><div class="mcx-bubble__v">6 horas</div></div></div>
+        </div>
+
+        <ul class="mcx-list mcx-list--dense">
+          <li><span class="mcx-check" aria-hidden="true"></span> Casco Netherita (Resp. 6, Prot. 6, Irromp. 6, Reparación 1, Espinas 6)</li>
+          <li><span class="mcx-check" aria-hidden="true"></span> Pechera Netherita (Prot. 6, Irromp. 6, Reparación 1, Espinas 6)</li>
+          <li><span class="mcx-check" aria-hidden="true"></span> Pantalones Netherita (Prot. 6, Irromp. 6, Reparación 1, Espinas 6)</li>
+          <li><span class="mcx-check" aria-hidden="true"></span> Botas Netherita (Prot. 6, Irromp. 6, Reparación 1, Espinas 6)</li>
+          <li><span class="mcx-check" aria-hidden="true"></span> Espada Netherita (Filo 6, Barrido 3, Aspecto Ígneo 3, Botín 6, Irromp. 6, Reparación 1)</li>
+          <li><span class="mcx-check" aria-hidden="true"></span> Pico Netherita (Eficiencia 6, Fortuna 6, Irromp. 6, Reparación 1)</li>
+          <li><span class="mcx-check" aria-hidden="true"></span> Pico Netherita (Eficiencia 6, Toque de Seda 1, Irromp. 6, Reparación 1)</li>
+          <li><span class="mcx-check" aria-hidden="true"></span> Hacha Netherita (Eficiencia 6, Irromp. 6, Reparación 1)</li>
+          <li><span class="mcx-check" aria-hidden="true"></span> Pala Netherita (Eficiencia 6, Irromp. 6, Reparación 1)</li>
+          <li><span class="mcx-check" aria-hidden="true"></span> Azada Netherita (Eficiencia 6, Irromp. 6, Reparación 1)</li>
+          <li><span class="mcx-check" aria-hidden="true"></span> 16 Manzanas encantadas</li>
+        </ul>
+      </section>
+
+      <section id="mcx-modalidades" class="mcx-section">
+        <h3 class="mcx-h3">Beneficios por modalidad</h3>
+
+        <div class="mcx-servers">
+
+          <details class="mcx-server" open>
+            <summary class="mcx-server__sum"><span class="mcx-server__tag">LOBBY</span><span class="mcx-server__mini">Base del rango</span></summary>
+            <ul class="mcx-list">
+              <li><span class="mcx-check" aria-hidden="true"></span> Acceso a beneficios de rangos anteriores.</li>
+              <li><span class="mcx-check" aria-hidden="true"></span> Entrada aunque el servidor esté lleno.</li>
+            </ul>
+          </details>
+
+          <details class="mcx-server">
+            <summary class="mcx-server__sum"><span class="mcx-server__tag mcx-server__tag--blue">CHUNKLOCK</span><span class="mcx-server__mini">Utilidad + economía</span></summary>
+            <ul class="mcx-list">
+              <li><span class="mcx-check" aria-hidden="true"></span> 6 trabajos simultáneos.</li>
+              <li><span class="mcx-check" aria-hidden="true"></span> Cambiar mob del spawner con huevo.</li>
+              <li><span class="mcx-check" aria-hidden="true"></span> Modo AFK automático.</li>
+              <li><span class="mcx-check" aria-hidden="true"></span> 50 sethome.</li>
+              <li><span class="mcx-check" aria-hidden="true"></span> +20.000$ dinero del servidor.</li>
+            </ul>
+          </details>
+
+          <details class="mcx-server">
+            <summary class="mcx-server__sum"><span class="mcx-server__tag mcx-server__tag--green">SURVIVAL CLÁSICO</span><span class="mcx-server__mini">Progreso sin fricción</span></summary>
+            <ul class="mcx-list">
+              <li><span class="mcx-check" aria-hidden="true"></span> 6 trabajos simultáneos.</li>
+              <li><span class="mcx-check" aria-hidden="true"></span> Cambiar mob del spawner con huevo.</li>
+              <li><span class="mcx-check" aria-hidden="true"></span> Modo AFK automático.</li>
+              <li><span class="mcx-check" aria-hidden="true"></span> 50 sethome.</li>
+            </ul>
+          </details>
+
+          <details class="mcx-server">
+            <summary class="mcx-server__sum"><span class="mcx-server__tag mcx-server__tag--amber">ONEBLOCK</span><span class="mcx-server__mini">Comercio + subastas</span></summary>
+            <ul class="mcx-list">
+              <li><span class="mcx-check" aria-hidden="true"></span> Hasta 45 subastas.</li>
+              <li><span class="mcx-check" aria-hidden="true"></span> Cambiar mob del spawner con huevo.</li>
+              <li><span class="mcx-check" aria-hidden="true"></span> Entrada aunque el servidor esté lleno.</li>
+            </ul>
+          </details>
+
+          <details class="mcx-server">
+            <summary class="mcx-server__sum"><span class="mcx-server__tag mcx-server__tag--gray">SURVIVAL HARD</span><span class="mcx-server__mini">Comodidad total</span></summary>
+            <ul class="mcx-list">
+              <li><span class="mcx-check" aria-hidden="true"></span> Acceso a <code>/afk</code>, <code>/compass</code>, <code>/feed</code>, <code>/hat</code>.</li>
+            </ul>
+          </details>
+
+          <details class="mcx-server mcx-server--danger">
+            <summary class="mcx-server__sum"><span class="mcx-server__tag mcx-server__tag--red">SURVIVAL ANÁRQUICO</span><span class="mcx-server__mini">Exclusivo</span></summary>
+            <ul class="mcx-list">
+              <li><span class="mcx-check" aria-hidden="true"></span> <strong>/dupe x10</strong> multiplica el ítem en mano.</li>
+            </ul>
+            <div class="mcx-warn">
+              <div class="mcx-warn__t">Aviso</div>
+              <div class="mcx-warn__p">Solo aplica dentro de la modalidad anárquica.</div>
+            </div>
+          </details>
+
+        </div>
+      </section>
+
+      ${legalBlock()}
+
     </div>
-
-    <div class="prod-kpis">
-      <div class="prod-kpi"><div class="prod-kpi__label">Trabajos</div><div class="prod-kpi__value">6</div></div>
-      <div class="prod-kpi"><div class="prod-kpi__label">Sethomes</div><div class="prod-kpi__value">50</div></div>
-      <div class="prod-kpi"><div class="prod-kpi__label">Kit</div><div class="prod-kpi__value">Cada 6h</div></div>
-      <div class="prod-kpi"><div class="prod-kpi__label">Keys</div><div class="prod-kpi__value">B/E/L</div></div>
-    </div>
-
-    <p class="prod-hero__subtitle">
-      El rango definitivo: vuelo, utilidades avanzadas, kit top recurrente, keys y economía para jugar sin freno.
-    </p>
-  </header>
-
-  <div class="prod-grid">
-    <section class="prod-section">
-      <h3 class="prod-section__title">Beneficios principales</h3>
-      <ul class="prod-list">
-        <li>Acceso a beneficios de rangos anteriores.</li>
-        <li>¡Podrás acceder al servidor cuando esté lleno!</li>
-        <li>Acceso a tener <strong>6 trabajos</strong> al mismo tiempo.</li>
-        <li>Cambiar el mob del Spawner con un <strong>Huevo de Mob</strong>.</li>
-        <li>Acceso al modo automático de <strong>AFK</strong>.</li>
-        <li>Establece hasta <strong>50 sethome</strong>.</li>
-      </ul>
-    </section>
-
-    <section class="prod-section">
-      <h3 class="prod-section__title">Comandos incluidos</h3>
-      <ul class="prod-cmds">
-        <li><code>/heal</code> <em class="prod-cooldown">(5min)</em> <span class="prod-cmds__sep">→</span> Cura toda tu vida.</li>
-        <li><code>/repairall</code> <em class="prod-cooldown">(30s)</em> <span class="prod-cmds__sep">→</span> Repara todo tu inventario.</li>
-        <li><code>/fly</code> <span class="prod-cmds__sep">→</span> Habilita el vuelo.</li>
-        <li><code>/anvil</code> <span class="prod-cmds__sep">→</span> Abre el yunque.</li>
-        <li><code>/kittycannon</code> <em class="prod-cooldown">(3min)</em> <span class="prod-cmds__sep">→</span> ¡Lanza gatos explosivos!</li>
-        <li><code>/respirar</code> <span class="prod-cmds__sep">→</span> Permite respirar bajo el agua.</li>
-        <li><code>/canal</code> / <code>/canalizador</code> <span class="prod-cmds__sep">→</span> Visión submarina.</li>
-      </ul>
-    </section>
   </div>
-
-  <details class="prod-details" open>
-    <summary class="prod-details__summary">
-      <span>Kit INMORTAL <em class="prod-muted">(cada 6 horas)</em></span>
-      <span class="prod-details__meta">ver kit</span>
-    </summary>
-    <div class="prod-details__content">
-      <div class="prod-gallery">
-        <img src="${IMG.INM_KIT_HEAD_1}" alt="Kit Inmortal" loading="lazy"/>
-        <img src="${IMG.INM_KIT_HEAD_2}" alt="Kit Inmortal" loading="lazy"/>
-        <img src="${IMG.INM_KIT_IMG_1}" alt="Kit Inmortal" loading="lazy"/>
-        <img src="${IMG.INM_KIT_IMG_2}" alt="Kit Inmortal" loading="lazy"/>
-      </div>
-
-      <ul class="prod-kit">
-        <li>Casco de Netherita (Respiración 6, Protección 6, Irrompibilidad 6, Reparación 1, Espinas 6)</li>
-        <li>Pechera de Netherita (Protección 6, Irrompibilidad 6, Reparación 1, Espinas 6)</li>
-        <li>Pantalones de Netherita (Protección 6, Irrompibilidad 6, Reparación 1, Espinas 6)</li>
-        <li>Botas de Netherita (Protección 6, Irrompibilidad 6, Reparación 1, Espinas 6)</li>
-        <li>Espada de Netherita (Filo 6, Barrido 3, Aspecto Ígneo 3, Botín 6, Irrompibilidad 6, Reparación 1)</li>
-        <li>Pico de Netherita (Eficiencia 6, Fortuna 6, Irrompibilidad 6, Reparación 1)</li>
-        <li>Pico de Netherita (Eficiencia 6, Toque de Seda 1, Irrompibilidad 6, Reparación 1)</li>
-        <li>Hacha de Netherita (Eficiencia 6, Irrompibilidad 6, Reparación 1)</li>
-        <li>Pala de Netherita (Eficiencia 6, Irrompibilidad 6, Reparación 1)</li>
-        <li>Azada de Netherita (Eficiencia 6, Irrompibilidad 6, Reparación 1)</li>
-        <li>16 Manzanas Encantadas</li>
-      </ul>
-    </div>
-  </details>
-
-  <details class="prod-details">
-    <summary class="prod-details__summary">
-      <span>Economía, keys y ventajas top</span>
-      <span class="prod-details__meta">ver extras</span>
-    </summary>
-    <div class="prod-details__content">
-      <div class="prod-inlineImg">
-        <img src="${IMG.MATERIALS_INM}" alt="Materiales Inmortal" loading="lazy"/>
-      </div>
-
-      <ul class="prod-list">
-        <li>Incluye <strong>+230.000$</strong> (según modalidad/servidor).</li>
-        <li><strong>Keys:</strong> x35 Básica, x18 Épica, x5 Legendaria.</li>
-        <li>Hasta <strong>45 subastas</strong> y <strong>30 warps personales</strong>.</li>
-        <li>Hasta <strong>40 tiendas personales</strong>.</li>
-      </ul>
-
-      <div class="prod-dividerImg">
-        <img class="prod-banner prod-banner--mid" src="${IMG.BANNER_DUPE}" alt="Dupe" loading="lazy"/>
-      </div>
-
-      <ul class="prod-list">
-        <li><strong>/dupe</strong>: multiplica x10 el ítem que tengas en la mano.</li>
-      </ul>
-    </div>
-  </details>
-
-  ${legalBlock()}
 </div>
 `;
 
 const PRODUCT_DATA = {
-  // --- NOVA
-  nova: { descripcion: NOVA_HTML, titulo: "NOVA" },
-  "rango-nova": { descripcion: NOVA_HTML, titulo: "NOVA" },
-  "rangos/nova": { descripcion: NOVA_HTML, titulo: "NOVA" },
-  "nova-30d": { descripcion: NOVA_HTML, titulo: "NOVA" },
-  "rango-nova-30d": { descripcion: NOVA_HTML, titulo: "NOVA" },
-  "nova-30-dias": { descripcion: NOVA_HTML, titulo: "NOVA" },
-  "rango-nova-30-dias": { descripcion: NOVA_HTML, titulo: "NOVA" },
-  "rangos/nova-30-dias": { descripcion: NOVA_HTML, titulo: "NOVA" },
-  "rangos/nova-30d": { descripcion: NOVA_HTML, titulo: "NOVA" },
-
-  // --- ALPHA
-  alpha: { descripcion: ALPHA_HTML, titulo: "ALPHA" },
-  "rango-alpha": { descripcion: ALPHA_HTML, titulo: "ALPHA" },
-  "rangos/alpha": { descripcion: ALPHA_HTML, titulo: "ALPHA" },
-  "alpha-30d": { descripcion: ALPHA_HTML, titulo: "ALPHA" },
-  "rango-alpha-30d": { descripcion: ALPHA_HTML, titulo: "ALPHA" },
-  "alpha-30-dias": { descripcion: ALPHA_HTML, titulo: "ALPHA" },
-  "rango-alpha-30-dias": { descripcion: ALPHA_HTML, titulo: "ALPHA" },
-  "rangos/alpha-30-dias": { descripcion: ALPHA_HTML, titulo: "ALPHA" },
-  "rangos/alpha-30d": { descripcion: ALPHA_HTML, titulo: "ALPHA" },
-
-  // --- INMORTAL
   inmortal: { descripcion: INMORTAL_HTML, titulo: "INMORTAL" },
   "rango-inmortal": { descripcion: INMORTAL_HTML, titulo: "INMORTAL" },
   "rangos/inmortal": { descripcion: INMORTAL_HTML, titulo: "INMORTAL" },

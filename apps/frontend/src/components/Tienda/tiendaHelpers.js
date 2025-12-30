@@ -1,11 +1,11 @@
+// src/components/Tienda/tiendaHelpers.js
+
 export const API_URL =
   import.meta.env.VITE_BACKEND_URL ||
   "https://flancraft-backend.onrender.com";
 
 /* =========================
    BASE + Tebex endpoints (robusto)
-   - Primero prueba /api/tebex
-   - Si da 404, prueba /tebex
    ========================= */
 export const API_BASE = String(API_URL || "").replace(/\/$/, "");
 
@@ -16,6 +16,27 @@ export const TEBEX_URL = `${API_BASE}${TEBEX_PATH}`;
 // Fallback automático (por si tu backend lo montó sin /api)
 export const TEBEX_URL_FALLBACK = `${API_BASE}/tebex`;
 
+/* =========================
+   Fetch helper (timeout + json)
+   ========================= */
+async function fetchWithTimeout(url, options = {}, timeoutMs = 15000) {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), timeoutMs);
+
+  try {
+    return await fetch(url, {
+      ...options,
+      signal: ctrl.signal,
+      credentials: options?.credentials ?? "include",
+      headers: {
+        ...(options?.headers || {}),
+      },
+    });
+  } finally {
+    clearTimeout(t);
+  }
+}
+
 /**
  * Fetch robusto para endpoints Tebex.
  * - Intenta TEBEX_URL + path
@@ -25,12 +46,56 @@ export async function fetchTebex(path, options) {
   const p = String(path || "");
   const safePath = p.startsWith("/") ? p : `/${p}`;
 
-  const r1 = await fetch(`${TEBEX_URL}${safePath}`, options);
+  const r1 = await fetchWithTimeout(`${TEBEX_URL}${safePath}`, options);
   if (r1.status !== 404) return r1;
 
-  // Fallback si el router está montado como /tebex
-  const r2 = await fetch(`${TEBEX_URL_FALLBACK}${safePath}`, options);
+  const r2 = await fetchWithTimeout(`${TEBEX_URL_FALLBACK}${safePath}`, options);
   return r2;
+}
+
+/**
+ * Catálogo público (tiles + subcats “permitidas”).
+ * Endpoint esperado: /api/tebex/public-catalog  (o /tebex/public-catalog)
+ */
+export async function fetchPublicCatalog() {
+  const r = await fetchTebex("/public-catalog", { method: "GET" });
+  if (!r.ok) throw new Error("No se pudo cargar el catálogo público.");
+  return r.json();
+}
+
+/**
+ * Sale activa (para inferir “precio original” si el backend solo devuelve price).
+ * Intenta:
+ * - /sale-activa/:server
+ * - /sale-activa?sv=:server
+ * - /sale-activa
+ */
+export async function fetchSaleActiva(serverKey) {
+  const sv = String(serverKey || "").trim().toLowerCase();
+
+  const tries = [
+    sv ? `/sale-activa/${encodeURIComponent(sv)}` : null,
+    sv ? `/sale-activa?sv=${encodeURIComponent(sv)}` : null,
+    "/sale-activa",
+  ].filter(Boolean);
+
+  for (const path of tries) {
+    try {
+      const r = await fetchTebex(path, { method: "GET" });
+      if (!r.ok) continue;
+
+      const data = await r.json();
+      // soporta payloads distintos
+      const sale = data?.sale ?? data?.data?.sale ?? null;
+      const active = Boolean(data?.active ?? data?.data?.active ?? sale);
+
+      return { active, sale: active ? sale : null, raw: data };
+    } catch {
+      // sigue probando
+    }
+  }
+
+  return { active: false, sale: null, raw: null };
 }
 
 /** Quita acentos SIN tocar mayúsculas/espacios (compat con código viejo) */
@@ -121,9 +186,7 @@ export function calcularTotal(carrito = []) {
 
 /**
  * Tiles principales de la tienda (portada).
- * Aquí definimos manualmente nombre, slug, servidor y la IMAGEN.
- *
- * SOLO CATEGORÍAS “GORDAS” (3 tiles simétricas).
+ * Nombre, slug, servidor y la IMAGEN.
  */
 export const PORTADA_TILES = [
   {
@@ -133,10 +196,22 @@ export const PORTADA_TILES = [
     image: "https://i.ibb.co/k6yZSyN4/rangos.webp",
   },
   {
+    server: "lobby",
+    name: "TAGS",
+    slug: "tags",
+    image: "/assets/reinos/tags.png",
+  },
+  {
     server: "clasico",
     name: "SURVIVAL CLASICO",
     slug: "survival-clasico",
     image: "https://i.ibb.co/rfT6fp5k/survival-clasico.webp",
+  },
+  {
+    server: "oneblock",
+    name: "ONEBLOCK",
+    slug: "oneblock",
+    image: "/assets/reinos/oneblock.webp",
   },
   {
     server: "clasico",
@@ -158,15 +233,16 @@ export const AVISO_PADRES_TILE = {
 
 /**
  * Subcategorías REALES que deben verse dentro de cada tile sintética.
- * La clave es `${server}|${slugCategoria}`.
- * Los nombres deben coincidir con los de Tebex (case-insensitive).
+ * Clave: `${server}|${slugCategoria}`.
+ * Nombres = como en Tebex (case-insensitive).
  */
 export const SUBCATS_PER_TILE = {
   // Lobby
   "lobby|rangos": ["RANGOS"],
+  "lobby|tags": ["TAGS"],
   "lobby|antes-de-comprar": [],
 
-  // Survival clásico (5 categorías)
+  // Survival clásico
   "clasico|survival-clasico": [
     "Protecciones",
     "Items OP",
@@ -175,7 +251,14 @@ export const SUBCATS_PER_TILE = {
     "Experiencia Survival",
   ],
 
-  // Chunklock (4 categorías)
+  // ONEBLOCK
+  "oneblock|oneblock": [
+    "Kit Navidad",
+    "Items OP Oneblock",
+    "Dinero Oneblock",
+  ],
+
+  // Chunklock
   "clasico|chunklock": [
     "Items OP",
     "Dinero Chunklock",
@@ -199,10 +282,7 @@ export function pickSubcatsFromApi(apiCategories = [], namesAllowed = []) {
     const id = c?.id ?? c?.category_id ?? null;
     if (!id || !name) continue;
 
-    if (
-      allowedLower.size === 0 ||
-      allowedLower.has(String(name).toLowerCase())
-    ) {
+    if (allowedLower.size === 0 || allowedLower.has(String(name).toLowerCase())) {
       out.push({ id, name, slug: slugify(name) });
     }
   }
@@ -212,7 +292,7 @@ export function pickSubcatsFromApi(apiCategories = [], namesAllowed = []) {
 
 /** Encuentra una categoría real por slug (slugify(name) === slug) */
 export function findCategoryBySlug(apiCategories = [], slug = "") {
-  const cats = pickSubcatsFromApi(apiCategories, []); // [] => todas normalizadas
+  const cats = pickSubcatsFromApi(apiCategories, []);
   const target = String(slug || "").toLowerCase();
   return cats.find((c) => String(c.slug).toLowerCase() === target) || null;
 }
@@ -222,7 +302,7 @@ export function filterPackagesByCategoryId(paquetes = [], categoryId) {
   if (!categoryId) return [];
   const wanted = String(categoryId);
 
-  return paquetes.filter((p) => {
+  return (paquetes || []).filter((p) => {
     const cid =
       p?.category?.id ??
       p?.category_id ??
@@ -236,8 +316,8 @@ export function filterPackagesByCategoryId(paquetes = [], categoryId) {
 
 /** Filtra paquetes por subcategorías (array de {id,name,slug}) */
 export function filterPackagesBySubcats(paquetes = [], subcats = []) {
-  const subcatIds = new Set(subcats.map((s) => String(s.id)));
-  return paquetes.filter((p) => {
+  const subcatIds = new Set((subcats || []).map((s) => String(s.id)));
+  return (paquetes || []).filter((p) => {
     const cid =
       p?.category?.id ??
       p?.category_id ??

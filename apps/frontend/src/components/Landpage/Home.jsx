@@ -1,3 +1,4 @@
+// src/components/Landpage/Home.jsx
 import React, { useState, useContext, useRef, useEffect } from "react";
 import "../../styles/components/Landpage/_home.scss";
 
@@ -14,6 +15,7 @@ import NewsHighlight from "./NewsHighlight";
 import RitualEko from "./RitualEko";
 import Footer from "./Footer";
 import LoginModal from "../Auth/LoginModal";
+import VoteWidget from "./VoteWidget";
 
 import { UserContext } from "../../context/UserContext";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -99,7 +101,7 @@ const Home = () => {
     };
   }, []);
 
-  // ✅ Rotar mensajes SOLO mientras está la pantalla de carga
+  // Rotar mensajes SOLO mientras está la pantalla de carga
   useEffect(() => {
     if (isLoaded) return;
 
@@ -134,12 +136,11 @@ const Home = () => {
     }
   }, []);
 
-  // ✅ Detectar si estamos dentro de la zona HERO + MAPRPG (sin scroll listener)
+  // Detectar si estamos dentro de la zona HERO + MAPRPG
   useEffect(() => {
     const el = heroMapSectionRef.current;
     if (!el) return;
 
-    // Preferible: IntersectionObserver (cero spam de re-renders)
     if ("IntersectionObserver" in window) {
       const obs = new IntersectionObserver(
         (entries) => {
@@ -156,7 +157,7 @@ const Home = () => {
       return () => obs.disconnect();
     }
 
-    // Fallback: scroll + raf (por si un navegador raro)
+    // Fallback
     let ticking = false;
 
     const handleScrollZone = () => {
@@ -198,7 +199,7 @@ const Home = () => {
     return () => clearTimeout(timer);
   }, [isLoaded, user]);
 
-  // Cargar nombre real del jugador desde backend (con abort)
+  // Cargar nombre real del jugador desde backend
   useEffect(() => {
     const controller = new AbortController();
 
@@ -268,24 +269,20 @@ const Home = () => {
 
     dragonCooldownRef.current = true;
 
-    // cooldown global para evitar spam (2s antes + vuelo + 2s después)
     const cooldownMs = 2000 + DRAGON_FLIGHT_DURATION_MS + 2000;
     const cooldownId = window.setTimeout(() => {
       dragonCooldownRef.current = false;
     }, cooldownMs);
     pushTimeout(cooldownId);
 
-    // reset de ciclo de rugidos para este vuelo
     lastRoarIndexRef.current = 0;
 
-    // vibración del logo inmediata
     setIslandShaking(true);
     const shakeId = window.setTimeout(() => {
       setIslandShaking(false);
     }, 550);
     pushTimeout(shakeId);
 
-    // 1s -> llamada del dragón
     const llamadaId = window.setTimeout(() => {
       if (llamadaAudioRef.current) {
         try {
@@ -298,7 +295,6 @@ const Home = () => {
     }, 1000);
     pushTimeout(llamadaId);
 
-    // 2s -> empieza el vuelo fluido + alas
     const startFlightId = window.setTimeout(() => {
       setDragonPhase("flight");
 
@@ -313,7 +309,6 @@ const Home = () => {
     }, 2000);
     pushTimeout(startFlightId);
 
-    // al terminar el vuelo -> ocultar dragón + parar alas
     const endFlightId = window.setTimeout(() => {
       setDragonPhase("hidden");
       if (alasAudioRef.current) {
@@ -335,14 +330,12 @@ const Home = () => {
     }, 2500);
     pushTimeout(roarCdId);
 
-    // vibración de enfado más larga (~1.4s)
     setIsDragonRoaring(true);
     const stopRoarAnimId = window.setTimeout(() => {
       setIsDragonRoaring(false);
     }, 1400);
     pushTimeout(stopRoarAnimId);
 
-    // elegir rugido (primer click = roar1, segundo = roar2)
     let audioToPlay = null;
     if (lastRoarIndexRef.current === 0) {
       audioToPlay = roarAudioRef.current;
@@ -372,8 +365,11 @@ const Home = () => {
       )}
 
       <div className={`home ${isLoaded ? "visible" : "invisible"}`}>
-        {/* ZONA HERO + MAPRPG (para limitar el popup) */}
+        {/* ZONA HERO + MAPRPG (para limitar el popup + widget voto) */}
         <div ref={heroMapSectionRef} className="hero-map-section">
+          {/* Widget de voto: anclado a esta sección (PIP cuando está cerrado) */}
+          <VoteWidget visible={isLoaded && isInHeroMapZone} />
+
           {/* HERO */}
           <header className="hero-flancraft">
             {/* Estrellas de fondo */}
@@ -446,6 +442,7 @@ const Home = () => {
               />
 
               <ServerStatus />
+
               <p className="hero-tagline">
                 Tu aventura empieza aquí. Sube de nivel y deja tu legado en la
                 mejor network de Minecraft.
@@ -478,8 +475,7 @@ const Home = () => {
             </div>
           </header>
 
-          {/* POPUP FLOTANTE DE LOGIN PARA INVITADOS
-              Solo visible en home + MapRPG */}
+          {/* POPUP FLOTANTE DE LOGIN PARA INVITADOS */}
           {!user?.loggedIn && showLoginTeaser && isInHeroMapZone && (
             <div className="login-teaser-pop">
               <button

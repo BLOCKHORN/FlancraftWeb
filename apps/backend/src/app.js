@@ -16,13 +16,12 @@ const allowedOriginsExact = new Set([
 
 function isAllowedOrigin(origin) {
   if (!origin) return true; // curl / server-to-server / healthchecks
-
   if (allowedOriginsExact.has(origin)) return true;
 
-  // Permite previews de Vercel: *.vercel.app
+  // Previews de Vercel: *.vercel.app
   if (/^https:\/\/([a-z0-9-]+\.)*vercel\.app$/i.test(origin)) return true;
 
-  // Permite subdominios de tu dominio: *.flancraft.com
+  // Subdominios: *.flancraft.com
   if (/^https:\/\/([a-z0-9-]+\.)*flancraft\.com$/i.test(origin)) return true;
 
   return false;
@@ -30,8 +29,6 @@ function isAllowedOrigin(origin) {
 
 const corsOptions = {
   origin(origin, callback) {
-    // Log útil para ver cuál te falta exactamente en Render
-    // (puedes dejarlo unos días y luego quitarlo)
     if (!isAllowedOrigin(origin)) {
       console.log("[CORS] Bloqueado origin:", origin);
       return callback(new Error("Not allowed by CORS"));
@@ -40,12 +37,20 @@ const corsOptions = {
   },
   credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+  // IMPORTANTE:
+  // - La web usa normal headers
+  // - El plugin (FlanSyncProxy) manda: x-vote-ingest-secret
+  allowedHeaders: [
+    "Content-Type",
+    "Authorization",
+    "X-Requested-With",
+    "X-Vote-Ingest-Secret",
+    "x-vote-ingest-secret",
+  ],
 };
 
 app.use(cors(corsOptions));
 app.options("*", cors(corsOptions));
-
 
 /* ===== Body parsing ===== */
 app.use(express.json({ limit: "5mb" }));
@@ -69,6 +74,7 @@ const rangosRoutes = require("./routes/rangos.routes");
 const noticiasRoutes = require("./routes/noticias.routes");
 const tiendaTebexRoutes = require("./routes/tiendatebex.routes");
 const minecraftRoutes = require("./routes/minecraft.routes");
+const votosRoutes = require("./routes/votos.routes"); // ✅ NUEVO
 
 // ping sencillo
 app.use("/ping", pingRoute);
@@ -94,6 +100,9 @@ app.use("/api/rangos", rangosRoutes);
 app.use("/api/noticias", noticiasRoutes);
 app.use("/api/tebex", tiendaTebexRoutes);
 app.use("/api/minecraft", minecraftRoutes);
+
+// ✅ Votos (ingest + status + top)
+app.use("/api/votos", votosRoutes);
 
 /* ===== Tareas programadas ===== */
 // Limpieza automática de rangos expirados

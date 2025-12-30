@@ -209,19 +209,34 @@
   border: 1px solid rgba(255,255,255,0.10);
 }
 
-/* Mobile: fijo arriba para no depender del layout reordenado */
+/* Mobile: pegado al carrito, NO fijo al viewport */
 @media (max-width: 960px) {
   .tdp-pip {
-    position: fixed;
-    top: 12px;
-    right: 12px;
+    position: absolute;
+    /* dentro del wrapper del carrito */
+    top: 6px;
+    right: 8px;
     left: auto;
-    z-index: 9997;
+    z-index: 6; // por encima del contenido del carrito, sin superar al nav global
   }
 
   .tdp-pip__bubble {
+    /* bocadillo justo debajo del botón, alineado al carrito */
+    top: 32px;
     left: auto;
     right: 0;
+
+    /* anulamos el translate que lo sacaba hacia la izquierda */
+    transform: none;
     transform-origin: top right;
+
+    width: min(280px, 90vw);
+  }
+
+  /* flechita alineada al botón en mobile (sin depender de la var JS) */
+  .tdp-pip__bubble::before {
+    top: -7px;
+    left: auto;
+    right: 20px;
   }
 }

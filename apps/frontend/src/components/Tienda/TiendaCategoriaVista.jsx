@@ -9,6 +9,8 @@ import {
   findCategoryBySlug,
   filterPackagesByCategoryId,
   SUBCATS_PER_TILE,
+  PORTADA_TILES,
+  AVISO_PADRES_TILE,
 } from "./tiendaHelpers";
 
 import { ANTES_DE_COMPRAR } from "./data/antesDeComprarData";
@@ -22,6 +24,13 @@ const FALLBACK_ICONS = {
 
   "items-op": "/tienda/categorias/itemop.webp",
   items_op: "/tienda/categorias/itemop.webp",
+  // Items OP específicos de OneBlock
+  "items-op-oneblock": "/tienda/categorias/itemop.webp",
+  items: "/tienda/categorias/itemop.webp",
+
+  // Kit de Navidad (OneBlock)
+  "kit-navidad": "/tienda/categorias/navidad.webp",
+  kit: "/tienda/categorias/navidad.webp",
 
   "llaves-survival": "/tienda/categorias/keys.webp",
   llaves_survival: "/tienda/categorias/keys.webp",
@@ -29,6 +38,7 @@ const FALLBACK_ICONS = {
   dinero: "/tienda/categorias/dinero.webp",
   "dinero-survival": "/tienda/categorias/dinero.webp",
   "dinero-chunklock": "/tienda/categorias/dinero.webp",
+  "dinero-oneblock": "/tienda/categorias/dinero.webp",
 
   experiencia: "/tienda/categorias/xp.webp",
   "experiencia-survival": "/tienda/categorias/xp.webp",
@@ -53,6 +63,12 @@ const HERO_ICONS = {
   survival: "/assets/reinos/survival-clasico.webp",
 
   chunklock: "/assets/reinos/chunklock.webp",
+
+  // Logo principal OneBlock
+  oneblock: "/assets/reinos/oneblock.webp",
+
+  // Logo principal Tags
+  tags: "/assets/reinos/tags.png",
 
   rangos: "/tienda/categorias/rangos.webp",
   "llaves-survival": "/tienda/categorias/keys.webp",
@@ -142,6 +158,44 @@ export default function TiendaCategoriaVista({ carrito, toggleProducto }) {
   const didRouteMountRef = useRef(false);
   const didSwapMountRef = useRef(false);
 
+  // ref del scroll del sidebar para auto-scroll en móvil
+  const sideScrollRef = useRef(null);
+
+  // ======= breadcrumb / quick switch =======
+  const [crumbOpen, setCrumbOpen] = useState(false);
+  const crumbRef = useRef(null);
+
+  const quickTiles = useMemo(() => {
+    const base = Array.isArray(PORTADA_TILES) ? PORTADA_TILES : [];
+    const extra = AVISO_PADRES_TILE ? [AVISO_PADRES_TILE] : [];
+    const seen = new Set();
+
+    return [...base, ...extra].filter((t) => {
+      const key = `${String(t?.server || "")}|${String(t?.slug || "")}`.toLowerCase();
+      if (!t?.server || !t?.slug) return false;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!crumbOpen) return;
+
+    const onDown = (e) => {
+      const el = crumbRef.current;
+      if (!el) return;
+      if (!el.contains(e.target)) setCrumbOpen(false);
+    };
+
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("touchstart", onDown, { passive: true });
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("touchstart", onDown);
+    };
+  }, [crumbOpen]);
+
   // ======= hooks / memos =======
   const mapKey = useMemo(
     () => `${(server || "").toLowerCase()}|${(categoria || "").toLowerCase()}`,
@@ -203,7 +257,8 @@ export default function TiendaCategoriaVista({ carrito, toggleProducto }) {
 
       try {
         const r = await fetch(`${API_URL}/api/tebex/datos?sv=${server}`);
-        if (!r.ok) throw new Error("No se pudo cargar la tienda para este servidor.");
+        if (!r.ok)
+          throw new Error("No se pudo cargar la tienda para este servidor.");
         const data = await r.json();
 
         const apiCats = data.categorias || [];
@@ -302,7 +357,9 @@ export default function TiendaCategoriaVista({ carrito, toggleProducto }) {
         list.find((s) => String(s.slug || "").toLowerCase() === subParam)) ||
       null;
 
-    const currentSlug = String(categoriaSeleccionada?.activeSubcat?.slug || "").toLowerCase();
+    const currentSlug = String(
+      categoriaSeleccionada?.activeSubcat?.slug || ""
+    ).toLowerCase();
     const nextSlug = String(newActive?.slug || "").toLowerCase();
 
     if (currentSlug === nextSlug) {
@@ -321,6 +378,29 @@ export default function TiendaCategoriaVista({ carrito, toggleProducto }) {
     }
     didSwapMountRef.current = true;
   }, [subcategoria, categoriaSeleccionada?.subcategorias]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ======= 2b) Auto-scroll al botón activo en móvil / tablet =======
+  useEffect(() => {
+    if (!activeSubcat) return;
+    if (typeof window === "undefined") return;
+
+    const isNarrow =
+      window.matchMedia?.("(max-width: 920px)").matches || window.innerWidth <= 920;
+
+    if (!isNarrow) return;
+
+    const container = sideScrollRef.current;
+    if (!container) return;
+
+    const activeButton = container.querySelector(".tc-side-item.is-active");
+    if (!activeButton) return;
+
+    activeButton.scrollIntoView({
+      block: "nearest",
+      inline: "nearest",
+      behavior: "smooth",
+    });
+  }, [activeSubcat]);
 
   // ======= 3) AUTO-SELECCIONAR cuando solo hay 1 subcategoría =======
   useEffect(() => {
@@ -368,14 +448,21 @@ export default function TiendaCategoriaVista({ carrito, toggleProducto }) {
   };
 
   const goClose = () => navAnimated("/tienda");
-  const goSubcat = (scSlug) => navigate(`/tienda/${server}/${categoria}/${scSlug}`);
+  const goSubcat = (scSlug) =>
+    navigate(`/tienda/${server}/${categoria}/${scSlug}`);
+
+  const goTile = (t) => {
+    if (!t?.server || !t?.slug) return;
+    setCrumbOpen(false);
+    navAnimated(`/tienda/${t.server}/${t.slug}`);
+  };
 
   // =========================================================
   // ERRORES / PÁGINA ESPECIAL
   // =========================================================
   if (error) {
     return (
-      <div className="tienda-tebex">
+      <div className="tienda-tebex is-anim">
         <div className="tienda-contenido">
           <div className="error-box">
             <strong>Error:</strong> {error}
@@ -387,7 +474,7 @@ export default function TiendaCategoriaVista({ carrito, toggleProducto }) {
 
   if (categoria === "antes-de-comprar") {
     return (
-      <div className="tienda-tebex">
+      <div className="tienda-tebex is-anim">
         <div className="tienda-contenido">
           <div className="tienda-wc">
             <div className="tienda-wc-frame" aria-hidden="true" />
@@ -398,11 +485,90 @@ export default function TiendaCategoriaVista({ carrito, toggleProducto }) {
                   <div className="tc-head-row">
                     <h1 className="tienda-wc-title">{ANTES_DE_COMPRAR.titulo}</h1>
                   </div>
+
+                  {/* Breadcrumb + salto rápido también aquí */}
+                  <div className="tc-breadcrumb" ref={crumbRef}>
+                    <button
+                      type="button"
+                      className="tc-crumb"
+                      onClick={() => navAnimated("/tienda")}
+                      title="Volver a la portada"
+                    >
+                      TIENDA
+                    </button>
+
+                    <span className="tc-crumb-sep" aria-hidden="true">
+                      ›
+                    </span>
+
+                    <span className="tc-crumb-current" title="Sección actual">
+                      ¡ANTES DE COMPRAR!
+                    </span>
+
+                    <div className={`tc-crumb-switch ${crumbOpen ? "is-open" : ""}`}>
+                      <button
+                        type="button"
+                        className="tc-switch-btn"
+                        onClick={() => setCrumbOpen((v) => !v)}
+                        aria-expanded={crumbOpen}
+                        aria-label="Cambiar de sección"
+                        title="Cambiar de sección"
+                      >
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                          <path d="M12 2a10 10 0 1 0 .001 20.001A10 10 0 0 0 12 2Zm0 2a8 8 0 1 1 0 16a8 8 0 0 1 0-16Zm3.9 4.2-3 7a1 1 0 0 1-.5.5l-7 3a.6.6 0 0 1-.8-.8l3-7a1 1 0 0 1 .5-.5l7-3a.6.6 0 0 1 .8.8ZM9 11l-1.6 3.8L11 13l1.6-3.8L9 11Z" />
+                        </svg>
+                      </button>
+
+                      {crumbOpen && (
+                        <div
+                          className="tc-switch-pop"
+                          role="menu"
+                          aria-label="Secciones"
+                        >
+                          {quickTiles.map((t) => {
+                            const active =
+                              String(t.server).toLowerCase() ===
+                                String(server).toLowerCase() &&
+                              String(t.slug).toLowerCase() ===
+                                String(categoria).toLowerCase();
+
+                            return (
+                              <button
+                                key={`${t.server}-${t.slug}`}
+                                type="button"
+                                role="menuitem"
+                                className={`tc-switch-item ${active ? "is-active" : ""}`}
+                                onClick={() => goTile(t)}
+                                title={t.name}
+                              >
+                                <span className="tc-switch-ico" aria-hidden="true">
+                                  <img
+                                    src={t.image}
+                                    alt=""
+                                    draggable="false"
+                                    loading="lazy"
+                                  />
+                                </span>
+                                <span className="tc-switch-label">{t.name}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
                   <div className="tc-head-divider" aria-hidden="true" />
-                  <p className="tienda-wc-subtitle">Información importante antes de comprar.</p>
+                  <p className="tienda-wc-subtitle">
+                    Información importante antes de comprar.
+                  </p>
                 </div>
                 <div className="tc-head-actions">
-                  <button className="tienda-wc-close" onClick={goClose} type="button">
+                  <button
+                    className="tienda-wc-close"
+                    onClick={goClose}
+                    type="button"
+                  >
                     Volver
                   </button>
                 </div>
@@ -452,6 +618,7 @@ export default function TiendaCategoriaVista({ carrito, toggleProducto }) {
   const rootClasses = [
     "tienda-tebex",
     "tienda-tebex--fusion",
+    "is-anim",
     isRealMode ? "is-real" : "",
     routeFx === "out" ? "tc-route-out" : "",
     routeFx === "in" ? "tc-route-in" : "",
@@ -479,7 +646,7 @@ export default function TiendaCategoriaVista({ carrito, toggleProducto }) {
               </div>
             )}
 
-            {/* CABECERA: color más oscuro + icono al lado del H1 */}
+            {/* CABECERA */}
             <div className="tc-head">
               <div className="tc-head-spacer" aria-hidden="true" />
 
@@ -491,6 +658,90 @@ export default function TiendaCategoriaVista({ carrito, toggleProducto }) {
                     </span>
                   )}
                   <h1 className="tienda-wc-title">{categoriaSeleccionada?.name}</h1>
+                </div>
+
+                {/* Breadcrumb + salto rápido */}
+                <div className="tc-breadcrumb" ref={crumbRef}>
+                  <button
+                    type="button"
+                    className="tc-crumb"
+                    onClick={() => navAnimated("/tienda")}
+                    title="Volver a la portada"
+                  >
+                    TIENDA
+                  </button>
+
+                  <span className="tc-crumb-sep" aria-hidden="true">
+                    ›
+                  </span>
+
+                  <button
+                    type="button"
+                    className="tc-crumb"
+                    onClick={() => navAnimated(`/tienda/${server}/${categoria}`)}
+                    title="Volver a esta categoría"
+                  >
+                    {categoriaSeleccionada?.name || "CATEGORÍA"}
+                  </button>
+
+                  {hasActive && activeSubcat?.name && (
+                    <>
+                      <span className="tc-crumb-sep" aria-hidden="true">
+                        ›
+                      </span>
+                      <span className="tc-crumb-current" title="Subcategoría actual">
+                        {activeSubcat.name}
+                      </span>
+                    </>
+                  )}
+
+                  <div className={`tc-crumb-switch ${crumbOpen ? "is-open" : ""}`}>
+                    <button
+                      type="button"
+                      className="tc-switch-btn"
+                      onClick={() => setCrumbOpen((v) => !v)}
+                      aria-expanded={crumbOpen}
+                      aria-label="Cambiar de sección"
+                      title="Cambiar de sección"
+                    >
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M12 2a10 10 0 1 0 .001 20.001A10 10 0 0 0 12 2Zm0 2a8 8 0 1 1 0 16a8 8 0 0 1 0-16Zm3.9 4.2-3 7a1 1 0 0 1-.5.5l-7 3a.6.6 0 0 1-.8-.8l3-7a1 1 0 0 1 .5-.5l7-3a.6.6 0 0 1 .8.8ZM9 11l-1.6 3.8L11 13l1.6-3.8L9 11Z" />
+                      </svg>
+                    </button>
+
+                    {crumbOpen && (
+                      <div className="tc-switch-pop" role="menu" aria-label="Secciones">
+                        {quickTiles.map((t) => {
+                          const active =
+                            String(t.server).toLowerCase() ===
+                              String(server).toLowerCase() &&
+                            String(t.slug).toLowerCase() ===
+                              String(categoria).toLowerCase();
+
+                          return (
+                            <button
+                              key={`${t.server}-${t.slug}`}
+                              type="button"
+                              role="menuitem"
+                              className={`tc-switch-item ${active ? "is-active" : ""}`}
+                              onClick={() => goTile(t)}
+                              title={t.name}
+                            >
+                              <span className="tc-switch-ico" aria-hidden="true">
+                                <img
+                                  src={t.image}
+                                  alt=""
+                                  draggable="false"
+                                  loading="lazy"
+                                />
+                              </span>
+                              <span className="tc-switch-label">{t.name}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <div className="tc-head-divider" aria-hidden="true" />
@@ -511,8 +762,13 @@ export default function TiendaCategoriaVista({ carrito, toggleProducto }) {
                 <aside className="tc-side">
                   <div className="tc-side-title">Categorías</div>
 
-                  <div className="tc-side-scroll">
-                    <div className={`tc-side-list ${fitSidebar ? "tc-side-list--fit" : ""}`}>
+                  <div
+                    className={`tc-side-scroll ${fitSidebar ? "tc-side-scroll--fit" : ""}`}
+                    ref={sideScrollRef}
+                  >
+                    <div
+                      className={`tc-side-list ${fitSidebar ? "tc-side-list--fit" : ""}`}
+                    >
                       {subcats.map((sc) => {
                         const icon = resolveIconForSubcat(sc);
                         const isActiveItem =
@@ -591,7 +847,8 @@ export default function TiendaCategoriaVista({ carrito, toggleProducto }) {
                     <div className="tc-empty-inner">
                       <h2 className="tc-empty-title">Selecciona una categoría</h2>
                       <p className="tc-empty-text">
-                        Elige una categoría del panel izquierdo para ver los productos disponibles.
+                        Elige una categoría del panel izquierdo para ver los productos
+                        disponibles.
                       </p>
                     </div>
                   </div>
