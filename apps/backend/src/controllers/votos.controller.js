@@ -49,9 +49,16 @@ function getUtcDayStart(date = new Date()) {
   return d;
 }
 
+function getClientIp(req) {
+  // Render/Proxy: x-forwarded-for suele venir como "ip1, ip2, ..."
+  const xf = String(req.headers["x-forwarded-for"] || "").trim();
+  if (xf) return xf.split(",")[0].trim();
+  const xr = String(req.headers["x-real-ip"] || "").trim();
+  if (xr) return xr;
+  return String(req.ip || "").trim();
+}
+
 // Mapeo “best effort” de serviceName -> id del widget (v1..v5)
-// Ajusta estos patterns si tus service names en NuVotifier son otros.
-// (No rompe nada: solo mejora el status por sitio)
 const SITE_MATCH = [
   { id: "v1", patterns: ["servidoresdeminecraft", "servidores de minecraft", "sdm"] },
   { id: "v2", patterns: ["minecraft-server", "minecraft server"] },
@@ -76,7 +83,7 @@ async function resolveUserUuidFromKey(key) {
     const { data, error } = await supabase
       .from("usuarios")
       .select("uuid")
-      .ilike("uid", k)
+      .ilike("uid", k) // exact case-insensitive
       .limit(1)
       .maybeSingle();
 
@@ -88,14 +95,12 @@ async function resolveUserUuidFromKey(key) {
   return null;
 }
 
-// Busca último voto (vote_time) para un usuario (uuid o username) filtrando por service “parecido”
-async function fetchLastVoteForSite({ userUuid, username }, siteId) {
+// Busca último voto (vote_time) para un usuario filtrando por service “parecido”
+// Prioridad: uuid -> username -> ip
+async function fetchLastVoteForSite({ userUuid, username, ip }, siteId) {
   const patterns = patternsForSiteId(siteId);
-
-  // Si no hay patterns, no podemos estimar por service
   if (!patterns.length) return null;
 
-  // probamos pattern por pattern para evitar .or() complejo
   for (const p of patterns) {
     let q = supabase
       .from("votos")
@@ -103,8 +108,16 @@ async function fetchLastVoteForSite({ userUuid, username }, siteId) {
       .order("vote_time", { ascending: false })
       .limit(1);
 
-    if (userUuid) q = q.eq("user_uuid", userUuid);
-    else q = q.ilike("username", username);
+    if (userUuid) {
+      q = q.eq("user_uuid", userUuid);
+    } else if (username) {
+      // exact (sin %), case-insensitive
+      q = q.ilike("username", String(username).trim());
+    } else if (ip) {
+      q = q.eq("ip", ip);
+    } else {
+      return null;
+    }
 
     q = q.ilike("service", `%${p}%`);
 
@@ -115,7 +128,6 @@ async function fetchLastVoteForSite({ userUuid, username }, siteId) {
     }
   }
 
-  // fallback final: si no matchea por service, no sabemos
   return null;
 }
 
@@ -287,7 +299,7 @@ async function getResumen(req, res) {
 
     const [totalR, hoyR, d7R, d30R] = await Promise.all([totalQ, hoyQ, d7Q, d30Q]);
 
-    const anyErr = totalR.error || hoyR.error || d7R.error || d30R.error;
+    const anyErr = totalR.error || hoyR.error || d7R.error || d30Q.error;
     if (anyErr) {
       return res.status(500).json({
         ok: false,
@@ -318,22 +330,26 @@ async function getResumen(req, res) {
 }
 
 // =========================
-// GET /api/votos/top?range=30d|total&limit=6
-// Devuelve: { ok, list:[{nombre, uuid?, votos}] }
+// GET /api/votos/top?range=30d|total&limit=10&page=0
+// Devuelve: { ok, list:[{uid, uuid, rango_usuario, es_premium, votos}], total, page, limit }
 // =========================
 async function getTop(req, res) {
   const range = String(req.query?.range || "30d").toLowerCase();
-  const limitRaw = Number(req.query?.limit ?? 6);
-  const limit = Number.isFinite(limitRaw) ? Math.min(Math.max(limitRaw, 1), 50) : 6;
+  const limitRaw = Number(req.query?.limit ?? 10);
+  const pageRaw = Number(req.query?.page ?? 0);
+
+  const limit = Number.isFinite(limitRaw) ? Math.min(Math.max(limitRaw, 1), 50) : 10;
+  const page = Number.isFinite(pageRaw) ? Math.max(pageRaw, 0) : 0;
+  const offset = page * limit;
 
   const col = range === "total" ? "total_votos" : "votos_30d";
 
   try {
-    const { data, error } = await supabase
+    const { data, error, count } = await supabase
       .from("vista_ranking_votos")
-      .select("jugador, username_lower, total_votos, votos_30d")
+      .select("jugador, username_lower, total_votos, votos_30d", { count: "exact" })
       .order(col, { ascending: false })
-      .limit(limit);
+      .range(offset, offset + limit - 1);
 
     if (error) {
       return res.status(500).json({
@@ -343,13 +359,46 @@ async function getTop(req, res) {
       });
     }
 
-    const list = (data || []).map((r) => ({
-      nombre: r.jugador || r.username_lower || "Desconocido",
-      uuid: null, // si más adelante quieres, lo resolvemos con join/lookup
-      votos: Number(r[col] || 0) || 0,
-    }));
+    const rows = data || [];
+    const names = rows
+      .map((r) => String(r.jugador || r.username_lower || "").trim())
+      .filter(Boolean);
 
-    return res.status(200).json({ ok: true, list });
+    // Lookup de meta (uuid/rango/premium) desde usuarios
+    // NOTA: .in es sensible a mayúsculas si tu DB lo está; aun así hacemos match case-insensitive en JS.
+    let usersMeta = [];
+    if (names.length) {
+      const { data: uu, error: uErr } = await supabase
+        .from("usuarios")
+        .select("uuid, uid, rango_usuario, es_premium")
+        .in("uid", names);
+
+      if (!uErr && Array.isArray(uu)) usersMeta = uu;
+    }
+
+    const list = rows.map((r) => {
+      const uid = String(r.jugador || r.username_lower || "Desconocido").trim();
+      const votos = Number(r[col] || 0) || 0;
+
+      const meta =
+        usersMeta.find((u) => safeLower(u.uid) === safeLower(uid)) || null;
+
+      return {
+        uid,
+        uuid: meta?.uuid || null,
+        rango_usuario: meta?.rango_usuario || null,
+        es_premium: typeof meta?.es_premium === "boolean" ? meta.es_premium : false,
+        votos,
+      };
+    });
+
+    return res.status(200).json({
+      ok: true,
+      total: Number(count || 0) || 0,
+      page,
+      limit,
+      list,
+    });
   } catch (e) {
     return res.status(500).json({
       ok: false,
@@ -360,39 +409,67 @@ async function getTop(req, res) {
 }
 
 // =========================
-// GET /api/votos/status/:id   (id = uuid o username)
-// Devuelve estado por cada site v1..v5 con cooldown 24h
+// GET /api/votos/status/:id
+// - id puede ser uuid, username o "anon"
+// - si id="anon" o vacío -> fallback por IP real
+// Query opcional: ?u=NombreJugador  (para invitados)
+// Devuelve: server_now_ms, items con next_available_ms, cooldown_ms...
 // =========================
 async function getStatus(req, res) {
-  const key = String(req.params?.id || "").trim();
-  if (!key) return res.status(400).json({ ok: false, error: "id requerido" });
+  const rawId = String(req.params?.id || "").trim();
+  const qUser = String(req.query?.u || "").trim();
+  const ip = getClientIp(req);
+
+  // id "anon" => no forzamos usuario; podemos usar u=... si lo pasan
+  const id = rawId && rawId.toLowerCase() !== "anon" ? rawId : "";
+  const username = qUser || (id && !isUuid(id) ? id : "");
 
   try {
-    // resolver uuid si es posible
-    const userUuid = await resolveUserUuidFromKey(key);
-    const username = safeLower(key); // fallback por username
+    const userUuid = id ? await resolveUserUuidFromKey(id) : null;
 
-    const now = Date.now();
+    // meta del usuario (si existe)
+    let me = null;
+    if (userUuid) {
+      const { data: u, error: uErr } = await supabase
+        .from("usuarios")
+        .select("uuid, uid, rango_usuario, es_premium, nivel")
+        .eq("uuid", userUuid)
+        .maybeSingle();
+
+      if (!uErr && u?.uuid) me = u;
+    } else if (username) {
+      const { data: u, error: uErr } = await supabase
+        .from("usuarios")
+        .select("uuid, uid, rango_usuario, es_premium, nivel")
+        .ilike("uid", username)
+        .maybeSingle();
+
+      if (!uErr && u?.uid) me = u;
+    }
+
+    const nowMs = Date.now();
 
     const sites = ["v1", "v2", "v3", "v4", "v5"];
     const items = [];
 
     for (const siteId of sites) {
-      const lastDate = await fetchLastVoteForSite({
-        userUuid,
-        username,
-      }, siteId);
+      const lastDate = await fetchLastVoteForSite(
+        { userUuid, username, ip },
+        siteId
+      );
 
-      const last = lastDate ? lastDate.getTime() : 0;
-      const elapsed = last ? now - last : Infinity;
-      const available = !last || elapsed >= COOLDOWN_MS;
-      const left = available ? 0 : COOLDOWN_MS - elapsed;
+      const lastVoteMs = lastDate ? lastDate.getTime() : 0;
+      const nextAvailMs = lastVoteMs ? lastVoteMs + COOLDOWN_MS : 0;
+      const available = !lastVoteMs || nowMs >= nextAvailMs;
+      const left = available ? 0 : nextAvailMs - nowMs;
 
       items.push({
         id: siteId,
-        last: last || 0,
+        last_vote_ms: lastVoteMs || 0,
+        cooldown_ms: COOLDOWN_MS,
+        next_available_ms: nextAvailMs || 0,
         available,
-        left: Math.max(0, Math.floor(left)),
+        left_ms: Math.max(0, Math.floor(left)),
       });
     }
 
@@ -403,11 +480,19 @@ async function getStatus(req, res) {
 
     return res.status(200).json({
       ok: true,
+      server_now_ms: nowMs,
+      cooldown_ms: COOLDOWN_MS,
       total,
       done,
       remaining,
       progress,
+      me,
       items,
+      hint: {
+        used_uuid: !!userUuid,
+        used_username: !!username,
+        used_ip: !!ip,
+      },
     });
   } catch (e) {
     return res.status(500).json({

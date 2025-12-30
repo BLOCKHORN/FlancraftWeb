@@ -6,6 +6,13 @@ const cors = require("cors");
 
 const app = express();
 
+/* =========================================================
+   TRUST PROXY (IMPORTANTE para IP real detrás de Render/Proxy)
+   - Necesario para que req.ip / x-forwarded-for funcionen bien
+   - No rompe nada, solo corrige IP real para rate-limit/status por IP
+   ========================================================= */
+app.set("trust proxy", true);
+
 /* ===== CORS ===== */
 const allowedOriginsExact = new Set([
   "http://localhost:5173",
@@ -101,7 +108,7 @@ app.use("/api/noticias", noticiasRoutes);
 app.use("/api/tebex", tiendaTebexRoutes);
 app.use("/api/minecraft", minecraftRoutes);
 
-// ✅ Votos (ingest + status + top)
+// Votos (ingest + status + top)
 app.use("/api/votos", votosRoutes);
 
 /* ===== Tareas programadas ===== */
@@ -122,7 +129,7 @@ app.use((req, res) => {
 
 /* ===== Manejador de errores ===== */
 app.use((err, _req, res, _next) => {
-  console.error("❌ Error no controlado:", err);
+  console.error("Error no controlado:", err);
   res.status(500).json({ error: "Error interno del servidor" });
 });
 
