@@ -12,23 +12,16 @@
 
   --vw-woodA: rgba(36, 26, 19, 0.92);
   --vw-woodB: rgba(22, 16, 12, 0.96);
-
   --vw-edge: rgba(42, 26, 16, 0.88);
 
   --vw-font: ui-serif, Georgia, "Times New Roman", serif;
 
-  /* Texto del botón voto (más legible) */
-  --vw-voteText: rgba(255, 236, 200, 0.92);
+  --vw-voteText: rgba(255, 246, 228, 0.94);
   --vw-voteTextHover: rgba(255, 255, 255, 0.98);
 
-  --vw-dirt-svg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 60'%3E%3Crect width='200' height='60' fill='%236b4a2b'/%3E%3Crect width='200' height='18' fill='%234aa83f'/%3E%3Crect y='18' width='200' height='2' fill='%233e8f35'/%3E%3Crect x='2' y='2' width='196' height='10' fill='%23ffffff' opacity='0.06'/%3E%3Crect x='12' y='24' width='8' height='8' fill='%235a3c24'/%3E%3Crect x='32' y='34' width='8' height='8' fill='%23503822'/%3E%3Crect x='54' y='26' width='8' height='8' fill='%23715535'/%3E%3Crect x='80' y='40' width='8' height='8' fill='%235a3c24'/%3E%3Crect x='104' y='28' width='8' height='8' fill='%23503822'/%3E%3Crect x='132' y='38' width='8' height='8' fill='%23715535'/%3E%3Crect x='156' y='26' width='8' height='8' fill='%235a3c24'/%3E%3Crect x='176' y='42' width='8' height='8' fill='%23503822'/%3E%3Crect x='18' y='6' width='8' height='6' fill='%2356be4a' opacity='0.8'/%3E%3Crect x='44' y='8' width='10' height='6' fill='%233f9c35' opacity='0.8'/%3E%3Crect x='72' y='6' width='8' height='6' fill='%2356be4a' opacity='0.8'/%3E%3Crect x='112' y='10' width='10' height='6' fill='%233f9c35' opacity='0.8'/%3E%3Crect x='150' y='7' width='8' height='6' fill='%2356be4a' opacity='0.8'/%3E%3C/svg%3E");
-
-  --vw-stone-svg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 60'%3E%3Crect width='200' height='60' fill='%238e8f93'/%3E%3Crect x='2' y='2' width='196' height='10' fill='%23ffffff' opacity='0.06'/%3E%3Crect x='16' y='24' width='10' height='10' fill='%237c7d81'/%3E%3Crect x='46' y='34' width='10' height='10' fill='%236f7074'/%3E%3Crect x='78' y='26' width='10' height='10' fill='%23848589'/%3E%3Crect x='112' y='38' width='10' height='10' fill='%23727377'/%3E%3Crect x='150' y='28' width='10' height='10' fill='%23848589'/%3E%3Crect x='176' y='42' width='10' height='10' fill='%23727377'/%3E%3C/svg%3E");
-
-  position: fixed;
+  position: fixed !important;
   z-index: 80;
   top: var(--vw-top);
-
   left: 14px;
   right: auto;
 
@@ -114,25 +107,50 @@
 }
 
 .vw-head__mid { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-.vw-head__titleRow { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+
+.vw-head__titleRow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding-right: 20px; /* badge */
+}
 
 .vw-head__title {
   font-family: "IM Fell English SC", var(--vw-font);
-  font-size: 0.96rem;
-  font-weight: 700;
+  font-size: 0.98rem;
+  font-weight: 900;
+  letter-spacing: .03em;
+  text-align: center;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.vw-head__badge { width: 20px; height: 20px; display: grid; place-items: center; }
-.vw-head__badgeImg { width: 18px; height: 18px; display: block; object-fit: contain; filter: drop-shadow(0 2px 6px rgba(0,0,0,.75)); }
+.vw-head__badge {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+}
+.vw-head__badgeImg {
+  width: 18px;
+  height: 18px;
+  display: block;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,.75));
+}
 
 .vw-head__progress {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: 1fr;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 .vw-head__bar {
   height: 6px;
@@ -151,9 +169,10 @@
 }
 .vw-head__progressText {
   font-family: "IM Fell English SC", var(--vw-font);
-  font-size: .74rem;
-  color: rgba(255, 226, 170, 0.84);
-  white-space: nowrap;
+  font-size: .70rem;
+  color: rgba(255, 226, 170, 0.86);
+  text-align: center;
+  white-space: nowrap; /* ahora es corto, no se corta */
 }
 
 /* =========================================================
@@ -175,11 +194,7 @@
   border-radius: 0 0 3px 3px;
 
   background:
-    repeating-linear-gradient(
-      0deg,
-      rgba(255,255,255,0.03) 0 1px,
-      rgba(0,0,0,0) 1px 3px
-    ),
+    repeating-linear-gradient(0deg, rgba(255,255,255,0.03) 0 1px, rgba(0,0,0,0) 1px 3px),
     linear-gradient(180deg, var(--vw-woodA) 0%, var(--vw-woodB) 100%);
 
   box-shadow:
@@ -295,6 +310,7 @@
   font-size: .78rem;
   color: rgba(255, 226, 170, 0.62);
   line-height: 1.1;
+  text-align: center;
 }
 
 /* =========================================================
@@ -329,7 +345,7 @@
     inset -1px -1px 0 rgba(0,0,0,0.70);
 }
 
-.vw-order-mini {
+.vw-orderTxt {
   display: grid;
   place-items: center;
   font-family: var(--vw-font);
@@ -350,7 +366,19 @@
   height: 26px;
   display: block;
   filter: drop-shadow(0 2px 0 rgba(0,0,0,0.60));
+  transform: translateY(0);
 }
+
+/* lift favicon (hover en botón → clase is-lift) */
+@keyframes vwFaviconLift {
+  0% { transform: translateY(0) scale(1); filter: drop-shadow(0 2px 0 rgba(0,0,0,0.60)); }
+  50% { transform: translateY(-7px) scale(1.10); filter: drop-shadow(0 10px 14px rgba(0,0,0,0.55)); }
+  100% { transform: translateY(-3px) scale(1.06); filter: drop-shadow(0 8px 12px rgba(0,0,0,0.55)); }
+}
+.vw-site-mini.is-lift .vw-site-mini__img {
+  animation: vwFaviconLift 520ms cubic-bezier(.2,.9,.2,1);
+}
+
 .vw-site-mini__fallback {
   position: absolute;
   opacity: 0;
@@ -363,7 +391,6 @@
 .vw-site-mini.is-fallback .vw-site-mini__fallback { opacity: 1; }
 .vw-site-mini.is-fallback .vw-site-mini__img { opacity: 0; }
 
-/* Fuerza estirado total del área del botón */
 .vw-action-mini {
   min-width: 0;
   display: flex;
@@ -374,7 +401,7 @@
 }
 
 /* =========================================================
-   BOTÓN VOTAR (bloque completo + sin “márgenes” laterales)
+   BOTÓN VOTAR (FULL-WIDTH + SIN MÁRGENES + SLAB/RUNA)
    ========================================================= */
 .vw-btn-mini {
   position: relative;
@@ -391,47 +418,62 @@
   font-weight: 900;
   font-size: 0.92rem;
 
-  /* base */
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: 100% 100%;
-  background-color: rgba(70, 54, 40, 0.88);
+  background-color: rgba(30, 20, 12, 0.85);
 
-  /* Sin marco lateral: quitamos el “inset borde” que te lo acorta visualmente */
   box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.16),
-    inset 0 -1px 0 rgba(0,0,0,0.28),
+    0 0 0 2px rgba(0,0,0,0.58),
+    inset 1px 1px 0 rgba(255,255,255,0.12),
+    inset -1px -1px 0 rgba(0,0,0,0.60),
     0 5px 0 rgba(0,0,0,0.18);
 
   overflow: hidden;
   transition: transform .12s ease, filter .12s ease;
 
-  &:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.04); }
+  &:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.05); }
   &:active:not(:disabled) { transform: translateY(0); }
   &:disabled { opacity: 0.68; cursor: not-allowed; }
   &:focus,
   &:focus-visible { outline: none; }
 }
 
+/* style “slab” verde arriba (sin svg → 0 márgenes raros) */
 .vw-btn-mini.is-store {
-  /* shading suave encima para “relieve” sin crear bordes laterales */
   background-image:
-    linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(0,0,0,0.10) 100%),
-    var(--vw-dirt-svg);
+    linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(0,0,0,0.18) 100%),
+    linear-gradient(180deg, rgba(55, 40, 28, 0.98) 0%, rgba(28, 20, 14, 0.98) 100%),
+    repeating-linear-gradient(
+      90deg,
+      rgba(255,255,255,0.035) 0 6px,
+      rgba(0,0,0,0) 6px 12px
+    );
+}
+
+/* banda “runa/vida” superior */
+.vw-btn-mini.is-store::before {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; top: 0;
+  height: 34%;
+  background:
+    linear-gradient(180deg, rgba(120, 255, 160, 0.60) 0%, rgba(40, 210, 110, 0.70) 55%, rgba(14, 140, 72, 0.85) 100%);
+  box-shadow:
+    inset 0 -2px 0 rgba(0,0,0,0.55),
+    0 0 14px rgba(60, 230, 130, 0.18);
+  opacity: 0.95;
+  pointer-events: none;
 }
 
 .vw-btn-mini.is-locked {
   background-image:
-    linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(0,0,0,0.10) 100%),
-    var(--vw-stone-svg);
-  filter: grayscale(0.10);
+    linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(0,0,0,0.14) 100%),
+    linear-gradient(180deg, #9c9ea3 0%, #7f8186 100%);
+  filter: grayscale(0.12);
 }
 
 .vw-btn-mini__label {
   position: relative;
   z-index: 2;
 
-  /* Más legible */
   color: var(--vw-voteText);
   text-shadow:
     0 2px 0 rgba(0,0,0,0.65),
@@ -440,13 +482,11 @@
   transition: color .22s ease, text-shadow .22s ease, transform .22s ease;
 }
 
-/* Locked = texto oscuro tipo piedra */
 .vw-btn-mini.is-locked .vw-btn-mini__label {
   color: rgba(30, 18, 10, 0.86);
   text-shadow: 0 1px 0 rgba(255,255,255,0.12);
 }
 
-/* Hover: aclara fluido */
 .vw-btn-mini.is-store:hover .vw-btn-mini__label {
   color: var(--vw-voteTextHover);
   text-shadow:
@@ -455,11 +495,9 @@
   transform: translateY(-0.5px);
 }
 
-/* Pending pulse (suave) */
 @keyframes vwPendingPulse { 50% { filter: brightness(1.08); } }
 .vw-btn-mini.is-pending { animation: vwPendingPulse 1.05s ease-in-out infinite; }
 
-/* Shine premium diagonal */
 .vw-btn-mini::after {
   content: "";
   position: absolute;
@@ -479,21 +517,16 @@
   transform: translateX(-120%) rotate(10deg);
   opacity: 0;
 }
-
 @keyframes vwShineSweep {
   0% { transform: translateX(-120%) rotate(10deg); opacity: 0; }
   15% { opacity: 0.70; }
   55% { opacity: 0.55; }
   100% { transform: translateX(120%) rotate(10deg); opacity: 0; }
 }
-
 .vw-btn-mini.is-store:hover::after {
   opacity: 1;
   animation: vwShineSweep 620ms ease-out;
 }
-
-/* Compat: ocultamos el shine viejo */
-.vw-btn-mini__shine { display: none; }
 
 .vw-sep {
   height: 1px;
@@ -508,12 +541,85 @@
     rgba(0,0,0,0) 100%
   );
 }
+.vw-sep--thin { opacity: 0.7; }
+
+/* =========================================================
+   MOSTRAR MÁS + PAGINACIÓN
+   ========================================================= */
+.vw-moreToggle {
+  width: 100%;
+  border: 0;
+  cursor: pointer;
+  margin: 4px 0 0;
+  padding: 6px 8px;
+  border-radius: 2px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  background: linear-gradient(180deg, rgba(70,54,40,0.62) 0%, rgba(40,30,22,0.86) 100%);
+  box-shadow: 0 0 0 2px rgba(0,0,0,0.55);
+
+  color: rgba(255, 226, 170, 0.90);
+  font-family: "IM Fell English SC", var(--vw-font);
+  font-weight: 900;
+  letter-spacing: .02em;
+
+  transition: transform .12s ease, filter .12s ease;
+
+  &:hover { transform: translateY(-1px); filter: brightness(1.05); }
+  &:active { transform: translateY(0); }
+}
+
+.vw-chev { width: 16px; height: 16px; color: rgba(255, 226, 170, 0.92); }
+.vw-chev.is-up { transform: rotate(180deg); }
+
+.vw-moreWrap {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(255, 220, 170, 0.12);
+}
+
+.vw-morePager {
+  margin-top: 8px;
+  display: grid;
+  grid-template-columns: 36px 1fr 36px;
+  align-items: center;
+  gap: 8px;
+}
+
+.vw-morePager__btn {
+  height: 30px;
+  border: 0;
+  border-radius: 2px;
+  cursor: pointer;
+
+  background: linear-gradient(180deg, #ffb35a 0%, #ff8a2a 55%, #d46a10 100%);
+  box-shadow: 0 0 0 2px rgba(0,0,0,0.55);
+
+  font-family: var(--vw-font);
+  font-weight: 900;
+  font-size: 1.1rem;
+  color: rgba(42, 20, 7, 0.98);
+
+  &:disabled { opacity: 0.55; cursor: not-allowed; }
+}
+
+.vw-morePager__info {
+  text-align: center;
+  font-family: "IM Fell English SC", var(--vw-font);
+  font-weight: 900;
+  font-size: .80rem;
+  color: rgba(255, 226, 170, 0.80);
+}
 
 /* =========================================================
    TOP VOTANTES
    ========================================================= */
 .vw-top-mini {
-  margin-top: 8px;
+  margin-top: 10px;
   padding: 7px;
   border-radius: 2px;
 
@@ -528,25 +634,20 @@
 }
 
 .vw-top-mini__title {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-
   padding: 0 2px 6px;
   margin: 0 0 7px;
-
   border-bottom: 1px solid rgba(255, 220, 170, 0.14);
 
   font-family: "IM Fell English SC", var(--vw-font);
-  font-size: .80rem;
+  font-size: .82rem;
   font-weight: 900;
   color: rgba(255, 226, 170, 0.92);
-}
 
-.vw-top-mini__meta {
-  font-size: .74rem;
-  color: rgba(255, 226, 170, 0.58);
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
+.vw-top-mini__titleText { text-align: center; letter-spacing: .03em; }
 
 .vw-top-mini__rows { display: flex; flex-direction: column; gap: 5px; }
 .vw-top-mini__rows--rest { margin-top: 7px; }
@@ -589,7 +690,14 @@
   text-shadow: 0 1px 0 rgba(0,0,0,0.85);
 }
 
-.vw-toprow__headWrap { width: 38px; height: 38px; display: grid; place-items: center; }
+.vw-toprow__headWrap {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  position: relative;
+}
+
 .vw-toprow__head {
   width: 30px;
   height: 30px;
@@ -602,6 +710,18 @@
     inset 1px 1px 0 rgba(255,255,255,0.08),
     inset -1px -1px 0 rgba(0,0,0,0.70);
 }
+
+/* Corona del usuario #1 */
+.vw-toprow__crown {
+  position: absolute;
+  left: -10px;
+  top: -12px;
+  width: 26px;
+  height: 26px;
+  transform: rotate(-8deg);
+  filter: drop-shadow(0 6px 10px rgba(0,0,0,0.55));
+}
+.vw-crown { width: 100%; height: 100%; }
 
 .vw-toprow__name {
   min-width: 0;
@@ -659,25 +779,43 @@
 .vw-toprow.is-inmortal .vw-toprow__name { color: rgba(255, 150, 90, 0.98); }
 
 /* =========================================================
-   MIN (pip)
+   MIN (pip) — más pequeño + NO sigue scroll + levita
    ========================================================= */
+@keyframes vwFloatMini {
+  0% { transform: translateY(0); filter: drop-shadow(0 8px 10px rgba(0,0,0,0.55)); }
+  50% { transform: translateY(-4px); filter: drop-shadow(0 12px 14px rgba(0,0,0,0.55)); }
+  100% { transform: translateY(0); filter: drop-shadow(0 8px 10px rgba(0,0,0,0.55)); }
+}
+
 .vote-widget-mini.is-min {
-  width: 70px;
+  width: 78px;
   max-width: none;
 
   .vw-panel-miniWrapper { max-height: 0 !important; opacity: 0 !important; transform: translate3d(0, -6px, 0) !important; }
+
+  /* IMPORTANTE: NO ponemos fixed en el botón interno.
+     El root ya es fixed → así NO “sigue” scroll por transforms externos. */
   .vw-pill-mini {
-    width: auto;
-    height: auto;
+    width: 100%;
+    height: 78px;
     padding: 0;
-    background: transparent;
-    box-shadow: none;
+    border-radius: 3px;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(0, 0, 0, 0.10) 100%),
+      linear-gradient(180deg, rgba(70, 54, 40, 0.72) 0%, rgba(40, 30, 22, 0.88) 100%);
   }
 
-  .vw-head { grid-template-columns: 52px 16px; gap: 8px; }
+  .vw-head { grid-template-columns: 1fr; gap: 0; justify-items: center; }
   .vw-head__mid { display: none; }
-  .vw-crest { width: 52px; height: 52px; }
-  .vw-crest__img { width: 44px; height: 44px; }
+  .vw-arrow { display: none; }
+
+  .vw-crest { width: 78px; height: 78px; }
+  .vw-crest__img {
+    width: 54px;
+    height: 54px;
+    animation: vwFloatMini 2.2s ease-in-out infinite;
+    will-change: transform, filter;
+  }
 }
 
 /* =========================================================
@@ -692,21 +830,20 @@
   }
 
   .vote-widget-mini.is-min {
-    width: 30px;
-    left: 0;
-    right: auto;
+    width: 48px;
+    left: 10px;
 
     .vw-pill-mini {
-      width: 30px;
-      height: 34px;
+      height: 48px;
       padding: 0;
-      background: transparent;
-      box-shadow: none;
+      border-radius: 3px;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(0, 0, 0, 0.10) 100%),
+        linear-gradient(180deg, rgba(70, 54, 40, 0.72) 0%, rgba(40, 30, 22, 0.88) 100%);
     }
 
-    .vw-crest { display: none; }
-    .vw-head { grid-template-columns: 1fr; justify-items: center; }
-    .vw-head__mid { display: none; }
+    .vw-crest { width: 48px; height: 48px; }
+    .vw-crest__img { width: 34px; height: 34px; animation-duration: 2.4s; }
   }
 }
 
@@ -714,7 +851,9 @@
 @media (prefers-reduced-motion: reduce) {
   .vw-row-mini,
   .vw-btn-mini.is-pending,
-  .vw-btn-mini.is-store:hover::after {
+  .vw-btn-mini.is-store:hover::after,
+  .vw-site-mini.is-lift .vw-site-mini__img,
+  .vote-widget-mini.is-min .vw-crest__img {
     animation: none !important;
     transition: none !important;
   }

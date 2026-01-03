@@ -155,6 +155,43 @@ function CheckIcon({ filled = false }) {
   );
 }
 
+function CrownIcon() {
+  return (
+    <svg className="vw-crown" viewBox="0 0 64 64" aria-hidden="true">
+      <path
+        d="M10 24 18 34 32 18 46 34 54 24 58 44H6l4-20Z"
+        fill="#f2b33a"
+      />
+      <path d="M14 44h36l-2 10H16l-2-10Z" fill="#d48b1c" />
+      <path
+        d="M12 24 18 34 32 18 46 34 52 24"
+        fill="none"
+        stroke="rgba(60,30,10,0.9)"
+        strokeWidth="4"
+        strokeLinejoin="round"
+      />
+      <circle cx="18" cy="34" r="3.5" fill="#61e6ff" />
+      <circle cx="32" cy="18" r="3.5" fill="#61e6ff" />
+      <circle cx="46" cy="34" r="3.5" fill="#61e6ff" />
+    </svg>
+  );
+}
+
+function ChevronMini({ up = false }) {
+  return (
+    <svg className={`vw-chev ${up ? "is-up" : ""}`} viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M7 10l5 5 5-5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 export default function VoteWidget({ visible = true }) {
   const navigate = useNavigate();
 
@@ -176,6 +213,14 @@ export default function VoteWidget({ visible = true }) {
     cleanNick(window.localStorage.getItem("vw_guest_nick") || "")
   );
   const [guestSaved, setGuestSaved] = useState(false);
+
+  // expand + paginación de “más sitios”
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [morePage, setMorePage] = useState(0);
+
+  // anim favicon al votar (click) y al hover
+  const [liftSiteId, setLiftSiteId] = useState("");
+  const [hoverSiteId, setHoverSiteId] = useState("");
 
   const storedA = window.localStorage.getItem("flan_user");
   const storedB = window.localStorage.getItem("fc_user");
@@ -378,7 +423,7 @@ export default function VoteWidget({ visible = true }) {
       window.removeEventListener("resize", update);
       ro.disconnect();
     };
-  }, [open, computed.items.length, topState.list.length]);
+  }, [open, computed.items.length, topState.list.length, moreOpen, morePage]);
 
   const handlePillClick = useCallback(() => setOpen((v) => !v), []);
 
@@ -386,6 +431,10 @@ export default function VoteWidget({ visible = true }) {
     (site) => {
       const t = Date.now();
       setLocalLast(identityKey, site.id, t);
+
+      // lift (click)
+      setLiftSiteId(site.id);
+      window.setTimeout(() => setLiftSiteId(""), 650);
 
       window.open(site.url, "_blank", "noopener,noreferrer");
       setPending((prev) => ({ ...prev, [site.id]: t }));
@@ -401,8 +450,13 @@ export default function VoteWidget({ visible = true }) {
       ? "/assets/logros/tab-diarias.webp"
       : "/assets/logros/estado-reclamado.webp";
 
-  const progressLabel =
-    computed.remaining > 0 ? `Faltan ${computed.remaining}/${computed.total}` : "Completado";
+  const titleMain = "VOTOS DIARIOS";
+
+  // feedback NO redundante y corto (no se corta)
+  const progressText =
+    computed.remaining > 0
+      ? `HOY ${computed.done}/${computed.total}`
+      : "COMPLETADO";
 
   const progressPercent = Math.max(0, Math.min(100, computed.progress * 100));
   const isMin = !open;
@@ -412,6 +466,21 @@ export default function VoteWidget({ visible = true }) {
   const topRest = topList.slice(3, 10);
 
   const showGuest = !userUuid && !userName;
+
+  // Lista principal: 5 + “más”
+  const PAGE_SIZE = 5;
+  const primarySites = computed.items.slice(0, PAGE_SIZE);
+  const remainingSites = computed.items.slice(PAGE_SIZE);
+
+  const morePageCount = Math.max(1, Math.ceil(remainingSites.length / PAGE_SIZE));
+  const morePageClamped = Math.min(Math.max(0, morePage), morePageCount - 1);
+  const moreSliceStart = morePageClamped * PAGE_SIZE;
+  const moreSliceEnd = moreSliceStart + PAGE_SIZE;
+  const moreSitesPage = remainingSites.slice(moreSliceStart, moreSliceEnd);
+
+  useEffect(() => {
+    if (!moreOpen) setMorePage(0);
+  }, [moreOpen]);
 
   if (!visible) return null;
 
@@ -434,7 +503,7 @@ export default function VoteWidget({ visible = true }) {
 
           <span className="vw-head__mid">
             <span className="vw-head__titleRow">
-              <span className="vw-head__title">RITUAL DIARIO</span>
+              <span className="vw-head__title">{titleMain}</span>
               <span className="vw-head__badge" aria-hidden="true">
                 <img src={statusImg} alt="" className="vw-head__badgeImg" loading="lazy" />
               </span>
@@ -444,11 +513,10 @@ export default function VoteWidget({ visible = true }) {
               <span className="vw-head__bar" aria-hidden="true">
                 <span className="vw-head__barFill" style={{ width: `${progressPercent}%` }} />
               </span>
-              <span className="vw-head__progressText">{progressLabel}</span>
+              <span className="vw-head__progressText">{progressText}</span>
             </span>
           </span>
 
-          {/* Flecha a la derecha */}
           <span className="vw-arrow" aria-hidden="true">
             <span className="vw-arrow__icon" />
           </span>
@@ -468,7 +536,7 @@ export default function VoteWidget({ visible = true }) {
                   className="vw-guest__input"
                   value={guestNick}
                   onChange={(e) => setGuestNick(cleanNick(e.target.value))}
-                  placeholder="Invitado"
+                  placeholder="Tu nick"
                   maxLength={16}
                   aria-label="Nick invitado"
                 />
@@ -481,7 +549,7 @@ export default function VoteWidget({ visible = true }) {
                     window.localStorage.setItem("vw_guest_nick", n);
                     setGuestNick(n);
                     setGuestSaved(true);
-                    setTimeout(() => setGuestSaved(false), 1200);
+                    setTimeout(() => setGuestSaved(false), 1100);
                     setTimeout(fetchStatus, 0);
                   }}
                   disabled={!cleanNick(guestNick)}
@@ -492,22 +560,25 @@ export default function VoteWidget({ visible = true }) {
                 </button>
               </div>
 
-              <div className="vw-guest__hint">Guarda tu nick para contar en este navegador.</div>
+              <div className="vw-guest__hint">Se guarda en este navegador.</div>
             </div>
           )}
 
-          {/* LISTA SITES */}
+          {/* LISTA PRINCIPAL (solo 5) */}
           <div className="vw-list-mini">
-            {computed.items.map((s, idx) => {
+            {primarySites.map((s, idx) => {
               const isPending = !!pending[s.id];
               const btnText = !s.available ? msToHMS(s.left) : isPending ? "…" : "VOTAR";
+              const isLift = hoverSiteId === s.id || liftSiteId === s.id;
 
               return (
                 <React.Fragment key={s.id}>
                   <div className="vw-row-mini" style={{ "--i": idx }}>
-                    <div className="vw-order-mini">#{idx + 1}</div>
+                    <div className="vw-order-mini">
+                      <span className="vw-orderTxt">#{idx + 1}</span>
+                    </div>
 
-                    <div className="vw-site-mini" aria-hidden="true">
+                    <div className={`vw-site-mini ${isLift ? "is-lift" : ""}`} aria-hidden="true">
                       <img
                         src={s.favicon}
                         alt=""
@@ -531,31 +602,137 @@ export default function VoteWidget({ visible = true }) {
                           isPending ? "is-pending" : ""
                         }`}
                         onClick={() => handleVoteClick(s)}
+                        onMouseEnter={() => setHoverSiteId(s.id)}
+                        onMouseLeave={() => setHoverSiteId("")}
+                        onFocus={() => setHoverSiteId(s.id)}
+                        onBlur={() => setHoverSiteId("")}
                         disabled={!s.available || isPending}
                         title={!s.available ? `Disponible en ${msToHMS(s.left)}` : "Abrir voto"}
                       >
                         <span className="vw-btn-mini__label">{btnText}</span>
-                        <span className="vw-btn-mini__shine" aria-hidden="true" />
                       </button>
                     </div>
                   </div>
 
-                  {idx !== computed.items.length - 1 && <div className="vw-sep" aria-hidden="true" />}
+                  {idx !== primarySites.length - 1 && <div className="vw-sep" aria-hidden="true" />}
                 </React.Fragment>
               );
             })}
+
+            {/* Toggle “mostrar más” + paginación */}
+            {remainingSites.length > 0 && (
+              <>
+                <div className="vw-sep" aria-hidden="true" />
+
+                <button
+                  type="button"
+                  className={`vw-moreToggle ${moreOpen ? "is-open" : ""}`}
+                  onClick={() => setMoreOpen((v) => !v)}
+                >
+                  <span className="vw-moreToggle__txt">
+                    {moreOpen ? "Ocultar" : "Mostrar más sitios"}
+                  </span>
+                  <span className="vw-moreToggle__chev" aria-hidden="true">
+                    <ChevronMini up={moreOpen} />
+                  </span>
+                </button>
+
+                {moreOpen && (
+                  <div className="vw-moreWrap">
+                    {moreSitesPage.map((s, i) => {
+                      const idxReal = PAGE_SIZE + moreSliceStart + i;
+                      const isPending = !!pending[s.id];
+                      const btnText = !s.available ? msToHMS(s.left) : isPending ? "…" : "VOTAR";
+                      const isLift = hoverSiteId === s.id || liftSiteId === s.id;
+
+                      return (
+                        <React.Fragment key={s.id}>
+                          <div className="vw-row-mini vw-row-mini--more" style={{ "--i": i }}>
+                            <div className="vw-order-mini">
+                              <span className="vw-orderTxt">#{idxReal + 1}</span>
+                            </div>
+
+                            <div className={`vw-site-mini ${isLift ? "is-lift" : ""}`} aria-hidden="true">
+                              <img
+                                src={s.favicon}
+                                alt=""
+                                className="vw-site-mini__img"
+                                loading="lazy"
+                                referrerPolicy="no-referrer"
+                                onError={(e) => {
+                                  const parent = e.currentTarget.parentElement;
+                                  if (parent) parent.classList.add("is-fallback");
+                                }}
+                              />
+                              <span className="vw-site-mini__fallback">
+                                {String(s.label || "?").slice(0, 2).toUpperCase()}
+                              </span>
+                            </div>
+
+                            <div className="vw-action-mini">
+                              <button
+                                type="button"
+                                className={`vw-btn-mini ${s.available ? "is-store" : "is-locked"} ${
+                                  isPending ? "is-pending" : ""
+                                }`}
+                                onClick={() => handleVoteClick(s)}
+                                onMouseEnter={() => setHoverSiteId(s.id)}
+                                onMouseLeave={() => setHoverSiteId("")}
+                                onFocus={() => setHoverSiteId(s.id)}
+                                onBlur={() => setHoverSiteId("")}
+                                disabled={!s.available || isPending}
+                              >
+                                <span className="vw-btn-mini__label">{btnText}</span>
+                              </button>
+                            </div>
+                          </div>
+
+                          {i !== moreSitesPage.length - 1 && (
+                            <div className="vw-sep vw-sep--thin" aria-hidden="true" />
+                          )}
+                        </React.Fragment>
+                      );
+                    })}
+
+                    {morePageCount > 1 && (
+                      <div className="vw-morePager">
+                        <button
+                          type="button"
+                          className="vw-morePager__btn"
+                          onClick={() => setMorePage((p) => Math.max(0, p - 1))}
+                          disabled={morePageClamped <= 0}
+                          aria-label="Página anterior"
+                        >
+                          ‹
+                        </button>
+
+                        <span className="vw-morePager__info">
+                          Página {morePageClamped + 1}/{morePageCount}
+                        </span>
+
+                        <button
+                          type="button"
+                          className="vw-morePager__btn"
+                          onClick={() => setMorePage((p) => Math.min(morePageCount - 1, p + 1))}
+                          disabled={morePageClamped >= morePageCount - 1}
+                          aria-label="Página siguiente"
+                        >
+                          ›
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </>
+            )}
           </div>
 
           {/* TOP VOTANTES */}
           {topList.length > 0 && (
             <div className="vw-top-mini vw-top-mini--compact">
               <div className="vw-top-mini__title">
-                <span>TOP VOTANTES</span>
-                {topState.total > 0 && (
-                  <span className="vw-top-mini__meta">
-                    {Math.min(topList.length, topState.total)}/{topState.total}
-                  </span>
-                )}
+                <span className="vw-top-mini__titleText">TOP VOTANTES</span>
+                {/* 6/6 eliminado */}
               </div>
 
               <div className="vw-top-mini__rows vw-top-mini__rows--top3">
@@ -581,6 +758,12 @@ export default function VoteWidget({ visible = true }) {
                       <span className="vw-toprow__rank">#{rank}</span>
 
                       <span className="vw-toprow__headWrap" aria-hidden="true">
+                        {rank === 1 && (
+                          <span className="vw-toprow__crown" aria-hidden="true">
+                            <CrownIcon />
+                          </span>
+                        )}
+
                         <img
                           className="vw-toprow__head"
                           alt=""

@@ -1,9 +1,4 @@
-
 /* apps/frontend/src/styles/components/Tienda/productoDetallesModal.scss */
-
-/* =========================
-   MODAL BASE (overlay + dialog)
-   ========================= */
 
 .tienda-modal-open {
   overflow: hidden;
@@ -16,21 +11,19 @@
   display: grid;
   place-items: center;
   padding: 18px;
-  background: rgba(5, 3, 12, 0.72);
-  backdrop-filter: blur(10px);
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(8px);
 }
 
 .tienda-modal__dialog {
-  width: min(980px, 94vw);
-  max-height: 88vh;
-  display: flex;
-  flex-direction: column;
-  border-radius: 18px;
+  width: min(980px, 100%);
+  max-height: min(84vh, 860px);
   overflow: hidden;
-
-  background: linear-gradient(180deg, rgba(18, 12, 26, 0.94), rgba(9, 6, 16, 0.94));
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
+  border-radius: 3px;
+  background: rgba(10, 10, 12, 0.92);
+  border: 2px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.6);
+  position: relative;
 }
 
 .tienda-modal__header {
@@ -38,364 +31,70 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  padding: 12px 12px;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.10);
+  background:
+    linear-gradient(180deg, rgba(20, 20, 26, 0.95), rgba(12, 12, 16, 0.95));
+}
 
-  padding: 14px 14px;
-  background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(0,0,0,0));
-  border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+.tienda-modal__titleWrap {
+  display: grid;
+  gap: 2px;
+}
+
+.tienda-modal__kicker {
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.65);
+  font-weight: 900;
 }
 
 .tienda-modal__title {
   margin: 0;
-  font-size: 16px;
-  font-weight: 900;
-  letter-spacing: 0.6px;
+  font-size: 18px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
   color: rgba(255, 255, 255, 0.92);
+  font-weight: 1000;
 }
 
 .tienda-modal__close {
   width: 38px;
   height: 38px;
-  border-radius: 12px;
-  border: 1px solid rgba(255,255,255,0.14);
-  background: rgba(255,255,255,0.06);
-  color: rgba(255,255,255,0.92);
-  font-size: 18px;
-  cursor: pointer;
-
+  border-radius: 3px;
+  border: 2px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.92);
   display: grid;
   place-items: center;
-
-  transition: transform .12s ease, background .12s ease;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  transition: transform .12s ease, background .12s ease, border-color .12s ease;
 }
+
 .tienda-modal__close:hover {
   transform: translateY(-1px);
-  background: rgba(255,255,255,0.10);
+  background: rgba(255, 255, 255, 0.10);
+  border-color: rgba(255, 255, 255, 0.22);
 }
 
 .tienda-modal__body {
-  padding: 14px;
   overflow: auto;
+  max-height: calc(min(84vh, 860px) - 62px);
+  padding: 14px;
 }
 
-/* si el HTML trae estilos propios, no queremos que el modal los aplaste */
-.tienda-modal__body > div {
-  min-height: 10px;
+/* Scrollbar “game UI” */
+.tienda-modal__body::-webkit-scrollbar {
+  width: 10px;
 }
-
-/* =========================
-   INMORTAL MCX (el estilo “pack+shaders”)
-   ========================= */
-
-.mcx {
-  /* Paleta “minecraft cartoon” */
-  --mcx-ink: rgba(25, 18, 12, 0.92);
-  --mcx-ink2: rgba(25, 18, 12, 0.68);
-  --mcx-paper: #f7e7c3;
-  --mcx-stone: #d6d1c4;
-  --mcx-stone2: #c9c2b2;
-
-  --mcx-blue: #2bbcff;
-  --mcx-cyan: #61e6ff;
-  --mcx-violet: #7f57ff;
-  --mcx-gold: #f2b33a;
-  --mcx-green: #38d56a;
-  --mcx-red: #ff3d3d;
-
-  --mcx-edge: rgba(30, 18, 10, 0.9);
-  --mcx-edge2: rgba(255, 255, 255, 0.25);
-
-  --mcx-r: 18px;
-  --mcx-r2: 14px;
-
-  /* “shader” */
-  --mcx-glow: 0 18px 60px rgba(0, 0, 0, 0.35);
-  --mcx-glow2: 0 0 0 1px rgba(255, 255, 255, 0.22), 0 10px 30px rgba(0, 0, 0, 0.18);
-
-  color: var(--mcx-ink);
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-  letter-spacing: 0.2px;
-
-  .mcx-note {
-    background:
-      radial-gradient(1000px 300px at 20% 0%, rgba(97, 230, 255, 0.28), transparent 55%),
-      linear-gradient(180deg, rgba(15, 12, 18, 0.82), rgba(8, 6, 12, 0.78));
-    border-radius: 14px;
-    padding: 10px 12px;
-    margin: 0 0 12px;
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.22);
-    color: rgba(255, 255, 255, 0.9);
-
-    &__row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-weight: 700;
-      font-size: 13px;
-    }
-
-    &__dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 999px;
-      background: linear-gradient(#ffeaa6, #f2b33a);
-      box-shadow: 0 0 0 2px rgba(0,0,0,0.35), 0 0 18px rgba(242, 179, 58, 0.35);
-    }
-
-    &__link {
-      display: inline-flex;
-      margin-top: 6px;
-      font-size: 12.5px;
-      color: rgba(255, 255, 255, 0.88);
-      text-decoration: underline;
-      text-underline-offset: 2px;
-
-      &:hover { color: #fff; }
-    }
-  }
-
-  .mcx-modal {
-    position: relative;
-    border-radius: var(--mcx-r);
-    overflow: hidden;
-    box-shadow: var(--mcx-glow);
-    background:
-      radial-gradient(1200px 700px at 25% 0%, rgba(43, 188, 255, 0.22), transparent 60%),
-      radial-gradient(900px 600px at 85% 20%, rgba(242, 179, 58, 0.18), transparent 62%),
-      linear-gradient(180deg, rgba(255, 255, 255, 0.85), rgba(248, 232, 197, 0.82));
-    border: 1px solid rgba(255, 255, 255, 0.55);
-
-    &::before {
-      content: "";
-      position: absolute;
-      inset: 10px;
-      border-radius: calc(var(--mcx-r) - 10px);
-      border: 2px solid rgba(30, 18, 10, 0.18);
-      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25);
-      pointer-events: none;
-    }
-  }
-
-  .mcx-skyGlow {
-    position: absolute;
-    inset: -120px -80px auto -80px;
-    height: 260px;
-    background: radial-gradient(circle at 30% 45%, rgba(97, 230, 255, 0.35), transparent 60%);
-    filter: blur(8px);
-    opacity: 0.9;
-    animation: mcxFloat 4.5s ease-in-out infinite;
-    pointer-events: none;
-  }
-
-  @keyframes mcxFloat {
-    0%,100% { transform: translate3d(0,0,0); }
-    50% { transform: translate3d(10px, 8px, 0); }
-  }
-
-  .mcx-header {
-    padding: 16px 16px 12px;
-    background:
-      radial-gradient(1000px 400px at 30% 0%, rgba(127, 87, 255, 0.18), transparent 60%),
-      linear-gradient(180deg, rgba(255,255,255,0.65), rgba(255,255,255,0.25));
-    border-bottom: 1px solid rgba(30, 18, 10, 0.18);
-  }
-
-  .mcx-ribbon {
-    display: grid;
-    grid-template-columns: 42px 1fr 42px;
-    align-items: center;
-    gap: 12px;
-    padding: 12px 14px;
-    border-radius: 16px;
-    background: linear-gradient(180deg, rgba(43, 188, 255, 0.95), rgba(43, 101, 255, 0.95));
-    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.18), inset 0 2px 0 rgba(255, 255, 255, 0.25);
-    border: 2px solid rgba(10, 22, 60, 0.35);
-    position: relative;
-
-    &::after {
-      content: "";
-      position: absolute;
-      inset: 2px;
-      border-radius: 14px;
-      background: repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.18) 0 8px, rgba(255, 255, 255, 0.05) 8px 16px);
-      opacity: 0.35;
-      pointer-events: none;
-      mix-blend-mode: overlay;
-    }
-
-    &__text {
-      text-align: center;
-      font-weight: 1000;
-      letter-spacing: 3px;
-      color: rgba(255,255,255,0.95);
-      text-shadow: 0 2px 0 rgba(0, 0, 0, 0.25);
-      font-size: 22px;
-    }
-
-    &__chest {
-      width: 42px;
-      height: 42px;
-      display: grid;
-      place-items: center;
-      .mcx-svg { width: 42px; height: 42px; filter: drop-shadow(0 8px 14px rgba(0,0,0,0.25)); }
-    }
-  }
-
-  .mcx-rankCard {
-    margin-top: 12px;
-    padding: 14px;
-    border-radius: var(--mcx-r2);
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(248, 232, 197, 0.7));
-    box-shadow: var(--mcx-glow2);
-    border: 1px solid rgba(30, 18, 10, 0.16);
-
-    &__tag {
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-      padding: 7px 10px;
-      border-radius: 999px;
-      background: rgba(242, 179, 58, 0.18);
-      border: 1px solid rgba(106, 58, 5, 0.25);
-      font-weight: 1000;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      font-size: 12px;
-      .mcx-svg { width: 20px; height: 20px; }
-    }
-
-    &__title {
-      margin-top: 8px;
-      font-weight: 1100;
-      letter-spacing: 2px;
-      font-size: 30px;
-    }
-
-    &__sub {
-      margin-top: 2px;
-      font-weight: 900;
-      color: var(--mcx-ink2);
-      letter-spacing: 1.2px;
-      text-transform: uppercase;
-      font-size: 13px;
-    }
-
-    &__lead {
-      margin-top: 10px;
-      font-size: 13.5px;
-      color: rgba(25, 18, 12, 0.75);
-      line-height: 1.35;
-    }
-  }
-
-  .mcx-badgeWord {
-    font-weight: 1000;
-    padding: 2px 8px;
-    border-radius: 999px;
-    background: rgba(127, 87, 255, 0.14);
-    border: 1px solid rgba(43, 26, 85, 0.2);
-  }
-
-  .mcx-quick {
-    margin-top: 12px;
-    display: grid;
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-    gap: 10px;
-  }
-
-  .mcx-q {
-    border-radius: 16px;
-    padding: 10px 10px 9px;
-    background:
-      radial-gradient(500px 180px at 20% 0%, rgba(97, 230, 255, 0.18), transparent 55%),
-      linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(233, 222, 200, 0.7));
-    border: 1px solid rgba(30, 18, 10, 0.14);
-    box-shadow: 0 14px 26px rgba(0,0,0,0.12);
-    display: grid;
-    gap: 5px;
-    text-align: center;
-    transition: transform .15s ease, box-shadow .15s ease;
-
-    .mcx-svg { width: 32px; height: 32px; margin: 0 auto 2px; filter: drop-shadow(0 10px 18px rgba(0,0,0,0.18)); }
-
-    &__k { font-size: 11px; font-weight: 1000; letter-spacing: 1px; text-transform: uppercase; color: rgba(25, 18, 12, 0.7); }
-    &__v { font-size: 16px; font-weight: 1100; letter-spacing: 1px; }
-    &__d { font-size: 11.5px; color: rgba(25, 18, 12, 0.62); font-weight: 800; }
-
-    &:hover { transform: translateY(-2px); box-shadow: 0 18px 34px rgba(0,0,0,0.16); }
-
-    &--danger {
-      background:
-        radial-gradient(500px 180px at 25% 0%, rgba(255, 61, 61, 0.20), transparent 55%),
-        linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(245, 214, 214, 0.7));
-      border-color: rgba(120, 10, 10, 0.18);
-    }
-  }
-
-  .mcx-tabs {
-    margin-top: 12px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-  }
-
-  .mcx-tab {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 12px;
-    border-radius: 14px;
-    text-decoration: none;
-    font-weight: 1000;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    font-size: 12px;
-    color: rgba(255,255,255,0.95);
-
-    background: linear-gradient(180deg, rgba(55, 44, 90, 0.92), rgba(20, 16, 35, 0.92));
-    border: 1px solid rgba(255,255,255,0.12);
-    box-shadow: 0 14px 26px rgba(0,0,0,0.18);
-
-    .mcx-svg { width: 22px; height: 22px; }
-    &:hover { transform: translateY(-1px); box-shadow: 0 18px 32px rgba(0,0,0,0.22); }
-
-    &--accent {
-      background: linear-gradient(180deg, rgba(43, 188, 255, 0.98), rgba(43, 101, 255, 0.98));
-      border-color: rgba(10, 22, 60, 0.22);
-    }
-  }
-
-  .mcx-body {
-    padding: 14px 16px 16px;
-    background:
-      radial-gradient(1100px 700px at 30% 10%, rgba(97, 230, 255, 0.18), transparent 62%),
-      linear-gradient(180deg, rgba(255,255,255,0.62), rgba(248, 232, 197, 0.72));
-  }
-
-  .mcx-section {
-    border-radius: var(--mcx-r2);
-    padding: 14px;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(241, 229, 203, 0.74));
-    border: 1px solid rgba(30, 18, 10, 0.14);
-    box-shadow: 0 16px 40px rgba(0,0,0,0.12);
-    & + & { margin-top: 12px; }
-  }
-
-  .mcx-h3 {
-    margin: 0 0 10px;
-    font-size: 14px;
-    font-weight: 1100;
-    letter-spacing: 1.2px;
-    text-transform: uppercase;
-  }
-
-  .mcx-svg { display: block; }
-
-  @media (max-width: 1100px) {
-    .mcx-quick { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  }
-  @media (max-width: 560px) {
-    .mcx-quick { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .mcx-tab { width: 100%; justify-content: center; }
-  }
+.tienda-modal__body::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.06);
+}
+.tienda-modal__body::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 3px;
+  border: 2px solid rgba(0, 0, 0, 0.35);
 }

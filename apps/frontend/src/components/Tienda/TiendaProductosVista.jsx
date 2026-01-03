@@ -1,6 +1,6 @@
 // apps/frontend/src/components/Tienda/TiendaProductosVista.jsx
 import React, { useMemo, useState } from "react";
-import PRODUCT_DATA from "./data/productos";
+import { resolveProductDetails } from "./data/productDetails/index.js";
 import ProductoDetallesModal from "./ProductoDetallesModal";
 import "../../styles/components/Tienda/tienda-productos.scss";
 
@@ -84,8 +84,7 @@ function keyFromBaseName(baseName = "") {
 
 /**
  * Sanitiza HTML:
- * - Permite tus clases (class="...") para que PRODUCT_DATA renderice bonito.
- * - Permite header/section/footer.
+ * - Permite class=""
  * - Elimina scripts/iframes/styles/on*.
  */
 function sanitizeTebexHtml(input) {
@@ -263,12 +262,10 @@ function discountPctForPkg(pkg) {
 }
 
 /* ===========================
-   DATA (PRODUCT_DATA)
+   DATA (productDetails registry)
    =========================== */
 
 function getProductData(pkg, categoria) {
-  if (!PRODUCT_DATA) return null;
-
   const id = pkg?.id || pkg?.package_id;
   const rawName = pkg?.name || pkg?.nombre || "";
   const baseName = normalizeBaseName(rawName);
@@ -285,8 +282,13 @@ function getProductData(pkg, categoria) {
   if (slugName) candidates.push(slugName);
   if (catSlug && slugName) candidates.push(`${catSlug}/${slugName}`);
 
+  // extras (por si aliasas por nombre directo)
+  if (rawName) candidates.push(rawName);
+  if (baseName) candidates.push(baseName);
+
   for (const key of candidates) {
-    if (PRODUCT_DATA[key]) return PRODUCT_DATA[key];
+    const d = resolveProductDetails(key);
+    if (d) return d;
   }
   return null;
 }
@@ -442,11 +444,22 @@ const TiendaProductosVista = ({
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [detailsTitle, setDetailsTitle] = useState("Detalles");
   const [detailsHtml, setDetailsHtml] = useState("");
+  const [detailsContent, setDetailsContent] = useState(null);
 
   const openDetalles = (pkg, rawNameForTitle = "Detalles") => {
     const data = getProductData(pkg, categoria);
-    const fallbackDesc = pkg?.description || pkg?.descripcion || pkg?.desc || "";
 
+    // ✅ Si existe JSON mc_menu -> renderizamos UI, no HTML
+    if (data?.type === "mc_menu") {
+      setDetailsTitle((data?.name || rawNameForTitle || "Detalles").trim());
+      setDetailsContent(data);
+      setDetailsHtml("");
+      setDetailsOpen(true);
+      return;
+    }
+
+    // Fallback legacy HTML (Tebex)
+    const fallbackDesc = pkg?.description || pkg?.descripcion || pkg?.desc || "";
     const htmlRaw = data?.html ?? data?.descripcion ?? fallbackDesc ?? "";
     const html = sanitizeTebexHtml(htmlRaw);
     if (!html) return;
@@ -460,6 +473,7 @@ const TiendaProductosVista = ({
 
     setDetailsTitle(title);
     setDetailsHtml(html);
+    setDetailsContent(null);
     setDetailsOpen(true);
   };
 
@@ -474,6 +488,7 @@ const TiendaProductosVista = ({
         onClose={() => setDetailsOpen(false)}
         title={detailsTitle}
         html={detailsHtml}
+        content={detailsContent}
       />
 
       <section className="tienda-productos__body">
@@ -537,15 +552,10 @@ const TiendaProductosVista = ({
                                   e.currentTarget.src = imgFallback;
                                 }}
                               />
-                              <span
-                                className="tp-stack-hero__glow"
-                                aria-hidden="true"
-                              />
+                              <span className="tp-stack-hero__glow" aria-hidden="true" />
                             </div>
 
-                            <div className="tp-stack-hero__title">
-                              {sec.title}
-                            </div>
+                            <div className="tp-stack-hero__title">{sec.title}</div>
                           </div>
 
                           {/* GRID DE STACKS */}
@@ -553,7 +563,9 @@ const TiendaProductosVista = ({
                             {sec.items.map((it) => {
                               const pkg = it.pkg;
                               const id =
-                                pkg?.id || pkg?.package_id || `${sec.key}-${it.idx}`;
+                                pkg?.id ||
+                                pkg?.package_id ||
+                                `${sec.key}-${it.idx}`;
                               const rawName =
                                 pkg?.name || pkg?.nombre || it.rawName || "Producto";
 
@@ -594,10 +606,14 @@ const TiendaProductosVista = ({
                                 ? sanitizeTebexHtml(fallbackDesc)
                                 : "";
 
-                              const hasDetails = !!descHtml;
+                              // ✅ si hay mc_menu, también hay detalles aunque no haya HTML
+                              const hasDetails = Boolean(descHtml) || data?.type === "mc_menu";
 
                               const flyImg =
-                                pkg?.image_url || pkg?.image || secImg || imgFallback;
+                                pkg?.image_url ||
+                                pkg?.image ||
+                                secImg ||
+                                imgFallback;
 
                               return (
                                 <article
@@ -607,9 +623,7 @@ const TiendaProductosVista = ({
                                   }`}
                                   title={rawName}
                                 >
-                                  <div className="tp-stack-card__qty">
-                                    {qtyLabel}
-                                  </div>
+                                  <div className="tp-stack-card__qty">{qtyLabel}</div>
 
                                   <div className="tp-pricebox">
                                     {originalFmt ? (
@@ -636,10 +650,7 @@ const TiendaProductosVista = ({
                                       toggleProducto(pkg);
                                     }}
                                   >
-                                    <span
-                                      className="tp-variant__shine"
-                                      aria-hidden="true"
-                                    />
+                                    <span className="tp-variant__shine" aria-hidden="true" />
                                     {enCarrito
                                       ? "Quitar del carrito"
                                       : `Comprar por ${precioFmt}`}
@@ -657,10 +668,7 @@ const TiendaProductosVista = ({
                                       <span className="tp-card__details-label">
                                         Ver detalles
                                       </span>
-                                      <span
-                                        className="tp-card__chevron"
-                                        aria-hidden="true"
-                                      />
+                                      <span className="tp-card__chevron" aria-hidden="true" />
                                     </button>
                                   )}
                                 </article>
@@ -707,18 +715,14 @@ const TiendaProductosVista = ({
                           const rawName =
                             pkg?.name || pkg?.nombre || it.rawName || "Producto";
 
-                          const precio = toMoneyNumber(
-                            pkg?.precio ?? pkg?.price ?? 0
-                          );
+                          const precio = toMoneyNumber(pkg?.precio ?? pkg?.price ?? 0);
                           const originalNum = toOptionalNumber(
                             pkg?.precio_original ?? pkg?.original_price ?? null
                           );
 
                           const precioFmt = `${precio.toFixed(2)} €`;
                           const originalFmt =
-                            originalNum != null
-                              ? `${originalNum.toFixed(2)} €`
-                              : null;
+                            originalNum != null ? `${originalNum.toFixed(2)} €` : null;
 
                           const enCarrito = estaEnCarrito(pkg);
 
@@ -733,7 +737,7 @@ const TiendaProductosVista = ({
                             ? sanitizeTebexHtml(fallbackDesc)
                             : "";
 
-                          const hasDetails = !!descHtml;
+                          const hasDetails = Boolean(descHtml) || data?.type === "mc_menu";
 
                           const flyImg =
                             pkg?.image_url || pkg?.image || secImg || imgFallback;
@@ -741,9 +745,7 @@ const TiendaProductosVista = ({
                           return (
                             <div
                               key={id}
-                              className={`tp-variant ${
-                                enCarrito ? "is-in-cart" : ""
-                              }`}
+                              className={`tp-variant ${enCarrito ? "is-in-cart" : ""}`}
                               title={rawName}
                             >
                               <div className="tp-variant__center">
@@ -776,10 +778,7 @@ const TiendaProductosVista = ({
                                     toggleProducto(pkg);
                                   }}
                                 >
-                                  <span
-                                    className="tp-variant__shine"
-                                    aria-hidden="true"
-                                  />
+                                  <span className="tp-variant__shine" aria-hidden="true" />
                                   {enCarrito
                                     ? "Quitar del carrito"
                                     : `Comprar por ${precioFmt}`}
@@ -797,10 +796,7 @@ const TiendaProductosVista = ({
                                     <span className="tp-card__details-label">
                                       Ver detalles
                                     </span>
-                                    <span
-                                      className="tp-card__chevron"
-                                      aria-hidden="true"
-                                    />
+                                    <span className="tp-card__chevron" aria-hidden="true" />
                                   </button>
                                 )}
                               </div>
@@ -824,14 +820,11 @@ const TiendaProductosVista = ({
                   const pkg = it.pkg;
                   const secImg = pickSectionImage(sec);
 
-                  const id =
-                    pkg?.id || pkg?.package_id || `${sec.key}-${it.idx}`;
+                  const id = pkg?.id || pkg?.package_id || `${sec.key}-${it.idx}`;
                   const rawName =
                     pkg?.name || pkg?.nombre || it.rawName || sec.title;
 
-                  const precio = toMoneyNumber(
-                    pkg?.precio ?? pkg?.price ?? 0
-                  );
+                  const precio = toMoneyNumber(pkg?.precio ?? pkg?.price ?? 0);
                   const originalNum = toOptionalNumber(
                     pkg?.precio_original ?? pkg?.original_price ?? null
                   );
@@ -855,7 +848,7 @@ const TiendaProductosVista = ({
                     ? sanitizeTebexHtml(fallbackDesc)
                     : "";
 
-                  const hasDetails = !!descHtml;
+                  const hasDetails = Boolean(descHtml) || data?.type === "mc_menu";
 
                   const flyImg =
                     pkg?.image_url || pkg?.image || secImg || imgFallback;
@@ -910,10 +903,7 @@ const TiendaProductosVista = ({
                             toggleProducto(pkg);
                           }}
                         >
-                          <span
-                            className="tp-variant__shine"
-                            aria-hidden="true"
-                          />
+                          <span className="tp-variant__shine" aria-hidden="true" />
                           {enCarrito
                             ? "Quitar del carrito"
                             : `Comprar por ${precioFmt}`}
@@ -931,10 +921,7 @@ const TiendaProductosVista = ({
                             <span className="tp-card__details-label">
                               Ver detalles
                             </span>
-                            <span
-                              className="tp-card__chevron"
-                              aria-hidden="true"
-                            />
+                            <span className="tp-card__chevron" aria-hidden="true" />
                           </button>
                         )}
                       </div>

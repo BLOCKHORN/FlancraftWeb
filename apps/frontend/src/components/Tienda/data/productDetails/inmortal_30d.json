@@ -1,0 +1,196 @@
+{
+  "version": 2,
+  "type": "mc_menu",
+  "id": "inmortal_30d",
+  "kicker": "Rango",
+  "name": "INMORTAL",
+  "tierLabel": "Máximo tier",
+  "durationLabel": "30 días",
+  "subtitle": "Válido en todas las modalidades. Abre una carta y mira qué ganas en cada servidor.",
+  "rankIcon": "/assets/rangos/inmortal.webp",
+  "defaultTabId": "",
+  "rarity": "epic",
+  "highlight": {
+    "title": "Lo más importante",
+    "text": ""
+  },
+  "common": {
+    "title": "Resumen (aplica en todas las modalidades)",
+    "items": [
+      "Prefijo INMORTAL en el chat y en TAB.",
+      "Acceso a los beneficios de los rangos anteriores.",
+      "¡Podrás acceder al servidor cuando esté lleno!"
+    ]
+  },
+  "tabs": [
+    {
+      "id": "lobby",
+      "label": "LOBBY",
+      "hint": "Base del rango",
+      "tag": "DETALLE",
+      "iconSrc": "/assets/reinos/global.webp",
+      "cardImage": "/assets/reinos/cards/lobby.webp",
+      "sections": [
+        { "type": "commands", "title": "Comandos", "items": [] }
+      ]
+    },
+    {
+      "id": "chunklock",
+      "label": "CHUNKLOCK",
+      "hint": "Utilidad + economía",
+      "tag": "DETALLE",
+      "iconSrc": "/assets/reinos/chunklock.webp",
+      "cardImage": "/assets/reinos/cards/chunklock.webp",
+      "sections": [
+        {
+          "type": "list",
+          "title": "Extras de CHUNKLOCK",
+          "items": [
+            "Acceso a tener 6 trabajos al mismo tiempo.",
+            "Cambiar el mob del Spawner con un Huevo de Mob.",
+            "Acceso al modo automático de AFK.",
+            "Establece hasta 50 puntos de inicio (/sethome).",
+            "Dinero del servidor: +20.000$."
+          ]
+        },
+        {
+          "type": "commands",
+          "title": "Comandos",
+          "items": [
+            { "cmd": "/heal", "cd": "5 min", "desc": "Cura toda tu vida.", "img": "/assets/armory/cmd/heal.webp" },
+            { "cmd": "/repairall", "cd": "30 s", "desc": "Repara todo tu inventario.", "img": "/assets/armory/cmd/repair.webp" },
+            { "cmd": "/fly", "cd": "Libre", "desc": "Habilita el vuelo.", "img": "/assets/armory/cmd/fly.webp" },
+            { "cmd": "/anvil", "cd": "Libre", "desc": "Abre el yunque.", "img": "/assets/armory/cmd/anvil.webp" },
+            { "cmd": "/kittycannon", "cd": "3 min", "desc": "Lanza gatos explosivos.", "img": "/assets/armory/cmd/kitty.webp" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "survival_clasico",
+      "label": "SURVIVAL CLÁSICO",
+      "hint": "Kit + comandos",
+      "tag": "KIT",
+      "iconSrc": "/assets/reinos/survival-clasico.webp",
+      "cardImage": "/assets/reinos/cards/survival-clasico.webp",
+      "sections": [
+        {
+          "type": "list",
+          "title": "Extras de SURVIVAL CLÁSICO",
+          "items": [
+            "Acceso a tener 6 trabajos al mismo tiempo.",
+            "Cambiar el mob del Spawner con un Huevo de Mob.",
+            "Acceso al modo automático de AFK.",
+            "Establece hasta 50 puntos de inicio (/sethome).",
+            "Dinero del servidor: +20.000$.",
+            "Acceso al Kit INMORTAL cada 6 horas."
+          ]
+        },
+        {
+          "type": "commands",
+          "title": "Comandos",
+          "items": [
+            { "cmd": "/heal", "cd": "5 min", "desc": "Cura toda tu vida.", "img": "/assets/armory/cmd/heal.webp" },
+            { "cmd": "/repairall", "cd": "30 s", "desc": "Repara todo tu inventario.", "img": "/assets/armory/cmd/repair.webp" },
+            { "cmd": "/fly", "cd": "Libre", "desc": "Habilita el vuelo.", "img": "/assets/armory/cmd/fly.webp" },
+            { "cmd": "/anvil", "cd": "Libre", "desc": "Abre el yunque.", "img": "/assets/armory/cmd/anvil.webp" },
+            { "cmd": "/kittycannon", "cd": "3 min", "desc": "Lanza gatos explosivos.", "img": "/assets/armory/cmd/kitty.webp" },
+            { "cmd": "/respirar", "cd": "Libre", "desc": "Permite respirar bajo el agua.", "img": "/assets/armory/cmd/breath.webp" },
+            { "cmd": "/canal o /canalizador", "cd": "Libre", "desc": "Visión submarina.", "img": "/assets/armory/cmd/conduit.webp" }
+          ]
+        },
+        {
+          "type": "kit",
+          "title": "Armory del Kit INMORTAL",
+          "cooldown": "Cada 6 horas",
+          "money": "+20.000$",
+          "steveImage": "/assets/armory/steve-inmortal.webp",
+          "rarity": "epic",
+          "items": [
+            { "slot": "helmet", "slotLabel": "CASCO", "name": "Casco INMORTAL", "img": "/assets/armory/items/helmet_netherite.webp", "meta": "Respiración VI · Protección VI · Irrompibilidad VI · Reparación I · Espinas VI" },
+            { "slot": "chest", "slotLabel": "PECHERA", "name": "Pechera INMORTAL", "img": "/assets/armory/items/chest_netherite.webp", "meta": "Protección VI · Irrompibilidad VI · Reparación I · Espinas VI" },
+            { "slot": "legs", "slotLabel": "PANTALONES", "name": "Pantalones INMORTAL", "img": "/assets/armory/items/legs_netherite.webp", "meta": "Protección VI · Irrompibilidad VI · Reparación I · Espinas VI" },
+            { "slot": "boots", "slotLabel": "BOTAS", "name": "Botas INMORTAL", "img": "/assets/armory/items/boots_netherite.webp", "meta": "Protección VI · Irrompibilidad VI · Reparación I · Espinas VI" },
+
+            { "slot": "sword", "slotLabel": "ESPADA", "name": "Espada INMORTAL", "img": "/assets/armory/items/sword_netherite.webp", "meta": "Sharpness III · Sweeping Edge III · Punch III · Unbreaking III" },
+
+            { "slot": "pickaxe_fortune", "slotLabel": "PICO (FORTUNA)", "name": "Pico INMORTAL (Fortuna)", "img": "/assets/armory/items/pickaxe_fortune.webp", "meta": "Eficiencia VI · Fortuna VI · Irrompibilidad VI · Reparación I" },
+            { "slot": "pickaxe_silk", "slotLabel": "PICO (SEDA)", "name": "Pico INMORTAL (Seda)", "img": "/assets/armory/items/pickaxe_silk.webp", "meta": "Eficiencia VI · Toque de Seda I · Irrompibilidad VI · Reparación I" },
+
+            { "slot": "axe", "slotLabel": "HACHA", "name": "Hacha INMORTAL", "img": "/assets/armory/items/axe_netherite.webp", "meta": "Eficiencia VI · Irrompibilidad VI · Reparación I" },
+            { "slot": "shovel", "slotLabel": "PALA", "name": "Pala INMORTAL", "img": "/assets/armory/items/shovel_netherite.webp", "meta": "Eficiencia VI · Irrompibilidad VI · Reparación I" },
+            { "slot": "hoe", "slotLabel": "AZADA", "name": "Azada INMORTAL", "img": "/assets/armory/items/hoe_netherite.webp", "meta": "Eficiencia VI · Irrompibilidad VI · Reparación I" },
+
+            { "slot": "extra", "name": "16 Manzanas encantadas", "meta": "Extra del kit", "img": "/assets/armory/items/golden_apple.webp" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "oneblock",
+      "label": "ONEBLOCK",
+      "hint": "Economía + progreso",
+      "tag": "DETALLE",
+      "iconSrc": "/assets/reinos/oneblock.webp",
+      "cardImage": "/assets/reinos/cards/oneblock.webp",
+      "sections": [
+        {
+          "type": "list",
+          "title": "Extras de ONEBLOCK",
+          "items": [
+            "Podrás añadir hasta 45 subastas.",
+            "Cambiar el mob del Spawner con un Huevo de Mob.",
+            "Establece hasta 50 puntos de inicio (/sethome)."
+          ]
+        },
+        {
+          "type": "commands",
+          "title": "Comandos",
+          "items": [
+            { "cmd": "/heal", "cd": "5 min", "desc": "Cura toda tu vida.", "img": "/assets/armory/cmd/heal.webp" },
+            { "cmd": "/repairall", "cd": "30 s", "desc": "Repara todo tu inventario.", "img": "/assets/armory/cmd/repair.webp" },
+            { "cmd": "/fly", "cd": "Libre", "desc": "Habilita el vuelo.", "img": "/assets/armory/cmd/fly.webp" },
+            { "cmd": "/anvil", "cd": "Libre", "desc": "Abre el yunque.", "img": "/assets/armory/cmd/anvil.webp" },
+            { "cmd": "/kittycannon", "cd": "3 min", "desc": "Lanza gatos explosivos.", "img": "/assets/armory/cmd/kitty.webp" },
+            { "cmd": "/respirar", "cd": "Libre", "desc": "Permite respirar bajo el agua.", "img": "/assets/armory/cmd/breath.webp" },
+            { "cmd": "/canal o /canalizador", "cd": "Libre", "desc": "Visión submarina.", "img": "/assets/armory/cmd/conduit.webp" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "survival_anarquico",
+      "label": "SURVIVAL ANÁRQUICO",
+      "hint": "PvP + riesgo",
+      "tag": "DETALLE",
+      "iconSrc": "/assets/reinos/survival-anarquico.webp",
+      "cardImage": "/assets/reinos/cards/survival-anarquico.webp",
+      "sections": [
+        {
+          "type": "list",
+          "title": "Extras de ANÁRQUICO",
+          "items": [
+            "Multiplica x10 el item que tengas en la mano con /dupe."
+          ]
+        },
+        { "type": "commands", "title": "Comandos", "items": [] }
+      ]
+    },
+    {
+      "id": "survival_hardcore",
+      "label": "SURVIVAL HARDCORE",
+      "hint": "Progresión extrema",
+      "tag": "DETALLE",
+      "iconSrc": "/assets/reinos/survival-hardcore.webp",
+      "cardImage": "/assets/reinos/cards/survival-hardcore.webp",
+      "sections": [
+        { "type": "commands", "title": "Comandos", "items": [] }
+      ]
+    }
+  ],
+  "legal": [
+    "Importante: necesitas huecos libres y estar dentro del servidor para recibir el paquete.",
+    "Único uso: si se pierde el beneficio/ítem, no se reentrega.",
+    "FlanCraft no está afiliado ni respaldado por Mojang AB."
+  ]
+}
