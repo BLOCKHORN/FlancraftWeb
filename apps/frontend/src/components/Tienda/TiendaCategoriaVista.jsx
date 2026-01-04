@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Outlet, useNavigate, useParams } from "react-router-dom";
 
 import TiendaProductosVista from "./TiendaProductosVista";
+import TiendaRangosVista from "./TiendaRangosVista";
 import {
   API_URL,
   pickSubcatsFromApi,
@@ -24,11 +25,9 @@ const FALLBACK_ICONS = {
 
   "items-op": "/tienda/categorias/itemop.webp",
   items_op: "/tienda/categorias/itemop.webp",
-  // Items OP específicos de OneBlock
   "items-op-oneblock": "/tienda/categorias/itemop.webp",
   items: "/tienda/categorias/itemop.webp",
 
-  // Kit de Navidad (OneBlock)
   "kit-navidad": "/tienda/categorias/navidad.webp",
   kit: "/tienda/categorias/navidad.webp",
 
@@ -63,11 +62,7 @@ const HERO_ICONS = {
   survival: "/assets/reinos/survival-clasico.webp",
 
   chunklock: "/assets/reinos/chunklock.webp",
-
-  // Logo principal OneBlock
   oneblock: "/assets/reinos/oneblock.webp",
-
-  // Logo principal Tags
   tags: "/assets/reinos/tags.png",
 
   rangos: "/tienda/categorias/rangos.webp",
@@ -77,7 +72,7 @@ const HERO_ICONS = {
 };
 
 const CATEGORY_DESCRIPTIONS = {
-  rangos: "Explora los rangos disponibles en el servidor y mejora tu cuenta.",
+  rangos: "Explora los rangos disponibles y compáralos con sus perks globales.",
   "llaves-survival": "Llaves para abrir cofres y conseguir recompensas especiales.",
   protecciones: "Protege tu base y tus cofres frente a otros jugadores.",
   default: "Explora los productos disponibles en esta categoría.",
@@ -247,6 +242,8 @@ export default function TiendaCategoriaVista({ carrito, toggleProducto }) {
 
   const isEmptyHint = !hasActive && !isRealMode && subcats.length > 1;
 
+  const isRangosView = String(categoria || "").toLowerCase() === "rangos";
+
   // ======= 1) Fetch SOLO cuando cambia server/categoria =======
   useEffect(() => {
     let cancel = false;
@@ -350,6 +347,7 @@ export default function TiendaCategoriaVista({ carrito, toggleProducto }) {
     if (!categoriaSeleccionada || categoriaSeleccionada?.mode !== "tile") return;
 
     const list = categoriaSeleccionada.subcategorias || [];
+
     const subParam = String(subcategoria || "").toLowerCase();
 
     const newActive =
@@ -486,7 +484,6 @@ export default function TiendaCategoriaVista({ carrito, toggleProducto }) {
                     <h1 className="tienda-wc-title">{ANTES_DE_COMPRAR.titulo}</h1>
                   </div>
 
-                  {/* Breadcrumb + salto rápido también aquí */}
                   <div className="tc-breadcrumb" ref={crumbRef}>
                     <button
                       type="button"
@@ -520,11 +517,7 @@ export default function TiendaCategoriaVista({ carrito, toggleProducto }) {
                       </button>
 
                       {crumbOpen && (
-                        <div
-                          className="tc-switch-pop"
-                          role="menu"
-                          aria-label="Secciones"
-                        >
+                        <div className="tc-switch-pop" role="menu" aria-label="Secciones">
                           {quickTiles.map((t) => {
                             const active =
                               String(t.server).toLowerCase() ===
@@ -542,12 +535,7 @@ export default function TiendaCategoriaVista({ carrito, toggleProducto }) {
                                 title={t.name}
                               >
                                 <span className="tc-switch-ico" aria-hidden="true">
-                                  <img
-                                    src={t.image}
-                                    alt=""
-                                    draggable="false"
-                                    loading="lazy"
-                                  />
+                                  <img src={t.image} alt="" draggable="false" loading="lazy" />
                                 </span>
                                 <span className="tc-switch-label">{t.name}</span>
                               </button>
@@ -563,12 +551,9 @@ export default function TiendaCategoriaVista({ carrito, toggleProducto }) {
                     Información importante antes de comprar.
                   </p>
                 </div>
+
                 <div className="tc-head-actions">
-                  <button
-                    className="tienda-wc-close"
-                    onClick={goClose}
-                    type="button"
-                  >
+                  <button className="tienda-wc-close" onClick={goClose} type="button">
                     Volver
                   </button>
                 </div>
@@ -630,11 +615,9 @@ export default function TiendaCategoriaVista({ carrito, toggleProducto }) {
     <div className={rootClasses}>
       <div className="tienda-contenido">
         <div className="tienda-wc">
-          {/* Marco (borde.jpeg) */}
           <div className="tienda-wc-frame" aria-hidden="true" />
 
           <div className="tienda-wc-inner">
-            {/* OVERLAY DE CARGA SUAVE */}
             {loading && (
               <div className="tienda-loading-overlay" aria-hidden="true">
                 <div className="tienda-loading-inner">
@@ -728,12 +711,7 @@ export default function TiendaCategoriaVista({ carrito, toggleProducto }) {
                               title={t.name}
                             >
                               <span className="tc-switch-ico" aria-hidden="true">
-                                <img
-                                  src={t.image}
-                                  alt=""
-                                  draggable="false"
-                                  loading="lazy"
-                                />
+                                <img src={t.image} alt="" draggable="false" loading="lazy" />
                               </span>
                               <span className="tc-switch-label">{t.name}</span>
                             </button>
@@ -755,7 +733,7 @@ export default function TiendaCategoriaVista({ carrito, toggleProducto }) {
               </div>
             </div>
 
-            {/* BODY: sidebar + main */}
+            {/* BODY */}
             <div className="tc-fusion-body">
               {/* SIDEBAR */}
               {showSidebar && (
@@ -766,9 +744,7 @@ export default function TiendaCategoriaVista({ carrito, toggleProducto }) {
                     className={`tc-side-scroll ${fitSidebar ? "tc-side-scroll--fit" : ""}`}
                     ref={sideScrollRef}
                   >
-                    <div
-                      className={`tc-side-list ${fitSidebar ? "tc-side-list--fit" : ""}`}
-                    >
+                    <div className={`tc-side-list ${fitSidebar ? "tc-side-list--fit" : ""}`}>
                       {subcats.map((sc) => {
                         const icon = resolveIconForSubcat(sc);
                         const isActiveItem =
@@ -814,15 +790,24 @@ export default function TiendaCategoriaVista({ carrito, toggleProducto }) {
                 {hasActive && !isRealMode && (
                   <div className={`tc-products ${swapFx ? "is-swap" : ""}`}>
                     <div className="tc-products-scroll">
-                      <TiendaProductosVista
-                        server={server}
-                        productos={productosFiltrados}
-                        categoria={categoriaSeleccionada}
-                        carrito={carrito}
-                        toggleProducto={toggleProducto}
-                        subcategoriaSeleccionadaURL={subcategoria}
-                        embedMode
-                      />
+                      {/* ✅ RANGOS: vista especial IGUAL a la referencia */}
+                      {isRangosView ? (
+                        <TiendaRangosVista
+                          productos={productosFiltrados}
+                          carrito={carrito}
+                          toggleProducto={toggleProducto}
+                        />
+                      ) : (
+                        <TiendaProductosVista
+                          server={server}
+                          productos={productosFiltrados}
+                          categoria={categoriaSeleccionada}
+                          carrito={carrito}
+                          toggleProducto={toggleProducto}
+                          subcategoriaSeleccionadaURL={subcategoria}
+                          embedMode
+                        />
+                      )}
                     </div>
                   </div>
                 )}
@@ -847,8 +832,7 @@ export default function TiendaCategoriaVista({ carrito, toggleProducto }) {
                     <div className="tc-empty-inner">
                       <h2 className="tc-empty-title">Selecciona una categoría</h2>
                       <p className="tc-empty-text">
-                        Elige una categoría del panel izquierdo para ver los productos
-                        disponibles.
+                        Elige una categoría del panel izquierdo para ver los productos disponibles.
                       </p>
                     </div>
                   </div>
