@@ -1,100 +1,173 @@
 /* apps/frontend/src/styles/components/Tienda/productoDetallesModal.scss */
 
-.tienda-modal-open {
-  overflow: hidden;
-}
+.tienda-modal-open { overflow: hidden; }
 
-.tienda-modal {
+/* =========================================================
+   OVERLAY
+   ========================================================= */
+.tienda-modal{
   position: fixed;
   inset: 0;
   z-index: 9999;
   display: grid;
   place-items: center;
-  padding: 18px;
-  background: rgba(0, 0, 0, 0.72);
-  backdrop-filter: blur(8px);
+  padding: 16px;
+  background: rgba(0,0,0,.72);
 }
 
-.tienda-modal__dialog {
+/* =========================================================
+   DIALOG: Minecraft GUI (stone + bevel)
+   ========================================================= */
+.tienda-modal__dialog{
   width: min(980px, 100%);
-  max-height: min(84vh, 860px);
+  max-height: min(86vh, 900px);
   overflow: hidden;
+
   border-radius: 3px;
-  background: rgba(10, 10, 12, 0.92);
-  border: 2px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.6);
+
+  background:
+    repeating-linear-gradient(
+      45deg,
+      rgba(255,255,255,.03) 0 2px,
+      rgba(0,0,0,.03) 2px 4px
+    ),
+    linear-gradient(180deg, #c6c6c6, #a8a8a8);
+
+  border: 2px solid #000;
+  box-shadow:
+    0 22px 60px rgba(0,0,0,.55),
+    inset 2px 2px 0 rgba(255,255,255,.35),
+    inset -2px -2px 0 rgba(0,0,0,.35);
+
   position: relative;
 }
 
-.tienda-modal__header {
+/* =========================================================
+   HEADER
+   ========================================================= */
+.tienda-modal__header{
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 12px 12px;
-  border-bottom: 2px solid rgba(255, 255, 255, 0.10);
-  background:
-    linear-gradient(180deg, rgba(20, 20, 26, 0.95), rgba(12, 12, 16, 0.95));
+  gap: 10px;
+
+  padding: 10px 10px;
+  background: linear-gradient(180deg, #3a3a3a, #2b2b2b);
+  border-bottom: 2px solid #000;
+
+  box-shadow:
+    inset 2px 2px 0 rgba(255,255,255,.10),
+    inset -2px -2px 0 rgba(0,0,0,.35);
 }
 
-.tienda-modal__titleWrap {
+.tienda-modal__titleWrap{
   display: grid;
-  gap: 2px;
+  gap: 3px;
 }
 
-.tienda-modal__kicker {
-  font-size: 11px;
+.tienda-modal__kicker{
+  font-size: 10px;
   letter-spacing: 2px;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.65);
+  color: rgba(255,255,255,.72);
   font-weight: 900;
 }
 
-.tienda-modal__title {
+.tienda-modal__title{
   margin: 0;
   font-size: 18px;
   letter-spacing: 2px;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.92);
+  color: rgba(255,255,255,.92);
   font-weight: 1000;
+  text-shadow: 0 2px 0 rgba(0,0,0,.45);
 }
 
-.tienda-modal__close {
-  width: 38px;
-  height: 38px;
+.tienda-modal__subline{
+  font-size: 12px;
+  color: rgba(255,255,255,.72);
+  line-height: 1.25;
+}
+
+/* Botón cerrar estilo “Minecraft button” */
+.tienda-modal__close{
+  width: 34px;
+  height: 34px;
   border-radius: 3px;
-  border: 2px solid rgba(255, 255, 255, 0.14);
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.92);
-  display: grid;
-  place-items: center;
-  cursor: pointer;
+
+  background: linear-gradient(180deg, #6b6b6b, #4f4f4f);
+  border: 2px solid #000;
+
+  box-shadow:
+    inset 2px 2px 0 rgba(255,255,255,.18),
+    inset -2px -2px 0 rgba(0,0,0,.35);
+
+  color: rgba(255,255,255,.9);
   font-size: 18px;
   line-height: 1;
-  transition: transform .12s ease, background .12s ease, border-color .12s ease;
+  cursor: pointer;
 }
 
-.tienda-modal__close:hover {
-  transform: translateY(-1px);
-  background: rgba(255, 255, 255, 0.10);
-  border-color: rgba(255, 255, 255, 0.22);
+.tienda-modal__close:hover{
+  filter: brightness(1.08);
 }
 
-.tienda-modal__body {
+/* =========================================================
+   BODY
+   ========================================================= */
+.tienda-modal__body{
   overflow: auto;
-  max-height: calc(min(84vh, 860px) - 62px);
-  padding: 14px;
+  max-height: calc(min(86vh, 900px) - 64px);
+  padding: 12px;
+
+  background:
+    repeating-linear-gradient(
+      0deg,
+      rgba(255,255,255,.02) 0 2px,
+      rgba(0,0,0,.02) 2px 4px
+    ),
+    linear-gradient(180deg, #2e2e2e, #262626);
 }
 
-/* Scrollbar “game UI” */
-.tienda-modal__body::-webkit-scrollbar {
-  width: 10px;
-}
-.tienda-modal__body::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.06);
-}
-.tienda-modal__body::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.18);
+/* Scrollbar discreta */
+.tienda-modal__body::-webkit-scrollbar { width: 10px; }
+.tienda-modal__body::-webkit-scrollbar-track { background: rgba(0,0,0,.35); }
+.tienda-modal__body::-webkit-scrollbar-thumb{
+  background: rgba(255,255,255,.18);
+  border: 2px solid rgba(0,0,0,.35);
   border-radius: 3px;
-  border: 2px solid rgba(0, 0, 0, 0.35);
 }
+
+/* =========================================================
+   Fallback
+   ========================================================= */
+.tienda-modal__fallback{
+  border-radius: 3px;
+  border: 2px solid #000;
+  background: linear-gradient(180deg, #3a3a3a, #2b2b2b);
+  box-shadow:
+    inset 2px 2px 0 rgba(255,255,255,.10),
+    inset -2px -2px 0 rgba(0,0,0,.35);
+  padding: 12px;
+  color: rgba(255,255,255,.9);
+}
+
+.tienda-modal__fallbackTitle{
+  font-weight: 1000;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.tienda-modal__fallbackText{
+  color: rgba(255,255,255,.76);
+}
+
+/* =========================================================
+   CONTENIDO HTML (genérico)
+   ========================================================= */
+.mcx2{
+  color: rgba(255,255,255,.92);
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+}
+  

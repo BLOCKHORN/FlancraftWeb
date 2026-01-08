@@ -12,6 +12,7 @@ const SERVIDORES = [
   { id: "survival_anarquico", nombre: "Survival Anárquico", imagen: "/assets/reinos/survival-anarquico.webp" },
   { id: "survival_hardcore", nombre: "Survival Hardcore", imagen: "/assets/reinos/survival-hardcore.webp" },
   { id: "oneblock", nombre: "OneBlock", imagen: "/assets/reinos/oneblock.webp" },
+  { id: "gens", nombre: "Gens", imagen: "/assets/reinos/gens.webp" },
   { id: "chunklock", nombre: "ChunkLock", imagen: "/assets/reinos/chunklock.webp" },
   { id: "parkour", nombre: "Parkour", imagen: "/assets/reinos/parkour.webp" },
 ];
@@ -116,7 +117,6 @@ export default function Leaderboards() {
             acc[u.uuid] = {
               rango: u.rango_usuario?.toLowerCase() || null,
               premium: u.es_premium === true,
-              // nivel: typeof u.nivel === "number" ? u.nivel : null, // ⛔ ya no se usa
             };
           }
           return acc;
@@ -227,7 +227,6 @@ export default function Leaderboards() {
     <section className="lb-page">
       <div className="lb-shell">
         <div className="lb-frame">
-          {/* ✅ SOLO el rectángulo superior (hasta la rayita) */}
           <div className="lb-topHeader">
             <header className="lb-header">
               <div className="lb-header__center">
@@ -252,7 +251,6 @@ export default function Leaderboards() {
             </header>
           </div>
 
-          {/* TOP 3 */}
           <section className="lb-podium">
             {top3.map((p, idx) => {
               const absPos = offset + idx + 1;
@@ -315,35 +313,34 @@ export default function Leaderboards() {
             })}
           </section>
 
-          {/* SERVERS */}
-          <section className="lb-servers" aria-label="Servidores">
-            <div className="server-grid">
-              {SERVIDORES.map((s) => {
-                const active = servidor === s.id;
-                return (
+          <section className="lb-servers">
+            <div className="server-rail">
+              <div className="server-grid" role="tablist" aria-label="Servidores">
+                {SERVIDORES.map((s) => (
                   <button
                     key={s.id}
                     type="button"
-                    className={cn("server-pill", { active })}
+                    className={cn("server-pill", { active: servidor === s.id })}
                     onClick={() => {
                       setServidor(s.id);
                       setOffset(0);
                     }}
-                    aria-pressed={active}
-                    title={s.nombre}
+                    role="tab"
+                    aria-selected={servidor === s.id}
                   >
-                    <span className="server-pill__iconWrap" aria-hidden="true">
-                      <img className="server-pill__icon" src={s.imagen} alt="" loading="lazy" />
-                    </span>
-                    <span className="server-pill__label">{s.nombre}</span>
-                    <span className="server-pill__underline" aria-hidden="true" />
+                    <div className="server-pill__iconWrap">
+                      <img className="server-pill__icon" src={s.imagen} alt="" />
+                    </div>
+
+                    <div className="server-pill__label">{s.nombre}</div>
+
+                    <div className="server-pill__underline" />
                   </button>
-                );
-              })}
+                ))}
+              </div>
             </div>
           </section>
 
-          {/* TOOLBAR */}
           <section className="lb-toolbar">
             <div className="lb-search">
               <Search size={18} />
@@ -354,7 +351,12 @@ export default function Leaderboards() {
                 spellCheck={false}
               />
               {query && (
-                <button className="lb-clear" onClick={() => setQuery("")} type="button" aria-label="Limpiar">
+                <button
+                  className="lb-clear"
+                  onClick={() => setQuery("")}
+                  type="button"
+                  aria-label="Limpiar"
+                >
                   <X size={18} />
                 </button>
               )}
@@ -431,7 +433,6 @@ export default function Leaderboards() {
             )}
           </section>
 
-          {/* TABLA */}
           <section className="lb-content">
             <div className="lb-tableCard">
               <div className="lb-tableTop">
@@ -471,7 +472,9 @@ export default function Leaderboards() {
                               title={`Ordenar por ${LABELS[st]}`}
                             >
                               <span>{LABELS[st]}</span>
-                              {orden === st && <i className="th-sort__arrow">{ordenAsc ? "▲" : "▼"}</i>}
+                              {orden === st && (
+                                <i className="th-sort__arrow">{ordenAsc ? "▲" : "▼"}</i>
+                              )}
                             </th>
                           ))}
                         </tr>
@@ -481,7 +484,9 @@ export default function Leaderboards() {
                         {loading &&
                           [...Array(limit)].map((_, i) => (
                             <tr key={`sk-${i}`} className="lb-row sk-row">
-                              <td><span className="sk sk--pos" /></td>
+                              <td>
+                                <span className="sk sk--pos" />
+                              </td>
                               <td>
                                 <div className="lb-player">
                                   <span className="sk sk--head" />
@@ -492,14 +497,18 @@ export default function Leaderboards() {
                                 </div>
                               </td>
                               {STATS.map((st) => (
-                                <td key={st}><span className="sk sk--num" /></td>
+                                <td key={st}>
+                                  <span className="sk sk--num" />
+                                </td>
                               ))}
                             </tr>
                           ))}
 
                         {!loading && datosFiltrados.length === 0 && (
                           <tr className="lb-row empty">
-                            <td colSpan={2 + STATS.length}>No hay resultados con los filtros actuales.</td>
+                            <td colSpan={2 + STATS.length}>
+                              No hay resultados con los filtros actuales.
+                            </td>
                           </tr>
                         )}
 
@@ -527,7 +536,12 @@ export default function Leaderboards() {
                               >
                                 <td className="td-pos">
                                   {medal ? (
-                                    <img src={medal} alt={`Top ${absPos}`} className="lb-medal" loading="lazy" />
+                                    <img
+                                      src={medal}
+                                      alt={`Top ${absPos}`}
+                                      className="lb-medal"
+                                      loading="lazy"
+                                    />
                                   ) : (
                                     <span className="lb-rank">{absPos}</span>
                                   )}
@@ -540,7 +554,9 @@ export default function Leaderboards() {
                                       src={`https://mc-heads.net/avatar/${name}/32`}
                                       alt=""
                                       loading="lazy"
-                                      onError={(e) => (e.currentTarget.src = "/assets/default-head.png")}
+                                      onError={(e) =>
+                                        (e.currentTarget.src = "/assets/default-head.png")
+                                      }
                                     />
                                     <div className="lb-player__text">
                                       <div className="lb-nameRow">
@@ -565,7 +581,8 @@ export default function Leaderboards() {
                                         </span>
                                       </div>
                                       <div className="lb-player__sub">
-                                        {meta?.rango ? meta.rango : "—"} · {meta?.premium ? "Premium" : "Normal"}
+                                        {meta?.rango ? meta.rango : "—"} ·{" "}
+                                        {meta?.premium ? "Premium" : "Normal"}
                                       </div>
                                     </div>
                                   </div>
@@ -583,7 +600,6 @@ export default function Leaderboards() {
                     </table>
                   </div>
 
-                  {/* CARDS MOBILE */}
                   <div className="lb-cards">
                     {loading &&
                       [...Array(limit)].map((_, i) => (
@@ -603,67 +619,71 @@ export default function Leaderboards() {
                         </div>
                       ))}
 
-                    {!loading && datosFiltrados.map((p, i) => {
-                      const absPos = offset + i + 1;
-                      const meta = getMeta(p.uuid);
-                      const name = p?.nombre_minecraft;
-                      const medal = MEDALLAS[absPos] || null;
+                    {!loading &&
+                      datosFiltrados.map((p, i) => {
+                        const absPos = offset + i + 1;
+                        const meta = getMeta(p.uuid);
+                        const name = p?.nombre_minecraft;
+                        const medal = MEDALLAS[absPos] || null;
 
-                      return (
-                        <button
-                          key={`m-${p.uuid}-${absPos}`}
-                          type="button"
-                          className={cn("lb-card", {
-                            top1: absPos === 1,
-                            top2: absPos === 2,
-                            top3: absPos === 3,
-                          })}
-                          onClick={() => irPerfil(p)}
-                          title="Abrir perfil"
-                        >
-                          <div className="lb-card__top">
-                            <div className="lb-card__pos">
-                              {medal ? <img src={medal} alt="" /> : <span>#{absPos}</span>}
-                            </div>
-
-                            <img
-                              className="lb-card__head"
-                              src={`https://mc-heads.net/avatar/${name}/40`}
-                              alt=""
-                              loading="lazy"
-                              onError={(e) => (e.currentTarget.src = "/assets/default-head.png")}
-                            />
-
-                            <div className="lb-card__who">
-                              <div className="lb-nameRow">
-                                <span className="lb-name">{name}</span>
-                                <span className="lb-badges">
-                                  {meta?.rango && (
-                                    <img
-                                      src={`/assets/rangos/${meta.rango}.webp`}
-                                      alt=""
-                                      className="lb-badge-rango"
-                                      loading="lazy"
-                                    />
-                                  )}
-                                  {meta?.premium && (
-                                    <img
-                                      src="/assets/premium.webp"
-                                      alt=""
-                                      className="lb-badge-premium"
-                                      loading="lazy"
-                                    />
-                                  )}
-                                </span>
+                        return (
+                          <button
+                            key={`m-${p.uuid}-${absPos}`}
+                            type="button"
+                            className={cn("lb-card", {
+                              top1: absPos === 1,
+                              top2: absPos === 2,
+                              top3: absPos === 3,
+                            })}
+                            onClick={() => irPerfil(p)}
+                            title="Abrir perfil"
+                          >
+                            <div className="lb-card__top">
+                              <div className="lb-card__pos">
+                                {medal ? <img src={medal} alt="" /> : <span>#{absPos}</span>}
                               </div>
-                              <div className="lb-card__sub">
-                                {LABELS[orden]} {ordenAsc ? "▲" : "▼"} · {meta?.premium ? "Premium" : "Normal"}
+
+                              <img
+                                className="lb-card__head"
+                                src={`https://mc-heads.net/avatar/${name}/40`}
+                                alt=""
+                                loading="lazy"
+                                onError={(e) =>
+                                  (e.currentTarget.src = "/assets/default-head.png")
+                                }
+                              />
+
+                              <div className="lb-card__who">
+                                <div className="lb-nameRow">
+                                  <span className="lb-name">{name}</span>
+                                  <span className="lb-badges">
+                                    {meta?.rango && (
+                                      <img
+                                        src={`/assets/rangos/${meta.rango}.webp`}
+                                        alt=""
+                                        className="lb-badge-rango"
+                                        loading="lazy"
+                                      />
+                                    )}
+                                    {meta?.premium && (
+                                      <img
+                                        src="/assets/premium.webp"
+                                        alt=""
+                                        className="lb-badge-premium"
+                                        loading="lazy"
+                                      />
+                                    )}
+                                  </span>
+                                </div>
+                                <div className="lb-card__sub">
+                                  {LABELS[orden]} {ordenAsc ? "▲" : "▼"} ·{" "}
+                                  {meta?.premium ? "Premium" : "Normal"}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        </button>
-                      );
-                    })}
+                          </button>
+                        );
+                      })}
                   </div>
                 </>
               )}

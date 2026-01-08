@@ -35,6 +35,17 @@ const modes = [
     image: "/assets/modes/oneblock.webp",
     icon: "/assets/reinos/oneblock.webp",
   },
+
+  // ✅ NUEVO MODO: GENS
+  {
+    id: "gens",
+    name: "Gens",
+    description:
+      "Construye, mejora y optimiza tus generadores para producir recursos automáticamente y escalar sin límites.",
+    image: "/assets/modes/gensback.webp",
+    icon: "/assets/reinos/gens.webp",
+  },
+
   {
     id: "chunklock",
     name: "Chunklock",
@@ -77,9 +88,7 @@ const GameModes = () => {
               return (
                 <button
                   key={mode.id}
-                  className={`gm-mode-btn ${mode.id} ${
-                    isActive ? "active" : ""
-                  }`}
+                  className={`gm-mode-btn ${mode.id} ${isActive ? "active" : ""}`}
                   onClick={() => setActive(mode)}
                   type="button"
                 >

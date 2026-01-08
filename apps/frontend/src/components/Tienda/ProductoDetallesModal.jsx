@@ -3,14 +3,9 @@ import React, { useEffect } from "react";
 import { createPortal } from "react-dom";
 import "../../styles/components/Tienda/productoDetallesModal.scss";
 
-import ProductDetailsMCMenu from "./ProductDetailsMCMenu";
 import { resolveProductDetails } from "./data/productDetails/index.js";
+import ProductDetailsMCMenu from "./ProductDetailsMCMenu.jsx";
 
-/**
- * Modal genérico:
- * - content: objeto (RECOMENDADO) o string key (id/slug) para resolver via registry
- * - html: legacy (si aún te queda algo viejo)
- */
 export default function ProductoDetallesModal({
   open,
   onClose,
@@ -36,11 +31,20 @@ export default function ProductoDetallesModal({
 
   if (!open) return null;
 
-  // Permite pasar: content="inmortal" o content={{...}}
-  const resolved =
-    typeof content === "string" ? resolveProductDetails(content) : content;
+  // content puede ser:
+  // - string => key del registry
+  // - object => payload ya resuelto
+  const resolved = typeof content === "string" ? resolveProductDetails(content) : content;
 
   const isMCMenu = resolved?.type === "mc_menu";
+  const bodyHtml = resolved?.html || html || "";
+
+  const theme = resolved?.theme ? String(resolved.theme).trim().toLowerCase() : "";
+  const dialogThemeClass = theme ? `tienda-modal__dialog--${theme}` : "";
+  const bodyThemeClass = theme ? `tienda-modal__body--${theme}` : "";
+
+  const kickerText = resolved?.kicker || "Producto";
+  const titleText = resolved?.name || title;
 
   return createPortal(
     <div
@@ -50,36 +54,40 @@ export default function ProductoDetallesModal({
       onMouseDown={() => onClose?.()}
     >
       <div
-        className="tienda-modal__dialog"
+        className={`tienda-modal__dialog ${dialogThemeClass}`}
         onMouseDown={(e) => e.stopPropagation()}
       >
         <div className="tienda-modal__header">
           <div className="tienda-modal__titleWrap">
-            <span className="tienda-modal__kicker">
-              {resolved?.kicker || "Producto"}
-            </span>
-            <h2 className="tienda-modal__title">{resolved?.name || title}</h2>
+            <span className="tienda-modal__kicker">{kickerText}</span>
+            <h2 className="tienda-modal__title">{titleText}</h2>
           </div>
 
+          {/* ❌ quitamos title="" para evitar tooltip nativo
+              ✅ usamos data-tooltip + hasTip */}
           <button
-            className="tienda-modal__close"
+            className="tienda-modal__close hasTip"
             type="button"
             onClick={() => onClose?.()}
             aria-label="Cerrar"
-            title="Cerrar"
+            data-tooltip="Cerrar"
           >
             <span aria-hidden="true">×</span>
           </button>
         </div>
 
-        <div className="tienda-modal__body">
+        <div className={`tienda-modal__body ${bodyThemeClass}`}>
           {isMCMenu ? (
             <ProductDetailsMCMenu data={resolved} />
+          ) : bodyHtml ? (
+            <div className="mcx2" dangerouslySetInnerHTML={{ __html: bodyHtml }} />
           ) : (
-            <div
-              className="mcx2"
-              dangerouslySetInnerHTML={{ __html: html || "" }}
-            />
+            <div className="tienda-modal__fallback">
+              <div className="tienda-modal__fallbackTitle">Sin detalles</div>
+              <div className="tienda-modal__fallbackText">
+                Este producto aún no tiene una ficha personalizada.
+              </div>
+            </div>
           )}
         </div>
       </div>

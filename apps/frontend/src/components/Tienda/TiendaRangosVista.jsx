@@ -1,6 +1,8 @@
+// src/components/Tienda/TiendaRangosVista.jsx
 import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { useParams } from "react-router-dom";
 import "../../styles/components/Tienda/tienda-rangos-flancraft.scss";
-import { RANGOS_COMPARATIVA } from "./data/rangosComparativa";
+import { RANGOS_COMPARATIVA, RANGOS_MODAL } from "./data/productDetails/rangosComparativa";
 
 function toMoney(v) {
   const n = Number(v);
@@ -32,6 +34,91 @@ function isInCart(carrito = [], pkg) {
   return (carrito || []).some((it) => String(it?.id ?? it?.package_id) === String(id));
 }
 
+function safeText(v) {
+  if (v == null) return "";
+  if (typeof v === "string" || typeof v === "number") return String(v);
+  return "";
+}
+
+function findScrollParent(el) {
+  let node = el?.parentElement;
+  while (node) {
+    const st = getComputedStyle(node);
+    const oy = st.overflowY;
+    const canScroll = (oy === "auto" || oy === "scroll") && node.scrollHeight > node.clientHeight + 2;
+    if (canScroll) return node;
+    node = node.parentElement;
+  }
+  return null;
+}
+
+/* ===== Helpers para COMANDOS ===== */
+function splitCmdText(str = "") {
+  const s = String(str || "");
+  const sep = s.includes("—") ? "—" : s.includes("→") ? "→" : null;
+  if (!sep) return { head: s.trim(), desc: "" };
+  const [a, ...rest] = s.split(sep);
+  return { head: (a || "").trim(), desc: rest.join(sep).trim() };
+}
+
+function normCmdKey(str = "") {
+  const { head } = splitCmdText(str);
+  return head.toLowerCase().replace(/\s+/g, " ").trim();
+}
+
+/**
+ * Construye filas de comandos con HERENCIA:
+ * - Alpha incluye todo lo de Nova
+ * - Inmortal incluye todo lo de Alpha + Nova
+ */
+function buildCommandsRows(serverKey) {
+  const block = RANGOS_MODAL?.cmds?.[serverKey] || {};
+  const novaList = Array.isArray(block?.nova) ? block.nova : [];
+  const alphaList = Array.isArray(block?.alpha) ? block.alpha : [];
+  const inmList = Array.isArray(block?.inmortal) ? block.inmortal : [];
+
+  const novaSet = new Set(novaList.map(normCmdKey));
+  const alphaOnlySet = new Set(alphaList.map(normCmdKey));
+  const inmOnlySet = new Set(inmList.map(normCmdKey));
+
+  const alphaSet = new Set([...novaSet, ...alphaOnlySet]);
+  const inmSet = new Set([...alphaSet, ...inmOnlySet]);
+
+  const ordered = [];
+  const seen = new Set();
+
+  const pushUnique = (arr) => {
+    arr.forEach((x) => {
+      const k = normCmdKey(x);
+      if (!k || seen.has(k)) return;
+      seen.add(k);
+      ordered.push(x);
+    });
+  };
+
+  pushUnique(novaList);
+  pushUnique(alphaList);
+  pushUnique(inmList);
+
+  return ordered.map((line) => {
+    const { head, desc } = splitCmdText(line);
+    const key = normCmdKey(line);
+
+    return {
+      key: `cmd_${serverKey}_${key}`,
+      perk: head || line,
+      hint: desc || "",
+      values: {
+        nova: novaSet.has(key),
+        alpha: alphaSet.has(key),
+        inmortal: inmSet.has(key),
+      },
+      __isCmd: true,
+    };
+  });
+}
+
+/* Iconos mini (svg) */
 const IconStar = () => (
   <svg viewBox="0 0 24 24" aria-hidden="true">
     <path d="M12 2.6l2.9 6.2 6.7.7-5 4.4 1.5 6.6L12 17.7 5.9 20.5l1.5-6.6-5-4.4 6.7-.7L12 2.6z" />
@@ -58,7 +145,7 @@ const Cross = () => (
 
 function Mark({ ok }) {
   return ok ? (
-    <span className="fcr-mark fcr-mark--ok" aria-label="Sí">
+    <span className="fcr-mark fcr-mark--ok" aria-label="Si">
       <Check />
     </span>
   ) : (
@@ -68,42 +155,108 @@ function Mark({ ok }) {
   );
 }
 
-function CellValue({ v }) {
-  if (typeof v === "boolean") return <Mark ok={v} />;
-  return <span className="fcr-val">{v}</span>;
-}
-
-function findScrollParent(el) {
-  let node = el?.parentElement;
-  while (node) {
-    const st = getComputedStyle(node);
-    const oy = st.overflowY;
-    const canScroll = (oy === "auto" || oy === "scroll") && node.scrollHeight > node.clientHeight + 2;
-    if (canScroll) return node;
-    node = node.parentElement;
-  }
-  return null;
-}
-
+/* Rutas de rangos */
 const RANK_ICONS = {
   nova: "/assets/rangos/nova.webp",
   alpha: "/assets/rangos/alpha.webp",
   inmortal: "/assets/rangos/inmortal.webp",
 };
 
-const RANK_BADGES = {
-  nova: "https://dunb17ur4ymx4.cloudfront.net/wysiwyg/1447273/4e8cee61a009cdc018aec05c200032ead64e0098.png",
-  alpha: "https://dunb17ur4ymx4.cloudfront.net/wysiwyg/1447273/ff375cc6fdecaa80b083b2ccc8b79ac903b1d000.png",
-  inmortal: "https://dunb17ur4ymx4.cloudfront.net/wysiwyg/1447273/42ca6ec9013c283d6265fb583b6d8c9bd88cc051.png",
+/**
+ * /public/assets/reinos/...
+ */
+const SERVER_META = {
+  lobby: { label: "Lobby", icon: "/assets/reinos/global.webp" },
+  survival: { label: "Survival", icon: "/assets/reinos/survival-clasico.webp" },
+  oneblock: { label: "OneBlock", icon: "/assets/reinos/oneblock.webp" },
+  chunklock: { label: "ChunkLock", icon: "/assets/reinos/chunklock.webp" },
+  hardcore: { label: "Hardcore", icon: "/assets/reinos/survival-hardcore.webp" },
+  anarq: { label: "Anárquico", icon: "/assets/reinos/survival-anarquico.webp" },
 };
 
+function getServerFromParams(params) {
+  const raw =
+    params?.servidor ||
+    params?.server ||
+    params?.categoria ||
+    params?.cat ||
+    params?.mode ||
+    "";
+  return String(raw || "").toLowerCase();
+}
+
+/* Action button solo para KIT */
+function ActionButton({ action, onOpen }) {
+  const label = action?.label || "Ver";
+  return (
+    <button
+      type="button"
+      className="fcr-action"
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onOpen(action);
+      }}
+    >
+      {label}
+    </button>
+  );
+}
+
 export default function TiendaRangosVista({ productos = [], carrito = [], toggleProducto }) {
-  const [open, setOpen] = useState(true);
+  const params = useParams();
+
+  // ✅ Colapsa SOLO beneficios globales (no comandos)
+  const [openGlobals, setOpenGlobals] = useState(true);
+
   const [hoverRank, setHoverRank] = useState(null);
   const [collapse, setCollapse] = useState(0);
 
+  // modal SOLO para kits
+  const [modal, setModal] = useState(null);
   const rootRef = useRef(null);
-  const mode = "30d";
+
+  const [mode] = useState("30d");
+
+  // ✅ Secciones colapsables (comandos)
+  const [openSections, setOpenSections] = useState(() => ({}));
+  const isSectionOpen = useCallback(
+    (id) => {
+      if (!id) return true;
+      const v = openSections[id];
+      return typeof v === "boolean" ? v : true;
+    },
+    [openSections]
+  );
+
+  const toggleSection = useCallback((id) => {
+    if (!id) return;
+    setOpenSections((prev) => {
+      const cur = typeof prev[id] === "boolean" ? prev[id] : true;
+      return { ...prev, [id]: !cur };
+    });
+  }, []);
+
+  const serversAvailable = useMemo(() => {
+    const block = RANGOS_COMPARATIVA?.[mode];
+    if (!block || typeof block !== "object") return [];
+    return Object.keys(block).filter((k) => Array.isArray(block[k]));
+  }, [mode]);
+
+  const [serverKey, setServerKey] = useState(() => {
+    const fromUrl = getServerFromParams(params);
+    return fromUrl || "lobby";
+  });
+
+  useEffect(() => {
+    const fromUrl = getServerFromParams(params);
+    if (fromUrl) setServerKey(fromUrl);
+  }, [params]);
+
+  useEffect(() => {
+    if (!serversAvailable.length) return;
+    if (!serversAvailable.includes(serverKey)) setServerKey(serversAvailable[0]);
+  }, [serversAvailable, serverKey]);
 
   const ranks = useMemo(() => {
     const nova = pickPkgByRank(productos, "nova");
@@ -120,26 +273,79 @@ export default function TiendaRangosVista({ productos = [], carrito = [], toggle
     return [
       mk("nova", "NOVA", null),
       mk("alpha", "ALPHA", "POPULAR"),
-      mk("inmortal", "INMORTAL", "BEST"),
+      mk("inmortal", "INMORTAL", "MEJOR"),
     ];
   }, [productos]);
 
+  /* Construimos la tabla y expandimos "cmds" en filas reales */
   const perks = useMemo(() => {
-    const rows = RANGOS_COMPARATIVA?.[mode] ?? [];
-    return rows.map((r) => ({
-      perk: r.label,
-      hint: r.hint,
-      values: {
-        nova: r.values?.nova,
-        alpha: r.values?.alpha,
-        inmortal: r.values?.inmortal,
-      },
-    }));
-  }, [mode]);
+    const rows = RANGOS_COMPARATIVA?.[mode]?.[serverKey];
+    const list = Array.isArray(rows) ? rows : [];
+
+    const out = [];
+
+    list.forEach((r) => {
+      const vN = r?.values?.nova;
+      const vA = r?.values?.alpha;
+      const vI = r?.values?.inmortal;
+
+      const isCmdRow =
+        (vN && typeof vN === "object" && vN.kind === "cmds") ||
+        (vA && typeof vA === "object" && vA.kind === "cmds") ||
+        (vI && typeof vI === "object" && vI.kind === "cmds") ||
+        r?.key === "cmds";
+
+      if (isCmdRow) {
+        const srv = (vN && vN.id) || (vA && vA.id) || (vI && vI.id) || serverKey;
+
+        const sectionId = `cmds_${srv}`;
+
+        out.push({
+          key: `cmd_header_${srv}`,
+          perk: "Comandos del rango",
+          values: { nova: "", alpha: "", inmortal: "" },
+          __isHeader: true,
+          __isCmdHeader: true,
+          __sectionId: sectionId,
+        });
+
+        const cmdRows = buildCommandsRows(srv);
+        cmdRows.forEach((cr) =>
+          out.push({
+            ...cr,
+            __inSection: true,
+            __sectionId: sectionId,
+          })
+        );
+        return;
+      }
+
+      out.push({
+        key: r.key || r.label || String(Math.random()),
+        perk: r.label ?? "-",
+        hint: r.hint ?? "",
+        values: {
+          nova: vN,
+          alpha: vA,
+          inmortal: vI,
+        },
+        __isGlobal: true,
+      });
+    });
+
+    return out;
+  }, [mode, serverKey]);
 
   const onEnter = useCallback((k) => setHoverRank(k), []);
   const onLeave = useCallback(() => setHoverRank(null), []);
 
+  // ✅ Animación “montaje” al cambiar server
+  const [swapTick, setSwapTick] = useState(0);
+  useEffect(() => {
+    setSwapTick((n) => n + 1);
+  }, [serverKey]);
+
+  // sticky collapse
   useEffect(() => {
     const root = rootRef.current;
     if (!root) return;
@@ -172,20 +378,153 @@ export default function TiendaRangosVista({ productos = [], carrito = [], toggle
     };
   }, []);
 
+  // ✅ Estado visual del panel reinos según colapso (evita cortes)
+  const cState = collapse > 0.72 ? "collapsed" : collapse > 0.35 ? "mid" : "open";
+
+  const closeModal = () => setModal(null);
+
+  const openAction = (action) => {
+    if (!action?.kind) return;
+    if (action.kind !== "kit") return;
+    setModal(action);
+  };
+
+  const isPrefixRow = (row) => {
+    const k = String(row?.key || "").toLowerCase();
+    const p = String(row?.perk || "").toLowerCase();
+    return k.includes("prefijo") || p.includes("prefijo");
+  };
+
+  // ✅ Prefijo: NO fallback a [NOVA]
+  const renderPrefix = (v) => {
+    if (typeof v === "string" && v.trim()) return v.trim();
+    if (v && typeof v === "object" && v.kind === "prefix" && String(v.text || "").trim()) {
+      return String(v.text).trim();
+    }
+    return "";
+  };
+
+  const renderCell = (v, row, colKey) => {
+    if (isPrefixRow(row)) {
+      const txt = renderPrefix(v);
+      if (!txt) return <span className="fcr-val">—</span>;
+      return <span className={`fcr-prefixText is-${colKey}`}>{txt}</span>;
+    }
+
+    if (typeof v === "boolean") return <Mark ok={v} />;
+
+    if (v && typeof v === "object" && v.kind === "kit") {
+      return <ActionButton action={v} onOpen={openAction} />;
+    }
+
+    if (Array.isArray(v)) {
+      const shown = v.slice(0, 2);
+      const rest = v.length - shown.length;
+      return (
+        <span className="fcr-val">
+          {shown.join(" · ")}
+          {rest > 0 ? ` · +${rest}` : ""}
+        </span>
+      );
+    }
+
+    const t = safeText(v);
+    return <span className="fcr-val">{t || "-"}</span>;
+  };
+
+  const modalContent = useMemo(() => {
+    if (!modal) return null;
+
+    if (modal.kind === "kit") {
+      const kit = RANGOS_MODAL?.kits?.[modal.id];
+      if (!kit) return { title: "Kit", body: ["No hay datos del kit."] };
+
+      const body = [];
+      if (kit.subtitle) body.push(kit.subtitle);
+      if (kit.cooldown) body.push(`Cooldown: ${kit.cooldown}`);
+
+      const armor = Array.isArray(kit.armor) ? kit.armor : [];
+      const tools = Array.isArray(kit.tools) ? kit.tools : [];
+      const resources = Array.isArray(kit.resources) ? kit.resources : [];
+
+      body.push("");
+      body.push("Armadura");
+      armor.forEach((it) => body.push(`• ${it.name}`));
+
+      body.push("");
+      body.push("Herramientas");
+      tools.forEach((it) => body.push(`• ${it.name}`));
+
+      body.push("");
+      body.push("Recursos");
+      resources.forEach((it) => body.push(`• ${it}`));
+
+      return { title: kit.title || "Kit", body };
+    }
+
+    return null;
+  }, [modal]);
+
+  const serverTitle = SERVER_META?.[serverKey]?.label || serverKey;
+  const serverIcon = SERVER_META?.[serverKey]?.icon || "";
+
   return (
     <div
       ref={rootRef}
       className="fcr"
       data-hover={hoverRank || ""}
+      data-cstate={cState}
       style={{ "--fc-collapse": String(collapse) }}
       onMouseLeave={onLeave}
     >
       <section className="fcr-wrap">
         <div className="fcr-zone">
-          {/* Sticky SOLO para tarjetas (nombre + precio) */}
           <div className="fcr-stickyShell">
             <div className="fcr-cards">
-              <div className="fcr-spacer" aria-hidden="true" />
+              {/* ✅ Panel izquierdo: selector de reinos (se adapta al colapso) */}
+              <aside className="fcr-side" aria-label="Selector de reinos">
+                <div className="fcr-sideBox">
+
+
+                  {serversAvailable.length > 1 ? (
+                    <div className="fcr-sideGrid" role="tablist" aria-label="Reinos">
+                      {serversAvailable.map((k) => {
+                        const meta = SERVER_META?.[k] || { label: k, icon: "" };
+                        const active = serverKey === k;
+
+                        return (
+                          <button
+                            key={k}
+                            type="button"
+                            role="tab"
+                            className={`fcr-sideBtn ${active ? "is-active" : ""}`}
+                            aria-selected={active}
+                            aria-current={active ? "true" : undefined}
+                            aria-label={meta.label}
+                            title={meta.label}
+                            onClick={() => setServerKey(k)}
+                          >
+                            <span className="fcr-sideBtnInner">
+                              <span className="fcr-sideBtnIcon" aria-hidden="true">
+                                {meta.icon ? <img src={meta.icon} alt="" draggable="false" /> : null}
+                              </span>
+
+                              <span className="fcr-sideBtnText">
+                                <span className="fcr-sideBtnLabel">{meta.label}</span>
+                              </span>
+
+                              <span className="fcr-sideBtnDot" aria-hidden="true" />
+                              <span className="fcr-srOnly">{meta.label}</span>
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="fcr-sideEmpty">—</div>
+                  )}
+                </div>
+              </aside>
 
               {ranks.map((r) => {
                 const inCart = r.pkg ? isInCart(carrito, r.pkg) : false;
@@ -199,7 +538,7 @@ export default function TiendaRangosVista({ productos = [], carrito = [], toggle
                     {r.ribbon && (
                       <div
                         className={`fcr-ribbon is-${r.ribbon.toLowerCase()} ${
-                          r.ribbon === "BEST" ? "is-right" : ""
+                          r.ribbon === "MEJOR" ? "is-right" : ""
                         }`}
                         aria-hidden="true"
                       >
@@ -207,7 +546,6 @@ export default function TiendaRangosVista({ productos = [], carrito = [], toggle
                       </div>
                     )}
 
-                    {/* Contenido grande (se apaga al colapsar) */}
                     <div className="fcr-cardInner">
                       <div className="fcr-cardTop">
                         <div className="fcr-emblem" aria-hidden="true">
@@ -224,7 +562,6 @@ export default function TiendaRangosVista({ productos = [], carrito = [], toggle
                       </div>
                     </div>
 
-                    {/* Contenido mini (aparece al colapsar) */}
                     <div className="fcr-mini" aria-hidden="true">
                       <div className="fcr-miniPlate">{r.label}</div>
                     </div>
@@ -244,86 +581,180 @@ export default function TiendaRangosVista({ productos = [], carrito = [], toggle
             </div>
           </div>
 
-          {/* Global Perks: SOLO desde columnas de rangos (sin tapar PERK) */}
+          {/* ===== Beneficios globales: colapsa SOLO perks (NO comandos) ===== */}
           <div className="fcr-perksRow">
             <div className="fcr-perksSpacer" aria-hidden="true" />
             <button
               type="button"
               className="fcr-perksBar"
-              onClick={() => setOpen((v) => !v)}
-              aria-expanded={open}
+              onClick={() => setOpenGlobals((v) => !v)}
+              aria-expanded={openGlobals}
             >
               <span className="fcr-perksCenter">
+                <span className="fcr-perksRealm" aria-hidden="true">
+                  {serverIcon ? <img src={serverIcon} alt="" draggable="false" /> : null}
+                </span>
                 <span className="fcr-perksStar" aria-hidden="true">
                   <IconStar />
                 </span>
-                <span className="fcr-perksTitle">Beneficios Globales</span>
+                <span className="fcr-perksTitle">Beneficios Globales · {serverTitle}</span>
               </span>
               <span className="fcr-perksChevron" aria-hidden="true">
-                <IconChevron open={open} />
+                <IconChevron open={openGlobals} />
               </span>
             </button>
           </div>
 
-          {open && (
-            <div className="fcr-table" role="table">
-              <div className="fcr-row fcr-row--head" role="row">
-                <div className="fcr-head fcr-head--perk" role="columnheader">
-                  
-                </div>
-
-                {ranks.map((r) => (
-                  <div
-                    key={`head-${r.key}`}
-                    className={`fcr-head fcr-head--rank is-${r.key}`}
-                    role="columnheader"
-                    onMouseEnter={() => onEnter(r.key)}
-                  >
-                    <img
-                      className={`fcr-rankBadge is-${r.key}`}
-                      src={RANK_BADGES[r.key]}
-                      alt={`${r.label}`}
-                      loading="lazy"
-                      draggable="false"
-                    />
-                  </div>
-                ))}
+          {/* ===== Tabla ===== */}
+          <div className="fcr-table" role="table">
+            {perks.length === 0 ? (
+              <div className="fcr-empty">
+                No hay perks configuradas para <b>{serverTitle}</b>.
               </div>
+            ) : (
+              <div
+                key={`${serverKey}_${swapTick}`}
+                className="fcr-swap"
+                data-open={openGlobals ? "1" : "0"}
+              >
+                {(() => {
+                  let dataCount = 0;
 
-              {perks.map((row, idx) => (
-                <div
-                  key={`${row.perk}-${idx}`}
-                  className={`fcr-row ${idx % 2 ? "is-alt" : ""}`}
-                  role="row"
-                >
-                  <div className="fcr-perkCell" role="cell">
-                    <div className="fcr-perkPill">
-                      <div className="fcr-perkTitle">{row.perk}</div>
-                      {row.hint && <div className="fcr-perkHint">{row.hint}</div>}
-                    </div>
-                  </div>
+                  return perks.map((row, idx) => {
+                    const sectionId = row.__sectionId || null;
+                    const hiddenBySection = row.__inSection && sectionId && !isSectionOpen(sectionId);
 
-                  <div className="fcr-cell is-nova" role="cell" onMouseEnter={() => onEnter("nova")}>
-                    <CellValue v={row.values.nova} />
-                  </div>
+                    if (hiddenBySection) return null;
 
-                  <div className="fcr-cell is-alpha" role="cell" onMouseEnter={() => onEnter("alpha")}>
-                    <CellValue v={row.values.alpha} />
-                  </div>
+                    // ✅ Si globales están cerrados, ocultamos SOLO filas globales
+                    const isCmdRow = !!row.__isCmd;
+                    const isCmdHeader = !!row.__isCmdHeader;
+                    const isGlobalRow = !!row.__isGlobal;
 
-                  <div
-                    className="fcr-cell is-inmortal"
-                    role="cell"
-                    onMouseEnter={() => onEnter("inmortal")}
-                  >
-                    <CellValue v={row.values.inmortal} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+                    if (!openGlobals && isGlobalRow) return null;
+
+                    // === Header de sección colapsable (comandos) ===
+                    if (row.__isHeader) {
+                      const canToggle = !!row.__sectionId;
+                      const sectionOpen = canToggle ? isSectionOpen(row.__sectionId) : true;
+
+                      return (
+                        <div
+                          key={`${row.key}-${idx}`}
+                          className="fcr-sectionRow"
+                          role="row"
+                          aria-label={row.perk}
+                        >
+                          <div className="fcr-sectionSpacer" aria-hidden="true" />
+
+                          <button
+                            type="button"
+                            className={`fcr-sectionBar ${canToggle ? "is-toggle" : ""}`}
+                            onClick={() => canToggle && toggleSection(row.__sectionId)}
+                            aria-expanded={sectionOpen}
+                          >
+                            <span className="fcr-sectionCenter">
+                              <span className="fcr-sectionStar" aria-hidden="true">
+                                <IconStar />
+                              </span>
+                              <span className="fcr-sectionTexts">
+                                <span className="fcr-sectionTitle">{row.perk}</span>
+                                {row.hint ? <span className="fcr-sectionHint">{row.hint}</span> : null}
+                              </span>
+                            </span>
+
+                            {canToggle ? (
+                              <span className="fcr-sectionChevron" aria-hidden="true">
+                                <IconChevron open={sectionOpen} />
+                              </span>
+                            ) : null}
+                          </button>
+                        </div>
+                      );
+                    }
+
+                    const isFirstDataRow = dataCount === 0;
+                    dataCount += 1;
+
+                    return (
+                      <div
+                        key={`${row.key}-${idx}`}
+                        className={`fcr-row ${idx % 2 ? "is-alt" : ""} ${
+                          isCmdRow ? "is-cmdRow" : ""
+                        } ${isFirstDataRow ? "is-firstData" : ""} ${
+                          !openGlobals && (isCmdRow || isCmdHeader) ? "is-afterCollapsedGlobals" : ""
+                        }`}
+                        role="row"
+                      >
+                        <div className="fcr-perkCell" role="cell">
+                          <div className="fcr-perkPill" data-kind={isCmdRow ? "cmd" : "perk"}>
+                            <div className="fcr-perkTitle">{row.perk}</div>
+                            {row.hint ? <div className="fcr-perkHint">{row.hint}</div> : null}
+                          </div>
+                        </div>
+
+                        <div
+                          className={`fcr-cell is-nova ${isFirstDataRow ? "has-colLabel" : ""}`}
+                          role="cell"
+                          onMouseEnter={() => onEnter("nova")}
+                        >
+                          {isFirstDataRow ? <div className="fcr-colLabel is-nova">NOVA</div> : null}
+                          {renderCell(row.values.nova, row, "nova")}
+                        </div>
+
+                        <div
+                          className={`fcr-cell is-alpha ${isFirstDataRow ? "has-colLabel" : ""}`}
+                          role="cell"
+                          onMouseEnter={() => onEnter("alpha")}
+                        >
+                          {isFirstDataRow ? <div className="fcr-colLabel is-alpha">ALPHA</div> : null}
+                          {renderCell(row.values.alpha, row, "alpha")}
+                        </div>
+
+                        <div
+                          className={`fcr-cell is-inmortal ${isFirstDataRow ? "has-colLabel" : ""}`}
+                          role="cell"
+                          onMouseEnter={() => onEnter("inmortal")}
+                        >
+                          {isFirstDataRow ? (
+                            <div className="fcr-colLabel is-inmortal">INMORTAL</div>
+                          ) : null}
+                          {renderCell(row.values.inmortal, row, "inmortal")}
+                        </div>
+                      </div>
+                    );
+                  });
+                })()}
+              </div>
+            )}
+          </div>
         </div>
       </section>
+
+      {modal && (
+        <div className="fcr-modalOverlay" onClick={closeModal} role="dialog" aria-modal="true">
+          <div className="fcr-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="fcr-modalTop">
+              <div className="fcr-modalTitle">{modalContent?.title || "Kit"}</div>
+              <button type="button" className="fcr-modalClose" onClick={closeModal}>
+                Cerrar
+              </button>
+            </div>
+
+            <div className="fcr-modalBody">
+              {(modalContent?.body || []).map((line, i) =>
+                line === "" ? (
+                  <div key={i} className="fcr-modalSep" />
+                ) : (
+                  <div key={i} className="fcr-modalLine">
+                    {line}
+                  </div>
+                )
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

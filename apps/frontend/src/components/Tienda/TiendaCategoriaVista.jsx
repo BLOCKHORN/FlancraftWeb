@@ -6,6 +6,7 @@ import TiendaProductosVista from "./TiendaProductosVista";
 import TiendaRangosVista from "./TiendaRangosVista";
 import {
   API_URL,
+  fetchTebex,
   pickSubcatsFromApi,
   findCategoryBySlug,
   filterPackagesByCategoryId,
@@ -192,15 +193,25 @@ export default function TiendaCategoriaVista({ carrito, toggleProducto }) {
   }, [crumbOpen]);
 
   // ======= hooks / memos =======
-  const mapKey = useMemo(
-    () => `${(server || "").toLowerCase()}|${(categoria || "").toLowerCase()}`,
-    [server, categoria]
-  );
+  const categoriaKey = useMemo(() => normKey(categoria), [categoria]);
+  const serverKey = useMemo(() => normKey(server), [server]);
 
-  const tileNamesAllowed = useMemo(
-    () => SUBCATS_PER_TILE[mapKey] ?? null,
-    [mapKey]
-  );
+  const mapKey = useMemo(() => `${serverKey}|${categoriaKey}`, [serverKey, categoriaKey]);
+
+  // ✅ FIX: fallback por categoría / wildcard para que TAGS no quede vacío si no existe lobby|tags
+  const tileNamesAllowed = useMemo(() => {
+    const a = SUBCATS_PER_TILE?.[mapKey];
+    if (a != null) return a;
+
+    const b = SUBCATS_PER_TILE?.[categoriaKey];
+    if (b != null) return b;
+
+    const c = SUBCATS_PER_TILE?.[`*|${categoriaKey}`];
+    if (c != null) return c;
+
+    return null;
+  }, [mapKey, categoriaKey]);
+
   const isTile = tileNamesAllowed !== null;
 
   const subcats = useMemo(
@@ -234,15 +245,15 @@ export default function TiendaCategoriaVista({ carrito, toggleProducto }) {
     [categoriaSeleccionada, categoria]
   );
 
-  // Sidebar solo si hay más de una subcategoría
-  const showSidebar = !isRealMode && subcats.length > 1;
+  const isRangosView = String(categoria || "").toLowerCase() === "rangos";
+
+  // Sidebar solo si hay más de una subcategoría (pero NO en RANGOS)
+  const showSidebar = !isRealMode && subcats.length > 1 && !isRangosView;
 
   // Auto-fit sidebar cuando hay pocas categorías (rellena alto y reparte)
   const fitSidebar = showSidebar && subcats.length > 0 && subcats.length <= 6;
 
   const isEmptyHint = !hasActive && !isRealMode && subcats.length > 1;
-
-  const isRangosView = String(categoria || "").toLowerCase() === "rangos";
 
   // ======= 1) Fetch SOLO cuando cambia server/categoria =======
   useEffect(() => {
@@ -253,9 +264,14 @@ export default function TiendaCategoriaVista({ carrito, toggleProducto }) {
       setError("");
 
       try {
-        const r = await fetch(`${API_URL}/api/tebex/datos?sv=${server}`);
-        if (!r.ok)
+        // ✅ robusto: usa tu helper (intenta /api/tebex + fallback /tebex)
+        const sv = encodeURIComponent(String(server || ""));
+        const r = await fetchTebex(`/datos?sv=${sv}`, { method: "GET" });
+
+        if (!r.ok) {
           throw new Error("No se pudo cargar la tienda para este servidor.");
+        }
+
         const data = await r.json();
 
         const apiCats = data.categorias || [];
@@ -315,7 +331,10 @@ export default function TiendaCategoriaVista({ carrito, toggleProducto }) {
         }
 
         // modo real
-        const catReal = findCategoryBySlug(apiCats, categoria);
+        // ✅ FIX: fallback por name si el slug no coincide
+        const catReal =
+          findCategoryBySlug(apiCats, categoria) ||
+          apiCats.find((c) => normKey(c?.name) === normKey(categoria));
 
         const catObj = {
           mode: "real",
@@ -340,14 +359,30 @@ export default function TiendaCategoriaVista({ carrito, toggleProducto }) {
     return () => {
       cancel = true;
     };
-  }, [server, categoria, isTile, tileNamesAllowed]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [server, categoria, isTile, tileNamesAllowed, subcategoria]);
+
+  // ======= 1b) ✅ FIX: si la URL trae una subcategoria inválida (ej. /tags/rangos), la limpiamos =======
+  useEffect(() => {
+    if (!categoriaSeleccionada || categoriaSeleccionada.mode !== "tile") return;
+
+    const list = categoriaSeleccionada.subcategorias || [];
+    if (!subcategoria) return;
+
+    const subParam = String(subcategoria || "").toLowerCase();
+    const exists = list.some(
+      (s) => String(s?.slug || "").toLowerCase() === subParam
+    );
+
+    if (!exists) {
+      navigate(`/tienda/${server}/${categoria}`, { replace: true });
+    }
+  }, [categoriaSeleccionada, subcategoria, server, categoria, navigate]);
 
   // ======= 2) Cuando cambia subcategoria: actualizar activeSubcat + animación swap =======
   useEffect(() => {
     if (!categoriaSeleccionada || categoriaSeleccionada?.mode !== "tile") return;
 
     const list = categoriaSeleccionada.subcategorias || [];
-
     const subParam = String(subcategoria || "").toLowerCase();
 
     const newActive =
@@ -446,8 +481,7 @@ export default function TiendaCategoriaVista({ carrito, toggleProducto }) {
   };
 
   const goClose = () => navAnimated("/tienda");
-  const goSubcat = (scSlug) =>
-    navigate(`/tienda/${server}/${categoria}/${scSlug}`);
+  const goSubcat = (scSlug) => navigate(`/tienda/${server}/${categoria}/${scSlug}`);
 
   const goTile = (t) => {
     if (!t?.server || !t?.slug) return;
@@ -547,9 +581,7 @@ export default function TiendaCategoriaVista({ carrito, toggleProducto }) {
                   </div>
 
                   <div className="tc-head-divider" aria-hidden="true" />
-                  <p className="tienda-wc-subtitle">
-                    Información importante antes de comprar.
-                  </p>
+                  <p className="tienda-wc-subtitle">Información importante antes de comprar.</p>
                 </div>
 
                 <div className="tc-head-actions">
@@ -605,6 +637,7 @@ export default function TiendaCategoriaVista({ carrito, toggleProducto }) {
     "tienda-tebex--fusion",
     "is-anim",
     isRealMode ? "is-real" : "",
+    isRangosView ? "is-rangos" : "",
     routeFx === "out" ? "tc-route-out" : "",
     routeFx === "in" ? "tc-route-in" : "",
   ]
@@ -629,109 +662,205 @@ export default function TiendaCategoriaVista({ carrito, toggleProducto }) {
               </div>
             )}
 
-            {/* CABECERA */}
-            <div className="tc-head">
-              <div className="tc-head-spacer" aria-hidden="true" />
+            {/* =======================================================
+               CABECERA
+               - Normal: icono + H1 + subtítulo
+               - Rangos: SOLO breadcrumb + cerrar (sin marrón con "RANGOS")
+               ======================================================= */}
 
-              <div className="tc-head-center">
-                <div className="tc-head-row">
-                  {heroIcon && (
-                    <span className="tc-head-icoWrap" aria-hidden="true">
-                      <img src={heroIcon} alt="" draggable="false" loading="lazy" />
-                    </span>
-                  )}
-                  <h1 className="tienda-wc-title">{categoriaSeleccionada?.name}</h1>
-                </div>
+            {!isRangosView ? (
+              <div className="tc-head">
+                <div className="tc-head-spacer" aria-hidden="true" />
 
-                {/* Breadcrumb + salto rápido */}
-                <div className="tc-breadcrumb" ref={crumbRef}>
-                  <button
-                    type="button"
-                    className="tc-crumb"
-                    onClick={() => navAnimated("/tienda")}
-                    title="Volver a la portada"
-                  >
-                    TIENDA
-                  </button>
-
-                  <span className="tc-crumb-sep" aria-hidden="true">
-                    ›
-                  </span>
-
-                  <button
-                    type="button"
-                    className="tc-crumb"
-                    onClick={() => navAnimated(`/tienda/${server}/${categoria}`)}
-                    title="Volver a esta categoría"
-                  >
-                    {categoriaSeleccionada?.name || "CATEGORÍA"}
-                  </button>
-
-                  {hasActive && activeSubcat?.name && (
-                    <>
-                      <span className="tc-crumb-sep" aria-hidden="true">
-                        ›
+                <div className="tc-head-center">
+                  <div className="tc-head-row">
+                    {heroIcon && (
+                      <span className="tc-head-icoWrap" aria-hidden="true">
+                        <img src={heroIcon} alt="" draggable="false" loading="lazy" />
                       </span>
-                      <span className="tc-crumb-current" title="Subcategoría actual">
-                        {activeSubcat.name}
-                      </span>
-                    </>
-                  )}
+                    )}
+                    <h1 className="tienda-wc-title">{categoriaSeleccionada?.name}</h1>
+                  </div>
 
-                  <div className={`tc-crumb-switch ${crumbOpen ? "is-open" : ""}`}>
+                  {/* Breadcrumb + salto rápido */}
+                  <div className="tc-breadcrumb" ref={crumbRef}>
                     <button
                       type="button"
-                      className="tc-switch-btn"
-                      onClick={() => setCrumbOpen((v) => !v)}
-                      aria-expanded={crumbOpen}
-                      aria-label="Cambiar de sección"
-                      title="Cambiar de sección"
+                      className="tc-crumb"
+                      onClick={() => navAnimated("/tienda")}
+                      title="Volver a la portada"
                     >
-                      <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="M12 2a10 10 0 1 0 .001 20.001A10 10 0 0 0 12 2Zm0 2a8 8 0 1 1 0 16a8 8 0 0 1 0-16Zm3.9 4.2-3 7a1 1 0 0 1-.5.5l-7 3a.6.6 0 0 1-.8-.8l3-7a1 1 0 0 1 .5-.5l7-3a.6.6 0 0 1 .8.8ZM9 11l-1.6 3.8L11 13l1.6-3.8L9 11Z" />
-                      </svg>
+                      TIENDA
                     </button>
 
-                    {crumbOpen && (
-                      <div className="tc-switch-pop" role="menu" aria-label="Secciones">
-                        {quickTiles.map((t) => {
-                          const active =
-                            String(t.server).toLowerCase() ===
-                              String(server).toLowerCase() &&
-                            String(t.slug).toLowerCase() ===
-                              String(categoria).toLowerCase();
+                    <span className="tc-crumb-sep" aria-hidden="true">
+                      ›
+                    </span>
 
-                          return (
-                            <button
-                              key={`${t.server}-${t.slug}`}
-                              type="button"
-                              role="menuitem"
-                              className={`tc-switch-item ${active ? "is-active" : ""}`}
-                              onClick={() => goTile(t)}
-                              title={t.name}
-                            >
-                              <span className="tc-switch-ico" aria-hidden="true">
-                                <img src={t.image} alt="" draggable="false" loading="lazy" />
-                              </span>
-                              <span className="tc-switch-label">{t.name}</span>
-                            </button>
-                          );
-                        })}
-                      </div>
+                    <button
+                      type="button"
+                      className="tc-crumb"
+                      onClick={() => navAnimated(`/tienda/${server}/${categoria}`)}
+                      title="Volver a esta categoría"
+                    >
+                      {categoriaSeleccionada?.name || "CATEGORÍA"}
+                    </button>
+
+                    {hasActive && activeSubcat?.name && (
+                      <>
+                        <span className="tc-crumb-sep" aria-hidden="true">
+                          ›
+                        </span>
+                        <span className="tc-crumb-current" title="Subcategoría actual">
+                          {activeSubcat.name}
+                        </span>
+                      </>
                     )}
+
+                    <div className={`tc-crumb-switch ${crumbOpen ? "is-open" : ""}`}>
+                      <button
+                        type="button"
+                        className="tc-switch-btn"
+                        onClick={() => setCrumbOpen((v) => !v)}
+                        aria-expanded={crumbOpen}
+                        aria-label="Cambiar de sección"
+                        title="Cambiar de sección"
+                      >
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                          <path d="M12 2a10 10 0 1 0 .001 20.001A10 10 0 0 0 12 2Zm0 2a8 8 0 1 1 0 16a8 8 0 0 1 0-16Zm3.9 4.2-3 7a1 1 0 0 1-.5.5l-7 3a.6.6 0 0 1-.8-.8l3-7a1 1 0 0 1 .5-.5l7-3a.6.6 0 0 1 .8.8ZM9 11l-1.6 3.8L11 13l1.6-3.8L9 11Z" />
+                        </svg>
+                      </button>
+
+                      {crumbOpen && (
+                        <div className="tc-switch-pop" role="menu" aria-label="Secciones">
+                          {quickTiles.map((t) => {
+                            const active =
+                              String(t.server).toLowerCase() ===
+                                String(server).toLowerCase() &&
+                              String(t.slug).toLowerCase() ===
+                                String(categoria).toLowerCase();
+
+                            return (
+                              <button
+                                key={`${t.server}-${t.slug}`}
+                                type="button"
+                                role="menuitem"
+                                className={`tc-switch-item ${active ? "is-active" : ""}`}
+                                onClick={() => goTile(t)}
+                                title={t.name}
+                              >
+                                <span className="tc-switch-ico" aria-hidden="true">
+                                  <img src={t.image} alt="" draggable="false" loading="lazy" />
+                                </span>
+                                <span className="tc-switch-label">{t.name}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="tc-head-divider" aria-hidden="true" />
+                  <p className="tienda-wc-subtitle">{heroDescription}</p>
+                </div>
+
+                <div className="tc-head-actions">
+                  <button className="tienda-wc-close" type="button" onClick={goClose}>
+                    Cerrar
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="tc-head tc-head--rangosMin">
+                <div className="tc-head-center tc-head-center--min">
+                  {/* Breadcrumb + salto rápido (misma lógica) */}
+                  <div className="tc-breadcrumb" ref={crumbRef}>
+                    <button
+                      type="button"
+                      className="tc-crumb"
+                      onClick={() => navAnimated("/tienda")}
+                      title="Volver a la portada"
+                    >
+                      TIENDA
+                    </button>
+
+                    <span className="tc-crumb-sep" aria-hidden="true">
+                      ›
+                    </span>
+
+                    <button
+                      type="button"
+                      className="tc-crumb"
+                      onClick={() => navAnimated(`/tienda/${server}/${categoria}`)}
+                      title="Volver a esta categoría"
+                    >
+                      {categoriaSeleccionada?.name || "CATEGORÍA"}
+                    </button>
+
+                    {hasActive && activeSubcat?.name && (
+                      <>
+                        <span className="tc-crumb-sep" aria-hidden="true">
+                          ›
+                        </span>
+                        <span className="tc-crumb-current" title="Subcategoría actual">
+                          {activeSubcat.name}
+                        </span>
+                      </>
+                    )}
+
+                    <div className={`tc-crumb-switch ${crumbOpen ? "is-open" : ""}`}>
+                      <button
+                        type="button"
+                        className="tc-switch-btn"
+                        onClick={() => setCrumbOpen((v) => !v)}
+                        aria-expanded={crumbOpen}
+                        aria-label="Cambiar de sección"
+                        title="Cambiar de sección"
+                      >
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                          <path d="M12 2a10 10 0 1 0 .001 20.001A10 10 0 0 0 12 2Zm0 2a8 8 0 1 1 0 16a8 8 0 0 1 0-16Zm3.9 4.2-3 7a1 1 0 0 1-.5.5l-7 3a.6.6 0 0 1-.8-.8l3-7a1 1 0 0 1 .5-.5l7-3a.6.6 0 0 1 .8.8ZM9 11l-1.6 3.8L11 13l1.6-3.8L9 11Z" />
+                        </svg>
+                      </button>
+
+                      {crumbOpen && (
+                        <div className="tc-switch-pop" role="menu" aria-label="Secciones">
+                          {quickTiles.map((t) => {
+                            const active =
+                              String(t.server).toLowerCase() ===
+                                String(server).toLowerCase() &&
+                              String(t.slug).toLowerCase() ===
+                                String(categoria).toLowerCase();
+
+                            return (
+                              <button
+                                key={`${t.server}-${t.slug}`}
+                                type="button"
+                                role="menuitem"
+                                className={`tc-switch-item ${active ? "is-active" : ""}`}
+                                onClick={() => goTile(t)}
+                                title={t.name}
+                              >
+                                <span className="tc-switch-ico" aria-hidden="true">
+                                  <img src={t.image} alt="" draggable="false" loading="lazy" />
+                                </span>
+                                <span className="tc-switch-label">{t.name}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 
-                <div className="tc-head-divider" aria-hidden="true" />
-                <p className="tienda-wc-subtitle">{heroDescription}</p>
+                <div className="tc-head-actions tc-head-actions--min">
+                  <button className="tienda-wc-close" type="button" onClick={goClose}>
+                    Cerrar
+                  </button>
+                </div>
               </div>
-
-              <div className="tc-head-actions">
-                <button className="tienda-wc-close" type="button" onClick={goClose}>
-                  Cerrar
-                </button>
-              </div>
-            </div>
+            )}
 
             {/* BODY */}
             <div className="tc-fusion-body">
@@ -790,7 +919,7 @@ export default function TiendaCategoriaVista({ carrito, toggleProducto }) {
                 {hasActive && !isRealMode && (
                   <div className={`tc-products ${swapFx ? "is-swap" : ""}`}>
                     <div className="tc-products-scroll">
-                      {/* ✅ RANGOS: vista especial IGUAL a la referencia */}
+                      {/* ✅ RANGOS: vista especial */}
                       {isRangosView ? (
                         <TiendaRangosVista
                           productos={productosFiltrados}

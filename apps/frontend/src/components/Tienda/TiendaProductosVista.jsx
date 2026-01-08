@@ -1,5 +1,5 @@
 // apps/frontend/src/components/Tienda/TiendaProductosVista.jsx
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useCallback } from "react";
 import { resolveProductDetails } from "./data/productDetails/index.js";
 import ProductoDetallesModal from "./ProductoDetallesModal";
 import "../../styles/components/Tienda/tienda-productos.scss";
@@ -33,15 +33,12 @@ function stripDiacritics(s) {
 function extractQtyNumber(name = "") {
   const n = String(name || "");
 
-  // x2.500 / x 2.500
   let m = n.match(/\b[xX]\s*([\d.,]+)\b/);
   if (m?.[1]) return Number(m[1].replace(/[^\d]/g, ""));
 
-  // 2.500x / 2.500 x
   m = n.match(/\b([\d.,]+)\s*[xX]\b/);
   if (m?.[1]) return Number(m[1].replace(/[^\d]/g, ""));
 
-  // Pack de 5
   m = n.match(/\bpack(?:\s+de)?\s+(\d+)\b/i);
   if (m?.[1]) return Number(m[1]);
 
@@ -51,7 +48,6 @@ function extractQtyNumber(name = "") {
 function extractQtyLabel(name = "") {
   const n = String(name || "");
 
-  // Conservamos el formato original si existe (x2.500 / 2.500x)
   let m = n.match(/\b[xX]\s*([\d.,]+)\b/);
   if (m?.[1]) return `x${m[1]}`;
 
@@ -65,12 +61,10 @@ function extractQtyLabel(name = "") {
 function normalizeBaseName(name = "") {
   let t = String(name || "");
 
-  // Quitamos cantidades "x2.500", "2000x", "Pack de 5", etc.
   t = t.replace(/\b[xX]\s*[\d.,]+\b/g, " ");
   t = t.replace(/\b[\d.,]+\s*[xX]\b/g, " ");
   t = t.replace(/\bpack(?:\s+de)?\s+\d+\b/gi, " ");
 
-  // Quitamos adornos de paréntesis / guiones
   t = t.replace(/[\(\)\[\]]/g, " ");
   t = t.replace(/[-–—|•]+/g, " ");
   t = t.replace(/\s{2,}/g, " ").trim();
@@ -248,10 +242,6 @@ function calcDiscountPct(original, current) {
   return pct > 0 ? pct : null;
 }
 
-/**
- * Devuelve el % de descuento de un paquete
- * (para mostrarlo a nivel de sección, no por card).
- */
 function discountPctForPkg(pkg) {
   const precio = toMoneyNumber(pkg?.precio ?? pkg?.price ?? 0);
   const originalNum = toOptionalNumber(
@@ -262,7 +252,7 @@ function discountPctForPkg(pkg) {
 }
 
 /* ===========================
-   DATA (productDetails registry)
+   DATA (details registry)
    =========================== */
 
 function getProductData(pkg, categoria) {
@@ -278,19 +268,49 @@ function getProductData(pkg, categoria) {
   const catSlug = (categoria?.slug || "").toLowerCase();
 
   const candidates = [];
-  if (id) candidates.push(String(id));
+
+  // ✅ 1) id (lo más fiable)
+  if (id != null) candidates.push(String(id));
+
+  // ✅ 2) slug base
   if (slugName) candidates.push(slugName);
+
+  // ✅ 3) cat/slug
   if (catSlug && slugName) candidates.push(`${catSlug}/${slugName}`);
 
-  // extras (por si aliasas por nombre directo)
-  if (rawName) candidates.push(rawName);
+  // ✅ 4) nombre base normalizado (por si registras "Llave Voto")
   if (baseName) candidates.push(baseName);
+  if (rawName) candidates.push(rawName);
+
+  // ✅ 5) key "espacios" (por si registras "llave voto")
+  if (baseName) candidates.push(keyFromBaseName(baseName));
 
   for (const key of candidates) {
     const d = resolveProductDetails(key);
     if (d) return d;
   }
   return null;
+}
+
+/**
+ * Devuelve:
+ * - data: objeto del registry si existe
+ * - html: descripción html saneada (registry o tebex)
+ * - hasDetails: true si hay algo que mostrar (mc_menu o html)
+ */
+function buildDetails(pkg, categoria) {
+  const data = getProductData(pkg, categoria);
+
+  // ✅ si es mc_menu: ya hay detalles sí o sí
+  if (data?.type === "mc_menu") {
+    return { data, html: "", hasDetails: true };
+  }
+
+  const fallbackDesc = pkg?.description || pkg?.descripcion || pkg?.desc || "";
+  const htmlRaw = data?.html ?? data?.descripcion ?? fallbackDesc ?? "";
+  const html = sanitizeTebexHtml(htmlRaw);
+
+  return { data, html, hasDetails: Boolean(html) };
 }
 
 /* ===========================
@@ -417,11 +437,7 @@ const TiendaProductosVista = ({
         btn?.closest("article") ||
         btn?.closest("div");
 
-      const imgEl =
-        host?.querySelector?.("img") ||
-        btn?.querySelector?.("img") ||
-        null;
-
+      const imgEl = host?.querySelector?.("img") || btn?.querySelector?.("img") || null;
       const rect = (imgEl || btn)?.getBoundingClientRect?.();
       if (!rect) return;
 
@@ -446,35 +462,40 @@ const TiendaProductosVista = ({
   const [detailsHtml, setDetailsHtml] = useState("");
   const [detailsContent, setDetailsContent] = useState(null);
 
-  const openDetalles = (pkg, rawNameForTitle = "Detalles") => {
-    const data = getProductData(pkg, categoria);
+  const openDetalles = useCallback(
+    (pkg, rawNameForTitle = "Detalles") => {
+      const { data, html, hasDetails } = buildDetails(pkg, categoria);
 
-    // ✅ Si existe JSON mc_menu -> renderizamos UI, no HTML
-    if (data?.type === "mc_menu") {
-      setDetailsTitle((data?.name || rawNameForTitle || "Detalles").trim());
-      setDetailsContent(data);
-      setDetailsHtml("");
+      if (!hasDetails && !data) return;
+
+      if (data?.type === "mc_menu") {
+        setDetailsTitle((data?.name || rawNameForTitle || "Detalles").trim());
+        setDetailsContent(data);
+        setDetailsHtml("");
+        setDetailsOpen(true);
+        return;
+      }
+
+      const title = (
+        data?.titulo ||
+        data?.title ||
+        rawNameForTitle ||
+        "Detalles"
+      ).trim();
+
+      setDetailsTitle(title);
+      setDetailsHtml(html || "");
+      setDetailsContent(null);
       setDetailsOpen(true);
-      return;
-    }
+    },
+    [categoria]
+  );
 
-    // Fallback legacy HTML (Tebex)
-    const fallbackDesc = pkg?.description || pkg?.descripcion || pkg?.desc || "";
-    const htmlRaw = data?.html ?? data?.descripcion ?? fallbackDesc ?? "";
-    const html = sanitizeTebexHtml(htmlRaw);
-    if (!html) return;
-
-    const title = (
-      data?.titulo ||
-      data?.title ||
-      rawNameForTitle ||
-      "Detalles"
-    ).trim();
-
-    setDetailsTitle(title);
-    setDetailsHtml(html);
-    setDetailsContent(null);
-    setDetailsOpen(true);
+  // helper para abrir desde imagen sin repetir
+  const onOpenFromMedia = (e, pkg, rawName, canOpen) => {
+    if (!canOpen) return;
+    e?.stopPropagation?.();
+    openDetalles(pkg, rawName);
   };
 
   return (
@@ -567,22 +588,19 @@ const TiendaProductosVista = ({
                                 pkg?.package_id ||
                                 `${sec.key}-${it.idx}`;
                               const rawName =
-                                pkg?.name || pkg?.nombre || it.rawName || "Producto";
+                                pkg?.name ||
+                                pkg?.nombre ||
+                                it.rawName ||
+                                "Producto";
 
-                              const precio = toMoneyNumber(
-                                pkg?.precio ?? pkg?.price ?? 0
-                              );
+                              const precio = toMoneyNumber(pkg?.precio ?? pkg?.price ?? 0);
                               const originalNum = toOptionalNumber(
-                                pkg?.precio_original ??
-                                  pkg?.original_price ??
-                                  null
+                                pkg?.precio_original ?? pkg?.original_price ?? null
                               );
 
                               const precioFmt = `${precio.toFixed(2)} €`;
                               const originalFmt =
-                                originalNum != null
-                                  ? `${originalNum.toFixed(2)} €`
-                                  : null;
+                                originalNum != null ? `${originalNum.toFixed(2)} €` : null;
 
                               const enCarrito = estaEnCarrito(pkg);
 
@@ -592,35 +610,15 @@ const TiendaProductosVista = ({
                                   ? `x${it.qtyNum}`
                                   : rawName);
 
-                              const data = getProductData(pkg, categoria);
-                              const fallbackDesc =
-                                pkg?.description ||
-                                pkg?.descripcion ||
-                                pkg?.desc ||
-                                "";
-                              const descHtml = data?.html
-                                ? sanitizeTebexHtml(data.html)
-                                : data?.descripcion
-                                ? sanitizeTebexHtml(data.descripcion)
-                                : fallbackDesc
-                                ? sanitizeTebexHtml(fallbackDesc)
-                                : "";
-
-                              // ✅ si hay mc_menu, también hay detalles aunque no haya HTML
-                              const hasDetails = Boolean(descHtml) || data?.type === "mc_menu";
+                              const { hasDetails, data } = buildDetails(pkg, categoria);
 
                               const flyImg =
-                                pkg?.image_url ||
-                                pkg?.image ||
-                                secImg ||
-                                imgFallback;
+                                pkg?.image_url || pkg?.image || secImg || imgFallback;
 
                               return (
                                 <article
                                   key={id}
-                                  className={`tp-stack-card ${
-                                    enCarrito ? "is-in-cart" : ""
-                                  }`}
+                                  className={`tp-stack-card ${enCarrito ? "is-in-cart" : ""}`}
                                   title={rawName}
                                 >
                                   <div className="tp-stack-card__qty">{qtyLabel}</div>
@@ -628,12 +626,8 @@ const TiendaProductosVista = ({
                                   <div className="tp-pricebox">
                                     {originalFmt ? (
                                       <div className="tp-pricebox__old">
-                                        <span className="tp-pricebox__label">
-                                          Antes
-                                        </span>
-                                        <span className="tp-pricebox__value">
-                                          {originalFmt}
-                                        </span>
+                                        <span className="tp-pricebox__label">Antes</span>
+                                        <span className="tp-pricebox__value">{originalFmt}</span>
                                       </div>
                                     ) : (
                                       <div className="tp-pricebox__spacer" />
@@ -651,23 +645,22 @@ const TiendaProductosVista = ({
                                     }}
                                   >
                                     <span className="tp-variant__shine" aria-hidden="true" />
-                                    {enCarrito
-                                      ? "Quitar del carrito"
-                                      : `Comprar por ${precioFmt}`}
+                                    {enCarrito ? "Quitar del carrito" : `Comprar por ${precioFmt}`}
                                   </button>
 
+                                  {/* ✅ BOTÓN DETALLES SOLO SI EXISTEN */}
                                   {hasDetails && (
                                     <button
                                       type="button"
                                       className="tp-card__details tp-stack-card__details"
                                       onClick={(e) => {
                                         e.stopPropagation();
+                                        // si era mc_menu, ya lo abrirá bien
                                         openDetalles(pkg, rawName);
                                       }}
+                                      title="Ver detalles"
                                     >
-                                      <span className="tp-card__details-label">
-                                        Ver detalles
-                                      </span>
+                                      <span className="tp-card__details-label">Ver detalles</span>
                                       <span className="tp-card__chevron" aria-hidden="true" />
                                     </button>
                                   )}
@@ -710,8 +703,7 @@ const TiendaProductosVista = ({
                         {/* VARIANTES */}
                         {sec.items.map((it) => {
                           const pkg = it.pkg;
-                          const id =
-                            pkg?.id || pkg?.package_id || `${sec.key}-${it.idx}`;
+                          const id = pkg?.id || pkg?.package_id || `${sec.key}-${it.idx}`;
                           const rawName =
                             pkg?.name || pkg?.nombre || it.rawName || "Producto";
 
@@ -726,18 +718,7 @@ const TiendaProductosVista = ({
 
                           const enCarrito = estaEnCarrito(pkg);
 
-                          const data = getProductData(pkg, categoria);
-                          const fallbackDesc =
-                            pkg?.description || pkg?.descripcion || pkg?.desc || "";
-                          const descHtml = data?.html
-                            ? sanitizeTebexHtml(data.html)
-                            : data?.descripcion
-                            ? sanitizeTebexHtml(data.descripcion)
-                            : fallbackDesc
-                            ? sanitizeTebexHtml(fallbackDesc)
-                            : "";
-
-                          const hasDetails = Boolean(descHtml) || data?.type === "mc_menu";
+                          const { hasDetails } = buildDetails(pkg, categoria);
 
                           const flyImg =
                             pkg?.image_url || pkg?.image || secImg || imgFallback;
@@ -754,12 +735,8 @@ const TiendaProductosVista = ({
                                 <div className="tp-pricebox">
                                   {originalFmt ? (
                                     <div className="tp-pricebox__old">
-                                      <span className="tp-pricebox__label">
-                                        Antes
-                                      </span>
-                                      <span className="tp-pricebox__value">
-                                        {originalFmt}
-                                      </span>
+                                      <span className="tp-pricebox__label">Antes</span>
+                                      <span className="tp-pricebox__value">{originalFmt}</span>
                                     </div>
                                   ) : (
                                     <div className="tp-pricebox__spacer" />
@@ -779,11 +756,10 @@ const TiendaProductosVista = ({
                                   }}
                                 >
                                   <span className="tp-variant__shine" aria-hidden="true" />
-                                  {enCarrito
-                                    ? "Quitar del carrito"
-                                    : `Comprar por ${precioFmt}`}
+                                  {enCarrito ? "Quitar del carrito" : `Comprar por ${precioFmt}`}
                                 </button>
 
+                                {/* ✅ BOTÓN DETALLES SOLO SI EXISTEN */}
                                 {hasDetails && (
                                   <button
                                     type="button"
@@ -792,10 +768,9 @@ const TiendaProductosVista = ({
                                       e.stopPropagation();
                                       openDetalles(pkg, rawName);
                                     }}
+                                    title="Ver detalles"
                                   >
-                                    <span className="tp-card__details-label">
-                                      Ver detalles
-                                    </span>
+                                    <span className="tp-card__details-label">Ver detalles</span>
                                     <span className="tp-card__chevron" aria-hidden="true" />
                                   </button>
                                 )}
@@ -821,8 +796,7 @@ const TiendaProductosVista = ({
                   const secImg = pickSectionImage(sec);
 
                   const id = pkg?.id || pkg?.package_id || `${sec.key}-${it.idx}`;
-                  const rawName =
-                    pkg?.name || pkg?.nombre || it.rawName || sec.title;
+                  const rawName = pkg?.name || pkg?.nombre || it.rawName || sec.title;
 
                   const precio = toMoneyNumber(pkg?.precio ?? pkg?.price ?? 0);
                   const originalNum = toOptionalNumber(
@@ -837,28 +811,28 @@ const TiendaProductosVista = ({
 
                   const enCarrito = estaEnCarrito(pkg);
 
-                  const data = getProductData(pkg, categoria);
-                  const fallbackDesc =
-                    pkg?.description || pkg?.descripcion || pkg?.desc || "";
-                  const descHtml = data?.html
-                    ? sanitizeTebexHtml(data.html)
-                    : data?.descripcion
-                    ? sanitizeTebexHtml(data.descripcion)
-                    : fallbackDesc
-                    ? sanitizeTebexHtml(fallbackDesc)
-                    : "";
-
-                  const hasDetails = Boolean(descHtml) || data?.type === "mc_menu";
+                  const { hasDetails } = buildDetails(pkg, categoria);
 
                   const flyImg =
                     pkg?.image_url || pkg?.image || secImg || imgFallback;
 
                   return (
-                    <article
-                      key={id}
-                      className={`tp-card ${enCarrito ? "is-in-cart" : ""}`}
-                    >
-                      <div className="tp-card__imgwrap">
+                    <article key={id} className={`tp-card ${enCarrito ? "is-in-cart" : ""}`}>
+                      {/* ✅ IMAGEN CLICABLE PARA ABRIR DETALLES SI EXISTEN */}
+                      <div
+                        className={`tp-card__imgwrap ${hasDetails ? "is-clickable" : ""}`}
+                        onClick={(e) => onOpenFromMedia(e, pkg, rawName, hasDetails)}
+                        title={hasDetails ? "Ver detalles" : rawName}
+                        role={hasDetails ? "button" : undefined}
+                        tabIndex={hasDetails ? 0 : undefined}
+                        onKeyDown={(e) => {
+                          if (!hasDetails) return;
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            openDetalles(pkg, rawName);
+                          }
+                        }}
+                      >
                         {secDiscountPct && (
                           <div className="tp-discount-badge tp-discount-badge--hero">
                             -{secDiscountPct}%
@@ -882,9 +856,7 @@ const TiendaProductosVista = ({
                           {originalFmt ? (
                             <div className="tp-pricebox__old">
                               <span className="tp-pricebox__label">Antes</span>
-                              <span className="tp-pricebox__value">
-                                {originalFmt}
-                              </span>
+                              <span className="tp-pricebox__value">{originalFmt}</span>
                             </div>
                           ) : (
                             <div className="tp-pricebox__spacer" />
@@ -904,11 +876,10 @@ const TiendaProductosVista = ({
                           }}
                         >
                           <span className="tp-variant__shine" aria-hidden="true" />
-                          {enCarrito
-                            ? "Quitar del carrito"
-                            : `Comprar por ${precioFmt}`}
+                          {enCarrito ? "Quitar del carrito" : `Comprar por ${precioFmt}`}
                         </button>
 
+                        {/* ✅ BOTÓN DETALLES SOLO SI EXISTEN */}
                         {hasDetails && (
                           <button
                             type="button"
@@ -917,10 +888,9 @@ const TiendaProductosVista = ({
                               e.stopPropagation();
                               openDetalles(pkg, rawName);
                             }}
+                            title="Ver detalles"
                           >
-                            <span className="tp-card__details-label">
-                              Ver detalles
-                            </span>
+                            <span className="tp-card__details-label">Ver detalles</span>
                             <span className="tp-card__chevron" aria-hidden="true" />
                           </button>
                         )}

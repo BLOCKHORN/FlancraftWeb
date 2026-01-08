@@ -18,6 +18,15 @@ import teleportSoundFile from '/assets/sounds/teleport.wav'
 import '../../styles/components/Landpage/_maprpg.scss'
 
 const baseZones = [
+    {
+    id: 'shop',
+    labelCorto: 'Tienda',
+    title: 'Tienda Oficial',
+    shortDescription: 'Rangos, llaves y mucho más.',
+    route: '/tienda',
+    image: '/assets/mercado.webp',
+    runeImage: '/assets/runes/runa-tienda.webp',
+  },
   {
     id: 'news',
     labelCorto: 'Taberna',
@@ -63,15 +72,7 @@ const baseZones = [
     image: '/assets/torre.webp',
     runeImage: '/assets/runes/runa-perfil.webp',
   },
-  {
-    id: 'shop',
-    labelCorto: 'Tienda',
-    title: 'Tienda Oficial',
-    shortDescription: 'Rangos, llaves y mucho más.',
-    route: '/tienda',
-    image: '/assets/mercado.webp',
-    runeImage: '/assets/runes/runa-tienda.webp',
-  },
+
 ]
 
 // SFX globales (no se recrean en cada render)

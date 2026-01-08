@@ -1,0 +1,403 @@
+/* apps/frontend/src/styles/components/Tienda/details/tagsDetails.scss */
+
+.pd--tags-live {
+  --ink: rgba(255, 255, 255, 0.92);
+  --muted: rgba(255, 255, 255, 0.72);
+
+  --border: #000;
+  --panelA: #3b3b3b;
+  --panelB: #2f2f2f;
+
+  --slotA: #2e2e2e;
+  --slotB: #242424;
+
+  --chatA: #1f1f1f;
+  --chatB: #171717;
+
+  --goldA: #caa041;
+  --goldB: #8d6a1f;
+
+  --steelA: #6a6a6a;
+  --steelB: #515151;
+
+  color: var(--ink);
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+}
+
+.pd--tags-live code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 12px;
+  padding: 0 6px;
+  border-radius: 3px;
+  border: 1px solid rgba(0, 0, 0, 0.55);
+  background: rgba(0, 0, 0, 0.25);
+  color: rgba(255, 255, 255, 0.92);
+}
+
+/* =========================================================
+   Helpers (panel estilo GUI)
+   ========================================================= */
+@mixin guiPanel($a, $b, $shine: .08, $depth: .35) {
+  border-radius: 3px;
+  border: 2px solid var(--border);
+  background: linear-gradient(180deg, $a, $b);
+  box-shadow:
+    inset 2px 2px 0 rgba(255, 255, 255, $shine),
+    inset -2px -2px 0 rgba(0, 0, 0, $depth);
+}
+
+.tgx {
+  display: grid;
+  gap: 10px;
+}
+
+.tgx__top {
+  @include guiPanel(var(--panelA), var(--panelB), .08, .35);
+  padding: 10px;
+  position: relative;
+  overflow: hidden;
+
+  /* sutil “accent” cálido arriba para separar */
+  &::before {
+    content: "";
+    position: absolute;
+    left: 10px;
+    right: 10px;
+    top: 6px;
+    height: 2px;
+    border-radius: 2px;
+    background: linear-gradient(90deg, transparent, rgba(202,160,65,.75), transparent);
+    opacity: .55;
+  }
+}
+
+.tgx__titleRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.tgx__title {
+  font-weight: 1000;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.95);
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.45);
+}
+
+.tgx__meta {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.tgx__pill {
+  @include guiPanel(#2e2e2e, #242424, .06, .35);
+  padding: 6px 8px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.85);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tgx__pillLabel {
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  font-weight: 1000;
+  font-size: 10px;
+  opacity: .78;
+}
+
+.tgx__sub {
+  margin-top: 8px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.78);
+  line-height: 1.35;
+}
+
+.tgx__grid {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 10px;
+}
+
+@media (max-width: 900px) {
+  .tgx__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.tgx__panel {
+  @include guiPanel(var(--panelA), var(--panelB), .08, .35);
+  padding: 10px;
+  display: grid;
+  gap: 10px;
+}
+
+.tgx__h {
+  font-weight: 1000;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.92);
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.45);
+}
+
+.tgx__h2 {
+  font-weight: 1000;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.tgx__muted {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+/* =========================================================
+   Inputs
+   ========================================================= */
+.tgx__inputs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+@media (max-width: 560px) {
+  .tgx__inputs {
+    grid-template-columns: 1fr;
+  }
+}
+
+.tgx__field {
+  display: grid;
+  gap: 6px;
+}
+
+.tgx__field .k {
+  font-size: 10px;
+  letter-spacing: 2px;
+  font-weight: 1000;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.70);
+}
+
+.tgx__field input {
+  height: 36px;
+  border-radius: 3px;
+  border: 2px solid var(--border);
+  background: linear-gradient(180deg, var(--slotA), var(--slotB));
+  box-shadow:
+    inset 2px 2px 0 rgba(255, 255, 255, 0.06),
+    inset -2px -2px 0 rgba(0, 0, 0, 0.35);
+  color: rgba(255, 255, 255, 0.92);
+  padding: 0 10px;
+  outline: none;
+}
+
+.tgx__field input:focus {
+  filter: brightness(1.07);
+}
+
+/* =========================================================
+   Chat box (sin badges repetidos, leyenda arriba)
+   ========================================================= */
+.tgx__chat {
+  border-radius: 3px;
+  border: 2px solid var(--border);
+  background: linear-gradient(180deg, var(--chatA), var(--chatB));
+  box-shadow:
+    inset 2px 2px 0 rgba(255, 255, 255, 0.05),
+    inset -2px -2px 0 rgba(0, 0, 0, 0.45);
+  padding: 10px;
+  display: grid;
+  gap: 10px;
+}
+
+.tgx__chatHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.tgx__chatTitle {
+  font-weight: 1000;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  font-size: 10px;
+  opacity: .85;
+}
+
+.tgx__legend {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.tgx__chip {
+  border-radius: 3px;
+  border: 2px solid var(--border);
+  background: linear-gradient(180deg, #3a3a3a, #2b2b2b);
+  box-shadow:
+    inset 2px 2px 0 rgba(255, 255, 255, 0.08),
+    inset -2px -2px 0 rgba(0, 0, 0, 0.35);
+  font-size: 10px;
+  letter-spacing: 1px;
+  font-weight: 1000;
+  padding: 2px 8px;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.tgx__chip--gold {
+  background: linear-gradient(180deg, var(--goldA), var(--goldB));
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.tgx__line {
+  position: relative;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.90);
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.45);
+  line-height: 1.35;
+  padding: 6px 8px 6px 10px;
+  border-radius: 3px;
+}
+
+.tgx__line--before {
+  background: rgba(255, 255, 255, 0.03);
+  border-left: 3px solid rgba(255, 255, 255, 0.18);
+}
+
+.tgx__line--after {
+  background: rgba(202, 160, 65, 0.07);
+  border-left: 3px solid rgba(202, 160, 65, 0.65);
+}
+
+.tgx__tag {
+  margin-right: 6px;
+}
+
+.tgx__name {
+  color: #8bd1ff;
+  font-weight: 1000;
+}
+
+.tgx__sep {
+  opacity: 0.85;
+  margin: 0 6px 0 2px;
+}
+
+.tgx__msg {
+  color: rgba(255, 255, 255, 0.90);
+}
+
+/* =========================================================
+   Description (solo aparece si hay contenido)
+   ========================================================= */
+.tgx__descBox {
+  @include guiPanel(var(--slotA), var(--slotB), .06, .35);
+  padding: 10px;
+  display: grid;
+  gap: 8px;
+}
+
+.tgx__descLines {
+  display: grid;
+  gap: 6px;
+}
+
+.tgx__descLine {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.82);
+  line-height: 1.35;
+}
+
+/* =========================================================
+   Tag grid (auto-fit: se adapta mejor y se ve más pro)
+   ========================================================= */
+.tgx__tagGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
+  gap: 8px;
+}
+
+.tgx__tagBtn {
+  border-radius: 3px;
+  border: 2px solid var(--border);
+  background: linear-gradient(180deg, #6b6b6b, #4f4f4f);
+  box-shadow:
+    inset 2px 2px 0 rgba(255, 255, 255, 0.14),
+    inset -2px -2px 0 rgba(0, 0, 0, 0.35);
+  padding: 10px 8px;
+  cursor: pointer;
+  text-align: center;
+  transition: filter .12s ease, transform .12s ease;
+  min-height: 42px;
+}
+
+.tgx__tagBtn:hover {
+  filter: brightness(1.06);
+  transform: translateY(-1px);
+}
+
+.tgx__tagBtn:active {
+  transform: translateY(0);
+  filter: brightness(1.02);
+}
+
+.tgx__tagBtn.is-active {
+  background: linear-gradient(180deg, var(--goldA), var(--goldB));
+  box-shadow:
+    inset 2px 2px 0 rgba(255, 255, 255, 0.18),
+    inset -2px -2px 0 rgba(0, 0, 0, 0.35),
+    0 0 0 2px rgba(0,0,0,.55),
+    0 0 16px rgba(202,160,65,.18);
+}
+
+.tgx__tagBtnInner {
+  display: block;
+  font-weight: 1000;
+  letter-spacing: 0.5px;
+}
+
+/* =========================================================
+   How / Foot (más compacto)
+   ========================================================= */
+.tgx__how {
+  @include guiPanel(#3a3a3a, #2b2b2b, .08, .35);
+  padding: 10px;
+  display: grid;
+  gap: 6px;
+}
+
+.tgx__howLine {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.82);
+  line-height: 1.35;
+}
+
+.tgx__foot {
+  @include guiPanel(var(--slotA), var(--slotB), .06, .35);
+  padding: 8px 10px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.75);
+  line-height: 1.35;
+}
+
+/* =========================================================
+   Minecraft text segments
+   ========================================================= */
+.mc-text {
+  white-space: pre-wrap;
+}
+
+.mc-text__seg--obf {
+  opacity: 0.95;
+}

@@ -1492,3 +1492,111 @@
     font-size: 1.22rem;
   }
 }
+/* =========================================================
+   RANGOS: Header minimal (solo breadcrumb + cerrar)
+   ========================================================= */
+
+.tienda-tebex.is-rangos {
+  /* hacemos que el header deje de "comerse" pantalla */
+  .tc-head--rangosMin {
+    /* quitamos el layout 3 columnas solo aquí */
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 0.8rem;
+
+    /* en vez del marrón gordo: una tira muy fina sobre el paper */
+    padding: 0.55rem 0.85rem;
+    background: linear-gradient(
+        to bottom,
+        rgba(0, 0, 0, 0.06),
+        rgba(0, 0, 0, 0.02)
+      ),
+      rgba(255, 255, 255, 0.10);
+
+    border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22);
+
+    color: var(--ink);
+  }
+
+  .tc-head-center--min {
+    justify-self: center;
+    text-align: center;
+    min-width: 0;
+  }
+
+  .tc-head-actions--min {
+    justify-self: end;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+  }
+
+  /* Breadcrumb en papel (ya no blanco) */
+  .tc-head--rangosMin .tc-breadcrumb {
+    margin-top: 0;
+    padding: 0;
+    color: rgba(58, 40, 22, 0.72);
+    text-shadow: none;
+  }
+
+  .tc-head--rangosMin .tc-crumb {
+    color: rgba(58, 40, 22, 0.78);
+    border: 1px solid transparent;
+    background: rgba(255, 255, 255, 0.10);
+  }
+
+  .tc-head--rangosMin .tc-crumb:hover {
+    background: rgba(255, 255, 255, 0.22);
+  }
+
+  .tc-head--rangosMin .tc-crumb-current {
+    color: rgba(58, 40, 22, 0.88);
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(0, 0, 0, 0.10);
+  }
+
+  .tc-head--rangosMin .tc-crumb-sep {
+    opacity: 0.35;
+  }
+
+  /* Switch adaptado al paper */
+  .tc-head--rangosMin .tc-switch-btn {
+    border-color: rgba(0, 0, 0, 0.18);
+    background: rgba(255, 255, 255, 0.16);
+  }
+
+  .tc-head--rangosMin .tc-switch-btn svg {
+    fill: rgba(58, 40, 22, 0.78);
+  }
+
+  .tc-head--rangosMin .tc-switch-btn:hover {
+    background: rgba(255, 255, 255, 0.26);
+    border-color: rgba(0, 0, 0, 0.24);
+  }
+
+  /* Botón cerrar un pelín más compacto en rangos */
+  .tc-head--rangosMin .tienda-wc-close {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.74rem;
+  }
+
+  /* En móvil, que sea 1 columna sin romper nada */
+  @media (max-width: 680px) {
+    .tc-head--rangosMin {
+      grid-template-columns: 1fr;
+      gap: 0.55rem;
+      text-align: center;
+    }
+
+    .tc-head-actions--min {
+      justify-self: center;
+      width: 100%;
+    }
+
+    .tc-head--rangosMin .tienda-wc-close {
+      width: 100%;
+    }
+  }
+}
