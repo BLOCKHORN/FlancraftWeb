@@ -195,7 +195,7 @@ export default function ProductDetailsTags({ data }) {
     [items, selectedKey]
   );
 
-  const [playerName, setPlayerName] = useState("Crystalchemist");
+  const [playerName, setPlayerName] = useState("Steve");
   const [message, setMessage] = useState("hola");
 
   const safeName = normalizeInputName(playerName);
