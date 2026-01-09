@@ -1,9 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { PORTADA_TILES, AVISO_PADRES_TILE } from "./tiendaHelpers";
+import { PORTADA_TILES, AVISO_PADRES_TILE } from "../utils/tiendaHelpers";
 
 import TiendaOfertaCountdown from "./TiendaOfertaCountdown";
-import "../../styles/components/Tienda/tienda-portada.scss";
+import "../../../styles/components/Tienda/tienda-portada.scss";
 
 /* =========================================================
    Util: columnas simétricas (evita 4+1, 3+1, etc.)

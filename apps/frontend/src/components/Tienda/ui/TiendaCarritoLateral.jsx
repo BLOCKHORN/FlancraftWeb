@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useCallback } from "react";
-import useMinecraftProfile from "./useMinecraftProfile";
-import TiendaCheckoutModal from "./TiendaCheckoutModal";
-import "../../styles/components/Tienda/tienda-carrito.scss";
+import useMinecraftProfile from "../hooks/useMinecraftProfile";
+import TiendaCheckoutModal from "../modals/TiendaCheckoutModal";
+import "../../../styles/components/Tienda/tienda-carrito.scss";
 
 const API_BASE = import.meta.env.VITE_BACKEND_URL || "http://localhost:10000";
 

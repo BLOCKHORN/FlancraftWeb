@@ -1,10 +1,10 @@
-// apps/frontend/src/components/Tienda/ProductoDetallesModal.jsx
+// apps/frontend/src/components/Tienda/modals/ProductoDetallesModal.jsx
 import React, { useEffect } from "react";
 import { createPortal } from "react-dom";
-import "../../styles/components/Tienda/productoDetallesModal.scss";
+import "../../../styles/components/Tienda/productoDetallesModal.scss";
 
-import { resolveProductDetails } from "./data/productDetails/index.js";
-import ProductDetailsMCMenu from "./ProductDetailsMCMenu.jsx";
+import { resolveProductDetails } from "../details/data/productDetails/index.js";
+import ProductDetailsMCMenu from "../details/ProductDetailsMCMenu.jsx";
 
 export default function ProductoDetallesModal({
   open,
@@ -33,18 +33,47 @@ export default function ProductoDetallesModal({
 
   // content puede ser:
   // - string => key del registry
-  // - object => payload ya resuelto
-  const resolved = typeof content === "string" ? resolveProductDetails(content) : content;
+  // - object => payload ya resuelto (mc_menu/html)
+  // - object => { type:"react_component", Comp, props, pkg } (nuevo)
+  const isReactComponentPayload =
+    content &&
+    typeof content === "object" &&
+    content.type === "react_component" &&
+    typeof content.Comp === "function";
+
+  // Si es react_component NO lo pasamos por resolveProductDetails.
+  const resolved =
+    isReactComponentPayload
+      ? null
+      : typeof content === "string"
+      ? resolveProductDetails(content)
+      : content;
 
   const isMCMenu = resolved?.type === "mc_menu";
   const bodyHtml = resolved?.html || html || "";
 
-  const theme = resolved?.theme ? String(resolved.theme).trim().toLowerCase() : "";
+  // Theme / clases:
+  // - Si es react_component, permitimos que venga theme dentro de props o lo dejamos sin theme.
+  const theme =
+    isReactComponentPayload
+      ? String(content?.props?.theme || "").trim().toLowerCase()
+      : resolved?.theme
+      ? String(resolved.theme).trim().toLowerCase()
+      : "";
+
   const dialogThemeClass = theme ? `tienda-modal__dialog--${theme}` : "";
   const bodyThemeClass = theme ? `tienda-modal__body--${theme}` : "";
 
-  const kickerText = resolved?.kicker || "Producto";
-  const titleText = resolved?.name || title;
+  const kickerText =
+    isReactComponentPayload ? (content?.props?.kicker || "Producto") : resolved?.kicker || "Producto";
+
+  const titleText =
+    isReactComponentPayload ? (content?.props?.name || title) : resolved?.name || title;
+
+  // Renderer componente
+  const ReactComp = isReactComponentPayload ? content.Comp : null;
+  const reactProps = isReactComponentPayload ? (content.props || {}) : null;
+  const reactPkg = isReactComponentPayload ? content.pkg : null;
 
   return createPortal(
     <div
@@ -63,8 +92,6 @@ export default function ProductoDetallesModal({
             <h2 className="tienda-modal__title">{titleText}</h2>
           </div>
 
-          {/* ❌ quitamos title="" para evitar tooltip nativo
-              ✅ usamos data-tooltip + hasTip */}
           <button
             className="tienda-modal__close hasTip"
             type="button"
@@ -77,7 +104,9 @@ export default function ProductoDetallesModal({
         </div>
 
         <div className={`tienda-modal__body ${bodyThemeClass}`}>
-          {isMCMenu ? (
+          {isReactComponentPayload && ReactComp ? (
+            <ReactComp {...reactProps} pkg={reactPkg} onClose={onClose} />
+          ) : isMCMenu ? (
             <ProductDetailsMCMenu data={resolved} />
           ) : bodyHtml ? (
             <div className="mcx2" dangerouslySetInnerHTML={{ __html: bodyHtml }} />

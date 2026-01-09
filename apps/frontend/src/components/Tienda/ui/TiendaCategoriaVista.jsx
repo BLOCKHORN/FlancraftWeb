@@ -1,4 +1,4 @@
-// src/components/Tienda/TiendaCategoriaVista.jsx
+// src/components/Tienda/ui/TiendaCategoriaVista.jsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Outlet, useNavigate, useParams } from "react-router-dom";
 
@@ -13,10 +13,10 @@ import {
   SUBCATS_PER_TILE,
   PORTADA_TILES,
   AVISO_PADRES_TILE,
-} from "./tiendaHelpers";
+} from "../utils/tiendaHelpers";
 
-import { ANTES_DE_COMPRAR } from "./data/antesDeComprarData";
-import "../../styles/components/Tienda/tienda-categoria.scss";
+import { ANTES_DE_COMPRAR } from "../details/data/antesDeComprarData";
+import "../../../styles/components/Tienda/tienda-categoria.scss";
 
 /* =========================================================
    Iconos de cabecera / sidebar
@@ -146,6 +146,9 @@ export default function TiendaCategoriaVista({ carrito, toggleProducto }) {
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState(null);
   const [error, setError] = useState("");
 
+  // ✅ cache-bust (para forzar recarga de imágenes)
+  const [cacheBust, setCacheBust] = useState(null);
+
   // animaciones
   const [routeFx, setRouteFx] = useState("idle"); // idle | out | in
   const [swapFx, setSwapFx] = useState(false); // animación al cambiar subcategoria
@@ -266,13 +269,21 @@ export default function TiendaCategoriaVista({ carrito, toggleProducto }) {
       try {
         // ✅ robusto: usa tu helper (intenta /api/tebex + fallback /tebex)
         const sv = encodeURIComponent(String(server || ""));
-        const r = await fetchTebex(`/datos?sv=${sv}`, { method: "GET" });
+        // ✅ mando sv y server para cubrir backends que leen uno u otro
+        const r = await fetchTebex(`/datos?sv=${sv}&server=${sv}`, { method: "GET" });
 
         if (!r.ok) {
           throw new Error("No se pudo cargar la tienda para este servidor.");
         }
 
         const data = await r.json();
+
+        // ✅ cache-bust desde backend
+        const bustFromApi = data?.bust ?? data?.cacheBust ?? null;
+        if (!cancel) setCacheBust(bustFromApi != null ? String(bustFromApi) : null);
+
+        // Debug útil (no rompe nada)
+        // console.log("[TIENDA] sv solicitado:", server, "| backend responde server:", data?.server, "| bust:", bustFromApi);
 
         const apiCats = data.categorias || [];
         const packs = data.paquetes || [];
@@ -662,12 +673,6 @@ export default function TiendaCategoriaVista({ carrito, toggleProducto }) {
               </div>
             )}
 
-            {/* =======================================================
-               CABECERA
-               - Normal: icono + H1 + subtítulo
-               - Rangos: SOLO breadcrumb + cerrar (sin marrón con "RANGOS")
-               ======================================================= */}
-
             {!isRangosView ? (
               <div className="tc-head">
                 <div className="tc-head-spacer" aria-hidden="true" />
@@ -682,7 +687,6 @@ export default function TiendaCategoriaVista({ carrito, toggleProducto }) {
                     <h1 className="tienda-wc-title">{categoriaSeleccionada?.name}</h1>
                   </div>
 
-                  {/* Breadcrumb + salto rápido */}
                   <div className="tc-breadcrumb" ref={crumbRef}>
                     <button
                       type="button"
@@ -774,7 +778,6 @@ export default function TiendaCategoriaVista({ carrito, toggleProducto }) {
             ) : (
               <div className="tc-head tc-head--rangosMin">
                 <div className="tc-head-center tc-head-center--min">
-                  {/* Breadcrumb + salto rápido (misma lógica) */}
                   <div className="tc-breadcrumb" ref={crumbRef}>
                     <button
                       type="button"
@@ -935,6 +938,7 @@ export default function TiendaCategoriaVista({ carrito, toggleProducto }) {
                           toggleProducto={toggleProducto}
                           subcategoriaSeleccionadaURL={subcategoria}
                           embedMode
+                          cacheBust={cacheBust}
                         />
                       )}
                     </div>
@@ -951,6 +955,7 @@ export default function TiendaCategoriaVista({ carrito, toggleProducto }) {
                         carrito={carrito}
                         toggleProducto={toggleProducto}
                         embedMode
+                        cacheBust={cacheBust}
                       />
                     </div>
                   </div>

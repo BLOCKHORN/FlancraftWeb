@@ -1,4 +1,4 @@
-useMinecraftProfile.js// apps/frontend/src/components/Tienda/useMinecraftProfile.js
+useMinecraftProfile.js// apps/frontend/src/components/Tienda/hooks/useMinecraftProfile.js
 import { useEffect, useMemo, useState } from "react";
 
 const API_BASE = import.meta.env.VITE_BACKEND_URL || "http://localhost:10000";

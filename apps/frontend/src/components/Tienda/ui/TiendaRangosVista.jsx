@@ -1,8 +1,8 @@
-// src/components/Tienda/TiendaRangosVista.jsx
+// src/components/Tienda/ui/TiendaRangosVista.jsx
 import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
-import "../../styles/components/Tienda/tienda-rangos-flancraft.scss";
-import { RANGOS_COMPARATIVA, RANGOS_MODAL } from "./data/productDetails/rangosComparativa";
+import "../../../styles/components/Tienda/tienda-rangos-flancraft.scss";
+import { RANGOS_COMPARATIVA, RANGOS_MODAL } from "../details/data/productDetails/rangosComparativa.js";
 
 function toMoney(v) {
   const n = Number(v);

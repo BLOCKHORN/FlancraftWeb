@@ -1,6 +1,6 @@
-// src/components/Tienda/TiendaFooter.jsx
+// src/components/Tienda/ui/TiendaFooter.jsx
 import React, { useEffect, useRef, useState, useCallback } from "react";
-import "../../styles/components/Tienda/tienda-footer.scss";
+import "../../../styles/components/Tienda/tienda-footer.scss";
 
 const PEEK_HEIGHT = 20; // lo visible cuando está cerrado
 

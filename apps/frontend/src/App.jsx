@@ -23,7 +23,7 @@ import NoticiasAdmin from "./components/Admin/NoticiasAdmin";
 import EditarNoticia from "./components/Noticias/EditarNoticia";
 
 // 🛍️ Tienda con rutas internas
-import TiendaLayout from "@/components/Tienda/TiendaLayout";
+import TiendaLayout from "@/components/Tienda/ui/TiendaLayout";
 import "@fortawesome/fontawesome-free/css/all.min.css";
 
 const App = () => {

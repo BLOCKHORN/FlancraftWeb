@@ -5,7 +5,7 @@ import React, {
   useState,
   useLayoutEffect,
 } from "react";
-import "../../styles/components/Tienda/tienda-topdonator-pip.scss";
+import "../../../styles/components/Tienda/tienda-topdonator-pip.scss";
 
 const API_BASE =
   import.meta.env.VITE_BACKEND_URL || "https://flancraft-backend.onrender.com";

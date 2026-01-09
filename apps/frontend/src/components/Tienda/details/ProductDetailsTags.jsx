@@ -1,6 +1,6 @@
-// apps/frontend/src/components/Tienda/ProductDetailsTags.jsx
+// apps/frontend/src/components/Tienda/details/ProductDetailsTags.jsx
 import React, { useEffect, useMemo, useState } from "react";
-import "../../styles/components/Tienda/details/tagsDetails.scss";
+import "../../../styles/components/Tienda/details/tagsDetails.scss";
 
 /* =========================================================
    Minecraft formatting parser (React)

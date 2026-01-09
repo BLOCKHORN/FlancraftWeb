@@ -1,4 +1,4 @@
-// src/components/Tienda/tiendaHelpers.js
+// src/components/Tienda/utils/tiendaHelpers.js
 
 export const API_URL =
   import.meta.env.VITE_BACKEND_URL ||
@@ -35,6 +35,32 @@ async function fetchWithTimeout(url, options = {}, timeoutMs = 15000) {
   } finally {
     clearTimeout(t);
   }
+}
+
+/**
+ * ✅ Cache-bust helper:
+ * añade/actualiza ?v=<bust> sin romper hashes ni queries existentes.
+ */
+export function withCacheBust(url = "", bust = null) {
+  const u = String(url || "").trim();
+  const b = bust != null ? String(bust).trim() : "";
+
+  if (!u) return u;
+  if (!b) return u;
+
+  // No tocar data/blob
+  if (/^(data:|blob:)/i.test(u)) return u;
+
+  // separar hash
+  const [basePlusQuery, hash = ""] = u.split("#");
+  const [base, query = ""] = basePlusQuery.split("?");
+
+  const params = new URLSearchParams(query);
+  params.set("v", b);
+
+  const qs = params.toString();
+  const out = `${base}${qs ? `?${qs}` : ""}${hash ? `#${hash}` : ""}`;
+  return out;
 }
 
 /**
@@ -245,7 +271,7 @@ export const SUBCATS_PER_TILE = {
   // Survival clásico
   "clasico|survival-clasico": [
     "Protecciones",
-    "Items OP",
+    "Items OP Survival",
     "Llaves Survival",
     "Dinero Survival",
     "Experiencia Survival",
@@ -253,14 +279,14 @@ export const SUBCATS_PER_TILE = {
 
   // ONEBLOCK
   "oneblock|oneblock": [
-    "Kit Navidad",
     "Items OP Oneblock",
+    "Llaves Oneblock",
     "Dinero Oneblock",
   ],
 
   // Chunklock
   "clasico|chunklock": [
-    "Items OP",
+    "Items OP Chunklock",
     "Dinero Chunklock",
     "Experiencia Chunklock",
     "Llaves Chunklock",

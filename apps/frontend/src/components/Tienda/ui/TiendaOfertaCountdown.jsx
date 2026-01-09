@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import "../../styles/components/Tienda/tienda-oferta-countdown.scss";
+import "../../../styles/components/Tienda/tienda-oferta-countdown.scss";
 
 const API_BASE =
   import.meta.env.VITE_BACKEND_URL || "https://flancraft-backend.onrender.com";

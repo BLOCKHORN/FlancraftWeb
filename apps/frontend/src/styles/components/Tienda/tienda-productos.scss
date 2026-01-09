@@ -8,7 +8,7 @@
 }
 
 /* ======================================
-   CONTENEDOR PRINCIPAL
+   CONTENEDOR
    ====================================== */
 
 .tienda-productos {
@@ -27,6 +27,12 @@
   --discountBorder: rgba(0, 0, 0, 0.38);
   --discountText: #fff2d6;
 
+  --plateBgA: rgba(62, 50, 40, 0.92);
+  --plateBgB: rgba(44, 35, 28, 0.96);
+  --plateEdge: rgba(0, 0, 0, 0.55);
+  --plateHi: rgba(255, 255, 255, 0.16);
+  --plateText: rgba(252, 241, 220, 0.96);
+
   width: 100%;
   height: 100%;
   min-height: 0;
@@ -34,7 +40,7 @@
   display: flex;
   flex-direction: column;
 
-  border-radius: 0.5rem;
+  border-radius: 0.55rem;
   border: 3px solid var(--gold);
   background:
     radial-gradient(circle at 0% 0%, rgba(255,255,255,0.22), transparent 55%),
@@ -59,7 +65,10 @@
   --discountText: #fff2d6;
 }
 
-/* BODY */
+/* ======================================
+   BODY
+   ====================================== */
+
 .tienda-productos__body {
   flex: 1 1 auto;
   min-height: 0;
@@ -82,12 +91,13 @@
 }
 
 @media (max-width: 768px) {
-  .tienda-productos__body {
-    padding: 0.45rem 0.45rem 0.6rem;
-  }
+  .tienda-productos__body { padding: 0.45rem 0.45rem 0.6rem; }
 }
 
-/* EMPTY */
+/* ======================================
+   EMPTY
+   ====================================== */
+
 .tienda-productos__empty {
   min-height: 260px;
   display: grid;
@@ -127,10 +137,10 @@
 
 .tp-discount-badge {
   position: absolute;
-  left: 8px;
-  top: 8px;
-  padding: 0.18rem 0.45rem;
-  border-radius: 0.4rem;
+  left: 10px;
+  top: 10px;
+  padding: 0.18rem 0.48rem;
+  border-radius: 0.45rem;
   border: 2px solid var(--discountBorder);
   background: var(--discountBg);
   color: var(--discountText);
@@ -142,20 +152,96 @@
   z-index: 3;
 }
 
-.tp-discount-badge--hero {
-  font-size: 0.78rem;
-}
+.tp-discount-badge--hero { font-size: 0.78rem; }
 
 /* ======================================
-   “ANTES”
+   NAMEPLATE
+   ====================================== */
+
+.tp-nameplate{
+  width: fit-content;
+  max-width: 100%;
+  margin-inline: auto;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 0.34rem 0.78rem;
+  border-radius: 0.55rem;
+
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.00)),
+    linear-gradient(180deg, var(--plateBgA), var(--plateBgB));
+  border: 2px solid var(--plateEdge);
+
+  box-shadow:
+    0 2px 0 rgba(0,0,0,0.55),
+    inset 0 1px 0 var(--plateHi),
+    inset 0 -1px 0 rgba(0,0,0,0.35);
+
+  position: relative;
+}
+
+.tp-nameplate::before,
+.tp-nameplate::after{
+  content:"";
+  position:absolute;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  transform: translateY(-50%) rotate(45deg);
+  border-radius: 2px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.22), rgba(255,255,255,0.04));
+  box-shadow: 0 1px 0 rgba(0,0,0,0.45);
+  opacity: .9;
+}
+
+.tp-nameplate::before{ left: -6px; border: 1px solid rgba(0,0,0,0.35); }
+.tp-nameplate::after{ right: -6px; border: 1px solid rgba(0,0,0,0.35); }
+
+.tp-nameplate__text{
+  color: var(--plateText);
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 0.86rem;
+  line-height: 1.15;
+
+  font-family: "IM Fell English SC", "Cinzel", "Trajan Pro", Georgia, "Times New Roman", serif;
+
+  text-shadow:
+    0 1px 0 rgba(0,0,0,0.55),
+    0 6px 16px rgba(0,0,0,0.25);
+
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.tp-nameplate--hero{
+  width: 100%;
+  padding: 0.42rem 0.7rem;
+}
+.tp-nameplate--hero .tp-nameplate__text{
+  font-size: 0.92rem;
+  letter-spacing: 0.1em;
+}
+
+.tp-nameplate--qty{ width: 100%; }
+.tp-nameplate--name{ width: 100%; }
+
+/* ======================================
+   PRICEBOX (ANTES)
    ====================================== */
 
 .tp-pricebox {
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 24px;
-  margin-top: 0.12rem;
+  min-height: 18px;
+  margin-top: 0;
 }
 
 .tp-pricebox__old {
@@ -163,7 +249,7 @@
   align-items: center;
   gap: 0.45rem;
 
-  padding: 0.22rem 0.48rem;
+  padding: 0.18rem 0.44rem;
   border-radius: 0.5rem;
 
   background: rgba(197, 58, 42, 0.10);
@@ -177,14 +263,10 @@
   font-weight: 900;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  font-size: 0.72rem;
+  font-size: 0.70rem;
 }
 
-.tp-pricebox__label {
-  color: rgba(0, 0, 0, 0.55);
-  font-weight: 950;
-}
-
+.tp-pricebox__label { color: rgba(0, 0, 0, 0.55); font-weight: 950; }
 .tp-pricebox__value {
   color: #8f2f27;
   font-weight: 950;
@@ -193,57 +275,79 @@
   text-decoration-color: rgba(197, 58, 42, 0.9);
 }
 
+/* antes: height:12px -> ahora lo convertimos en “ornamento” */
 .tp-pricebox__spacer {
-  height: 24px;
+  height: 18px;
+  width: 100%;
+  position: relative;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(58,40,22,0.18) 18%,
+    rgba(58,40,22,0.10) 50%,
+    rgba(58,40,22,0.18) 82%,
+    transparent 100%
+  );
+  opacity: 0.85;
+}
+.tp-pricebox__spacer::after{
+  content: "PRECIO BASE";
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(58,40,22,0.55);
+  text-shadow: 0 1px 0 rgba(255,255,255,0.22);
 }
 
 /* ======================================
-   SECCIONES / GRIDS
+   FLOW (lista de productos)
    ====================================== */
 
-.tp-sections {
-  display: flex;
-  flex-direction: column;
-  gap: 0.8rem;
+.tp-flow{
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  align-items: start;
 }
+.tp-flow__full{ grid-column: 1 / -1; }
 
-.tp-section {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-  min-width: 0;
-}
+/* ======================================
+   SECCIONES / GRIDS (multi)
+   ====================================== */
 
-/* desktop base */
+.tp-section { display:flex; flex-direction:column; gap: 0.35rem; min-width:0; }
+
 .tp-section__grid {
-  border-radius: 0.55rem;
+  border-radius: 0.7rem;
   padding: 0.6rem;
   background: var(--basket);
-  box-shadow: inset 0 0 0 1px rgba(134, 93, 40, 0.35);
-  border: 2px solid rgba(0, 0, 0, 0.15);
+  box-shadow:
+    inset 0 0 0 1px rgba(134, 93, 40, 0.35),
+    0 6px 18px rgba(0,0,0,0.12);
+  border: 2px solid rgba(0, 0, 0, 0.14);
 
   display: grid;
   gap: 0.55rem;
-
-  grid-template-columns: clamp(160px, 18vw, 220px) repeat(3, minmax(0, 1fr));
+  grid-template-columns: clamp(168px, 18vw, 220px) repeat(3, minmax(0, 1fr));
 
   overflow: hidden;
   min-width: 0;
 }
 
-.tp-section__grid--two {
-  grid-template-columns: clamp(160px, 18vw, 220px) repeat(2, minmax(0, 1fr));
-}
-
-.tp-section__grid--three {
-  grid-template-columns: clamp(160px, 18vw, 220px) repeat(3, minmax(0, 1fr));
-}
+.tp-section__grid--two { grid-template-columns: clamp(168px, 18vw, 220px) repeat(2, minmax(0, 1fr)); }
+.tp-section__grid--three { grid-template-columns: clamp(168px, 18vw, 220px) repeat(3, minmax(0, 1fr)); }
 
 @media (max-width: 980px) {
   .tp-section__grid,
   .tp-section__grid--three,
   .tp-section__grid--two {
-    grid-template-columns: clamp(150px, 22vw, 200px) repeat(2, minmax(0, 1fr));
+    grid-template-columns: clamp(158px, 22vw, 200px) repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -252,24 +356,31 @@
   .tp-section__grid--two,
   .tp-section__grid--three {
     grid-template-columns: 1fr;
-    padding: 0.5rem;
+    padding: 0.55rem;
   }
 }
 
-/* MEDIA */
+/* ======================================
+   MEDIA (columna izquierda en multi)
+   ====================================== */
+
 .tp-media {
   position: relative;
-  border-radius: 0.65rem;
-  border: 2px solid rgba(0, 0, 0, 0.25);
-  background: rgba(0, 0, 0, 0.03);
-  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.18);
+  border-radius: 0.75rem;
+  border: 2px solid rgba(0, 0, 0, 0.18);
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255,255,255,0.22), transparent 55%),
+    rgba(0, 0, 0, 0.025);
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,0.28),
+    0 3px 0 rgba(0, 0, 0, 0.16);
 
   overflow: hidden;
 
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
-  padding: 0.55rem;
+  gap: 0.42rem;
+  padding: 0.56rem;
 
   min-width: 0;
 }
@@ -278,113 +389,120 @@
   position: relative;
   display: grid;
   place-items: center;
-  padding: 0.2rem;
-  min-height: 150px;
+
+  padding: 0.28rem;
+  min-height: 172px;
+
+  border-radius: 0.7rem;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.26), rgba(255,255,255,0.06)),
+    rgba(0,0,0,0.04);
+  border: 1px solid rgba(0,0,0,0.18);
+
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.30),
+    inset 0 -1px 0 rgba(0,0,0,0.12);
 
   overflow: hidden;
-  border-radius: 0.55rem;
 }
 
 .tp-media img {
   width: 100%;
-  height: 145px;
+  height: 168px;
   object-fit: contain;
   display: block;
-  transform: scale(1.02);
-  filter: saturate(1.05);
-  transition: transform 0.18s ease-out, filter 0.18s ease-out, box-shadow 0.18s ease-out;
+  transform: scale(1.05);
+  filter: saturate(1.12) drop-shadow(0 14px 18px rgba(0,0,0,.26));
+  transition: transform 0.18s ease-out, filter 0.18s ease-out;
 }
 
 .tp-media__glow {
   position: absolute;
   inset: -30%;
-  background: radial-gradient(circle at 50% 50%, rgba(255, 220, 165, 0.26), transparent 60%);
-  opacity: 0.8;
+  background: radial-gradient(circle at 50% 50%, rgba(255, 220, 165, 0.22), transparent 60%);
+  opacity: 0.9;
   pointer-events: none;
 }
 
-.tp-media__title {
-  text-align: center;
-  font-weight: 950;
-  font-size: 0.9rem;
-  letter-spacing: 0.04em;
-  font-family: "Press Start 2P", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-
-  padding: 0.22rem 0.32rem 0.28rem;
-  border-radius: 0.4rem;
-  background: linear-gradient(180deg, rgba(35, 111, 201, 0.98), rgba(12, 74, 153, 0.98));
-  color: #fdf4ce;
-
-  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6), 0 0 6px rgba(15, 23, 42, 0.5);
-  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.25);
-}
-
 /* ======================================
-   VARIANTE
+   VARIANTE (tarjetas de multiplicadores)
+   - FIX: sin hueco arriba, simetría tipo UI
    ====================================== */
 
 .tp-variant {
   position: relative;
-  border-radius: 0.65rem;
-  border: 2px solid rgba(0, 0, 0, 0.25);
-  background: rgba(0, 0, 0, 0.03);
-  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.18);
-  padding: 0.55rem 0.55rem 0.8rem;
+  border-radius: 0.75rem;
+  border: 2px solid rgba(0, 0, 0, 0.18);
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255,255,255,0.20), transparent 60%),
+    rgba(0, 0, 0, 0.02);
 
-  display: flex;
-  flex-direction: column;
-  gap: 0.45rem;
-  min-height: 130px;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,0.25),
+    0 3px 0 rgba(0, 0, 0, 0.16);
+
+  padding: 0.52rem 0.52rem 0.62rem;
+
+  /* antes: flex column -> ahora grid para evitar “aire muerto” */
+  display: grid;
+  grid-template-rows: auto 1fr; /* center arriba, actions abajo */
+  gap: 0.38rem;
+
+  min-height: 172px;
 
   overflow: hidden;
-
-  transition: transform 0.08s ease, filter 0.12s ease, box-shadow 0.12s ease;
   min-width: 0;
+
+  transition: transform 0.10s ease, filter 0.14s ease, box-shadow 0.14s ease;
 }
 
-.tp-variant:hover { filter: brightness(1.03); transform: translateY(-1px); }
+.tp-variant:hover { filter: brightness(1.02); transform: translateY(-1px); }
 .tp-variant:active { transform: translateY(1px); }
 
 .tp-variant.is-in-cart {
-  border-color: rgba(25, 140, 40, 0.55);
+  border-color: rgba(25, 140, 40, 0.40);
   box-shadow:
-    0 2px 0 rgba(0, 0, 0, 0.18),
-    0 0 0 2px rgba(47, 225, 122, 0.18);
+    inset 0 0 0 1px rgba(255,255,255,0.25),
+    0 3px 0 rgba(0, 0, 0, 0.16),
+    0 0 0 2px rgba(47, 225, 122, 0.14);
 }
 
 .tp-variant__center {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 0.2rem;
-  min-height: 78px;
-  padding: 0.1rem 0.1rem 0;
-  flex: 1 1 auto;
+  /* antes: justify-content:flex-end + min-height -> generaba hueco */
+  display: grid;
+  grid-template-rows: auto auto;
+  align-content: start;
+  justify-items: stretch;
+
+  gap: 0.28rem;
+  min-height: 0;
+  padding: 0.02rem 0;
   min-width: 0;
 }
 
-.tp-variant__name {
-  font-weight: 900;
-  color: #2a1a10;
-  text-align: center;
-  font-size: 0.86rem;
-  line-height: 1.2;
-  font-family: "Press Start 2P", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  letter-spacing: 0.05em;
-
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-/* Acciones */
 .tp-variant__actions {
-  display: flex;
-  flex-direction: column;
-  gap: 0.28rem;
-  margin-top: auto;
+  display: grid;
+  gap: 0.16rem;
+
+  align-content: end;
+  margin-top: 0;
+
+  padding-top: 0.18rem;
+  border-top: 1px solid rgba(0,0,0,0.08);
 }
+
+/* compactar hueco entre nameplate y CTA en multi */
+.tp-variant .tp-pricebox { min-height: 18px; }
+.tp-variant .tp-nameplate { width: 100%; padding: 0.26rem 0.62rem; margin: 0; }
+.tp-variant .tp-nameplate__text {
+  font-size: 0.78rem;
+  letter-spacing: 0.10em;
+  line-height: 1.12;
+  -webkit-line-clamp: 2;
+}
+
+/* botón detalles en multi alineado */
+.tp-variant__details-btn { width: 100%; }
 
 /* ======================================
    BOTÓN CTA
@@ -393,35 +511,32 @@
 .tp-variant__buy {
   position: relative;
   width: 100%;
-  height: 50px;
+  height: 46px;
 
-  border-radius: 0.35rem;
+  border-radius: 0.45rem;
   border: 2px solid var(--goodBorder);
-  background: var(--good);
+  background: linear-gradient(180deg, rgba(255,255,255,0.16), rgba(0,0,0,0.06)), var(--good);
 
   color: #ffffff;
-
   font-family: "Montserrat", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-weight: 900;
 
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  font-size: 0.82rem;
+  font-size: 0.80rem;
 
   box-shadow: 0 4px 0 var(--goodShadow);
   cursor: pointer;
 
   overflow: hidden;
-
-  transition: transform 0.08s ease, box-shadow 0.08s ease, filter 0.12s ease, opacity 0.12s ease;
+  transition: transform 0.10s ease, box-shadow 0.10s ease, filter 0.14s ease, opacity 0.14s ease;
 }
 
 .tp-variant__buy:hover:not(:disabled) {
-  filter: brightness(1.05);
+  filter: brightness(1.04);
   transform: translateY(-1px);
   box-shadow: 0 2px 0 var(--goodShadow);
 }
-
 .tp-variant__buy:active:not(:disabled) {
   transform: translateY(2px);
   box-shadow: 0 1px 0 var(--goodShadow);
@@ -429,13 +544,13 @@
 
 .tp-variant__buy[data-state="in"] {
   border-color: #3f2b1f;
-  background: #6b5847;
+  background: linear-gradient(180deg, rgba(255,255,255,0.10), rgba(0,0,0,0.10)), #6b5847;
   box-shadow: 0 4px 0 #3f2b1f;
 }
 
 .tp-variant__buy:focus { outline: none; }
 .tp-variant__buy:focus-visible {
-  outline: 2px solid rgba(0, 0, 0, 0.28);
+  outline: 2px solid rgba(0, 0, 0, 0.22);
   outline-offset: 2px;
 }
 
@@ -459,51 +574,50 @@
   animation: tpShine 3.2s infinite ease-in-out;
 }
 
-/* Botón detalles */
+/* ======================================
+   BOTÓN DETALLES
+   ====================================== */
+
 .tp-card__details {
-  height: 36px;
-  border-radius: 0.5rem;
-  border: 2px solid rgba(54, 38, 24, 0.9);
-  background: linear-gradient(180deg, #7a6a5b 0%, #6a5a4c 40%, #5a4c40 100%);
+  height: 32px;
+  border-radius: 0.6rem;
+  border: 2px solid rgba(54, 38, 24, 0.85);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.12), rgba(0,0,0,0.10)),
+    linear-gradient(180deg, #7a6a5b 0%, #6a5a4c 45%, #5a4c40 100%);
 
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.42rem;
-  padding: 0 0.8rem;
+  padding: 0 0.85rem;
 
   color: #f5e2c5;
   font-weight: 900;
-  font-size: 0.7rem;
-  letter-spacing: 0.1em;
+  font-size: 0.66rem;
+  letter-spacing: 0.11em;
   text-transform: uppercase;
 
-  box-shadow: 0 3px 0 rgba(37, 26, 18, 0.95), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  box-shadow: 0 3px 0 rgba(37, 26, 18, 0.95), inset 0 1px 0 rgba(255, 255, 255, 0.18);
   cursor: pointer;
 
-  transition: transform 0.08s ease, box-shadow 0.08s ease, filter 0.12s ease, background 0.12s ease;
+  transition: transform 0.10s ease, box-shadow 0.10s ease, filter 0.14s ease;
 }
 
 .tp-card__details:hover {
   filter: brightness(1.03);
   transform: translateY(-1px);
-  box-shadow: 0 2px 0 rgba(37, 26, 18, 0.95), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  box-shadow: 0 2px 0 rgba(37, 26, 18, 0.95), inset 0 1px 0 rgba(255, 255, 255, 0.18);
 }
-
 .tp-card__details:active {
   transform: translateY(1px);
-  box-shadow: 0 1px 0 rgba(37, 26, 18, 0.95), inset 0 0px 0 rgba(255, 255, 255, 0.2);
+  box-shadow: 0 1px 0 rgba(37, 26, 18, 0.95), inset 0 0px 0 rgba(255, 255, 255, 0.18);
 }
-
 .tp-card__details:focus { outline: none; }
-.tp-card__details:focus-visible {
-  outline: 2px solid rgba(0, 0, 0, 0.28);
-  outline-offset: 2px;
-}
+.tp-card__details:focus-visible { outline: 2px solid rgba(0, 0, 0, 0.22); outline-offset: 2px; }
 
 .tp-card__chevron {
-  width: 8px;
-  height: 8px;
+  width: 8px; height: 8px;
   border-style: solid;
   border-width: 0 2px 2px 0;
   border-color: rgba(244, 226, 199, 0.95);
@@ -516,15 +630,17 @@
    ====================================== */
 
 .tp-section--stack .tp-stack-layout {
-  border-radius: 0.55rem;
-  padding: 0.6rem;
+  border-radius: 0.7rem;
+  padding: 0.65rem;
   background: var(--basket);
-  box-shadow: inset 0 0 0 1px rgba(134, 93, 40, 0.35);
-  border: 2px solid rgba(0, 0, 0, 0.15);
+  box-shadow:
+    inset 0 0 0 1px rgba(134, 93, 40, 0.35),
+    0 6px 18px rgba(0,0,0,0.12);
+  border: 2px solid rgba(0, 0, 0, 0.14);
 
   display: grid;
-  grid-template-columns: clamp(200px, 24vw, 300px) minmax(0, 1fr);
-  gap: 0.7rem;
+  grid-template-columns: clamp(210px, 24vw, 310px) minmax(0, 1fr);
+  gap: 0.75rem;
 
   overflow: hidden;
   min-width: 0;
@@ -534,17 +650,21 @@
 
 .tp-stack-hero {
   position: relative;
-  border-radius: 0.65rem;
-  border: 2px solid rgba(0, 0, 0, 0.25);
-  background: rgba(0, 0, 0, 0.03);
-  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.18);
+  border-radius: 0.75rem;
+  border: 2px solid rgba(0, 0, 0, 0.18);
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255,255,255,0.22), transparent 60%),
+    rgba(0, 0, 0, 0.02);
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,0.25),
+    0 3px 0 rgba(0, 0, 0, 0.16);
 
   overflow: hidden;
 
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
-  padding: 0.55rem;
+  gap: 0.55rem;
+  padding: 0.6rem;
 
   min-width: 0;
 }
@@ -554,10 +674,19 @@
   display: grid;
   place-items: center;
   min-height: 190px;
-  padding: 0.15rem;
+  padding: 0.35rem;
+
+  border-radius: 0.75rem;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.26), rgba(255,255,255,0.06)),
+    rgba(0,0,0,0.04);
+  border: 1px solid rgba(0,0,0,0.18);
+
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.30),
+    inset 0 -1px 0 rgba(0,0,0,0.12);
 
   overflow: hidden;
-  border-radius: 0.55rem;
 }
 
 .tp-stack-hero__imgwrap img {
@@ -565,38 +694,22 @@
   height: 200px;
   object-fit: contain;
   display: block;
-  transform: scale(1.03);
-  filter: saturate(1.08) drop-shadow(0 12px 18px rgba(0,0,0,.35));
+  transform: scale(1.05);
+  filter: saturate(1.12) drop-shadow(0 16px 18px rgba(0,0,0,.28));
 }
 
 .tp-stack-hero__glow {
   position: absolute;
   inset: -35%;
-  background: radial-gradient(circle at 50% 50%, rgba(255, 220, 165, 0.28), transparent 62%);
-  opacity: 0.85;
+  background: radial-gradient(circle at 50% 50%, rgba(255, 220, 165, 0.22), transparent 62%);
+  opacity: 0.9;
   pointer-events: none;
-}
-
-.tp-stack-hero__title {
-  text-align: center;
-  font-weight: 950;
-  font-size: 0.9rem;
-  letter-spacing: 0.04em;
-  font-family: "Press Start 2P", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-
-  padding: 0.24rem 0.32rem 0.3rem;
-  border-radius: 0.4rem;
-  background: linear-gradient(180deg, rgba(35, 111, 201, 0.98), rgba(12, 74, 153, 0.98));
-  color: #fdf4ce;
-
-  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6), 0 0 6px rgba(15, 23, 42, 0.5);
-  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 
 .tp-stack-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.5rem;
+  gap: 0.55rem;
   align-content: flex-start;
   min-width: 0;
 
@@ -606,150 +719,240 @@
 
 .tp-stack-card {
   position: relative;
-  border-radius: 0.65rem;
-  border: 2px solid rgba(0, 0, 0, 0.25);
-  background: rgba(0, 0, 0, 0.03);
-  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.18);
-  padding: 0.55rem 0.52rem 0.8rem;
+  border-radius: 0.75rem;
+  border: 2px solid rgba(0, 0, 0, 0.18);
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255,255,255,0.20), transparent 62%),
+    rgba(0, 0, 0, 0.02);
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,0.25),
+    0 3px 0 rgba(0, 0, 0, 0.16);
 
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 0.3rem;
+  padding: 0.6rem 0.58rem 0.85rem;
+
+  /* FIX: grid para que el pricebox/spacer no “parezca vacío” */
+  display: grid;
+  grid-template-rows: auto auto 1fr auto auto;
+  align-items: start;
+  gap: 0.35rem;
 
   overflow: hidden;
   min-width: 0;
 
-  transition: transform 0.08s ease, filter 0.12s ease, box-shadow 0.12s ease;
+  transition: transform 0.10s ease, filter 0.14s ease, box-shadow 0.14s ease;
 }
-
-.tp-stack-card:hover { filter: brightness(1.03); transform: translateY(-1px); }
+.tp-stack-card:hover { filter: brightness(1.02); transform: translateY(-1px); }
 
 .tp-stack-card.is-in-cart {
-  border-color: rgba(25, 140, 40, 0.55);
+  border-color: rgba(25, 140, 40, 0.40);
   box-shadow:
-    0 2px 0 rgba(0, 0, 0, 0.18),
-    0 0 0 2px rgba(47, 225, 122, 0.18);
+    inset 0 0 0 1px rgba(255,255,255,0.25),
+    0 3px 0 rgba(0, 0, 0, 0.16),
+    0 0 0 2px rgba(47, 225, 122, 0.14);
 }
 
-.tp-stack-card__qty {
-  font-weight: 950;
-  font-size: 0.98rem;
-  text-align: center;
-  color: #2a1a10;
-  font-family: "Press Start 2P", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-}
-
-.tp-stack-card__btn { margin-top: 0.16rem; }
-.tp-stack-card__details { margin-top: 0.2rem; }
+.tp-stack-card__btn { margin-top: 0.18rem; }
+.tp-stack-card__details { margin-top: 0.22rem; }
 
 /* ======================================
-   CARD GRID (RANGOS / ÚNICOS)
+   CARD SINGLE (items únicos)
    ====================================== */
 
-.tp-card-grid {
-  margin-top: 0.7rem;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 0.75rem;
-
-  overflow: hidden;
-  min-width: 0;
-}
-
-@media (max-width: 520px) {
-  .tp-card-grid {
-    grid-template-columns: 1fr;
-    gap: 0.6rem;
-  }
-}
-
 .tp-card {
+  --tpCardH: clamp(286px, 33vh, 320px);
+  --tpImgH: clamp(182px, 22vh, 210px);
+  --tpBtnH: 46px;
+
   position: relative;
-  border-radius: 0.65rem;
-  border: 2px solid rgba(0, 0, 0, 0.25);
+  height: var(--tpCardH);
+
+  border-radius: 0.75rem;
+  border: 2px solid rgba(0, 0, 0, 0.18);
   background: var(--basket);
-  box-shadow: inset 0 0 0 1px rgba(134, 93, 40, 0.35),
-    0 2px 0 rgba(0, 0, 0, 0.18);
-  padding: 0.55rem 0.55rem 0.85rem;
 
-  display: flex;
-  flex-direction: column;
-  gap: 0.38rem;
+  box-shadow:
+    inset 0 0 0 1px rgba(134, 93, 40, 0.30),
+    0 3px 0 rgba(0, 0, 0, 0.16),
+    0 10px 18px rgba(0,0,0,0.10);
 
+  padding: 0.52rem 0.52rem 0.58rem;
   overflow: hidden;
   min-width: 0;
 
-  transition: transform 0.08s ease, filter 0.12s ease, box-shadow 0.12s ease;
-}
+  display: grid;
+  grid-template-rows: var(--tpImgH) auto 1fr;
+  row-gap: 0.18rem;
 
-.tp-card:hover { filter: brightness(1.03); transform: translateY(-1px); }
+  transition: transform 0.10s ease, filter 0.14s ease;
+}
+.tp-card:hover { filter: brightness(1.02); transform: translateY(-1px); }
 
 .tp-card.is-in-cart {
-  border-color: rgba(25, 140, 40, 0.55);
+  border-color: rgba(25, 140, 40, 0.40);
   box-shadow:
-    inset 0 0 0 1px rgba(134, 93, 40, 0.35),
-    0 2px 0 rgba(0, 0, 0, 0.18),
-    0 0 0 2px rgba(47, 225, 122, 0.18);
+    inset 0 0 0 1px rgba(134, 93, 40, 0.30),
+    0 3px 0 rgba(0, 0, 0, 0.16),
+    0 0 0 2px rgba(47, 225, 122, 0.14);
 }
 
 .tp-card__imgwrap {
   position: relative;
+  height: var(--tpImgH);
+  min-height: 0;
+
   display: grid;
   place-items: center;
-  padding: 0.15rem;
-  min-height: 130px;
+  padding: 0.26rem;
+
+  border-radius: 0.80rem;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255,255,255,0.26), transparent 60%),
+    linear-gradient(180deg, rgba(255,255,255,0.14), rgba(0,0,0,0.04));
+  border: 1px solid rgba(0,0,0,0.18);
+
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.28),
+    inset 0 -1px 0 rgba(0,0,0,0.14);
 
   overflow: hidden;
-  border-radius: 0.55rem;
 }
 
 .tp-card__imgwrap img {
   width: 100%;
-  height: 130px;
+  height: 100%;
   object-fit: contain;
   display: block;
-  transform: scale(1.02);
-  filter: saturate(1.04);
-  transition: transform 0.18s ease-out, filter 0.18s ease-out, box-shadow 0.18s ease-out;
+  transform: translateY(-1px) scale(1.05);
+  filter: saturate(1.18) drop-shadow(0 14px 16px rgba(0,0,0,.22));
+  transition: transform 0.18s ease-out, filter 0.18s ease-out;
 }
-
 .tp-card:hover .tp-card__imgwrap img {
-  transform: translateY(-4px) scale(1.07) rotate(-2deg);
-  filter: saturate(1.2) drop-shadow(0 9px 14px rgba(0, 0, 0, 0.55));
+  transform: translateY(-3px) scale(1.07);
+  filter: saturate(1.24) drop-shadow(0 16px 18px rgba(0,0,0,.26));
 }
 
 .tp-card__body {
-  flex: 1 1 auto;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.14rem;
-  min-height: 60px;
   min-width: 0;
+  min-height: 0;
+
+  display: grid;
+  justify-items: center;
+  align-content: end;
+  row-gap: 0.10rem;
 }
 
-.tp-card__name {
-  font-weight: 900;
-  font-size: 0.94rem;
-  text-align: center;
-  color: #2a1a10;
-  font-family: "Press Start 2P", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  letter-spacing: 0.04em;
-  line-height: 1.2;
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.2);
-
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+.tp-card .tp-nameplate {
+  width: 100%;
+  padding: 0.22rem 0.60rem;
 }
+.tp-card .tp-nameplate__text {
+  font-size: 0.80rem;
+  letter-spacing: 0.10em;
+  -webkit-line-clamp: 1;
+}
+
+.tp-card .tp-pricebox { min-height: 10px; }
+.tp-card .tp-pricebox__spacer {
+  height: 12px; /* en single lo dejamos más discreto */
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(58,40,22,0.14) 22%,
+    rgba(58,40,22,0.08) 50%,
+    rgba(58,40,22,0.14) 78%,
+    transparent 100%
+  );
+}
+.tp-card .tp-pricebox__spacer::after{
+  content: "";
+  display: none;
+}
+.tp-card .tp-pricebox__old { padding: 0.14rem 0.40rem; font-size: 0.65rem; }
 
 .tp-card__actions {
-  display: flex;
-  flex-direction: column;
-  gap: 0.28rem;
-  margin-top: auto;
+  min-width: 0;
+
+  display: grid;
+  align-content: end;
+  row-gap: 0.14rem;
+
+  padding-top: 0.14rem;
+  border-top: 1px solid rgba(0,0,0,0.07);
+}
+
+.tp-card .tp-variant__buy {
+  height: var(--tpBtnH);
+  font-size: 0.80rem;
+  letter-spacing: 0.075em;
+}
+
+.tp-card .tp-card__details {
+  height: 31px;
+  font-size: 0.66rem;
+}
+
+@media (max-width: 520px) {
+  .tp-card{
+    --tpCardH: 302px;
+    --tpImgH: 194px;
+    padding: 0.50rem 0.50rem 0.56rem;
+  }
+  .tp-card .tp-variant__buy{ height: 44px; }
+  .tp-card .tp-card__details{ height: 30px; }
+}
+
+/* ======================================
+   ITEMS OP sello + tooltip
+   ====================================== */
+
+.tp-itemsopMark{
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 30% 30%, rgba(255,255,255,0.35), rgba(255,255,255,0.05)),
+    radial-gradient(circle at 50% 70%, rgba(0,0,0,0.12), rgba(0,0,0,0.35));
+  border: 1px solid rgba(0,0,0,0.35);
+  box-shadow:
+    0 10px 16px rgba(0,0,0,0.20),
+    inset 0 1px 0 rgba(255,255,255,0.22);
+  pointer-events: none;
+  opacity: .85;
+}
+
+.tp-card.is-itemsop .tp-card__imgwrap::before{
+  content: "STATS";
+  position: absolute;
+  right: 42px;
+  top: 10px;
+
+  padding: 6px 10px;
+  border-radius: 999px;
+
+  font-weight: 900;
+  font-size: 11px;
+  letter-spacing: .10em;
+  text-transform: uppercase;
+
+  color: rgba(252,241,220,0.96);
+  background: rgba(0,0,0,0.42);
+  border: 1px solid rgba(255,255,255,0.10);
+  box-shadow: 0 12px 18px rgba(0,0,0,0.18);
+
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity .14s ease, transform .14s ease;
+  pointer-events: none;
+}
+
+@media (hover:hover) and (pointer:fine){
+  .tp-card.is-itemsop .tp-card__imgwrap:hover::before{
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* ======================================
@@ -768,14 +971,13 @@
   min-height: 0;
 }
 
-/* Reduce motion */
 @media (prefers-reduced-motion: reduce) {
   .tp-variant__shine { animation: none !important; }
 }
 
-/* =========================================================
+/* ======================================
    STACK MOSAICO MÓVIL
-   ========================================================= */
+   ====================================== */
 
 @media (max-width: 560px) {
   .tp-section--stack .tp-stack-layout {
@@ -785,27 +987,18 @@
     overflow: hidden;
   }
 
-  .tp-stack-grid {
-    display: contents;
-  }
+  .tp-stack-grid { display: contents; }
 
   .tp-stack-hero {
     grid-column: 1;
     grid-row: 1;
-    padding: 0.48rem;
+    padding: 0.52rem;
   }
 
-  .tp-stack-hero__imgwrap {
-    min-height: 140px;
-  }
+  .tp-stack-hero__imgwrap { min-height: 140px; }
+  .tp-stack-hero__imgwrap img { height: 150px; }
 
-  .tp-stack-hero__imgwrap img {
-    height: 150px;
-  }
-
-  .tp-stack-hero__title {
-    display: none;
-  }
+  .tp-nameplate--hero{ display:none; }
 
   .tp-stack-card:first-of-type {
     grid-column: 2;
@@ -813,13 +1006,7 @@
     min-height: 165px;
   }
 
-  .tp-stack-card {
-    min-height: 145px;
-  }
-
-  .tp-stack-card__qty {
-    font-size: 1.02rem;
-  }
+  .tp-stack-card { min-height: 145px; }
 
   .tp-variant__buy.tp-stack-card__btn {
     height: 48px;
@@ -832,48 +1019,32 @@
     font-size: 0.69rem;
   }
 
-  .tp-discount-badge--hero {
-    top: 7px;
-    left: 7px;
-  }
+  .tp-discount-badge--hero { top: 8px; left: 8px; }
 }
 
 @media (max-width: 380px) {
-  .tp-section--stack .tp-stack-layout {
-    gap: 0.5rem;
-  }
-
-  .tp-stack-hero__imgwrap {
-    min-height: 135px;
-  }
-
-  .tp-stack-hero__imgwrap img {
-    height: 145px;
-  }
-
-  .tp-stack-card:first-of-type {
-    min-height: 160px;
-  }
-
-  .tp-variant__buy.tp-stack-card__btn {
-    height: 46px;
-    font-size: 0.78rem;
-  }
+  .tp-section--stack .tp-stack-layout { gap: 0.5rem; }
+  .tp-stack-hero__imgwrap { min-height: 135px; }
+  .tp-stack-hero__imgwrap img { height: 145px; }
+  .tp-stack-card:first-of-type { min-height: 160px; }
+  .tp-variant__buy.tp-stack-card__btn { height: 46px; font-size: 0.78rem; }
 }
-/* Imagen clicable cuando hay detalles */
-.tp-card__imgwrap.is-clickable {
-  cursor: pointer;
-}
+
+/* ======================================
+   Imagen clicable (detalles)
+   ====================================== */
+
+.tp-card__imgwrap.is-clickable { cursor: pointer; }
 
 .tp-card__imgwrap.is-clickable::after {
   content: "DETALLES";
   position: absolute;
-  left: 10px;
-  bottom: 10px;
-  padding: 0.22rem 0.5rem;
-  border-radius: 0.45rem;
-  border: 2px solid rgba(54, 38, 24, 0.9);
-  background: rgba(0,0,0,0.35);
+  left: 12px;
+  bottom: 12px;
+  padding: 0.22rem 0.55rem;
+  border-radius: 0.55rem;
+  border: 2px solid rgba(54, 38, 24, 0.85);
+  background: rgba(0,0,0,0.34);
   color: rgba(245, 226, 197, 0.95);
   font-weight: 950;
   font-size: 0.62rem;

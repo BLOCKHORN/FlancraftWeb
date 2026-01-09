@@ -1,9 +1,9 @@
-// src/components/Tienda/data/productDetails/index.js
+// apps/frontend/src/components/Tienda/details/data/productDetails/index.js
 
 import { TAGS_DETAILS } from "./tags.details.js";
 import { PROTECCIONES_DETAILS } from "./protecciones.details.js";
-// import { ITEMSOP_DETAILS } from "./itemsop.details.js";
-// import { LLAVES_DETAILS } from "./llaves.details.js";
+import { ITEMSOP_DETAILS } from "./itemsop.details.js";
+import { LLAVES_DETAILS } from "./llaves.details.js";
 // import { DINERO_DETAILS } from "./dinero.details.js";
 // import { EXPERIENCIA_DETAILS } from "./experiencia.details.js";
 
@@ -13,8 +13,8 @@ import { PROTECCIONES_DETAILS } from "./protecciones.details.js";
 export const PRODUCT_DETAILS_REGISTRY = {
   ...TAGS_DETAILS,
   ...PROTECCIONES_DETAILS,
-  // ...ITEMSOP_DETAILS,
-  // ...LLAVES_DETAILS,
+  ...ITEMSOP_DETAILS,
+  ...LLAVES_DETAILS,
   // ...DINERO_DETAILS,
   // ...EXPERIENCIA_DETAILS,
 };
@@ -30,13 +30,12 @@ function normKey(v) {
 
 /**
  * Resuelve detalles por:
- * - "tags/pack-tags-paises" (categoria/slug)
- * - "pack-tags-paises" (slug)
- * - "1234567" (id)
- * - también acepta cosas con espacios y las prueba con "_" y "-"
+ * - "categoria/slug"
+ * - "slug"
+ * - "1234567" (id si lo añades como alias)
  *
  * ✅ Soporta alias:
- *   "pack-tags-paises": "tags/pack-tags-paises"
+ *   "pico-way": "items-op/pico-way"
  */
 export function resolveProductDetails(key) {
   if (!key) return null;
@@ -47,7 +46,7 @@ export function resolveProductDetails(key) {
     const k = normKey(kRaw);
     if (!k) return null;
 
-    if (visited.has(k)) return null; // evita bucles
+    if (visited.has(k)) return null;
     visited.add(k);
 
     // 1) match directo
@@ -66,6 +65,7 @@ export function resolveProductDetails(key) {
     // 3) si viene "categoria/slug", prueba "slug"
     if (k.includes("/")) {
       const slugOnly = k.split("/").pop();
+
       v = PRODUCT_DETAILS_REGISTRY[slugOnly];
       if (v != null) return v;
 
@@ -81,11 +81,8 @@ export function resolveProductDetails(key) {
     return null;
   };
 
-  // 1) primera pasada
   let out = resolveOnce(key);
 
-  // 2) si es alias string -> seguir resolviendo
-  //    (máximo 10 saltos por seguridad)
   for (let i = 0; i < 10; i++) {
     if (out && typeof out === "string") {
       out = resolveOnce(out);

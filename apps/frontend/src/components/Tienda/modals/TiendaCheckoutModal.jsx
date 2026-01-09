@@ -1,6 +1,6 @@
-// src/components/Tienda/TiendaCheckoutModal.jsx
+// src/components/Tienda/modals/TiendaCheckoutModal.jsx
 import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
-import "../../styles/components/Tienda/tienda-checkout-modal.scss";
+import "../../../styles/components/Tienda/tienda-checkout-modal.scss";
 
 const API_BASE = import.meta.env.VITE_BACKEND_URL || "http://localhost:10000";
 

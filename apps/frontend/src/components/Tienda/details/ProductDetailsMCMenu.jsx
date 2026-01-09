@@ -1,12 +1,19 @@
-// apps/frontend/src/components/Tienda/ProductDetailsMCMenu.jsx
 import React from "react";
 import ProductDetailsTags from "./ProductDetailsTags.jsx";
+import ProductDetailsItemsOP from "./ProductDetailsItemsOP.jsx";
+import ProductDetailsLlaves from "./ProductDetailsLlaves.jsx";
 
 export default function ProductDetailsMCMenu({ data }) {
   const theme = (data?.theme || "").toString().trim().toLowerCase();
 
-  if (theme === "tags") {
-    return <ProductDetailsTags data={data} />;
+  if (theme === "tags") return <ProductDetailsTags data={data} />;
+
+  if (theme === "itemsop" || theme === "items-op" || theme === "items_op") {
+    return <ProductDetailsItemsOP data={data} />;
+  }
+
+  if (theme === "keys" || theme === "llaves" || theme === "key" || theme === "keys_survival") {
+    return <ProductDetailsLlaves data={data} />;
   }
 
   return (

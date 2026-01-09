@@ -1,0 +1,406 @@
+/* apps/frontend/src/styles/components/Tienda/details/itemsopDetails.scss */
+
+/* ===== Modal renderer wrapper ===== */
+.pd--itemsop-single{
+  display: grid;
+  place-items: center;
+}
+
+.itemsop__wrap{
+  width: min(860px, 100%);
+  display: grid;
+  gap: 12px;
+  padding: 6px 4px;
+}
+
+.itemsop__tooltip{
+  display: grid;
+  place-items: center;
+}
+
+.itemsop__notes{
+  border-radius: 6px;
+  border: 2px solid rgba(0,0,0,.85);
+  background: linear-gradient(180deg, rgba(18,12,26,.95), rgba(10,8,14,.95));
+  box-shadow:
+    0 12px 26px rgba(0,0,0,.45),
+    inset 0 1px 0 rgba(255,255,255,.06);
+  padding: 12px;
+}
+
+.itemsop__notesH{
+  font-weight: 1000;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  font-size: 12px;
+  color: rgba(240,230,255,.92);
+  margin-bottom: 8px;
+}
+
+.itemsop__notesList{
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+  color: rgba(230,225,255,.82);
+}
+
+/* =========================================================
+   Minecraft Tooltip Card (más estrecha + más compacta aún)
+   ========================================================= */
+.mct{
+  --bgA: rgba(16, 10, 22, .96);
+  --bgB: rgba(10, 7, 14, .96);
+  --edge: rgba(95, 40, 155, .95);
+  --txt: rgba(235, 232, 255, .90);
+  --muted: rgba(200, 195, 220, .70);
+
+  /* ✅ aún más estrecha */
+  width: min(420px, 92vw);
+
+  border-radius: 6px;
+  border: 2px solid rgba(0,0,0,.85);
+  background: linear-gradient(180deg, var(--bgA), var(--bgB));
+  box-shadow:
+    0 14px 30px rgba(0,0,0,.52),
+    0 0 0 2px var(--edge),
+    0 0 0 4px rgba(0,0,0,.55),
+    inset 0 1px 0 rgba(255,255,255,.06);
+
+  position: relative;
+  overflow: visible;
+}
+
+.mct__inner{
+  /* ✅ menos padding / más densidad */
+  padding: 8px 9px 7px;
+  color: var(--txt);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  text-shadow: 0 2px 0 rgba(0,0,0,.55);
+  line-height: 1.18;
+}
+
+.mct__titleRow{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.mct__title{
+  font-weight: 1000;
+  letter-spacing: .9px;
+  font-size: 16px;
+  color: rgba(255, 175, 255, .95);
+}
+
+/* ✅ separadores más “finos” y con menos aire */
+.mct__sep{
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(230,225,255,.26), transparent);
+  margin: 6px 0;
+}
+.mct__sep--thin{ margin: 5px 0; opacity: .85; }
+
+/* ✅ imagen más grande y sin márgenes */
+.mct__imgRow{
+  display: grid;
+  place-items: center;
+  margin: 2px 0 2px;
+}
+
+.mct__img{
+  width: 148px;
+  height: 148px;
+  object-fit: contain;
+  image-rendering: auto;
+  filter: drop-shadow(0 14px 18px rgba(0,0,0,.56));
+}
+
+.mct__sectionTitle{
+  font-weight: 1000;
+  font-size: 15px;
+  letter-spacing: 1px;
+  color: rgba(255, 175, 255, .95);
+  margin-top: 1px;
+  margin-bottom: 1px;
+}
+
+/* =========================================================
+   Enchants: layout “apretado” + badge pegado
+   ========================================================= */
+.mct__line{
+  display: flex;
+  gap: 5px;
+  align-items: baseline;
+  font-size: 14px;
+  margin: 0; /* ✅ evita aire extra */
+}
+
+.mct__bullet{
+  opacity: .72;
+  transform: translateY(-1px);
+}
+
+.mct__txt{
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+}
+
+/* nombres */
+.mct__enchName, .mct__effName{
+  flex: 1;
+  min-width: 0;
+  font-weight: 900;
+  letter-spacing: .15px;
+  color: rgba(235, 232, 255, .92);
+}
+
+/* badge (más pequeño y más cerca) */
+.mct__enchLvl, .mct__effLvl{
+  flex: 0 0 auto;
+  margin-left: auto;
+  white-space: nowrap;
+
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-weight: 1000;
+  line-height: 1.1;
+  font-size: 12.5px;
+
+  color: rgba(255, 235, 190, .96);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 220, 140, .22),
+    rgba(255, 180, 90, .10)
+  );
+  border: 1px solid rgba(0,0,0,.55);
+  box-shadow:
+    0 10px 14px rgba(0,0,0,.20),
+    inset 0 1px 0 rgba(255,255,255,.10);
+
+  transform: translateY(-1px);
+}
+
+/* Lore (por si vuelve) */
+.mct__loreLine{
+  font-size: 13px;
+  margin: 2px 0;
+}
+.mct__loreLine.is-italic{ font-style: italic; }
+.mct__loreLine.is-muted{ color: var(--muted); }
+
+/* =========================================================
+   Attributes: compactos
+   ========================================================= */
+.mct__attrs{
+  display: grid;
+  gap: 3px;
+  font-size: 13px;
+}
+
+.mct__attrHeader{
+  color: rgba(235, 232, 255, .92);
+  margin-top: 4px;
+  margin-bottom: 1px;
+}
+
+.mct__attr{
+  display: flex;
+  gap: 7px;
+}
+
+.mct__attrLeft{
+  min-width: 52px;
+  font-weight: 1000;
+}
+
+.mct__attrLeft.is-green{ color: rgba(120, 255, 140, .95); }
+.mct__attrLeft.is-blue{ color: rgba(120, 190, 255, .95); }
+.mct__attrLeft.is-dim{ color: rgba(170, 165, 190, .65); }
+
+.mct__attrRight{
+  color: rgba(235, 232, 255, .86);
+}
+
+.mct__id{
+  color: rgba(160, 155, 185, .55);
+  font-size: 12px;
+  margin-top: 3px;
+}
+
+/* =========================================================
+   Popover: menos “aire” + scroll elegante
+   ========================================================= */
+.itemsop-pop{
+  position: fixed;
+  inset: 0;
+  z-index: 10050;
+  pointer-events: none;
+}
+
+.itemsop-pop__panel{
+  position: fixed;
+  pointer-events: auto;
+  transform-origin: top left;
+
+  /* ✅ menos padding exterior */
+  padding: 6px;
+
+  max-width: calc(100vw - 24px);
+  max-height: calc(100vh - 24px);
+  overflow: auto;
+
+  border-radius: 10px;
+
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+
+  scrollbar-width: thin;
+}
+
+.itemsop-pop__panel::-webkit-scrollbar{ width: 10px; }
+.itemsop-pop__panel::-webkit-scrollbar-thumb{
+  background: rgba(255,255,255,.12);
+  border-radius: 10px;
+}
+.itemsop-pop__panel::-webkit-scrollbar-track{
+  background: rgba(0,0,0,.15);
+}
+
+/* ✅ card ocupa el panel (sin crecer de más) */
+.itemsop-pop__panel .mct{
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+}
+
+.itemsop-pop__hint{
+  margin-top: 5px;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  font-size: 11px;
+  color: rgba(235, 232, 255, .75);
+  text-align: center;
+  text-shadow: 0 2px 0 rgba(0,0,0,.45);
+}
+
+.itemsop-pop__panel.is-pinned .mct{
+  box-shadow:
+    0 18px 38px rgba(0,0,0,.58),
+    0 0 0 2px rgba(255, 220, 140, .55),
+    0 0 0 4px rgba(0,0,0,.55),
+    inset 0 1px 0 rgba(255,255,255,.06);
+}
+
+/* =========================================================
+   Responsive: móvil bottom-sheet
+   ========================================================= */
+@media (max-width: 860px){
+  .itemsop-pop__panel{
+    border-radius: 12px;
+    padding: 8px;
+  }
+
+  .itemsop-pop__panel .mct{
+    max-width: 520px;
+  }
+
+  .mct{
+    width: min(520px, 94vw);
+  }
+
+  .mct__img{
+    width: 156px;
+    height: 156px;
+  }
+}
+
+
+/* Botón cerrar solo en touch */
+.itemsop-pop__close{
+  width: 100%;
+  margin: 0 0 8px;
+  padding: 10px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,.10);
+  background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(0,0,0,.10));
+  color: rgba(240,235,255,.88);
+  font-weight: 900;
+  letter-spacing: .6px;
+  text-transform: uppercase;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.itemsop-pop__close:hover{
+  background: linear-gradient(180deg, rgba(255,255,255,.09), rgba(0,0,0,.12));
+}
+/* =========================================================
+   ITEMS OP — Inmersión: cursor + feedback interactivo
+   ========================================================= */
+
+/* Cursor “game UI” (pointer) cuando es interactivo */
+.itemsop-trigger{
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Si el trigger se usa sobre cosas que ya son botones,
+   mantenemos consistencia */
+.itemsop-trigger:where(button){
+  cursor: pointer;
+}
+
+/* Mejor feedback al pasar por encima (PC) */
+@media (hover: hover) and (pointer: fine){
+  .itemsop-trigger{
+    transition: transform .14s ease, filter .14s ease;
+    filter: drop-shadow(0 10px 14px rgba(0,0,0,.18));
+  }
+
+  .itemsop-trigger:hover{
+    transform: translateY(-1px);
+    filter:
+      drop-shadow(0 14px 18px rgba(0,0,0,.26))
+      drop-shadow(0 0 18px rgba(170, 90, 255, .18));
+  }
+
+  /* Si el trigger es tu botón "Ver detalles" */
+  .itemsop-trigger.tp-card__details:hover,
+  .itemsop-trigger.tp-variant__details-btn:hover{
+    transform: translateY(-1px);
+  }
+}
+
+/* Focus accesible (teclado) */
+.itemsop-trigger:focus-visible{
+  outline: none;
+  box-shadow:
+    0 0 0 2px rgba(255, 220, 140, .45),
+    0 0 0 4px rgba(0,0,0,.55);
+  border-radius: 8px;
+}
+
+/* Panel pinned: aún más “importante” */
+.itemsop-pop__panel.is-pinned .mct{
+  box-shadow:
+    0 22px 46px rgba(0,0,0,.62),
+    0 0 0 2px rgba(255, 220, 140, .55),
+    0 0 0 4px rgba(0,0,0,.55),
+    inset 0 1px 0 rgba(255,255,255,.06);
+}
+
+/* En móvil: evita “hover fake” y deja claro que es tap */
+@media (hover: none) and (pointer: coarse){
+  .itemsop-trigger{
+    cursor: default; /* en touch no existe hover real */
+  }
+
+  .itemsop-trigger:active{
+    transform: scale(.99);
+    filter: drop-shadow(0 10px 16px rgba(0,0,0,.28));
+  }
+}

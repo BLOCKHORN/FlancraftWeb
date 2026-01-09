@@ -1,4 +1,4 @@
-// src/components/Tienda/TiendaLayout.jsx
+// src/components/Tienda/ui/TiendaLayout.jsx
 import React, {
   useContext,
   useEffect,
@@ -9,14 +9,14 @@ import React, {
 } from "react";
 import { Route, Routes, useLocation } from "react-router-dom";
 
-import "../../styles/components/Tienda/tienda-layout.scss";
+import "../../../styles/components/Tienda/tienda-layout.scss";
 
-import { UserContext } from "../../context/UserContext";
+import { UserContext } from "../../../context/UserContext";
 import TiendaPortada from "./TiendaPortada";
 import TiendaCategoriaVista from "./TiendaCategoriaVista";
 import TiendaCarritoLateral from "./TiendaCarritoLateral";
-import TiendaModalJugador from "./TiendaModalJugador";
-import useTiendaCarrito from "./useTiendaCarrito";
+import TiendaModalJugador from "../modals/TiendaModalJugador";
+import useTiendaCarrito from "../hooks/useTiendaCarrito";
 import TiendaFooter from "./TiendaFooter";
 import TiendaTopDonatorPip from "./TiendaTopDonatorPip";
 

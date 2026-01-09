@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import "../../styles/components/Tienda/tienda-modal-jugador.scss";
+import "../../../styles/components/Tienda/tienda-modal-jugador.scss";
 
 const API_BASE = import.meta.env.VITE_BACKEND_URL || "http://localhost:10000";
 
