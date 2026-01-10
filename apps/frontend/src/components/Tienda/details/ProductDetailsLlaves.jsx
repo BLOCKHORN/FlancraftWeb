@@ -1,15 +1,20 @@
-import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import "../../../styles/components/Tienda/productDetailsLlaves.scss";
 
 /* =========================================================
-   ProductDetailsLlaves (MEJORADO)
-   - 0 scroll horizontal
-   - 6/7 cartas visibles
-   - Reel tipo CSGO (barrita centro + tensión al frenar)
-   - Tick sound al pasar cada carta + SUCCESS dopaminico al premio
-   - UI gaming/Minecraft, radios <= 3px
-   - Títulos con IM Fell, cuerpo más legible (sans)
+   ProductDetailsLlaves (DOPAMINA PASS)
+   - Textos centrados + blancos
+   - Botones más legibles (blancos, bevel, focus, shine recortado)
+   - Spin con más tensión:
+     * fase 1: aceleración + arrastre
+     * fase 2: "lock" final con overshoot/snap
+     * ticks que aumentan cerca del final
+     * variable CSS --spinP (0..1) para glow/pulso
+   - ICONS: assets /public/tienda/productos/llaves/*.webp
+     * dinero: misma imagen + badge con importe via CSS
    ========================================================= */
+
+const ASSET_BASE = "/tienda/productos/llaves";
 
 const RARITY = {
   common: { label: "Común" },
@@ -18,21 +23,24 @@ const RARITY = {
   legend: { label: "Legendario" },
 };
 
-function makeItem({ id, name, meta, rarity = "common", weight = 1, icon = null, group = "" }) {
-  return { id, name, meta, rarity, weight, icon, group };
+function makeItem({ id, name, meta, rarity = "common", weight = 1, icon = null, group = "", amount = null }) {
+  return { id, name, meta, rarity, weight, icon, group, amount };
 }
 
-function stripDiacritics(s) {
-  try {
-    return String(s || "").normalize("NFD").replace(/\p{Diacritic}/gu, "");
-  } catch {
-    return String(s || "");
-  }
+function clamp(n, a, b) {
+  return Math.max(a, Math.min(b, n));
 }
 
-/* ---------------------------
-   Prefer reduced motion
---------------------------- */
+function easeOutQuint(t) {
+  return 1 - Math.pow(1 - t, 5);
+}
+
+function easeOutBack(t) {
+  const c1 = 1.70158;
+  const c3 = c1 + 1;
+  return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+}
+
 function usePrefersReducedMotion() {
   const [reduced, setReduced] = useState(false);
   useEffect(() => {
@@ -61,7 +69,7 @@ function useSpinSounds() {
         if (!AudioCtx) return false;
         const ctx = new AudioCtx();
         const master = ctx.createGain();
-        master.gain.value = 0.30; // volumen global
+        master.gain.value = 0.28;
         master.connect(ctx.destination);
         ctxRef.current = ctx;
         masterRef.current = master;
@@ -73,133 +81,173 @@ function useSpinSounds() {
     }
   }, []);
 
-  const tick = useCallback((intensity = 1) => {
-    const ok = ensure();
-    if (!ok) return;
+  const tick = useCallback(
+    (intensity = 1) => {
+      const ok = ensure();
+      if (!ok) return;
 
-    const now = performance.now();
-    // anti-spam (CSGO-like tick rate)
-    const minGap = 22; // ms
-    if (now - lastTickAtRef.current < minGap) return;
-    lastTickAtRef.current = now;
+      const now = performance.now();
+      const minGap = 18; // un pelín más "nervioso"
+      if (now - lastTickAtRef.current < minGap) return;
+      lastTickAtRef.current = now;
 
-    const ctx = ctxRef.current;
-    const master = masterRef.current;
+      const ctx = ctxRef.current;
+      const master = masterRef.current;
+      const t0 = ctx.currentTime;
 
-    const t0 = ctx.currentTime;
-    const dur = 0.03 + 0.01 * (1 - Math.min(1, intensity));
+      const dur = 0.028;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      const hp = ctx.createBiquadFilter();
+      hp.type = "highpass";
+      hp.frequency.setValueAtTime(1500, t0);
 
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    const hp = ctx.createBiquadFilter();
-    hp.type = "highpass";
-    hp.frequency.setValueAtTime(1800, t0);
+      osc.type = "square";
+      const base = 760 + Math.random() * 260;
+      osc.frequency.setValueAtTime(base, t0);
+      osc.frequency.exponentialRampToValueAtTime(base * 0.70, t0 + dur);
 
-    // click “metallic”
-    const base = 850 + 220 * Math.random();
-    osc.type = "square";
-    osc.frequency.setValueAtTime(base, t0);
-    osc.frequency.exponentialRampToValueAtTime(base * 0.75, t0 + dur);
+      const v = 0.10 * Math.min(1, Math.max(0.20, intensity));
+      gain.gain.setValueAtTime(0.0001, t0);
+      gain.gain.exponentialRampToValueAtTime(v, t0 + 0.006);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
 
-    gain.gain.setValueAtTime(0.0001, t0);
-    gain.gain.exponentialRampToValueAtTime(0.16 * Math.min(1, intensity), t0 + 0.006);
-    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      osc.connect(hp);
+      hp.connect(gain);
+      gain.connect(master);
 
-    osc.connect(hp);
-    hp.connect(gain);
-    gain.connect(master);
+      osc.start(t0);
+      osc.stop(t0 + dur + 0.01);
+    },
+    [ensure]
+  );
 
-    osc.start(t0);
-    osc.stop(t0 + dur + 0.01);
-  }, [ensure]);
+  const success = useCallback(
+    (rarity = "common") => {
+      const ok = ensure();
+      if (!ok) return;
 
-  const success = useCallback((rarity = "common") => {
-    const ok = ensure();
-    if (!ok) return;
+      const ctx = ctxRef.current;
+      const master = masterRef.current;
+      const t0 = ctx.currentTime;
 
-    const ctx = ctxRef.current;
-    const master = masterRef.current;
-    const t0 = ctx.currentTime;
+      const dry = ctx.createGain();
+      const wet = ctx.createGain();
+      const delay = ctx.createDelay(1.2);
+      const fb = ctx.createGain();
+      const lp = ctx.createBiquadFilter();
 
-    const g = ctx.createGain();
-    g.gain.setValueAtTime(0.0001, t0);
-    g.gain.exponentialRampToValueAtTime(0.55, t0 + 0.02);
-    g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.9);
-    g.connect(master);
+      delay.delayTime.setValueAtTime(0.11, t0);
+      fb.gain.setValueAtTime(0.34, t0);
+      lp.type = "lowpass";
+      lp.frequency.setValueAtTime(3600, t0);
 
-    const mk = (freq, type, start, len, peak = 0.35) => {
-      const o = ctx.createOscillator();
-      const gg = ctx.createGain();
-      o.type = type;
-      o.frequency.setValueAtTime(freq, start);
-      gg.gain.setValueAtTime(0.0001, start);
-      gg.gain.exponentialRampToValueAtTime(peak, start + 0.02);
-      gg.gain.exponentialRampToValueAtTime(0.0001, start + len);
-      o.connect(gg);
-      gg.connect(g);
-      o.start(start);
-      o.stop(start + len + 0.02);
-    };
+      dry.gain.setValueAtTime(0.86, t0);
+      wet.gain.setValueAtTime(0.52, t0);
 
-    // “Dopamine” chord / arpeggio
-    const isBig = rarity === "legend";
-    const isMid = rarity === "epic";
+      dry.connect(master);
+      wet.connect(master);
 
-    // hit
-    mk(isBig ? 170 : isMid ? 190 : 210, "sine", t0, 0.24, 0.32);
-    mk(isBig ? 340 : isMid ? 380 : 420, "triangle", t0, 0.22, 0.22);
+      delay.connect(lp);
+      lp.connect(fb);
+      fb.connect(delay);
+      delay.connect(wet);
 
-    // sparkle arpeggio
-    const notes = isBig
-      ? [880, 1100, 1320, 1760]
-      : isMid
-      ? [740, 880, 1100]
-      : [660, 740];
+      const play = (freq, type, start, len, peak) => {
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
 
-    notes.forEach((f, i) => {
-      const st = t0 + 0.12 + i * 0.07;
-      mk(f, "sine", st, 0.18, isBig ? 0.20 : 0.15);
-    });
+        o.type = type;
+        o.frequency.setValueAtTime(freq, start);
 
-    // tail “whoosh”
-    const noise = ctx.createBufferSource();
-    const buffer = ctx.createBuffer(1, ctx.sampleRate * 0.25, ctx.sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / data.length);
-    noise.buffer = buffer;
+        g.gain.setValueAtTime(0.0001, start);
+        g.gain.exponentialRampToValueAtTime(peak, start + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, start + len);
 
-    const bp = ctx.createBiquadFilter();
-    bp.type = "bandpass";
-    bp.frequency.setValueAtTime(isBig ? 900 : 700, t0);
-    bp.Q.setValueAtTime(1.6, t0);
+        o.connect(g);
+        g.connect(dry);
+        g.connect(delay);
 
-    const ng = ctx.createGain();
-    ng.gain.setValueAtTime(0.0001, t0);
-    ng.gain.exponentialRampToValueAtTime(isBig ? 0.25 : 0.18, t0 + 0.02);
-    ng.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.35);
+        o.start(start);
+        o.stop(start + len + 0.02);
+      };
 
-    noise.connect(bp);
-    bp.connect(ng);
-    ng.connect(g);
-    noise.start(t0);
-    noise.stop(t0 + 0.28);
-  }, [ensure]);
+      const isBig = rarity === "legend";
+      const isMid = rarity === "epic";
+
+      play(isBig ? 150 : isMid ? 175 : 205, "sine", t0, 0.40, isBig ? 0.40 : 0.32);
+      play(isBig ? 300 : isMid ? 360 : 420, "triangle", t0, 0.32, isBig ? 0.20 : 0.16);
+
+      const seq = isBig ? [740, 880, 1100, 1320, 1760] : isMid ? [660, 740, 880, 1100] : [620, 740, 880];
+      seq.forEach((f, i) => {
+        const st = t0 + 0.12 + i * 0.085;
+        play(f, "sine", st, 0.26, isBig ? 0.17 : isMid ? 0.14 : 0.11);
+      });
+    },
+    [ensure]
+  );
 
   return { tick, success, ensure };
 }
 
 /* =========================================================
-   DATASETS (más “user-facing”, sin comandos)
+   ICON RESOLVER (voto assets)
+   ========================================================= */
+
+const VOTO_ICONS = {
+  // dinero (mismo asset + badge)
+  money_75: `${ASSET_BASE}/dinero.webp`,
+  money_150: `${ASSET_BASE}/dinero.webp`,
+  money_300: `${ASSET_BASE}/dinero.webp`,
+  money_500: `${ASSET_BASE}/dinero.webp`,
+  money_1000: `${ASSET_BASE}/dinero.webp`,
+
+  // kit voto
+  voto_sword: `${ASSET_BASE}/espadavoto.webp`,
+  voto_pick: `${ASSET_BASE}/picovoto.webp`,
+  voto_helm: `${ASSET_BASE}/cascovoto.webp`,
+  voto_chest: `${ASSET_BASE}/pecheravoto.webp`,
+  voto_legs: `${ASSET_BASE}/pantvoto.webp`,
+  voto_boots: `${ASSET_BASE}/botasvoto.webp`,
+
+  // materiales
+  iron_32: `${ASSET_BASE}/hierro.webp`,
+  diamond_5: `${ASSET_BASE}/diamantes.webp`,
+  oak_64: `${ASSET_BASE}/maderaroble.webp`,
+  book_unb3: `${ASSET_BASE}/libroencantado.webp`,
+  scrap_4: `${ASSET_BASE}/netheritescrap.webp`,
+  gapples_3: `${ASSET_BASE}/goldenapple.webp`,
+  rockets_32: `${ASSET_BASE}/cohetes.webp`,
+  totem_1: `${ASSET_BASE}/totem.webp`,
+  dragon_head: `${ASSET_BASE}/cabezadragon.webp`,
+
+  // extra
+  key2: `${ASSET_BASE}/llavevoto.webp`,
+};
+
+function getMoneyBadgeFromId(id) {
+  // money_75 -> "75$"
+  if (!id?.startsWith?.("money_")) return null;
+  const n = String(id).split("_")[1];
+  if (!n) return null;
+  return `${n}$`;
+}
+
+function withIcons(items) {
+  return items.map((it) => {
+    const icon = VOTO_ICONS[it.id] || it.icon || null;
+    const amount = it.amount ?? getMoneyBadgeFromId(it.id);
+    return { ...it, icon, amount };
+  });
+}
+
+/* =========================================================
+   DATASETS
    ========================================================= */
 
 function datasetRandom() {
   return {
-    hero: {
-      title: "Llave Random",
-      tagline: "Sorpresa inmediata.",
-      accent: "random",
-      line: "Un premio directo. Puede tocar de todo.",
-    },
+    hero: { title: "Llave Random", tagline: "Sorpresa inmediata", line: "Puede tocar de todo" },
     reel: [
       makeItem({ id: "elytra", name: "Élitros", meta: "Movilidad total", rarity: "legend", weight: 1, group: "Sorpresa" }),
       makeItem({ id: "netherite_sword", name: "Espada Netherite", meta: "Daño premium", rarity: "epic", weight: 2, group: "Combate" }),
@@ -218,12 +266,7 @@ function datasetRandom() {
 
 function datasetCabezas() {
   return {
-    hero: {
-      title: "Llave Cabezas",
-      tagline: "1 cabeza garantizada.",
-      accent: "cabezas",
-      line: "Colección enorme para decoración.",
-    },
+    hero: { title: "Llave Cabezas", tagline: "1 cabeza garantizada", line: "Colección enorme para decoración" },
     reel: [
       makeItem({ id: "head_legend", name: "Cabeza Legendaria", meta: "Pieza de museo", rarity: "legend", weight: 1, group: "Colección" }),
       makeItem({ id: "head_epic", name: "Cabeza Épica", meta: "Muy vistosa", rarity: "epic", weight: 4, group: "Colección" }),
@@ -237,10 +280,9 @@ function datasetCabezas() {
 }
 
 function datasetVoto() {
-  // pesos (preview)
   const total = 105;
 
-  const votoItems = [
+  const votoItemsRaw = [
     makeItem({ id: "money_75", name: "+75$", meta: "Economía", rarity: "common", weight: 18.0, group: "Dinero" }),
     makeItem({ id: "money_150", name: "+150$", meta: "Economía", rarity: "common", weight: 12.0, group: "Dinero" }),
     makeItem({ id: "money_300", name: "+300$", meta: "Economía", rarity: "rare", weight: 8.0, group: "Dinero" }),
@@ -263,30 +305,17 @@ function datasetVoto() {
     makeItem({ id: "rockets_32", name: "32× Cohetes", meta: "Movilidad", rarity: "rare", weight: 3.5, group: "Materiales" }),
     makeItem({ id: "totem_1", name: "Tótem", meta: "Supervivencia", rarity: "legend", weight: 1.5, group: "Materiales" }),
     makeItem({ id: "dragon_head", name: "Cabeza Dragón", meta: "Ultra raro", rarity: "legend", weight: 0.5, group: "Materiales" }),
-
     makeItem({ id: "key2", name: "2× Llave Voto", meta: "Extra dentro", rarity: "legend", weight: 1.0, group: "Extra" }),
   ];
+
+  const votoItems = withIcons(votoItemsRaw);
 
   const pct = (w) => ((w / total) * 100).toFixed(2).replace(".", ",");
 
   return {
-    hero: {
-      title: "Llave Voto",
-      tagline: "Progreso real.",
-      accent: "voto",
-      line: "Dinero, kit y materiales en una sola apertura.",
-    },
+    hero: { title: "Llave Voto", tagline: "Progreso real", line: "Dinero, kit y materiales" },
     reel: votoItems.map((it) => ({ ...it, meta: `${it.meta} · ${pct(it.weight)}%` })),
     best: ["dragon_head", "key2", "totem_1", "money_1000"],
-    oddsTable: {
-      total,
-      groups: [
-        { name: "Dinero", totalW: 47.0, pct: "44,76%" },
-        { name: "Kit", totalW: 24.0, pct: "22,86%" },
-        { name: "Materiales", totalW: 33.0, pct: "31,43%" },
-        { name: "Extra", totalW: 1.0, pct: "0,95%" },
-      ],
-    },
   };
 }
 
@@ -295,10 +324,6 @@ function getDataset(variant) {
   if (variant === "voto") return datasetVoto();
   return datasetRandom();
 }
-
-/* =========================================================
-   Spin helpers
-   ========================================================= */
 
 function weightedPick(items) {
   const list = items.filter((x) => (x?.weight ?? 0) > 0);
@@ -313,27 +338,6 @@ function weightedPick(items) {
   return list[list.length - 1] || null;
 }
 
-function clamp(n, a, b) {
-  return Math.max(a, Math.min(b, n));
-}
-
-// ease out con “tensión” al final
-function easeTension(t) {
-  // base easeOutCubic
-  let e = 1 - Math.pow(1 - t, 3);
-
-  // micro “freno” (wobble suave) en el 92%+
-  if (t > 0.90) {
-    const u = (t - 0.90) / 0.10; // 0..1
-    e += Math.sin(u * Math.PI) * 0.010 * (1 - u);
-  }
-  return clamp(e, 0, 1);
-}
-
-/* =========================================================
-   UI bits
-   ========================================================= */
-
 function IconFallback({ text = "?" }) {
   const letter = String(text || "?").trim().slice(0, 1).toUpperCase();
   return (
@@ -343,29 +347,31 @@ function IconFallback({ text = "?" }) {
   );
 }
 
-/* =========================================================
-   COMPONENT
-   ========================================================= */
+function calcPercents(items) {
+  const list = items.filter((x) => (x?.weight ?? 0) > 0);
+  const total = list.reduce((a, b) => a + (b.weight || 0), 0);
+  const map = new Map();
+  if (total <= 0) return map;
+  for (const it of list) map.set(it.id, (it.weight / total) * 100);
+  return map;
+}
 
 export default function ProductDetailsLlaves({
-  // compat: si te llega “data” desde el registry/mc_menu
   data: registryData = null,
-
-  // props directas
   variant = "random",
   server = "clasico",
   pkg = null,
+  onAddToCart = null,
 }) {
   const reducedMotion = usePrefersReducedMotion();
   const { tick, success, ensure } = useSpinSounds();
 
-  // si viene del registry, respetamos sus props
+  const rootRef = useRef(null);
+
   const resolvedVariant = registryData?.props?.variant || variant;
   const resolvedServer = registryData?.props?.server || server;
-
   const dataset = useMemo(() => getDataset(resolvedVariant), [resolvedVariant]);
 
-  // imagen: preferimos pkg, si no, intentamos pillar algo del registry
   const productImg =
     registryData?.__pkg?.image_url ||
     registryData?.__pkg?.image ||
@@ -374,39 +380,42 @@ export default function ProductDetailsLlaves({
     pkg?.imageUrl ||
     null;
 
-  const kicker =
-    registryData?.kicker ||
-    (resolvedServer === "clasico" ? "Llaves · Survival Clásico" : "Llaves");
-
   const title = registryData?.name || dataset.hero.title;
-  const tagline = dataset.hero.tagline;
-  const line = dataset.hero.line;
 
   const accentClass =
     resolvedVariant === "voto" ? "is-voto" : resolvedVariant === "cabezas" ? "is-cabezas" : "is-random";
 
-  // reel refs
   const viewportRef = useRef(null);
   const reelRef = useRef(null);
+  const artImgRef = useRef(null);
 
-  // animation state (controlado por refs para smooth)
   const rafRef = useRef(0);
+  const spinSeqRef = useRef(0);
+
+  const pendingRef = useRef(null); // { picked, seq, targetIndex }
+  const startedRef = useRef(false);
+
   const animRef = useRef({
     running: false,
     startAt: 0,
     duration: 0,
     fromX: 0,
+    midX: 0,
     toX: 0,
+    cut: 0.78, // % de fase 1
     lastIdx: -1,
-    cardW: 156,
-    targetIdx: 0,
+    lastX: 0,
   });
 
   const [spinning, setSpinning] = useState(false);
   const [result, setResult] = useState(null);
   const [strip, setStrip] = useState(() => dataset.reel);
 
-  // best drops
+  const [openDropsModal, setOpenDropsModal] = useState(false);
+  const [openWinModal, setOpenWinModal] = useState(false);
+
+  const pctMap = useMemo(() => calcPercents(dataset.reel), [dataset]);
+
   const bestDrops = useMemo(() => {
     const ids = new Set(dataset.best || []);
     const byId = new Map(dataset.reel.map((x) => [x.id, x]));
@@ -415,33 +424,10 @@ export default function ProductDetailsLlaves({
       const it = byId.get(id);
       if (it) arr.push(it);
     }
-    // fallback: top rarities
-    if (arr.length === 0) {
-      const sorted = [...dataset.reel].sort((a, b) => {
-        const rank = (r) => (r === "legend" ? 3 : r === "epic" ? 2 : r === "rare" ? 1 : 0);
-        return rank(b.rarity) - rank(a.rarity);
-      });
-      return sorted.slice(0, 6);
-    }
     return arr.slice(0, 8);
   }, [dataset]);
 
-  useEffect(() => {
-    // reset al cambiar dataset
-    setStrip(dataset.reel);
-    setResult(null);
-    setSpinning(false);
-
-    // limpiar anim
-    if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    animRef.current.running = false;
-  }, [dataset]);
-
-  const stopAnim = useCallback(() => {
-    if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    rafRef.current = 0;
-    animRef.current.running = false;
-  }, []);
+  const rarityLabel = (r) => RARITY[r]?.label || "Común";
 
   const setReelX = useCallback((x) => {
     const el = reelRef.current;
@@ -449,63 +435,106 @@ export default function ProductDetailsLlaves({
     el.style.transform = `translate3d(${x}px,0,0)`;
   }, []);
 
-  const computeCardW = () => {
+  const setSpinP = useCallback((p) => {
+    const el = rootRef.current;
+    if (!el) return;
+    el.style.setProperty("--spinP", String(clamp(p, 0, 1)));
+  }, []);
+
+  const stopAnim = useCallback(() => {
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    rafRef.current = 0;
+    animRef.current.running = false;
+    startedRef.current = false;
+    setSpinP(0);
+  }, [setSpinP]);
+
+  const measureMetrics = useCallback(() => {
+    const reel = reelRef.current;
     const vp = viewportRef.current;
-    if (!vp) return 156;
-    const styles = getComputedStyle(vp);
-    const v = styles.getPropertyValue("--pdkeys-cardW").trim();
-    const n = Number(String(v).replace("px", ""));
-    return Number.isFinite(n) && n > 40 ? n : 156;
-  };
+    if (!reel || !vp) return null;
+    const first = reel.children?.[0];
+    if (!first) return null;
+
+    const itemW = first.getBoundingClientRect().width || 150;
+    const gapStr = getComputedStyle(reel).gap || "0px";
+    const gap = Number(String(gapStr).replace("px", "")) || 0;
+
+    const stepW = itemW + gap;
+    const vpW = vp.clientWidth || 0;
+
+    const totalWidth = strip.length * stepW - gap;
+    const maxRight = vpW - totalWidth;
+    const maxLeft = 0;
+
+    return { itemW, gap, stepW, vpW, maxRight, maxLeft };
+  }, [strip.length]);
 
   const runAnim = useCallback(
-    ({ fromX, toX, duration, targetIdx, picked }) => {
-      const vp = viewportRef.current;
-      const reel = reelRef.current;
-      if (!vp || !reel) return;
+    ({ fromX, toX, duration, picked, seq, midX, cut = 0.78 }) => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
 
-      const cardW = computeCardW();
-      animRef.current.cardW = cardW;
-      animRef.current.fromX = fromX;
-      animRef.current.toX = toX;
-      animRef.current.duration = duration;
-      animRef.current.startAt = performance.now();
       animRef.current.running = true;
-      animRef.current.targetIdx = targetIdx;
+      animRef.current.startAt = performance.now();
+      animRef.current.duration = duration;
+      animRef.current.fromX = fromX;
+      animRef.current.midX = midX;
+      animRef.current.toX = toX;
+      animRef.current.cut = cut;
       animRef.current.lastIdx = -1;
+      animRef.current.lastX = fromX;
 
-      // ensure audio context on user gesture
       ensure();
 
       const step = () => {
+        if (seq !== spinSeqRef.current) return;
         if (!animRef.current.running) return;
 
         const now = performance.now();
-        const t = clamp((now - animRef.current.startAt) / animRef.current.duration, 0, 1);
-        const e = easeTension(t);
-        const x = animRef.current.fromX + (animRef.current.toX - animRef.current.fromX) * e;
+        const tAll = clamp((now - animRef.current.startAt) / animRef.current.duration, 0, 1);
 
-        setReelX(x);
+        // Fase 1 (rapidez) + Fase 2 (lock con overshoot)
+        const cutT = animRef.current.cut;
+        let x = fromX;
 
-        // tick index bajo el puntero (centro)
-        const vpW = vp.clientWidth || 0;
-        const pointerX = vpW / 2;
-        const idx = Math.floor((pointerX - x) / cardW);
-
-        if (idx !== animRef.current.lastIdx && t < 0.985) {
-          animRef.current.lastIdx = idx;
-          // intensidad: más fuerte cuando va más lento
-          const intensity = 0.35 + (1 - t) * 0.75;
-          tick(intensity);
+        if (tAll <= cutT) {
+          const t1 = tAll / cutT;
+          x = animRef.current.fromX + (animRef.current.midX - animRef.current.fromX) * easeOutQuint(t1);
+        } else {
+          const t2 = (tAll - cutT) / (1 - cutT);
+          x = animRef.current.midX + (animRef.current.toX - animRef.current.midX) * easeOutBack(t2);
         }
 
-        if (t >= 1) {
+        setReelX(x);
+        setSpinP(tAll);
+
+        const m = measureMetrics();
+        if (m) {
+          const pointerX = m.vpW / 2;
+          const idx = Math.floor((pointerX - x) / m.stepW);
+
+          // Intensidad por "velocidad" + boost final
+          const vel = Math.abs(x - animRef.current.lastX);
+          animRef.current.lastX = x;
+          const velN = clamp(vel / (m.stepW * 0.9), 0, 1);
+          const endBoost = 0.35 + Math.pow(tAll, 2.1) * 0.85;
+          const inten = clamp(velN * endBoost, 0.15, 1);
+
+          if (idx !== animRef.current.lastIdx && tAll < 0.995) {
+            animRef.current.lastIdx = idx;
+            tick(inten);
+          }
+        }
+
+        if (tAll >= 1) {
           animRef.current.running = false;
           setSpinning(false);
+          setSpinP(0);
           setResult(picked || null);
-
-          // SUCCESS
+          setOpenWinModal(true);
           if (picked?.rarity) success(picked.rarity);
+          startedRef.current = false;
+          pendingRef.current = null;
           return;
         }
 
@@ -514,228 +543,333 @@ export default function ProductDetailsLlaves({
 
       rafRef.current = requestAnimationFrame(step);
     },
-    [ensure, setReelX, success, tick]
+    [ensure, measureMetrics, setReelX, setSpinP, success, tick]
   );
+
+  // Reset cuando cambia dataset
+  useEffect(() => {
+    stopAnim();
+    setStrip(dataset.reel);
+    setResult(null);
+    setSpinning(false);
+    setOpenDropsModal(false);
+    setOpenWinModal(false);
+    pendingRef.current = null;
+    startedRef.current = false;
+    requestAnimationFrame(() => setReelX(0));
+  }, [dataset, setReelX, stopAnim]);
+
+  // ESC para cerrar modales
+  useEffect(() => {
+    const anyOpen = openDropsModal || openWinModal;
+    if (!anyOpen) return;
+
+    const onKey = (e) => {
+      if (e.key === "Escape") {
+        setOpenDropsModal(false);
+        setOpenWinModal(false);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [openDropsModal, openWinModal]);
+
+  // Arranque real del spin cuando strip está renderizado
+  useLayoutEffect(() => {
+    if (!spinning) return;
+    if (startedRef.current) return;
+    const p = pendingRef.current;
+    if (!p?.picked || !p?.seq) return;
+
+    const id = requestAnimationFrame(() => {
+      if (!reelRef.current || !viewportRef.current) return;
+      if (p.seq !== spinSeqRef.current) return;
+
+      const m = measureMetrics();
+      if (!m) return;
+
+      const idx = p.targetIndex;
+      const targetX = -(idx * m.stepW) + (m.vpW / 2 - m.itemW / 2);
+      const toX = clamp(targetX, m.maxRight, m.maxLeft);
+
+      // Dopamina: un overshoot antes de clavar el resultado
+      const sign = Math.sign(toX - 0) || -1;
+      const overshoot = Math.min(18, Math.max(10, m.stepW * 0.10));
+      const midX = clamp(toX + sign * overshoot, m.maxRight, m.maxLeft);
+
+      const duration = 3200 + Math.floor(Math.random() * 950);
+      startedRef.current = true;
+
+      setReelX(0);
+      setSpinP(0);
+
+      runAnim({ fromX: 0, toX, midX, duration, picked: p.picked, seq: p.seq, cut: 0.80 });
+    });
+
+    return () => cancelAnimationFrame(id);
+  }, [spinning, strip.length, measureMetrics, runAnim, setReelX, setSpinP]);
+
+  const emitFlyToBasket = useCallback(() => {
+    try {
+      const img = productImg;
+      if (!img) return;
+
+      const rect = artImgRef.current?.getBoundingClientRect?.();
+      if (!rect) return;
+
+      const x = rect.left + rect.width / 2;
+      const y = rect.top + rect.height / 2;
+
+      document.dispatchEvent(
+        new CustomEvent("tienda:fly", {
+          detail: { img, rect: { x, y } },
+        })
+      );
+    } catch {
+      // no-op
+    }
+  }, [productImg]);
+
+  const dispatchAddToCart = useCallback(() => {
+    const payloadPkg = registryData?.__pkg || pkg || null;
+    if (!payloadPkg) return;
+
+    emitFlyToBasket();
+
+    if (typeof onAddToCart === "function") {
+      onAddToCart(payloadPkg);
+      return;
+    }
+
+    window.dispatchEvent(new CustomEvent("flancraft:add-to-cart", { detail: { pkg: payloadPkg } }));
+  }, [emitFlyToBasket, onAddToCart, pkg, registryData]);
+
+  const pctText = (id) => {
+    const v = pctMap.get(id);
+    if (!Number.isFinite(v)) return null;
+    const s = v >= 1 ? v.toFixed(1) : v.toFixed(2);
+    return `${s.replace(".", ",")}%`;
+  };
 
   const spin = useCallback(() => {
     if (spinning) return;
+
+    spinSeqRef.current += 1;
+    const seq = spinSeqRef.current;
 
     const base = dataset.reel;
     const picked = weightedPick(base);
     if (!picked) return;
 
+    setOpenWinModal(false);
+    setOpenDropsModal(false);
+    setResult(null);
+
     if (reducedMotion) {
       setResult(picked);
+      setOpenWinModal(true);
       success(picked.rarity);
       return;
     }
 
-    setSpinning(true);
-    setResult(null);
-
-    // Construimos strip largo (CSGO vibe)
     const long = [];
-    const targetIndex = 64; // lejos => tensión
-    const noiseBefore = targetIndex;
-    const noiseAfter = 10;
+    const targetIndex = 58;
+    const before = targetIndex;
+    const after = 14;
 
-    for (let i = 0; i < noiseBefore; i++) {
-      long.push(base[Math.floor(Math.random() * base.length)]);
-    }
+    for (let i = 0; i < before; i++) long.push(base[Math.floor(Math.random() * base.length)]);
     long.push(picked);
-    for (let i = 0; i < noiseAfter; i++) {
-      long.push(base[Math.floor(Math.random() * base.length)]);
-    }
+    for (let i = 0; i < after; i++) long.push(base[Math.floor(Math.random() * base.length)]);
 
+    pendingRef.current = { picked, seq, targetIndex };
+    startedRef.current = false;
+
+    stopAnim();
+    setReelX(0);
+    setSpinning(true);
     setStrip(long);
 
-    // espera 1 frame para medir
-    requestAnimationFrame(() => {
-      const vp = viewportRef.current;
-      if (!vp) return;
-
-      const vpW = vp.clientWidth || 0;
-      const cardW = computeCardW();
-
-      const idx = targetIndex;
-
-      // centramos el item idx en el puntero (centro)
-      const targetX = -(idx * cardW) + (vpW / 2 - cardW / 2);
-
-      // limites
-      const maxLeft = 0;
-      const maxRight = -(long.length * cardW) + vpW;
-      const toX = clamp(targetX, maxRight, maxLeft);
-
-      // partimos desde 0 siempre (o desde donde esté)
-      const current = reelRef.current?.style?.transform || "";
-      let fromX = 0;
-      const m = current.match(/translate3d\(([-\d.]+)px/);
-      if (m?.[1]) fromX = Number(m[1]) || 0;
-
-      // duración con variación
-      const duration = 3100 + Math.floor(Math.random() * 850);
-
-      // arrancamos anim
-      stopAnim();
-      runAnim({ fromX, toX, duration, targetIdx: idx, picked });
-    });
-  }, [dataset, reducedMotion, runAnim, spinning, stopAnim, success]);
-
-  const rarityLabel = (r) => RARITY[r]?.label || "Común";
+    // “arranque” sonoro para dopamina (solo 1 toque)
+    ensure();
+    tick(0.55);
+  }, [dataset, reducedMotion, spinning, stopAnim, setReelX, success, ensure, tick]);
 
   return (
-    <div className={`pdkeys ${accentClass}`} data-server={resolvedServer}>
-      {/* HERO (gaming / minecraft) */}
-      <div className="pdkeys__hero">
-        <div className="pdkeys__heroLeft">
-          <div className="pdkeys__kicker">{kicker}</div>
-          <h2 className="pdkeys__title">{title}</h2>
-
-          <div className="pdkeys__desc">
-            <span className="pdkeys__tagline">{tagline}</span>
-            <span className="pdkeys__dot">•</span>
-            <span className="pdkeys__line">{line}</span>
+    <div ref={rootRef} className={`pdkeys ${accentClass}`} data-server={resolvedServer}>
+      {/* TOP */}
+      <div className="pdkeys__top">
+        <div className="pdkeys__topLeft">
+          <div className="pdkeys__head">
+            <div className="pdkeys__kicker">PRODUCTO</div>
+            <h2 className="pdkeys__title">{title}</h2>
+            <div className="pdkeys__sub">
+              {dataset.hero.tagline} · {dataset.hero.line}
+            </div>
           </div>
 
-          <div className="pdkeys__mini">
-            <span>Instantánea</span>
-            <span className="pdkeys__sep">/</span>
-            <span>1 premio</span>
-            <span className="pdkeys__sep">/</span>
-            <span>Puede tocar de todo</span>
-          </div>
-
-          {/* BEST DROPS */}
           <div className="pdkeys__best">
-            <div className="pdkeys__bestTitle">Best drops</div>
-            <div className="pdkeys__bestRow">
+            <div className="pdkeys__bestHead">
+              <div className="pdkeys__bestLabel">TOP ITEMS</div>
+              <div className="pdkeys__bestHint">Los más buscados en esta llave</div>
+            </div>
+
+            <div className="pdkeys__bestGrid">
               {bestDrops.map((it) => (
                 <div key={it.id} className={`pdkeys__bestCard is-${it.rarity}`} title={it.name}>
-                  <div className="pdkeys__bestIcon">
-                    {it.icon ? <img src={it.icon} alt="" loading="lazy" draggable="false" /> : <IconFallback text={it.name} />}
+                  <div
+                    className={`pdkeys__bestIcon ${it.amount ? "has-amt" : ""}`}
+                    data-amt={it.amount || undefined}
+                  >
+                    {it.icon ? (
+                      <img src={it.icon} alt="" loading="lazy" draggable="false" />
+                    ) : (
+                      <IconFallback text={it.name} />
+                    )}
                   </div>
-                  <div className="pdkeys__bestName">{it.name}</div>
+                  <div className="pdkeys__bestText">
+                    <div className="pdkeys__bestName">{it.name}</div>
+                    <div className="pdkeys__bestMeta">{rarityLabel(it.rarity)}</div>
+                  </div>
                 </div>
               ))}
             </div>
           </div>
         </div>
 
-        <div className="pdkeys__heroRight">
-          <div className="pdkeys__artCard" role="presentation">
+        <div className="pdkeys__topRight">
+          <div className="pdkeys__art">
             <div className="pdkeys__artFrame">
               {productImg ? (
-                <img className="pdkeys__artImg" src={productImg} alt="" loading="lazy" draggable="false" />
+                <img ref={artImgRef} className="pdkeys__artImg" src={productImg} alt="" loading="lazy" draggable="false" />
               ) : (
                 <div className="pdkeys__artImg ph" aria-hidden="true" />
               )}
-              <div className="pdkeys__artGlow" aria-hidden="true" />
+              <div className="pdkeys__artSpark" aria-hidden="true" />
             </div>
+          </div>
 
-            <div className="pdkeys__artMeta">
-              <div className="pdkeys__artName">{title}</div>
-              <div className="pdkeys__artSub">{tagline}</div>
-            </div>
+          <div className="pdkeys__actions">
+            <button
+              type="button"
+              className="pdkeys__btn pdkeys__btn--ghost"
+              onClick={() => setOpenDropsModal(true)}
+              disabled={spinning}
+            >
+              <span className="pdkeys__btnShine" aria-hidden="true" />
+              VER PREMIOS
+            </button>
+
+            <button type="button" className="pdkeys__btn pdkeys__btn--spin" onClick={spin} disabled={spinning}>
+              <span className="pdkeys__btnShine" aria-hidden="true" />
+              {spinning ? "ABRIENDO..." : "VISTA PREVIA"}
+            </button>
+
+            <button type="button" className="pdkeys__btn pdkeys__btn--buy" onClick={dispatchAddToCart}>
+              <span className="pdkeys__btnShine" aria-hidden="true" />
+              AÑADIR AL CARRITO
+            </button>
           </div>
         </div>
       </div>
 
-      {/* SIM */}
-      <div className="pdkeys__sim">
-        <div className="pdkeys__simHead">
-          <div className="pdkeys__simLeft">
-            <div className="pdkeys__simTitle">Simulación</div>
-            <div className="pdkeys__simSub">Preview visual · El premio real lo decide el servidor</div>
-          </div>
-
-          <button
-            type="button"
-            className="pdkeys__cta"
-            onClick={spin}
-            disabled={spinning}
-          >
-            <span className="pdkeys__ctaShine" aria-hidden="true" />
-            {spinning ? "ABRIENDO…" : "SIMULAR APERTURA"}
-          </button>
+      {/* REEL */}
+      <div className={`pdkeys__case ${spinning ? "is-spinning" : ""}`}>
+        <div className="pdkeys__pointer" aria-hidden="true">
+          <span className="pdkeys__pointerLine" />
+          <span className="pdkeys__pointerCap" />
         </div>
 
-        <div className={`pdkeys__case ${spinning ? "is-spinning" : ""}`}>
-          {/* spotlight edges */}
-          <div className="pdkeys__caseShade" aria-hidden="true" />
-
-          {/* pointer */}
-          <div className="pdkeys__pointer" aria-hidden="true">
-            <span className="pdkeys__pointerLine" />
-            <span className="pdkeys__pointerCap" />
+        <div className="pdkeys__reelViewport" ref={viewportRef}>
+          <div className="pdkeys__reel" ref={reelRef}>
+            {strip.map((it, idx) => (
+              <div key={`${it.id}-${idx}`} className={`pdkeys__item is-${it.rarity}`}>
+                <div
+                  className={`pdkeys__itemIcon ${it.amount ? "has-amt" : ""}`}
+                  data-amt={it.amount || undefined}
+                >
+                  {it.icon ? <img src={it.icon} alt="" loading="lazy" draggable="false" /> : <IconFallback text={it.name} />}
+                </div>
+                <div className="pdkeys__itemName">{it.name}</div>
+                <div className="pdkeys__itemMeta">{it.group ? it.group : it.meta}</div>
+              </div>
+            ))}
           </div>
+        </div>
 
-          {/* viewport */}
-          <div className="pdkeys__reelViewport" ref={viewportRef}>
-            <div className="pdkeys__reel" ref={reelRef}>
-              {strip.map((it, idx) => (
-                <div key={`${it.id}-${idx}`} className={`pdkeys__item is-${it.rarity}`}>
-                  <div className="pdkeys__itemTop">
-                    <div className="pdkeys__itemIcon">
-                      {it.icon ? <img src={it.icon} alt="" loading="lazy" draggable="false" /> : <IconFallback text={it.name} />}
-                    </div>
-                    <div className="pdkeys__itemTag">
-                      <span className="pdkeys__rar">{rarityLabel(it.rarity)}</span>
-                      {it.group ? <span className="pdkeys__grp">{it.group}</span> : null}
-                    </div>
+        <div className="pdkeys__note">Vista previa orientativa · La apertura real ocurre en el servidor</div>
+      </div>
+
+      {/* MODAL: PREMIOS */}
+      {openDropsModal ? (
+        <div className="pdkeysModal" role="dialog" aria-label="Premios">
+          <div className="pdkeysModal__backdrop" onClick={() => setOpenDropsModal(false)} />
+          <div className="pdkeysModal__panel">
+            <div className="pdkeysModal__head">
+              <div className="pdkeysModal__title">Posibles premios</div>
+              <button className="pdkeysModal__close" onClick={() => setOpenDropsModal(false)} aria-label="Cerrar">
+                ×
+              </button>
+            </div>
+
+            <div className="pdkeysModal__sub">Probabilidades orientativas · Puede variar in-game</div>
+
+            <div className="pdkeysModal__grid">
+              {dataset.reel.map((it) => (
+                <div key={it.id} className={`pdkeysDrop is-${it.rarity}`}>
+                  <div
+                    className={`pdkeysDrop__icon ${it.amount ? "has-amt" : ""}`}
+                    data-amt={it.amount || undefined}
+                  >
+                    {it.icon ? <img src={it.icon} alt="" loading="lazy" draggable="false" /> : <IconFallback text={it.name} />}
                   </div>
-                  <div className="pdkeys__itemName">{it.name}</div>
-                  <div className="pdkeys__itemMeta">{it.meta}</div>
+
+                  <div className="pdkeysDrop__mid">
+                    <div className="pdkeysDrop__name">{it.name}</div>
+                    <div className="pdkeysDrop__meta">{it.group ? it.group : it.meta}</div>
+                  </div>
+
+                  <div className="pdkeysDrop__right">
+                    <div className="pdkeysDrop__rar">{rarityLabel(it.rarity)}</div>
+                    {pctText(it.id) ? <div className="pdkeysDrop__pct">{pctText(it.id)}</div> : null}
+                  </div>
                 </div>
               ))}
             </div>
           </div>
-
-          {/* result */}
-          <div className={`pdkeys__result ${result ? "has" : ""}`}>
-            {result ? (
-              <div className={`pdkeys__resultCard is-${result.rarity}`}>
-                <div className="pdkeys__resultHead">
-                  <div className="pdkeys__resultTitle">PREMIO</div>
-                  <div className="pdkeys__resultBadges">
-                    <span className="pdkeys__rar">{rarityLabel(result.rarity)}</span>
-                    {result.group ? <span className="pdkeys__grp">{result.group}</span> : null}
-                  </div>
-                </div>
-
-                <div className="pdkeys__resultMain">
-                  <div className="pdkeys__resultName">{result.name}</div>
-                  <div className="pdkeys__resultMeta">{result.meta}</div>
-                </div>
-
-                <div className="pdkeys__resultGlow" aria-hidden="true" />
-              </div>
-            ) : (
-              <div className="pdkeys__resultEmpty">
-                Pulsa <strong>SIMULAR APERTURA</strong> para ver una recompensa posible.
-              </div>
-            )}
-          </div>
-
-          {/* odds (solo voto, discreto) */}
-          {dataset.oddsTable ? (
-            <details className="pdkeys__odds">
-              <summary>Probabilidades</summary>
-              <div className="pdkeys__oddsGrid">
-                {dataset.oddsTable.groups.map((g) => (
-                  <div key={g.name} className="pdkeys__oddsRow">
-                    <div className="pdkeys__oddsName">{g.name}</div>
-                    <div className="pdkeys__oddsBar">
-                      <div className="pdkeys__oddsFill" style={{ width: g.pct.replace(",", ".") + "%" }} />
-                    </div>
-                    <div className="pdkeys__oddsPct">{g.pct}</div>
-                  </div>
-                ))}
-              </div>
-            </details>
-          ) : null}
         </div>
-      </div>
+      ) : null}
+
+      {/* MODAL: RESULTADO */}
+      {openWinModal && result ? (
+        <div className="pdkeysWin" role="dialog" aria-label="Resultado">
+          <div className="pdkeysWin__backdrop" onClick={() => setOpenWinModal(false)} />
+          <div className={`pdkeysWin__panel is-${result.rarity}`}>
+            <button className="pdkeysWin__close" onClick={() => setOpenWinModal(false)} aria-label="Cerrar">
+              ×
+            </button>
+
+            <div className="pdkeysWin__kicker">RESULTADO (VISTA PREVIA)</div>
+            <div className="pdkeysWin__name">{result.name}</div>
+            <div className="pdkeysWin__meta">{result.group ? result.group : result.meta}</div>
+
+            <div className="pdkeysWin__row">
+              <div className={`pdkeysWin__icon ${result.amount ? "has-amt" : ""}`} data-amt={result.amount || undefined}>
+                {result.icon ? <img src={result.icon} alt="" loading="lazy" draggable="false" /> : <IconFallback text={result.name} />}
+              </div>
+
+              <div className="pdkeysWin__badges">
+                <span className="pdkeysWin__badge">{rarityLabel(result.rarity)}</span>
+                {pctText(result.id) ? <span className="pdkeysWin__badge soft">{pctText(result.id)}</span> : null}
+              </div>
+            </div>
+
+            <div className="pdkeysWin__note">La apertura real se realiza en el servidor al usar la llave.</div>
+
+            <div className="pdkeysWin__glow" aria-hidden="true" />
+            <div className="pdkeysWin__shine" aria-hidden="true" />
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
