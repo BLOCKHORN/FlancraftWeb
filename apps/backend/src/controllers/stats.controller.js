@@ -2,7 +2,7 @@
 const db = require("../models/db");
 
 /**
- * ANTIGUO (compatibilidad con sistema viejo por tipo/categoria)
+ * Compatibilidad con sistema viejo por tipo/categoria
  */
 exports.importarStat = async (req, res) => {
   const { uuid, nombre_minecraft, servidor, tipo, categoria, valor } = req.body;
@@ -37,7 +37,7 @@ exports.importarStat = async (req, res) => {
 };
 
 /**
- * NUEVO: Importación agrupada desde el plugin
+ * Importación agrupada desde el plugin
  * Se llama 1 vez por jugador y servidor, con todas las stats agregadas.
  * Incluye extras por servidor cuando el plugin las manda.
  */
@@ -50,10 +50,7 @@ exports.importarStatsAgrupadas = async (req, res) => {
   const textOrNull = (v) => {
     if (v == null) return null;
     const s = String(v).trim();
-    if (!s) return null;
-    // Si llega el placeholder sin resolver (%...%), se ignora
-    if (s.startsWith("%") && s.endsWith("%")) return null;
-    return s;
+    return s ? s : null;
   };
 
   const {
@@ -119,7 +116,7 @@ exports.importarStatsAgrupadas = async (req, res) => {
 
   const payload = {
     uuid,
-    nombre_minecraft: nombre_minecraft || null,
+    nombre_minecraft: textOrNull(nombre_minecraft),
     servidor,
 
     // vanilla
@@ -129,7 +126,7 @@ exports.importarStatsAgrupadas = async (req, res) => {
     kills_pvp: num(kills_pvp),
     muertes: num(muertes),
 
-    // Estandar recomendado: segundos
+    // recomendado en segundos (si usas ticks, el frontend debe adaptarse)
     tiempo_jugado: num(tiempo_jugado),
 
     saltos: num(saltos),
@@ -192,9 +189,9 @@ exports.importarStatsAgrupadas = async (req, res) => {
 };
 
 /**
- * Ranking desde vista optimizada (si se mantiene)
+ * Ranking desde vista optimizada
  * vista_ranking_estadisticas: columnas esperadas:
- * uuid, nombre_minecraft, servidor, tipo, valor
+ * - uuid, nombre_minecraft, servidor, tipo, valor
  */
 exports.obtenerRankingEstadisticas = async (req, res) => {
   const { tipo, servidor, limit = 10, offset = 0 } = req.query;
@@ -286,6 +283,9 @@ exports.obtenerLeaderboards = async (req, res) => {
     });
   }
 
+  // asc opcional. Si no lo mandas:
+  // - mejor_tiempo (parkour) por defecto ASC
+  // - el resto por defecto DESC
   let ascending = false;
   if (typeof asc !== "undefined") {
     ascending = String(asc).toLowerCase() === "true";
@@ -316,8 +316,8 @@ exports.obtenerLeaderboards = async (req, res) => {
 
 /**
  * Perfil de estadísticas de un jugador
- * GET /api/stats/perfil/:uuid?servidor=survival
- * Si no se pasa servidor: devuelve todas las filas del jugador (una por servidor)
+ * - GET /api/stats/perfil/:uuid?servidor=survival
+ * - Si NO se pasa servidor: devuelve todas las filas del jugador (uno por servidor)
  */
 exports.obtenerPerfilJugador = async (req, res) => {
   const { uuid } = req.params;
