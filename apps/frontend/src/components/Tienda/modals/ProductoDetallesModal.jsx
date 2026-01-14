@@ -53,7 +53,6 @@ export default function ProductoDetallesModal({
   const bodyHtml = resolved?.html || html || "";
 
   // Theme / clases:
-  // - Si es react_component, permitimos que venga theme dentro de props o lo dejamos sin theme.
   const theme =
     isReactComponentPayload
       ? String(content?.props?.theme || "").trim().toLowerCase()
@@ -65,10 +64,20 @@ export default function ProductoDetallesModal({
   const bodyThemeClass = theme ? `tienda-modal__body--${theme}` : "";
 
   const kickerText =
-    isReactComponentPayload ? (content?.props?.kicker || "Producto") : resolved?.kicker || "Producto";
+    isReactComponentPayload
+      ? (content?.props?.kicker || "Producto")
+      : resolved?.kicker || "Producto";
 
   const titleText =
-    isReactComponentPayload ? (content?.props?.name || title) : resolved?.name || title;
+    isReactComponentPayload
+      ? (content?.props?.name || title)
+      : resolved?.name || title;
+
+  // Subline opcional (si existe)
+  const sublineText =
+    isReactComponentPayload
+      ? (content?.props?.subline || "")
+      : (resolved?.subline || "");
 
   // Renderer componente
   const ReactComp = isReactComponentPayload ? content.Comp : null;
@@ -87,9 +96,12 @@ export default function ProductoDetallesModal({
         onMouseDown={(e) => e.stopPropagation()}
       >
         <div className="tienda-modal__header">
-          <div className="tienda-modal__titleWrap">
+          <div className="tienda-modal__headerCenter">
             <span className="tienda-modal__kicker">{kickerText}</span>
             <h2 className="tienda-modal__title">{titleText}</h2>
+            {sublineText ? (
+              <div className="tienda-modal__subline">{sublineText}</div>
+            ) : null}
           </div>
 
           <button
@@ -104,20 +116,22 @@ export default function ProductoDetallesModal({
         </div>
 
         <div className={`tienda-modal__body ${bodyThemeClass}`}>
-          {isReactComponentPayload && ReactComp ? (
-            <ReactComp {...reactProps} pkg={reactPkg} onClose={onClose} />
-          ) : isMCMenu ? (
-            <ProductDetailsMCMenu data={resolved} />
-          ) : bodyHtml ? (
-            <div className="mcx2" dangerouslySetInnerHTML={{ __html: bodyHtml }} />
-          ) : (
-            <div className="tienda-modal__fallback">
-              <div className="tienda-modal__fallbackTitle">Sin detalles</div>
-              <div className="tienda-modal__fallbackText">
-                Este producto aún no tiene una ficha personalizada.
+          <div className="tienda-modal__contentFrame">
+            {isReactComponentPayload && ReactComp ? (
+              <ReactComp {...reactProps} pkg={reactPkg} onClose={onClose} />
+            ) : isMCMenu ? (
+              <ProductDetailsMCMenu data={resolved} />
+            ) : bodyHtml ? (
+              <div className="mcx2" dangerouslySetInnerHTML={{ __html: bodyHtml }} />
+            ) : (
+              <div className="tienda-modal__fallback">
+                <div className="tienda-modal__fallbackTitle">Sin detalles</div>
+                <div className="tienda-modal__fallbackText">
+                  Este producto aún no tiene una ficha personalizada.
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </div>,

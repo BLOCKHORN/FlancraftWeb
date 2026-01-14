@@ -4,8 +4,8 @@ import { Outlet, useNavigate, useParams } from "react-router-dom";
 
 import TiendaProductosVista from "./TiendaProductosVista";
 import TiendaRangosVista from "./TiendaRangosVista";
+import TiendaGensCoinsVista from "./TiendaGensCoinsVista"; // ✅ NUEVO
 import {
-  API_URL,
   fetchTebex,
   pickSubcatsFromApi,
   findCategoryBySlug,
@@ -37,19 +37,18 @@ const FALLBACK_ICONS = {
 
   dinero: "/tienda/categorias/dinero.webp",
   "dinero-survival": "/tienda/categorias/dinero.webp",
-  "dinero-chunklock": "/tienda/categorias/dinero.webp",
   "dinero-oneblock": "/tienda/categorias/dinero.webp",
+  "dinero-gens": "/tienda/categorias/dinero.webp",
 
   experiencia: "/tienda/categorias/xp.webp",
   "experiencia-survival": "/tienda/categorias/xp.webp",
-  "experiencia-chunklock": "/tienda/categorias/xp.webp",
   xp: "/tienda/categorias/xp.webp",
 
-  "llaves-chunklock": "/tienda/categorias/keys.webp",
-  llaves_chunklock: "/tienda/categorias/keys.webp",
   llaves: "/tienda/categorias/keys.webp",
 
   rangos: "/tienda/categorias/rangos.webp",
+
+  gens: "/assets/reinos/gens.webp",
 
   default: "/tienda/categorias/rangos.webp",
 };
@@ -62,9 +61,9 @@ const HERO_ICONS = {
   survival_clasico: "/assets/reinos/survival-clasico.webp",
   survival: "/assets/reinos/survival-clasico.webp",
 
-  chunklock: "/assets/reinos/chunklock.webp",
   oneblock: "/assets/reinos/oneblock.webp",
   tags: "/assets/reinos/tags.png",
+  gens: "/assets/reinos/gens.webp",
 
   rangos: "/tienda/categorias/rangos.webp",
   "llaves-survival": "/tienda/categorias/keys.webp",
@@ -74,6 +73,7 @@ const HERO_ICONS = {
 
 const CATEGORY_DESCRIPTIONS = {
   rangos: "Explora los rangos disponibles y compáralos con sus perks globales.",
+  gens: "Compra Coins para Gens y potencia tu progreso.",
   "llaves-survival": "Llaves para abrir cofres y conseguir recompensas especiales.",
   protecciones: "Protege tu base y tus cofres frente a otros jugadores.",
   default: "Explora los productos disponibles en esta categoría.",
@@ -198,10 +198,9 @@ export default function TiendaCategoriaVista({ carrito, toggleProducto }) {
   // ======= hooks / memos =======
   const categoriaKey = useMemo(() => normKey(categoria), [categoria]);
   const serverKey = useMemo(() => normKey(server), [server]);
-
   const mapKey = useMemo(() => `${serverKey}|${categoriaKey}`, [serverKey, categoriaKey]);
 
-  // ✅ FIX: fallback por categoría / wildcard para que TAGS no quede vacío si no existe lobby|tags
+  // ✅ FIX: fallback por categoría / wildcard para que no quede vacío si no existe map exacto
   const tileNamesAllowed = useMemo(() => {
     const a = SUBCATS_PER_TILE?.[mapKey];
     if (a != null) return a;
@@ -238,6 +237,13 @@ export default function TiendaCategoriaVista({ carrito, toggleProducto }) {
     return filterPackagesByCategoryId(paquetes, active.id);
   }, [paquetes, categoriaSeleccionada]);
 
+  // ✅ SEGURIDAD: incluso en modo real, filtra por la categoría real (si existe)
+  const productosFiltradosReal = useMemo(() => {
+    const id = categoriaSeleccionada?.activeSubcat?.id ?? null;
+    if (!id) return paquetes || [];
+    return filterPackagesByCategoryId(paquetes, id);
+  }, [paquetes, categoriaSeleccionada]);
+
   const heroIcon = useMemo(
     () => resolveHeroIcon(categoriaSeleccionada, categoria),
     [categoriaSeleccionada, categoria]
@@ -249,6 +255,7 @@ export default function TiendaCategoriaVista({ carrito, toggleProducto }) {
   );
 
   const isRangosView = String(categoria || "").toLowerCase() === "rangos";
+  const isGensView = String(categoria || "").toLowerCase() === "gens"; // ✅ NUEVO
 
   // Sidebar solo si hay más de una subcategoría (pero NO en RANGOS)
   const showSidebar = !isRealMode && subcats.length > 1 && !isRangosView;
@@ -267,9 +274,7 @@ export default function TiendaCategoriaVista({ carrito, toggleProducto }) {
       setError("");
 
       try {
-        // ✅ robusto: usa tu helper (intenta /api/tebex + fallback /tebex)
         const sv = encodeURIComponent(String(server || ""));
-        // ✅ mando sv y server para cubrir backends que leen uno u otro
         const r = await fetchTebex(`/datos?sv=${sv}&server=${sv}`, { method: "GET" });
 
         if (!r.ok) {
@@ -278,12 +283,8 @@ export default function TiendaCategoriaVista({ carrito, toggleProducto }) {
 
         const data = await r.json();
 
-        // ✅ cache-bust desde backend
         const bustFromApi = data?.bust ?? data?.cacheBust ?? null;
         if (!cancel) setCacheBust(bustFromApi != null ? String(bustFromApi) : null);
-
-        // Debug útil (no rompe nada)
-        // console.log("[TIENDA] sv solicitado:", server, "| backend responde server:", data?.server, "| bust:", bustFromApi);
 
         const apiCats = data.categorias || [];
         const packs = data.paquetes || [];
@@ -325,7 +326,7 @@ export default function TiendaCategoriaVista({ carrito, toggleProducto }) {
               (categoria === "oneblock" && "ONEBLOCK") ||
               (categoria === "rangos" && "RANGOS") ||
               (categoria === "premium" && "PREMIUM") ||
-              (categoria === "chunklock" && "CHUNKLOCK") ||
+              (categoria === "gens" && "GENS") ||
               (categoria === "antes-de-comprar" && "¡ANTES DE COMPRAR!") ||
               (categoria && categoria.toUpperCase()) ||
               "CATEGORÍA",
@@ -342,7 +343,6 @@ export default function TiendaCategoriaVista({ carrito, toggleProducto }) {
         }
 
         // modo real
-        // ✅ FIX: fallback por name si el slug no coincide
         const catReal =
           findCategoryBySlug(apiCats, categoria) ||
           apiCats.find((c) => normKey(c?.name) === normKey(categoria));
@@ -372,7 +372,7 @@ export default function TiendaCategoriaVista({ carrito, toggleProducto }) {
     };
   }, [server, categoria, isTile, tileNamesAllowed, subcategoria]);
 
-  // ======= 1b) ✅ FIX: si la URL trae una subcategoria inválida (ej. /tags/rangos), la limpiamos =======
+  // ======= 1b) ✅ FIX: si la URL trae una subcategoria inválida, la limpiamos =======
   useEffect(() => {
     if (!categoriaSeleccionada || categoriaSeleccionada.mode !== "tile") return;
 
@@ -929,6 +929,14 @@ export default function TiendaCategoriaVista({ carrito, toggleProducto }) {
                           carrito={carrito}
                           toggleProducto={toggleProducto}
                         />
+                      ) : isGensView ? (
+                        // ✅ GENS: vista especial (cards individuales + modal)
+                        <TiendaGensCoinsVista
+                          productos={productosFiltrados}
+                          carrito={carrito}
+                          toggleProducto={toggleProducto}
+                          cacheBust={cacheBust}
+                        />
                       ) : (
                         <TiendaProductosVista
                           server={server}
@@ -948,15 +956,25 @@ export default function TiendaCategoriaVista({ carrito, toggleProducto }) {
                 {isRealMode && (
                   <div className="tc-products tc-products--real">
                     <div className="tc-products-scroll">
-                      <TiendaProductosVista
-                        server={server}
-                        productos={paquetes}
-                        categoria={categoriaSeleccionada}
-                        carrito={carrito}
-                        toggleProducto={toggleProducto}
-                        embedMode
-                        cacheBust={cacheBust}
-                      />
+                      {isGensView ? (
+                        // ✅ por si algún día GENS llega como modo real
+                        <TiendaGensCoinsVista
+                          productos={productosFiltradosReal}
+                          carrito={carrito}
+                          toggleProducto={toggleProducto}
+                          cacheBust={cacheBust}
+                        />
+                      ) : (
+                        <TiendaProductosVista
+                          server={server}
+                          productos={productosFiltradosReal}
+                          categoria={categoriaSeleccionada}
+                          carrito={carrito}
+                          toggleProducto={toggleProducto}
+                          embedMode
+                          cacheBust={cacheBust}
+                        />
+                      )}
                     </div>
                   </div>
                 )}

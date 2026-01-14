@@ -11,22 +11,8 @@ const modes = [
     image: "/assets/modes/survival.webp",
     icon: "/assets/reinos/survival-clasico.webp",
   },
-  {
-    id: "anarquico",
-    name: "Survival Anárquico",
-    description:
-      "Sin reglas, sin límites. Survival puro donde todo vale y solo los más astutos sobreviven.",
-    image: "/assets/modes/anarquico.webp",
-    icon: "/assets/reinos/survival-anarquico.webp",
-  },
-  {
-    id: "hardcore",
-    name: "Survival Hardcore",
-    description:
-      "Dificultad máxima y castigo definitivo: si mueres, lo pierdes todo. ¿Te atreves al reto definitivo?",
-    image: "/assets/modes/hardcore.webp",
-    icon: "/assets/reinos/survival-hardcore.webp",
-  },
+
+
   {
     id: "oneblock",
     name: "OneBlock",
@@ -36,7 +22,6 @@ const modes = [
     icon: "/assets/reinos/oneblock.webp",
   },
 
-  // ✅ NUEVO MODO: GENS
   {
     id: "gens",
     name: "Gens",
@@ -45,14 +30,13 @@ const modes = [
     image: "/assets/modes/gensback.webp",
     icon: "/assets/reinos/gens.webp",
   },
-
-  {
-    id: "chunklock",
-    name: "Chunklock",
+    {
+    id: "anarquico",
+    name: "Survival Anárquico",
     description:
-      "Reclama tu propio chunk, mejóralo, automatiza y compite por el control del mundo bloque a bloque.",
-    image: "/assets/modes/chunklock.webp",
-    icon: "/assets/reinos/chunklock.webp",
+      "Sin reglas, sin límites. Survival puro donde todo vale y solo los más astutos sobreviven.",
+    image: "/assets/modes/anarquico.webp",
+    icon: "/assets/reinos/survival-anarquico.webp",
   },
   {
     id: "parkour",
@@ -62,6 +46,7 @@ const modes = [
     image: "/assets/modes/parkour.webp",
     icon: "/assets/reinos/parkour.webp",
   },
+  
 ];
 
 const GameModes = () => {

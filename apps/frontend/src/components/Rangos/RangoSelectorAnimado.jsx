@@ -1,50 +1,71 @@
-// apps/frontend/src/components/Rangos/RangoSelectorAnimado.jsx
-
-import { useState, useEffect, useContext } from "react";
+import { useEffect, useMemo, useState, useContext } from "react";
 import { UserContext } from "../../context/UserContext";
 import toast from "react-hot-toast";
-import "../../styles/components/Rangos/rangoSelectorAnimado.scss";
 
-import { RANGOS, RANGOS_ORDENADOS, FILAS } from "./dataRangos";
+import "../../styles/components/Rangos/rangoSelectorAnimado.scss";
+import "../../styles/components/Rangos/rangoComparativaExtras.scss";
+
+import { RANGOS_COMPARATIVA, RANGOS_MODAL } from "./dataRangos";
+
 import ModalCompraRango from "./ModalCompraRango";
+import RangoAccionModal from "./RangoAccionModal";
 import RangoDetalleModal from "./RangoDetalleModal";
 
-function RangoSelectorAnimado() {
+const API_BASE = import.meta.env.VITE_BACKEND_URL || "https://flancraft-backend.onrender.com";
+
+const RANGOS_ORDENADOS = ["nova", "alpha", "inmortal"];
+const RANGOS_UI = [
+  { id: "nova", nombre: "NOVA", imagen: "/assets/rangos/nova.webp" },
+  { id: "alpha", nombre: "ALPHA", imagen: "/assets/rangos/alpha.webp" },
+  { id: "inmortal", nombre: "INMORTAL", imagen: "/assets/rangos/inmortal.webp" },
+];
+
+const SERVERS = [
+  { id: "lobby", label: "Lobby", img: "/assets/reinos/global.webp" },
+  { id: "survival", label: "Survival", img: "/assets/reinos/survival-clasico.webp" },
+  { id: "oneblock", label: "OneBlock", img: "/assets/reinos/oneblock.webp" },
+  { id: "anarq", label: "Anárquico", img: "/assets/reinos/survival-anarquico.webp" },
+];
+
+function isAction(v) {
+  return v && typeof v === "object" && (v.kind === "kit" || v.kind === "cmds");
+}
+function formatCompact(v) {
+  if (Array.isArray(v)) return v.join(" · ");
+  return String(v);
+}
+
+export default function RangoSelectorAnimado() {
   const [precios, setPrecios] = useState({});
+  const [servidor, setServidor] = useState("survival");
+
   const [rangoSeleccionado, setRangoSeleccionado] = useState(null);
   const [confirmando, setConfirmando] = useState(false);
   const [comprando, setComprando] = useState(false);
-  const [kitDesplegado, setKitDesplegado] = useState(null);
+
+  const [modalAccion, setModalAccion] = useState(null);
   const [detalleRango, setDetalleRango] = useState(null);
 
-  // Saldo real de ECOS (desde backend)
   const [saldoEcos, setSaldoEcos] = useState(null);
   const [cargandoSaldo, setCargandoSaldo] = useState(false);
 
-  // Datos usuario
   const { user, setUser } = useContext(UserContext);
-
-  // Datos de rango del usuario (igual lógica que en Navbar)
   const [rangoDatos, setRangoDatos] = useState(null);
 
-  // -------- Cargar precios desde el backend --------
+  // Precios (solo 30d)
   useEffect(() => {
     const fetchPrecios = async () => {
       try {
-        const res = await fetch(
-          "https://flancraft-backend.onrender.com/api/rangos/lista"
-        );
+        const res = await fetch(`${API_BASE}/api/rangos/lista`);
         const data = await res.json();
-        if (res.ok) {
-          const mapa = {};
-          data.forEach(({ rango, tipo, precio }) => {
-            if (!mapa[rango]) mapa[rango] = {};
-            mapa[rango][tipo] = precio;
-          });
-          setPrecios(mapa);
-        } else {
-          toast.error("No se pudieron cargar los precios.");
-        }
+        if (!res.ok) throw new Error("No se pudieron cargar los precios.");
+
+        const mapa = {};
+        data.forEach(({ rango, tipo, precio }) => {
+          if (!mapa[rango]) mapa[rango] = {};
+          mapa[rango][tipo] = precio; // usaremos tipo="30d"
+        });
+        setPrecios(mapa);
       } catch (err) {
         console.error(err);
         toast.error("Error al obtener los precios.");
@@ -53,127 +74,96 @@ function RangoSelectorAnimado() {
     fetchPrecios();
   }, []);
 
-  // -------- Cargar saldo de ECOS --------
+  // Saldo
   useEffect(() => {
     if (!user?.uuid) {
       setSaldoEcos(null);
       return;
     }
-
     const fetchSaldo = async () => {
       try {
         setCargandoSaldo(true);
-        const res = await fetch(
-          `https://flancraft-backend.onrender.com/api/monedas/${user.uuid}`
-        );
+        const res = await fetch(`${API_BASE}/api/monedas/${user.uuid}`);
         if (!res.ok) throw new Error("No se pudo obtener el saldo.");
         const data = await res.json();
         setSaldoEcos(Number(data.ecos ?? 0));
       } catch (err) {
-        console.error("Error al obtener saldo de ECOS:", err);
-        // Fallback con lo que haya en el contexto de usuario
-        if (typeof user?.ecos === "number") {
-          setSaldoEcos(user.ecos);
-        } else {
-          setSaldoEcos(0);
-        }
+        console.error(err);
+        setSaldoEcos(typeof user?.ecos === "number" ? user.ecos : 0);
       } finally {
         setCargandoSaldo(false);
       }
     };
-
     fetchSaldo();
   }, [user?.uuid]);
 
-  // -------- Cargar rango actual del usuario (igual que en Navbar) --------
+  // Rango actual
   useEffect(() => {
     const fetchRangoUsuario = async () => {
-      if (user?.uuid) {
-        try {
-          const res = await fetch(
-            `https://flancraft-backend.onrender.com/api/usuarios/${user.uuid}`
-          );
-          const data = await res.json();
-          setRangoDatos({
-            rango: data.rango_usuario?.toLowerCase() || null,
-            premium: data.es_premium === true,
-          });
-        } catch (err) {
-          console.error("Error al obtener datos de rango del usuario:", err);
-          setRangoDatos(null);
-        }
-      } else {
+      if (!user?.uuid) {
+        setRangoDatos(null);
+        return;
+      }
+      try {
+        const res = await fetch(`${API_BASE}/api/usuarios/${user.uuid}`);
+        const data = await res.json();
+        setRangoDatos({ rango: data.rango_usuario?.toLowerCase() || null, premium: data.es_premium === true });
+      } catch (err) {
+        console.error(err);
         setRangoDatos(null);
       }
     };
-
     fetchRangoUsuario();
   }, [user?.uuid]);
 
-  // Helper: saldo efectivo = backend o, si no, contexto
-  const getSaldoDisponible = () => {
+  const saldoVisible = useMemo(() => {
     if (saldoEcos !== null && !Number.isNaN(saldoEcos)) return saldoEcos;
     if (typeof user?.ecos === "number") return user.ecos;
     return null;
+  }, [saldoEcos, user?.ecos]);
+
+  const indiceRangoActual = useMemo(() => {
+    return rangoDatos?.rango ? RANGOS_ORDENADOS.indexOf(rangoDatos.rango) : -1;
+  }, [rangoDatos?.rango]);
+
+  const filas = useMemo(() => RANGOS_COMPARATIVA?.[servidor] ?? [], [servidor]);
+
+  const miniRowValue = (key, rankId) => {
+    const row = filas.find((r) => r.key === key);
+    const v = row?.values?.[rankId];
+    if (v === undefined || v === null) return "—";
+    if (isAction(v)) return v.label || "Ver";
+    if (typeof v === "boolean") return v ? "Sí" : "No";
+    return formatCompact(v);
   };
 
-  // Helper: nombre bonito del rango actual
   const getNombreRangoActual = () => {
-    if (!user || !user.uuid) return "Invitado";
+    if (!user?.uuid) return "Invitado";
     const raw = rangoDatos?.rango;
     if (!raw) return "Sin rango";
-
-    const rangoObj = RANGOS.find((r) => r.id === raw);
-    if (rangoObj) return rangoObj.nombre;
-
-    return raw.charAt(0).toUpperCase() + raw.slice(1);
+    const found = RANGOS_UI.find((r) => r.id === raw);
+    return found ? found.nombre : raw;
   };
 
-  const saldoVisible = getSaldoDisponible();
-
-  // Índice del rango actual en el orden de rangos (para bloquear inferiores)
-  const indiceRangoActual = rangoDatos?.rango
-    ? RANGOS_ORDENADOS.indexOf(rangoDatos.rango)
-    : -1;
-
-  // -------- Comprar rango (siempre 30d en esta vista) --------
+  // Comprar (siempre 30d)
   const handleComprar = (rango) => {
-    const precio = precios?.[rango.id]?.["30d"];
+    const tipo = "30d";
+    const precio = precios?.[rango.id]?.[tipo];
 
-    if (precio === undefined) {
-      toast.error("No se ha podido cargar el precio de este rango.");
-      return;
-    }
+    if (precio === undefined) return toast.error("No se ha podido cargar el precio.");
+    if (!user) return toast.error("Debes iniciar sesión para comprar un rango.");
 
-    if (!user) {
-      toast.error("Debes iniciar sesión para comprar un rango.");
-      return;
-    }
-
-    // Bloquear compra de rangos inferiores al que ya tiene
     if (indiceRangoActual !== -1) {
-      const indiceNuevo = RANGOS_ORDENADOS.indexOf(rango.id);
-      if (indiceNuevo !== -1 && indiceNuevo < indiceRangoActual) {
-        toast.error(
-          "Ya tienes un rango superior. No puedes comprar uno inferior."
-        );
-        return;
+      const idxNuevo = RANGOS_ORDENADOS.indexOf(rango.id);
+      if (idxNuevo !== -1 && idxNuevo < indiceRangoActual) {
+        return toast.error("Ya tienes un rango superior. No puedes comprar uno inferior.");
       }
     }
 
-    const saldoDisponible = getSaldoDisponible();
+    if (saldoVisible === null) return toast.error("Todavía no se ha cargado tu saldo.");
+    if (saldoVisible < precio) return toast.error(`No tienes suficientes ECOS. Necesitas ${precio}.`);
 
-    if (saldoDisponible === null) {
-      toast.error("Todavía no se ha cargado tu saldo.");
-      return;
-    }
-
-    if (saldoDisponible < precio) {
-      toast.error(`No tienes suficientes ECOS. Necesitas ${precio}.`);
-      return;
-    }
-
-    setRangoSeleccionado({ rango, tipo: "30d", precio });
+    setRangoSeleccionado({ rango, tipo, precio });
     setConfirmando(true);
   };
 
@@ -183,41 +173,24 @@ function RangoSelectorAnimado() {
 
     setComprando(true);
     try {
-      const res = await fetch(
-        "https://flancraft-backend.onrender.com/api/rangos/comprar-rango",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${user.token}`,
-          },
-          body: JSON.stringify({
-            uuid: user.uuid,
-            rango: rango.id,
-            tipo, // "30d"
-          }),
-        }
-      );
+      const res = await fetch(`${API_BASE}/api/rangos/comprar-rango`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${user.token}` },
+        body: JSON.stringify({ uuid: user.uuid, rango: rango.id, tipo }), // tipo="30d"
+      });
 
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || "Error al comprar el rango");
 
       toast.custom((t) => (
         <div className={`toast-rango-compra ${t.visible ? "mostrar" : ""}`}>
-          <img
-            src={rango.imagen}
-            alt={rango.nombre}
-            className="toast-rango-imagen"
-          />
+          <img src={rango.imagen} alt={rango.nombre} className="toast-rango-imagen" />
           <div className="toast-rango-texto">
-            <strong>¡Has desbloqueado el rango {rango.nombre}!</strong>
+            <strong>Rango {rango.nombre} activado</strong>
             <span>
-              30 días por {precios[rango.id]["30d"]}{" "}
-              <img
-                src="/assets/eco.webp"
-                alt="ECOS"
-                className="eco-mini-inline"
-              />
+              {precios?.[rango.id]?.["30d"]?.toLocaleString("es-ES") ?? rangoSeleccionado.precio}
+              <img src="/assets/eco.webp" alt="ECOS" className="eco-mini-inline" />
+              · 30 días
             </span>
           </div>
         </div>
@@ -225,49 +198,36 @@ function RangoSelectorAnimado() {
 
       setConfirmando(false);
 
-      // Actualizar saldo local y en el contexto
       if (data.nuevoSaldo !== undefined) {
         const nuevoSaldoNum = Number(data.nuevoSaldo);
         setSaldoEcos(nuevoSaldoNum);
-        if (setUser) {
-          setUser((prev) => (prev ? { ...prev, ecos: nuevoSaldoNum } : prev));
-        }
+        setUser?.((prev) => (prev ? { ...prev, ecos: nuevoSaldoNum } : prev));
       }
     } catch (err) {
-      console.error("Error en la compra:", err);
+      console.error(err);
       toast.error("Hubo un problema al procesar la compra.");
     } finally {
       setComprando(false);
     }
   };
 
-  const handleVerDetalles = (rango) => {
-    setDetalleRango(rango);
-  };
-
-  const cerrarDetalles = () => {
-    setDetalleRango(null);
+  const abrirAccion = (action) => {
+    if (!action) return;
+    setModalAccion({ kind: action.kind, server: action.id, rank: action.rank, label: action.label });
   };
 
   return (
     <section className="rango-selector-epico">
-      {/* MARCO ÚNICO CON LATERALES DE MADERA */}
       <div className="rango-panel-marco">
-        {/* HERO */}
         <div className="rango-banner-hero">
           <div className="banner-overlay">
             <h1>Rangos</h1>
-            <p>
-              Desbloquea beneficios exclusivos durante un mes completo: kits
-              mejorados, más trabajos, más llaves y comandos especiales.
-            </p>
+            <p>Desbloquea beneficios exclusivos: kits, comandos y perks por servidor. Compra con ECOS.</p>
           </div>
         </div>
 
-        {/* BARRA INFORMATIVA + RANGO ACTUAL + SALDO */}
         <div className="rango-banner-textura">
           <div className="banner-info-grid">
-            {/* Izquierda: rango actual */}
             <div className="info-rango-actual">
               {user ? (
                 <>
@@ -275,123 +235,98 @@ function RangoSelectorAnimado() {
                   <strong className="valor">{getNombreRangoActual()}</strong>
                 </>
               ) : (
-                <span className="label">
-                  Inicia sesión para ver tu rango actual.
-                </span>
+                <span className="label">Inicia sesión para ver tu rango actual.</span>
               )}
             </div>
 
-            {/* Centro: texto ECOS */}
             <p className="modo-unico-texto">
-              Los rangos solo pueden comprarse con <strong>ECOS</strong>,
-              obtenidos al completar misiones y logros únicos desde tu perfil
-              web.
+              Los rangos se compran con <strong>ECOS</strong> y duran <strong>30 días</strong>.
             </p>
 
-            {/* Derecha: saldo ECOS */}
             <div className="saldo-ecos">
               {user ? (
                 <>
                   <span>Tu saldo:</span>
                   <strong>
-                    {cargandoSaldo && saldoVisible === null
-                      ? "Cargando..."
-                      : saldoVisible !== null
-                      ? saldoVisible.toLocaleString("es-ES")
-                      : "—"}
-                    {saldoVisible !== null && (
-                      <img
-                        src="/assets/eco.webp"
-                        alt="ECOS"
-                        className="eco-mini-inline"
-                      />
-                    )}
+                    {cargandoSaldo && saldoVisible === null ? "Cargando..." : saldoVisible !== null ? saldoVisible.toLocaleString("es-ES") : "—"}
+                    {saldoVisible !== null && <img src="/assets/eco.webp" alt="ECOS" className="eco-mini-inline" />}
                   </strong>
                 </>
               ) : (
                 <>
-                  <span>Inicia sesión para ver tu saldo de</span>
-                  <img
-                    src="/assets/eco.webp"
-                    alt="ECOS"
-                    className="eco-mini-inline"
-                  />
+                  <span>Inicia sesión para ver tu saldo</span>
+                  <img src="/assets/eco.webp" alt="ECOS" className="eco-mini-inline" />
                 </>
               )}
             </div>
           </div>
+
+          {/* ✅ Selector de servidor con imágenes */}
+          <div className="rango-server-picker" role="tablist" aria-label="Servidor">
+            {SERVERS.map((s) => (
+              <button
+                key={s.id}
+                type="button"
+                className={`server-tile ${servidor === s.id ? "active" : ""}`}
+                onClick={() => setServidor(s.id)}
+              >
+                <span className="server-art" aria-hidden="true">
+                  <img src={s.img} alt="" loading="lazy" />
+                </span>
+                <span className="server-name">{s.label}</span>
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* TABLA DE RANGOS */}
         <div className="tabla-rangos">
-          {/* Header: columnas de rangos */}
           <div className="tabla-header">
             <div className="beneficio-label encabezado">
-              Beneficios de cada rango
+              Beneficios ({SERVERS.find((s) => s.id === servidor)?.label})
             </div>
 
             {RANGOS_ORDENADOS.map((id) => {
-              const rango = RANGOS.find((r) => r.id === id);
+              const rango = RANGOS_UI.find((r) => r.id === id);
               const precio = precios?.[rango.id]?.["30d"];
-              const b = rango?.beneficios_30d ?? {};
 
-              const indiceRango = RANGOS_ORDENADOS.indexOf(rango.id);
-              const tieneRangoActual = indiceRangoActual !== -1;
-              const esRangoInferior =
-                tieneRangoActual && indiceRango < indiceRangoActual;
-              const esRangoActual =
-                tieneRangoActual && rango.id === rangoDatos?.rango;
+              const idxNuevo = RANGOS_ORDENADOS.indexOf(rango.id);
+              const tieneActual = indiceRangoActual !== -1;
+              const esInferior = tieneActual && idxNuevo < indiceRangoActual;
+              const esActual = tieneActual && rango.id === rangoDatos?.rango;
 
               return (
                 <div
                   key={rango.id}
-                  className={`columna-rango ${
-                    rango.id === "inmortal" ? "resaltado" : ""
-                  } ${esRangoActual ? "rango-actual" : ""} ${
-                    esRangoInferior ? "rango-bloqueado" : ""
-                  }`}
+                  className={`columna-rango ${rango.id === "inmortal" ? "resaltado" : ""} ${
+                    esActual ? "rango-actual" : ""
+                  } ${esInferior ? "rango-bloqueado" : ""}`}
                 >
-                  {rango.id === "inmortal" && (
-                    <span className="etiqueta-popular">MÁS COMPRADO</span>
-                  )}
+                  {rango.id === "inmortal" && <span className="etiqueta-popular">MÁS COMPRADO</span>}
+                  {esActual && <span className="etiqueta-rango-actual">TU RANGO</span>}
 
-                  {esRangoActual && (
-                    <span className="etiqueta-rango-actual">TU RANGO</span>
-                  )}
-
-                  <img
-                    src={rango.imagen}
-                    alt={`Rango ${rango.nombre}`}
-                    className="imagen-rango"
-                  />
-
+                  <img src={rango.imagen} alt={`Rango ${rango.nombre}`} className="imagen-rango" />
                   <h2 className="nombre-rango">{rango.nombre}</h2>
-                  <p className="rango-duracion">1 Mes</p>
+                  <p className="rango-duracion">30 días</p>
 
                   <div className="rango-mini-resumen">
-                    <span>{b.trabajos ?? "-"} trabajos</span>
-                    <span>{b.dinero || "—"} iniciales</span>
-                    <span>{b.dupe ? `/dupe ${b.dupe}` : "Sin /dupe"}</span>
+                    <span>{miniRowValue("jobs", rango.id)} trabajos</span>
+                    <span>{miniRowValue("money", rango.id)} iniciales</span>
+                    <span>{miniRowValue("dupe", rango.id).includes("x") ? `/dupe ${miniRowValue("dupe", rango.id)}` : "Sin /dupe"}</span>
                   </div>
 
                   <div className="botones-compra">
                     <button
                       className="boton-compra btn-30"
-                      onClick={
-                        esRangoInferior ? undefined : () => handleComprar(rango)
-                      }
-                      disabled={precio === undefined || esRangoInferior}
+                      onClick={esInferior ? undefined : () => handleComprar(rango)}
+                      disabled={precio === undefined || esInferior}
+                      type="button"
                     >
-                      {esRangoInferior ? (
+                      {esInferior ? (
                         "Rango inferior bloqueado"
                       ) : precio !== undefined ? (
                         <>
-                          {precio.toLocaleString("es-ES")}{" "}
-                          <img
-                            src="/assets/eco.webp"
-                            alt="ECOS"
-                            className="eco-mini"
-                          />{" "}
+                          {precio.toLocaleString("es-ES")}
+                          <img src="/assets/eco.webp" alt="ECOS" className="eco-mini" />
                           30 días
                         </>
                       ) : (
@@ -399,11 +334,7 @@ function RangoSelectorAnimado() {
                       )}
                     </button>
 
-                    <button
-                      className="boton-detalles"
-                      type="button"
-                      onClick={() => handleVerDetalles(rango)}
-                    >
+                    <button className="boton-detalles" type="button" onClick={() => setDetalleRango(rango)}>
                       Ver detalles
                     </button>
                   </div>
@@ -412,143 +343,50 @@ function RangoSelectorAnimado() {
             })}
           </div>
 
-          {/* Cuerpo comparativa */}
           <div className="tabla-body">
-            {FILAS.map((fila) => {
-              const esFilaKit = fila.clave === "kit";
+            {filas.length === 0 ? (
+              <div className="rango-empty">
+                No hay comparativa para <strong>{SERVERS.find((s) => s.id === servidor)?.label}</strong>.
+              </div>
+            ) : (
+              filas.map((fila) => (
+                <div key={fila.key} className="fila-beneficio">
+                  <div className="beneficio-label">{fila.label}</div>
 
-              return (
-                <div key={fila.clave}>
-                  <div
-                    className={`fila-beneficio ${
-                      fila.clave === "comida" ? "fila-comida" : ""
-                    }`}
-                  >
-                    <div className="beneficio-label">{fila.label}</div>
+                  <div className="beneficio-celda-group">
+                    {RANGOS_ORDENADOS.map((rid) => {
+                      const v = fila.values?.[rid];
 
-                    <div className="beneficio-celda-group">
-                      {RANGOS_ORDENADOS.map((id) => {
-                        const rango = RANGOS.find((r) => r.id === id);
-                        const valor = rango?.beneficios_30d?.[fila.clave];
-
-                        const claseColor =
-                          fila.clave === "dinero"
-                            ? "verde-economico"
-                            : [
-                                "sethomes",
-                                "subastas",
-                                "warps",
-                                "tiendas",
-                                "trabajos",
-                              ].includes(fila.clave)
-                            ? "amarillo-beneficio"
-                            : ["keys_survival", "keys_oneblock"].includes(
-                                fila.clave
-                              )
-                            ? "violeta-keys"
-                            : ["kit", "comida", "dupe"].includes(fila.clave)
-                            ? "dorado-kit"
-                            : "";
-
-                        const claseCheck = fila.clave.includes("avanzados")
-                          ? "check-avanzado"
-                          : fila.clave.includes("extra")
-                          ? "check-extra"
-                          : "check-basico";
-
-                        return (
-                          <div
-                            key={rango.id + fila.clave}
-                            className="beneficio-celda"
-                          >
-                            {typeof valor === "boolean" ? (
-                              valor ? (
-                                <img
-                                  src="/assets/check.webp"
-                                  alt="Sí"
-                                  className={`icono-check ${claseCheck}`}
-                                />
-                              ) : (
-                                <span className="no-disponible">X</span>
-                              )
-                            ) : fila.clave === "kit" ? (
-                              <div className="kit-con-icono">
-                                <img
-                                  src={
-                                    valor &&
-                                    String(valor)
-                                      .toLowerCase()
-                                      .includes("op")
-                                      ? "/assets/netheritafull.webp"
-                                      : valor &&
-                                        String(valor)
-                                          .toLowerCase()
-                                          .includes("netherita")
-                                      ? "/assets/netherita.webp"
-                                      : "/assets/diamante.webp"
-                                  }
-                                  alt="Kit Icon"
-                                  className="kit-icono"
-                                />
-                                <span
-                                  className={`valor-num ${claseColor} kit-desplegable-toggle`}
-                                  onClick={() =>
-                                    setKitDesplegado(
-                                      kitDesplegado ? null : "todos"
-                                    )
-                                  }
-                                  style={{ cursor: "pointer" }}
-                                  title="Ver detalles de los kits"
-                                >
-                                  {valor ?? "—"} ▼
-                                </span>
-                              </div>
+                      return (
+                        <div key={`${fila.key}_${rid}`} className="beneficio-celda">
+                          {typeof v === "boolean" ? (
+                            v ? (
+                              <img src="/assets/check.webp" alt="Sí" className="icono-check check-basico" />
                             ) : (
-                              <span className={`valor-num ${claseColor}`}>
-                                {valor ?? "—"}
-                              </span>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
+                              <span className="no-disponible">X</span>
+                            )
+                          ) : isAction(v) ? (
+                            <button type="button" className="celda-accion" onClick={() => abrirAccion(v)}>
+                              {v.label || "Ver"}
+                            </button>
+                          ) : v === undefined || v === null ? (
+                            <span className="valor-num">—</span>
+                          ) : Array.isArray(v) ? (
+                            <span className="valor-num">{formatCompact(v)}</span>
+                          ) : (
+                            <span className="valor-num">{String(v)}</span>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
-
-                  {/* Detalle de kits (muestra los tres a la vez) */}
-                  {esFilaKit && kitDesplegado && (
-                    <div className="fila-kit-detallado">
-                      <div className="beneficio-label" />
-                      <div className="beneficio-celda-group">
-                        {RANGOS_ORDENADOS.map((id) => {
-                          const rango = RANGOS.find((r) => r.id === id);
-                          return (
-                            <div
-                              key={id + "_kitdetalle"}
-                              className="beneficio-celda"
-                            >
-                              {rango?.kit_detallado?.length ? (
-                                <ul className="kit-detalle-lista">
-                                  {rango.kit_detallado.map((item, index) => (
-                                    <li key={index}>{item}</li>
-                                  ))}
-                                </ul>
-                              ) : (
-                                <span className="kit-detalle-vacio">—</span>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
                 </div>
-              );
-            })}
+              ))
+            )}
           </div>
         </div>
       </div>
 
-      {/* MODAL COMPRA */}
       <ModalCompraRango
         open={confirmando}
         rangoSeleccionado={rangoSeleccionado}
@@ -558,12 +396,17 @@ function RangoSelectorAnimado() {
         onCancel={() => setConfirmando(false)}
       />
 
-      {/* MODAL DETALLE RANGO */}
-      {detalleRango && (
-        <RangoDetalleModal detalleRango={detalleRango} onClose={cerrarDetalles} />
-      )}
+      <RangoDetalleModal
+        open={!!detalleRango}
+        rango={detalleRango}
+        servidor={servidor}
+        filas={filas}
+        onClose={() => setDetalleRango(null)}
+        onOpenAction={(action) => abrirAccion(action)}
+      />
 
-      {/* EFECTO MÁGICO MIENTRAS COMPRA */}
+      <RangoAccionModal open={!!modalAccion} accion={modalAccion} dataModal={RANGOS_MODAL} onClose={() => setModalAccion(null)} />
+
       {comprando && (
         <div className="overlay-conjuro">
           <div className="circulo-magico" />
@@ -575,5 +418,3 @@ function RangoSelectorAnimado() {
     </section>
   );
 }
-
-export default RangoSelectorAnimado;

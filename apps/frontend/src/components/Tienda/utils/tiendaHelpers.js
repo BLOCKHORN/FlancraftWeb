@@ -5,19 +5,19 @@ export const API_URL =
   "https://flancraft-backend.onrender.com";
 
 /* =========================
-   BASE + Tebex endpoints (robusto)
+   BASE + endpoints Tebex (robusto)
    ========================= */
 export const API_BASE = String(API_URL || "").replace(/\/$/, "");
 
-// Si quieres forzarlo desde .env: VITE_TEBEX_PATH=/api/tebex  (o /tebex)
+// Forzable desde .env: VITE_TEBEX_PATH=/api/tebex (o /tebex)
 export const TEBEX_PATH = import.meta.env.VITE_TEBEX_PATH || "/api/tebex";
 export const TEBEX_URL = `${API_BASE}${TEBEX_PATH}`;
 
-// Fallback automático (por si tu backend lo montó sin /api)
+// Fallback por si el backend lo montó sin /api
 export const TEBEX_URL_FALLBACK = `${API_BASE}/tebex`;
 
 /* =========================
-   Fetch helper (timeout + json)
+   Fetch helper (timeout)
    ========================= */
 async function fetchWithTimeout(url, options = {}, timeoutMs = 15000) {
   const ctrl = new AbortController();
@@ -38,20 +38,15 @@ async function fetchWithTimeout(url, options = {}, timeoutMs = 15000) {
 }
 
 /**
- * ✅ Cache-bust helper:
- * añade/actualiza ?v=<bust> sin romper hashes ni queries existentes.
+ * Cache-bust: añade/actualiza ?v=<bust> respetando hash y query existentes.
  */
 export function withCacheBust(url = "", bust = null) {
   const u = String(url || "").trim();
   const b = bust != null ? String(bust).trim() : "";
 
-  if (!u) return u;
-  if (!b) return u;
-
-  // No tocar data/blob
+  if (!u || !b) return u;
   if (/^(data:|blob:)/i.test(u)) return u;
 
-  // separar hash
   const [basePlusQuery, hash = ""] = u.split("#");
   const [base, query = ""] = basePlusQuery.split("?");
 
@@ -59,12 +54,11 @@ export function withCacheBust(url = "", bust = null) {
   params.set("v", b);
 
   const qs = params.toString();
-  const out = `${base}${qs ? `?${qs}` : ""}${hash ? `#${hash}` : ""}`;
-  return out;
+  return `${base}${qs ? `?${qs}` : ""}${hash ? `#${hash}` : ""}`;
 }
 
 /**
- * Fetch robusto para endpoints Tebex.
+ * Fetch robusto Tebex:
  * - Intenta TEBEX_URL + path
  * - Si 404, intenta TEBEX_URL_FALLBACK + path
  */
@@ -75,13 +69,12 @@ export async function fetchTebex(path, options) {
   const r1 = await fetchWithTimeout(`${TEBEX_URL}${safePath}`, options);
   if (r1.status !== 404) return r1;
 
-  const r2 = await fetchWithTimeout(`${TEBEX_URL_FALLBACK}${safePath}`, options);
-  return r2;
+  return fetchWithTimeout(`${TEBEX_URL_FALLBACK}${safePath}`, options);
 }
 
 /**
- * Catálogo público (tiles + subcats “permitidas”).
- * Endpoint esperado: /api/tebex/public-catalog  (o /tebex/public-catalog)
+ * Catálogo público.
+ * Endpoint esperado: /api/tebex/public-catalog (o /tebex/public-catalog)
  */
 export async function fetchPublicCatalog() {
   const r = await fetchTebex("/public-catalog", { method: "GET" });
@@ -90,7 +83,7 @@ export async function fetchPublicCatalog() {
 }
 
 /**
- * Sale activa (para inferir “precio original” si el backend solo devuelve price).
+ * Sale activa (para inferir precio original si el backend solo devuelve price).
  * Intenta:
  * - /sale-activa/:server
  * - /sale-activa?sv=:server
@@ -111,7 +104,6 @@ export async function fetchSaleActiva(serverKey) {
       if (!r.ok) continue;
 
       const data = await r.json();
-      // soporta payloads distintos
       const sale = data?.sale ?? data?.data?.sale ?? null;
       const active = Boolean(data?.active ?? data?.data?.active ?? sale);
 
@@ -124,12 +116,12 @@ export async function fetchSaleActiva(serverKey) {
   return { active: false, sale: null, raw: null };
 }
 
-/** Quita acentos SIN tocar mayúsculas/espacios (compat con código viejo) */
+/** Quita acentos sin alterar mayúsculas/espacios. */
 export function stripAccents(str = "") {
   return String(str).normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
 
-/** Slug seguro (quita acentos, minúsculas y guiones) */
+/** Slug seguro (sin acentos, minúsculas, guiones). */
 export function slugify(str = "") {
   return String(str)
     .normalize("NFD")
@@ -146,12 +138,12 @@ function toNumber(v, fallback = 0) {
   return Number.isFinite(n) ? n : fallback;
 }
 
-/** Obtiene id de paquete de forma robusta (id / package_id). */
+/** Id de paquete (id / package_id). */
 export function getPackageId(pkg) {
   return pkg?.id ?? pkg?.package_id ?? null;
 }
 
-/** Obtiene nombre de paquete de forma robusta. */
+/** Nombre de paquete (best-effort). */
 export function getPackageName(pkg) {
   return (
     pkg?.name ??
@@ -162,12 +154,12 @@ export function getPackageName(pkg) {
   );
 }
 
-/** Obtiene precio final (ya con rebajas si backend las aplica). */
+/** Precio final (ya con rebajas si backend las aplica). */
 export function getPackagePrice(pkg) {
   return toNumber(pkg?.price ?? pkg?.precio ?? 0, 0);
 }
 
-/** Precio original (para mostrar tachado), si existe. */
+/** Precio original (para tachado), si existe. */
 export function getPackageOriginalPrice(pkg) {
   const v = pkg?.original_price ?? pkg?.precio_original ?? null;
   if (v === null || v === undefined) return null;
@@ -186,7 +178,7 @@ export function getPackageImage(pkg) {
   );
 }
 
-/** Normaliza un paquete a la forma que necesita el carrito (id/name/price + cantidad). */
+/** Normaliza un paquete para carrito (id/name/price + cantidad). */
 export function normalizeProductForCart(pkg, cantidad = 1) {
   const id = getPackageId(pkg);
   return {
@@ -200,19 +192,20 @@ export function normalizeProductForCart(pkg, cantidad = 1) {
   };
 }
 
-/** Total del carrito (suma price * cantidad). Tolera strings y nulls. */
+/** Total del carrito (suma price * cantidad). */
 export function calcularTotal(carrito = []) {
-  const total = carrito.reduce((acc, it) => {
+  const total = (carrito || []).reduce((acc, it) => {
     const price = toNumber(it?.price ?? it?.precio ?? 0, 0);
     const qty = toNumber(it?.cantidad ?? it?.quantity ?? 1, 1);
     return acc + price * qty;
   }, 0);
+
   return total.toFixed(2);
 }
 
 /**
  * Tiles principales de la tienda (portada).
- * Nombre, slug, servidor y la IMAGEN.
+ * Incluye tile sintético "GENS".
  */
 export const PORTADA_TILES = [
   {
@@ -228,6 +221,12 @@ export const PORTADA_TILES = [
     image: "/assets/reinos/tags.png",
   },
   {
+    server: "lobby",
+    name: "GENS",
+    slug: "gens",
+    image: "/assets/reinos/gens.webp",
+  },
+  {
     server: "clasico",
     name: "SURVIVAL CLASICO",
     slug: "survival-clasico",
@@ -239,17 +238,9 @@ export const PORTADA_TILES = [
     slug: "oneblock",
     image: "/assets/reinos/oneblock.webp",
   },
-  {
-    server: "clasico",
-    name: "CHUNKLOCK",
-    slug: "chunklock",
-    image: "https://i.ibb.co/yB8dyZD4/chunklock.png",
-  },
 ];
 
-/**
- * Tile ESPECÍFICA para el aviso a padres.
- */
+/** Tile específica para aviso a padres. */
 export const AVISO_PADRES_TILE = {
   server: "lobby",
   name: "ANTES DE COMPRAR",
@@ -258,17 +249,19 @@ export const AVISO_PADRES_TILE = {
 };
 
 /**
- * Subcategorías REALES que deben verse dentro de cada tile sintética.
+ * Subcategorías reales visibles dentro de cada tile sintética.
  * Clave: `${server}|${slugCategoria}`.
- * Nombres = como en Tebex (case-insensitive).
+ * Los nombres deben coincidir con Tebex (case-insensitive).
  */
 export const SUBCATS_PER_TILE = {
-  // Lobby
   "lobby|rangos": ["RANGOS"],
   "lobby|tags": ["TAGS"],
+
+  // Importante: debe existir una categoría real en Tebex con nombre "GENS" (o ajusta el string).
+  "lobby|gens": ["GENS"],
+
   "lobby|antes-de-comprar": [],
 
-  // Survival clásico
   "clasico|survival-clasico": [
     "Protecciones",
     "Items OP Survival",
@@ -277,33 +270,19 @@ export const SUBCATS_PER_TILE = {
     "Experiencia Survival",
   ],
 
-  // ONEBLOCK
-  "oneblock|oneblock": [
-    "Items OP Oneblock",
-    "Llaves Oneblock",
-    "Dinero Oneblock",
-  ],
-
-  // Chunklock
-  "clasico|chunklock": [
-    "Items OP Chunklock",
-    "Dinero Chunklock",
-    "Experiencia Chunklock",
-    "Llaves Chunklock",
-  ],
+  "oneblock|oneblock": ["Items OP Oneblock", "Llaves Oneblock", "Dinero Oneblock"],
 };
 
 /**
  * Cruza categorías de la API con una lista permitida por nombre.
- * Devuelve [{id,name,slug}, ...] existentes.
- * Si namesAllowed está vacío, devuelve todas las categorías normalizadas.
+ * Devuelve [{id,name,slug}, ...]. Si namesAllowed está vacío, devuelve todas.
  */
 export function pickSubcatsFromApi(apiCategories = [], namesAllowed = []) {
   const allowed = Array.isArray(namesAllowed) ? namesAllowed : [];
   const allowedLower = new Set(allowed.map((n) => String(n).toLowerCase()));
   const out = [];
 
-  for (const c of apiCategories) {
+  for (const c of apiCategories || []) {
     const name = c?.name || c?.category_name || "";
     const id = c?.id ?? c?.category_id ?? null;
     if (!id || !name) continue;
@@ -316,14 +295,14 @@ export function pickSubcatsFromApi(apiCategories = [], namesAllowed = []) {
   return out;
 }
 
-/** Encuentra una categoría real por slug (slugify(name) === slug) */
+/** Encuentra una categoría real por slug (slugify(name) === slug). */
 export function findCategoryBySlug(apiCategories = [], slug = "") {
   const cats = pickSubcatsFromApi(apiCategories, []);
   const target = String(slug || "").toLowerCase();
   return cats.find((c) => String(c.slug).toLowerCase() === target) || null;
 }
 
-/** Filtra paquetes por UNA categoría (id) */
+/** Filtra paquetes por una categoría (id). */
 export function filterPackagesByCategoryId(paquetes = [], categoryId) {
   if (!categoryId) return [];
   const wanted = String(categoryId);
@@ -340,9 +319,10 @@ export function filterPackagesByCategoryId(paquetes = [], categoryId) {
   });
 }
 
-/** Filtra paquetes por subcategorías (array de {id,name,slug}) */
+/** Filtra paquetes por subcategorías (array de {id,name,slug}). */
 export function filterPackagesBySubcats(paquetes = [], subcats = []) {
   const subcatIds = new Set((subcats || []).map((s) => String(s.id)));
+
   return (paquetes || []).filter((p) => {
     const cid =
       p?.category?.id ??
@@ -350,6 +330,7 @@ export function filterPackagesBySubcats(paquetes = [], subcats = []) {
       p?.categories?.[0]?.id ??
       p?.categories?.[0]?.category_id ??
       null;
+
     return cid && subcatIds.has(String(cid));
   });
 }

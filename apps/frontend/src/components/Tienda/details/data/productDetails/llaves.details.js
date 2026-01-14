@@ -3,7 +3,8 @@ import ProductDetailsLlaves from "../../ProductDetailsLlaves.jsx";
 
 /* =========================================================
    LLAVES (Survival Clásico)
-   - Añade aliases “a lo bestia” para que siempre resuelva.
+   - Incluye aliases genéricos (llave voto, vote key, etc.)
+   - ❌ NO incluye Spawners (eso va en OneBlock)
    ========================================================= */
 
 export const LLAVES_DETAILS = {
@@ -30,15 +31,15 @@ export const LLAVES_DETAILS = {
   "head key": buildLlaveCabezas(),
 
   // ----------------------------
-  // LLAVE VOTO (Survival)
+  // LLAVE VOTO (Survival) ✅ (GENÉRICA AQUÍ)
   // ----------------------------
-  "llaves survival/llave voto": buildLlaveVoto(),
-  "llaves-survival/llave-voto": buildLlaveVoto(),
-  "llaves_survival/llave_voto": buildLlaveVoto(),
-  "llave voto": buildLlaveVoto(),
-  "llave-voto": buildLlaveVoto(),
-  "voto key": buildLlaveVoto(),
-  "vote key": buildLlaveVoto(),
+  "llaves survival/llave voto": buildLlaveVotoClasico(),
+  "llaves-survival/llave-voto": buildLlaveVotoClasico(),
+  "llaves_survival/llave_voto": buildLlaveVotoClasico(),
+  "llave voto": buildLlaveVotoClasico(),
+  "llave-voto": buildLlaveVotoClasico(),
+  "voto key": buildLlaveVotoClasico(),
+  "vote key": buildLlaveVotoClasico(),
 };
 
 function buildLlaveRandom() {
@@ -47,7 +48,6 @@ function buildLlaveRandom() {
     kicker: "Llaves · Survival Clásico",
     name: "Llave Random",
     subline: "Apertura instantánea · 1 premio garantizado · Sorpresa pura",
-    // ✅ compat: varias formas por si tu modal usa un nombre u otro
     component: ProductDetailsLlaves,
     Component: ProductDetailsLlaves,
     render: ProductDetailsLlaves,
@@ -68,12 +68,12 @@ function buildLlaveCabezas() {
   };
 }
 
-function buildLlaveVoto() {
+function buildLlaveVotoClasico() {
   return {
     theme: "keys",
     kicker: "Llaves · Survival Clásico",
     name: "Llave Voto",
-    subline: "Dinero + kit + materiales · Probabilidades claras · Puede soltar llaves extra",
+    subline: "Dinero + kit + materiales · Probabilidades por peso · Contenido Survival",
     component: ProductDetailsLlaves,
     Component: ProductDetailsLlaves,
     render: ProductDetailsLlaves,

@@ -1,13 +1,15 @@
 /* ======================================================================
    src/styles/components/Tienda/tienda-portada.scss
-   Ajuste clave: la portada ocupa el ancho real de la columna izquierda,
-   así alinea con los bordes del sidebar (carrito).
+   - Sin scroll: todo encaja en la altura del panel izquierdo
+   - ✅ Bloque de tiles centrado verticalmente (global+servers)
+   - Hover: sube/baja INFINITO mientras hover y vuelve suave al soltar
+   - NO cambia tu paleta (mantengo colores oscuros y parchment label)
    ====================================================================== */
 @use "../../base/_variables" as *;
 
 @keyframes shelfFloat {
   0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-2px); }
+  50% { transform: translateY(-3px); }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -19,14 +21,21 @@
 }
 
 .tienda-portada-wrapper {
-  /* Antes: min(720px, 100%) y centrado. Ahora: ancho real del panel */
-  --portadaW: 100%;
-
   width: 100%;
   max-width: 100%;
+  height: 100%;
+  min-height: 0;
+
+  /* ancho real del panel */
+  --portadaW: 100%;
+
+  /* tamaños auto-fit (para que quepa sin scroll) */
+  --tileW: clamp(210px, 22vw, 300px);
+  --tileMinH: clamp(150px, 20vh, 200px);
+  --iconS: clamp(78px, 9.2vw, 132px);
 
   margin: 0;
-  padding: clamp(16px, 2.1vh, 26px) clamp(14px, 1.6vw, 22px) clamp(16px, 2.2vh, 28px);
+  padding: clamp(14px, 1.8vh, 22px) clamp(12px, 1.4vw, 18px) clamp(14px, 2vh, 22px);
 
   border-radius: 3px;
 
@@ -42,54 +51,75 @@
   text-align: center;
 
   position: relative;
-  overflow: visible;
+  overflow: hidden;
 
-  &::before {
-    content: "";
-    position: absolute;
-    inset: -2px;
-    background:
-      radial-gradient(circle at 50% 0%, rgba(255, 235, 190, 0.16), transparent 55%),
-      radial-gradient(circle at 10% 10%, rgba(120, 220, 255, 0.08), transparent 42%),
-      radial-gradient(circle at 90% 10%, rgba(255, 120, 200, 0.06), transparent 44%);
-    pointer-events: none;
-    mix-blend-mode: screen;
-    opacity: 0.85;
-  }
+  display: flex;
+  align-items: stretch;
 }
 
-.tienda-portada-panel { position: relative; z-index: 1; }
+.tienda-portada-wrapper::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255, 235, 190, 0.16), transparent 55%),
+    radial-gradient(circle at 10% 10%, rgba(120, 220, 255, 0.08), transparent 42%),
+    radial-gradient(circle at 90% 10%, rgba(255, 120, 200, 0.06), transparent 44%);
+  pointer-events: none;
+  mix-blend-mode: screen;
+  opacity: 0.85;
+}
 
+.tienda-portada-panel {
+  position: relative;
+  z-index: 1;
+
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* HEAD */
 .tienda-portada-head {
   width: var(--portadaW);
-  margin: 0 auto 0.9rem;
+  margin: 0;
+  padding: 0;
 }
 
 .tienda-portada-title {
   margin: 0;
-  font-size: clamp(1.15rem, 2.2vw, 1.6rem);
+  padding: 0;
+
+  font-size: clamp(1.05rem, 1.55vw, 1.55rem);
   letter-spacing: 0.02em;
   text-shadow: 0 1px 0 rgba(0,0,0,0.55);
+
+  margin-top: clamp(2px, 0.6vh, 8px);
+  margin-bottom: clamp(6px, 1.1vh, 10px);
 }
 
-.tienda-portada-subtitle {
-  margin: 0.35rem 0 0;
-  font-size: 0.92rem;
-  color: rgba(251, 232, 197, 0.90);
-  opacity: 0.95;
-  text-shadow: 0 1px 0 rgba(0,0,0,0.55);
-}
-
+/* OFERTA (si está vacío, no ocupa hueco) */
 .tienda-portada-oferta-slot {
   width: var(--portadaW);
-  margin: 0 auto;
+  margin: 0;
 
   display: flex;
   justify-content: center;
   align-items: center;
 
-  min-height: clamp(52px, 6vw, 74px);
-  margin-bottom: clamp(12px, 1.6vw, 20px);
+  min-height: 0;
+  margin-bottom: clamp(8px, 1.2vh, 12px);
+}
+
+.tienda-portada-oferta-slot:empty {
+  display: none;
+  margin: 0;
+  min-height: 0;
 }
 
 .tienda-portada-oferta {
@@ -100,29 +130,59 @@
   filter: saturate(0.92) contrast(0.96);
 }
 
-.tienda-portada-grid {
+/* =========================================================
+   ✅ CONTENEDOR CENTRAL: ocupa el “aire” y centra las tiles
+   - Esto es lo que te faltaba: antes los grids eran auto-height
+     y se quedaban pegados arriba.
+   ========================================================= */
+.tienda-portada-grids {
   width: var(--portadaW);
-  margin: 0 auto;
+  max-width: 100%;
+
+  flex: 1 1 auto;
+  min-height: 0;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center; /* ✅ centra vertical */
+  align-items: center;
+
+  gap: clamp(10px, 1.6vh, 16px); /* separación entre global y servers */
+}
+
+/* =========================================================
+   GRIDS (wrap centrado)
+   ========================================================= */
+.tienda-portada-grid {
+  width: 100%;
+  max-width: 100%;
   list-style: none;
   padding: 0;
+  margin: 0;
 
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-  gap: clamp(0.85rem, 2.0vw, 1.1rem) clamp(0.9rem, 2.2vw, 1.35rem);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-content: center;
 
-  justify-items: stretch;
-  align-items: stretch;
+  gap: clamp(10px, 1.3vw, 16px) clamp(12px, 1.6vw, 18px);
 
-  position: relative;
-  z-index: 1;
+  flex: 0 0 auto;
+}
+
+/* ya no dependemos del margin-top para separar */
+.tienda-portada-grid--servers {
+  margin-top: 0;
 }
 
 .tienda-portada-item {
+  flex: 0 1 var(--tileW);
   display: flex;
   justify-content: center;
-  width: 100%;
+  min-width: 0;
 }
 
+/* BOTÓN TARJETA */
 .tienda-portada-btn {
   width: 100%;
   border: none;
@@ -134,10 +194,10 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.6rem;
+  gap: clamp(8px, 1vh, 12px);
 
-  min-height: 186px;
-  padding: 0.9rem 0.9rem 0.95rem;
+  min-height: var(--tileMinH);
+  padding: clamp(10px, 1.2vh, 14px) clamp(10px, 1vw, 14px) clamp(10px, 1.2vh, 14px);
   border-radius: 12px;
 
   background: rgba(0, 0, 0, 0.16);
@@ -146,64 +206,72 @@
     0 10px 18px rgba(0, 0, 0, 0.18);
 
   transition:
-    transform 0.22s ease-out,
     background 0.22s ease-out,
-    box-shadow 0.22s ease-out;
+    box-shadow 0.22s ease-out,
+    transform 0.22s ease-out;
 
-  &:focus-visible {
-    outline: none;
-    box-shadow:
-      0 0 0 3px rgba(255, 255, 255, 0.18),
-      0 0 0 6px rgba(64, 200, 255, 0.16),
-      inset 0 0 0 1px rgba(255, 255, 255, 0.06),
-      0 10px 18px rgba(0, 0, 0, 0.18);
-  }
+  transform: translateY(0);
+  will-change: transform;
 }
 
+.tienda-portada-btn:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 3px rgba(255, 255, 255, 0.18),
+    0 0 0 6px rgba(64, 200, 255, 0.16),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.06),
+    0 10px 18px rgba(0, 0, 0, 0.18);
+}
+
+/* Hover float infinito */
 .tienda-portada-btn:hover {
-  transform: translateY(-2px);
   background: rgba(0, 0, 0, 0.24);
-  animation: shelfFloat 1.15s ease-in-out;
+  animation: shelfFloat 1.15s ease-in-out infinite;
 }
 
-.tienda-portada-btn:active { transform: translateY(-1px); }
+/* Click: pausa float y baja un pelín */
+.tienda-portada-btn:active {
+  animation-play-state: paused;
+  transform: translateY(-1px);
+}
 
+/* ICONO */
 .tienda-portada-icon {
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
+
+  width: var(--iconS);
+  height: var(--iconS);
+
   transform: translateZ(0);
   overflow: visible;
 
-  transition:
-    transform 0.40s cubic-bezier(0.22, 0.61, 0.36, 1),
-    box-shadow 0.30s ease-out;
+  transition: filter 0.30s ease-out;
+}
 
-  &::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    border-radius: 999px;
-    background: radial-gradient(
-      circle,
-      rgba(255, 255, 255, 0.92) 0%,
-      rgba(255, 255, 255, 0.55) 30%,
-      rgba(255, 255, 255, 0.0) 66%
-    );
-    opacity: 0;
-    transform: scale(0.78);
-    mix-blend-mode: screen;
-    transition:
-      opacity 0.40s ease-out,
-      transform 0.40s cubic-bezier(0.22, 0.61, 0.36, 1);
-  }
+.tienda-portada-icon::before {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  pointer-events: none;
+  border-radius: 999px;
+  background: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 0.92) 0%,
+    rgba(255, 255, 255, 0.55) 30%,
+    rgba(255, 255, 255, 0.0) 66%
+  );
+  opacity: 0;
+  transform: scale(0.86);
+  mix-blend-mode: screen;
+  transition: opacity 0.35s ease-out, transform 0.35s ease-out;
 }
 
 .tienda-portada-icon img {
-  width: clamp(92px, 18vw, 140px);
-  height: clamp(92px, 18vw, 140px);
+  width: 100%;
+  height: 100%;
   object-fit: contain;
 
   image-rendering: pixelated;
@@ -213,14 +281,17 @@
   filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.85));
 
   transition:
-    transform 0.40s cubic-bezier(0.22, 0.61, 0.36, 1),
+    transform 0.35s cubic-bezier(0.22, 0.61, 0.36, 1),
     filter 0.30s cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 
-.tienda-portada-btn:hover .tienda-portada-icon { transform: translateY(-6px); }
-.tienda-portada-btn:hover .tienda-portada-icon::before { opacity: 0.85; transform: scale(1.12); }
+.tienda-portada-btn:hover .tienda-portada-icon::before {
+  opacity: 0.85;
+  transform: scale(1.08);
+}
+
 .tienda-portada-btn:hover .tienda-portada-icon img {
-  transform: translateY(-10px) scale(1.05) rotate(-2deg);
+  transform: translateY(-4px) scale(1.05) rotate(-2deg);
   filter:
     brightness(1.14)
     drop-shadow(0 0 4px rgba(255, 255, 255, 0.55))
@@ -228,6 +299,7 @@
     drop-shadow(0 10px 16px rgba(0, 0, 0, 0.90));
 }
 
+/* LABEL (parchment) */
 .tienda-portada-label {
   position: relative;
   display: inline-flex;
@@ -246,25 +318,24 @@
     inset 0 0 0 1px rgba(255, 255, 255, 0.45);
 
   color: #3b2512;
-  font-size: 0.88rem;
+  font-size: clamp(0.78rem, 1.05vw, 0.88rem);
   font-weight: 700;
   letter-spacing: 0.03em;
 
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
 
   transition: transform 0.18s ease-out, box-shadow 0.18s ease-out;
-
-  &::before,
-  &::after {
-    content: "•";
-    font-size: 0.9em;
-    opacity: 0.9;
-    flex: 0 0 auto;
-  }
-
-  &::before { margin-right: 0.35rem; }
-  &::after  { margin-left: 0.35rem; }
 }
+
+.tienda-portada-label::before,
+.tienda-portada-label::after {
+  content: "•";
+  font-size: 0.9em;
+  opacity: 0.9;
+  flex: 0 0 auto;
+}
+.tienda-portada-label::before { margin-right: 0.35rem; }
+.tienda-portada-label::after  { margin-left: 0.35rem; }
 
 .tienda-portada-labelText {
   display: block;
@@ -277,14 +348,15 @@
 .tienda-portada-btn:hover .tienda-portada-label { transform: translateY(-1px); }
 .tienda-portada-btn:active .tienda-portada-label { transform: translateY(1px); }
 
+/* FOOTNOTE abajo del todo */
 .tienda-portada-footnote {
   width: var(--portadaW);
-  margin: 1.05rem auto 0;
+  margin-top: auto;
+  padding-top: clamp(10px, 1.4vh, 14px);
+
   font-size: 0.82rem;
   color: #f3ddc4;
   opacity: 0.92;
-  position: relative;
-  z-index: 1;
   text-shadow: 0 1px 0 rgba(0, 0, 0, 0.55);
 
   display: inline-flex;
@@ -308,54 +380,41 @@
   cursor: pointer;
 
   transition: color 0.15s ease-out;
+}
 
-  &:focus-visible {
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(64, 200, 255, 0.25);
-  }
+.tienda-portada-footnote-link:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(64, 200, 255, 0.25);
 }
 
 .tienda-portada-footnote-link:hover { color: #ffffff; }
 
-@media (max-width: 960px) {
+/* Ajustes para pantallas “medias” */
+@media (max-width: 980px) {
   .tienda-portada-wrapper {
-    padding: 1rem 0.8rem 1rem;
+    --tileW: clamp(190px, 28vw, 280px);
+    --tileMinH: clamp(140px, 18vh, 190px);
+    --iconS: clamp(74px, 10vw, 122px);
+    padding: clamp(12px, 1.8vh, 18px) clamp(10px, 1.6vw, 16px) clamp(12px, 2vh, 18px);
+  }
+}
 
-    background: #f7e2b2;
-    border: 2px solid #d2b071;
-    box-shadow:
-      0 0 0 1px rgba(90, 59, 23, 0.35),
-      0 14px 30px rgba(0, 0, 0, 0.45);
-
-    color: #3a2816;
-
-    &::before { opacity: 0; }
+/* Mobile */
+@media (max-width: 640px) {
+  .tienda-portada-wrapper {
+    --tileW: min(92vw, 360px);
+    --tileMinH: 156px;
+    --iconS: 112px;
+    border-radius: 0;
+    padding: 12px 10px 12px;
   }
 
   .tienda-portada-title {
-    color: #3a2816;
-    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
+    margin-bottom: 10px;
+    font-size: 1.15rem;
   }
 
-  .tienda-portada-subtitle {
-    color: rgba(58, 40, 22, 0.78);
-    text-shadow: none;
+  .tienda-portada-grid {
+    gap: 12px;
   }
-
-  .tienda-portada-oferta { opacity: 1; filter: none; }
-
-  .tienda-portada-btn {
-    min-height: 168px;
-    background: rgba(255, 255, 255, 0.35);
-    box-shadow:
-      inset 0 0 0 1px rgba(0, 0, 0, 0.08),
-      0 10px 18px rgba(0, 0, 0, 0.18);
-  }
-
-  .tienda-portada-footnote {
-    color: rgba(58, 40, 22, 0.78);
-    text-shadow: none;
-  }
-
-  .tienda-portada-footnote-link { color: #3a2816; }
 }

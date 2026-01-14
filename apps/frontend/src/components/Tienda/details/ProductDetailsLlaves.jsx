@@ -1,18 +1,6 @@
+// apps/frontend/src/components/Tienda/details/ProductDetailsLlaves.jsx
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import "../../../styles/components/Tienda/productDetailsLlaves.scss";
-
-/* =========================================================
-   ProductDetailsLlaves (DOPAMINA PASS)
-   - Textos centrados + blancos
-   - Botones más legibles (blancos, bevel, focus, shine recortado)
-   - Spin con más tensión:
-     * fase 1: aceleración + arrastre
-     * fase 2: "lock" final con overshoot/snap
-     * ticks que aumentan cerca del final
-     * variable CSS --spinP (0..1) para glow/pulso
-   - ICONS: assets /public/tienda/productos/llaves/*.webp
-     * dinero: misma imagen + badge con importe via CSS
-   ========================================================= */
 
 const ASSET_BASE = "/tienda/productos/llaves";
 
@@ -22,6 +10,59 @@ const RARITY = {
   epic: { label: "Épico" },
   legend: { label: "Legendario" },
 };
+
+function normServer(v) {
+  return String(v ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_-]+/g, "");
+}
+
+function displayServerLabel(server) {
+  const s = normServer(server);
+  if (s.includes("oneblock")) return "OneBlock";
+  if (s.includes("gens")) return "Gens";
+  if (s.includes("global")) return "Global";
+  return "Survival Clásico";
+}
+
+function normVariant(v) {
+  return String(v ?? "").trim().toLowerCase();
+}
+
+function inferServerFromPkg(pkg) {
+  const hay = [
+    pkg?.server,
+    pkg?.category_slug,
+    pkg?.category_name,
+    pkg?.name,
+    pkg?.slug,
+    pkg?.short_description,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  if (hay.includes("oneblock") || hay.includes("one block") || hay.includes("one_block")) return "oneblock";
+  if (hay.includes("gens")) return "gens";
+  if (hay.includes("global")) return "global";
+  if (hay.includes("survival")) return "survival";
+  return "";
+}
+
+function inferServerFromLocation() {
+  try {
+    const p = String(window?.location?.pathname || "").toLowerCase();
+    if (p.includes("/oneblock")) return "oneblock";
+    if (p.includes("/gens")) return "gens";
+    if (p.includes("/survival")) return "survival";
+    return "";
+  } catch {
+    return "";
+  }
+}
+
+/* Helpers */
 
 function makeItem({ id, name, meta, rarity = "common", weight = 1, icon = null, group = "", amount = null }) {
   return { id, name, meta, rarity, weight, icon, group, amount };
@@ -54,9 +95,8 @@ function usePrefersReducedMotion() {
   return reduced;
 }
 
-/* ---------------------------
-   SOUND (WebAudio) – sin assets
---------------------------- */
+/* Sound */
+
 function useSpinSounds() {
   const ctxRef = useRef(null);
   const masterRef = useRef(null);
@@ -87,7 +127,7 @@ function useSpinSounds() {
       if (!ok) return;
 
       const now = performance.now();
-      const minGap = 18; // un pelín más "nervioso"
+      const minGap = 18;
       if (now - lastTickAtRef.current < minGap) return;
       lastTickAtRef.current = now;
 
@@ -190,27 +230,22 @@ function useSpinSounds() {
   return { tick, success, ensure };
 }
 
-/* =========================================================
-   ICON RESOLVER (voto assets)
-   ========================================================= */
+/* Iconos */
 
-const VOTO_ICONS = {
-  // dinero (mismo asset + badge)
+const ICONS = {
+  spawner_generic: `${ASSET_BASE}/spawner.webp`,
+  book: `${ASSET_BASE}/libro.webp`,
+  enchanted_book: `${ASSET_BASE}/libroencantado.webp`,
+  potion: `${ASSET_BASE}/pocion.webp`,
+  bucket: `${ASSET_BASE}/cubo.webp`,
+  money: `${ASSET_BASE}/dinero.webp`,
+
   money_75: `${ASSET_BASE}/dinero.webp`,
   money_150: `${ASSET_BASE}/dinero.webp`,
   money_300: `${ASSET_BASE}/dinero.webp`,
   money_500: `${ASSET_BASE}/dinero.webp`,
   money_1000: `${ASSET_BASE}/dinero.webp`,
 
-  // kit voto
-  voto_sword: `${ASSET_BASE}/espadavoto.webp`,
-  voto_pick: `${ASSET_BASE}/picovoto.webp`,
-  voto_helm: `${ASSET_BASE}/cascovoto.webp`,
-  voto_chest: `${ASSET_BASE}/pecheravoto.webp`,
-  voto_legs: `${ASSET_BASE}/pantvoto.webp`,
-  voto_boots: `${ASSET_BASE}/botasvoto.webp`,
-
-  // materiales
   iron_32: `${ASSET_BASE}/hierro.webp`,
   diamond_5: `${ASSET_BASE}/diamantes.webp`,
   oak_64: `${ASSET_BASE}/maderaroble.webp`,
@@ -220,13 +255,68 @@ const VOTO_ICONS = {
   rockets_32: `${ASSET_BASE}/cohetes.webp`,
   totem_1: `${ASSET_BASE}/totem.webp`,
   dragon_head: `${ASSET_BASE}/cabezadragon.webp`,
-
-  // extra
   key2: `${ASSET_BASE}/llavevoto.webp`,
+
+  voto_sword: `${ASSET_BASE}/espadavoto.webp`,
+  voto_pick: `${ASSET_BASE}/picovoto.webp`,
+  voto_axe: `${ASSET_BASE}/hachavoto.webp`,
+  voto_shovel: `${ASSET_BASE}/palavoto.webp`,
+  voto_hoe: `${ASSET_BASE}/azadavoto.webp`,
+  voto_boots: `${ASSET_BASE}/botasvoto.webp`,
+  voto_legs: `${ASSET_BASE}/pantvoto.webp`,
+  voto_chest: `${ASSET_BASE}/pecheravoto.webp`,
+  voto_helm: `${ASSET_BASE}/cascovoto.webp`,
+
+  axolotl_bucket: `${ASSET_BASE}/cuboajolote.webp`,
+  tadpole_bucket: `${ASSET_BASE}/cuborenacuajo.webp`,
+
+  bread_64: `${ASSET_BASE}/pan.webp`,
+  cooked_beef_16: `${ASSET_BASE}/ternera.webp`,
+  cake_1: `${ASSET_BASE}/tarta.webp`,
+  golden_apple_1: `${ASSET_BASE}/goldenapple.webp`,
+
+  pot_strength_long: `${ASSET_BASE}/pocionfuerza.webp`,
+  pot_fire_res_long: `${ASSET_BASE}/pocionfuego.webp`,
+  pot_invis_long: `${ASSET_BASE}/pocioninvis.webp`,
+  pot_speed_long: `${ASSET_BASE}/pocionvelocidad.webp`,
+
+  books_8: `${ASSET_BASE}/libro.webp`,
+  ench_silk_touch_1: `${ASSET_BASE}/libroencantado.webp`,
+  ench_infinity_1: `${ASSET_BASE}/libroencantado.webp`,
+  ench_swift_sneak_3: `${ASSET_BASE}/libroencantado.webp`,
+  ench_soul_speed_3: `${ASSET_BASE}/libroencantado.webp`,
+
+  oak_log_64: `${ASSET_BASE}/maderaroble.webp`,
+  grass_block_64: `${ASSET_BASE}/hierba.webp`,
+  redstone_64: `${ASSET_BASE}/redstone.webp`,
+  lapis_64: `${ASSET_BASE}/lapis.webp`,
+  copper_ingot_64: `${ASSET_BASE}/cobre.webp`,
+  leather_48: `${ASSET_BASE}/cuero.webp`,
+  iron_ingot_32: `${ASSET_BASE}/hierro.webp`,
+  gold_ingot_24: `${ASSET_BASE}/oro.webp`,
+  emerald_16: `${ASSET_BASE}/esmeraldas.webp`,
+  diamond_8: `${ASSET_BASE}/diamantes.webp`,
+
+  ender_pearl_1: `${ASSET_BASE}/enderpearl.webp`,
+  blaze_rod_3: `${ASSET_BASE}/blazerod.webp`,
+  netherite_ingot_1: `${ASSET_BASE}/netheriteingot.webp`,
+  netherite_upgrade_template_1: `${ASSET_BASE}/templateupgrade.webp`,
+  trim_snout_1: `${ASSET_BASE}/templatehocico.webp`,
+  diamond_horse_armor_1: `${ASSET_BASE}/armaduracaballo.webp`,
+  saddle_1: `${ASSET_BASE}/silla.webp`,
+  name_tag_1: `${ASSET_BASE}/nametag.webp`,
+  music_disc_far_1: `${ASSET_BASE}/disc_far.webp`,
+  turtle_helmet_1: `${ASSET_BASE}/casco_tortuga.webp`,
+  wolf_armor_1: `${ASSET_BASE}/armadura_lobo.webp`,
+
+  lime_bundle_1: `${ASSET_BASE}/lime_bundle.webp`,
+  lime_harness_1: `${ASSET_BASE}/lime_harness.webp`,
+
+  goat_horn_ponder_1: `${ASSET_BASE}/cuerno.webp`,
+  goat_horn_sing_1: `${ASSET_BASE}/cuerno.webp`,
 };
 
 function getMoneyBadgeFromId(id) {
-  // money_75 -> "75$"
   if (!id?.startsWith?.("money_")) return null;
   const n = String(id).split("_")[1];
   if (!n) return null;
@@ -235,15 +325,13 @@ function getMoneyBadgeFromId(id) {
 
 function withIcons(items) {
   return items.map((it) => {
-    const icon = VOTO_ICONS[it.id] || it.icon || null;
+    const icon = ICONS[it.id] || it.icon || null;
     const amount = it.amount ?? getMoneyBadgeFromId(it.id);
     return { ...it, icon, amount };
   });
 }
 
-/* =========================================================
-   DATASETS
-   ========================================================= */
+/* Datasets */
 
 function datasetRandom() {
   return {
@@ -279,10 +367,10 @@ function datasetCabezas() {
   };
 }
 
-function datasetVoto() {
+function datasetVotoClasico() {
   const total = 105;
 
-  const votoItemsRaw = [
+  const raw = [
     makeItem({ id: "money_75", name: "+75$", meta: "Economía", rarity: "common", weight: 18.0, group: "Dinero" }),
     makeItem({ id: "money_150", name: "+150$", meta: "Economía", rarity: "common", weight: 12.0, group: "Dinero" }),
     makeItem({ id: "money_300", name: "+300$", meta: "Economía", rarity: "rare", weight: 8.0, group: "Dinero" }),
@@ -308,20 +396,202 @@ function datasetVoto() {
     makeItem({ id: "key2", name: "2× Llave Voto", meta: "Extra dentro", rarity: "legend", weight: 1.0, group: "Extra" }),
   ];
 
-  const votoItems = withIcons(votoItemsRaw);
-
+  const items = withIcons(raw);
   const pct = (w) => ((w / total) * 100).toFixed(2).replace(".", ",");
 
   return {
-    hero: { title: "Llave Voto", tagline: "Progreso real", line: "Dinero, kit y materiales" },
-    reel: votoItems.map((it) => ({ ...it, meta: `${it.meta} · ${pct(it.weight)}%` })),
+    hero: { title: "Llave Voto", tagline: "Progreso real (Survival)", line: "Dinero, kit y materiales" },
+    reel: items.map((it) => ({ ...it, meta: `${it.meta} · ${pct(it.weight)}%` })),
     best: ["dragon_head", "key2", "totem_1", "money_1000"],
   };
 }
 
-function getDataset(variant) {
-  if (variant === "cabezas") return datasetCabezas();
-  if (variant === "voto") return datasetVoto();
+function datasetVotoOneblock() {
+  const W = 10.0;
+
+  const raw = [
+    makeItem({ id: "voto_sword", name: "Espada Voto", meta: "Kit caja voto OneBlock", rarity: "common", weight: W, group: "Kit Voto" }),
+    makeItem({ id: "voto_pick", name: "Pico Voto", meta: "Kit caja voto OneBlock", rarity: "common", weight: W, group: "Kit Voto" }),
+    makeItem({ id: "voto_axe", name: "Hacha Voto", meta: "Kit caja voto OneBlock", rarity: "common", weight: W, group: "Kit Voto" }),
+    makeItem({ id: "voto_shovel", name: "Pala Voto", meta: "Kit caja voto OneBlock", rarity: "common", weight: W, group: "Kit Voto" }),
+    makeItem({ id: "voto_hoe", name: "Azada Voto", meta: "Kit caja voto OneBlock", rarity: "common", weight: W, group: "Kit Voto" }),
+    makeItem({ id: "voto_boots", name: "Botas Voto", meta: "Kit caja voto OneBlock", rarity: "common", weight: W, group: "Kit Voto" }),
+    makeItem({ id: "voto_legs", name: "Pantalones Voto", meta: "Kit caja voto OneBlock", rarity: "common", weight: W, group: "Kit Voto" }),
+    makeItem({ id: "voto_chest", name: "Peto Voto", meta: "Kit caja voto OneBlock", rarity: "common", weight: W, group: "Kit Voto" }),
+    makeItem({ id: "voto_helm", name: "Casco Voto", meta: "Kit caja voto OneBlock", rarity: "common", weight: W, group: "Kit Voto" }),
+
+    makeItem({ id: "axolotl_bucket", name: "Cubo con Ajolote", meta: "Cubo con mob", rarity: "common", weight: W, group: "Cubos", amount: "x1" }),
+    makeItem({ id: "tadpole_bucket", name: "Cubo con Renacuajo", meta: "Cubo con mob", rarity: "common", weight: W, group: "Cubos", amount: "x1" }),
+
+    makeItem({ id: "bread_64", name: "Pan", meta: "Comida", rarity: "common", weight: W, group: "Comida", amount: "x64" }),
+    makeItem({ id: "cooked_beef_16", name: "Ternera cocinada", meta: "Comida", rarity: "common", weight: W, group: "Comida", amount: "x16" }),
+    makeItem({ id: "cake_1", name: "Tarta", meta: "Comida", rarity: "common", weight: W, group: "Comida", amount: "x1" }),
+    makeItem({ id: "golden_apple_1", name: "Manzana dorada", meta: "Comida", rarity: "common", weight: W, group: "Comida", amount: "x1" }),
+
+    makeItem({ id: "pot_strength_long", name: "Poción de Fuerza (long)", meta: "Poción extendida", rarity: "common", weight: W, group: "Pociones", amount: "x1" }),
+    makeItem({ id: "pot_fire_res_long", name: "Resistencia al Fuego (long)", meta: "Poción extendida", rarity: "common", weight: W, group: "Pociones", amount: "x1" }),
+    makeItem({ id: "pot_invis_long", name: "Invisibilidad (long)", meta: "Poción extendida", rarity: "common", weight: W, group: "Pociones", amount: "x1" }),
+    makeItem({ id: "pot_speed_long", name: "Velocidad (long)", meta: "Poción extendida", rarity: "common", weight: W, group: "Pociones", amount: "x1" }),
+
+    makeItem({ id: "books_8", name: "Libro", meta: "Libros", rarity: "common", weight: W, group: "Libros", amount: "x8" }),
+    makeItem({ id: "ench_silk_touch_1", name: "Toque de Seda I", meta: "Libro encantado", rarity: "common", weight: W, group: "Encantos", amount: "x1" }),
+    makeItem({ id: "ench_infinity_1", name: "Infinidad I", meta: "Libro encantado", rarity: "common", weight: W, group: "Encantos", amount: "x1" }),
+    makeItem({ id: "ench_swift_sneak_3", name: "Swift Sneak III", meta: "Libro encantado", rarity: "common", weight: W, group: "Encantos", amount: "x1" }),
+    makeItem({ id: "ench_soul_speed_3", name: "Soul Speed III", meta: "Libro encantado", rarity: "common", weight: W, group: "Encantos", amount: "x1" }),
+
+    makeItem({ id: "oak_log_64", name: "Tronco de roble", meta: "Materiales", rarity: "common", weight: W, group: "Materiales", amount: "x64" }),
+    makeItem({ id: "grass_block_64", name: "Bloque de hierba", meta: "Materiales", rarity: "common", weight: W, group: "Materiales", amount: "x64" }),
+    makeItem({ id: "redstone_64", name: "Redstone", meta: "Materiales", rarity: "common", weight: W, group: "Materiales", amount: "x64" }),
+    makeItem({ id: "lapis_64", name: "Lapislázuli", meta: "Materiales", rarity: "common", weight: W, group: "Materiales", amount: "x64" }),
+    makeItem({ id: "copper_ingot_64", name: "Lingote de cobre", meta: "Materiales", rarity: "common", weight: W, group: "Materiales", amount: "x64" }),
+    makeItem({ id: "leather_48", name: "Cuero", meta: "Materiales", rarity: "common", weight: W, group: "Materiales", amount: "x48" }),
+    makeItem({ id: "iron_ingot_32", name: "Lingote de hierro", meta: "Materiales", rarity: "common", weight: W, group: "Materiales", amount: "x32" }),
+    makeItem({ id: "gold_ingot_24", name: "Lingote de oro", meta: "Materiales", rarity: "common", weight: W, group: "Materiales", amount: "x24" }),
+    makeItem({ id: "emerald_16", name: "Esmeraldas", meta: "Materiales", rarity: "common", weight: W, group: "Materiales", amount: "x16" }),
+    makeItem({ id: "diamond_8", name: "Diamantes", meta: "Materiales", rarity: "common", weight: W, group: "Materiales", amount: "x8" }),
+
+    makeItem({ id: "ender_pearl_1", name: "Perla de Ender", meta: "Utilidad", rarity: "common", weight: W, group: "Nether/End", amount: "x1" }),
+    makeItem({ id: "blaze_rod_3", name: "Vara de Blaze", meta: "Nether", rarity: "common", weight: W, group: "Nether/End", amount: "x3" }),
+    makeItem({ id: "netherite_ingot_1", name: "Lingote de netherita", meta: "Progreso", rarity: "common", weight: W, group: "Nether/End", amount: "x1" }),
+    makeItem({ id: "netherite_upgrade_template_1", name: "Plantilla mejora netherita", meta: "Plantilla", rarity: "common", weight: W, group: "Nether/End", amount: "x1" }),
+    makeItem({ id: "trim_snout_1", name: "Ribete Snout (Hocico)", meta: "Plantilla herrería", rarity: "common", weight: W, group: "Nether/End", amount: "x1" }),
+    makeItem({ id: "diamond_horse_armor_1", name: "Armadura caballo diamante", meta: "Coleccionable", rarity: "common", weight: W, group: "Utilidad", amount: "x1" }),
+    makeItem({ id: "saddle_1", name: "Silla de montar", meta: "Utilidad", rarity: "common", weight: W, group: "Utilidad", amount: "x1" }),
+    makeItem({ id: "name_tag_1", name: "Name Tag", meta: "Utilidad", rarity: "common", weight: W, group: "Utilidad", amount: "x1" }),
+    makeItem({ id: "music_disc_far_1", name: "Disco “Far”", meta: "Coleccionable", rarity: "common", weight: W, group: "Coleccionable", amount: "x1" }),
+    makeItem({ id: "turtle_helmet_1", name: "Casco de tortuga", meta: "Utilidad", rarity: "common", weight: W, group: "Utilidad", amount: "x1" }),
+    makeItem({ id: "wolf_armor_1", name: "Armadura de lobo", meta: "Utilidad", rarity: "common", weight: W, group: "Utilidad", amount: "x1" }),
+
+    makeItem({ id: "lime_bundle_1", name: "lime_bundle", meta: "ID especial (YAML)", rarity: "common", weight: W, group: "Raro/Custom", amount: "x1" }),
+    makeItem({ id: "lime_harness_1", name: "lime_harness", meta: "ID especial (YAML)", rarity: "common", weight: W, group: "Raro/Custom", amount: "x1" }),
+
+    makeItem({ id: "goat_horn_ponder_1", name: "Cuerno de cabra (ponder)", meta: "Instrumento", rarity: "common", weight: W, group: "Cuernos", amount: "x1" }),
+    makeItem({ id: "goat_horn_sing_1", name: "Cuerno de cabra (sing)", meta: "Instrumento", rarity: "common", weight: W, group: "Cuernos", amount: "x1" }),
+  ];
+
+  return {
+    hero: { title: "Llave Voto", tagline: "49 recompensas (OneBlock)", line: "Todas equiprobables (≈ 2,04% cada una)" },
+    reel: withIcons(raw),
+    best: ["netherite_ingot_1", "netherite_upgrade_template_1", "ench_swift_sneak_3", "ench_soul_speed_3", "diamond_8", "emerald_16"],
+  };
+}
+
+function datasetSpawners() {
+  const COMMON_W = 10.0;
+  const RARE_W = 2.33;
+  const LEG_W = 0.5;
+
+  const common = [
+    ["axolotl", "Ajolote"],
+    ["breeze", "Brisa"],
+    ["camel", "Camello"],
+    ["cave_spider", "Araña de cueva"],
+    ["chicken", "Gallina"],
+    ["cod", "Bacalao"],
+    ["donkey", "Burro"],
+    ["drowned", "Ahogado"],
+    ["fox", "Zorro"],
+    ["frog", "Rana"],
+    ["glow_squid", "Calamar brillante"],
+    ["goat", "Cabra"],
+    ["hoglin", "Hoglin"],
+    ["horse", "Caballo"],
+    ["husk", "Zombi momificado"],
+    ["llama", "Llama"],
+    ["magma_cube", "Cubo de magma"],
+    ["mooshroom", "Vaca seta"],
+    ["mule", "Mula"],
+    ["ocelot", "Ocelote"],
+    ["panda", "Panda"],
+    ["parrot", "Loro"],
+    ["pig", "Cerdo"],
+    ["piglin_brute", "Piglin bruto"],
+    ["piglin", "Piglin"],
+    ["polar_bear", "Oso polar"],
+    ["rabbit", "Conejo"],
+    ["salmon", "Salmón"],
+    ["sheep", "Oveja"],
+    ["skeleton_horse", "Caballo esqueleto"],
+    ["skeleton", "Esqueleto"],
+    ["slime", "Slime / Baba"],
+    ["spider", "Araña"],
+    ["tropical_fish", "Pez tropical"],
+    ["turtle", "Tortuga"],
+    ["zoglin", "Zoglin"],
+    ["zombie_horse", "Caballo zombi"],
+    ["zombie", "Zombi"],
+  ];
+
+  const rare = [
+    ["blaze", "Blaze"],
+    ["witch", "Bruja"],
+  ];
+
+  const legend = [
+    ["creeper", "Creeper"],
+    ["enderman", "Enderman"],
+    ["iron_golem", "Gólem de hierro"],
+    ["pillager", "Saqueador"],
+    ["villager", "Aldeano"],
+    ["vindicator", "Vindicador"],
+  ];
+
+  const reelRaw = [
+    ...common.map(([k, label]) =>
+      makeItem({
+        id: `sp_${k}`,
+        name: `Spawner ${label}`,
+        meta: "Spawner de Entidades",
+        rarity: "common",
+        weight: COMMON_W,
+        icon: ICONS.spawner_generic,
+        group: "Spawner",
+      })
+    ),
+    ...rare.map(([k, label]) =>
+      makeItem({
+        id: `sp_${k}`,
+        name: `Spawner ${label}`,
+        meta: "Spawner de Entidades",
+        rarity: "rare",
+        weight: RARE_W,
+        icon: ICONS.spawner_generic,
+        group: "Spawner",
+      })
+    ),
+    ...legend.map(([k, label]) =>
+      makeItem({
+        id: `sp_${k}`,
+        name: `Spawner ${label}`,
+        meta: "Spawner de Entidades",
+        rarity: "legend",
+        weight: LEG_W,
+        icon: ICONS.spawner_generic,
+        group: "Spawner",
+      })
+    ),
+  ];
+
+  return {
+    hero: { title: "Llave Spawners", tagline: "1 spawner garantizado", line: "La rareza real la marca el Weight (peso)" },
+    reel: withIcons(reelRaw),
+    best: ["sp_villager", "sp_iron_golem", "sp_enderman", "sp_creeper", "sp_vindicator", "sp_pillager"],
+  };
+}
+
+function getDataset(variant, server) {
+  const v = normVariant(variant);
+  const sN = normServer(server);
+
+  if (v === "cabezas") return datasetCabezas();
+
+  if (v === "voto") {
+    if (sN.includes("oneblock")) return datasetVotoOneblock();
+    return datasetVotoClasico();
+  }
+
+  if (v === "spawner" || v === "spawners") return datasetSpawners();
+
   return datasetRandom();
 }
 
@@ -367,32 +637,13 @@ export default function ProductDetailsLlaves({
   const { tick, success, ensure } = useSpinSounds();
 
   const rootRef = useRef(null);
-
-  const resolvedVariant = registryData?.props?.variant || variant;
-  const resolvedServer = registryData?.props?.server || server;
-  const dataset = useMemo(() => getDataset(resolvedVariant), [resolvedVariant]);
-
-  const productImg =
-    registryData?.__pkg?.image_url ||
-    registryData?.__pkg?.image ||
-    pkg?.image_url ||
-    pkg?.image ||
-    pkg?.imageUrl ||
-    null;
-
-  const title = registryData?.name || dataset.hero.title;
-
-  const accentClass =
-    resolvedVariant === "voto" ? "is-voto" : resolvedVariant === "cabezas" ? "is-cabezas" : "is-random";
-
   const viewportRef = useRef(null);
   const reelRef = useRef(null);
   const artImgRef = useRef(null);
 
   const rafRef = useRef(0);
   const spinSeqRef = useRef(0);
-
-  const pendingRef = useRef(null); // { picked, seq, targetIndex }
+  const pendingRef = useRef(null);
   const startedRef = useRef(false);
 
   const animRef = useRef({
@@ -402,15 +653,59 @@ export default function ProductDetailsLlaves({
     fromX: 0,
     midX: 0,
     toX: 0,
-    cut: 0.78, // % de fase 1
+    cut: 0.78,
     lastIdx: -1,
     lastX: 0,
   });
 
+  const payloadPkg = registryData?.__pkg || pkg || null;
+
+  const resolvedVariant = useMemo(() => {
+    const v = registryData?.props?.variant ?? variant;
+    return normVariant(v);
+  }, [registryData, variant]);
+
+  const resolvedServer = useMemo(() => {
+    const direct = registryData?.props?.server ?? registryData?.server ?? server;
+    const fromPkg = inferServerFromPkg(payloadPkg);
+    const fromPath = inferServerFromLocation();
+
+    const directN = normServer(direct);
+    const pkgN = normServer(fromPkg);
+    const pathN = normServer(fromPath);
+
+    // Si estás en ruta OneBlock y el registry viene mal (survival), forzamos OneBlock en la Llave Voto
+    if (resolvedVariant === "voto" && pathN.includes("oneblock") && !directN.includes("oneblock")) {
+      return "oneblock";
+    }
+
+    return directN || pkgN || pathN || "clasico";
+  }, [registryData, payloadPkg, server, resolvedVariant]);
+
+  const dataset = useMemo(() => getDataset(resolvedVariant, resolvedServer), [resolvedVariant, resolvedServer]);
+
+  const productImg =
+    registryData?.__pkg?.image_url ||
+    registryData?.__pkg?.image ||
+    payloadPkg?.image_url ||
+    payloadPkg?.image ||
+    payloadPkg?.imageUrl ||
+    null;
+
+  const serverText = displayServerLabel(resolvedServer);
+
+  const accentClass =
+    resolvedVariant === "voto"
+      ? "is-voto"
+      : resolvedVariant === "cabezas"
+      ? "is-cabezas"
+      : resolvedVariant === "spawner" || resolvedVariant === "spawners"
+      ? "is-spawner"
+      : "is-random";
+
   const [spinning, setSpinning] = useState(false);
   const [result, setResult] = useState(null);
   const [strip, setStrip] = useState(() => dataset.reel);
-
   const [openDropsModal, setOpenDropsModal] = useState(false);
   const [openWinModal, setOpenWinModal] = useState(false);
 
@@ -493,7 +788,6 @@ export default function ProductDetailsLlaves({
         const now = performance.now();
         const tAll = clamp((now - animRef.current.startAt) / animRef.current.duration, 0, 1);
 
-        // Fase 1 (rapidez) + Fase 2 (lock con overshoot)
         const cutT = animRef.current.cut;
         let x = fromX;
 
@@ -513,7 +807,6 @@ export default function ProductDetailsLlaves({
           const pointerX = m.vpW / 2;
           const idx = Math.floor((pointerX - x) / m.stepW);
 
-          // Intensidad por "velocidad" + boost final
           const vel = Math.abs(x - animRef.current.lastX);
           animRef.current.lastX = x;
           const velN = clamp(vel / (m.stepW * 0.9), 0, 1);
@@ -546,7 +839,6 @@ export default function ProductDetailsLlaves({
     [ensure, measureMetrics, setReelX, setSpinP, success, tick]
   );
 
-  // Reset cuando cambia dataset
   useEffect(() => {
     stopAnim();
     setStrip(dataset.reel);
@@ -559,7 +851,6 @@ export default function ProductDetailsLlaves({
     requestAnimationFrame(() => setReelX(0));
   }, [dataset, setReelX, stopAnim]);
 
-  // ESC para cerrar modales
   useEffect(() => {
     const anyOpen = openDropsModal || openWinModal;
     if (!anyOpen) return;
@@ -574,7 +865,6 @@ export default function ProductDetailsLlaves({
     return () => window.removeEventListener("keydown", onKey);
   }, [openDropsModal, openWinModal]);
 
-  // Arranque real del spin cuando strip está renderizado
   useLayoutEffect(() => {
     if (!spinning) return;
     if (startedRef.current) return;
@@ -592,7 +882,6 @@ export default function ProductDetailsLlaves({
       const targetX = -(idx * m.stepW) + (m.vpW / 2 - m.itemW / 2);
       const toX = clamp(targetX, m.maxRight, m.maxLeft);
 
-      // Dopamina: un overshoot antes de clavar el resultado
       const sign = Math.sign(toX - 0) || -1;
       const overshoot = Math.min(18, Math.max(10, m.stepW * 0.10));
       const midX = clamp(toX + sign * overshoot, m.maxRight, m.maxLeft);
@@ -620,18 +909,11 @@ export default function ProductDetailsLlaves({
       const x = rect.left + rect.width / 2;
       const y = rect.top + rect.height / 2;
 
-      document.dispatchEvent(
-        new CustomEvent("tienda:fly", {
-          detail: { img, rect: { x, y } },
-        })
-      );
-    } catch {
-      // no-op
-    }
+      document.dispatchEvent(new CustomEvent("tienda:fly", { detail: { img, rect: { x, y } } }));
+    } catch {}
   }, [productImg]);
 
   const dispatchAddToCart = useCallback(() => {
-    const payloadPkg = registryData?.__pkg || pkg || null;
     if (!payloadPkg) return;
 
     emitFlyToBasket();
@@ -642,7 +924,7 @@ export default function ProductDetailsLlaves({
     }
 
     window.dispatchEvent(new CustomEvent("flancraft:add-to-cart", { detail: { pkg: payloadPkg } }));
-  }, [emitFlyToBasket, onAddToCart, pkg, registryData]);
+  }, [emitFlyToBasket, onAddToCart, payloadPkg]);
 
   const pctText = (id) => {
     const v = pctMap.get(id);
@@ -689,22 +971,16 @@ export default function ProductDetailsLlaves({
     setSpinning(true);
     setStrip(long);
 
-    // “arranque” sonoro para dopamina (solo 1 toque)
     ensure();
     tick(0.55);
   }, [dataset, reducedMotion, spinning, stopAnim, setReelX, success, ensure, tick]);
 
   return (
     <div ref={rootRef} className={`pdkeys ${accentClass}`} data-server={resolvedServer}>
-      {/* TOP */}
       <div className="pdkeys__top">
         <div className="pdkeys__topLeft">
           <div className="pdkeys__head">
-            <div className="pdkeys__kicker">PRODUCTO</div>
-            <h2 className="pdkeys__title">{title}</h2>
-            <div className="pdkeys__sub">
-              {dataset.hero.tagline} · {dataset.hero.line}
-            </div>
+            <div className="pdkeys__kicker">LLAVES · {serverText}</div>
           </div>
 
           <div className="pdkeys__best">
@@ -716,19 +992,12 @@ export default function ProductDetailsLlaves({
             <div className="pdkeys__bestGrid">
               {bestDrops.map((it) => (
                 <div key={it.id} className={`pdkeys__bestCard is-${it.rarity}`} title={it.name}>
-                  <div
-                    className={`pdkeys__bestIcon ${it.amount ? "has-amt" : ""}`}
-                    data-amt={it.amount || undefined}
-                  >
-                    {it.icon ? (
-                      <img src={it.icon} alt="" loading="lazy" draggable="false" />
-                    ) : (
-                      <IconFallback text={it.name} />
-                    )}
+                  <div className={`pdkeys__bestIcon ${it.amount ? "has-amt" : ""}`} data-amt={it.amount || undefined}>
+                    {it.icon ? <img src={it.icon} alt="" loading="lazy" draggable="false" /> : <IconFallback text={it.name} />}
                   </div>
                   <div className="pdkeys__bestText">
                     <div className="pdkeys__bestName">{it.name}</div>
-                    <div className="pdkeys__bestMeta">{rarityLabel(it.rarity)}</div>
+                    <div className="pdkeys__bestMeta">{RARITY[it.rarity]?.label || "Común"}</div>
                   </div>
                 </div>
               ))}
@@ -749,12 +1018,7 @@ export default function ProductDetailsLlaves({
           </div>
 
           <div className="pdkeys__actions">
-            <button
-              type="button"
-              className="pdkeys__btn pdkeys__btn--ghost"
-              onClick={() => setOpenDropsModal(true)}
-              disabled={spinning}
-            >
+            <button type="button" className="pdkeys__btn pdkeys__btn--ghost" onClick={() => setOpenDropsModal(true)} disabled={spinning}>
               <span className="pdkeys__btnShine" aria-hidden="true" />
               VER PREMIOS
             </button>
@@ -772,7 +1036,6 @@ export default function ProductDetailsLlaves({
         </div>
       </div>
 
-      {/* REEL */}
       <div className={`pdkeys__case ${spinning ? "is-spinning" : ""}`}>
         <div className="pdkeys__pointer" aria-hidden="true">
           <span className="pdkeys__pointerLine" />
@@ -783,10 +1046,7 @@ export default function ProductDetailsLlaves({
           <div className="pdkeys__reel" ref={reelRef}>
             {strip.map((it, idx) => (
               <div key={`${it.id}-${idx}`} className={`pdkeys__item is-${it.rarity}`}>
-                <div
-                  className={`pdkeys__itemIcon ${it.amount ? "has-amt" : ""}`}
-                  data-amt={it.amount || undefined}
-                >
+                <div className={`pdkeys__itemIcon ${it.amount ? "has-amt" : ""}`} data-amt={it.amount || undefined}>
                   {it.icon ? <img src={it.icon} alt="" loading="lazy" draggable="false" /> : <IconFallback text={it.name} />}
                 </div>
                 <div className="pdkeys__itemName">{it.name}</div>
@@ -799,7 +1059,6 @@ export default function ProductDetailsLlaves({
         <div className="pdkeys__note">Vista previa orientativa · La apertura real ocurre en el servidor</div>
       </div>
 
-      {/* MODAL: PREMIOS */}
       {openDropsModal ? (
         <div className="pdkeysModal" role="dialog" aria-label="Premios">
           <div className="pdkeysModal__backdrop" onClick={() => setOpenDropsModal(false)} />
@@ -816,10 +1075,7 @@ export default function ProductDetailsLlaves({
             <div className="pdkeysModal__grid">
               {dataset.reel.map((it) => (
                 <div key={it.id} className={`pdkeysDrop is-${it.rarity}`}>
-                  <div
-                    className={`pdkeysDrop__icon ${it.amount ? "has-amt" : ""}`}
-                    data-amt={it.amount || undefined}
-                  >
+                  <div className={`pdkeysDrop__icon ${it.amount ? "has-amt" : ""}`} data-amt={it.amount || undefined}>
                     {it.icon ? <img src={it.icon} alt="" loading="lazy" draggable="false" /> : <IconFallback text={it.name} />}
                   </div>
 
@@ -839,27 +1095,25 @@ export default function ProductDetailsLlaves({
         </div>
       ) : null}
 
-      {/* MODAL: RESULTADO */}
       {openWinModal && result ? (
         <div className="pdkeysWin" role="dialog" aria-label="Resultado">
           <div className="pdkeysWin__backdrop" onClick={() => setOpenWinModal(false)} />
+
           <div className={`pdkeysWin__panel is-${result.rarity}`}>
             <button className="pdkeysWin__close" onClick={() => setOpenWinModal(false)} aria-label="Cerrar">
               ×
             </button>
 
-            <div className="pdkeysWin__kicker">RESULTADO (VISTA PREVIA)</div>
-            <div className="pdkeysWin__name">{result.name}</div>
-            <div className="pdkeysWin__meta">{result.group ? result.group : result.meta}</div>
+            <div className="pdkeysWin__header">
+              <div className="pdkeysWin__name">{result.name}</div>
+              <div className="pdkeysWin__meta">{result.group ? result.group : result.meta}</div>
+            </div>
 
-            <div className="pdkeysWin__row">
-              <div className={`pdkeysWin__icon ${result.amount ? "has-amt" : ""}`} data-amt={result.amount || undefined}>
+            <div className="pdkeysWin__hero">
+              <div className={`pdkeysWin__heroIcon ${result.amount ? "has-amt" : ""}`} data-amt={result.amount || undefined}>
+                <div className="pdkeysWin__corner pdkeysWin__corner--rar">{rarityLabel(result.rarity)}</div>
+                {pctText(result.id) ? <div className="pdkeysWin__corner pdkeysWin__corner--pct">{pctText(result.id)}</div> : null}
                 {result.icon ? <img src={result.icon} alt="" loading="lazy" draggable="false" /> : <IconFallback text={result.name} />}
-              </div>
-
-              <div className="pdkeysWin__badges">
-                <span className="pdkeysWin__badge">{rarityLabel(result.rarity)}</span>
-                {pctText(result.id) ? <span className="pdkeysWin__badge soft">{pctText(result.id)}</span> : null}
               </div>
             </div>
 

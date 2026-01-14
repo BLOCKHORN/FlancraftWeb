@@ -348,6 +348,13 @@ function isItemsOpTheme(data) {
   return t === "itemsop" || t === "items-op" || t === "items_op";
 }
 
+const formatQtyBig = (qtyLabelOrNull, rawName) => {
+  const q = qtyLabelOrNull || extractQtyLabel(rawName) || "";
+  if (!q) return "";
+  // x8 -> X8
+  return String(q).toUpperCase();
+};
+
 /* ===========================
    COMPONENTE
    =========================== */
@@ -402,6 +409,7 @@ const TiendaProductosVista = ({
     const arr = Array.from(map.values());
     arr.sort((a, b) => a.firstIdx - b.firstIdx);
 
+    // ordenar variantes por cantidad si aplica
     arr.forEach((sec) => {
       const qtyCount = sec.items.filter((it) => typeof it.qtyNum === "number").length;
       const hasQty = qtyCount >= 2;
@@ -504,7 +512,6 @@ const TiendaProductosVista = ({
         setDetailsTitle(title);
         setDetailsHtml("");
 
-        // Pasamos un content “estándar” para que el modal lo pinte
         setDetailsContent({
           type: "react_component",
           Comp,
@@ -525,13 +532,6 @@ const TiendaProductosVista = ({
     },
     [categoria]
   );
-
-  const onOpenFromMedia = (e, pkg, rawName, canOpen, isItemsOp) => {
-    if (!canOpen) return;
-    e?.stopPropagation?.();
-    if (isItemsOp) return;
-    openDetalles(pkg, rawName);
-  };
 
   return (
     <div className={`tienda-productos tienda-productos--${slugCat} ${embedMode ? "tp-embed" : ""}`}>
@@ -564,6 +564,13 @@ const TiendaProductosVista = ({
               }, 0);
               const secDiscountPct = secDiscountPctRaw || null;
 
+              // detalles (una sola vez por sección)
+              const firstForDetails = sec.items?.[0]?.pkg || null;
+              const firstRawForDetails = sec.items?.[0]?.rawName || sec.title || "Detalles";
+              const sectionDetails = firstForDetails ? buildDetails(firstForDetails, categoria) : null;
+              const sectionIsItemsOp = isItemsOpTheme(sectionDetails?.data);
+              const sectionHasDetails = Boolean(sectionDetails?.hasDetails) && !sectionIsItemsOp;
+
               // ============ STACK (dinero / xp) ============
               if (isStackSection) {
                 return (
@@ -589,6 +596,21 @@ const TiendaProductosVista = ({
                         <div className="tp-nameplate tp-nameplate--hero">
                           <span className="tp-nameplate__text">{sec.title}</span>
                         </div>
+
+                        {sectionHasDetails && (
+                          <button
+                            type="button"
+                            className="tp-detailsOne"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openDetalles(firstForDetails, firstRawForDetails);
+                            }}
+                            title="Ver detalles"
+                          >
+                            <span className="tp-detailsOne__label">Ver detalles</span>
+                            <span className="tp-detailsOne__chev" aria-hidden="true" />
+                          </button>
+                        )}
                       </div>
 
                       <div className="tp-stack-grid">
@@ -605,32 +627,27 @@ const TiendaProductosVista = ({
 
                           const enCarrito = estaEnCarrito(pkg);
 
-                          const qtyLabel =
-                            it.qtyLabel || (typeof it.qtyNum === "number" ? `x${it.qtyNum}` : rawName);
-
-                          const { hasDetails, data } = buildDetails(pkg, categoria);
-                          const isItemsOp = isItemsOpTheme(data);
-                          const detailsKey = isItemsOp ? getProductDetailsKey(pkg, categoria) : null;
+                          const qtyBig = formatQtyBig(it.qtyLabel, rawName) || "X1";
 
                           const flyBase = pkg?.image_url || pkg?.image || pkg?.imageUrl || secImg || imgFallback;
                           const flyImg = getImg(flyBase);
 
                           return (
                             <article key={id} className={`tp-stack-card ${enCarrito ? "is-in-cart" : ""}`} title={rawName}>
-                              <div className="tp-nameplate tp-nameplate--qty">
-                                <span className="tp-nameplate__text">{qtyLabel}</span>
+                              <div className="tp-stackCard__name">{sec.title}</div>
+
+                              <div className="tp-stackCard__qty" aria-label={`Cantidad ${qtyBig}`}>
+                                {qtyBig}
                               </div>
 
-                              <div className="tp-pricebox">
-                                {originalFmt ? (
-                                  <div className="tp-pricebox__old">
-                                    <span className="tp-pricebox__label">Antes</span>
-                                    <span className="tp-pricebox__value">{originalFmt}</span>
-                                  </div>
-                                ) : (
-                                  <div className="tp-pricebox__spacer" />
-                                )}
-                              </div>
+                              {originalFmt ? (
+                                <div className="tp-variant__old" aria-label={`Precio anterior ${originalFmt}`}>
+                                  <span className="tp-variant__oldLbl">Antes</span>
+                                  <span className="tp-variant__oldVal">{originalFmt}</span>
+                                </div>
+                              ) : (
+                                <div className="tp-variant__old tp-variant__old--ghost" aria-hidden="true" />
+                              )}
 
                               <button
                                 type="button"
@@ -645,30 +662,6 @@ const TiendaProductosVista = ({
                                 <span className="tp-variant__shine" aria-hidden="true" />
                                 {enCarrito ? "Quitar del carrito" : `Comprar por ${precioFmt}`}
                               </button>
-
-                              {hasDetails && !isItemsOp && (
-                                <button
-                                  type="button"
-                                  className="tp-card__details tp-stack-card__details"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    openDetalles(pkg, rawName);
-                                  }}
-                                  title="Ver detalles"
-                                >
-                                  <span className="tp-card__details-label">Ver detalles</span>
-                                  <span className="tp-card__chevron" aria-hidden="true" />
-                                </button>
-                              )}
-
-                              {hasDetails && isItemsOp && detailsKey && (
-                                <ItemOpTooltipTrigger detailsKey={detailsKey}>
-                                  <button type="button" className="tp-card__details tp-stack-card__details" title="Ver detalles">
-                                    <span className="tp-card__details-label">Ver detalles</span>
-                                    <span className="tp-card__chevron" aria-hidden="true" />
-                                  </button>
-                                </ItemOpTooltipTrigger>
-                              )}
                             </article>
                           );
                         })}
@@ -680,13 +673,11 @@ const TiendaProductosVista = ({
 
               // ============ MULTI VARIANT (sección normal) ============
               if (variantsCount > 1) {
-                let gridClasses = "tp-section__grid";
-                if (variantsCount === 2) gridClasses += " tp-section__grid--two";
-                else gridClasses += " tp-section__grid--three";
+                const gridCols = variantsCount === 2 ? 2 : 3;
 
                 return (
                   <article className="tp-section tp-flow__full" key={sec.key}>
-                    <div className={gridClasses}>
+                    <div className="tp-section__grid">
                       <div className="tp-media">
                         <div className="tp-media__imgwrap">
                           {secDiscountPct && (
@@ -707,89 +698,98 @@ const TiendaProductosVista = ({
                         <div className="tp-nameplate tp-nameplate--hero">
                           <span className="tp-nameplate__text">{sec.title}</span>
                         </div>
+
+                        {sectionHasDetails && (
+                          <button
+                            type="button"
+                            className="tp-detailsOne"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openDetalles(firstForDetails, firstRawForDetails);
+                            }}
+                            title="Ver detalles"
+                          >
+                            <span className="tp-detailsOne__label">Ver detalles</span>
+                            <span className="tp-detailsOne__chev" aria-hidden="true" />
+                          </button>
+                        )}
                       </div>
 
-                      {sec.items.map((it) => {
-                        const pkg = it.pkg;
-                        const id = pkg?.id || pkg?.package_id || `${sec.key}-${it.idx}`;
-                        const rawName = pkg?.name || pkg?.nombre || it.rawName || "Producto";
+                      <div className={`tp-variantsGrid tp-variantsGrid--${gridCols}`}>
+                        {sec.items.map((it) => {
+                          const pkg = it.pkg;
+                          const id = pkg?.id || pkg?.package_id || `${sec.key}-${it.idx}`;
+                          const rawName = pkg?.name || pkg?.nombre || it.rawName || "Producto";
 
-                        const precio = toMoneyNumber(pkg?.precio ?? pkg?.price ?? 0);
-                        const originalNum = toOptionalNumber(pkg?.precio_original ?? pkg?.original_price ?? null);
+                          const precio = toMoneyNumber(pkg?.precio ?? pkg?.price ?? 0);
+                          const originalNum = toOptionalNumber(pkg?.precio_original ?? pkg?.original_price ?? null);
 
-                        const precioFmt = `${precio.toFixed(2)} €`;
-                        const originalFmt = originalNum != null ? `${originalNum.toFixed(2)} €` : null;
+                          const precioFmt = `${precio.toFixed(2)} €`;
+                          const originalFmt = originalNum != null ? `${originalNum.toFixed(2)} €` : null;
 
-                        const enCarrito = estaEnCarrito(pkg);
+                          const enCarrito = estaEnCarrito(pkg);
 
-                        const { hasDetails, data } = buildDetails(pkg, categoria);
-                        const isItemsOp = isItemsOpTheme(data);
-                        const detailsKey = isItemsOp ? getProductDetailsKey(pkg, categoria) : null;
+                          const qtyBig = formatQtyBig(it.qtyLabel, rawName) || "X1";
 
-                        const flyBase = pkg?.image_url || pkg?.image || pkg?.imageUrl || secImg || imgFallback;
-                        const flyImg = getImg(flyBase);
+                          const flyBase = pkg?.image_url || pkg?.image || pkg?.imageUrl || secImg || imgFallback;
+                          const flyImg = getImg(flyBase);
 
-                        return (
-                          <div key={id} className={`tp-variant ${enCarrito ? "is-in-cart" : ""}`} title={rawName}>
-                            <div className="tp-variant__center">
-                              <div className="tp-nameplate tp-nameplate--name">
-                                <span className="tp-nameplate__text">{rawName}</span>
-                              </div>
+                          const onToggle = (e) => {
+                            e?.stopPropagation?.();
+                            if (!enCarrito) emitFlyToBasket(e, flyImg);
+                            toggleProducto(pkg);
+                          };
 
-                              <div className="tp-pricebox">
+                          return (
+                            <div
+                              key={id}
+                              className={`tp-variant ${enCarrito ? "is-in-cart" : ""}`}
+                              title={rawName}
+                              role="button"
+                              tabIndex={0}
+                              onClick={(e) => onToggle(e)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" || e.key === " ") {
+                                  e.preventDefault();
+                                  onToggle(e);
+                                }
+                              }}
+                            >
+                              <div className="tp-variant__center">
+                                <div className="tp-nameplate tp-nameplate--name">
+                                  <span className="tp-nameplate__text">{sec.title}</span>
+                                </div>
+
+                                <div className="tp-variant__qty" aria-label={`Cantidad ${qtyBig}`}>
+                                  {qtyBig}
+                                </div>
+
                                 {originalFmt ? (
-                                  <div className="tp-pricebox__old">
-                                    <span className="tp-pricebox__label">Antes</span>
-                                    <span className="tp-pricebox__value">{originalFmt}</span>
+                                  <div className="tp-variant__old" aria-label={`Precio anterior ${originalFmt}`}>
+                                    <span className="tp-variant__oldLbl">Antes</span>
+                                    <span className="tp-variant__oldVal">{originalFmt}</span>
                                   </div>
                                 ) : (
-                                  <div className="tp-pricebox__spacer" />
+                                  <div className="tp-variant__old tp-variant__old--ghost" aria-hidden="true" />
                                 )}
                               </div>
-                            </div>
 
-                            <div className="tp-variant__actions">
                               <button
                                 type="button"
                                 className="tp-variant__buy"
                                 data-state={enCarrito ? "in" : "out"}
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  if (!enCarrito) emitFlyToBasket(e, flyImg);
-                                  toggleProducto(pkg);
+                                  onToggle(e);
                                 }}
                               >
                                 <span className="tp-variant__shine" aria-hidden="true" />
                                 {enCarrito ? "Quitar del carrito" : `Comprar por ${precioFmt}`}
                               </button>
-
-                              {hasDetails && !isItemsOp && (
-                                <button
-                                  type="button"
-                                  className="tp-card__details tp-variant__details-btn"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    openDetalles(pkg, rawName);
-                                  }}
-                                  title="Ver detalles"
-                                >
-                                  <span className="tp-card__details-label">Ver detalles</span>
-                                  <span className="tp-card__chevron" aria-hidden="true" />
-                                </button>
-                              )}
-
-                              {hasDetails && isItemsOp && detailsKey && (
-                                <ItemOpTooltipTrigger detailsKey={detailsKey}>
-                                  <button type="button" className="tp-card__details tp-variant__details-btn" title="Ver detalles">
-                                    <span className="tp-card__details-label">Ver detalles</span>
-                                    <span className="tp-card__chevron" aria-hidden="true" />
-                                  </button>
-                                </ItemOpTooltipTrigger>
-                              )}
                             </div>
-                          </div>
-                        );
-                      })}
+                          );
+                        })}
+                      </div>
                     </div>
                   </article>
                 );
@@ -823,7 +823,11 @@ const TiendaProductosVista = ({
                   {!isItemsOp ? (
                     <div
                       className={`tp-card__imgwrap ${hasDetails ? "is-clickable" : ""}`}
-                      onClick={(e) => onOpenFromMedia(e, pkg, rawName, hasDetails, false)}
+                      onClick={(e) => {
+                        if (!hasDetails) return;
+                        e.stopPropagation();
+                        openDetalles(pkg, rawName);
+                      }}
                       title={hasDetails ? "Ver detalles" : rawName}
                       role={hasDetails ? "button" : undefined}
                       tabIndex={hasDetails ? 0 : undefined}
@@ -884,16 +888,14 @@ const TiendaProductosVista = ({
                       <span className="tp-nameplate__text">{rawName}</span>
                     </div>
 
-                    <div className="tp-pricebox">
-                      {originalFmt ? (
-                        <div className="tp-pricebox__old">
-                          <span className="tp-pricebox__label">Antes</span>
-                          <span className="tp-pricebox__value">{originalFmt}</span>
-                        </div>
-                      ) : (
-                        <div className="tp-pricebox__spacer" />
-                      )}
-                    </div>
+                    {originalFmt ? (
+                      <div className="tp-variant__old" aria-label={`Precio anterior ${originalFmt}`}>
+                        <span className="tp-variant__oldLbl">Antes</span>
+                        <span className="tp-variant__oldVal">{originalFmt}</span>
+                      </div>
+                    ) : (
+                      <div className="tp-variant__old tp-variant__old--ghost" aria-hidden="true" />
+                    )}
                   </div>
 
                   <div className="tp-card__actions">

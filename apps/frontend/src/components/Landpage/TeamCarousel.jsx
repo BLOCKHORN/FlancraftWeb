@@ -25,7 +25,7 @@ const teamMembers = [
   },
   {
     name: "Paxino",
-    role: "GRAN MAESTRE DEL REINO",
+    role: "GRAN MAESTRO DEL REINO",
     badgeColor: "#f4cc62",
     skinImage: "/assets/skins/paxino.webp",
     headImage: "/assets/skins/paxinohead.webp",
@@ -43,16 +43,7 @@ const teamMembers = [
       "Especialista en diseño visual, construcción estructural y producción multimedia. Domina herramientas como WorldEdit, VoxelSniper, Blender y ReplayMod para crear mundos inmersivos y material promocional de alto impacto. Responsable del estilo visual del servidor, animaciones y cinemáticas. Colabora con desarrollo para alinear estética con funcionalidades jugables.",
     icon: <FaPencilRuler />,
   },
-  {
-    name: "ElJugante",
-    role: "ALTO CANCILLER DEL REINO",
-    badgeColor: "#7fd4ff",
-    skinImage: "/assets/skins/eljugante.webp",
-    headImage: "/assets/skins/jugantehead.webp",
-    description:
-      "Responsable de la administración global del servidor y la gestión del staff. Supervisa el día a día de los reinos, la aplicación de normas y la experiencia del jugador. Encargado de coordinar eventos, revisar incidencias y asegurar que cada decisión mantenga el equilibrio entre diversión, justicia y estabilidad a largo plazo.",
-    icon: <FaShieldAlt />,
-  },
+
   {
     name: "GoldenPunch101",
     role: "MAESTRO DE LOS ENGRANAJES",

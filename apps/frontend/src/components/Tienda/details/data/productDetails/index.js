@@ -1,22 +1,21 @@
-// apps/frontend/src/components/Tienda/details/data/productDetails/index.js
+// src/components/Tienda/details/data/productDetails/index.js
 
 import { TAGS_DETAILS } from "./tags.details.js";
 import { PROTECCIONES_DETAILS } from "./protecciones.details.js";
 import { ITEMSOP_DETAILS } from "./itemsop.details.js";
+import { ITEMSOP_ONEBLOCK_DETAILS } from "./itemsop.oneblock.details.js";
 import { LLAVES_DETAILS } from "./llaves.details.js";
-// import { DINERO_DETAILS } from "./dinero.details.js";
-// import { EXPERIENCIA_DETAILS } from "./experiencia.details.js";
+import { LLAVES_ONEBLOCK_DETAILS } from "./llaves.oneblock.details.js";
+import { GENS_DETAILS } from "./gens.details.js"; // ✅ AÑADIR
 
-/* =========================================================
-   Registry global
-   ========================================================= */
 export const PRODUCT_DETAILS_REGISTRY = {
   ...TAGS_DETAILS,
   ...PROTECCIONES_DETAILS,
   ...ITEMSOP_DETAILS,
+  ...ITEMSOP_ONEBLOCK_DETAILS,
   ...LLAVES_DETAILS,
-  // ...DINERO_DETAILS,
-  // ...EXPERIENCIA_DETAILS,
+  ...LLAVES_ONEBLOCK_DETAILS,
+  ...GENS_DETAILS, // ✅ AÑADIR
 };
 
 /** Normaliza clave */
@@ -29,15 +28,9 @@ function normKey(v) {
 }
 
 /**
- * Resuelve detalles por:
- * - "categoria/slug"
- * - "slug"
- * - "1234567" (id si lo añades como alias)
- *
- * ✅ Soporta alias:
- *   "pico-way": "items-op/pico-way"
+ * resolveProductDetails(key, scope?)
  */
-export function resolveProductDetails(key) {
+export function resolveProductDetails(key, scope = null) {
   if (!key) return null;
 
   const visited = new Set();
@@ -49,11 +42,9 @@ export function resolveProductDetails(key) {
     if (visited.has(k)) return null;
     visited.add(k);
 
-    // 1) match directo
     let v = PRODUCT_DETAILS_REGISTRY[k];
     if (v != null) return v;
 
-    // 2) variaciones
     const kUnd = k.replace(/\s+/g, "_");
     v = PRODUCT_DETAILS_REGISTRY[kUnd];
     if (v != null) return v;
@@ -62,7 +53,6 @@ export function resolveProductDetails(key) {
     v = PRODUCT_DETAILS_REGISTRY[kDash];
     if (v != null) return v;
 
-    // 3) si viene "categoria/slug", prueba "slug"
     if (k.includes("/")) {
       const slugOnly = k.split("/").pop();
 
@@ -81,15 +71,34 @@ export function resolveProductDetails(key) {
     return null;
   };
 
-  let out = resolveOnce(key);
+  const kNorm = normKey(key);
+  if (scope && !kNorm.includes("/")) {
+    const sc = normKey(scope);
+    const candidates = [
+      `${sc}/${kNorm}`,
+      `${sc}/${kNorm.replace(/\s+/g, "-")}`,
+      `${sc}/${kNorm.replace(/\s+/g, "_")}`,
+      `${sc.replace(/\s+/g, "-")}/${kNorm}`,
+      `${sc.replace(/\s+/g, "_")}/${kNorm}`,
+    ];
 
-  for (let i = 0; i < 10; i++) {
-    if (out && typeof out === "string") {
-      out = resolveOnce(out);
-      continue;
+    for (const c of candidates) {
+      const hit = resolveOnce(c);
+      if (hit) {
+        let out = hit;
+        for (let i = 0; i < 10; i++) {
+          if (out && typeof out === "string") out = resolveOnce(out);
+          else break;
+        }
+        return out && typeof out === "object" ? out : null;
+      }
     }
-    break;
   }
 
+  let out = resolveOnce(key);
+  for (let i = 0; i < 10; i++) {
+    if (out && typeof out === "string") out = resolveOnce(out);
+    else break;
+  }
   return out && typeof out === "object" ? out : null;
 }

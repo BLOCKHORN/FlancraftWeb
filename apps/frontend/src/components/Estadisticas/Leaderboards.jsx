@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search, SlidersHorizontal, X, ChevronDown } from "lucide-react";
 
@@ -7,32 +7,116 @@ import "../../styles/components/Estadisticas/_leaderboards.scss";
 
 const API_BASE = import.meta.env.VITE_BACKEND_URL || "http://localhost:10000";
 
+/**
+ * UI IDs (bonitos) → IDs oficiales backend/supabase/plugin
+ * IMPORTANTE: esto tiene que coincidir con tu config del plugin (servidor: "oneblock", "survival", etc.)
+ */
+const SERVIDOR_API_MAP = {
+  survival_clasico: "survival",
+  oneblock: "oneblock",
+  gens: "gens",
+  survival_anarquico: "anarquico",
+  parkour: "parkour",
+};
+
 const SERVIDORES = [
   { id: "survival_clasico", nombre: "Survival Clásico", imagen: "/assets/reinos/survival-clasico.webp" },
-  { id: "survival_anarquico", nombre: "Survival Anárquico", imagen: "/assets/reinos/survival-anarquico.webp" },
-  { id: "survival_hardcore", nombre: "Survival Hardcore", imagen: "/assets/reinos/survival-hardcore.webp" },
   { id: "oneblock", nombre: "OneBlock", imagen: "/assets/reinos/oneblock.webp" },
   { id: "gens", nombre: "Gens", imagen: "/assets/reinos/gens.webp" },
-  { id: "chunklock", nombre: "ChunkLock", imagen: "/assets/reinos/chunklock.webp" },
+  { id: "survival_anarquico", nombre: "Survival Anárquico", imagen: "/assets/reinos/survival-anarquico.webp" },
   { id: "parkour", nombre: "Parkour", imagen: "/assets/reinos/parkour.webp" },
 ];
 
-const STATS = [
-  "bloques_minados",
-  "bloques_colocados",
-  "mobs_matados",
-  "kills_pvp",
-  "muertes",
-  "tiempo_jugado",
-];
+/* =========================================================
+   Stats por servidor (keys que espera el frontend)
+   (estas keys deben existir en tu tabla/vista del backend)
+   ========================================================= */
+const STATS_BY_SERVER = {
+  survival_clasico: [
+    "tiempo_jugado",
+    "bloques_minados",
+    "mobs_matados",
+    "dinero",
+    "power_mcmmo",
+    "kills_pvp",
+    "muertes",
+  ],
+  oneblock: [
+    "island_level",
+    "oneblock_blocks_broken",
+    "phase_actual",
+    "challenges_completados",
+    "mobs_matados",
+    "tiempo_jugado",
+    "muertes",
+  ],
+  gens: [
+    "coins_ganadas_total",
+    "income_rate",
+    "upgrades_comprados",
+    "gens_owned",
+    "prestigios",
+    "tiempo_jugado",
+    "muertes",
+  ],
+  survival_anarquico: [
+    "kills_pvp",
+    "kdr",
+    "killstreak_max",
+    "damage_dealt",
+    "muertes",
+    "tiempo_jugado",
+  ],
+  parkour: [
+    "mejor_tiempo",
+    "completadas_total",
+    "perfect_runs",
+    "falls",
+    "medallas_ganadas",
+    "racha_dias",
+    "tiempo_jugado",
+  ],
+};
+
+const DEFAULTS_BY_SERVER = {
+  survival_clasico: { orden: "tiempo_jugado", asc: false },
+  oneblock: { orden: "island_level", asc: false },
+  gens: { orden: "coins_ganadas_total", asc: false },
+  survival_anarquico: { orden: "kills_pvp", asc: false },
+  parkour: { orden: "mejor_tiempo", asc: true },
+};
 
 const LABELS = {
+  tiempo_jugado: "Tiempo",
+  muertes: "Muertes",
+
   bloques_minados: "Minados",
-  bloques_colocados: "Colocados",
   mobs_matados: "Mobs",
   kills_pvp: "Kills PvP",
-  muertes: "Muertes",
-  tiempo_jugado: "Tiempo",
+  dinero: "Dinero",
+  power_mcmmo: "Power",
+
+  island_level: "Nivel Isla",
+  oneblock_blocks_broken: "Bloques OB",
+  phase_actual: "Fase",
+  challenges_completados: "Challenges",
+
+  coins_ganadas_total: "Coins",
+  income_rate: "Coins/h",
+  upgrades_comprados: "Upgrades",
+  gens_owned: "Gens",
+  prestigios: "Prestigios",
+
+  kdr: "KDR",
+  killstreak_max: "Racha Máx",
+  damage_dealt: "Daño",
+
+  mejor_tiempo: "Mejor Tiempo",
+  completadas_total: "Completadas",
+  perfect_runs: "Perfect",
+  falls: "Caídas",
+  medallas_ganadas: "Medallas",
+  racha_dias: "Racha",
 };
 
 const MEDALLAS = {
@@ -62,9 +146,13 @@ const isNombreValido = (nombre) => {
 export default function Leaderboards() {
   const navigate = useNavigate();
 
-  const [servidor, setServidor] = useState(SERVIDORES[2].id);
-  const [orden, setOrden] = useState("tiempo_jugado");
-  const [ordenAsc, setOrdenAsc] = useState(false);
+  const [servidor, setServidor] = useState(SERVIDORES[2].id); // gens por defecto (UI)
+  const servidorApi = useMemo(() => SERVIDOR_API_MAP[servidor] || servidor, [servidor]);
+
+  const defaults = DEFAULTS_BY_SERVER[servidor] || { orden: "tiempo_jugado", asc: false };
+
+  const [orden, setOrden] = useState(defaults.orden);
+  const [ordenAsc, setOrdenAsc] = useState(defaults.asc);
 
   const [datos, setDatos] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -77,35 +165,76 @@ export default function Leaderboards() {
   const [query, setQuery] = useState("");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [soloVinculados, setSoloVinculados] = useState(false);
-  const [soloPremium, setSoloPremium] = useState(false);
 
   const [usuariosVinculados, setUsuariosVinculados] = useState({});
-  const tableWrapRef = useRef(null);
 
   const servidorSeleccionado = useMemo(
     () => SERVIDORES.find((s) => s.id === servidor),
     [servidor]
   );
 
+  const STATS = useMemo(() => STATS_BY_SERVER[servidor] || ["tiempo_jugado"], [servidor]);
   const paginaActual = useMemo(() => Math.floor(offset / limit) + 1, [offset]);
 
-  const formatearTiempo = useCallback((ticks) => {
-    const totalSegundos = Math.floor((ticks || 0) / 20);
+  useEffect(() => {
+    const d = DEFAULTS_BY_SERVER[servidor] || { orden: "tiempo_jugado", asc: false };
+    setOrden(d.orden);
+    setOrdenAsc(d.asc);
+    setOffset(0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [servidor]);
+
+  // Tiempo EN SEGUNDOS (tu plugin/DB deberían enviar segundos)
+  const formatearTiempo = useCallback((seconds) => {
+    const totalSegundos = Math.floor(seconds || 0);
     const horas = Math.floor(totalSegundos / 3600);
     const minutos = Math.floor((totalSegundos % 3600) / 60);
     return `${horas}h ${minutos}m`;
   }, []);
 
+  const formatearTiempoParkour = useCallback((v) => {
+    const n = Number(v || 0);
+    if (!Number.isFinite(n) || n <= 0) return "—";
+    const isMs = n > 1000;
+    const totalMs = isMs ? Math.floor(n) : Math.floor(n * 1000);
+
+    const min = Math.floor(totalMs / 60000);
+    const sec = Math.floor((totalMs % 60000) / 1000);
+    const ms = totalMs % 1000;
+
+    const mm = String(min).padStart(2, "0");
+    const ss = String(sec).padStart(2, "0");
+    const mss = String(ms).padStart(3, "0");
+    return `${mm}:${ss}.${mss}`;
+  }, []);
+
   const formatValue = useCallback(
     (key, value) => {
-      if (key === "tiempo_jugado") return formatearTiempo(value || 0);
-      return (value || 0).toLocaleString("es-ES");
+      const n = Number(value || 0);
+
+      if (key === "tiempo_jugado") return formatearTiempo(n);
+      if (key === "mejor_tiempo") return formatearTiempoParkour(n);
+
+      if (key === "kdr") {
+        if (!Number.isFinite(n)) return "—";
+        return n.toFixed(2);
+      }
+
+      if (key === "income_rate") {
+        if (!Number.isFinite(n)) return "—";
+        return `${n.toLocaleString("es-ES")} /h`;
+      }
+
+      if (!Number.isFinite(n)) return "—";
+      return n.toLocaleString("es-ES");
     },
-    [formatearTiempo]
+    [formatearTiempo, formatearTiempoParkour]
   );
 
+  /* Vinculados + rango */
   useEffect(() => {
     const controller = new AbortController();
+
     (async () => {
       try {
         const res = await fetch(`${API_BASE}/api/usuarios`, { signal: controller.signal });
@@ -116,7 +245,6 @@ export default function Leaderboards() {
           if (u?.uuid) {
             acc[u.uuid] = {
               rango: u.rango_usuario?.toLowerCase() || null,
-              premium: u.es_premium === true,
             };
           }
           return acc;
@@ -132,6 +260,7 @@ export default function Leaderboards() {
     return () => controller.abort();
   }, []);
 
+  /* Carga leaderboard */
   useEffect(() => {
     let alive = true;
     setLoading(true);
@@ -139,7 +268,12 @@ export default function Leaderboards() {
 
     (async () => {
       try {
-        const res = await getLeaderboards({ tipo: orden, servidor, limit, offset });
+        const res = await getLeaderboards({
+          tipo: orden,
+          servidor: servidorApi, // 👈 AQUI VA EL ID OFICIAL
+          limit,
+          offset,
+        });
         if (!alive) return;
 
         const lista = (res?.resultados || []).filter((p) => isNombreValido(p?.nombre_minecraft));
@@ -149,10 +283,6 @@ export default function Leaderboards() {
           : [...lista].sort((a, b) => (b?.[orden] || 0) - (a?.[orden] || 0));
 
         setDatos(ordenada);
-
-        requestAnimationFrame(() => {
-          if (tableWrapRef.current) tableWrapRef.current.scrollLeft = 0;
-        });
       } catch (err) {
         if (!alive) return;
         console.error(err);
@@ -167,7 +297,7 @@ export default function Leaderboards() {
     return () => {
       alive = false;
     };
-  }, [orden, ordenAsc, servidor, offset]);
+  }, [orden, ordenAsc, servidorApi, offset, limit]);
 
   const cambiarOrden = useCallback((stat) => {
     setOrden((prev) => {
@@ -175,16 +305,13 @@ export default function Leaderboards() {
         setOrdenAsc((v) => !v);
         return prev;
       }
-      setOrdenAsc(false);
+      setOrdenAsc(stat === "mejor_tiempo");
       return stat;
     });
     setOffset(0);
   }, []);
 
-  const getMeta = useCallback(
-    (uuid) => usuariosVinculados[uuid] || null,
-    [usuariosVinculados]
-  );
+  const getMeta = useCallback((uuid) => usuariosVinculados[uuid] || null, [usuariosVinculados]);
 
   const irPerfil = useCallback(
     (player) => {
@@ -205,14 +332,11 @@ export default function Leaderboards() {
 
       const meta = getMeta(p?.uuid);
       const vinc = !!meta;
-      const prem = meta?.premium === true;
-
       const okVinc = !soloVinculados || vinc;
-      const okPrem = !soloPremium || prem;
 
-      return matchNombre && okVinc && okPrem;
+      return matchNombre && okVinc;
     });
-  }, [datos, query, soloVinculados, soloPremium, getMeta]);
+  }, [datos, query, soloVinculados, getMeta]);
 
   const top3 = useMemo(() => {
     const list = (datosFiltrados.length ? datosFiltrados : datos).filter((p) =>
@@ -235,7 +359,7 @@ export default function Leaderboards() {
                   <span className="lb-subtitle__server">{servidorSeleccionado?.nombre}</span>
                   <span className="lb-dot">•</span>
                   <span className="lb-subtitle__order">
-                    {LABELS[orden]} {ordenAsc ? "▲" : "▼"}
+                    {LABELS[orden] || orden} {ordenAsc ? "▲" : "▼"}
                   </span>
                 </h2>
               </div>
@@ -291,19 +415,11 @@ export default function Leaderboards() {
                               loading="lazy"
                             />
                           )}
-                          {meta?.premium && (
-                            <img
-                              src="/assets/premium.webp"
-                              alt="Premium"
-                              className="lb-badge-premium"
-                              loading="lazy"
-                            />
-                          )}
                         </span>
                       </div>
 
                       <div className="pod-stat">
-                        <span className="pod-stat__k">{LABELS[orden]}</span>
+                        <span className="pod-stat__k">{LABELS[orden] || orden}</span>
                         <span className="pod-stat__v">{formatValue(orden, p?.[orden])}</span>
                       </div>
                     </div>
@@ -321,10 +437,7 @@ export default function Leaderboards() {
                     key={s.id}
                     type="button"
                     className={cn("server-pill", { active: servidor === s.id })}
-                    onClick={() => {
-                      setServidor(s.id);
-                      setOffset(0);
-                    }}
+                    onClick={() => setServidor(s.id)}
                     role="tab"
                     aria-selected={servidor === s.id}
                   >
@@ -378,14 +491,15 @@ export default function Leaderboards() {
                 <select
                   value={orden}
                   onChange={(e) => {
-                    setOrden(e.target.value);
-                    setOrdenAsc(false);
+                    const v = e.target.value;
+                    setOrden(v);
+                    setOrdenAsc(v === "mejor_tiempo");
                     setOffset(0);
                   }}
                 >
                   {STATS.map((st) => (
                     <option key={st} value={st}>
-                      {LABELS[st]}
+                      {LABELS[st] || st}
                     </option>
                   ))}
                 </select>
@@ -404,21 +518,11 @@ export default function Leaderboards() {
                   <span>Solo vinculados</span>
                 </label>
 
-                <label className={cn("lb-toggle", { on: soloPremium })}>
-                  <input
-                    type="checkbox"
-                    checked={soloPremium}
-                    onChange={(e) => setSoloPremium(e.target.checked)}
-                  />
-                  <span>Solo premium</span>
-                </label>
-
                 <button
                   type="button"
                   className="lb-reset"
                   onClick={() => {
                     setQuery("");
-                    setSoloPremium(false);
                     setSoloVinculados(false);
                   }}
                 >
@@ -440,7 +544,7 @@ export default function Leaderboards() {
                   <span className="lb-tableTitle__server">{servidorSeleccionado?.nombre}</span>
                   <span className="lb-sep">•</span>
                   <span className="lb-tableTitle__stat">
-                    {LABELS[orden]} {ordenAsc ? "▲" : "▼"}
+                    {LABELS[orden] || orden} {ordenAsc ? "▲" : "▼"}
                   </span>
                 </div>
               </div>
@@ -452,13 +556,14 @@ export default function Leaderboards() {
                 </div>
               ) : (
                 <>
-                  <div className="lb-tableWrap" ref={tableWrapRef}>
-                    <div className="lb-scrollHint" aria-hidden="true">
-                      <span className="lb-scrollHint__arrow">→</span>
-                      <span className="lb-scrollHint__text">Desliza para ver más</span>
-                    </div>
-
-                    <table className="lb-table">
+                  {/* IMPORTANTE: sin scroll horizontal, y sin recortes */}
+                  <div className="lb-tableWrap">
+                    <table
+                      className="lb-table"
+                      style={{
+                        "--stats": STATS.length,
+                      }}
+                    >
                       <thead>
                         <tr>
                           <th className="col-pos">Top</th>
@@ -469,9 +574,9 @@ export default function Leaderboards() {
                               key={st}
                               className={cn("th-sort", { active: orden === st })}
                               onClick={() => cambiarOrden(st)}
-                              title={`Ordenar por ${LABELS[st]}`}
+                              title={`Ordenar por ${LABELS[st] || st}`}
                             >
-                              <span>{LABELS[st]}</span>
+                              <span>{LABELS[st] || st}</span>
                               {orden === st && (
                                 <i className="th-sort__arrow">{ordenAsc ? "▲" : "▼"}</i>
                               )}
@@ -570,19 +675,10 @@ export default function Leaderboards() {
                                               loading="lazy"
                                             />
                                           )}
-                                          {meta?.premium && (
-                                            <img
-                                              src="/assets/premium.webp"
-                                              alt=""
-                                              className="lb-badge-premium"
-                                              loading="lazy"
-                                            />
-                                          )}
                                         </span>
                                       </div>
                                       <div className="lb-player__sub">
-                                        {meta?.rango ? meta.rango : "—"} ·{" "}
-                                        {meta?.premium ? "Premium" : "Normal"}
+                                        {meta?.rango ? meta.rango : "—"}
                                       </div>
                                     </div>
                                   </div>
@@ -600,6 +696,7 @@ export default function Leaderboards() {
                     </table>
                   </div>
 
+                  {/* Cards (móvil) */}
                   <div className="lb-cards">
                     {loading &&
                       [...Array(limit)].map((_, i) => (
@@ -612,7 +709,7 @@ export default function Leaderboards() {
                             </div>
                           </div>
                           <div className="lb-card__grid">
-                            {[...Array(6)].map((__, j) => (
+                            {[...Array(Math.min(6, STATS.length))].map((__, j) => (
                               <span key={j} className="sk sk--num" />
                             ))}
                           </div>
@@ -648,9 +745,7 @@ export default function Leaderboards() {
                                 src={`https://mc-heads.net/avatar/${name}/40`}
                                 alt=""
                                 loading="lazy"
-                                onError={(e) =>
-                                  (e.currentTarget.src = "/assets/default-head.png")
-                                }
+                                onError={(e) => (e.currentTarget.src = "/assets/default-head.png")}
                               />
 
                               <div className="lb-card__who">
@@ -665,21 +760,25 @@ export default function Leaderboards() {
                                         loading="lazy"
                                       />
                                     )}
-                                    {meta?.premium && (
-                                      <img
-                                        src="/assets/premium.webp"
-                                        alt=""
-                                        className="lb-badge-premium"
-                                        loading="lazy"
-                                      />
-                                    )}
                                   </span>
                                 </div>
                                 <div className="lb-card__sub">
-                                  {LABELS[orden]} {ordenAsc ? "▲" : "▼"} ·{" "}
-                                  {meta?.premium ? "Premium" : "Normal"}
+                                  {LABELS[orden] || orden} {ordenAsc ? "▲" : "▼"} ·{" "}
+                                  {meta?.rango ? meta.rango : "—"}
                                 </div>
                               </div>
+                            </div>
+
+                            <div className="lb-card__grid">
+                              {STATS.slice(0, 6).map((st) => (
+                                <div
+                                  key={st}
+                                  className={cn("lb-card__stat", { active: orden === st })}
+                                >
+                                  <span className="k">{LABELS[st] || st}</span>
+                                  <span className="v">{formatValue(st, p?.[st] || 0)}</span>
+                                </div>
+                              ))}
                             </div>
                           </button>
                         );

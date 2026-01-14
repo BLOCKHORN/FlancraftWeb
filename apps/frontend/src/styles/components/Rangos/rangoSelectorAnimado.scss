@@ -1573,3 +1573,91 @@
     max-width: 200px;
   }
 }
+/* ===========================
+   SELECTOR SERVIDOR (TILES)
+   =========================== */
+
+.rango-server-picker {
+  margin-top: 0.9rem;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.server-tile {
+  position: relative;
+  width: 100%;
+  padding: 0.55rem 0.55rem 0.6rem;
+  border-radius: 8px;
+  background: #120b07;
+  border: 1px solid #3b2514;
+  box-shadow: inset 0 0 0 1px #26160c, 0 6px 12px rgba(0, 0, 0, 0.55);
+  cursor: pointer;
+  display: grid;
+  grid-template-rows: 46px auto;
+  gap: 0.45rem;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease, filter 0.12s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    border-color: #8c5b2b;
+    box-shadow: inset 0 0 0 1px #26160c, 0 10px 18px rgba(0, 0, 0, 0.7);
+    filter: brightness(1.04);
+  }
+
+  &.active {
+    border-color: #e0aa3e;
+    box-shadow:
+      inset 0 0 0 2px rgba(224, 170, 62, 0.55),
+      0 10px 22px rgba(0, 0, 0, 0.8);
+    background: radial-gradient(circle at top, #23140b, #120b07);
+  }
+}
+
+.server-art {
+  border-radius: 6px;
+  overflow: hidden;
+  background: #0a0503;
+  border: 1px solid #2b180c;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+
+  img {
+    width: 100%;
+    height: 46px;
+    object-fit: cover;
+    display: block;
+    filter: saturate(1.05) contrast(1.02);
+    transform: scale(1.02);
+  }
+}
+
+.server-name {
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #fce3b3;
+  text-align: center;
+  padding: 0.15rem 0.35rem;
+  background: #24150c;
+  border: 1px solid #5e371a;
+  border-radius: 6px;
+}
+
+/* Responsive tiles */
+@media (max-width: 960px) {
+  .rango-server-picker {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .rango-server-picker {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .server-tile {
+    grid-template-rows: 42px auto;
+  }
+  .server-art img {
+    height: 42px;
+  }
+}

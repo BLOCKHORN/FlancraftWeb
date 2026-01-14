@@ -404,3 +404,49 @@
     filter: drop-shadow(0 10px 16px rgba(0,0,0,.28));
   }
 }
+/* =========================================================
+   RARITY THEMING (legend = naranja)
+   ========================================================= */
+
+.mct[data-rarity="legend"]{
+  --bgA: rgba(20, 12, 8, .965);
+  --bgB: rgba(12, 7, 5, .965);
+
+  /* borde “legend” */
+  --edge: rgba(255, 145, 60, .92);
+
+  --txt: rgba(255, 245, 230, .92);
+  --muted: rgba(225, 205, 185, .70);
+}
+
+.mct[data-rarity="legend"] .mct__title,
+.mct[data-rarity="legend"] .mct__sectionTitle{
+  color: rgba(255, 200, 120, .96);
+  text-shadow:
+    0 2px 0 rgba(0,0,0,.55),
+    0 0 18px rgba(255, 155, 60, .16);
+}
+
+/* Badge de nivel (naranja legend) */
+.mct[data-rarity="legend"] .mct__enchLvl,
+.mct[data-rarity="legend"] .mct__effLvl{
+  color: rgba(255, 245, 225, .96);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 190, 120, .24),
+    rgba(255, 120, 40, .12)
+  );
+  box-shadow:
+    0 10px 14px rgba(0,0,0,.22),
+    0 0 22px rgba(255, 130, 45, .10),
+    inset 0 1px 0 rgba(255,255,255,.10);
+}
+
+/* Pinned = aún más “legendario” */
+.itemsop-pop__panel.is-pinned .mct[data-rarity="legend"]{
+  box-shadow:
+    0 22px 46px rgba(0,0,0,.62),
+    0 0 0 2px rgba(255, 165, 90, .60),
+    0 0 0 4px rgba(0,0,0,.55),
+    inset 0 1px 0 rgba(255,255,255,.06);
+}

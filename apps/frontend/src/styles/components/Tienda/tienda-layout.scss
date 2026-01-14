@@ -1,5 +1,7 @@
 /* ======================================================================
    src/styles/components/Tienda/tienda-layout.scss
+   - FIX: selector correcto del scroll del carrito (no era hijo directo)
+   - FIX: portada sin overflow-y interno (se ajusta a la altura del layout)
    ====================================================================== */
 @use "../../base/_variables" as *;
 
@@ -23,22 +25,14 @@
 
 @keyframes footerToggleFloatClosed {
   0%,
-  100% {
-    transform: translate(-50%, 0);
-  }
-  50% {
-    transform: translate(-50%, -6px);
-  }
+  100% { transform: translate(-50%, 0); }
+  50% { transform: translate(-50%, -6px); }
 }
 
 @keyframes footerToggleFloatOpen {
   0%,
-  100% {
-    transform: translate(-50%, 0);
-  }
-  50% {
-    transform: translate(-50%, -3px);
-  }
+  100% { transform: translate(-50%, 0); }
+  50% { transform: translate(-50%, -3px); }
 }
 
 /* =========================================================
@@ -154,11 +148,7 @@
   align-items: stretch;
 }
 
-.tienda-layout.is-portada .tienda-shelf-frame {
-  align-items: stretch;
-  justify-content: stretch;
-}
-
+.tienda-layout.is-portada .tienda-shelf-frame,
 .tienda-layout.is-contenido .tienda-shelf-frame {
   align-items: stretch;
   justify-content: stretch;
@@ -172,26 +162,29 @@
     opacity 260ms ease;
 }
 
-/* PORTADA: ocupa alto completo y hace scroll si hace falta */
+/* =========================================================
+   PORTADA: ocupa alto completo SIN scroll interno (clave)
+   ========================================================= */
 .tienda-layout.is-portada .tienda-shelf-inner {
   max-width: 100%;
   height: 100%;
   min-height: 0;
 
-  overflow-y: auto;
-  overflow-x: hidden;
-
-  padding: clamp(8px, 1.4vh, 14px) 0 clamp(16px, 2.2vh, 26px);
-
-  scrollbar-gutter: stable;
-  overscroll-behavior: contain;
-  -webkit-overflow-scrolling: touch;
+  overflow: hidden; /* <- clave: nada de overflow-y auto aquí */
+  padding: 0;       /* <- clave: no metas padding aquí */
 
   display: flex;
   justify-content: stretch;
-  align-items: flex-start;
+  align-items: stretch;
 }
 
+/* para que TiendaPortada pueda medir/encajar dentro */
+.tienda-layout.is-portada .tienda-shelf-inner > * {
+  flex: 1;
+  min-height: 0;
+}
+
+/* CONTENIDO */
 .tienda-layout.is-contenido .tienda-shelf-inner {
   max-width: 100%;
   height: 100%;
@@ -202,7 +195,10 @@
   animation: shelfExpandIn 520ms cubic-bezier(0.2, 0.9, 0.2, 1) both;
 }
 
-/* SIDEBAR (desktop) */
+/* =========================================================
+   SIDEBAR (desktop)
+   ========================================================= */
+
 .tienda-layout-sidebar {
   min-width: 0;
   min-height: 0;
@@ -210,12 +206,6 @@
   display: flex;
   justify-content: flex-end;
   align-items: stretch;
-}
-
-.tienda-cart-wrap {
-  position: relative;
-  flex: 1;
-  min-height: 0;
 }
 
 .tienda-sidebar-card {
@@ -241,13 +231,23 @@
   gap: 0.95rem;
 }
 
-/* scroll interno real del carrito */
-.tienda-sidebar-card > .carrito-lateral {
+/* ✅ FIX REAL:
+   .carrito-lateral NO es hijo directo de .tienda-sidebar-card (va dentro de .tienda-cart-wrap) */
+.tienda-cart-wrap {
+  position: relative;
   flex: 1;
   min-height: 0;
-  overflow: auto;
-  overscroll-behavior: contain;
-  scrollbar-gutter: stable;
+
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* el propio carrito (que internamente ya gestiona su scroll) */
+.tienda-cart-wrap .carrito-lateral {
+  flex: 1;
+  min-height: 0;
+  display: block;
 }
 
 /* =========================================================
@@ -275,10 +275,6 @@
     align-self: flex-start;
     position: sticky;
     top: calc(var(--top-offset) + var(--pad-y));
-  }
-
-  .tienda-layout.is-portada .tienda-shelf-inner {
-    padding: clamp(8px, 1.2vh, 12px) 0 clamp(14px, 2vh, 22px);
   }
 }
 
@@ -356,17 +352,6 @@
     z-index: 20;
   }
 
-  .tienda-sidebar-card > .carrito-lateral {
-    max-height: min(
-      44vh,
-      calc(100dvh - var(--top-offset) - (var(--pad-y) * 2) - 18px)
-    );
-    overflow: auto;
-    overscroll-behavior: contain;
-    scrollbar-gutter: stable;
-    -webkit-overflow-scrolling: touch;
-  }
-
   .tienda-layout-left {
     overflow: visible;
     justify-content: stretch;
@@ -408,7 +393,6 @@
   }
 
   .tienda-shelf-inner .tienda-tebex .tienda-contenido {
-    /* sin márgenes laterales extras, el marco pega al viewport */
     padding: 0.5rem 0 !important;
     width: 100%;
     max-width: none;
@@ -418,13 +402,7 @@
 
 /* micro-ajuste móvil pequeño */
 @media (max-width: 479.98px) {
-  .tienda-layout {
-    --m-gutter: 0px;
-  }
-
-  .tienda-sidebar-card > .carrito-lateral {
-    max-height: 42vh;
-  }
+  .tienda-layout { --m-gutter: 0px; }
 
   .tienda-shelf-inner .tienda-tebex .tienda-contenido {
     padding: 0.45rem 0 !important;
@@ -452,9 +430,7 @@
     opacity: 0.95;
     filter: drop-shadow(0 10px 12px rgba(0, 0, 0, 0.35));
   }
-  65% {
-    opacity: 0.95;
-  }
+  65% { opacity: 0.95; }
   100% {
     transform: translate(var(--dx), var(--dy)) scale(0.18);
     opacity: 0;
@@ -491,11 +467,8 @@
   height: min(760px, 92vh);
   border-radius: 3px;
   overflow: hidden;
-  background: radial-gradient(
-      circle at 30% 10%,
-      rgba(255, 255, 255, 0.08),
-      transparent 55%
-    ),
+  background:
+    radial-gradient(circle at 30% 10%, rgba(255, 255, 255, 0.08), transparent 55%),
     rgba(22, 16, 10, 0.92);
   border: 1px solid rgba(255, 220, 150, 0.18);
   box-shadow: 0 30px 70px rgba(0, 0, 0, 0.55);

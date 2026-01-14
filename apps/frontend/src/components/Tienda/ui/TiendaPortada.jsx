@@ -7,8 +7,6 @@ import "../../../styles/components/Tienda/tienda-portada.scss";
 
 /* =========================================================
    Util: columnas simétricas (evita 4+1, 3+1, etc.)
-   - Prueba cols posibles y minimiza “huecos” en la última fila
-   - Penaliza fuerte que quede 1 solo item abajo si hay alternativa
    ========================================================= */
 function pickBestCols(n, allowedCols) {
   if (!n) return allowedCols[0] || 2;
@@ -40,12 +38,28 @@ function pickBestCols(n, allowedCols) {
   return best;
 }
 
+/* ✅ Determina si tile es “global” */
+function isGlobalTile(tile) {
+  const server = String(tile?.server || "").toLowerCase();
+  const slug = String(tile?.slug || "").toLowerCase();
+  const name = String(tile?.name || "").toLowerCase();
+
+  if (server === "global") return true;
+  if (slug.includes("rangos") || name.includes("rango")) return true;
+  if (slug.includes("tags") || name.includes("tag")) return true;
+
+  return false;
+}
+
 const TiendaPortada = () => {
   const navigate = useNavigate();
   const wrapperRef = useRef(null);
 
   const [cols, setCols] = useState(4);
-  const tilesCount = PORTADA_TILES.length;
+
+  const tiles = PORTADA_TILES || [];
+  const globalTiles = useMemo(() => tiles.filter(isGlobalTile), [tiles]);
+  const serverTiles = useMemo(() => tiles.filter((t) => !isGlobalTile(t)), [tiles]);
 
   const go = (tile) => {
     navigate(`/tienda/${tile.server}/${tile.slug}`);
@@ -56,9 +70,6 @@ const TiendaPortada = () => {
 
   /* =========================================================
      Columnas inteligentes según ancho real del panel + nº tiles
-     - < 620px => 2
-     - >= 620px => 2/3
-     - >= 980px => 2/3/4
      ========================================================= */
   useEffect(() => {
     const el = wrapperRef.current;
@@ -71,72 +82,114 @@ const TiendaPortada = () => {
       if (w >= 620) allowed = [2, 3];
       if (w >= 980) allowed = [2, 3, 4];
 
-      const best = pickBestCols(tilesCount, allowed);
+      // ✅ Para simetría: calculamos cols por el grupo más grande
+      const n = Math.max(globalTiles.length, serverTiles.length, tiles.length);
+      const best = pickBestCols(n, allowed);
       setCols(best);
     });
 
     ro.observe(el);
     return () => ro.disconnect();
-  }, [tilesCount]);
+  }, [tiles.length, globalTiles.length, serverTiles.length]);
 
   const wrapperAttrs = useMemo(
     () => ({
-      "data-count": String(tilesCount),
       style: { "--portada-cols": cols },
     }),
-    [tilesCount, cols]
+    [cols]
   );
 
   return (
     <div className="tienda-portada-wrapper" ref={wrapperRef} {...wrapperAttrs}>
       <section className="tienda-portada-panel" aria-label="Portada de la tienda">
-        {/* HEAD */}
+        {/* H1 real (discreto) */}
         <header className="tienda-portada-head">
-          <h1 className="tienda-portada-title">Elige el servidor</h1>
-          <p className="tienda-portada-subtitle">
-            Compra rangos y extras para el modo de juego que uses.
-          </p>
+          <h1 className="tienda-portada-title">Tienda Flancraft</h1>
         </header>
 
-        {/* OFERTA
-            - Si no hay oferta, TiendaOfertaCountdown devuelve null
-            - El slot se auto-oculta con CSS :has(.tienda-oferta-banner)
-        */}
+        {/* OFERTA (si no hay oferta, devuelve null) */}
         <div className="tienda-portada-oferta-slot" aria-label="Ofertas activas">
           <TiendaOfertaCountdown />
         </div>
 
-        {/* GRID */}
-        <ul className="tienda-portada-grid" aria-label="Categorías principales">
-          {PORTADA_TILES.map((tile) => (
-            <li className="tienda-portada-item" key={`${tile.server}-${tile.slug}`}>
-              <button
-                type="button"
-                className="tienda-portada-btn"
-                data-kind={tile.slug}
-                onClick={() => go(tile)}
-                aria-label={`Abrir ${tile.name}`}
-              >
-                <div className="tienda-portada-icon">
-                  <img
-                    src={getTileImage(tile)}
-                    alt={tile.name}
-                    loading="lazy"
-                    draggable="false"
-                    onError={(e) => {
-                      e.currentTarget.onerror = null;
-                      e.currentTarget.src = "/assets/tienda/producto-placeholder.png";
-                    }}
-                  />
-                </div>
+        {/* ✅ CONTENEDOR QUE CENTRA LOS TILES EN EL ESPACIO SOBRANTE */}
+        <div className="tienda-portada-grids" aria-label="Categorías disponibles">
+          {/* GLOBAL */}
+          {globalTiles.length > 0 && (
+            <ul
+              className="tienda-portada-grid tienda-portada-grid--global"
+              aria-label="Categorías globales"
+              data-count={globalTiles.length}
+            >
+              {globalTiles.map((tile) => (
+                <li className="tienda-portada-item" key={`${tile.server}-${tile.slug}`}>
+                  <button
+                    type="button"
+                    className="tienda-portada-btn"
+                    data-kind={tile.slug}
+                    onClick={() => go(tile)}
+                    aria-label={`Abrir ${tile.name}`}
+                  >
+                    <div className="tienda-portada-icon">
+                      <img
+                        src={getTileImage(tile)}
+                        alt={tile.name}
+                        loading="lazy"
+                        draggable="false"
+                        onError={(e) => {
+                          e.currentTarget.onerror = null;
+                          e.currentTarget.src = "/assets/tienda/producto-placeholder.png";
+                        }}
+                      />
+                    </div>
 
-                <div className="tienda-portada-label">
-                  <span className="tienda-portada-labelText">{tile.name}</span>
-                </div>
-              </button>
-            </li>
-          ))}
-        </ul>
+                    <div className="tienda-portada-label">
+                      <span className="tienda-portada-labelText">{tile.name}</span>
+                    </div>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {/* SERVIDORES */}
+          {serverTiles.length > 0 && (
+            <ul
+              className="tienda-portada-grid tienda-portada-grid--servers"
+              aria-label="Categorías por servidor"
+              data-count={serverTiles.length}
+            >
+              {serverTiles.map((tile) => (
+                <li className="tienda-portada-item" key={`${tile.server}-${tile.slug}`}>
+                  <button
+                    type="button"
+                    className="tienda-portada-btn"
+                    data-kind={tile.slug}
+                    onClick={() => go(tile)}
+                    aria-label={`Abrir ${tile.name}`}
+                  >
+                    <div className="tienda-portada-icon">
+                      <img
+                        src={getTileImage(tile)}
+                        alt={tile.name}
+                        loading="lazy"
+                        draggable="false"
+                        onError={(e) => {
+                          e.currentTarget.onerror = null;
+                          e.currentTarget.src = "/assets/tienda/producto-placeholder.png";
+                        }}
+                      />
+                    </div>
+
+                    <div className="tienda-portada-label">
+                      <span className="tienda-portada-labelText">{tile.name}</span>
+                    </div>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
 
         <p className="tienda-portada-footnote">
           Los artículos se entregan automáticamente en el servidor correspondiente nada más completar el pago.
