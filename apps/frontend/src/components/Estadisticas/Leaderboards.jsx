@@ -420,7 +420,11 @@ export default function Leaderboards() {
 
                       <div className="pod-stat">
                         <span className="pod-stat__k">{LABELS[orden] || orden}</span>
-                        <span className="pod-stat__v">{formatValue(orden, p?.[orden])}</span>
+                        <span className="pod-stat__v">
+  {orden === "phase_actual"
+    ? (p?.phase_nombre || "—")
+    : formatValue(orden, p?.[orden])}
+</span>
                       </div>
                     </div>
                   </div>
@@ -685,10 +689,15 @@ export default function Leaderboards() {
                                 </td>
 
                                 {STATS.map((st) => (
-                                  <td key={st} className={cn("td-stat", { active: orden === st })}>
-                                    <span className="num">{formatValue(st, p?.[st] || 0)}</span>
-                                  </td>
-                                ))}
+  <td key={st} className={cn("td-stat", { active: orden === st })}>
+    <span className="num">
+      {st === "phase_actual"
+        ? (p?.phase_nombre || "—")
+        : formatValue(st, p?.[st] || 0)}
+    </span>
+  </td>
+))}
+
                               </tr>
                             );
                           })}
