@@ -229,17 +229,31 @@ export default function Leaderboards() {
     [getIslandLevel]
   );
 
-  const formatValue = useCallback(
+const formatValue = useCallback(
   (key, value) => {
     const n = Number(value || 0);
 
     if (key === "tiempo_jugado") return formatearTiempo(n);
     if (key === "mejor_tiempo") return formatearTiempoParkour(n);
 
-    // Dinero (Vault) en $
+    // Dinero (Vault)
     if (key === "dinero") {
       if (!Number.isFinite(n)) return "—";
       return `${n.toLocaleString("es-ES")} $`;
+    }
+
+    // Gens: coins totales
+    if (key === "coins_ganadas_total") {
+      if (!Number.isFinite(n)) return "—";
+      return n.toLocaleString("es-ES");
+      // si quieres “Coins”:
+      // return `${n.toLocaleString("es-ES")} Coins`;
+    }
+
+    // Gens: coins por hora (ya lo usas)
+    if (key === "income_rate") {
+      if (!Number.isFinite(n)) return "—";
+      return `${n.toLocaleString("es-ES")} /h`;
     }
 
     if (key === "kdr") {
@@ -247,17 +261,11 @@ export default function Leaderboards() {
       return n.toFixed(2);
     }
 
-    if (key === "income_rate") {
-      if (!Number.isFinite(n)) return "—";
-      return `${n.toLocaleString("es-ES")} /h`;
-    }
-
     if (!Number.isFinite(n)) return "—";
     return n.toLocaleString("es-ES");
   },
   [formatearTiempo, formatearTiempoParkour]
 );
-
 
   /* Vinculados + rango */
   useEffect(() => {
