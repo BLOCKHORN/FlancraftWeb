@@ -1,3 +1,4 @@
+// src/pages/Leaderboards/Leaderboards.jsx (o donde lo tengas)
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search, SlidersHorizontal, X, ChevronDown } from "lucide-react";
@@ -45,7 +46,7 @@ const STATS_BY_SERVER = {
     "island_level",
     "oneblock_blocks_broken",
     "phase_actual",
-    "challenges_completados",
+    "dinero", // ✅ antes challenges_completados
     "mobs_matados",
     "tiempo_jugado",
     "muertes",
@@ -97,9 +98,8 @@ const LABELS = {
   power_mcmmo: "Power",
 
   island_level: "Nivel Isla",
-  oneblock_blocks_broken: "Bloques OB",
+  oneblock_blocks_broken: "Bloque Infinito",
   phase_actual: "Fase",
-  challenges_completados: "Challenges",
 
   coins_ganadas_total: "Coins",
   income_rate: "Coins/h",
@@ -186,7 +186,7 @@ export default function Leaderboards() {
 
   // Tiempo EN SEGUNDOS (tu plugin/DB deberían enviar segundos)
   const formatearTiempo = useCallback((seconds) => {
-    const totalSegundos = Math.floor(seconds || 0);
+    const totalSegundos = Math.floor(Number(seconds || 0));
     const horas = Math.floor(totalSegundos / 3600);
     const minutos = Math.floor((totalSegundos % 3600) / 60);
     return `${horas}h ${minutos}m`;
@@ -207,6 +207,28 @@ export default function Leaderboards() {
     const mss = String(ms).padStart(3, "0");
     return `${mm}:${ss}.${mss}`;
   }, []);
+
+  // ✅ FIX NIVEL ISLA:
+  // Si island_level viene 0 pero phase_actual ya existe (Llanuras=1, Bosque=2...), usamos phase_actual.
+  const getIslandLevel = useCallback((p) => {
+    const isl = Number(p?.island_level || 0);
+    const ph = Number(p?.phase_actual || 0);
+    const v = Math.max(isl, ph);
+    return Number.isFinite(v) ? v : 0;
+  }, []);
+
+  const getStatNumber = useCallback(
+    (p, key) => {
+      if (!p) return 0;
+
+      if (key === "island_level") return getIslandLevel(p);
+
+      const n = Number(p?.[key] ?? 0);
+      if (!Number.isFinite(n)) return 0;
+      return n;
+    },
+    [getIslandLevel]
+  );
 
   const formatValue = useCallback(
     (key, value) => {
@@ -278,9 +300,10 @@ export default function Leaderboards() {
 
         const lista = (res?.resultados || []).filter((p) => isNombreValido(p?.nombre_minecraft));
 
+        // ✅ ordenar usando el valor "real" (incluye fix de island_level)
         const ordenada = ordenAsc
-          ? [...lista].sort((a, b) => (a?.[orden] || 0) - (b?.[orden] || 0))
-          : [...lista].sort((a, b) => (b?.[orden] || 0) - (a?.[orden] || 0));
+          ? [...lista].sort((a, b) => getStatNumber(a, orden) - getStatNumber(b, orden))
+          : [...lista].sort((a, b) => getStatNumber(b, orden) - getStatNumber(a, orden));
 
         setDatos(ordenada);
       } catch (err) {
@@ -297,7 +320,7 @@ export default function Leaderboards() {
     return () => {
       alive = false;
     };
-  }, [orden, ordenAsc, servidorApi, offset, limit]);
+  }, [orden, ordenAsc, servidorApi, offset, limit, getStatNumber]);
 
   const cambiarOrden = useCallback((stat) => {
     setOrden((prev) => {
@@ -382,6 +405,13 @@ export default function Leaderboards() {
               const meta = getMeta(p.uuid);
               const name = p?.nombre_minecraft;
 
+              const valueForPodium =
+                orden === "phase_actual"
+                  ? (p?.phase_nombre || "—")
+                  : orden === "island_level"
+                  ? getIslandLevel(p)
+                  : p?.[orden];
+
               return (
                 <button
                   key={p.uuid}
@@ -421,10 +451,10 @@ export default function Leaderboards() {
                       <div className="pod-stat">
                         <span className="pod-stat__k">{LABELS[orden] || orden}</span>
                         <span className="pod-stat__v">
-  {orden === "phase_actual"
-    ? (p?.phase_nombre || "—")
-    : formatValue(orden, p?.[orden])}
-</span>
+                          {orden === "phase_actual"
+                            ? (p?.phase_nombre || "—")
+                            : formatValue(orden, valueForPodium)}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -688,16 +718,24 @@ export default function Leaderboards() {
                                   </div>
                                 </td>
 
-                                {STATS.map((st) => (
-  <td key={st} className={cn("td-stat", { active: orden === st })}>
-    <span className="num">
-      {st === "phase_actual"
-        ? (p?.phase_nombre || "—")
-        : formatValue(st, p?.[st] || 0)}
-    </span>
-  </td>
-))}
+                                {STATS.map((st) => {
+                                  const rawValue =
+                                    st === "phase_actual"
+                                      ? (p?.phase_nombre || "—")
+                                      : st === "island_level"
+                                      ? getIslandLevel(p)
+                                      : p?.[st] ?? 0;
 
+                                  return (
+                                    <td key={st} className={cn("td-stat", { active: orden === st })}>
+                                      <span className="num">
+                                        {st === "phase_actual"
+                                          ? (p?.phase_nombre || "—")
+                                          : formatValue(st, rawValue)}
+                                      </span>
+                                    </td>
+                                  );
+                                })}
                               </tr>
                             );
                           })}
@@ -779,15 +817,28 @@ export default function Leaderboards() {
                             </div>
 
                             <div className="lb-card__grid">
-                              {STATS.slice(0, 6).map((st) => (
-                                <div
-                                  key={st}
-                                  className={cn("lb-card__stat", { active: orden === st })}
-                                >
-                                  <span className="k">{LABELS[st] || st}</span>
-                                  <span className="v">{formatValue(st, p?.[st] || 0)}</span>
-                                </div>
-                              ))}
+                              {STATS.slice(0, 6).map((st) => {
+                                const rawValue =
+                                  st === "phase_actual"
+                                    ? (p?.phase_nombre || "—")
+                                    : st === "island_level"
+                                    ? getIslandLevel(p)
+                                    : p?.[st] ?? 0;
+
+                                return (
+                                  <div
+                                    key={st}
+                                    className={cn("lb-card__stat", { active: orden === st })}
+                                  >
+                                    <span className="k">{LABELS[st] || st}</span>
+                                    <span className="v">
+                                      {st === "phase_actual"
+                                        ? (p?.phase_nombre || "—")
+                                        : formatValue(st, rawValue)}
+                                    </span>
+                                  </div>
+                                );
+                              })}
                             </div>
                           </button>
                         );
