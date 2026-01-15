@@ -101,10 +101,10 @@ const LABELS = {
   phase_actual: "Fase",
 
   coins_ganadas_total: "Coins",
-  income_rate: "Coins/h",
+  income_rate: "Multiplicador",
   upgrades_comprados: "Upgrades",
   gens_owned: "Gens",
-  prestigios: "Prestigios",
+  prestigios: "Nivel",
 
   kdr: "KDR",
   killstreak_max: "Racha Máx",
@@ -252,9 +252,9 @@ const formatValue = useCallback(
 
     // Gens: coins por hora (ya lo usas)
     if (key === "income_rate") {
-      if (!Number.isFinite(n)) return "—";
-      return `${n.toLocaleString("es-ES")} /h`;
-    }
+  if (!Number.isFinite(n)) return "—";
+  return `${n.toLocaleString("es-ES")}x`;
+}
 
     if (key === "kdr") {
       if (!Number.isFinite(n)) return "—";
