@@ -34,14 +34,14 @@ const SERVIDORES = [
    ========================================================= */
 const STATS_BY_SERVER = {
   survival_clasico: [
-    "tiempo_jugado",
-    "bloques_minados",
-    "mobs_matados",
-    "dinero",
-    "power_mcmmo",
-    "kills_pvp",
-    "muertes",
-  ],
+  "tiempo_jugado",
+  "bloques_minados",
+  "mobs_matados",
+  "dinero",
+  "kills_pvp",
+  "muertes",
+],
+
   oneblock: [
     "island_level",
     "oneblock_blocks_broken",
@@ -95,7 +95,6 @@ const LABELS = {
   mobs_matados: "Mobs",
   kills_pvp: "Kills PvP",
   dinero: "Dinero",
-  power_mcmmo: "Power",
 
   island_level: "Nivel Isla",
   oneblock_blocks_broken: "Bloque Infinito",
@@ -231,27 +230,34 @@ export default function Leaderboards() {
   );
 
   const formatValue = useCallback(
-    (key, value) => {
-      const n = Number(value || 0);
+  (key, value) => {
+    const n = Number(value || 0);
 
-      if (key === "tiempo_jugado") return formatearTiempo(n);
-      if (key === "mejor_tiempo") return formatearTiempoParkour(n);
+    if (key === "tiempo_jugado") return formatearTiempo(n);
+    if (key === "mejor_tiempo") return formatearTiempoParkour(n);
 
-      if (key === "kdr") {
-        if (!Number.isFinite(n)) return "—";
-        return n.toFixed(2);
-      }
-
-      if (key === "income_rate") {
-        if (!Number.isFinite(n)) return "—";
-        return `${n.toLocaleString("es-ES")} /h`;
-      }
-
+    // Dinero (Vault) en $
+    if (key === "dinero") {
       if (!Number.isFinite(n)) return "—";
-      return n.toLocaleString("es-ES");
-    },
-    [formatearTiempo, formatearTiempoParkour]
-  );
+      return `${n.toLocaleString("es-ES")} $`;
+    }
+
+    if (key === "kdr") {
+      if (!Number.isFinite(n)) return "—";
+      return n.toFixed(2);
+    }
+
+    if (key === "income_rate") {
+      if (!Number.isFinite(n)) return "—";
+      return `${n.toLocaleString("es-ES")} /h`;
+    }
+
+    if (!Number.isFinite(n)) return "—";
+    return n.toLocaleString("es-ES");
+  },
+  [formatearTiempo, formatearTiempoParkour]
+);
+
 
   /* Vinculados + rango */
   useEffect(() => {
