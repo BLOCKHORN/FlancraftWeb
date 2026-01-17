@@ -1,3 +1,4 @@
+/* src/styles/components/Estadisticas/_leaderboards.scss */
 @use "../../base/variables" as *;
 
 @keyframes glowSweep {
@@ -51,7 +52,7 @@
 
 .lb-frame {
   position: relative;
-  overflow: hidden;
+  overflow: visible;
 
   background:
     radial-gradient(circle at 18% 0%, rgba(255,255,255,0.22), transparent 56%),
@@ -178,7 +179,7 @@
 }
 
 /* =========================================================
-   PODIUM (igual que lo tenías bien)
+   PODIUM
    ========================================================= */
 .lb-podium {
   padding: 1.15rem var(--padX) 0.35rem;
@@ -498,6 +499,16 @@
   }
 }
 
+.lb-orderHint {
+  margin-top: .55rem;
+  padding: .55rem .75rem;
+  border-radius: var(--r);
+  background: rgba(0,0,0,0.08);
+  border: 1px solid rgba(0,0,0,0.10);
+  color: rgba(43,25,14,0.74);
+  font-size: .98rem;
+}
+
 .lb-filtersPanel {
   width: 100%;
   display: flex;
@@ -568,6 +579,85 @@
 }
 
 /* =========================================================
+   ✅ TOOLTIP PRO: AHORA SIEMPRE VISIBLE CUANDO OPEN
+   - fixed + z-index alto
+   - fuente simple y legible
+   ========================================================= */
+.lb-tip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+}
+
+.lb-tip__btn {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.20);
+  background: rgba(0, 0, 0, 0.12);
+  color: rgba(255, 255, 255, 0.92);
+  cursor: pointer;
+  padding: 0;
+  line-height: 0;
+
+  &:hover { background: rgba(0, 0, 0, 0.22); }
+}
+
+.lb-tip__bubble {
+  position: fixed;
+  z-index: 999999;
+  transform: translateX(-50%);
+
+  width: min(420px, calc(100vw - 22px));
+  padding: 12px 14px;
+  border-radius: 12px;
+
+  background: rgba(18, 12, 8, 0.96);
+  border: 1px solid rgba(255, 210, 140, 0.30);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.55);
+
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  letter-spacing: 0;
+  text-transform: none;
+
+  color: rgba(255, 245, 230, 0.96);
+  font-size: 13px;
+  line-height: 1.28;
+  text-align: left;
+
+  white-space: normal;
+  word-break: normal;
+  overflow-wrap: anywhere;
+
+  pointer-events: none;
+}
+
+.lb-tip__bubble::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  width: 10px;
+  height: 10px;
+  background: rgba(18, 12, 8, 0.96);
+  transform: translateX(-50%) rotate(45deg);
+}
+
+.lb-tip__bubble.is-bottom::after {
+  top: -6px;
+  border-left: 1px solid rgba(255, 210, 140, 0.20);
+  border-top: 1px solid rgba(255, 210, 140, 0.20);
+}
+
+.lb-tip__bubble.is-top::after {
+  bottom: -6px;
+  border-right: 1px solid rgba(255, 210, 140, 0.20);
+  border-bottom: 1px solid rgba(255, 210, 140, 0.20);
+}
+
+/* =========================================================
    TABLE CARD
    ========================================================= */
 .lb-content {
@@ -612,28 +702,34 @@
   .lb-sep { opacity: .55; }
 }
 
-/* ✅ CLAVE: aquí NO recortamos nada */
 .lb-tableWrap {
   position: relative;
   max-width: 100%;
   overflow: visible;
 }
 
-/* =========================================================
-   TABLE — SIN SCROLL, SIN RECORTES
-   - Calcula ancho de stats según --stats (desde JSX)
-   ========================================================= */
 .lb-table {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
   table-layout: fixed;
 
-  /* Defaults (por si no llega --stats del inline style) */
   --stats: 7;
   --posW: 64px;
   --playerW: clamp(240px, 32vw, 360px);
-  --statW: calc((100% - var(--posW) - var(--playerW)) / var(--stats));
+
+  --wideBoost: 1.45;
+  --mediumBoost: 1.20;
+  --wideCount: 0;
+  --mediumCount: 0;
+
+  --remaining: calc(100% - var(--posW) - var(--playerW));
+  --denom: calc(
+    var(--stats)
+    + (var(--wideCount) * (var(--wideBoost) - 1))
+    + (var(--mediumCount) * (var(--mediumBoost) - 1))
+  );
+  --statBase: calc(var(--remaining) / var(--denom));
 
   color: var(--ink);
 
@@ -648,32 +744,53 @@
     padding: .68rem .62rem;
     border-bottom: 2px solid rgba(0,0,0,0.30);
     font-size: clamp(.92rem, 1.0vw, 1.06rem);
+    overflow: visible;
   }
 
   thead th.col-pos { width: var(--posW); text-align: center; }
   thead th.col-player { width: var(--playerW); }
+  thead th.th-sort { width: var(--statBase); }
 
-  /* ✅ ancho automático por stat */
-  thead th.th-sort { width: var(--statW); }
+  thead th.th-sort[data-stat="income_rate"],
+  thead th.th-sort[data-stat="upgrades_comprados"],
+  thead th.th-sort[data-stat="oneblock_blocks_broken"] {
+    width: calc(var(--statBase) * var(--wideBoost));
+  }
+
+  thead th.th-sort[data-stat="killstreak_max"],
+  thead th.th-sort[data-stat="mejor_tiempo"] {
+    width: calc(var(--statBase) * var(--mediumBoost));
+  }
 
   .th-sort {
     user-select: none;
     cursor: pointer;
     position: relative;
 
-    /* ✅ headers sin cortes raros */
-    span {
-      display: block;
-      white-space: normal;
-      overflow: visible;
-      text-overflow: unset;
-      line-height: 1.02;
-      word-break: break-word;
-      hyphens: auto;
+    .th-sort__label {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
       text-align: center;
+
+      white-space: normal;
+      line-height: 1.05;
+
+      hyphens: none;
+      word-break: normal;
+      overflow-wrap: normal;
     }
 
-    /* ✅ ACTIVE LEGIBLE (sin aclarar el fondo) */
+    .th-sort__text {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      min-width: 0;
+    }
+
     &.active {
       background: linear-gradient(180deg, rgba(85,55,32,0.98), rgba(24,15,8,0.96));
       box-shadow:
@@ -681,7 +798,7 @@
         inset 0 -2px 0 rgba(255,210,110,0.32);
       z-index: 6;
 
-      span { color: rgba(255,210,110,0.98); }
+      .th-sort__label { color: rgba(255,210,110,0.98); }
     }
 
     &.active::after {
@@ -787,24 +904,15 @@
   }
 }
 
-/* ✅ Ajuste extra: en pantallas más pequeñas comprimimos playerW
-   (sin ocultar columnas en desktop) */
 @media (max-width: 1120px) {
-  .lb-table {
-    --playerW: clamp(210px, 30vw, 320px);
-  }
+  .lb-table { --playerW: clamp(210px, 30vw, 320px); }
 }
 @media (max-width: 980px) {
-  .lb-table {
-    --playerW: clamp(190px, 28vw, 280px);
-  }
+  .lb-table { --playerW: clamp(190px, 28vw, 280px); }
   .lb-table thead th,
-  .lb-table tbody td {
-    padding: .58rem .52rem;
-  }
+  .lb-table tbody td { padding: .58rem .52rem; }
 }
 
-/* Player cell */
 .lb-player {
   display: flex;
   align-items: center;
@@ -963,6 +1071,9 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
   }
 
   .v {
@@ -978,7 +1089,6 @@
   }
 }
 
-/* Pagination */
 .lb-pagination {
   padding: 1rem 1rem 1.2rem;
   display: flex;
@@ -1003,5 +1113,31 @@
       background: rgba(0,0,0,0.08);
       border-color: rgba(0,0,0,0.16);
     }
+  }
+}
+.lb-badge-platform {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 18px;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  border: 1px solid rgba(255,255,255,.18);
+  background: rgba(0,0,0,.28);
+  color: rgba(255,255,255,.92);
+  box-shadow: 0 1px 0 rgba(0,0,0,.35);
+  transform: translateY(-1px);
+
+  &.java {
+    border-color: rgba(110, 200, 255, .35);
+    background: rgba(30, 90, 140, .28);
+  }
+
+  &.bedrock {
+    border-color: rgba(130, 255, 170, .35);
+    background: rgba(30, 120, 70, .26);
   }
 }

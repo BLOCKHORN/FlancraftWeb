@@ -1,7 +1,14 @@
-// src/pages/Leaderboards/Leaderboards.jsx (o donde lo tengas)
-import { useCallback, useEffect, useMemo, useState } from "react";
+// src/pages/Leaderboards/Leaderboards.jsx
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useRef,
+  useLayoutEffect,
+} from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, SlidersHorizontal, X, ChevronDown } from "lucide-react";
+import { Search, SlidersHorizontal, X, ChevronDown, Info } from "lucide-react";
 
 import { getLeaderboards } from "../../api/getLeaderboards";
 import "../../styles/components/Estadisticas/_leaderboards.scss";
@@ -10,7 +17,6 @@ const API_BASE = import.meta.env.VITE_BACKEND_URL || "http://localhost:10000";
 
 /**
  * UI IDs (bonitos) → IDs oficiales backend/supabase/plugin
- * IMPORTANTE: esto tiene que coincidir con tu config del plugin (servidor: "oneblock", "survival", etc.)
  */
 const SERVIDOR_API_MAP = {
   survival_clasico: "survival",
@@ -28,55 +34,35 @@ const SERVIDORES = [
   { id: "parkour", nombre: "Parkour", imagen: "/assets/reinos/parkour.webp" },
 ];
 
-/* =========================================================
-   Stats por servidor (keys que espera el frontend)
-   (estas keys deben existir en tu tabla/vista del backend)
-   ========================================================= */
+/**
+ * ✅ GENS: cambiamos MUERTES por DINERO
+ */
 const STATS_BY_SERVER = {
-  survival_clasico: [
-  "tiempo_jugado",
-  "bloques_minados",
-  "mobs_matados",
-  "dinero",
-  "kills_pvp",
-  "muertes",
-],
+  survival_clasico: ["tiempo_jugado", "bloques_minados", "mobs_matados", "dinero", "kills_pvp", "muertes"],
 
   oneblock: [
     "island_level",
     "oneblock_blocks_broken",
     "phase_actual",
-    "dinero", // ✅ antes challenges_completados
+    "dinero",
     "mobs_matados",
     "tiempo_jugado",
     "muertes",
   ],
+
   gens: [
     "coins_ganadas_total",
-    "income_rate",
-    "upgrades_comprados",
-    "gens_owned",
     "prestigios",
+    "income_rate",
+    "gens_owned",
+    "upgrades_comprados",
     "tiempo_jugado",
-    "muertes",
+    "dinero", // ✅ en vez de muertes
   ],
-  survival_anarquico: [
-    "kills_pvp",
-    "kdr",
-    "killstreak_max",
-    "damage_dealt",
-    "muertes",
-    "tiempo_jugado",
-  ],
-  parkour: [
-    "mejor_tiempo",
-    "completadas_total",
-    "perfect_runs",
-    "falls",
-    "medallas_ganadas",
-    "racha_dias",
-    "tiempo_jugado",
-  ],
+
+  survival_anarquico: ["kills_pvp", "kdr", "killstreak_max", "damage_dealt", "muertes", "tiempo_jugado"],
+
+  parkour: ["mejor_tiempo", "completadas_total", "perfect_runs", "falls", "medallas_ganadas", "racha_dias", "tiempo_jugado"],
 };
 
 const DEFAULTS_BY_SERVER = {
@@ -101,8 +87,8 @@ const LABELS = {
   phase_actual: "Fase",
 
   coins_ganadas_total: "Coins",
-  income_rate: "Multiplicador",
-  upgrades_comprados: "Upgrades",
+  income_rate: "Multi",
+  upgrades_comprados: "Límite Gens",
   gens_owned: "Gens",
   prestigios: "Nivel",
 
@@ -116,6 +102,37 @@ const LABELS = {
   falls: "Caídas",
   medallas_ganadas: "Medallas",
   racha_dias: "Racha",
+};
+
+const STAT_HELP = {
+  tiempo_jugado: "Tiempo total jugado en este servidor (en horas y minutos).",
+  muertes: "Número total de muertes del jugador en este servidor.",
+
+  dinero: "Dinero del jugador (Vault).",
+  bloques_minados: "Bloques minados (estadística de Minecraft).",
+  mobs_matados: "Mobs eliminados (estadística de Minecraft).",
+  kills_pvp: "Kills a otros jugadores (PvP).",
+
+  island_level: "Nivel de tu isla. Si está a 0, se usa la fase como aproximación.",
+  oneblock_blocks_broken: "Bloques rotos en el bloque infinito (lifetime).",
+  phase_actual: "Fase numérica del progreso de OneBlock.",
+
+  mejor_tiempo: "Mejor tiempo registrado en Parkour (mm:ss.ms).",
+  completadas_total: "Número total de recorridos completados.",
+  perfect_runs: "Recorridos perfectos (sin fallos).",
+  falls: "Caídas registradas.",
+  medallas_ganadas: "Medallas conseguidas en Parkour.",
+  racha_dias: "Racha de días consecutivos jugando Parkour.",
+
+  kdr: "Ratio K/D: kills PvP dividido entre muertes.",
+  killstreak_max: "Mayor racha de kills sin morir.",
+  damage_dealt: "Daño total infligido (estadística).",
+
+  coins_ganadas_total: "Coins del modo Gens (balance). Se usa para comprar cosas exclusivas.",
+  prestigios: "Nivel del jugador en AxGens.",
+  income_rate: "Multiplicador de producción (AxGens). Cuanto más alto, más rendimiento.",
+  gens_owned: "Generadores colocados (AxGens).",
+  upgrades_comprados: "Límite máximo de generadores (capacidad).",
 };
 
 const MEDALLAS = {
@@ -142,10 +159,142 @@ const isNombreValido = (nombre) => {
   return true;
 };
 
+/* =========================================================
+   Tooltip PRO (fixed + flip + legible)
+   ========================================================= */
+function HelpTip({ text }) {
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef(null);
+  const bubbleRef = useRef(null);
+
+  const placeBubble = useCallback(() => {
+    const wrap = wrapRef.current;
+    const bubble = bubbleRef.current;
+    if (!wrap || !bubble) return;
+
+    const w = wrap.getBoundingClientRect();
+
+    const margin = 10;
+    const gap = 10;
+
+    const b = bubble.getBoundingClientRect();
+
+    let left = w.left + w.width / 2;
+
+    let top = w.bottom + gap;
+    let place = "bottom";
+
+    if (top + b.height > window.innerHeight - margin) {
+      top = w.top - gap - b.height;
+      place = "top";
+    }
+
+    const halfW = b.width / 2;
+    if (left - halfW < margin) left = margin + halfW;
+    if (left + halfW > window.innerWidth - margin) left = window.innerWidth - margin - halfW;
+
+    bubble.style.left = `${left}px`;
+    bubble.style.top = `${top}px`;
+
+    bubble.classList.toggle("is-top", place === "top");
+    bubble.classList.toggle("is-bottom", place === "bottom");
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!open) return;
+    const id1 = requestAnimationFrame(() => {
+      placeBubble();
+      const id2 = requestAnimationFrame(placeBubble);
+      bubbleRef.current && (bubbleRef.current.__raf2 = id2);
+    });
+    return () => {
+      cancelAnimationFrame(id1);
+      const id2 = bubbleRef.current?.__raf2;
+      if (id2) cancelAnimationFrame(id2);
+    };
+  }, [open, placeBubble]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const onResize = () => placeBubble();
+    const onScroll = () => placeBubble();
+    const onDown = (e) => {
+      const wrap = wrapRef.current;
+      if (!wrap) return;
+      if (!wrap.contains(e.target)) setOpen(false);
+    };
+
+    window.addEventListener("resize", onResize);
+    window.addEventListener("scroll", onScroll, true);
+    window.addEventListener("pointerdown", onDown);
+
+    return () => {
+      window.removeEventListener("resize", onResize);
+      window.removeEventListener("scroll", onScroll, true);
+      window.removeEventListener("pointerdown", onDown);
+    };
+  }, [open, placeBubble]);
+
+  if (!text) return null;
+
+  return (
+    <span
+      ref={wrapRef}
+      className="lb-tip"
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+    >
+      <button
+        type="button"
+        className="lb-tip__btn"
+        aria-label={text}
+        onClick={(e) => {
+          e.stopPropagation();
+          setOpen((v) => !v);
+        }}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setOpen(false)}
+      >
+        <Info size={14} />
+      </button>
+
+      {open && (
+        <span ref={bubbleRef} className="lb-tip__bubble is-bottom" role="tooltip">
+          {text}
+        </span>
+      )}
+    </span>
+  );
+}
+
+function StatHeader({ stat, active, ordenAsc, onClick }) {
+  const label = LABELS[stat] || stat;
+  const help = STAT_HELP[stat] || `Ordenar por ${label}`;
+
+  return (
+    <th
+      className={cn("th-sort", { active })}
+      data-stat={stat}
+      onClick={onClick}
+      role="columnheader"
+      aria-sort={active ? (ordenAsc ? "ascending" : "descending") : "none"}
+      title={label}
+    >
+      <span className="th-sort__label">
+        <span className="th-sort__text">{label}</span>
+        <HelpTip text={help} />
+      </span>
+
+      {active && <i className="th-sort__arrow">{ordenAsc ? "▲" : "▼"}</i>}
+    </th>
+  );
+}
+
 export default function Leaderboards() {
   const navigate = useNavigate();
 
-  const [servidor, setServidor] = useState(SERVIDORES[2].id); // gens por defecto (UI)
+  const [servidor, setServidor] = useState(SERVIDORES[2].id); // gens por defecto
   const servidorApi = useMemo(() => SERVIDOR_API_MAP[servidor] || servidor, [servidor]);
 
   const defaults = DEFAULTS_BY_SERVER[servidor] || { orden: "tiempo_jugado", asc: false };
@@ -167,10 +316,7 @@ export default function Leaderboards() {
 
   const [usuariosVinculados, setUsuariosVinculados] = useState({});
 
-  const servidorSeleccionado = useMemo(
-    () => SERVIDORES.find((s) => s.id === servidor),
-    [servidor]
-  );
+  const servidorSeleccionado = useMemo(() => SERVIDORES.find((s) => s.id === servidor), [servidor]);
 
   const STATS = useMemo(() => STATS_BY_SERVER[servidor] || ["tiempo_jugado"], [servidor]);
   const paginaActual = useMemo(() => Math.floor(offset / limit) + 1, [offset]);
@@ -183,7 +329,6 @@ export default function Leaderboards() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [servidor]);
 
-  // Tiempo EN SEGUNDOS (tu plugin/DB deberían enviar segundos)
   const formatearTiempo = useCallback((seconds) => {
     const totalSegundos = Math.floor(Number(seconds || 0));
     const horas = Math.floor(totalSegundos / 3600);
@@ -207,8 +352,6 @@ export default function Leaderboards() {
     return `${mm}:${ss}.${mss}`;
   }, []);
 
-  // ✅ FIX NIVEL ISLA:
-  // Si island_level viene 0 pero phase_actual ya existe (Llanuras=1, Bosque=2...), usamos phase_actual.
   const getIslandLevel = useCallback((p) => {
     const isl = Number(p?.island_level || 0);
     const ph = Number(p?.phase_actual || 0);
@@ -216,45 +359,57 @@ export default function Leaderboards() {
     return Number.isFinite(v) ? v : 0;
   }, []);
 
+  // ✅ Plataforma desde backend: "java" | "bedrock"
+  const getPlatform = useCallback((p) => {
+    const pl = (p?.plataforma || "").toString().toLowerCase();
+    if (pl === "bedrock") return "bedrock";
+    if (pl === "java") return "java";
+    return null;
+  }, []);
+
   const getStatNumber = useCallback(
     (p, key) => {
       if (!p) return 0;
-
       if (key === "island_level") return getIslandLevel(p);
 
-      const n = Number(p?.[key] ?? 0);
+      // ✅ sorting: null/undefined => 0 (pero display lo hará "—")
+      const raw = p?.[key];
+      if (raw === null || raw === undefined || raw === "") return 0;
+
+      const n = Number(raw);
       if (!Number.isFinite(n)) return 0;
       return n;
     },
     [getIslandLevel]
   );
 
-const formatValue = useCallback(
+ const formatValue = useCallback(
   (key, value) => {
-    const n = Number(value || 0);
+    // ✅ Si no hay dato, no lo pintes como 0
+    if (value === null || value === undefined) {
+      // tiempo sí puede tener sentido 0, pero si te falta dato -> —
+      return "—";
+    }
+
+    const n = Number(value);
 
     if (key === "tiempo_jugado") return formatearTiempo(n);
     if (key === "mejor_tiempo") return formatearTiempoParkour(n);
 
-    // Dinero (Vault)
     if (key === "dinero") {
       if (!Number.isFinite(n)) return "—";
       return `${n.toLocaleString("es-ES")} $`;
     }
 
-    // Gens: coins totales
     if (key === "coins_ganadas_total") {
       if (!Number.isFinite(n)) return "—";
       return n.toLocaleString("es-ES");
-      // si quieres “Coins”:
-      // return `${n.toLocaleString("es-ES")} Coins`;
     }
 
-    // Gens: coins por hora (ya lo usas)
     if (key === "income_rate") {
-  if (!Number.isFinite(n)) return "—";
-  return `${n.toLocaleString("es-ES")}x`;
-}
+      if (!Number.isFinite(n)) return "—";
+      return `${n.toLocaleString("es-ES")}x`;
+    }
 
     if (key === "kdr") {
       if (!Number.isFinite(n)) return "—";
@@ -267,7 +422,7 @@ const formatValue = useCallback(
   [formatearTiempo, formatearTiempoParkour]
 );
 
-  /* Vinculados + rango */
+
   useEffect(() => {
     const controller = new AbortController();
 
@@ -279,9 +434,7 @@ const formatValue = useCallback(
 
         const mapa = (usuarios || []).reduce((acc, u) => {
           if (u?.uuid) {
-            acc[u.uuid] = {
-              rango: u.rango_usuario?.toLowerCase() || null,
-            };
+            acc[u.uuid] = { rango: u.rango_usuario?.toLowerCase() || null };
           }
           return acc;
         }, {});
@@ -296,7 +449,6 @@ const formatValue = useCallback(
     return () => controller.abort();
   }, []);
 
-  /* Carga leaderboard */
   useEffect(() => {
     let alive = true;
     setLoading(true);
@@ -306,7 +458,7 @@ const formatValue = useCallback(
       try {
         const res = await getLeaderboards({
           tipo: orden,
-          servidor: servidorApi, // 👈 AQUI VA EL ID OFICIAL
+          servidor: servidorApi,
           limit,
           offset,
         });
@@ -314,7 +466,6 @@ const formatValue = useCallback(
 
         const lista = (res?.resultados || []).filter((p) => isNombreValido(p?.nombre_minecraft));
 
-        // ✅ ordenar usando el valor "real" (incluye fix de island_level)
         const ordenada = ordenAsc
           ? [...lista].sort((a, b) => getStatNumber(a, orden) - getStatNumber(b, orden))
           : [...lista].sort((a, b) => getStatNumber(b, orden) - getStatNumber(a, orden));
@@ -376,13 +527,24 @@ const formatValue = useCallback(
   }, [datos, query, soloVinculados, getMeta]);
 
   const top3 = useMemo(() => {
-    const list = (datosFiltrados.length ? datosFiltrados : datos).filter((p) =>
-      isNombreValido(p?.nombre_minecraft)
-    );
+    const list = (datosFiltrados.length ? datosFiltrados : datos).filter((p) => isNombreValido(p?.nombre_minecraft));
     return (list || []).slice(0, 3);
   }, [datos, datosFiltrados]);
 
   const cambiarPagina = (pageIndex) => setOffset(pageIndex * limit);
+
+  const { wideCount, mediumCount } = useMemo(() => {
+    const WIDE = new Set(["income_rate", "upgrades_comprados", "oneblock_blocks_broken"]);
+    const MED = new Set(["killstreak_max", "mejor_tiempo"]);
+
+    let w = 0;
+    let m = 0;
+    for (const s of STATS) {
+      if (WIDE.has(s)) w += 1;
+      else if (MED.has(s)) m += 1;
+    }
+    return { wideCount: w, mediumCount: m };
+  }, [STATS]);
 
   return (
     <section className="lb-page">
@@ -418,6 +580,7 @@ const formatValue = useCallback(
               const medal = MEDALLAS[absPos] || MEDALLAS[idx + 1];
               const meta = getMeta(p.uuid);
               const name = p?.nombre_minecraft;
+              const platform = getPlatform(p);
 
               const valueForPodium =
                 orden === "phase_actual"
@@ -451,6 +614,11 @@ const formatValue = useCallback(
                       <div className="pod-nameLine">
                         <span className="pod-name">{name}</span>
                         <span className="pod-badges">
+                          {platform && (
+                            <span className={cn("lb-badge-platform", { bedrock: platform === "bedrock", java: platform === "java" })}>
+                              {platform === "bedrock" ? "BEDROCK" : "JAVA"}
+                            </span>
+                          )}
                           {meta?.rango && (
                             <img
                               src={`/assets/rangos/${meta.rango}.webp`}
@@ -465,9 +633,7 @@ const formatValue = useCallback(
                       <div className="pod-stat">
                         <span className="pod-stat__k">{LABELS[orden] || orden}</span>
                         <span className="pod-stat__v">
-                          {orden === "phase_actual"
-                            ? (p?.phase_nombre || "—")
-                            : formatValue(orden, valueForPodium)}
+                          {orden === "phase_actual" ? (p?.phase_nombre || "—") : formatValue(orden, valueForPodium)}
                         </span>
                       </div>
                     </div>
@@ -512,12 +678,7 @@ const formatValue = useCallback(
                 spellCheck={false}
               />
               {query && (
-                <button
-                  className="lb-clear"
-                  onClick={() => setQuery("")}
-                  type="button"
-                  aria-label="Limpiar"
-                >
+                <button className="lb-clear" onClick={() => setQuery("")} type="button" aria-label="Limpiar">
                   <X size={18} />
                 </button>
               )}
@@ -553,6 +714,8 @@ const formatValue = useCallback(
                 </select>
                 <ChevronDown size={16} />
               </div>
+
+              {STAT_HELP[orden] && <div className="lb-orderHint">{STAT_HELP[orden]}</div>}
             </div>
 
             {filtersOpen && (
@@ -604,12 +767,13 @@ const formatValue = useCallback(
                 </div>
               ) : (
                 <>
-                  {/* IMPORTANTE: sin scroll horizontal, y sin recortes */}
                   <div className="lb-tableWrap">
                     <table
                       className="lb-table"
                       style={{
                         "--stats": STATS.length,
+                        "--wideCount": wideCount,
+                        "--mediumCount": mediumCount,
                       }}
                     >
                       <thead>
@@ -618,17 +782,13 @@ const formatValue = useCallback(
                           <th className="col-player">Jugador</th>
 
                           {STATS.map((st) => (
-                            <th
+                            <StatHeader
                               key={st}
-                              className={cn("th-sort", { active: orden === st })}
+                              stat={st}
+                              active={orden === st}
+                              ordenAsc={ordenAsc}
                               onClick={() => cambiarOrden(st)}
-                              title={`Ordenar por ${LABELS[st] || st}`}
-                            >
-                              <span>{LABELS[st] || st}</span>
-                              {orden === st && (
-                                <i className="th-sort__arrow">{ordenAsc ? "▲" : "▼"}</i>
-                              )}
-                            </th>
+                            />
                           ))}
                         </tr>
                       </thead>
@@ -637,9 +797,7 @@ const formatValue = useCallback(
                         {loading &&
                           [...Array(limit)].map((_, i) => (
                             <tr key={`sk-${i}`} className="lb-row sk-row">
-                              <td>
-                                <span className="sk sk--pos" />
-                              </td>
+                              <td><span className="sk sk--pos" /></td>
                               <td>
                                 <div className="lb-player">
                                   <span className="sk sk--head" />
@@ -650,18 +808,14 @@ const formatValue = useCallback(
                                 </div>
                               </td>
                               {STATS.map((st) => (
-                                <td key={st}>
-                                  <span className="sk sk--num" />
-                                </td>
+                                <td key={st}><span className="sk sk--num" /></td>
                               ))}
                             </tr>
                           ))}
 
                         {!loading && datosFiltrados.length === 0 && (
                           <tr className="lb-row empty">
-                            <td colSpan={2 + STATS.length}>
-                              No hay resultados con los filtros actuales.
-                            </td>
+                            <td colSpan={2 + STATS.length}>No hay resultados con los filtros actuales.</td>
                           </tr>
                         )}
 
@@ -671,6 +825,7 @@ const formatValue = useCallback(
                             const meta = getMeta(p.uuid);
                             const medal = MEDALLAS[absPos] || null;
                             const name = p?.nombre_minecraft;
+                            const platform = getPlatform(p);
 
                             return (
                               <tr
@@ -689,12 +844,7 @@ const formatValue = useCallback(
                               >
                                 <td className="td-pos">
                                   {medal ? (
-                                    <img
-                                      src={medal}
-                                      alt={`Top ${absPos}`}
-                                      className="lb-medal"
-                                      loading="lazy"
-                                    />
+                                    <img src={medal} alt={`Top ${absPos}`} className="lb-medal" loading="lazy" />
                                   ) : (
                                     <span className="lb-rank">{absPos}</span>
                                   )}
@@ -707,14 +857,17 @@ const formatValue = useCallback(
                                       src={`https://mc-heads.net/avatar/${name}/32`}
                                       alt=""
                                       loading="lazy"
-                                      onError={(e) =>
-                                        (e.currentTarget.src = "/assets/default-head.png")
-                                      }
+                                      onError={(e) => (e.currentTarget.src = "/assets/default-head.png")}
                                     />
                                     <div className="lb-player__text">
                                       <div className="lb-nameRow">
                                         <span className="lb-name">{name}</span>
                                         <span className="lb-badges">
+                                          {platform && (
+                                            <span className={cn("lb-badge-platform", { bedrock: platform === "bedrock", java: platform === "java" })}>
+                                              {platform === "bedrock" ? "BEDROCK" : "JAVA"}
+                                            </span>
+                                          )}
                                           {meta?.rango && (
                                             <img
                                               src={`/assets/rangos/${meta.rango}.webp`}
@@ -725,9 +878,7 @@ const formatValue = useCallback(
                                           )}
                                         </span>
                                       </div>
-                                      <div className="lb-player__sub">
-                                        {meta?.rango ? meta.rango : "—"}
-                                      </div>
+                                      <div className="lb-player__sub">{meta?.rango ? meta.rango : "—"}</div>
                                     </div>
                                   </div>
                                 </td>
@@ -738,14 +889,12 @@ const formatValue = useCallback(
                                       ? (p?.phase_nombre || "—")
                                       : st === "island_level"
                                       ? getIslandLevel(p)
-                                      : p?.[st] ?? 0;
+                                      : p?.[st];
 
                                   return (
                                     <td key={st} className={cn("td-stat", { active: orden === st })}>
                                       <span className="num">
-                                        {st === "phase_actual"
-                                          ? (p?.phase_nombre || "—")
-                                          : formatValue(st, rawValue)}
+                                        {st === "phase_actual" ? (p?.phase_nombre || "—") : formatValue(st, rawValue)}
                                       </span>
                                     </td>
                                   );
@@ -757,32 +906,14 @@ const formatValue = useCallback(
                     </table>
                   </div>
 
-                  {/* Cards (móvil) */}
                   <div className="lb-cards">
-                    {loading &&
-                      [...Array(limit)].map((_, i) => (
-                        <div key={`csk-${i}`} className="lb-card sk-card">
-                          <div className="lb-card__top">
-                            <span className="sk sk--head" />
-                            <div className="sk-col">
-                              <span className="sk sk--name" />
-                              <span className="sk sk--mini" />
-                            </div>
-                          </div>
-                          <div className="lb-card__grid">
-                            {[...Array(Math.min(6, STATS.length))].map((__, j) => (
-                              <span key={j} className="sk sk--num" />
-                            ))}
-                          </div>
-                        </div>
-                      ))}
-
                     {!loading &&
                       datosFiltrados.map((p, i) => {
                         const absPos = offset + i + 1;
                         const meta = getMeta(p.uuid);
                         const name = p?.nombre_minecraft;
                         const medal = MEDALLAS[absPos] || null;
+                        const platform = getPlatform(p);
 
                         return (
                           <button
@@ -813,6 +944,11 @@ const formatValue = useCallback(
                                 <div className="lb-nameRow">
                                   <span className="lb-name">{name}</span>
                                   <span className="lb-badges">
+                                    {platform && (
+                                      <span className={cn("lb-badge-platform", { bedrock: platform === "bedrock", java: platform === "java" })}>
+                                        {platform === "bedrock" ? "BEDROCK" : "JAVA"}
+                                      </span>
+                                    )}
                                     {meta?.rango && (
                                       <img
                                         src={`/assets/rangos/${meta.rango}.webp`}
@@ -824,8 +960,7 @@ const formatValue = useCallback(
                                   </span>
                                 </div>
                                 <div className="lb-card__sub">
-                                  {LABELS[orden] || orden} {ordenAsc ? "▲" : "▼"} ·{" "}
-                                  {meta?.rango ? meta.rango : "—"}
+                                  {LABELS[orden] || orden} {ordenAsc ? "▲" : "▼"} · {meta?.rango ? meta.rango : "—"}
                                 </div>
                               </div>
                             </div>
@@ -833,22 +968,23 @@ const formatValue = useCallback(
                             <div className="lb-card__grid">
                               {STATS.slice(0, 6).map((st) => {
                                 const rawValue =
-                                  st === "phase_actual"
-                                    ? (p?.phase_nombre || "—")
-                                    : st === "island_level"
-                                    ? getIslandLevel(p)
-                                    : p?.[st] ?? 0;
+  st === "phase_actual"
+    ? (p?.phase_nombre || "—")
+    : st === "island_level"
+    ? getIslandLevel(p)
+    : p?.[st];
+
 
                                 return (
-                                  <div
-                                    key={st}
-                                    className={cn("lb-card__stat", { active: orden === st })}
-                                  >
-                                    <span className="k">{LABELS[st] || st}</span>
+                                  <div key={st} className={cn("lb-card__stat", { active: orden === st })}>
+                                    <span className="k">
+                                      {LABELS[st] || st}
+                                      <span className="k-help">
+                                        <HelpTip text={STAT_HELP[st] || ""} />
+                                      </span>
+                                    </span>
                                     <span className="v">
-                                      {st === "phase_actual"
-                                        ? (p?.phase_nombre || "—")
-                                        : formatValue(st, rawValue)}
+                                      {st === "phase_actual" ? (p?.phase_nombre || "—") : formatValue(st, rawValue)}
                                     </span>
                                   </div>
                                 );

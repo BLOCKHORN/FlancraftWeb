@@ -38,8 +38,14 @@ exports.importarStat = async (req, res) => {
 
 /**
  * Importación agrupada desde el plugin
- * Se llama 1 vez por jugador y servidor, con todas las stats agregadas.
- * Incluye extras por servidor cuando el plugin las manda.
+ *
+ * REGLA:
+ * - Vanilla SIEMPRE se actualiza
+ * - Extras SOLO si sync_context === "online"
+ *
+ * FIX:
+ * - Para offline/logout NO usamos UPSERT (evita pisar extras a 0/default)
+ * - UPDATE selectivo; si no existe fila -> INSERT mínimo
  */
 exports.importarStatsAgrupadas = async (req, res) => {
   const num = (v, def = 0) => {
@@ -47,151 +53,147 @@ exports.importarStatsAgrupadas = async (req, res) => {
     return Number.isFinite(n) ? n : def;
   };
 
-  const textOrNull = (v) => {
-    if (v == null) return null;
-    const s = String(v).trim();
-    return s ? s : null;
+  const numOrUndef = (v) => {
+    if (v === undefined || v === null || v === "") return undefined;
+    const n = Number(v);
+    return Number.isFinite(n) ? n : undefined;
   };
 
-  const {
-    uuid,
-    nombre_minecraft,
-    servidor,
+  const textOrUndef = (v) => {
+    if (v === undefined || v === null) return undefined;
+    const s = String(v).trim();
+    return s ? s : undefined;
+  };
 
-    // vanilla
-    bloques_minados,
-    bloques_colocados,
-    mobs_matados,
-    kills_pvp,
-    muertes,
-    tiempo_jugado,
-    saltos,
-    distancia_caminada,
-    distancia_volada,
+  const setIfDefined = (obj, key, value) => {
+    if (value !== undefined) obj[key] = value;
+  };
 
-    diamantes_minados,
-    hierro_minado,
-    oro_minado,
-    esmeraldas_minadas,
-    cultivos_cosechados,
-    peces_pescados,
-    dano_infligido,
-    dano_recibido,
-
-    // extras survival
-    dinero,
-    power_mcmmo,
-
-    // extras oneblock
-    island_level,
-    oneblock_blocks_broken,
-    phase_actual,
-    phase_nombre,
-    challenges_completados,
-
-    // extras gens
-    coins_ganadas_total,
-    income_rate,
-    upgrades_comprados,
-    gens_owned,
-    prestigios,
-
-    // extras anarquico
-    kdr,
-    killstreak_max,
-    damage_dealt,
-
-    // extras parkour
-    mejor_tiempo,
-    completadas_total,
-    perfect_runs,
-    falls,
-    medallas_ganadas,
-    racha_dias,
-  } = req.body;
+  const { uuid, servidor } = req.body;
 
   if (!uuid || !servidor) {
     return res.status(400).json({ error: "Faltan campos obligatorios (uuid/servidor)." });
   }
 
-  const payload = {
-    uuid,
-    nombre_minecraft: textOrNull(nombre_minecraft),
-    servidor,
+  const syncContext = String(req.body.sync_context || "online").toLowerCase();
+  const allowExtras = syncContext === "online";
 
-    // vanilla
-    bloques_minados: num(bloques_minados),
-    bloques_colocados: num(bloques_colocados),
-    mobs_matados: num(mobs_matados),
-    kills_pvp: num(kills_pvp),
-    muertes: num(muertes),
+  // 1) Vanilla (siempre)
+  const baseUpdate = {
+    bloques_minados: num(req.body.bloques_minados),
+    bloques_colocados: num(req.body.bloques_colocados),
+    mobs_matados: num(req.body.mobs_matados),
+    kills_pvp: num(req.body.kills_pvp),
+    muertes: num(req.body.muertes),
+    tiempo_jugado: num(req.body.tiempo_jugado),
 
-    // recomendado en segundos (si usas ticks, el frontend debe adaptarse)
-    tiempo_jugado: num(tiempo_jugado),
+    saltos: num(req.body.saltos),
+    distancia_caminada: num(req.body.distancia_caminada),
+    distancia_volada: num(req.body.distancia_volada),
 
-    saltos: num(saltos),
-    distancia_caminada: num(distancia_caminada),
-    distancia_volada: num(distancia_volada),
+    diamantes_minados: num(req.body.diamantes_minados),
+    hierro_minado: num(req.body.hierro_minado),
+    oro_minado: num(req.body.oro_minado),
+    esmeraldas_minadas: num(req.body.esmeraldas_minadas),
+    cultivos_cosechados: num(req.body.cultivos_cosechados),
 
-    diamantes_minados: num(diamantes_minados),
-    hierro_minado: num(hierro_minado),
-    oro_minado: num(oro_minado),
-    esmeraldas_minadas: num(esmeraldas_minadas),
-    cultivos_cosechados: num(cultivos_cosechados),
-    peces_pescados: num(peces_pescados),
-    dano_infligido: num(dano_infligido),
-    dano_recibido: num(dano_recibido),
-
-    // extras survival
-    dinero: num(dinero),
-    power_mcmmo: num(power_mcmmo),
-
-    // extras oneblock
-    island_level: num(island_level),
-    oneblock_blocks_broken: num(oneblock_blocks_broken),
-    phase_actual: num(phase_actual),
-    phase_nombre: textOrNull(phase_nombre),
-    challenges_completados: num(challenges_completados),
-
-    // extras gens
-    coins_ganadas_total: num(coins_ganadas_total),
-    income_rate: num(income_rate),
-    upgrades_comprados: num(upgrades_comprados),
-    gens_owned: num(gens_owned),
-    prestigios: num(prestigios),
-
-    // extras anarquico
-    kdr: num(kdr),
-    killstreak_max: num(killstreak_max),
-    damage_dealt: num(damage_dealt),
-
-    // extras parkour
-    mejor_tiempo: num(mejor_tiempo),
-    completadas_total: num(completadas_total),
-    perfect_runs: num(perfect_runs),
-    falls: num(falls),
-    medallas_ganadas: num(medallas_ganadas),
-    racha_dias: num(racha_dias),
+    peces_pescados: num(req.body.peces_pescados),
+    dano_infligido: num(req.body.dano_infligido),
+    dano_recibido: num(req.body.dano_recibido),
 
     ultima_actualizacion: new Date().toISOString(),
   };
 
-  const { error } = await db.from("estadisticas_agrupadas").upsert([payload], {
-    onConflict: ["uuid", "servidor"],
-  });
+  // Campos blandos (solo si vienen)
+  setIfDefined(baseUpdate, "nombre_minecraft", textOrUndef(req.body.nombre_minecraft));
+  setIfDefined(baseUpdate, "plataforma", textOrUndef(req.body.plataforma));
 
-  if (error) {
-    console.error("[FlanSync] Error al guardar stats agrupadas:", error.message);
-    return res.status(500).json({ error: "Error al guardar estadísticas." });
+  // 2) Extras (solo online)
+  const extrasUpdate = {};
+  if (allowExtras) {
+    // survival
+    setIfDefined(extrasUpdate, "dinero", numOrUndef(req.body.dinero));
+    setIfDefined(extrasUpdate, "power_mcmmo", numOrUndef(req.body.power_mcmmo));
+
+    // oneblock
+    setIfDefined(extrasUpdate, "island_level", numOrUndef(req.body.island_level));
+    setIfDefined(extrasUpdate, "oneblock_blocks_broken", numOrUndef(req.body.oneblock_blocks_broken));
+    setIfDefined(extrasUpdate, "phase_actual", numOrUndef(req.body.phase_actual));
+    setIfDefined(extrasUpdate, "phase_nombre", textOrUndef(req.body.phase_nombre));
+    setIfDefined(extrasUpdate, "challenges_completados", numOrUndef(req.body.challenges_completados));
+
+    // gens
+    setIfDefined(extrasUpdate, "coins_ganadas_total", numOrUndef(req.body.coins_ganadas_total));
+    setIfDefined(extrasUpdate, "income_rate", numOrUndef(req.body.income_rate));
+    setIfDefined(extrasUpdate, "upgrades_comprados", numOrUndef(req.body.upgrades_comprados));
+    setIfDefined(extrasUpdate, "gens_owned", numOrUndef(req.body.gens_owned));
+    setIfDefined(extrasUpdate, "prestigios", numOrUndef(req.body.prestigios));
+
+    // anarquico
+    setIfDefined(extrasUpdate, "kdr", numOrUndef(req.body.kdr));
+    setIfDefined(extrasUpdate, "killstreak_max", numOrUndef(req.body.killstreak_max));
+    setIfDefined(extrasUpdate, "damage_dealt", numOrUndef(req.body.damage_dealt));
+
+    // parkour
+    setIfDefined(extrasUpdate, "mejor_tiempo", numOrUndef(req.body.mejor_tiempo));
+    setIfDefined(extrasUpdate, "completadas_total", numOrUndef(req.body.completadas_total));
+    setIfDefined(extrasUpdate, "perfect_runs", numOrUndef(req.body.perfect_runs));
+    setIfDefined(extrasUpdate, "falls", numOrUndef(req.body.falls));
+    setIfDefined(extrasUpdate, "medallas_ganadas", numOrUndef(req.body.medallas_ganadas));
+    setIfDefined(extrasUpdate, "racha_dias", numOrUndef(req.body.racha_dias));
   }
 
-  return res.status(200).json({ success: true });
+  // 3) ¿Existe fila?
+  const { data: existing, error: findErr } = await db
+    .from("estadisticas_agrupadas")
+    .select("uuid")
+    .eq("uuid", uuid)
+    .eq("servidor", servidor)
+    .maybeSingle();
+
+  if (findErr) {
+    console.error("[FlanSync] Error buscando stats existentes:", findErr.message);
+    return res.status(500).json({ error: "Error al comprobar estadísticas existentes." });
+  }
+
+  if (existing) {
+    // UPDATE selectivo: vanilla siempre, extras solo online
+    const updatePayload = allowExtras ? { ...baseUpdate, ...extrasUpdate } : { ...baseUpdate };
+
+    const { error: updErr } = await db
+      .from("estadisticas_agrupadas")
+      .update(updatePayload)
+      .eq("uuid", uuid)
+      .eq("servidor", servidor);
+
+    if (updErr) {
+      console.error("[FlanSync] Error al actualizar stats:", updErr.message);
+      return res.status(500).json({ error: "Error al actualizar estadísticas." });
+    }
+
+    return res.status(200).json({ success: true, mode: "update", sync_context: syncContext });
+  }
+
+  // INSERT mínimo (si no existe fila)
+  const insertPayload = {
+    uuid,
+    servidor,
+    ...baseUpdate,
+    ...(allowExtras ? extrasUpdate : {}),
+  };
+
+  const { error: insErr } = await db.from("estadisticas_agrupadas").insert([insertPayload]);
+
+  if (insErr) {
+    console.error("[FlanSync] Error al insertar stats:", insErr.message);
+    return res.status(500).json({ error: "Error al insertar estadísticas." });
+  }
+
+  return res.status(200).json({ success: true, mode: "insert", sync_context: syncContext });
 };
 
 /**
  * Ranking desde vista optimizada
- * vista_ranking_estadisticas: columnas esperadas:
- * - uuid, nombre_minecraft, servidor, tipo, valor
  */
 exports.obtenerRankingEstadisticas = async (req, res) => {
   const { tipo, servidor, limit = 10, offset = 0 } = req.query;
@@ -220,13 +222,11 @@ exports.obtenerRankingEstadisticas = async (req, res) => {
 
 /**
  * Leaderboard desde tabla agrupada
- * Soporta: ?tipo=xxx&servidor=yyy&limit=10&offset=0&asc=true|false
  */
 exports.obtenerLeaderboards = async (req, res) => {
   const { tipo = "tiempo_jugado", servidor, limit = 10, offset = 0, asc } = req.query;
 
   const tiposValidos = [
-    // vanilla
     "bloques_minados",
     "bloques_colocados",
     "mobs_matados",
@@ -245,29 +245,24 @@ exports.obtenerLeaderboards = async (req, res) => {
     "dano_infligido",
     "dano_recibido",
 
-    // survival extras
     "dinero",
     "power_mcmmo",
 
-    // oneblock extras
     "island_level",
     "oneblock_blocks_broken",
     "phase_actual",
     "challenges_completados",
 
-    // gens extras
     "coins_ganadas_total",
     "income_rate",
     "upgrades_comprados",
     "gens_owned",
     "prestigios",
 
-    // anarquico extras
     "kdr",
     "killstreak_max",
     "damage_dealt",
 
-    // parkour extras
     "mejor_tiempo",
     "completadas_total",
     "perfect_runs",
@@ -277,15 +272,9 @@ exports.obtenerLeaderboards = async (req, res) => {
   ];
 
   if (!tiposValidos.includes(tipo)) {
-    return res.status(400).json({
-      error: "Tipo de estadística inválido.",
-      tiposValidos,
-    });
+    return res.status(400).json({ error: "Tipo de estadística inválido.", tiposValidos });
   }
 
-  // asc opcional. Si no lo mandas:
-  // - mejor_tiempo (parkour) por defecto ASC
-  // - el resto por defecto DESC
   let ascending = false;
   if (typeof asc !== "undefined") {
     ascending = String(asc).toLowerCase() === "true";
@@ -308,30 +297,20 @@ exports.obtenerLeaderboards = async (req, res) => {
     return res.status(500).json({ error: "Error al obtener datos." });
   }
 
-  return res.json({
-    total: count,
-    resultados: data,
-  });
+  return res.json({ total: count, resultados: data });
 };
 
 /**
  * Perfil de estadísticas de un jugador
- * - GET /api/stats/perfil/:uuid?servidor=survival
- * - Si NO se pasa servidor: devuelve todas las filas del jugador (uno por servidor)
  */
 exports.obtenerPerfilJugador = async (req, res) => {
   const { uuid } = req.params;
   const { servidor } = req.query;
 
-  if (!uuid) {
-    return res.status(400).json({ error: "Falta uuid en la ruta." });
-  }
+  if (!uuid) return res.status(400).json({ error: "Falta uuid en la ruta." });
 
   let query = db.from("estadisticas_agrupadas").select("*").eq("uuid", uuid);
-
-  if (servidor) {
-    query = query.eq("servidor", servidor);
-  }
+  if (servidor) query = query.eq("servidor", servidor);
 
   const { data, error } = await query;
 
@@ -340,7 +319,5 @@ exports.obtenerPerfilJugador = async (req, res) => {
     return res.status(500).json({ error: "Error al obtener perfil de estadísticas." });
   }
 
-  return res.json({
-    resultados: data || [],
-  });
+  return res.json({ resultados: data || [] });
 };

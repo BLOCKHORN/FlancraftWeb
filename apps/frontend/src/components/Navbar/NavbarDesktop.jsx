@@ -249,7 +249,7 @@ const NavbarDesktop = ({
 
         <NavLink to="/leaderboards" className={navCls("nav-stats")}>
           <NavIcon src="/botones/estadisticas.svg" alt="Estadísticas" />
-          <span className="nav-label">Ranking</span>
+          <span className="nav-label">Rankings</span>
         </NavLink>
 
         <NavLink to="/tienda" className={navCls("nav-store")}>
