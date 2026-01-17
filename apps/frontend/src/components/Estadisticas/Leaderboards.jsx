@@ -35,7 +35,7 @@ const SERVIDORES = [
 ];
 
 /**
- * ✅ GENS: cambiamos MUERTES por DINERO
+ * ✅ GENS: coins (balance actual), nivel, gens, produccion, tiempo, dinero
  */
 const STATS_BY_SERVER = {
   survival_clasico: ["tiempo_jugado", "bloques_minados", "mobs_matados", "dinero", "kills_pvp", "muertes"],
@@ -52,12 +52,11 @@ const STATS_BY_SERVER = {
 
   gens: [
     "coins_ganadas_total",
-    "prestigios",
-    "income_rate",
+    "nivel",
     "gens_owned",
-    "upgrades_comprados",
+    "income_rate",
     "tiempo_jugado",
-    "dinero", // ✅ en vez de muertes
+    "dinero",
   ],
 
   survival_anarquico: ["kills_pvp", "kdr", "killstreak_max", "damage_dealt", "muertes", "tiempo_jugado"],
@@ -87,10 +86,9 @@ const LABELS = {
   phase_actual: "Fase",
 
   coins_ganadas_total: "Coins",
-  income_rate: "Multi",
-  upgrades_comprados: "Límite Gens",
+  nivel: "Nivel",
   gens_owned: "Gens",
-  prestigios: "Nivel",
+  income_rate: "Producción",
 
   kdr: "KDR",
   killstreak_max: "Racha Máx",
@@ -128,11 +126,10 @@ const STAT_HELP = {
   killstreak_max: "Mayor racha de kills sin morir.",
   damage_dealt: "Daño total infligido (estadística).",
 
-  coins_ganadas_total: "Coins del modo Gens (balance). Se usa para comprar cosas exclusivas.",
-  prestigios: "Nivel del jugador en AxGens.",
-  income_rate: "Multiplicador de producción (AxGens). Cuanto más alto, más rendimiento.",
-  gens_owned: "Generadores colocados (AxGens).",
-  upgrades_comprados: "Límite máximo de generadores (capacidad).",
+  coins_ganadas_total: "Coins del modo Gens (balance actual). Se usa para comprar cosas exclusivas.",
+  nivel: "Nivel del jugador (LuckPerms track level).",
+  gens_owned: "Generadores colocados en la isla.",
+  income_rate: "Producción del jugador (quién produce más).",
 };
 
 const MEDALLAS = {
@@ -291,6 +288,34 @@ function StatHeader({ stat, active, ordenAsc, onClick }) {
   );
 }
 
+/* =========================================================
+   ✅ PUNTOS (solo display móvil/podio)
+   - Normaliza con log / escalado suave
+   - Ajusta pesos si quieres más "competitivo"
+   ========================================================= */
+function safeNum(v) {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : 0;
+}
+function log1p10(v) {
+  // log10(1+v)
+  const x = Math.max(0, safeNum(v));
+  return Math.log10(1 + x);
+}
+function computeGensScore(p) {
+  // Pesos (ajustables)
+  const coins = log1p10(p?.coins_ganadas_total) * 90; // balance (suavizado)
+  const nivel = safeNum(p?.nivel) * 220;              // nivel pesa bastante
+  const gens = safeNum(p?.gens_owned) * 55;           // construcción
+  const prod = safeNum(p?.income_rate) * 140;         // producción (clave)
+  const tiempoH = safeNum(p?.tiempo_jugado) / 3600;
+  const tiempo = Math.min(400, tiempoH * 18);         // tope para no premiar solo AFK
+  const dinero = log1p10(p?.dinero) * 35;             // suavizado
+
+  const score = coins + nivel + gens + prod + tiempo + dinero;
+  return Math.max(0, Math.round(score));
+}
+
 export default function Leaderboards() {
   const navigate = useNavigate();
 
@@ -372,7 +397,6 @@ export default function Leaderboards() {
       if (!p) return 0;
       if (key === "island_level") return getIslandLevel(p);
 
-      // ✅ sorting: null/undefined => 0 (pero display lo hará "—")
       const raw = p?.[key];
       if (raw === null || raw === undefined || raw === "") return 0;
 
@@ -383,45 +407,41 @@ export default function Leaderboards() {
     [getIslandLevel]
   );
 
- const formatValue = useCallback(
-  (key, value) => {
-    // ✅ Si no hay dato, no lo pintes como 0
-    if (value === null || value === undefined) {
-      // tiempo sí puede tener sentido 0, pero si te falta dato -> —
-      return "—";
-    }
+  const formatValue = useCallback(
+    (key, value) => {
+      if (value === null || value === undefined) return "—";
 
-    const n = Number(value);
+      const n = Number(value);
 
-    if (key === "tiempo_jugado") return formatearTiempo(n);
-    if (key === "mejor_tiempo") return formatearTiempoParkour(n);
+      if (key === "tiempo_jugado") return formatearTiempo(n);
+      if (key === "mejor_tiempo") return formatearTiempoParkour(n);
 
-    if (key === "dinero") {
-      if (!Number.isFinite(n)) return "—";
-      return `${n.toLocaleString("es-ES")} $`;
-    }
+      if (key === "dinero") {
+        if (!Number.isFinite(n)) return "—";
+        return `${n.toLocaleString("es-ES")} $`;
+      }
 
-    if (key === "coins_ganadas_total") {
+      if (key === "coins_ganadas_total") {
+        if (!Number.isFinite(n)) return "—";
+        return n.toLocaleString("es-ES");
+      }
+
+      if (key === "income_rate") {
+        if (!Number.isFinite(n)) return "—";
+        // Si luego decides que esto es "coins/min", lo cambiamos aquí
+        return `${n.toLocaleString("es-ES")}x`;
+      }
+
+      if (key === "kdr") {
+        if (!Number.isFinite(n)) return "—";
+        return n.toFixed(2);
+      }
+
       if (!Number.isFinite(n)) return "—";
       return n.toLocaleString("es-ES");
-    }
-
-    if (key === "income_rate") {
-      if (!Number.isFinite(n)) return "—";
-      return `${n.toLocaleString("es-ES")}x`;
-    }
-
-    if (key === "kdr") {
-      if (!Number.isFinite(n)) return "—";
-      return n.toFixed(2);
-    }
-
-    if (!Number.isFinite(n)) return "—";
-    return n.toLocaleString("es-ES");
-  },
-  [formatearTiempo, formatearTiempoParkour]
-);
-
+    },
+    [formatearTiempo, formatearTiempoParkour]
+  );
 
   useEffect(() => {
     const controller = new AbortController();
@@ -527,14 +547,16 @@ export default function Leaderboards() {
   }, [datos, query, soloVinculados, getMeta]);
 
   const top3 = useMemo(() => {
-    const list = (datosFiltrados.length ? datosFiltrados : datos).filter((p) => isNombreValido(p?.nombre_minecraft));
+    const list = (datosFiltrados.length ? datosFiltrados : datos).filter((p) =>
+      isNombreValido(p?.nombre_minecraft)
+    );
     return (list || []).slice(0, 3);
   }, [datos, datosFiltrados]);
 
   const cambiarPagina = (pageIndex) => setOffset(pageIndex * limit);
 
   const { wideCount, mediumCount } = useMemo(() => {
-    const WIDE = new Set(["income_rate", "upgrades_comprados", "oneblock_blocks_broken"]);
+    const WIDE = new Set(["income_rate", "oneblock_blocks_broken"]);
     const MED = new Set(["killstreak_max", "mejor_tiempo"]);
 
     let w = 0;
@@ -589,6 +611,8 @@ export default function Leaderboards() {
                   ? getIslandLevel(p)
                   : p?.[orden];
 
+              const gensScore = servidor === "gens" ? computeGensScore(p) : null;
+
               return (
                 <button
                   key={p.uuid}
@@ -615,7 +639,12 @@ export default function Leaderboards() {
                         <span className="pod-name">{name}</span>
                         <span className="pod-badges">
                           {platform && (
-                            <span className={cn("lb-badge-platform", { bedrock: platform === "bedrock", java: platform === "java" })}>
+                            <span
+                              className={cn("lb-badge-platform", {
+                                bedrock: platform === "bedrock",
+                                java: platform === "java",
+                              })}
+                            >
                               {platform === "bedrock" ? "BEDROCK" : "JAVA"}
                             </span>
                           )}
@@ -636,6 +665,13 @@ export default function Leaderboards() {
                           {orden === "phase_actual" ? (p?.phase_nombre || "—") : formatValue(orden, valueForPodium)}
                         </span>
                       </div>
+
+                      {servidor === "gens" && (
+                        <div className="pod-stat" style={{ marginTop: 6, opacity: 0.95 }}>
+                          <span className="pod-stat__k">Puntos</span>
+                          <span className="pod-stat__v">{gensScore?.toLocaleString("es-ES")}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </button>
@@ -864,7 +900,12 @@ export default function Leaderboards() {
                                         <span className="lb-name">{name}</span>
                                         <span className="lb-badges">
                                           {platform && (
-                                            <span className={cn("lb-badge-platform", { bedrock: platform === "bedrock", java: platform === "java" })}>
+                                            <span
+                                              className={cn("lb-badge-platform", {
+                                                bedrock: platform === "bedrock",
+                                                java: platform === "java",
+                                              })}
+                                            >
                                               {platform === "bedrock" ? "BEDROCK" : "JAVA"}
                                             </span>
                                           )}
@@ -906,6 +947,9 @@ export default function Leaderboards() {
                     </table>
                   </div>
 
+                  {/* =========================================================
+                      ✅ MOBILE CARDS: 1 único valor en GENS (PUNTOS)
+                     ========================================================= */}
                   <div className="lb-cards">
                     {!loading &&
                       datosFiltrados.map((p, i) => {
@@ -914,6 +958,8 @@ export default function Leaderboards() {
                         const name = p?.nombre_minecraft;
                         const medal = MEDALLAS[absPos] || null;
                         const platform = getPlatform(p);
+
+                        const gensScore = servidor === "gens" ? computeGensScore(p) : null;
 
                         return (
                           <button
@@ -945,7 +991,12 @@ export default function Leaderboards() {
                                   <span className="lb-name">{name}</span>
                                   <span className="lb-badges">
                                     {platform && (
-                                      <span className={cn("lb-badge-platform", { bedrock: platform === "bedrock", java: platform === "java" })}>
+                                      <span
+                                        className={cn("lb-badge-platform", {
+                                          bedrock: platform === "bedrock",
+                                          java: platform === "java",
+                                        })}
+                                      >
                                         {platform === "bedrock" ? "BEDROCK" : "JAVA"}
                                       </span>
                                     )}
@@ -959,37 +1010,51 @@ export default function Leaderboards() {
                                     )}
                                   </span>
                                 </div>
+
                                 <div className="lb-card__sub">
-                                  {LABELS[orden] || orden} {ordenAsc ? "▲" : "▼"} · {meta?.rango ? meta.rango : "—"}
+                                  {meta?.rango ? meta.rango : "—"}
                                 </div>
                               </div>
                             </div>
 
-                            <div className="lb-card__grid">
-                              {STATS.slice(0, 6).map((st) => {
-                                const rawValue =
-  st === "phase_actual"
-    ? (p?.phase_nombre || "—")
-    : st === "island_level"
-    ? getIslandLevel(p)
-    : p?.[st];
+                            {servidor === "gens" ? (
+                              <div className="lb-card__grid">
+                                <div className="lb-card__stat active">
+                                  <span className="k">
+                                    Puntos
+                                    <span className="k-help">
+                                      <HelpTip text="Calculado con Coins, Nivel, Gens, Producción, Tiempo y Dinero para resumir el rendimiento." />
+                                    </span>
+                                  </span>
+                                  <span className="v">{gensScore?.toLocaleString("es-ES")}</span>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="lb-card__grid">
+                                {STATS.slice(0, 6).map((st) => {
+                                  const rawValue =
+                                    st === "phase_actual"
+                                      ? (p?.phase_nombre || "—")
+                                      : st === "island_level"
+                                      ? getIslandLevel(p)
+                                      : p?.[st];
 
-
-                                return (
-                                  <div key={st} className={cn("lb-card__stat", { active: orden === st })}>
-                                    <span className="k">
-                                      {LABELS[st] || st}
-                                      <span className="k-help">
-                                        <HelpTip text={STAT_HELP[st] || ""} />
+                                  return (
+                                    <div key={st} className={cn("lb-card__stat", { active: orden === st })}>
+                                      <span className="k">
+                                        {LABELS[st] || st}
+                                        <span className="k-help">
+                                          <HelpTip text={STAT_HELP[st] || ""} />
+                                        </span>
                                       </span>
-                                    </span>
-                                    <span className="v">
-                                      {st === "phase_actual" ? (p?.phase_nombre || "—") : formatValue(st, rawValue)}
-                                    </span>
-                                  </div>
-                                );
-                              })}
-                            </div>
+                                      <span className="v">
+                                        {st === "phase_actual" ? (p?.phase_nombre || "—") : formatValue(st, rawValue)}
+                                      </span>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
                           </button>
                         );
                       })}
