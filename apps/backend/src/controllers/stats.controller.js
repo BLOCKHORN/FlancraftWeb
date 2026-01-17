@@ -129,6 +129,9 @@ exports.importarStatsAgrupadas = async (req, res) => {
     setIfDefined(extrasUpdate, "gens_owned", numOrUndef(req.body.gens_owned));
     setIfDefined(extrasUpdate, "prestigios", numOrUndef(req.body.prestigios));
 
+    // ✅ NIVEL (LuckPerms track): ES TEXTO (nova/alpha/inmortal)
+    setIfDefined(extrasUpdate, "nivel", textOrUndef(req.body.nivel));
+
     // anarquico
     setIfDefined(extrasUpdate, "kdr", numOrUndef(req.body.kdr));
     setIfDefined(extrasUpdate, "killstreak_max", numOrUndef(req.body.killstreak_max));
@@ -157,7 +160,6 @@ exports.importarStatsAgrupadas = async (req, res) => {
   }
 
   if (existing) {
-    // UPDATE selectivo: vanilla siempre, extras solo online
     const updatePayload = allowExtras ? { ...baseUpdate, ...extrasUpdate } : { ...baseUpdate };
 
     const { error: updErr } = await db
@@ -174,7 +176,6 @@ exports.importarStatsAgrupadas = async (req, res) => {
     return res.status(200).json({ success: true, mode: "update", sync_context: syncContext });
   }
 
-  // INSERT mínimo (si no existe fila)
   const insertPayload = {
     uuid,
     servidor,
@@ -258,6 +259,9 @@ exports.obtenerLeaderboards = async (req, res) => {
     "upgrades_comprados",
     "gens_owned",
     "prestigios",
+
+    // ✅ NIVEL LuckPerms (texto)
+    "nivel",
 
     "kdr",
     "killstreak_max",
