@@ -176,29 +176,38 @@ exports.importarStatsAgrupadas = async (req, res) => {
 
     // Coins: total ganado
     if (incoming.coins_balance !== undefined) {
-      const prevBal = Number(prevRow?.coins_balance ?? 0) || 0;
-      const prevTotal = Number(prevRow?.coins_ganadas_total ?? prevRow?.coins_balance ?? 0) || 0;
-      const newBal = Number(incoming.coins_balance) || 0;
+  const prevBal = Number(prevRow?.coins_balance ?? 0) || 0;
+  const prevTotalRaw = Number(prevRow?.coins_ganadas_total ?? prevRow?.coins_balance ?? 0) || 0;
 
-      const delta = max0(newBal - prevBal);
-      const newTotal = prevTotal + delta;
+  const prevTotal = Math.max(prevTotalRaw, prevBal);
 
-      out.coins_balance = newBal;
-      out.coins_ganadas_total = newTotal;
-    }
+  const newBal = Number(incoming.coins_balance) || 0;
 
-    // Dinero: total ganado (solo gens)
-    if (incoming.dinero !== undefined) {
-      const prevBal = Number(prevRow?.dinero ?? 0) || 0;
-      const prevTotal = Number(prevRow?.dinero_ganado_total ?? prevRow?.dinero ?? 0) || 0;
-      const newBal = Number(incoming.dinero) || 0;
+  const delta = max0(newBal - prevBal);
+  const newTotal = prevTotal + delta;
 
-      const delta = max0(newBal - prevBal);
-      const newTotal = prevTotal + delta;
+  out.coins_balance = newBal;
+  out.coins_ganadas_total = newTotal;
+}
 
-      out.dinero = newBal;
-      out.dinero_ganado_total = newTotal;
-    }
+
+// Dinero: total ganado (solo gens)
+if (incoming.dinero !== undefined) {
+  const prevBal = Number(prevRow?.dinero ?? 0) || 0;
+  const prevTotalRaw = Number(prevRow?.dinero_ganado_total ?? prevRow?.dinero ?? 0) || 0;
+
+  //  RECONCILIAR: el total nunca puede ir por debajo del balance histórico
+  const prevTotal = Math.max(prevTotalRaw, prevBal);
+
+  const newBal = Number(incoming.dinero) || 0;
+
+  const delta = max0(newBal - prevBal); // solo subidas
+  const newTotal = prevTotal + delta;
+
+  out.dinero = newBal;
+  out.dinero_ganado_total = newTotal;
+}
+
 
     return out;
   };

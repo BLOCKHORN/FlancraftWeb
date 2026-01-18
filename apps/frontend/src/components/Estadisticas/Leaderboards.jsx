@@ -8,7 +8,7 @@ import {
   useLayoutEffect,
 } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, SlidersHorizontal, X, ChevronDown, Info } from "lucide-react";
+import { Search, SlidersHorizontal, X, ChevronDown, Info, ChevronRight } from "lucide-react";
 
 import { getLeaderboards } from "../../api/getLeaderboards";
 import "../../styles/components/Estadisticas/_leaderboards.scss";
@@ -16,7 +16,7 @@ import "../../styles/components/Estadisticas/_leaderboards.scss";
 const API_BASE = import.meta.env.VITE_BACKEND_URL || "http://localhost:10000";
 
 /**
- * UI IDs (bonitos) → IDs oficiales backend/supabase/plugin
+ * UI IDs → IDs backend/supabase/plugin
  */
 const SERVIDOR_API_MAP = {
   survival_clasico: "survival",
@@ -35,8 +35,8 @@ const SERVIDORES = [
 ];
 
 /**
- * ✅ Columnas por servidor
- * GENS: PUNTOS | COINS (total ganado) | GENS | TIEMPO | DINERO (total ganado)
+ * Columnas por servidor
+ * GENS: GENPOINTS | COINS (actual) | GENS | TIEMPO | DINERO (actual)
  */
 const STATS_BY_SERVER = {
   survival_clasico: ["tiempo_jugado", "bloques_minados", "mobs_matados", "dinero", "kills_pvp", "muertes"],
@@ -51,13 +51,7 @@ const STATS_BY_SERVER = {
     "muertes",
   ],
 
-  gens: [
-    "puntos",
-    "coins_ganadas_total",
-    "gens_owned",
-    "tiempo_jugado",
-    "dinero_ganado_total",
-  ],
+  gens: ["genpoints", "coins_balance", "gens_owned", "tiempo_jugado", "dinero"],
 
   survival_anarquico: ["kills_pvp", "kdr", "killstreak_max", "damage_dealt", "muertes", "tiempo_jugado"],
 
@@ -67,16 +61,13 @@ const STATS_BY_SERVER = {
 const DEFAULTS_BY_SERVER = {
   survival_clasico: { orden: "tiempo_jugado", asc: false },
   oneblock: { orden: "island_level", asc: false },
-
-  // ✅ GENS: por defecto ordena por puntos
-  gens: { orden: "puntos", asc: false },
-
+  gens: { orden: "genpoints", asc: false },
   survival_anarquico: { orden: "kills_pvp", asc: false },
   parkour: { orden: "mejor_tiempo", asc: true },
 };
 
 const LABELS = {
-  puntos: "Puntos",
+  genpoints: "GENPOINTS",
 
   tiempo_jugado: "Tiempo",
   muertes: "Muertes",
@@ -90,9 +81,8 @@ const LABELS = {
   oneblock_blocks_broken: "Bloque Infinito",
   phase_actual: "Fase",
 
-  coins_ganadas_total: "Coins",
+  coins_balance: "Coins",
   gens_owned: "Gens",
-  dinero_ganado_total: "Dinero",
 
   kdr: "KDR",
   killstreak_max: "Racha Máx",
@@ -107,19 +97,18 @@ const LABELS = {
 };
 
 const STAT_HELP = {
-  // ✅ PUNTOS: explicación breve y “para niños de 12”
-  puntos:
-    "Tu score de Gens. Subes puntos consiguiendo coins, ganando dinero, poniendo más gens y jugando. Gastar coins o dinero no te baja puntos.",
+  genpoints:
+    "Puntuación competitiva de Gens. Se calcula con Coins y Dinero totales ganados, progreso (gens) y tiempo. Gastar coins o dinero no te baja la puntuación.",
 
-  tiempo_jugado: "Tiempo total jugado en este servidor (en horas y minutos).",
+  tiempo_jugado: "Tiempo total jugado en este servidor.",
   muertes: "Número total de muertes del jugador en este servidor.",
 
-  dinero: "Dinero del jugador (balance actual en ese servidor).",
+  dinero: "Balance actual del jugador en este servidor.",
   bloques_minados: "Bloques minados (estadística de Minecraft).",
   mobs_matados: "Mobs eliminados (estadística de Minecraft).",
   kills_pvp: "Kills a otros jugadores (PvP).",
 
-  island_level: "Nivel de tu isla. Si está a 0, se usa la fase como aproximación.",
+  island_level: "Nivel de tu isla.",
   oneblock_blocks_broken: "Bloques rotos en el bloque infinito (lifetime).",
   phase_actual: "Fase numérica del progreso de OneBlock.",
 
@@ -132,12 +121,10 @@ const STAT_HELP = {
 
   kdr: "Ratio K/D: kills PvP dividido entre muertes.",
   killstreak_max: "Mayor racha de kills sin morir.",
-  damage_dealt: "Daño total infligido (estadística).",
+  damage_dealt: "Daño total infligido.",
 
-  // ✅ GENS PRO
-  coins_ganadas_total: "Coins totales ganadas en Gens. Si gastas, no baja.",
-  gens_owned: "Generadores colocados en tu isla.",
-  dinero_ganado_total: "Dinero total ganado en Gens. Si gastas, no baja.",
+  coins_balance: "Coins actuales en Gens.",
+  gens_owned: "Generadores colocados.",
 };
 
 const MEDALLAS = {
@@ -164,8 +151,49 @@ const isNombreValido = (nombre) => {
   return true;
 };
 
+function safeNum(v) {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : 0;
+}
+function log10p1(v) {
+  return Math.log10(1 + Math.max(0, safeNum(v)));
+}
+function sqrtp(v) {
+  return Math.sqrt(Math.max(0, safeNum(v)));
+}
+
+/**
+ * GENPOINTS
+ * - Coins y Dinero: usa totales ganados (no bajan al gastar)
+ * - Gens: log para que no domine
+ * - Tiempo: sqrt y cap suave
+ */
+function computeGensScore(p) {
+  const coinsTotal = log10p1(p?.coins_ganadas_total);
+  const moneyTotal = log10p1(p?.dinero_ganado_total);
+  const gensProg = log10p1(p?.gens_owned);
+
+  const hours = safeNum(p?.tiempo_jugado) / 3600;
+  const time = sqrtp(Math.min(120, Math.max(0, hours)));
+
+  const w = {
+    coins: 520,
+    money: 320,
+    gens: 240,
+    time: 85,
+  };
+
+  const score =
+    coinsTotal * w.coins +
+    moneyTotal * w.money +
+    gensProg * w.gens +
+    time * w.time;
+
+  return Math.max(0, Math.round(score));
+}
+
 /* =========================================================
-   Tooltip PRO (fixed + flip + legible)
+   Tooltip fijo
    ========================================================= */
 function HelpTip({ text }) {
   const [open, setOpen] = useState(false);
@@ -179,13 +207,12 @@ function HelpTip({ text }) {
 
     const w = wrap.getBoundingClientRect();
 
-    const margin = 10;
+    const margin = 12;
     const gap = 10;
 
     const b = bubble.getBoundingClientRect();
 
     let left = w.left + w.width / 2;
-
     let top = w.bottom + gap;
     let place = "bottom";
 
@@ -273,15 +300,15 @@ function HelpTip({ text }) {
   );
 }
 
-function StatHeader({ stat, active, ordenAsc, onClick }) {
+function StatHeader({ stat, active, ordenAsc, onClick, sortable, helpOverride }) {
   const label = LABELS[stat] || stat;
-  const help = STAT_HELP[stat] || `Ordenar por ${label}`;
+  const help = helpOverride || STAT_HELP[stat] || label;
 
   return (
     <th
-      className={cn("th-sort", { active })}
+      className={cn("th-sort", { active, "is-locked": !sortable })}
       data-stat={stat}
-      onClick={onClick}
+      onClick={sortable ? onClick : undefined}
       role="columnheader"
       aria-sort={active ? (ordenAsc ? "ascending" : "descending") : "none"}
       title={label}
@@ -291,58 +318,26 @@ function StatHeader({ stat, active, ordenAsc, onClick }) {
         <HelpTip text={help} />
       </span>
 
-      {active && <i className="th-sort__arrow">{ordenAsc ? "▲" : "▼"}</i>}
+      {active && sortable && <i className="th-sort__arrow">{ordenAsc ? "▲" : "▼"}</i>}
     </th>
   );
 }
 
-/* =========================================================
-   ✅ PUNTOS GENS (PRO)
-   - Usa TOTAL ganado (coins_ganadas_total y dinero_ganado_total)
-   - No baja si gastas
-   - Suaviza valores enormes para que sea competitivo (log + sqrt)
-   - Tiempo capado para que no gane el AFK por horas infinitas
-   ========================================================= */
-function safeNum(v) {
-  const n = Number(v);
-  return Number.isFinite(n) ? n : 0;
+function formatMoney(n) {
+  const x = Number(n);
+  if (!Number.isFinite(x)) return "—";
+  return `${x.toLocaleString("es-ES")} $`;
 }
-function log1p10(v) {
-  const x = Math.max(0, safeNum(v));
-  return Math.log10(1 + x);
-}
-function sqrtp(v) {
-  const x = Math.max(0, safeNum(v));
-  return Math.sqrt(x);
-}
-function computeGensScore(p) {
-  const coinsEarned = log1p10(p?.coins_ganadas_total);       // total ganado
-  const moneyEarned = log1p10(p?.dinero_ganado_total);       // total ganado
-  const gens = sqrtp(p?.gens_owned);                         // retorno decreciente
-  const hours = safeNum(p?.tiempo_jugado) / 3600;
-  const time = Math.min(60, Math.max(0, hours));             // cap 60h
-
-  // Pesos: equilibrado y competitivo
-  const w = {
-    coins: 320,
-    gens: 260,
-    time: 14,
-    money: 120,
-  };
-
-  const score =
-    coinsEarned * w.coins +
-    gens * w.gens +
-    time * w.time +
-    moneyEarned * w.money;
-
-  return Math.max(0, Math.round(score));
+function formatInt(n) {
+  const x = Number(n);
+  if (!Number.isFinite(x)) return "—";
+  return x.toLocaleString("es-ES");
 }
 
 export default function Leaderboards() {
   const navigate = useNavigate();
 
-  const [servidor, setServidor] = useState(SERVIDORES[2].id); // gens por defecto
+  const [servidor, setServidor] = useState(SERVIDORES[2].id);
   const servidorApi = useMemo(() => SERVIDOR_API_MAP[servidor] || servidor, [servidor]);
 
   const defaults = DEFAULTS_BY_SERVER[servidor] || { orden: "tiempo_jugado", asc: false };
@@ -356,17 +351,20 @@ export default function Leaderboards() {
 
   const [offset, setOffset] = useState(0);
   const limit = 10;
-  const paginasTotales = 10;
+
+  const [totalRows, setTotalRows] = useState(0);
 
   const [query, setQuery] = useState("");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [soloVinculados, setSoloVinculados] = useState(false);
 
   const [usuariosVinculados, setUsuariosVinculados] = useState({});
+  const [openCard, setOpenCard] = useState(null);
 
   const servidorSeleccionado = useMemo(() => SERVIDORES.find((s) => s.id === servidor), [servidor]);
 
   const STATS = useMemo(() => STATS_BY_SERVER[servidor] || ["tiempo_jugado"], [servidor]);
+  const paginasTotales = useMemo(() => Math.max(1, Math.ceil((totalRows || 0) / limit)), [totalRows, limit]);
   const paginaActual = useMemo(() => Math.floor(offset / limit) + 1, [offset]);
 
   useEffect(() => {
@@ -374,7 +372,7 @@ export default function Leaderboards() {
     setOrden(d.orden);
     setOrdenAsc(d.asc);
     setOffset(0);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    setOpenCard(null);
   }, [servidor]);
 
   const formatearTiempo = useCallback((seconds) => {
@@ -407,7 +405,6 @@ export default function Leaderboards() {
     return Number.isFinite(v) ? v : 0;
   }, []);
 
-  // ✅ Plataforma desde backend: "java" | "bedrock"
   const getPlatform = useCallback((p) => {
     const pl = (p?.plataforma || "").toString().toLowerCase();
     if (pl === "bedrock") return "bedrock";
@@ -419,9 +416,7 @@ export default function Leaderboards() {
     (p, key) => {
       if (!p) return 0;
 
-      // ✅ PUNTOS (solo gens)
-      if (key === "puntos") return computeGensScore(p);
-
+      if (key === "genpoints") return computeGensScore(p);
       if (key === "island_level") return getIslandLevel(p);
 
       const raw = p?.[key];
@@ -437,40 +432,18 @@ export default function Leaderboards() {
   const formatValue = useCallback(
     (key, value) => {
       if (value === null || value === undefined) return "—";
-
-      if (key === "puntos") {
-        const n = Number(value || 0);
-        if (!Number.isFinite(n)) return "—";
-        return n.toLocaleString("es-ES");
-      }
-
       const n = Number(value);
 
+      if (key === "genpoints") return formatInt(n);
       if (key === "tiempo_jugado") return formatearTiempo(n);
       if (key === "mejor_tiempo") return formatearTiempoParkour(n);
 
-      if (key === "dinero") {
-        if (!Number.isFinite(n)) return "—";
-        return `${n.toLocaleString("es-ES")} $`;
-      }
+      if (key === "dinero") return formatMoney(n);
+      if (key === "coins_balance") return formatInt(n);
 
-      if (key === "dinero_ganado_total") {
-        if (!Number.isFinite(n)) return "—";
-        return `${n.toLocaleString("es-ES")} $`;
-      }
+      if (key === "kdr") return Number.isFinite(n) ? n.toFixed(2) : "—";
 
-      if (key === "coins_ganadas_total") {
-        if (!Number.isFinite(n)) return "—";
-        return n.toLocaleString("es-ES");
-      }
-
-      if (key === "kdr") {
-        if (!Number.isFinite(n)) return "—";
-        return n.toFixed(2);
-      }
-
-      if (!Number.isFinite(n)) return "—";
-      return n.toLocaleString("es-ES");
+      return Number.isFinite(n) ? formatInt(n) : "—";
     },
     [formatearTiempo, formatearTiempoParkour]
   );
@@ -503,17 +476,39 @@ export default function Leaderboards() {
 
   useEffect(() => {
     let alive = true;
+
     setLoading(true);
     setErrorTabla("");
 
     (async () => {
       try {
-        // ✅ Si el usuario ordena por "puntos", pedimos al backend por coins_ganadas_total (paginación),
-        // y luego ordenamos en frontend por puntos.
-        const tipoBackend = orden === "puntos" ? "coins_ganadas_total" : orden;
+        if (servidorApi === "gens") {
+          const res = await getLeaderboards({
+            tipo: "dinero_ganado_total",
+            servidor: servidorApi,
+            limit: 500,
+            offset: 0,
+          });
+          if (!alive) return;
+
+          const lista = (res?.resultados || [])
+            .filter((p) => isNombreValido(p?.nombre_minecraft))
+            .map((p) => ({
+              ...p,
+              genpoints: computeGensScore(p),
+            }))
+            .sort((a, b) => b.genpoints - a.genpoints);
+
+          setTotalRows(res?.total || lista.length);
+
+          const slice = lista.slice(offset, offset + limit);
+          setDatos(slice);
+
+          return;
+        }
 
         const res = await getLeaderboards({
-          tipo: tipoBackend,
+          tipo: orden,
           servidor: servidorApi,
           limit,
           offset,
@@ -521,6 +516,7 @@ export default function Leaderboards() {
         if (!alive) return;
 
         const lista = (res?.resultados || []).filter((p) => isNombreValido(p?.nombre_minecraft));
+        setTotalRows(res?.total || 0);
 
         const ordenada = ordenAsc
           ? [...lista].sort((a, b) => getStatNumber(a, orden) - getStatNumber(b, orden))
@@ -532,6 +528,7 @@ export default function Leaderboards() {
         console.error(err);
         setErrorTabla("No se pudo cargar el ranking.");
         setDatos([]);
+        setTotalRows(0);
       } finally {
         if (!alive) return;
         setLoading(false);
@@ -543,17 +540,21 @@ export default function Leaderboards() {
     };
   }, [orden, ordenAsc, servidorApi, offset, limit, getStatNumber]);
 
-  const cambiarOrden = useCallback((stat) => {
-    setOrden((prev) => {
-      if (prev === stat) {
-        setOrdenAsc((v) => !v);
-        return prev;
-      }
-      setOrdenAsc(stat === "mejor_tiempo");
-      return stat;
-    });
-    setOffset(0);
-  }, []);
+  const cambiarOrden = useCallback(
+    (stat) => {
+      if (servidorApi === "gens") return;
+      setOrden((prev) => {
+        if (prev === stat) {
+          setOrdenAsc((v) => !v);
+          return prev;
+        }
+        setOrdenAsc(stat === "mejor_tiempo");
+        return stat;
+      });
+      setOffset(0);
+    },
+    [servidorApi]
+  );
 
   const getMeta = useCallback((uuid) => usuariosVinculados[uuid] || null, [usuariosVinculados]);
 
@@ -583,11 +584,17 @@ export default function Leaderboards() {
   }, [datos, query, soloVinculados, getMeta]);
 
   const top3 = useMemo(() => {
-    const list = (datosFiltrados.length ? datosFiltrados : datos).filter((p) =>
-      isNombreValido(p?.nombre_minecraft)
-    );
+    const list = (datosFiltrados.length ? datosFiltrados : datos).filter((p) => isNombreValido(p?.nombre_minecraft));
+
+    if (servidorApi === "gens") {
+      return [...list]
+        .map((p) => ({ ...p, genpoints: p?.genpoints ?? computeGensScore(p) }))
+        .sort((a, b) => (b.genpoints || 0) - (a.genpoints || 0))
+        .slice(0, 3);
+    }
+
     return (list || []).slice(0, 3);
-  }, [datos, datosFiltrados]);
+  }, [datos, datosFiltrados, servidorApi]);
 
   const cambiarPagina = (pageIndex) => setOffset(pageIndex * limit);
 
@@ -604,6 +611,50 @@ export default function Leaderboards() {
     return { wideCount: w, mediumCount: m };
   }, [STATS]);
 
+  const renderGensDualHint = useCallback((p, key) => {
+    if (!p) return null;
+
+    if (key === "coins_balance") {
+      const actual = safeNum(p?.coins_balance);
+      const total = safeNum(p?.coins_ganadas_total);
+      const txt = `Actual: ${formatInt(actual)}\nTotal ganado: ${formatInt(total)}`;
+      return <HelpTip text={txt} />;
+    }
+
+    if (key === "dinero") {
+      const actual = safeNum(p?.dinero);
+      const total = safeNum(p?.dinero_ganado_total);
+      const txt = `Actual: ${formatMoney(actual)}\nTotal ganado: ${formatMoney(total)}`;
+      return <HelpTip text={txt} />;
+    }
+
+    return null;
+  }, []);
+
+  const StatCell = useCallback(
+    ({ stat, p, value }) => {
+      if (servidorApi !== "gens") {
+        return <span className="num">{formatValue(stat, value)}</span>;
+      }
+
+      if (stat === "genpoints") {
+        return <span className="num num--score">{formatValue("genpoints", value)}</span>;
+      }
+
+      if (stat === "coins_balance" || stat === "dinero") {
+        return (
+          <span className="num num--dual">
+            <span className="num__v">{formatValue(stat, value)}</span>
+            <span className="num__hint">{renderGensDualHint(p, stat)}</span>
+          </span>
+        );
+      }
+
+      return <span className="num">{formatValue(stat, value)}</span>;
+    },
+    [formatValue, servidorApi, renderGensDualHint]
+  );
+
   return (
     <section className="lb-page">
       <div className="lb-shell">
@@ -616,7 +667,7 @@ export default function Leaderboards() {
                   <span className="lb-subtitle__server">{servidorSeleccionado?.nombre}</span>
                   <span className="lb-dot">•</span>
                   <span className="lb-subtitle__order">
-                    {LABELS[orden] || orden} {ordenAsc ? "▲" : "▼"}
+                    {servidorApi === "gens" ? "GENPOINTS ▼" : `${LABELS[orden] || orden} ${ordenAsc ? "▲" : "▼"}`}
                   </span>
                 </h2>
               </div>
@@ -634,24 +685,17 @@ export default function Leaderboards() {
 
           <section className="lb-podium">
             {top3.map((p, idx) => {
-              const absPos = offset + idx + 1;
-              const medal = MEDALLAS[absPos] || MEDALLAS[idx + 1];
+              const absPos = idx + 1;
+              const medal = MEDALLAS[absPos];
               const meta = getMeta(p.uuid);
               const name = p?.nombre_minecraft;
               const platform = getPlatform(p);
 
-              const valueForPodium =
-                orden === "phase_actual"
-                  ? (p?.phase_nombre || "—")
-                  : orden === "island_level"
-                  ? getIslandLevel(p)
-                  : orden === "puntos"
-                  ? computeGensScore(p)
-                  : p?.[orden];
+              const points = servidorApi === "gens" ? (p?.genpoints ?? computeGensScore(p)) : getStatNumber(p, orden);
 
               return (
                 <button
-                  key={p.uuid}
+                  key={`${p.uuid}-${idx}`}
                   type="button"
                   className={cn("pod-card", `pod-card--${idx + 1}`)}
                   onClick={() => irPerfil(p)}
@@ -696,20 +740,22 @@ export default function Leaderboards() {
                       </div>
 
                       <div className="pod-stat">
-                        <span className="pod-stat__k">{LABELS[orden] || orden}</span>
-                        <span className="pod-stat__v">
-                          {orden === "phase_actual"
-                            ? (p?.phase_nombre || "—")
-                            : orden === "puntos"
-                            ? Number(valueForPodium || 0).toLocaleString("es-ES")
-                            : formatValue(orden, valueForPodium)}
-                        </span>
+                        <span className="pod-stat__k">GENPOINTS</span>
+                        <span className="pod-stat__v">{formatInt(points)}</span>
                       </div>
 
-                      {servidor === "gens" && orden !== "puntos" && (
-                        <div className="pod-stat" style={{ marginTop: 6, opacity: 0.95 }}>
-                          <span className="pod-stat__k">Puntos</span>
-                          <span className="pod-stat__v">{computeGensScore(p).toLocaleString("es-ES")}</span>
+                      {servidorApi === "gens" && (
+                        <div className="pod-mini">
+                          <div className="pod-mini__row">
+                            <span>Coins</span>
+                            <b>{formatInt(p?.coins_balance)}</b>
+                            <span className="pod-mini__hint">{renderGensDualHint(p, "coins_balance")}</span>
+                          </div>
+                          <div className="pod-mini__row">
+                            <span>Dinero</span>
+                            <b>{formatMoney(p?.dinero)}</b>
+                            <span className="pod-mini__hint">{renderGensDualHint(p, "dinero")}</span>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -736,7 +782,6 @@ export default function Leaderboards() {
                     </div>
 
                     <div className="server-pill__label">{s.nombre}</div>
-
                     <div className="server-pill__underline" />
                   </button>
                 ))}
@@ -774,15 +819,17 @@ export default function Leaderboards() {
               <div className="lb-select">
                 <span className="lb-select__k">Orden</span>
                 <select
-                  value={orden}
+                  value={servidorApi === "gens" ? "genpoints" : orden}
                   onChange={(e) => {
                     const v = e.target.value;
+                    if (servidorApi === "gens") return;
                     setOrden(v);
                     setOrdenAsc(v === "mejor_tiempo");
                     setOffset(0);
                   }}
+                  disabled={servidorApi === "gens"}
                 >
-                  {STATS.map((st) => (
+                  {(servidorApi === "gens" ? ["genpoints"] : STATS).map((st) => (
                     <option key={st} value={st}>
                       {LABELS[st] || st}
                     </option>
@@ -791,7 +838,11 @@ export default function Leaderboards() {
                 <ChevronDown size={16} />
               </div>
 
-              {STAT_HELP[orden] && <div className="lb-orderHint">{STAT_HELP[orden]}</div>}
+              {servidorApi === "gens" ? (
+                <div className="lb-orderHint">{STAT_HELP.genpoints}</div>
+              ) : (
+                STAT_HELP[orden] && <div className="lb-orderHint">{STAT_HELP[orden]}</div>
+              )}
             </div>
 
             {filtersOpen && (
@@ -831,7 +882,7 @@ export default function Leaderboards() {
                   <span className="lb-tableTitle__server">{servidorSeleccionado?.nombre}</span>
                   <span className="lb-sep">•</span>
                   <span className="lb-tableTitle__stat">
-                    {LABELS[orden] || orden} {ordenAsc ? "▲" : "▼"}
+                    {servidorApi === "gens" ? "GENPOINTS" : (LABELS[orden] || orden)}
                   </span>
                 </div>
               </div>
@@ -857,15 +908,54 @@ export default function Leaderboards() {
                           <th className="col-pos">Top</th>
                           <th className="col-player">Jugador</th>
 
-                          {STATS.map((st) => (
-                            <StatHeader
-                              key={st}
-                              stat={st}
-                              active={orden === st}
-                              ordenAsc={ordenAsc}
-                              onClick={() => cambiarOrden(st)}
-                            />
-                          ))}
+                          {STATS.map((st) => {
+                            const isGens = servidorApi === "gens";
+                            const sortable = !isGens && st === orden;
+
+                            if (isGens && st !== "genpoints") {
+                              return (
+                                <StatHeader
+                                  key={st}
+                                  stat={st}
+                                  active={false}
+                                  ordenAsc={false}
+                                  sortable={false}
+                                  helpOverride={
+                                    st === "coins_balance"
+                                      ? "Coins actuales. Abre el detalle para ver el total ganado."
+                                      : st === "dinero"
+                                      ? "Dinero actual. Abre el detalle para ver el total ganado."
+                                      : STAT_HELP[st]
+                                  }
+                                />
+                              );
+                            }
+
+                            if (isGens && st === "genpoints") {
+                              return (
+                                <StatHeader
+                                  key={st}
+                                  stat={st}
+                                  active={true}
+                                  ordenAsc={false}
+                                  sortable={true}
+                                  onClick={() => {}}
+                                  helpOverride={STAT_HELP.genpoints}
+                                />
+                              );
+                            }
+
+                            return (
+                              <StatHeader
+                                key={st}
+                                stat={st}
+                                active={orden === st}
+                                ordenAsc={ordenAsc}
+                                sortable={true}
+                                onClick={() => cambiarOrden(st)}
+                              />
+                            );
+                          })}
                         </tr>
                       </thead>
 
@@ -905,7 +995,7 @@ export default function Leaderboards() {
 
                             return (
                               <tr
-                                key={`${p.uuid}-${absPos}-${orden}`}
+                                key={`${p.uuid}-${absPos}`}
                                 className={cn("lb-row", {
                                   top1: absPos === 1,
                                   top2: absPos === 2,
@@ -970,17 +1060,13 @@ export default function Leaderboards() {
                                       ? (p?.phase_nombre || "—")
                                       : st === "island_level"
                                       ? getIslandLevel(p)
-                                      : st === "puntos"
-                                      ? computeGensScore(p)
+                                      : st === "genpoints"
+                                      ? (p?.genpoints ?? computeGensScore(p))
                                       : p?.[st];
 
                                   return (
-                                    <td key={st} className={cn("td-stat", { active: orden === st })}>
-                                      <span className="num">
-                                        {st === "phase_actual"
-                                          ? (p?.phase_nombre || "—")
-                                          : formatValue(st, rawValue)}
-                                      </span>
+                                    <td key={st} className={cn("td-stat", { active: servidorApi === "gens" ? st === "genpoints" : orden === st })}>
+                                      <StatCell stat={st} p={p} value={rawValue} />
                                     </td>
                                   );
                                 })}
@@ -991,7 +1077,6 @@ export default function Leaderboards() {
                     </table>
                   </div>
 
-                  {/* MOBILE CARDS: en GENS mostramos 5 stats (Puntos + 4) */}
                   <div className="lb-cards">
                     {!loading &&
                       datosFiltrados.map((p, i) => {
@@ -1001,7 +1086,8 @@ export default function Leaderboards() {
                         const medal = MEDALLAS[absPos] || null;
                         const platform = getPlatform(p);
 
-                        const gensScore = servidor === "gens" ? computeGensScore(p) : null;
+                        const isOpen = openCard === `${p.uuid}-${absPos}`;
+                        const genpoints = servidorApi === "gens" ? (p?.genpoints ?? computeGensScore(p)) : null;
 
                         return (
                           <button
@@ -1011,6 +1097,7 @@ export default function Leaderboards() {
                               top1: absPos === 1,
                               top2: absPos === 2,
                               top3: absPos === 3,
+                              open: isOpen,
                             })}
                             onClick={() => irPerfil(p)}
                             title="Abrir perfil"
@@ -1053,41 +1140,69 @@ export default function Leaderboards() {
                                   </span>
                                 </div>
 
-                                <div className="lb-card__sub">
-                                  {meta?.rango ? meta.rango : "—"}
-                                </div>
+                                <div className="lb-card__sub">{meta?.rango ? meta.rango : "—"}</div>
                               </div>
+
+                              {servidorApi === "gens" && (
+                                <button
+                                  type="button"
+                                  className="lb-card__detailsBtn"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    const key = `${p.uuid}-${absPos}`;
+                                    setOpenCard((cur) => (cur === key ? null : key));
+                                  }}
+                                  aria-label="Ver detalles"
+                                >
+                                  <span>Detalles</span>
+                                  <ChevronRight size={16} />
+                                </button>
+                              )}
                             </div>
 
-                            {servidor === "gens" ? (
-                              <div className="lb-card__grid">
-                                <div className="lb-card__stat active">
-                                  <span className="k">
-                                    Puntos <span className="k-help"><HelpTip text={STAT_HELP.puntos} /></span>
-                                  </span>
-                                  <span className="v">{gensScore?.toLocaleString("es-ES")}</span>
+                            {servidorApi === "gens" ? (
+                              <>
+                                <div className="lb-card__scoreRow">
+                                  <div className="lb-card__score">
+                                    <span className="k">
+                                      GENPOINTS <span className="k-help"><HelpTip text={STAT_HELP.genpoints} /></span>
+                                    </span>
+                                    <span className="v">{formatInt(genpoints)}</span>
+                                  </div>
                                 </div>
 
-                                <div className="lb-card__stat">
-                                  <span className="k">Coins <span className="k-help"><HelpTip text={STAT_HELP.coins_ganadas_total} /></span></span>
-                                  <span className="v">{formatValue("coins_ganadas_total", p?.coins_ganadas_total)}</span>
-                                </div>
+                                {isOpen && (
+                                  <div className="lb-card__details" onClick={(e) => e.stopPropagation()}>
+                                    <div className="lb-card__grid lb-card__grid--gens">
+                                      <div className="lb-card__stat">
+                                        <span className="k">
+                                          Coins (actual) <span className="k-help">{renderGensDualHint(p, "coins_balance")}</span>
+                                        </span>
+                                        <span className="v">{formatInt(p?.coins_balance)}</span>
+                                        <span className="sub">Total: {formatInt(p?.coins_ganadas_total)}</span>
+                                      </div>
 
-                                <div className="lb-card__stat">
-                                  <span className="k">Gens <span className="k-help"><HelpTip text={STAT_HELP.gens_owned} /></span></span>
-                                  <span className="v">{formatValue("gens_owned", p?.gens_owned)}</span>
-                                </div>
+                                      <div className="lb-card__stat">
+                                        <span className="k">
+                                          Dinero (actual) <span className="k-help">{renderGensDualHint(p, "dinero")}</span>
+                                        </span>
+                                        <span className="v">{formatMoney(p?.dinero)}</span>
+                                        <span className="sub">Total: {formatMoney(p?.dinero_ganado_total)}</span>
+                                      </div>
 
-                                <div className="lb-card__stat">
-                                  <span className="k">Tiempo <span className="k-help"><HelpTip text={STAT_HELP.tiempo_jugado} /></span></span>
-                                  <span className="v">{formatValue("tiempo_jugado", p?.tiempo_jugado)}</span>
-                                </div>
+                                      <div className="lb-card__stat">
+                                        <span className="k">Gens</span>
+                                        <span className="v">{formatInt(p?.gens_owned)}</span>
+                                      </div>
 
-                                <div className="lb-card__stat">
-                                  <span className="k">Dinero <span className="k-help"><HelpTip text={STAT_HELP.dinero_ganado_total} /></span></span>
-                                  <span className="v">{formatValue("dinero_ganado_total", p?.dinero_ganado_total)}</span>
-                                </div>
-                              </div>
+                                      <div className="lb-card__stat">
+                                        <span className="k">Tiempo</span>
+                                        <span className="v">{formatearTiempo(p?.tiempo_jugado)}</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
+                              </>
                             ) : (
                               <div className="lb-card__grid">
                                 {STATS.slice(0, 6).map((st) => {
