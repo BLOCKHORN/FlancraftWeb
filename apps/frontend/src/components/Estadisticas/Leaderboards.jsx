@@ -35,7 +35,8 @@ const SERVIDORES = [
 ];
 
 /**
- * ✅ GENS: coins (balance actual), nivel, gens, produccion, tiempo, dinero
+ * ✅ Columnas por servidor
+ * GENS: PUNTOS | COINS (total ganado) | GENS | TIEMPO | DINERO (total ganado)
  */
 const STATS_BY_SERVER = {
   survival_clasico: ["tiempo_jugado", "bloques_minados", "mobs_matados", "dinero", "kills_pvp", "muertes"],
@@ -51,12 +52,11 @@ const STATS_BY_SERVER = {
   ],
 
   gens: [
+    "puntos",
     "coins_ganadas_total",
-    "nivel",
     "gens_owned",
-    "income_rate",
     "tiempo_jugado",
-    "dinero",
+    "dinero_ganado_total",
   ],
 
   survival_anarquico: ["kills_pvp", "kdr", "killstreak_max", "damage_dealt", "muertes", "tiempo_jugado"],
@@ -67,12 +67,17 @@ const STATS_BY_SERVER = {
 const DEFAULTS_BY_SERVER = {
   survival_clasico: { orden: "tiempo_jugado", asc: false },
   oneblock: { orden: "island_level", asc: false },
-  gens: { orden: "coins_ganadas_total", asc: false },
+
+  // ✅ GENS: por defecto ordena por puntos
+  gens: { orden: "puntos", asc: false },
+
   survival_anarquico: { orden: "kills_pvp", asc: false },
   parkour: { orden: "mejor_tiempo", asc: true },
 };
 
 const LABELS = {
+  puntos: "Puntos",
+
   tiempo_jugado: "Tiempo",
   muertes: "Muertes",
 
@@ -86,9 +91,8 @@ const LABELS = {
   phase_actual: "Fase",
 
   coins_ganadas_total: "Coins",
-  nivel: "Nivel",
   gens_owned: "Gens",
-  income_rate: "Producción",
+  dinero_ganado_total: "Dinero",
 
   kdr: "KDR",
   killstreak_max: "Racha Máx",
@@ -103,10 +107,14 @@ const LABELS = {
 };
 
 const STAT_HELP = {
+  // ✅ PUNTOS: explicación breve y “para niños de 12”
+  puntos:
+    "Tu score de Gens. Subes puntos consiguiendo coins, ganando dinero, poniendo más gens y jugando. Gastar coins o dinero no te baja puntos.",
+
   tiempo_jugado: "Tiempo total jugado en este servidor (en horas y minutos).",
   muertes: "Número total de muertes del jugador en este servidor.",
 
-  dinero: "Dinero del jugador (Vault).",
+  dinero: "Dinero del jugador (balance actual en ese servidor).",
   bloques_minados: "Bloques minados (estadística de Minecraft).",
   mobs_matados: "Mobs eliminados (estadística de Minecraft).",
   kills_pvp: "Kills a otros jugadores (PvP).",
@@ -126,10 +134,10 @@ const STAT_HELP = {
   killstreak_max: "Mayor racha de kills sin morir.",
   damage_dealt: "Daño total infligido (estadística).",
 
-  coins_ganadas_total: "Coins del modo Gens (balance actual). Se usa para comprar cosas exclusivas.",
-  nivel: "Nivel del jugador (LuckPerms track level).",
-  gens_owned: "Generadores colocados en la isla.",
-  income_rate: "Producción del jugador (quién produce más).",
+  // ✅ GENS PRO
+  coins_ganadas_total: "Coins totales ganadas en Gens. Si gastas, no baja.",
+  gens_owned: "Generadores colocados en tu isla.",
+  dinero_ganado_total: "Dinero total ganado en Gens. Si gastas, no baja.",
 };
 
 const MEDALLAS = {
@@ -289,30 +297,45 @@ function StatHeader({ stat, active, ordenAsc, onClick }) {
 }
 
 /* =========================================================
-   ✅ PUNTOS (solo display móvil/podio)
-   - Normaliza con log / escalado suave
-   - Ajusta pesos si quieres más "competitivo"
+   ✅ PUNTOS GENS (PRO)
+   - Usa TOTAL ganado (coins_ganadas_total y dinero_ganado_total)
+   - No baja si gastas
+   - Suaviza valores enormes para que sea competitivo (log + sqrt)
+   - Tiempo capado para que no gane el AFK por horas infinitas
    ========================================================= */
 function safeNum(v) {
   const n = Number(v);
   return Number.isFinite(n) ? n : 0;
 }
 function log1p10(v) {
-  // log10(1+v)
   const x = Math.max(0, safeNum(v));
   return Math.log10(1 + x);
 }
+function sqrtp(v) {
+  const x = Math.max(0, safeNum(v));
+  return Math.sqrt(x);
+}
 function computeGensScore(p) {
-  // Pesos (ajustables)
-  const coins = log1p10(p?.coins_ganadas_total) * 90; // balance (suavizado)
-  const nivel = safeNum(p?.nivel) * 220;              // nivel pesa bastante
-  const gens = safeNum(p?.gens_owned) * 55;           // construcción
-  const prod = safeNum(p?.income_rate) * 140;         // producción (clave)
-  const tiempoH = safeNum(p?.tiempo_jugado) / 3600;
-  const tiempo = Math.min(400, tiempoH * 18);         // tope para no premiar solo AFK
-  const dinero = log1p10(p?.dinero) * 35;             // suavizado
+  const coinsEarned = log1p10(p?.coins_ganadas_total);       // total ganado
+  const moneyEarned = log1p10(p?.dinero_ganado_total);       // total ganado
+  const gens = sqrtp(p?.gens_owned);                         // retorno decreciente
+  const hours = safeNum(p?.tiempo_jugado) / 3600;
+  const time = Math.min(60, Math.max(0, hours));             // cap 60h
 
-  const score = coins + nivel + gens + prod + tiempo + dinero;
+  // Pesos: equilibrado y competitivo
+  const w = {
+    coins: 320,
+    gens: 260,
+    time: 14,
+    money: 120,
+  };
+
+  const score =
+    coinsEarned * w.coins +
+    gens * w.gens +
+    time * w.time +
+    moneyEarned * w.money;
+
   return Math.max(0, Math.round(score));
 }
 
@@ -395,6 +418,10 @@ export default function Leaderboards() {
   const getStatNumber = useCallback(
     (p, key) => {
       if (!p) return 0;
+
+      // ✅ PUNTOS (solo gens)
+      if (key === "puntos") return computeGensScore(p);
+
       if (key === "island_level") return getIslandLevel(p);
 
       const raw = p?.[key];
@@ -411,6 +438,12 @@ export default function Leaderboards() {
     (key, value) => {
       if (value === null || value === undefined) return "—";
 
+      if (key === "puntos") {
+        const n = Number(value || 0);
+        if (!Number.isFinite(n)) return "—";
+        return n.toLocaleString("es-ES");
+      }
+
       const n = Number(value);
 
       if (key === "tiempo_jugado") return formatearTiempo(n);
@@ -421,15 +454,14 @@ export default function Leaderboards() {
         return `${n.toLocaleString("es-ES")} $`;
       }
 
+      if (key === "dinero_ganado_total") {
+        if (!Number.isFinite(n)) return "—";
+        return `${n.toLocaleString("es-ES")} $`;
+      }
+
       if (key === "coins_ganadas_total") {
         if (!Number.isFinite(n)) return "—";
         return n.toLocaleString("es-ES");
-      }
-
-      if (key === "income_rate") {
-        if (!Number.isFinite(n)) return "—";
-        // Si luego decides que esto es "coins/min", lo cambiamos aquí
-        return `${n.toLocaleString("es-ES")}x`;
       }
 
       if (key === "kdr") {
@@ -476,8 +508,12 @@ export default function Leaderboards() {
 
     (async () => {
       try {
+        // ✅ Si el usuario ordena por "puntos", pedimos al backend por coins_ganadas_total (paginación),
+        // y luego ordenamos en frontend por puntos.
+        const tipoBackend = orden === "puntos" ? "coins_ganadas_total" : orden;
+
         const res = await getLeaderboards({
-          tipo: orden,
+          tipo: tipoBackend,
           servidor: servidorApi,
           limit,
           offset,
@@ -556,7 +592,7 @@ export default function Leaderboards() {
   const cambiarPagina = (pageIndex) => setOffset(pageIndex * limit);
 
   const { wideCount, mediumCount } = useMemo(() => {
-    const WIDE = new Set(["income_rate", "oneblock_blocks_broken"]);
+    const WIDE = new Set(["oneblock_blocks_broken"]);
     const MED = new Set(["killstreak_max", "mejor_tiempo"]);
 
     let w = 0;
@@ -609,9 +645,9 @@ export default function Leaderboards() {
                   ? (p?.phase_nombre || "—")
                   : orden === "island_level"
                   ? getIslandLevel(p)
+                  : orden === "puntos"
+                  ? computeGensScore(p)
                   : p?.[orden];
-
-              const gensScore = servidor === "gens" ? computeGensScore(p) : null;
 
               return (
                 <button
@@ -662,14 +698,18 @@ export default function Leaderboards() {
                       <div className="pod-stat">
                         <span className="pod-stat__k">{LABELS[orden] || orden}</span>
                         <span className="pod-stat__v">
-                          {orden === "phase_actual" ? (p?.phase_nombre || "—") : formatValue(orden, valueForPodium)}
+                          {orden === "phase_actual"
+                            ? (p?.phase_nombre || "—")
+                            : orden === "puntos"
+                            ? Number(valueForPodium || 0).toLocaleString("es-ES")
+                            : formatValue(orden, valueForPodium)}
                         </span>
                       </div>
 
-                      {servidor === "gens" && (
+                      {servidor === "gens" && orden !== "puntos" && (
                         <div className="pod-stat" style={{ marginTop: 6, opacity: 0.95 }}>
                           <span className="pod-stat__k">Puntos</span>
-                          <span className="pod-stat__v">{gensScore?.toLocaleString("es-ES")}</span>
+                          <span className="pod-stat__v">{computeGensScore(p).toLocaleString("es-ES")}</span>
                         </div>
                       )}
                     </div>
@@ -930,12 +970,16 @@ export default function Leaderboards() {
                                       ? (p?.phase_nombre || "—")
                                       : st === "island_level"
                                       ? getIslandLevel(p)
+                                      : st === "puntos"
+                                      ? computeGensScore(p)
                                       : p?.[st];
 
                                   return (
                                     <td key={st} className={cn("td-stat", { active: orden === st })}>
                                       <span className="num">
-                                        {st === "phase_actual" ? (p?.phase_nombre || "—") : formatValue(st, rawValue)}
+                                        {st === "phase_actual"
+                                          ? (p?.phase_nombre || "—")
+                                          : formatValue(st, rawValue)}
                                       </span>
                                     </td>
                                   );
@@ -947,9 +991,7 @@ export default function Leaderboards() {
                     </table>
                   </div>
 
-                  {/* =========================================================
-                      ✅ MOBILE CARDS: 1 único valor en GENS (PUNTOS)
-                     ========================================================= */}
+                  {/* MOBILE CARDS: en GENS mostramos 5 stats (Puntos + 4) */}
                   <div className="lb-cards">
                     {!loading &&
                       datosFiltrados.map((p, i) => {
@@ -1021,12 +1063,29 @@ export default function Leaderboards() {
                               <div className="lb-card__grid">
                                 <div className="lb-card__stat active">
                                   <span className="k">
-                                    Puntos
-                                    <span className="k-help">
-                                      <HelpTip text="Calculado con Coins, Nivel, Gens, Producción, Tiempo y Dinero para resumir el rendimiento." />
-                                    </span>
+                                    Puntos <span className="k-help"><HelpTip text={STAT_HELP.puntos} /></span>
                                   </span>
                                   <span className="v">{gensScore?.toLocaleString("es-ES")}</span>
+                                </div>
+
+                                <div className="lb-card__stat">
+                                  <span className="k">Coins <span className="k-help"><HelpTip text={STAT_HELP.coins_ganadas_total} /></span></span>
+                                  <span className="v">{formatValue("coins_ganadas_total", p?.coins_ganadas_total)}</span>
+                                </div>
+
+                                <div className="lb-card__stat">
+                                  <span className="k">Gens <span className="k-help"><HelpTip text={STAT_HELP.gens_owned} /></span></span>
+                                  <span className="v">{formatValue("gens_owned", p?.gens_owned)}</span>
+                                </div>
+
+                                <div className="lb-card__stat">
+                                  <span className="k">Tiempo <span className="k-help"><HelpTip text={STAT_HELP.tiempo_jugado} /></span></span>
+                                  <span className="v">{formatValue("tiempo_jugado", p?.tiempo_jugado)}</span>
+                                </div>
+
+                                <div className="lb-card__stat">
+                                  <span className="k">Dinero <span className="k-help"><HelpTip text={STAT_HELP.dinero_ganado_total} /></span></span>
+                                  <span className="v">{formatValue("dinero_ganado_total", p?.dinero_ganado_total)}</span>
                                 </div>
                               </div>
                             ) : (
