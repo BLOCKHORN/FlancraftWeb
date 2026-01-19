@@ -15,9 +15,6 @@ import "../../styles/components/Estadisticas/_leaderboards.scss";
 
 const API_BASE = import.meta.env.VITE_BACKEND_URL || "http://localhost:10000";
 
-/**
- * UI IDs → IDs backend/supabase/plugin
- */
 const SERVIDOR_API_MAP = {
   survival_clasico: "survival",
   oneblock: "oneblock",
@@ -34,10 +31,6 @@ const SERVIDORES = [
   { id: "parkour", nombre: "Parkour", imagen: "/assets/reinos/parkour.webp" },
 ];
 
-/**
- * Columnas por servidor
- * GENS: GENPOINTS | COINS (actual) | GENS | TIEMPO | DINERO (actual)
- */
 const STATS_BY_SERVER = {
   survival_clasico: ["tiempo_jugado", "bloques_minados", "mobs_matados", "dinero", "kills_pvp", "muertes"],
 
@@ -51,7 +44,7 @@ const STATS_BY_SERVER = {
     "muertes",
   ],
 
-  gens: ["genpoints", "coins_balance", "gens_owned", "tiempo_jugado", "dinero"],
+  gens: ["genpoints", "coins_balance", "gens_value_total", "gens_highest_tier", "tiempo_jugado", "dinero"],
 
   survival_anarquico: ["kills_pvp", "kdr", "killstreak_max", "damage_dealt", "muertes", "tiempo_jugado"],
 
@@ -82,7 +75,9 @@ const LABELS = {
   phase_actual: "Fase",
 
   coins_balance: "Coins",
-  gens_owned: "Gens",
+
+  gens_value_total: "Valor Gens",
+  gens_highest_tier: "Tier Máx",
 
   kdr: "KDR",
   killstreak_max: "Racha Máx",
@@ -98,7 +93,7 @@ const LABELS = {
 
 const STAT_HELP = {
   genpoints:
-    "Puntuación competitiva de Gens. Se calcula con Coins y Dinero totales ganados, progreso (gens) y tiempo. Gastar coins o dinero no te baja la puntuación.",
+    "Puntuación competitiva de Gens. Usa Coins/Dinero totales ganados (no bajan al gastar), Valor real de generadores por tier, Income/h estimado y tiempo. Tener 10 gens tier 10 puntúa mucho más que 10 gens tier 1.",
 
   tiempo_jugado: "Tiempo total jugado en este servidor.",
   muertes: "Número total de muertes del jugador en este servidor.",
@@ -123,8 +118,9 @@ const STAT_HELP = {
   killstreak_max: "Mayor racha de kills sin morir.",
   damage_dealt: "Daño total infligido.",
 
-  coins_balance: "Coins actuales en Gens.",
-  gens_owned: "Generadores colocados.",
+  coins_balance: "Coins actuales en Gens. Abre el detalle para ver total ganado.",
+  gens_value_total: "Valor total invertido en generadores (por tier), calculado desde AxGens.",
+  gens_highest_tier: "Tier más alto que tiene el jugador (generadores activos).",
 };
 
 const MEDALLAS = {
@@ -162,39 +158,37 @@ function sqrtp(v) {
   return Math.sqrt(Math.max(0, safeNum(v)));
 }
 
-/**
- * GENPOINTS
- * - Coins y Dinero: usa totales ganados (no bajan al gastar)
- * - Gens: log para que no domine
- * - Tiempo: sqrt y cap suave
- */
 function computeGensScore(p) {
   const coinsTotal = log10p1(p?.coins_ganadas_total);
   const moneyTotal = log10p1(p?.dinero_ganado_total);
-  const gensProg = log10p1(p?.gens_owned);
+
+  const gensValue = log10p1(p?.gens_value_total);
+  const incomeH = log10p1(p?.gens_income_h);
+  const maxTier = log10p1(p?.gens_highest_tier);
 
   const hours = safeNum(p?.tiempo_jugado) / 3600;
-  const time = sqrtp(Math.min(120, Math.max(0, hours)));
+  const time = sqrtp(Math.min(160, Math.max(0, hours)));
 
   const w = {
-    coins: 520,
-    money: 320,
-    gens: 240,
+    coins: 420,
+    money: 260,
+    value: 460,
+    income: 360,
+    tier: 220,
     time: 85,
   };
 
   const score =
     coinsTotal * w.coins +
     moneyTotal * w.money +
-    gensProg * w.gens +
+    gensValue * w.value +
+    incomeH * w.income +
+    maxTier * w.tier +
     time * w.time;
 
   return Math.max(0, Math.round(score));
 }
 
-/* =========================================================
-   Tooltip fijo
-   ========================================================= */
 function HelpTip({ text }) {
   const [open, setOpen] = useState(false);
   const wrapRef = useRef(null);
@@ -441,6 +435,9 @@ export default function Leaderboards() {
       if (key === "dinero") return formatMoney(n);
       if (key === "coins_balance") return formatInt(n);
 
+      if (key === "gens_value_total") return formatMoney(n);
+      if (key === "gens_highest_tier") return formatInt(n);
+
       if (key === "kdr") return Number.isFinite(n) ? n.toFixed(2) : "—";
 
       return Number.isFinite(n) ? formatInt(n) : "—";
@@ -486,7 +483,7 @@ export default function Leaderboards() {
           const res = await getLeaderboards({
             tipo: "dinero_ganado_total",
             servidor: servidorApi,
-            limit: 500,
+            limit: 700,
             offset: 0,
           });
           if (!alive) return;
@@ -628,6 +625,13 @@ export default function Leaderboards() {
       return <HelpTip text={txt} />;
     }
 
+    if (key === "gens_value_total") {
+      const v = safeNum(p?.gens_value_total);
+      const inc = safeNum(p?.gens_income_h);
+      const txt = `Valor total: ${formatMoney(v)}\nIncome/h estimado: ${formatMoney(inc)}\nTier máx: ${formatInt(p?.gens_highest_tier)}`;
+      return <HelpTip text={txt} />;
+    }
+
     return null;
   }, []);
 
@@ -641,7 +645,7 @@ export default function Leaderboards() {
         return <span className="num num--score">{formatValue("genpoints", value)}</span>;
       }
 
-      if (stat === "coins_balance" || stat === "dinero") {
+      if (stat === "coins_balance" || stat === "dinero" || stat === "gens_value_total") {
         return (
           <span className="num num--dual">
             <span className="num__v">{formatValue(stat, value)}</span>
@@ -752,9 +756,9 @@ export default function Leaderboards() {
                             <span className="pod-mini__hint">{renderGensDualHint(p, "coins_balance")}</span>
                           </div>
                           <div className="pod-mini__row">
-                            <span>Dinero</span>
-                            <b>{formatMoney(p?.dinero)}</b>
-                            <span className="pod-mini__hint">{renderGensDualHint(p, "dinero")}</span>
+                            <span>Valor Gens</span>
+                            <b>{formatMoney(p?.gens_value_total)}</b>
+                            <span className="pod-mini__hint">{renderGensDualHint(p, "gens_value_total")}</span>
                           </div>
                         </div>
                       )}
@@ -910,7 +914,6 @@ export default function Leaderboards() {
 
                           {STATS.map((st) => {
                             const isGens = servidorApi === "gens";
-                            const sortable = !isGens && st === orden;
 
                             if (isGens && st !== "genpoints") {
                               return (
@@ -920,13 +923,7 @@ export default function Leaderboards() {
                                   active={false}
                                   ordenAsc={false}
                                   sortable={false}
-                                  helpOverride={
-                                    st === "coins_balance"
-                                      ? "Coins actuales. Abre el detalle para ver el total ganado."
-                                      : st === "dinero"
-                                      ? "Dinero actual. Abre el detalle para ver el total ganado."
-                                      : STAT_HELP[st]
-                                  }
+                                  helpOverride={STAT_HELP[st]}
                                 />
                               );
                             }
@@ -1184,20 +1181,28 @@ export default function Leaderboards() {
 
                                       <div className="lb-card__stat">
                                         <span className="k">
-                                          Dinero (actual) <span className="k-help">{renderGensDualHint(p, "dinero")}</span>
+                                          Valor Gens <span className="k-help">{renderGensDualHint(p, "gens_value_total")}</span>
                                         </span>
-                                        <span className="v">{formatMoney(p?.dinero)}</span>
-                                        <span className="sub">Total: {formatMoney(p?.dinero_ganado_total)}</span>
+                                        <span className="v">{formatMoney(p?.gens_value_total)}</span>
+                                        <span className="sub">Income/h: {formatMoney(p?.gens_income_h)}</span>
                                       </div>
 
                                       <div className="lb-card__stat">
-                                        <span className="k">Gens</span>
-                                        <span className="v">{formatInt(p?.gens_owned)}</span>
+                                        <span className="k">Tier Máx</span>
+                                        <span className="v">{formatInt(p?.gens_highest_tier)}</span>
                                       </div>
 
                                       <div className="lb-card__stat">
                                         <span className="k">Tiempo</span>
                                         <span className="v">{formatearTiempo(p?.tiempo_jugado)}</span>
+                                      </div>
+
+                                      <div className="lb-card__stat">
+                                        <span className="k">
+                                          Dinero (actual) <span className="k-help">{renderGensDualHint(p, "dinero")}</span>
+                                        </span>
+                                        <span className="v">{formatMoney(p?.dinero)}</span>
+                                        <span className="sub">Total: {formatMoney(p?.dinero_ganado_total)}</span>
                                       </div>
                                     </div>
                                   </div>

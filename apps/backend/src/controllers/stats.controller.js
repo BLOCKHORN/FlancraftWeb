@@ -52,6 +52,8 @@ exports.importarStat = async (req, res) => {
  * - coins_ganadas_total = total ganado (acumula SOLO subidas)
  * - dinero = balance actual (vault)
  * - dinero_ganado_total = total ganado (acumula SOLO subidas, SOLO gens)
+ * - gens_value_total / gens_income_h / gens_highest_tier = calculado en plugin leyendo AxGens
+ * - gens_tiers = JSONB con conteo por tier (objeto)
  */
 exports.importarStatsAgrupadas = async (req, res) => {
   const num = (v, def = 0) => {
@@ -71,6 +73,32 @@ exports.importarStatsAgrupadas = async (req, res) => {
     return s ? s : undefined;
   };
 
+  const jsonOrUndef = (v) => {
+    if (v === undefined || v === null) return undefined;
+
+    // ya viene como objeto (ideal desde el plugin)
+    if (typeof v === "object") {
+      // evita arrays raros por si acaso
+      if (Array.isArray(v)) return undefined;
+      return v;
+    }
+
+    // si viene como string JSON
+    if (typeof v === "string") {
+      const s = v.trim();
+      if (!s) return undefined;
+      try {
+        const parsed = JSON.parse(s);
+        if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) return parsed;
+        return undefined;
+      } catch {
+        return undefined;
+      }
+    }
+
+    return undefined;
+  };
+
   const setIfDefined = (obj, key, value) => {
     if (value !== undefined) obj[key] = value;
   };
@@ -84,7 +112,6 @@ exports.importarStatsAgrupadas = async (req, res) => {
   const syncContext = String(req.body.sync_context || "online").toLowerCase();
   const allowExtras = syncContext === "online";
 
-  // 1) Vanilla (siempre)
   const baseUpdate = {
     bloques_minados: num(req.body.bloques_minados),
     bloques_colocados: num(req.body.bloques_colocados),
@@ -110,50 +137,50 @@ exports.importarStatsAgrupadas = async (req, res) => {
     ultima_actualizacion: new Date().toISOString(),
   };
 
-  // Campos blandos (solo si vienen)
   setIfDefined(baseUpdate, "nombre_minecraft", textOrUndef(req.body.nombre_minecraft));
   setIfDefined(baseUpdate, "plataforma", textOrUndef(req.body.plataforma));
 
-  // 2) Extras (solo online)
   const extrasUpdate = {};
   if (allowExtras) {
-    // survival / oneblock usan dinero como balance (ok)
     setIfDefined(extrasUpdate, "dinero", numOrUndef(req.body.dinero));
     setIfDefined(extrasUpdate, "power_mcmmo", numOrUndef(req.body.power_mcmmo));
 
-    // oneblock
     setIfDefined(extrasUpdate, "island_level", numOrUndef(req.body.island_level));
     setIfDefined(extrasUpdate, "oneblock_blocks_broken", numOrUndef(req.body.oneblock_blocks_broken));
     setIfDefined(extrasUpdate, "phase_actual", numOrUndef(req.body.phase_actual));
     setIfDefined(extrasUpdate, "phase_nombre", textOrUndef(req.body.phase_nombre));
     setIfDefined(extrasUpdate, "challenges_completados", numOrUndef(req.body.challenges_completados));
 
-    // gens
-    // ✅ coins_balance llega del plugin, el total lo calculamos nosotros
     setIfDefined(extrasUpdate, "coins_balance", numOrUndef(req.body.coins_balance));
-
     setIfDefined(extrasUpdate, "upgrades_comprados", numOrUndef(req.body.upgrades_comprados));
     setIfDefined(extrasUpdate, "gens_owned", numOrUndef(req.body.gens_owned));
     setIfDefined(extrasUpdate, "prestigios", numOrUndef(req.body.prestigios));
-
-    // nivel track (num en tu caso, pero lo guardamos como texto para no romper compat)
     setIfDefined(extrasUpdate, "nivel", textOrUndef(req.body.nivel));
 
-    // anarquico
     setIfDefined(extrasUpdate, "kdr", numOrUndef(req.body.kdr));
     setIfDefined(extrasUpdate, "killstreak_max", numOrUndef(req.body.killstreak_max));
     setIfDefined(extrasUpdate, "damage_dealt", numOrUndef(req.body.damage_dealt));
 
-    // parkour
     setIfDefined(extrasUpdate, "mejor_tiempo", numOrUndef(req.body.mejor_tiempo));
     setIfDefined(extrasUpdate, "completadas_total", numOrUndef(req.body.completadas_total));
     setIfDefined(extrasUpdate, "perfect_runs", numOrUndef(req.body.perfect_runs));
     setIfDefined(extrasUpdate, "falls", numOrUndef(req.body.falls));
     setIfDefined(extrasUpdate, "medallas_ganadas", numOrUndef(req.body.medallas_ganadas));
     setIfDefined(extrasUpdate, "racha_dias", numOrUndef(req.body.racha_dias));
+
+    // PRO AxGens
+    setIfDefined(extrasUpdate, "gens_value_total", numOrUndef(req.body.gens_value_total));
+    setIfDefined(extrasUpdate, "gens_income_h", numOrUndef(req.body.gens_income_h));
+    setIfDefined(extrasUpdate, "gens_highest_tier", numOrUndef(req.body.gens_highest_tier));
+
+    // NUEVO: jsonb real
+    setIfDefined(extrasUpdate, "gens_tiers", jsonOrUndef(req.body.gens_tiers));
+
+    // Compat opcional: si te llegara como string JSON (pero ideal es gens_tiers)
+    setIfDefined(extrasUpdate, "gens_tiers_json", textOrUndef(req.body.gens_tiers_json));
   }
 
-  // 3) ¿Existe fila? (para PRO acumulados necesitamos leer balances previos)
+  // Traemos también gens_tiers por si quieres ver si existe, pero no es obligatorio
   const { data: existing, error: findErr } = await db
     .from("estadisticas_agrupadas")
     .select("uuid, servidor, coins_balance, coins_ganadas_total, dinero, dinero_ganado_total")
@@ -166,57 +193,46 @@ exports.importarStatsAgrupadas = async (req, res) => {
     return res.status(500).json({ error: "Error al comprobar estadísticas existentes." });
   }
 
-  // Helpers PRO
   const isGens = String(servidor).toLowerCase() === "gens";
   const max0 = (x) => Math.max(0, Number(x) || 0);
 
   const buildProGensPayload = (prevRow, incoming) => {
-    // incoming.coins_balance y incoming.dinero son balances actuales (si vienen)
     const out = { ...incoming };
 
-    // Coins: total ganado
+    // coins_total: acumula SOLO subidas del balance
     if (incoming.coins_balance !== undefined) {
-  const prevBal = Number(prevRow?.coins_balance ?? 0) || 0;
-  const prevTotalRaw = Number(prevRow?.coins_ganadas_total ?? prevRow?.coins_balance ?? 0) || 0;
+      const prevBal = Number(prevRow?.coins_balance ?? 0) || 0;
+      const prevTotalRaw = Number(prevRow?.coins_ganadas_total ?? prevRow?.coins_balance ?? 0) || 0;
+      const prevTotal = Math.max(prevTotalRaw, prevBal);
 
-  const prevTotal = Math.max(prevTotalRaw, prevBal);
+      const newBal = Number(incoming.coins_balance) || 0;
+      const delta = max0(newBal - prevBal);
+      const newTotal = prevTotal + delta;
 
-  const newBal = Number(incoming.coins_balance) || 0;
+      out.coins_balance = newBal;
+      out.coins_ganadas_total = newTotal;
+    }
 
-  const delta = max0(newBal - prevBal);
-  const newTotal = prevTotal + delta;
+    // dinero_total: acumula SOLO subidas del balance
+    if (incoming.dinero !== undefined) {
+      const prevBal = Number(prevRow?.dinero ?? 0) || 0;
+      const prevTotalRaw = Number(prevRow?.dinero_ganado_total ?? prevRow?.dinero ?? 0) || 0;
+      const prevTotal = Math.max(prevTotalRaw, prevBal);
 
-  out.coins_balance = newBal;
-  out.coins_ganadas_total = newTotal;
-}
+      const newBal = Number(incoming.dinero) || 0;
+      const delta = max0(newBal - prevBal);
+      const newTotal = prevTotal + delta;
 
-
-// Dinero: total ganado (solo gens)
-if (incoming.dinero !== undefined) {
-  const prevBal = Number(prevRow?.dinero ?? 0) || 0;
-  const prevTotalRaw = Number(prevRow?.dinero_ganado_total ?? prevRow?.dinero ?? 0) || 0;
-
-  //  RECONCILIAR: el total nunca puede ir por debajo del balance histórico
-  const prevTotal = Math.max(prevTotalRaw, prevBal);
-
-  const newBal = Number(incoming.dinero) || 0;
-
-  const delta = max0(newBal - prevBal); // solo subidas
-  const newTotal = prevTotal + delta;
-
-  out.dinero = newBal;
-  out.dinero_ganado_total = newTotal;
-}
-
+      out.dinero = newBal;
+      out.dinero_ganado_total = newTotal;
+    }
 
     return out;
   };
 
   if (existing) {
-    // UPDATE
     let updatePayload = allowExtras ? { ...baseUpdate, ...extrasUpdate } : { ...baseUpdate };
 
-    // PRO: aplica acumulados solo si allowExtras y servidor gens
     if (allowExtras && isGens) {
       updatePayload = buildProGensPayload(existing, updatePayload);
     }
@@ -235,7 +251,6 @@ if (incoming.dinero !== undefined) {
     return res.status(200).json({ success: true, mode: "update", sync_context: syncContext });
   }
 
-  // INSERT
   let insertPayload = {
     uuid,
     servidor,
@@ -243,7 +258,6 @@ if (incoming.dinero !== undefined) {
     ...(allowExtras ? extrasUpdate : {}),
   };
 
-  // PRO: inicializa acumulados en el insert solo si gens + online
   if (allowExtras && isGens) {
     const initialRow = {
       coins_balance: 0,
@@ -251,9 +265,10 @@ if (incoming.dinero !== undefined) {
       dinero: 0,
       dinero_ganado_total: 0,
     };
+
     insertPayload = buildProGensPayload(initialRow, insertPayload);
 
-    // Si no venían balances, deja todo a 0, pero no rompe
+    // si por lo que sea no se setea, inicializa
     if (insertPayload.coins_ganadas_total === undefined && insertPayload.coins_balance !== undefined) {
       insertPayload.coins_ganadas_total = insertPayload.coins_balance;
     }
@@ -333,7 +348,6 @@ exports.obtenerLeaderboards = async (req, res) => {
     "phase_actual",
     "challenges_completados",
 
-    // GENS PRO
     "coins_balance",
     "coins_ganadas_total",
     "dinero_ganado_total",
@@ -341,6 +355,12 @@ exports.obtenerLeaderboards = async (req, res) => {
     "gens_owned",
     "prestigios",
 
+    "gens_value_total",
+    "gens_income_h",
+    "gens_highest_tier",
+
+    // IMPORTANTE: si en tu tabla "nivel" es TEXT, ordenar funciona pero lexicográfico.
+    // Si quieres numérico, habría que guardarlo como número (o crear columna nivel_num).
     "nivel",
 
     "kdr",
@@ -355,6 +375,7 @@ exports.obtenerLeaderboards = async (req, res) => {
     "racha_dias",
   ];
 
+  // NUEVO: permitir ordenar por gens_tiers (no tiene sentido, así que no lo añadimos)
   if (!tiposValidos.includes(tipo)) {
     return res.status(400).json({ error: "Tipo de estadística inválido.", tiposValidos });
   }
