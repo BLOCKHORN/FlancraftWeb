@@ -53,7 +53,7 @@ exports.importarStat = async (req, res) => {
  * - dinero = balance actual (vault)
  * - dinero_ganado_total = total ganado (acumula SOLO subidas, SOLO gens)
  * - gens_value_total / gens_income_h / gens_highest_tier = calculado en plugin leyendo AxGens
- * - gens_tiers = JSONB con conteo por tier (objeto)
+ * - gens_tiers = jsonb con desglose por tier (p.ej. {"1": 10, "10": 2})
  */
 exports.importarStatsAgrupadas = async (req, res) => {
   const num = (v, def = 0) => {
@@ -76,20 +76,16 @@ exports.importarStatsAgrupadas = async (req, res) => {
   const jsonOrUndef = (v) => {
     if (v === undefined || v === null) return undefined;
 
-    // ya viene como objeto (ideal desde el plugin)
-    if (typeof v === "object") {
-      // evita arrays raros por si acaso
-      if (Array.isArray(v)) return undefined;
-      return v;
-    }
+    // ya viene JSON (objeto/array)
+    if (typeof v === "object") return v;
 
-    // si viene como string JSON
+    // viene como string JSON
     if (typeof v === "string") {
       const s = v.trim();
       if (!s) return undefined;
       try {
         const parsed = JSON.parse(s);
-        if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) return parsed;
+        if (parsed && typeof parsed === "object") return parsed;
         return undefined;
       } catch {
         return undefined;
@@ -168,19 +164,22 @@ exports.importarStatsAgrupadas = async (req, res) => {
     setIfDefined(extrasUpdate, "medallas_ganadas", numOrUndef(req.body.medallas_ganadas));
     setIfDefined(extrasUpdate, "racha_dias", numOrUndef(req.body.racha_dias));
 
-    // PRO AxGens
+    // snapshots (si el plugin los envía)
+    setIfDefined(extrasUpdate, "coins_snapshot", numOrUndef(req.body.coins_snapshot));
+    setIfDefined(extrasUpdate, "dinero_snapshot", numOrUndef(req.body.dinero_snapshot));
+
+    // AxGens PRO
     setIfDefined(extrasUpdate, "gens_value_total", numOrUndef(req.body.gens_value_total));
     setIfDefined(extrasUpdate, "gens_income_h", numOrUndef(req.body.gens_income_h));
     setIfDefined(extrasUpdate, "gens_highest_tier", numOrUndef(req.body.gens_highest_tier));
 
-    // NUEVO: jsonb real
+    // ✅ Guardar jsonb real
     setIfDefined(extrasUpdate, "gens_tiers", jsonOrUndef(req.body.gens_tiers));
 
-    // Compat opcional: si te llegara como string JSON (pero ideal es gens_tiers)
+    // (Opcional) mantener string si lo sigues enviando y tienes esa columna
     setIfDefined(extrasUpdate, "gens_tiers_json", textOrUndef(req.body.gens_tiers_json));
   }
 
-  // Traemos también gens_tiers por si quieres ver si existe, pero no es obligatorio
   const { data: existing, error: findErr } = await db
     .from("estadisticas_agrupadas")
     .select("uuid, servidor, coins_balance, coins_ganadas_total, dinero, dinero_ganado_total")
@@ -199,7 +198,6 @@ exports.importarStatsAgrupadas = async (req, res) => {
   const buildProGensPayload = (prevRow, incoming) => {
     const out = { ...incoming };
 
-    // coins_total: acumula SOLO subidas del balance
     if (incoming.coins_balance !== undefined) {
       const prevBal = Number(prevRow?.coins_balance ?? 0) || 0;
       const prevTotalRaw = Number(prevRow?.coins_ganadas_total ?? prevRow?.coins_balance ?? 0) || 0;
@@ -213,7 +211,6 @@ exports.importarStatsAgrupadas = async (req, res) => {
       out.coins_ganadas_total = newTotal;
     }
 
-    // dinero_total: acumula SOLO subidas del balance
     if (incoming.dinero !== undefined) {
       const prevBal = Number(prevRow?.dinero ?? 0) || 0;
       const prevTotalRaw = Number(prevRow?.dinero_ganado_total ?? prevRow?.dinero ?? 0) || 0;
@@ -268,7 +265,6 @@ exports.importarStatsAgrupadas = async (req, res) => {
 
     insertPayload = buildProGensPayload(initialRow, insertPayload);
 
-    // si por lo que sea no se setea, inicializa
     if (insertPayload.coins_ganadas_total === undefined && insertPayload.coins_balance !== undefined) {
       insertPayload.coins_ganadas_total = insertPayload.coins_balance;
     }
@@ -359,8 +355,6 @@ exports.obtenerLeaderboards = async (req, res) => {
     "gens_income_h",
     "gens_highest_tier",
 
-    // IMPORTANTE: si en tu tabla "nivel" es TEXT, ordenar funciona pero lexicográfico.
-    // Si quieres numérico, habría que guardarlo como número (o crear columna nivel_num).
     "nivel",
 
     "kdr",
@@ -375,7 +369,6 @@ exports.obtenerLeaderboards = async (req, res) => {
     "racha_dias",
   ];
 
-  // NUEVO: permitir ordenar por gens_tiers (no tiene sentido, así que no lo añadimos)
   if (!tiposValidos.includes(tipo)) {
     return res.status(400).json({ error: "Tipo de estadística inválido.", tiposValidos });
   }
