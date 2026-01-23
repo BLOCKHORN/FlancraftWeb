@@ -1,0 +1,101 @@
+/* =========================
+   SERVERS
+========================= */
+.lb-servers { padding: .95rem var(--padX) 1.05rem; }
+
+.server-rail {
+  border-radius: var(--r);
+  border: 2px solid rgba(0,0,0,0.12);
+  background: linear-gradient(180deg, rgba(255,255,255,0.22), rgba(255,255,255,0.10));
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.14), 0 14px 22px rgba(0,0,0,0.10);
+  padding: clamp(.75rem, 1.8vw, 1rem);
+}
+
+.server-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: clamp(.6rem, 1.2vw, .9rem);
+  align-items: stretch;
+
+  @media (max-width: 1060px) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  @media (max-width: 720px) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+.server-pill {
+  border: 0;
+  cursor: pointer;
+  border-radius: var(--r);
+  padding: clamp(.7rem, 1.1vw, .85rem);
+  text-align: center;
+  position: relative;
+
+  display: grid;
+  grid-template-rows: 64px auto;
+  align-items: center;
+  justify-items: center;
+  gap: .45rem;
+
+  background:
+    radial-gradient(circle at 30% 0%, rgba(255,255,255,0.22), transparent 52%),
+    linear-gradient(180deg, rgba(0,0,0,0.04), rgba(0,0,0,0.02)),
+    rgba(242,226,184,0.55);
+
+  border: 2px solid rgba(0,0,0,0.10);
+  box-shadow: 0 10px 16px rgba(0,0,0,0.10), inset 0 0 0 1px rgba(255,255,255,0.14);
+  transition: transform .16s ease, filter .16s ease, box-shadow .16s ease;
+
+  &:hover { transform: translateY(-2px); filter: brightness(1.02); }
+  &:active { transform: translateY(0px) scale(.99); }
+
+  .server-pill__iconWrap {
+    width: 100%;
+    height: 64px;
+    display: grid;
+    place-items: center;
+  }
+
+  .server-pill__icon {
+    width: 100%;
+    max-width: 132px;
+    height: 64px;
+    object-fit: contain;
+    filter: saturate(1.15) contrast(1.06);
+    transition: transform .18s ease, filter .18s ease;
+    transform-origin: center bottom;
+  }
+
+  .server-pill__label {
+    width: 100%;
+    padding: 0 .25rem;
+    line-height: 1.06;
+    font-size: clamp(1.05rem, 1.15vw, 1.12rem);
+    color: rgba(43,25,14,0.92);
+    text-shadow: 0 1px 0 rgba(255,255,255,0.28);
+
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    white-space: normal;
+  }
+
+  &:hover .server-pill__icon { transform: translateY(-2px) scale(1.05); }
+
+  &.active {
+    border-color: rgba(0,0,0,0.18);
+    box-shadow:
+      0 14px 22px rgba(0,0,0,0.14),
+      inset 0 0 0 1px rgba(255,255,255,0.16),
+      0 0 0 3px rgba(255,210,110,0.30);
+
+    &::after {
+      content: "";
+      position: absolute;
+      inset: 6px;
+      border-radius: var(--r);
+      border: 1px solid rgba(255,210,110,0.65);
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.18);
+      pointer-events: none;
+    }
+  }
+}

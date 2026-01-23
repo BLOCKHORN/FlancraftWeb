@@ -1,0 +1,387 @@
+/* src/components/Estadisticas/parts/LeaderboardsTable.scss */
+
+.lb-content { padding: 0 var(--padX) 1.7rem; }
+
+.lb-tableCard {
+  border-radius: min(3px, var(--r));
+  overflow: hidden;
+  border: 2px solid rgba(0,0,0,0.12);
+  background: linear-gradient(180deg, var(--paper2), var(--paper));
+  box-shadow: 0 18px 34px rgba(0,0,0,0.18);
+}
+
+.lb-tableWrap {
+  position: relative;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0,0,0,0.25) rgba(255,255,255,0.18);
+
+  &::-webkit-scrollbar { height: 10px; }
+  &::-webkit-scrollbar-track { background: rgba(255,255,255,0.16); }
+  &::-webkit-scrollbar-thumb {
+    background: rgba(0,0,0,0.22);
+    border-radius: min(3px, var(--r));
+    border: 2px solid rgba(255,255,255,0.18);
+  }
+}
+
+.lb-table {
+  width: 100%;
+  min-width: 980px;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+
+  --stats: 7;
+  --posW: 56px;
+  --playerW: clamp(210px, 26vw, 220px);
+
+  --wideBoost: 1.28;
+  --mediumBoost: 1.14;
+  --wideCount: 0;
+  --mediumCount: 0;
+
+  --remaining: calc(100% - var(--posW) - var(--playerW));
+  --denom: calc(
+    var(--stats)
+    + (var(--wideCount) * (var(--wideBoost) - 1))
+    + (var(--mediumCount) * (var(--mediumBoost) - 1))
+  );
+  --statBase: calc(var(--remaining) / var(--denom));
+
+  --ink-strong: rgba(24, 14, 8, 0.94);
+  --ink: rgba(43,25,14,0.92);
+  --ink-soft: rgba(43,25,14,0.70);
+
+  --acc-gold: rgba(255,210,110,0.95);
+  --acc-coins: rgba(45, 205, 200, 0.95);
+
+  --acc-money: rgba(64, 194, 120, 0.95);
+  --acc-money-deep: rgba(18, 92, 54, 0.96);
+
+  color: var(--ink);
+
+  thead th {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+
+    background: linear-gradient(180deg, rgba(74,47,27,0.98), rgba(24,15,8,0.95));
+    color: rgba(255,245,218,0.94);
+
+    padding: .56rem .55rem;
+    border-bottom: 2px solid rgba(0,0,0,0.30);
+
+    font-size: clamp(1.06rem, 1.15vw, 1.20rem);
+    height: 60px;
+    vertical-align: middle;
+    background-clip: padding-box;
+  }
+
+  thead th.col-pos { width: var(--posW); text-align: center; }
+  thead th.col-player { width: var(--playerW); text-align: left; }
+  thead th.th-sort { width: var(--statBase); text-align: center; }
+
+  thead th.th-sort[data-stat="oneblock_blocks_broken"] { width: calc(var(--statBase) * var(--wideBoost)); }
+  thead th.th-sort[data-stat="killstreak_max"],
+  thead th.th-sort[data-stat="mejor_tiempo"] { width: calc(var(--statBase) * var(--mediumBoost)); }
+
+  thead th.th-sort.is-locked { opacity: .92; }
+
+  thead th.th-sort.active {
+    background: linear-gradient(180deg, rgba(85,55,32,0.98), rgba(24,15,8,0.96));
+    box-shadow:
+      inset 0 0 0 2px rgba(255,210,110,0.22),
+      inset 0 -2px 0 rgba(255,210,110,0.34);
+  }
+
+  thead th.th-sort:not(.is-locked) { cursor: pointer; user-select: none; }
+  thead th.th-sort:not(.is-locked):hover {
+    filter: brightness(1.06);
+    box-shadow: inset 0 -2px 0 rgba(255,210,110,0.22);
+  }
+
+  tbody td {
+    padding: .54rem .55rem;
+    border-bottom: 1px solid rgba(0,0,0,0.10);
+    font-size: clamp(1.08rem, 1.20vw, 1.22rem);
+    color: var(--ink);
+    background: transparent;
+    vertical-align: middle;
+    height: 60px;
+  }
+
+  tbody tr { transition: background .16s ease, box-shadow .16s ease, transform .16s ease; }
+
+  tbody tr:hover {
+    background: rgba(255,255,255,0.26);
+    box-shadow: inset 0 0 0 2px rgba(0,0,0,0.06);
+    transform: translateY(-1px);
+  }
+
+  tbody tr.top1 { background: linear-gradient(90deg, rgba(255,210,110,0.26), transparent 62%); }
+  tbody tr.top2 { background: linear-gradient(90deg, rgba(0,0,0,0.06), transparent 62%); }
+  tbody tr.top3 { background: linear-gradient(90deg, rgba(255,138,122,0.16), transparent 62%); }
+
+  .td-pos {
+    text-align: center;
+    white-space: nowrap;
+
+    .lb-rank {
+      display: inline-grid;
+      place-items: center;
+      width: 44px;
+      height: 36px;
+      border-radius: min(3px, var(--r));
+      background: rgba(0,0,0,0.07);
+      border: 2px solid rgba(0,0,0,0.12);
+      color: var(--ink-strong);
+      font-variant-numeric: tabular-nums;
+      font-weight: 800;
+    }
+
+    .lb-medal {
+      width: 28px;
+      height: 28px;
+      object-fit: contain;
+      filter: drop-shadow(0 10px 10px rgba(0,0,0,0.18));
+    }
+  }
+
+  .td-player { min-width: 0; }
+
+  .td-stat {
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+
+    &.active { background: rgba(255, 235, 185, 0.08); }
+
+    .num {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+
+      height: 44px;
+      min-height: 44px;
+
+      padding: .22rem .64rem;
+      border-radius: min(3px, var(--r));
+
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.36), rgba(0,0,0,0.03));
+      border: 2px solid rgba(0,0,0,0.16);
+
+      box-sizing: border-box;
+      overflow: hidden;
+
+      color: var(--ink-strong);
+
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.62),
+        inset 0 0 0 1px rgba(0,0,0,0.05),
+        0 10px 16px rgba(0,0,0,0.08);
+
+      &::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background:
+          linear-gradient(90deg, rgba(255,255,255,0.18), transparent 34%),
+          linear-gradient(180deg, rgba(255,255,255,0.14), transparent 50%);
+        opacity: .92;
+        mix-blend-mode: overlay;
+      }
+
+      &::after {
+        content: "";
+        position: absolute;
+        inset: 1px;
+        border-radius: min(3px, var(--r));
+        pointer-events: none;
+        box-shadow: inset 0 0 0 1px rgba(255,255,255,0.16);
+        opacity: .95;
+      }
+
+      .fitText__t {
+        font-weight: 900;
+        letter-spacing: 0.10px;
+        color: inherit;
+        font-variant-numeric: tabular-nums;
+        text-shadow: 0 1px 0 rgba(255,255,255,0.55);
+      }
+    }
+
+    .num--full { width: 100%; max-width: 100%; }
+    .num--pill { padding: .22rem .64rem; }
+
+    .num--score {
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.36), rgba(0,0,0,0.03)),
+        radial-gradient(circle at 30% 20%, rgba(255,210,110,0.22), transparent 62%);
+      border-color: rgba(255,210,110,0.52);
+      box-shadow:
+        inset 0 0 0 1px rgba(255,210,110,0.20),
+        inset 0 1px 0 rgba(255,255,255,0.62),
+        0 12px 18px rgba(0,0,0,0.09);
+    }
+
+    .num--coins {
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.36), rgba(0,0,0,0.03)),
+        radial-gradient(circle at 30% 20%, rgba(45, 205, 200, 0.18), transparent 62%);
+      border-color: rgba(45, 205, 200, 0.44);
+      box-shadow:
+        inset 0 0 0 1px rgba(45, 205, 200, 0.18),
+        inset 0 1px 0 rgba(255,255,255,0.62),
+        0 12px 18px rgba(0,0,0,0.08);
+
+      .fitText__t { color: rgba(10, 72, 72, 0.98); }
+    }
+
+    .num--money {
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.36), rgba(0,0,0,0.03)),
+        radial-gradient(circle at 30% 20%, rgba(64, 194, 120, 0.20), transparent 62%);
+      border-color: rgba(64, 194, 120, 0.50);
+      box-shadow:
+        inset 0 0 0 1px rgba(64, 194, 120, 0.18),
+        inset 0 1px 0 rgba(255,255,255,0.62),
+        0 12px 18px rgba(0,0,0,0.08);
+
+      .fitText__t { color: var(--acc-money-deep); }
+    }
+
+    .num--tier {
+      .fitText__t { text-shadow: 0 1px 0 rgba(255,255,255,0.55); }
+    }
+
+    /* Texto por tier (lo que te faltaba: el nombre debe “lucir” igual que coins/dinero) */
+    .tier-text-0 .fitText__t { color: rgba(70, 70, 70, 0.96); }
+    .tier-text-1 .fitText__t { color: rgba(92, 74, 58, 0.96); }
+    .tier-text-2 .fitText__t { color: rgba(96, 72, 26, 0.98); }
+    .tier-text-3 .fitText__t { color: rgba(58, 92, 34, 0.98); }
+    .tier-text-4 .fitText__t { color: rgba(16, 86, 76, 0.98); }
+    .tier-text-5 .fitText__t { color: rgba(18, 74, 112, 0.98); }
+    .tier-text-6 .fitText__t { color: rgba(74, 34, 124, 0.98); }
+    .tier-text-7 .fitText__t { color: rgba(120, 64, 12, 0.98); }
+    .tier-text-8 .fitText__t { color: rgba(132, 24, 24, 0.98); }
+    .tier-text-9 .fitText__t { color: rgba(120, 86, 10, 0.98); }
+    .tier-text-10 .fitText__t { color: rgba(92, 62, 6, 0.98); }
+  }
+}
+
+.lb-player {
+  display: flex;
+  align-items: center;
+  gap: .70rem;
+  min-width: 0;
+
+  .lb-head {
+    width: 34px;
+    height: 34px;
+    border-radius: min(3px, var(--r));
+    border: 2px solid rgba(0,0,0,0.12);
+    background: rgba(0,0,0,0.06);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.18);
+    flex: 0 0 auto;
+  }
+
+  .lb-player__text { min-width: 0; }
+
+  .lb-nameRow { display: flex; align-items: center; gap: .55rem; min-width: 0; }
+  .lb-badges { display: inline-flex; align-items: center; gap: .35rem; flex: 0 0 auto; }
+
+  .lb-player__sub {
+    margin-top: .12rem;
+    font-size: 1.02rem;
+    color: var(--ink-soft);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+/* Tier backgrounds (los tuyos, igual) */
+.gens-tier-0 { border-color: rgba(90, 90, 90, .42) !important;
+  background: linear-gradient(180deg, rgba(255,255,255,0.36), rgba(0,0,0,0.03)),
+  radial-gradient(circle at 30% 20%, rgba(90,90,90,0.20), transparent 62%) !important; }
+.gens-tier-1 { border-color: rgba(120, 110, 95, .48) !important;
+  background: linear-gradient(180deg, rgba(255,255,255,0.36), rgba(0,0,0,0.03)),
+  radial-gradient(circle at 30% 20%, rgba(120,110,95,0.22), transparent 62%) !important; }
+.gens-tier-2 { border-color: rgba(135, 110, 70, .50) !important;
+  background: linear-gradient(180deg, rgba(255,255,255,0.36), rgba(0,0,0,0.03)),
+  radial-gradient(circle at 30% 20%, rgba(135,110,70,0.24), transparent 62%) !important; }
+.gens-tier-3 { border-color: rgba(120, 140, 85, .52) !important;
+  background: linear-gradient(180deg, rgba(255,255,255,0.36), rgba(0,0,0,0.03)),
+  radial-gradient(circle at 30% 20%, rgba(120,140,85,0.24), transparent 62%) !important; }
+.gens-tier-4 { border-color: rgba(90, 150, 140, .52) !important;
+  background: linear-gradient(180deg, rgba(255,255,255,0.36), rgba(0,0,0,0.03)),
+  radial-gradient(circle at 30% 20%, rgba(90,150,140,0.26), transparent 62%) !important; }
+.gens-tier-5 { border-color: rgba(80, 140, 190, .54) !important;
+  background: linear-gradient(180deg, rgba(255,255,255,0.36), rgba(0,0,0,0.03)),
+  radial-gradient(circle at 30% 20%, rgba(80,140,190,0.26), transparent 62%) !important; }
+.gens-tier-6 { border-color: rgba(150, 110, 200, .54) !important;
+  background: linear-gradient(180deg, rgba(255,255,255,0.36), rgba(0,0,0,0.03)),
+  radial-gradient(circle at 30% 20%, rgba(150,110,200,0.26), transparent 62%) !important; }
+.gens-tier-7 { border-color: rgba(230, 170, 90, .58) !important;
+  background: linear-gradient(180deg, rgba(255,255,255,0.36), rgba(0,0,0,0.03)),
+  radial-gradient(circle at 30% 20%, rgba(230,170,90,0.28), transparent 62%) !important; }
+.gens-tier-8 { border-color: rgba(255, 120, 120, .60) !important;
+  background: linear-gradient(180deg, rgba(255,255,255,0.36), rgba(0,0,0,0.03)),
+  radial-gradient(circle at 30% 20%, rgba(255,120,120,0.26), transparent 62%) !important; }
+.gens-tier-9 { border-color: rgba(255, 210, 110, .62) !important;
+  background: linear-gradient(180deg, rgba(255,255,255,0.36), rgba(0,0,0,0.03)),
+  radial-gradient(circle at 30% 20%, rgba(255,210,110,0.30), transparent 62%) !important; }
+.gens-tier-10 { border-color: rgba(255, 230, 160, .66) !important;
+  background: linear-gradient(180deg, rgba(255,255,255,0.36), rgba(0,0,0,0.03)),
+  radial-gradient(circle at 30% 20%, rgba(255,230,160,0.32), transparent 62%) !important; }
+
+@media (max-width: 920px) {
+  .lb-table {
+    min-width: 920px;
+    --playerW: clamp(220px, 34vw, 290px);
+
+    tbody td { height: 58px; }
+    thead th { height: 58px; }
+
+    .td-stat .num { height: 42px; min-height: 42px; }
+  }
+}
+
+@media (max-width: 520px) {
+  .lb-table {
+    min-width: 880px;
+
+    tbody td {
+      font-size: 1.05rem;
+      height: 56px;
+      padding: .50rem .48rem;
+    }
+
+    thead th {
+      font-size: 1.02rem;
+      height: 56px;
+      padding: .50rem .48rem;
+    }
+
+    .td-stat .num {
+      height: 40px;
+      min-height: 40px;
+      padding: .20rem .56rem;
+
+      .fitText__t {
+        font-weight: 900;
+        letter-spacing: 0.08px;
+      }
+    }
+
+    .lb-player .lb-head { width: 32px; height: 32px; }
+    .lb-player .lb-player__sub { font-size: .98rem; }
+  }
+}

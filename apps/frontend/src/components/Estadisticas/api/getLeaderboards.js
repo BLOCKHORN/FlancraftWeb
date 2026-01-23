@@ -1,4 +1,4 @@
-// src/api/getLeaderboards.js
+// src/components/Estadisticas/api/getLeaderboards.js
 const API_BASE = import.meta.env.VITE_BACKEND_URL || "http://localhost:10000";
 
 export async function getLeaderboards({ tipo, servidor, limit = 10, offset = 0, asc }) {

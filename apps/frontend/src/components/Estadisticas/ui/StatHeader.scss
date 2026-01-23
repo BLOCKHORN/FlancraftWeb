@@ -1,0 +1,82 @@
+/* src/components/Estadisticas/ui/StatHeader.scss */
+
+.th-sort {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+
+  /* hereda el look del header que ya estabas dando en LeaderboardsTable.scss */
+  /* aquí solo controlamos layout interno y el icono */
+
+  &.is-clickable {
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .th-sort__label {
+    display: flex;
+    align-items: center;
+    justify-content: center; /* tus headers están centrados */
+    gap: .30rem;
+  }
+
+  /* Bloque texto + icono */
+  .th-sort__text {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .42rem; /* icono más junto al texto */
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .th-sort__icon {
+    width: 22px;   /* más grande */
+    height: 22px;  /* más grande */
+    object-fit: contain;
+    flex: 0 0 auto;
+    opacity: .98;
+    filter: drop-shadow(0 2px 2px rgba(0,0,0,0.35));
+    transform: translateY(0.5px); /* micro alineación visual */
+  }
+
+  .th-sort__textInner {
+    display: inline-flex;
+    align-items: center;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  /* Slot de flecha fijo para no “bailar” el header */
+  .th-sort__arrowSlot {
+    width: 12px; /* un pelín más estrecho */
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    opacity: .92;
+    margin-left: .12rem;
+  }
+
+  .th-sort__arrow {
+    font-style: normal;
+    font-size: 12px;
+    line-height: 1;
+    transform: translateY(-0.5px);
+  }
+}
+
+/* Responsive: mantenemos iconos grandes pero ajustamos un poco */
+@media (max-width: 920px) {
+  .th-sort {
+    .th-sort__text { gap: .38rem; }
+    .th-sort__icon { width: 21px; height: 21px; }
+  }
+}
+
+@media (max-width: 520px) {
+  .th-sort {
+    .th-sort__text { gap: .34rem; }
+    .th-sort__icon { width: 20px; height: 20px; }
+    .th-sort__arrowSlot { width: 11px; }
+  }
+}

@@ -43,17 +43,16 @@ exports.importarStat = async (req, res) => {
  * - Vanilla SIEMPRE se actualiza
  * - Extras SOLO si sync_context === "online"
  *
- * FIX:
- * - Para offline/logout NO usamos UPSERT (evita pisar extras a 0/default)
- * - UPDATE selectivo; si no existe fila -> INSERT mínimo
- *
  * PRO (Gens):
  * - coins_balance = balance actual
  * - coins_ganadas_total = total ganado (acumula SOLO subidas)
  * - dinero = balance actual (vault)
- * - dinero_ganado_total = total ganado (acumula SOLO subidas, SOLO gens)
+ * - dinero_ganado_total = total ganado (acumula SOLO subidas)
  * - gens_value_total / gens_income_h / gens_highest_tier = calculado en plugin leyendo AxGens
  * - gens_tiers = jsonb con desglose por tier (p.ej. {"1": 10, "10": 2})
+ *
+ * PRO (OneBlock):
+ * - dinero_ganado_total también acumula SOLO subidas (para OBPoints)
  */
 exports.importarStatsAgrupadas = async (req, res) => {
   const num = (v, def = 0) => {
@@ -75,11 +74,8 @@ exports.importarStatsAgrupadas = async (req, res) => {
 
   const jsonOrUndef = (v) => {
     if (v === undefined || v === null) return undefined;
-
-    // ya viene JSON (objeto/array)
     if (typeof v === "object") return v;
 
-    // viene como string JSON
     if (typeof v === "string") {
       const s = v.trim();
       if (!s) return undefined;
@@ -153,31 +149,16 @@ exports.importarStatsAgrupadas = async (req, res) => {
     setIfDefined(extrasUpdate, "prestigios", numOrUndef(req.body.prestigios));
     setIfDefined(extrasUpdate, "nivel", textOrUndef(req.body.nivel));
 
-    setIfDefined(extrasUpdate, "kdr", numOrUndef(req.body.kdr));
-    setIfDefined(extrasUpdate, "killstreak_max", numOrUndef(req.body.killstreak_max));
-    setIfDefined(extrasUpdate, "damage_dealt", numOrUndef(req.body.damage_dealt));
-
-    setIfDefined(extrasUpdate, "mejor_tiempo", numOrUndef(req.body.mejor_tiempo));
-    setIfDefined(extrasUpdate, "completadas_total", numOrUndef(req.body.completadas_total));
-    setIfDefined(extrasUpdate, "perfect_runs", numOrUndef(req.body.perfect_runs));
-    setIfDefined(extrasUpdate, "falls", numOrUndef(req.body.falls));
-    setIfDefined(extrasUpdate, "medallas_ganadas", numOrUndef(req.body.medallas_ganadas));
-    setIfDefined(extrasUpdate, "racha_dias", numOrUndef(req.body.racha_dias));
-
-    // snapshots (si el plugin los envía)
-    setIfDefined(extrasUpdate, "coins_snapshot", numOrUndef(req.body.coins_snapshot));
-    setIfDefined(extrasUpdate, "dinero_snapshot", numOrUndef(req.body.dinero_snapshot));
-
     // AxGens PRO
     setIfDefined(extrasUpdate, "gens_value_total", numOrUndef(req.body.gens_value_total));
     setIfDefined(extrasUpdate, "gens_income_h", numOrUndef(req.body.gens_income_h));
     setIfDefined(extrasUpdate, "gens_highest_tier", numOrUndef(req.body.gens_highest_tier));
-
-    // ✅ Guardar jsonb real
     setIfDefined(extrasUpdate, "gens_tiers", jsonOrUndef(req.body.gens_tiers));
-
-    // (Opcional) mantener string si lo sigues enviando y tienes esa columna
     setIfDefined(extrasUpdate, "gens_tiers_json", textOrUndef(req.body.gens_tiers_json));
+
+    // snapshots (si lo sigues mandando)
+    setIfDefined(extrasUpdate, "coins_snapshot", numOrUndef(req.body.coins_snapshot));
+    setIfDefined(extrasUpdate, "dinero_snapshot", numOrUndef(req.body.dinero_snapshot));
   }
 
   const { data: existing, error: findErr } = await db
@@ -192,36 +173,37 @@ exports.importarStatsAgrupadas = async (req, res) => {
     return res.status(500).json({ error: "Error al comprobar estadísticas existentes." });
   }
 
-  const isGens = String(servidor).toLowerCase() === "gens";
+  const serverKey = String(servidor).toLowerCase();
+  const trackMoneyTotals = serverKey === "gens" || serverKey === "oneblock";
+  const trackCoinsTotals = serverKey === "gens";
+
   const max0 = (x) => Math.max(0, Number(x) || 0);
 
-  const buildProGensPayload = (prevRow, incoming) => {
+  const buildTotalsPayload = (prevRow, incoming) => {
     const out = { ...incoming };
 
-    if (incoming.coins_balance !== undefined) {
+    if (trackCoinsTotals && incoming.coins_balance !== undefined) {
       const prevBal = Number(prevRow?.coins_balance ?? 0) || 0;
       const prevTotalRaw = Number(prevRow?.coins_ganadas_total ?? prevRow?.coins_balance ?? 0) || 0;
       const prevTotal = Math.max(prevTotalRaw, prevBal);
 
       const newBal = Number(incoming.coins_balance) || 0;
       const delta = max0(newBal - prevBal);
-      const newTotal = prevTotal + delta;
 
       out.coins_balance = newBal;
-      out.coins_ganadas_total = newTotal;
+      out.coins_ganadas_total = prevTotal + delta;
     }
 
-    if (incoming.dinero !== undefined) {
+    if (trackMoneyTotals && incoming.dinero !== undefined) {
       const prevBal = Number(prevRow?.dinero ?? 0) || 0;
       const prevTotalRaw = Number(prevRow?.dinero_ganado_total ?? prevRow?.dinero ?? 0) || 0;
       const prevTotal = Math.max(prevTotalRaw, prevBal);
 
       const newBal = Number(incoming.dinero) || 0;
       const delta = max0(newBal - prevBal);
-      const newTotal = prevTotal + delta;
 
       out.dinero = newBal;
-      out.dinero_ganado_total = newTotal;
+      out.dinero_ganado_total = prevTotal + delta;
     }
 
     return out;
@@ -229,10 +211,7 @@ exports.importarStatsAgrupadas = async (req, res) => {
 
   if (existing) {
     let updatePayload = allowExtras ? { ...baseUpdate, ...extrasUpdate } : { ...baseUpdate };
-
-    if (allowExtras && isGens) {
-      updatePayload = buildProGensPayload(existing, updatePayload);
-    }
+    if (allowExtras) updatePayload = buildTotalsPayload(existing, updatePayload);
 
     const { error: updErr } = await db
       .from("estadisticas_agrupadas")
@@ -255,20 +234,14 @@ exports.importarStatsAgrupadas = async (req, res) => {
     ...(allowExtras ? extrasUpdate : {}),
   };
 
-  if (allowExtras && isGens) {
-    const initialRow = {
-      coins_balance: 0,
-      coins_ganadas_total: 0,
-      dinero: 0,
-      dinero_ganado_total: 0,
-    };
+  if (allowExtras) {
+    const initialRow = { coins_balance: 0, coins_ganadas_total: 0, dinero: 0, dinero_ganado_total: 0 };
+    insertPayload = buildTotalsPayload(initialRow, insertPayload);
 
-    insertPayload = buildProGensPayload(initialRow, insertPayload);
-
-    if (insertPayload.coins_ganadas_total === undefined && insertPayload.coins_balance !== undefined) {
+    if (trackCoinsTotals && insertPayload.coins_ganadas_total === undefined && insertPayload.coins_balance !== undefined) {
       insertPayload.coins_ganadas_total = insertPayload.coins_balance;
     }
-    if (insertPayload.dinero_ganado_total === undefined && insertPayload.dinero !== undefined) {
+    if (trackMoneyTotals && insertPayload.dinero_ganado_total === undefined && insertPayload.dinero !== undefined) {
       insertPayload.dinero_ganado_total = insertPayload.dinero;
     }
   }
@@ -284,7 +257,7 @@ exports.importarStatsAgrupadas = async (req, res) => {
 };
 
 /**
- * Ranking desde vista optimizada
+ * Ranking desde vista optimizada (legacy)
  */
 exports.obtenerRankingEstadisticas = async (req, res) => {
   const { tipo, servidor, limit = 10, offset = 0 } = req.query;
@@ -294,9 +267,7 @@ exports.obtenerRankingEstadisticas = async (req, res) => {
   if (tipo) query = query.eq("tipo", tipo);
   if (servidor) query = query.eq("servidor", servidor);
 
-  query = query
-    .order("valor", { ascending: false })
-    .range(+offset, +offset + +limit - 1);
+  query = query.order("valor", { ascending: false }).range(+offset, +offset + +limit - 1);
 
   const { data, count, error } = await query;
 
@@ -305,19 +276,19 @@ exports.obtenerRankingEstadisticas = async (req, res) => {
     return res.status(500).json({ error: "Error al obtener ranking." });
   }
 
-  return res.json({
-    total: count,
-    resultados: data,
-  });
+  return res.json({ total: count, resultados: data });
 };
 
 /**
- * Leaderboard desde tabla agrupada
+ * Leaderboard desde tabla agrupada / o vista calculada (genpoints / obpoints)
  */
 exports.obtenerLeaderboards = async (req, res) => {
   const { tipo = "tiempo_jugado", servidor, limit = 10, offset = 0, asc } = req.query;
 
   const tiposValidos = [
+    "genpoints",
+    "obpoints",
+
     "bloques_minados",
     "bloques_colocados",
     "mobs_matados",
@@ -356,17 +327,6 @@ exports.obtenerLeaderboards = async (req, res) => {
     "gens_highest_tier",
 
     "nivel",
-
-    "kdr",
-    "killstreak_max",
-    "damage_dealt",
-
-    "mejor_tiempo",
-    "completadas_total",
-    "perfect_runs",
-    "falls",
-    "medallas_ganadas",
-    "racha_dias",
   ];
 
   if (!tiposValidos.includes(tipo)) {
@@ -376,10 +336,51 @@ exports.obtenerLeaderboards = async (req, res) => {
   let ascending = false;
   if (typeof asc !== "undefined") {
     ascending = String(asc).toLowerCase() === "true";
-  } else if (tipo === "mejor_tiempo") {
-    ascending = true;
   }
 
+  // ✅ Caso especial: genpoints (vista calculada)
+  if (tipo === "genpoints") {
+    let q = db
+      .from("vista_leaderboard_genspoints")
+      .select("*", { count: "exact" })
+      .order("genpoints", { ascending })
+      .range(+offset, +offset + +limit - 1);
+
+    if (servidor && String(servidor).toLowerCase() !== "gens") {
+      return res.json({ total: 0, resultados: [] });
+    }
+
+    const { data, count, error } = await q;
+    if (error) {
+      console.error("[FlanSync] Error al obtener genpoints:", error.message);
+      return res.status(500).json({ error: "Error al obtener datos." });
+    }
+
+    return res.json({ total: count, resultados: data });
+  }
+
+  // ✅ Caso especial: obpoints (vista calculada)
+  if (tipo === "obpoints") {
+    let q = db
+      .from("vista_leaderboard_obpoints")
+      .select("*", { count: "exact" })
+      .order("obpoints", { ascending })
+      .range(+offset, +offset + +limit - 1);
+
+    if (servidor && String(servidor).toLowerCase() !== "oneblock") {
+      return res.json({ total: 0, resultados: [] });
+    }
+
+    const { data, count, error } = await q;
+    if (error) {
+      console.error("[FlanSync] Error al obtener obpoints:", error.message);
+      return res.status(500).json({ error: "Error al obtener datos." });
+    }
+
+    return res.json({ total: count, resultados: data });
+  }
+
+  // ✅ Resto de tipos: tabla normal
   let query = db
     .from("estadisticas_agrupadas")
     .select("*", { count: "exact" })

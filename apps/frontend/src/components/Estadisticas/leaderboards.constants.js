@@ -1,0 +1,111 @@
+// src/components/Estadisticas/leaderboards.constants.js
+
+export const SERVIDOR_API_MAP = {
+  survival_clasico: "survival",
+  oneblock: "oneblock",
+  gens: "gens",
+  survival_anarquico: "anarquico",
+  parkour: "parkour",
+};
+
+export const SERVIDORES = [
+  { id: "survival_clasico", nombre: "Survival Clásico", imagen: "/assets/reinos/survival-clasico.webp" },
+  { id: "oneblock", nombre: "OneBlock", imagen: "/assets/reinos/oneblock.webp" },
+  { id: "gens", nombre: "Gens", imagen: "/assets/reinos/gens.webp" },
+  { id: "survival_anarquico", nombre: "Survival Anárquico", imagen: "/assets/reinos/survival-anarquico.webp" },
+  { id: "parkour", nombre: "Parkour", imagen: "/assets/reinos/parkour.webp" },
+];
+
+export const STATS_BY_SERVER = {
+  survival_clasico: ["tiempo_jugado", "bloques_minados", "mobs_matados", "dinero", "kills_pvp", "muertes"],
+
+  // ✅ ONEBLOCK (nuevo): quitamos muertes y metemos OBPoints + orden que has pedido
+  oneblock: ["obpoints", "oneblock_blocks_broken", "phase_actual", "dinero", "mobs_matados", "tiempo_jugado"],
+
+  gens: ["genpoints", "gens_value_total", "coins_balance", "nivel", "dinero", "tiempo_jugado"],
+  survival_anarquico: ["kills_pvp", "kdr", "killstreak_max", "damage_dealt", "muertes", "tiempo_jugado"],
+  parkour: ["mejor_tiempo", "completadas_total", "perfect_runs", "falls", "medallas_ganadas", "racha_dias", "tiempo_jugado"],
+};
+
+export const DEFAULTS_BY_SERVER = {
+  survival_clasico: { orden: "tiempo_jugado", asc: false },
+
+  // ✅ ONEBLOCK: por defecto ordenar por OBPoints desc
+  oneblock: { orden: "obpoints", asc: false },
+
+  gens: { orden: "genpoints", asc: false },
+  survival_anarquico: { orden: "kills_pvp", asc: false },
+  parkour: { orden: "mejor_tiempo", asc: true },
+};
+
+export const LABELS = {
+  genpoints: "Genpoints",
+  obpoints: "OBPoints",
+
+  tiempo_jugado: "Tiempo",
+  muertes: "Muertes",
+  bloques_minados: "Minados",
+  mobs_matados: "Mobs",
+  kills_pvp: "Kills PvP",
+  dinero: "Dinero",
+
+  island_level: "Nivel Isla",
+  oneblock_blocks_broken: "Bloque Infinito",
+  phase_actual: "Fase",
+
+  coins_balance: "Coins",
+  nivel: "Nivel",
+  gens_value_total: "Valor Isla",
+
+  kdr: "KDR",
+  killstreak_max: "Racha Máx",
+  damage_dealt: "Daño",
+
+  mejor_tiempo: "Mejor Tiempo",
+  completadas_total: "Completadas",
+  perfect_runs: "Perfect",
+  falls: "Caídas",
+  medallas_ganadas: "Medallas",
+  racha_dias: "Racha",
+};
+
+export const STAT_HELP = {
+  genpoints:
+    "Puntuación competitiva de Gens. No baja al gastar: se basa en totales ganados (coins/dinero) + valor real de generadores y tu nivel.",
+
+  // ✅ ONEBLOCK
+  obpoints:
+    "Puntuación competitiva de OneBlock. Prioriza la fase de progreso, luego bloque infinito, dinero ganado, mobs y tiempo jugado.",
+
+  gens_value_total:
+    "Etapa del Valor de Isla (lo que llevas invertido en generadores). Puede subir o bajar porque depende de tus generadores actuales.",
+  coins_balance: "Coins actuales en Gens. Pasa el ratón para ver el total ganado (no baja al gastar).",
+  nivel: "Nivel del jugador en Gens (se sincroniza desde el servidor).",
+  dinero: "Dinero actual. Pasa el ratón para ver el total ganado (no baja al gastar).",
+  tiempo_jugado: "Tiempo total jugado en este servidor.",
+  muertes: "Número total de muertes del jugador en este servidor.",
+  bloques_minados: "Bloques minados (estadística de Minecraft).",
+  mobs_matados: "Mobs eliminados (estadística de Minecraft).",
+  kills_pvp: "Kills a otros jugadores (PvP).",
+
+  island_level: "Nivel de tu isla.",
+  oneblock_blocks_broken: "Bloques rotos en el bloque infinito (lifetime).",
+  phase_actual: "Fase numérica del progreso de OneBlock.",
+
+  mejor_tiempo: "Mejor tiempo registrado en Parkour (mm:ss.ms).",
+  completadas_total: "Número total de recorridos completados.",
+  perfect_runs: "Recorridos perfectos (sin fallos).",
+  falls: "Caídas registradas.",
+  medallas_ganadas: "Medallas conseguidas en Parkour.",
+  racha_dias: "Racha de días consecutivos jugando Parkour.",
+
+  kdr: "Ratio K/D: kills PvP dividido entre muertes.",
+  killstreak_max: "Mayor racha de kills sin morir.",
+  damage_dealt: "Daño total infligido.",
+};
+
+export const MEDALLAS = {
+  1: "/assets/oro.webp",
+  2: "/assets/plata.webp",
+  3: "/assets/bronce.webp",
+};

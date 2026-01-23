@@ -1,0 +1,32 @@
+/* =========================
+   PAGINATION
+========================= */
+.lb-pagination {
+  padding: 1rem 1rem 1.2rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: .45rem;
+  justify-content: center;
+  background: linear-gradient(180deg, rgba(0,0,0,0.02), rgba(0,0,0,0.04));
+  border-top: 2px solid rgba(0,0,0,0.10);
+
+  button {
+    border: 2px solid rgba(0,0,0,0.12);
+    background: rgba(255,255,255,0.18);
+    color: rgba(43,25,14,0.84);
+    border-radius: var(--r);
+    padding: .45rem .65rem;
+    cursor: pointer;
+
+    transition: transform .16s ease, background .16s ease, filter .16s ease;
+
+    &:hover { transform: translateY(-1px); background: rgba(255,255,255,0.26); }
+    &:active { transform: translateY(0px) scale(.99); }
+
+    &.active {
+      background: rgba(0,0,0,0.08);
+      border-color: rgba(0,0,0,0.16);
+      box-shadow: inset 0 0 0 2px rgba(255,210,110,0.14);
+    }
+  }
+}
