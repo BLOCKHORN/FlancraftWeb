@@ -1,3 +1,4 @@
+// src/components/Estadisticas/leaderboards.utils.js
 export const cn = (...args) =>
   args
     .flatMap((a) => {
@@ -20,9 +21,11 @@ export function safeNum(v) {
   const n = Number(v);
   return Number.isFinite(n) ? n : 0;
 }
+
 export function log10p1(v) {
   return Math.log10(1 + Math.max(0, safeNum(v)));
 }
+
 export function sqrtp(v) {
   return Math.sqrt(Math.max(0, safeNum(v)));
 }
@@ -32,6 +35,7 @@ export function formatMoney(n) {
   if (!Number.isFinite(x)) return "—";
   return `${x.toLocaleString("es-ES")} $`;
 }
+
 export function formatInt(n) {
   const x = Number(n);
   if (!Number.isFinite(x)) return "—";

@@ -17,22 +17,16 @@ export const SERVIDORES = [
 ];
 
 export const STATS_BY_SERVER = {
-  survival_clasico: ["tiempo_jugado", "bloques_minados", "mobs_matados", "dinero", "kills_pvp", "muertes"],
-
-  // ✅ ONEBLOCK (nuevo): quitamos muertes y metemos OBPoints + orden que has pedido
-  oneblock: ["obpoints", "oneblock_blocks_broken", "phase_actual", "dinero", "mobs_matados", "tiempo_jugado"],
-
+  survival_clasico: ["svpoints", "dinero", "bloques_minados", "mobs_matados", "kills_pvp", "muertes", "tiempo_jugado"],
+  oneblock: ["obpoints", "phase_actual", "oneblock_blocks_broken", "dinero", "mobs_matados", "tiempo_jugado"],
   gens: ["genpoints", "gens_value_total", "coins_balance", "nivel", "dinero", "tiempo_jugado"],
   survival_anarquico: ["kills_pvp", "kdr", "killstreak_max", "damage_dealt", "muertes", "tiempo_jugado"],
   parkour: ["mejor_tiempo", "completadas_total", "perfect_runs", "falls", "medallas_ganadas", "racha_dias", "tiempo_jugado"],
 };
 
 export const DEFAULTS_BY_SERVER = {
-  survival_clasico: { orden: "tiempo_jugado", asc: false },
-
-  // ✅ ONEBLOCK: por defecto ordenar por OBPoints desc
+  survival_clasico: { orden: "svpoints", asc: false },
   oneblock: { orden: "obpoints", asc: false },
-
   gens: { orden: "genpoints", asc: false },
   survival_anarquico: { orden: "kills_pvp", asc: false },
   parkour: { orden: "mejor_tiempo", asc: true },
@@ -41,6 +35,7 @@ export const DEFAULTS_BY_SERVER = {
 export const LABELS = {
   genpoints: "Genpoints",
   obpoints: "OBPoints",
+  svpoints: "SVPoints",
 
   tiempo_jugado: "Tiempo",
   muertes: "Muertes",
@@ -51,7 +46,7 @@ export const LABELS = {
 
   island_level: "Nivel Isla",
   oneblock_blocks_broken: "Bloque Infinito",
-  phase_actual: "Fase",
+  phase_actual: "Bioma Isla",
 
   coins_balance: "Coins",
   nivel: "Nivel",
@@ -73,9 +68,11 @@ export const STAT_HELP = {
   genpoints:
     "Puntuación competitiva de Gens. No baja al gastar: se basa en totales ganados (coins/dinero) + valor real de generadores y tu nivel.",
 
-  // ✅ ONEBLOCK
   obpoints:
     "Puntuación competitiva de OneBlock. Prioriza la fase de progreso, luego bloque infinito, dinero ganado, mobs y tiempo jugado.",
+
+  svpoints:
+    "Puntuación competitiva de Survival. Suma progreso (minados/mobs/kills/dinero ganado total) y resta muertes. El tiempo pesa poco.",
 
   gens_value_total:
     "Etapa del Valor de Isla (lo que llevas invertido en generadores). Puede subir o bajar porque depende de tus generadores actuales.",

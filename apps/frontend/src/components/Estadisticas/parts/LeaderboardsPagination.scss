@@ -1,32 +1,125 @@
-/* =========================
-   PAGINATION
-========================= */
+/* src/components/Estadisticas/parts/LeaderboardsPagination.scss */
+
 .lb-pagination {
-  padding: 1rem 1rem 1.2rem;
+  width: 100%;
   display: flex;
-  flex-wrap: wrap;
-  gap: .45rem;
   justify-content: center;
-  background: linear-gradient(180deg, rgba(0,0,0,0.02), rgba(0,0,0,0.04));
-  border-top: 2px solid rgba(0,0,0,0.10);
+  margin: 18px 0 10px;
+}
 
-  button {
-    border: 2px solid rgba(0,0,0,0.12);
-    background: rgba(255,255,255,0.18);
-    color: rgba(43,25,14,0.84);
-    border-radius: var(--r);
-    padding: .45rem .65rem;
-    cursor: pointer;
+.lb-pagination__inner {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
 
-    transition: transform .16s ease, background .16s ease, filter .16s ease;
+  padding: 10px 12px;
+  border-radius: 3px;
+  border: 1px solid rgba(0,0,0,.20);
+  background: rgba(255,255,255,.08);
+  box-shadow: 0 6px 14px rgba(0,0,0,.18);
+  backdrop-filter: blur(3px);
+}
 
-    &:hover { transform: translateY(-1px); background: rgba(255,255,255,0.26); }
-    &:active { transform: translateY(0px) scale(.99); }
+.lb-pages {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: min(720px, 82vw);
+  overflow: hidden;
+}
 
-    &.active {
-      background: rgba(0,0,0,0.08);
-      border-color: rgba(0,0,0,0.16);
-      box-shadow: inset 0 0 0 2px rgba(255,210,110,0.14);
-    }
+.lb-pageBtn {
+  height: 32px;
+  min-width: 34px;
+  padding: 0 10px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 3px;
+  border: 1px solid rgba(0,0,0,.22);
+  background: rgba(255,255,255,.06);
+  color: rgba(15, 15, 15, .92);
+
+  font-weight: 800;
+  font-size: 13px;
+  letter-spacing: .2px;
+
+  cursor: pointer;
+  user-select: none;
+
+  transition: transform 120ms ease, background 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+    background: rgba(255,255,255,.12);
+    border-color: rgba(0,0,0,.32);
+    box-shadow: 0 6px 10px rgba(0,0,0,.16);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: none;
+  }
+
+  &:disabled {
+    opacity: .45;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+
+  &.active {
+    background: rgba(0,0,0,.10);
+    border-color: rgba(0,0,0,.40);
+    box-shadow: inset 0 -2px 0 rgba(0,0,0,.35);
+  }
+}
+
+.lb-pageBtn--nav {
+  min-width: 34px;
+  padding: 0 8px;
+}
+
+.lb-ellipsis {
+  width: 22px;
+  text-align: center;
+  opacity: .70;
+  font-weight: 900;
+  transform: translateY(-1px);
+}
+
+.lb-pagination__meta {
+  margin-left: 6px;
+  padding-left: 10px;
+  border-left: 1px solid rgba(0,0,0,.18);
+}
+
+.lb-metaText {
+  font-size: 12px;
+  opacity: .86;
+
+  b {
+    opacity: 1;
+  }
+}
+
+/* Responsive */
+@media (max-width: 560px) {
+  .lb-pagination__inner {
+    gap: 8px;
+    padding: 10px 10px;
+  }
+
+  .lb-metaText {
+    display: none; /* en móvil limpia */
+  }
+
+  .lb-pageBtn {
+    height: 30px;
+    min-width: 32px;
+    padding: 0 8px;
+    font-size: 12px;
   }
 }

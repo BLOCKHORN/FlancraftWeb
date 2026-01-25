@@ -16,12 +16,16 @@ import {
   safeNum,
   getPlatform,
   getIslandLevel,
+  formatearTiempo,
+  formatearTiempoParkour,
+  formatInt,
 } from "../../components/Estadisticas/leaderboards.utils";
 
 import { computeGensScore } from "../../components/Estadisticas/leaderboards.gens";
 
 import useLeaderboardsData from "../../components/Estadisticas/hooks/useLeaderboardsData";
 import useUsuariosVinculados from "../../components/Estadisticas/hooks/useUsuariosVinculados";
+import { useGlobalPodium } from "../../components/Estadisticas/hooks/useGlobalPodium";
 
 import LeaderboardsHeader from "../../components/Estadisticas/parts/LeaderboardsHeader";
 import LeaderboardsPodium from "../../components/Estadisticas/parts/LeaderboardsPodium";
@@ -34,9 +38,13 @@ import LeaderboardsPagination from "../../components/Estadisticas/parts/Leaderbo
 export default function Leaderboards() {
   const navigate = useNavigate();
 
-  const [servidor, setServidor] = useState(SERVIDORES?.[2]?.id || SERVIDORES?.[0]?.id);
-
-  const servidorApi = useMemo(() => SERVIDOR_API_MAP[servidor] || servidor, [servidor]);
+  const [servidor, setServidor] = useState(
+    SERVIDORES?.[2]?.id || SERVIDORES?.[0]?.id
+  );
+  const servidorApi = useMemo(
+    () => SERVIDOR_API_MAP[servidor] || servidor,
+    [servidor]
+  );
 
   const defaults = useMemo(() => {
     return DEFAULTS_BY_SERVER[servidor] || { orden: "tiempo_jugado", asc: false };
@@ -53,24 +61,6 @@ export default function Leaderboards() {
   const [soloVinculados, setSoloVinculados] = useState(false);
   const [openCard, setOpenCard] = useState(null);
 
-  const formatearTiempo = useCallback((sec) => {
-    const total = Math.floor(Number(sec || 0));
-    const h = Math.floor(total / 3600);
-    const m = Math.floor((total % 3600) / 60);
-    return `${h}h ${m}m`;
-  }, []);
-
-  const formatearTiempoParkour = useCallback((msOrSec) => {
-    const n = Number(msOrSec || 0);
-    if (!Number.isFinite(n) || n <= 0) return "—";
-    const totalMs = n > 10_000 ? n : n * 1000;
-    const totalSec = Math.floor(totalMs / 1000);
-    const m = Math.floor(totalSec / 60);
-    const s = totalSec % 60;
-    const ms = Math.floor((totalMs % 1000) / 10);
-    return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}.${String(ms).padStart(2, "0")}`;
-  }, []);
-
   useEffect(() => {
     setOrden(defaults.orden);
     setOrdenAsc(defaults.asc);
@@ -82,8 +72,10 @@ export default function Leaderboards() {
   }, [servidor, defaults]);
 
   const usuariosVinculados = useUsuariosVinculados();
-
-  const getMeta = useCallback((uuid) => usuariosVinculados?.[uuid] || null, [usuariosVinculados]);
+  const getMeta = useCallback(
+    (uuid) => usuariosVinculados?.[uuid] || null,
+    [usuariosVinculados]
+  );
 
   const onOpenPerfil = useCallback(
     (player) => {
@@ -93,12 +85,20 @@ export default function Leaderboards() {
     [navigate]
   );
 
-  const STATS = useMemo(() => STATS_BY_SERVER[servidor] || ["tiempo_jugado"], [servidor]);
+  const STATS = useMemo(
+    () => STATS_BY_SERVER[servidor] || ["tiempo_jugado"],
+    [servidor]
+  );
 
   const getStatNumber = useCallback((p, key) => {
     if (!p) return 0;
     if (key === "genpoints") return safeNum(p?.genpoints) || computeGensScore(p);
+    if (key === "svpoints") return safeNum(p?.svpoints);
+    if (key === "pkpoints") return safeNum(p?.pkpoints);
+    if (key === "obpoints") return safeNum(p?.obpoints);
+    if (key === "network_points") return safeNum(p?.network_points);
     if (key === "island_level") return getIslandLevel(p);
+
     const raw = p?.[key];
     if (raw === null || raw === undefined || raw === "") return 0;
     const n = Number(raw);
@@ -122,6 +122,8 @@ export default function Leaderboards() {
     soloVinculados,
     getMeta,
   });
+
+  const { loading: loadingPodium, top3: top3Global } = useGlobalPodium();
 
   const datosFiltradosBase = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -148,18 +150,15 @@ export default function Leaderboards() {
       .sort((a, b) => (b.genpoints || 0) - (a.genpoints || 0));
   }, [datosFiltradosBase, servidorApi]);
 
-  const top3 = useMemo(() => {
-    const list = (datosFiltrados.length ? datosFiltrados : datosFiltradosBase).filter((p) =>
-      isNombreValido(p?.nombre_minecraft)
-    );
-    return [...list].slice(0, 3);
-  }, [datosFiltrados, datosFiltradosBase]);
-
-  const paginasTotales = useMemo(() => Math.max(1, Math.ceil((totalRows || 0) / limit)), [totalRows, limit]);
-
+  const paginasTotales = useMemo(
+    () => Math.max(1, Math.ceil((totalRows || 0) / limit)),
+    [totalRows, limit]
+  );
   const paginaActual = useMemo(() => Math.floor(offset / limit) + 1, [offset, limit]);
-
-  const servidorSeleccionado = useMemo(() => SERVIDORES.find((s) => s.id === servidor), [servidor]);
+  const servidorSeleccionado = useMemo(
+    () => SERVIDORES.find((s) => s.id === servidor),
+    [servidor]
+  );
 
   const cambiarOrden = useCallback(
     (stat) => {
@@ -191,16 +190,26 @@ export default function Leaderboards() {
     return { wideCount: w, mediumCount: m };
   }, [STATS]);
 
-  const cambiarPagina = useCallback((pageIndex) => setOffset(pageIndex * limit), [limit]);
-
-  const onSearch = useCallback(
-    (q) => {
-      setQuery(q);
-      setOffset(0);
-      setOpenCard(null);
-    },
-    [setQuery, setOffset]
+  const cambiarPagina = useCallback(
+    (pageIndex) => setOffset(pageIndex * limit),
+    [limit]
   );
+
+  const onSearch = useCallback((q) => {
+    setQuery(q);
+    setOffset(0);
+    setOpenCard(null);
+  }, []);
+
+  const formatValueNonGens = useCallback((key, value) => {
+    if (value === null || value === undefined) return "—";
+    const n = Number(value);
+    if (!Number.isFinite(n)) return "—";
+    if (key === "svpoints" || key === "obpoints" || key === "pkpoints") {
+      return formatInt(Math.round(n));
+    }
+    return formatInt(n);
+  }, []);
 
   return (
     <section className="lb-page">
@@ -215,14 +224,13 @@ export default function Leaderboards() {
             paginasTotales={paginasTotales}
           />
 
-          <LeaderboardsPodium
-            top3={top3}
-            servidorApi={servidorApi}
-            orden={orden}
-            getMeta={getMeta}
-            getStatNumber={getStatNumber}
-            onOpenPerfil={onOpenPerfil}
-          />
+          {!loadingPodium && (
+            <LeaderboardsPodium
+              top3={top3Global}
+              getMeta={getMeta}
+              onOpenPerfil={onOpenPerfil}
+            />
+          )}
 
           <LeaderboardsServers servidor={servidor} setServidor={setServidor} />
 
@@ -287,16 +295,15 @@ export default function Leaderboards() {
                 onOpenPerfil={onOpenPerfil}
                 formatearTiempo={formatearTiempo}
                 formatearTiempoParkour={formatearTiempoParkour}
-                formatValueNonGens={(key, value) => {
-                  if (value === null || value === undefined) return "—";
-                  const n = Number(value);
-                  if (!Number.isFinite(n)) return "—";
-                  return n.toLocaleString("es-ES");
-                }}
+                formatValueNonGens={formatValueNonGens}
                 getIslandLevelLocal={getIslandLevel}
               />
 
-              <LeaderboardsPagination paginasTotales={paginasTotales} paginaActual={paginaActual} onGo={cambiarPagina} />
+              <LeaderboardsPagination
+                paginasTotales={paginasTotales}
+                paginaActual={paginaActual}
+                onGo={cambiarPagina}
+              />
             </div>
           </section>
         </div>

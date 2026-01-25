@@ -1,9 +1,6 @@
 // apps/backend/src/controllers/stats.controller.js
 const db = require("../models/db");
 
-/**
- * Compatibilidad con sistema viejo por tipo/categoria
- */
 exports.importarStat = async (req, res) => {
   const { uuid, nombre_minecraft, servidor, tipo, categoria, valor } = req.body;
 
@@ -11,22 +8,20 @@ exports.importarStat = async (req, res) => {
     return res.status(400).json({ error: "Faltan campos obligatorios." });
   }
 
-  const { error } = await db
-    .from("estadisticas_importadas")
-    .upsert(
-      [
-        {
-          uuid,
-          nombre_minecraft,
-          servidor,
-          tipo,
-          categoria,
-          valor,
-          ultima_actualizacion: new Date().toISOString(),
-        },
-      ],
-      { onConflict: ["uuid", "servidor", "tipo", "categoria"] }
-    );
+  const { error } = await db.from("estadisticas_importadas").upsert(
+    [
+      {
+        uuid,
+        nombre_minecraft,
+        servidor,
+        tipo,
+        categoria,
+        valor,
+        ultima_actualizacion: new Date().toISOString(),
+      },
+    ],
+    { onConflict: ["uuid", "servidor", "tipo", "categoria"] }
+  );
 
   if (error) {
     console.error("[FlanSync] Error al importar stat:", error.message);
@@ -36,24 +31,6 @@ exports.importarStat = async (req, res) => {
   return res.status(200).json({ success: true });
 };
 
-/**
- * Importación agrupada desde el plugin
- *
- * REGLA:
- * - Vanilla SIEMPRE se actualiza
- * - Extras SOLO si sync_context === "online"
- *
- * PRO (Gens):
- * - coins_balance = balance actual
- * - coins_ganadas_total = total ganado (acumula SOLO subidas)
- * - dinero = balance actual (vault)
- * - dinero_ganado_total = total ganado (acumula SOLO subidas)
- * - gens_value_total / gens_income_h / gens_highest_tier = calculado en plugin leyendo AxGens
- * - gens_tiers = jsonb con desglose por tier (p.ej. {"1": 10, "10": 2})
- *
- * PRO (OneBlock):
- * - dinero_ganado_total también acumula SOLO subidas (para OBPoints)
- */
 exports.importarStatsAgrupadas = async (req, res) => {
   const num = (v, def = 0) => {
     const n = Number(v);
@@ -149,16 +126,21 @@ exports.importarStatsAgrupadas = async (req, res) => {
     setIfDefined(extrasUpdate, "prestigios", numOrUndef(req.body.prestigios));
     setIfDefined(extrasUpdate, "nivel", textOrUndef(req.body.nivel));
 
-    // AxGens PRO
     setIfDefined(extrasUpdate, "gens_value_total", numOrUndef(req.body.gens_value_total));
     setIfDefined(extrasUpdate, "gens_income_h", numOrUndef(req.body.gens_income_h));
     setIfDefined(extrasUpdate, "gens_highest_tier", numOrUndef(req.body.gens_highest_tier));
     setIfDefined(extrasUpdate, "gens_tiers", jsonOrUndef(req.body.gens_tiers));
     setIfDefined(extrasUpdate, "gens_tiers_json", textOrUndef(req.body.gens_tiers_json));
 
-    // snapshots (si lo sigues mandando)
     setIfDefined(extrasUpdate, "coins_snapshot", numOrUndef(req.body.coins_snapshot));
     setIfDefined(extrasUpdate, "dinero_snapshot", numOrUndef(req.body.dinero_snapshot));
+
+    setIfDefined(extrasUpdate, "mejor_tiempo", numOrUndef(req.body.mejor_tiempo));
+    setIfDefined(extrasUpdate, "completadas_total", numOrUndef(req.body.completadas_total));
+    setIfDefined(extrasUpdate, "perfect_runs", numOrUndef(req.body.perfect_runs));
+    setIfDefined(extrasUpdate, "falls", numOrUndef(req.body.falls));
+    setIfDefined(extrasUpdate, "medallas_ganadas", numOrUndef(req.body.medallas_ganadas));
+    setIfDefined(extrasUpdate, "racha_dias", numOrUndef(req.body.racha_dias));
   }
 
   const { data: existing, error: findErr } = await db
@@ -213,11 +195,7 @@ exports.importarStatsAgrupadas = async (req, res) => {
     let updatePayload = allowExtras ? { ...baseUpdate, ...extrasUpdate } : { ...baseUpdate };
     if (allowExtras) updatePayload = buildTotalsPayload(existing, updatePayload);
 
-    const { error: updErr } = await db
-      .from("estadisticas_agrupadas")
-      .update(updatePayload)
-      .eq("uuid", uuid)
-      .eq("servidor", servidor);
+    const { error: updErr } = await db.from("estadisticas_agrupadas").update(updatePayload).eq("uuid", uuid).eq("servidor", servidor);
 
     if (updErr) {
       console.error("[FlanSync] Error al actualizar stats:", updErr.message);
@@ -256,9 +234,6 @@ exports.importarStatsAgrupadas = async (req, res) => {
   return res.status(200).json({ success: true, mode: "insert", sync_context: syncContext });
 };
 
-/**
- * Ranking desde vista optimizada (legacy)
- */
 exports.obtenerRankingEstadisticas = async (req, res) => {
   const { tipo, servidor, limit = 10, offset = 0 } = req.query;
 
@@ -279,15 +254,15 @@ exports.obtenerRankingEstadisticas = async (req, res) => {
   return res.json({ total: count, resultados: data });
 };
 
-/**
- * Leaderboard desde tabla agrupada / o vista calculada (genpoints / obpoints)
- */
 exports.obtenerLeaderboards = async (req, res) => {
   const { tipo = "tiempo_jugado", servidor, limit = 10, offset = 0, asc } = req.query;
 
   const tiposValidos = [
     "genpoints",
     "obpoints",
+    "svpoints",
+    "pkpoints",
+    "network_points",
 
     "bloques_minados",
     "bloques_colocados",
@@ -327,6 +302,13 @@ exports.obtenerLeaderboards = async (req, res) => {
     "gens_highest_tier",
 
     "nivel",
+
+    "mejor_tiempo",
+    "completadas_total",
+    "perfect_runs",
+    "falls",
+    "medallas_ganadas",
+    "racha_dias",
   ];
 
   if (!tiposValidos.includes(tipo)) {
@@ -338,7 +320,6 @@ exports.obtenerLeaderboards = async (req, res) => {
     ascending = String(asc).toLowerCase() === "true";
   }
 
-  // ✅ Caso especial: genpoints (vista calculada)
   if (tipo === "genpoints") {
     let q = db
       .from("vista_leaderboard_genspoints")
@@ -359,7 +340,6 @@ exports.obtenerLeaderboards = async (req, res) => {
     return res.json({ total: count, resultados: data });
   }
 
-  // ✅ Caso especial: obpoints (vista calculada)
   if (tipo === "obpoints") {
     let q = db
       .from("vista_leaderboard_obpoints")
@@ -380,7 +360,62 @@ exports.obtenerLeaderboards = async (req, res) => {
     return res.json({ total: count, resultados: data });
   }
 
-  // ✅ Resto de tipos: tabla normal
+  if (tipo === "svpoints") {
+    let q = db
+      .from("vista_leaderboard_svpoints")
+      .select("*", { count: "exact" })
+      .order("svpoints", { ascending })
+      .range(+offset, +offset + +limit - 1);
+
+    if (servidor && String(servidor).toLowerCase() !== "survival") {
+      return res.json({ total: 0, resultados: [] });
+    }
+
+    const { data, count, error } = await q;
+    if (error) {
+      console.error("[FlanSync] Error al obtener svpoints:", error.message);
+      return res.status(500).json({ error: "Error al obtener datos." });
+    }
+
+    return res.json({ total: count, resultados: data });
+  }
+
+  if (tipo === "pkpoints") {
+    let q = db
+      .from("vista_leaderboard_pkpoints")
+      .select("*", { count: "exact" })
+      .order("pkpoints", { ascending })
+      .range(+offset, +offset + +limit - 1);
+
+    if (servidor && String(servidor).toLowerCase() !== "parkour") {
+      return res.json({ total: 0, resultados: [] });
+    }
+
+    const { data, count, error } = await q;
+    if (error) {
+      console.error("[FlanSync] Error al obtener pkpoints:", error.message);
+      return res.status(500).json({ error: "Error al obtener datos." });
+    }
+
+    return res.json({ total: count, resultados: data });
+  }
+
+  if (tipo === "network_points") {
+    let q = db
+      .from("vista_leaderboard_network_points")
+      .select("*", { count: "exact" })
+      .order("network_points", { ascending })
+      .range(+offset, +offset + +limit - 1);
+
+    const { data, count, error } = await q;
+    if (error) {
+      console.error("[FlanSync] Error al obtener network_points:", error.message);
+      return res.status(500).json({ error: "Error al obtener datos." });
+    }
+
+    return res.json({ total: count, resultados: data });
+  }
+
   let query = db
     .from("estadisticas_agrupadas")
     .select("*", { count: "exact" })
@@ -399,9 +434,6 @@ exports.obtenerLeaderboards = async (req, res) => {
   return res.json({ total: count, resultados: data });
 };
 
-/**
- * Perfil de estadísticas de un jugador
- */
 exports.obtenerPerfilJugador = async (req, res) => {
   const { uuid } = req.params;
   const { servidor } = req.query;

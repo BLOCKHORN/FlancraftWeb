@@ -14,11 +14,43 @@ function pad2(n) {
   return v < 10 ? `0${v}` : String(v);
 }
 
+function RankDelta({ delta }) {
+  const d = Number(delta);
+  if (!Number.isFinite(d)) return <span className="lb-delta lb-delta--na">—</span>;
+  if (d === 0) return <span className="lb-delta lb-delta--eq">•</span>;
+
+  const up = d > 0;
+  const val = Math.abs(d);
+
+  return (
+    <span className={cn("lb-delta", up ? "lb-delta--up" : "lb-delta--down")}>
+      <span className="lb-delta__arrow" aria-hidden="true">
+        {up ? "▲" : "▼"}
+      </span>
+      <span className="lb-delta__num">{val}</span>
+    </span>
+  );
+}
+
 function formatValue({ key, value, formatearTiempo, formatearTiempoParkour }) {
   if (value === null || value === undefined) return "—";
+
+  if (key === "phase_actual") {
+    if (typeof value === "string") {
+      const s = value.trim();
+      if (!s || s === "-" || s === "—") return "—";
+      return s;
+    }
+    const n = Number(value);
+    return Number.isFinite(n) && n > 0 ? `Fase ${fmtInt(n)}` : "—";
+  }
+
   const n = Number(value);
 
   if (key === "genpoints") return Number.isFinite(n) ? fmtInt(n) : "—";
+  if (key === "svpoints") return Number.isFinite(n) ? fmtInt(Math.round(n)) : "—";
+  if (key === "obpoints") return Number.isFinite(n) ? fmtInt(Math.round(n)) : "—";
+
   if (key === "tiempo_jugado") return formatearTiempo(n);
   if (key === "mejor_tiempo") return formatearTiempoParkour(n);
 
@@ -36,11 +68,7 @@ function formatValue({ key, value, formatearTiempo, formatearTiempoParkour }) {
   return Number.isFinite(n) ? fmtInt(n) : "—";
 }
 
-/**
- * Objetivo:
- * - Todo el mundo con el mismo “peso” visual
- * - Lo largo (dinero) NO se puede ir a minúsculo
- */
+
 const FT_BASE = {
   maxPx: 18,
   minPx: 13,
@@ -52,11 +80,10 @@ const FT_BASE = {
   step: 0.5,
 };
 
-// Ajustes finos por tipo
 const FT_CELL = { ...FT_BASE, extraPadding: 34 };
 const FT_SCORE = { ...FT_BASE, extraPadding: 34 };
-const FT_TIER = { ...FT_BASE, extraPadding: 30 }; // era demasiado alto → encogía Valor Isla
-const FT_MONEY = { ...FT_BASE, extraPadding: 22, minPx: 13, mobileMinPx: 12 }; // dinero: menos “padding fantasma”
+const FT_TIER = { ...FT_BASE, extraPadding: 30 };
+const FT_MONEY = { ...FT_BASE, extraPadding: 22, minPx: 13, mobileMinPx: 12 };
 
 function StatCell({ stat, p, value, servidorApi, formatearTiempo, formatearTiempoParkour }) {
   if (servidorApi !== "gens") {
@@ -89,15 +116,7 @@ function StatCell({ stat, p, value, servidorApi, formatearTiempo, formatearTiemp
         content={<GensValorTooltip info={info} incomeH={p?.gens_income_h} tierMax={p?.gens_highest_tier} />}
         maxWidth={380}
       >
-        <span
-          className={cn(
-            "num num--full num--pill num--tier",
-            `gens-tier-${info.idx}`,
-            `tier-text-${info.idx}`
-          )}
-          data-stat="gens_value_total"
-          data-tier={info.idx}
-        >
+        <span className={cn("num num--full num--pill num--tier", `gens-tier-${info.idx}`, `tier-text-${info.idx}`)} data-stat="gens_value_total" data-tier={info.idx}>
           <FitText text={display} {...FT_TIER} />
         </span>
       </Tooltip>
@@ -109,14 +128,7 @@ function StatCell({ stat, p, value, servidorApi, formatearTiempo, formatearTiemp
     return (
       <Tooltip
         theme="coins"
-        content={
-          <DualMoneyTooltip
-            title="Coins"
-            actual={safeNum(p?.coins_balance)}
-            total={safeNum(p?.coins_ganadas_total)}
-            kind="coins"
-          />
-        }
+        content={<DualMoneyTooltip title="Coins" actual={safeNum(p?.coins_balance)} total={safeNum(p?.coins_ganadas_total)} kind="coins" />}
         maxWidth={340}
       >
         <span className="num num--full num--pill num--coins" data-stat="coins_balance">
@@ -131,14 +143,7 @@ function StatCell({ stat, p, value, servidorApi, formatearTiempo, formatearTiemp
     return (
       <Tooltip
         theme="money"
-        content={
-          <DualMoneyTooltip
-            title="Dinero"
-            actual={safeNum(p?.dinero)}
-            total={safeNum(p?.dinero_ganado_total)}
-            kind="money"
-          />
-        }
+        content={<DualMoneyTooltip title="Dinero" actual={safeNum(p?.dinero)} total={safeNum(p?.dinero_ganado_total)} kind="money" />}
         maxWidth={360}
       >
         <span className="num num--full num--pill num--money" data-stat="dinero">
@@ -216,10 +221,7 @@ export default function LeaderboardsTable({
 
   return (
     <div className="lb-tableWrap">
-      <table
-        className="lb-table"
-        style={{ "--stats": STATS.length, "--wideCount": wideCount, "--mediumCount": mediumCount }}
-      >
+      <table className="lb-table" style={{ "--stats": STATS.length, "--wideCount": wideCount, "--mediumCount": mediumCount }}>
         <thead>
           <tr>
             <th className="col-pos">Top</th>
@@ -233,6 +235,7 @@ export default function LeaderboardsTable({
                   <StatHeader
                     key={st}
                     stat={st}
+                    servidorApi={servidorApi}
                     active={false}
                     ordenAsc={false}
                     sortable={false}
@@ -246,6 +249,7 @@ export default function LeaderboardsTable({
                   <StatHeader
                     key={st}
                     stat={st}
+                    servidorApi={servidorApi}
                     active={true}
                     ordenAsc={false}
                     sortable={false}
@@ -258,6 +262,7 @@ export default function LeaderboardsTable({
                 <StatHeader
                   key={st}
                   stat={st}
+                  servidorApi={servidorApi}
                   active={orden === st}
                   ordenAsc={ordenAsc}
                   sortable={true}
@@ -305,18 +310,19 @@ export default function LeaderboardsTable({
               const medal = MEDALLAS[absPos] || null;
               const name = p?.nombre_minecraft;
               const platform = getPlatform(p);
+              const delta = p?.delta_pos_24h;
 
               return (
-                <tr
-                  key={`${p.uuid}-${absPos}`}
-                  className={cn("lb-row", { top1: absPos === 1, top2: absPos === 2, top3: absPos === 3 })}
-                >
+                <tr key={`${p.uuid}-${absPos}`} className={cn("lb-row", { top1: absPos === 1, top2: absPos === 2, top3: absPos === 3 })}>
                   <td className="td-pos">
-                    {medal ? (
-                      <img src={medal} alt={`Top ${absPos}`} className="lb-medal" loading="lazy" />
-                    ) : (
-                      <span className="lb-rank">{absPos}</span>
-                    )}
+                    <div className="lb-posWrap">
+                      {medal ? (
+                        <img src={medal} alt={`Top ${absPos}`} className="lb-medal" loading="lazy" />
+                      ) : (
+                        <span className="lb-rank">{absPos}</span>
+                      )}
+                      <RankDelta delta={delta} />
+                    </div>
                   </td>
 
                   <td className="td-player">
@@ -333,22 +339,12 @@ export default function LeaderboardsTable({
                           <NameLink player={p} className="lb-name" onOpen={onOpenPerfil} />
                           <span className="lb-badges">
                             {platform && (
-                              <span
-                                className={cn("lb-badge-platform", {
-                                  bedrock: platform === "bedrock",
-                                  java: platform === "java",
-                                })}
-                              >
+                              <span className={cn("lb-badge-platform", { bedrock: platform === "bedrock", java: platform === "java" })}>
                                 {platform === "bedrock" ? "BEDROCK" : "JAVA"}
                               </span>
                             )}
                             {meta?.rango && (
-                              <img
-                                src={`/assets/rangos/${meta.rango}.webp`}
-                                alt=""
-                                className="lb-badge-rango"
-                                loading="lazy"
-                              />
+                              <img src={`/assets/rangos/${meta.rango}.webp`} alt="" className="lb-badge-rango" loading="lazy" />
                             )}
                           </span>
                         </div>
@@ -370,9 +366,7 @@ export default function LeaderboardsTable({
                     return (
                       <td
                         key={st}
-                        className={cn("td-stat", {
-                          active: servidorApi === "gens" ? st === "genpoints" : orden === st,
-                        })}
+                        className={cn("td-stat", { active: servidorApi === "gens" ? st === "genpoints" : orden === st })}
                         data-stat={st}
                       >
                         <StatCell

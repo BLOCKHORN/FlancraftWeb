@@ -64,6 +64,17 @@
     transform: translateY(-0.5px);
   }
 }
+.th-sort.is-oneblock {
+  .th-sort__icon {
+    filter:
+      drop-shadow(0 2px 2px rgba(0, 0, 0, 0.35))
+      drop-shadow(0 0 10px rgba(80, 170, 255, 0.35));
+  }
+}
+
+.th-sort.is-oneblock.active {
+  box-shadow: inset 0 -2px 0 rgba(80, 170, 255, 0.55);
+}
 
 /* Responsive: mantenemos iconos grandes pero ajustamos un poco */
 @media (max-width: 920px) {
