@@ -89,6 +89,10 @@ exports.importarStatsAgrupadas = async (req, res) => {
     muertes: num(req.body.muertes),
     tiempo_jugado: num(req.body.tiempo_jugado),
 
+    // ✅ añadidos para Anárquico (si el plugin los envía)
+    killstreak_max: num(req.body.killstreak_max),
+    damage_dealt: num(req.body.damage_dealt),
+
     saltos: num(req.body.saltos),
     distancia_caminada: num(req.body.distancia_caminada),
     distancia_volada: num(req.body.distancia_volada),
@@ -195,7 +199,11 @@ exports.importarStatsAgrupadas = async (req, res) => {
     let updatePayload = allowExtras ? { ...baseUpdate, ...extrasUpdate } : { ...baseUpdate };
     if (allowExtras) updatePayload = buildTotalsPayload(existing, updatePayload);
 
-    const { error: updErr } = await db.from("estadisticas_agrupadas").update(updatePayload).eq("uuid", uuid).eq("servidor", servidor);
+    const { error: updErr } = await db
+      .from("estadisticas_agrupadas")
+      .update(updatePayload)
+      .eq("uuid", uuid)
+      .eq("servidor", servidor);
 
     if (updErr) {
       console.error("[FlanSync] Error al actualizar stats:", updErr.message);
@@ -262,6 +270,7 @@ exports.obtenerLeaderboards = async (req, res) => {
     "obpoints",
     "svpoints",
     "pkpoints",
+    "anpoints",
     "network_points",
 
     "bloques_minados",
@@ -281,6 +290,10 @@ exports.obtenerLeaderboards = async (req, res) => {
     "peces_pescados",
     "dano_infligido",
     "dano_recibido",
+
+    // ✅ anárquico extras (si existen en tabla)
+    "killstreak_max",
+    "damage_dealt",
 
     "dinero",
     "power_mcmmo",
@@ -394,6 +407,27 @@ exports.obtenerLeaderboards = async (req, res) => {
     const { data, count, error } = await q;
     if (error) {
       console.error("[FlanSync] Error al obtener pkpoints:", error.message);
+      return res.status(500).json({ error: "Error al obtener datos." });
+    }
+
+    return res.json({ total: count, resultados: data });
+  }
+
+  // ✅ NUEVO: ANPoints
+  if (tipo === "anpoints") {
+    let q = db
+      .from("vista_leaderboard_anpoints")
+      .select("*", { count: "exact" })
+      .order("anpoints", { ascending })
+      .range(+offset, +offset + +limit - 1);
+
+    if (servidor && String(servidor).toLowerCase() !== "anarquico") {
+      return res.json({ total: 0, resultados: [] });
+    }
+
+    const { data, count, error } = await q;
+    if (error) {
+      console.error("[FlanSync] Error al obtener anpoints:", error.message);
       return res.status(500).json({ error: "Error al obtener datos." });
     }
 

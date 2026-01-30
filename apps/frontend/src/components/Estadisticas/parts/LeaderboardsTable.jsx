@@ -50,6 +50,7 @@ function formatValue({ key, value, formatearTiempo, formatearTiempoParkour }) {
   if (key === "genpoints") return Number.isFinite(n) ? fmtInt(n) : "—";
   if (key === "svpoints") return Number.isFinite(n) ? fmtInt(Math.round(n)) : "—";
   if (key === "obpoints") return Number.isFinite(n) ? fmtInt(Math.round(n)) : "—";
+  if (key === "anpoints") return Number.isFinite(n) ? fmtInt(Math.round(n)) : "—";
 
   if (key === "tiempo_jugado") return formatearTiempo(n);
   if (key === "mejor_tiempo") return formatearTiempoParkour(n);
@@ -67,7 +68,6 @@ function formatValue({ key, value, formatearTiempo, formatearTiempoParkour }) {
   if (key === "kdr") return Number.isFinite(n) ? n.toFixed(2) : "—";
   return Number.isFinite(n) ? fmtInt(n) : "—";
 }
-
 
 const FT_BASE = {
   maxPx: 18,
@@ -116,7 +116,11 @@ function StatCell({ stat, p, value, servidorApi, formatearTiempo, formatearTiemp
         content={<GensValorTooltip info={info} incomeH={p?.gens_income_h} tierMax={p?.gens_highest_tier} />}
         maxWidth={380}
       >
-        <span className={cn("num num--full num--pill num--tier", `gens-tier-${info.idx}`, `tier-text-${info.idx}`)} data-stat="gens_value_total" data-tier={info.idx}>
+        <span
+          className={cn("num num--full num--pill num--tier", `gens-tier-${info.idx}`, `tier-text-${info.idx}`)}
+          data-stat="gens_value_total"
+          data-tier={info.idx}
+        >
           <FitText text={display} {...FT_TIER} />
         </span>
       </Tooltip>
@@ -170,6 +174,7 @@ export default function LeaderboardsTable({
   mediumCount,
   datosFiltrados,
   offset,
+  totalRows,
   servidorApi,
   orden,
   ordenAsc,
@@ -218,6 +223,8 @@ export default function LeaderboardsTable({
       </div>
     );
   }
+
+  const total = Math.max(0, Number(totalRows || 0));
 
   return (
     <div className="lb-tableWrap">
@@ -305,7 +312,9 @@ export default function LeaderboardsTable({
 
           {!loading &&
             datosFiltrados.map((p, i) => {
-              const absPos = offset + i + 1;
+              const baseIndex = offset + i;
+              const absPos = ordenAsc && total > 0 ? total - baseIndex : baseIndex + 1;
+
               const meta = getMeta(p.uuid);
               const medal = MEDALLAS[absPos] || null;
               const name = p?.nombre_minecraft;
@@ -313,7 +322,10 @@ export default function LeaderboardsTable({
               const delta = p?.delta_pos_24h;
 
               return (
-                <tr key={`${p.uuid}-${absPos}`} className={cn("lb-row", { top1: absPos === 1, top2: absPos === 2, top3: absPos === 3 })}>
+                <tr
+                  key={`${p.uuid}-${absPos}`}
+                  className={cn("lb-row", { top1: absPos === 1, top2: absPos === 2, top3: absPos === 3 })}
+                >
                   <td className="td-pos">
                     <div className="lb-posWrap">
                       {medal ? (

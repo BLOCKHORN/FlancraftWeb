@@ -41,6 +41,7 @@ export default function Leaderboards() {
   const [servidor, setServidor] = useState(
     SERVIDORES?.[2]?.id || SERVIDORES?.[0]?.id
   );
+
   const servidorApi = useMemo(
     () => SERVIDOR_API_MAP[servidor] || servidor,
     [servidor]
@@ -154,7 +155,12 @@ export default function Leaderboards() {
     () => Math.max(1, Math.ceil((totalRows || 0) / limit)),
     [totalRows, limit]
   );
-  const paginaActual = useMemo(() => Math.floor(offset / limit) + 1, [offset, limit]);
+
+  const paginaActual = useMemo(
+    () => Math.floor(offset / limit) + 1,
+    [offset, limit]
+  );
+
   const servidorSeleccionado = useMemo(
     () => SERVIDORES.find((s) => s.id === servidor),
     [servidor]
@@ -191,7 +197,10 @@ export default function Leaderboards() {
   }, [STATS]);
 
   const cambiarPagina = useCallback(
-    (pageIndex) => setOffset(pageIndex * limit),
+    (page) => {
+      const p = Math.max(1, Number(page || 1));
+      setOffset((p - 1) * limit);
+    },
     [limit]
   );
 
@@ -269,6 +278,7 @@ export default function Leaderboards() {
                 mediumCount={mediumCount}
                 datosFiltrados={datosFiltrados}
                 offset={offset}
+                totalRows={totalRows}
                 servidorApi={servidorApi}
                 orden={orden}
                 ordenAsc={ordenAsc}
@@ -285,9 +295,11 @@ export default function Leaderboards() {
                 loading={loading}
                 datosFiltrados={datosFiltrados}
                 offset={offset}
+                totalRows={totalRows}
                 servidorApi={servidorApi}
                 STATS={STATS}
                 orden={orden}
+                ordenAsc={ordenAsc}
                 openCard={openCard}
                 setOpenCard={setOpenCard}
                 getMeta={getMeta}

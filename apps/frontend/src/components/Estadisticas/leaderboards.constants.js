@@ -1,5 +1,3 @@
-// src/components/Estadisticas/leaderboards.constants.js
-
 export const SERVIDOR_API_MAP = {
   survival_clasico: "survival",
   oneblock: "oneblock",
@@ -17,10 +15,13 @@ export const SERVIDORES = [
 ];
 
 export const STATS_BY_SERVER = {
-  survival_clasico: ["svpoints", "dinero", "bloques_minados", "mobs_matados", "kills_pvp", "muertes", "tiempo_jugado"],
-  oneblock: ["obpoints", "phase_actual", "oneblock_blocks_broken", "dinero", "mobs_matados", "tiempo_jugado"],
+  survival_clasico: ["svpoints", "tiempo_jugado", "bloques_minados", "mobs_matados", "dinero", "kills_pvp", "muertes"],
+  oneblock: ["obpoints", "oneblock_blocks_broken", "phase_actual", "dinero", "mobs_matados", "tiempo_jugado"],
   gens: ["genpoints", "gens_value_total", "coins_balance", "nivel", "dinero", "tiempo_jugado"],
-  survival_anarquico: ["kills_pvp", "kdr", "killstreak_max", "damage_dealt", "muertes", "tiempo_jugado"],
+
+  // ✅ ANÁRQUICO (competitivo)
+  survival_anarquico: ["anpoints", "kills_pvp", "muertes", "killstreak_max", "dano_infligido", "kdr", "tiempo_jugado"],
+
   parkour: ["mejor_tiempo", "completadas_total", "perfect_runs", "falls", "medallas_ganadas", "racha_dias", "tiempo_jugado"],
 };
 
@@ -28,7 +29,10 @@ export const DEFAULTS_BY_SERVER = {
   survival_clasico: { orden: "svpoints", asc: false },
   oneblock: { orden: "obpoints", asc: false },
   gens: { orden: "genpoints", asc: false },
-  survival_anarquico: { orden: "kills_pvp", asc: false },
+
+  // ✅ orden por ANPoints
+  survival_anarquico: { orden: "anpoints", asc: false },
+
   parkour: { orden: "mejor_tiempo", asc: true },
 };
 
@@ -36,6 +40,7 @@ export const LABELS = {
   genpoints: "Genpoints",
   obpoints: "OBPoints",
   svpoints: "SVPoints",
+  anpoints: "ANPoints",
 
   tiempo_jugado: "Tiempo",
   muertes: "Muertes",
@@ -54,7 +59,7 @@ export const LABELS = {
 
   kdr: "KDR",
   killstreak_max: "Racha Máx",
-  damage_dealt: "Daño",
+  dano_infligido: "Daño",
 
   mejor_tiempo: "Mejor Tiempo",
   completadas_total: "Completadas",
@@ -73,6 +78,10 @@ export const STAT_HELP = {
 
   svpoints:
     "Puntuación competitiva de Survival. Suma progreso (minados/mobs/kills/dinero ganado total) y resta muertes. El tiempo pesa poco.",
+
+  // ✅ NUEVO: Anárquico
+  anpoints:
+    "Puntuación competitiva de Anárquico. Premia kills/racha/daño, pero penaliza más las muertes (más de lo que suman las kills). El tiempo pesa poco.",
 
   gens_value_total:
     "Etapa del Valor de Isla (lo que llevas invertido en generadores). Puede subir o bajar porque depende de tus generadores actuales.",
@@ -98,7 +107,7 @@ export const STAT_HELP = {
 
   kdr: "Ratio K/D: kills PvP dividido entre muertes.",
   killstreak_max: "Mayor racha de kills sin morir.",
-  damage_dealt: "Daño total infligido.",
+  dano_infligido: "Daño total infligido.",
 };
 
 export const MEDALLAS = {
