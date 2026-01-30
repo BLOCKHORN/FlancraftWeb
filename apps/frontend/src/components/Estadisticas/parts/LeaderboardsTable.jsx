@@ -116,11 +116,7 @@ function StatCell({ stat, p, value, servidorApi, formatearTiempo, formatearTiemp
         content={<GensValorTooltip info={info} incomeH={p?.gens_income_h} tierMax={p?.gens_highest_tier} />}
         maxWidth={380}
       >
-        <span
-          className={cn("num num--full num--pill num--tier", `gens-tier-${info.idx}`, `tier-text-${info.idx}`)}
-          data-stat="gens_value_total"
-          data-tier={info.idx}
-        >
+        <span className={cn("num num--full num--pill num--tier", `gens-tier-${info.idx}`, `tier-text-${info.idx}`)} data-stat="gens_value_total" data-tier={info.idx}>
           <FitText text={display} {...FT_TIER} />
         </span>
       </Tooltip>
@@ -322,17 +318,10 @@ export default function LeaderboardsTable({
               const delta = p?.delta_pos_24h;
 
               return (
-                <tr
-                  key={`${p.uuid}-${absPos}`}
-                  className={cn("lb-row", { top1: absPos === 1, top2: absPos === 2, top3: absPos === 3 })}
-                >
+                <tr key={`${p.uuid}-${absPos}`} className={cn("lb-row", { top1: absPos === 1, top2: absPos === 2, top3: absPos === 3 })}>
                   <td className="td-pos">
                     <div className="lb-posWrap">
-                      {medal ? (
-                        <img src={medal} alt={`Top ${absPos}`} className="lb-medal" loading="lazy" />
-                      ) : (
-                        <span className="lb-rank">{absPos}</span>
-                      )}
+                      {medal ? <img src={medal} alt={`Top ${absPos}`} className="lb-medal" loading="lazy" /> : <span className="lb-rank">{absPos}</span>}
                       <RankDelta delta={delta} />
                     </div>
                   </td>
@@ -355,9 +344,7 @@ export default function LeaderboardsTable({
                                 {platform === "bedrock" ? "BEDROCK" : "JAVA"}
                               </span>
                             )}
-                            {meta?.rango && (
-                              <img src={`/assets/rangos/${meta.rango}.webp`} alt="" className="lb-badge-rango" loading="lazy" />
-                            )}
+                            {meta?.rango && <img src={`/assets/rangos/${meta.rango}.webp`} alt="" className="lb-badge-rango" loading="lazy" />}
                           </span>
                         </div>
                         <div className="lb-player__sub">{meta?.rango ? meta.rango : "—"}</div>
@@ -373,14 +360,18 @@ export default function LeaderboardsTable({
                         ? getIslandLevelLocal(p)
                         : st === "genpoints"
                         ? safeNum(p?.genpoints) || computeGensScore(p)
+                        : st === "kdr"
+                        ? (() => {
+                            const k = safeNum(p?.kills_pvp);
+                            const d = safeNum(p?.muertes_pvp ?? p?.muertes);
+                            if (!Number.isFinite(k) || !Number.isFinite(d)) return null;
+                            if (d <= 0) return k;
+                            return k / d;
+                          })()
                         : p?.[st];
 
                     return (
-                      <td
-                        key={st}
-                        className={cn("td-stat", { active: servidorApi === "gens" ? st === "genpoints" : orden === st })}
-                        data-stat={st}
-                      >
+                      <td key={st} className={cn("td-stat", { active: servidorApi === "gens" ? st === "genpoints" : orden === st })} data-stat={st}>
                         <StatCell
                           stat={st}
                           p={p}

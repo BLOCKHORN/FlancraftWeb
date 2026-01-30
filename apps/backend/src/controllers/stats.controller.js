@@ -81,6 +81,7 @@ exports.importarStatsAgrupadas = async (req, res) => {
   const syncContext = String(req.body.sync_context || "online").toLowerCase();
   const allowExtras = syncContext === "online";
 
+  // ✅ BASE: stats que SIEMPRE envía el plugin (si algo no viene, mejor 0)
   const baseUpdate = {
     bloques_minados: num(req.body.bloques_minados),
     bloques_colocados: num(req.body.bloques_colocados),
@@ -88,10 +89,6 @@ exports.importarStatsAgrupadas = async (req, res) => {
     kills_pvp: num(req.body.kills_pvp),
     muertes: num(req.body.muertes),
     tiempo_jugado: num(req.body.tiempo_jugado),
-
-    // ✅ añadidos para Anárquico (si el plugin los envía)
-    killstreak_max: num(req.body.killstreak_max),
-    damage_dealt: num(req.body.damage_dealt),
 
     saltos: num(req.body.saltos),
     distancia_caminada: num(req.body.distancia_caminada),
@@ -113,6 +110,7 @@ exports.importarStatsAgrupadas = async (req, res) => {
   setIfDefined(baseUpdate, "nombre_minecraft", textOrUndef(req.body.nombre_minecraft));
   setIfDefined(baseUpdate, "plataforma", textOrUndef(req.body.plataforma));
 
+  // ✅ EXTRAS: SOLO si sync_context=online, y SOLO si vienen definidos (NO pisar con 0)
   const extrasUpdate = {};
   if (allowExtras) {
     setIfDefined(extrasUpdate, "dinero", numOrUndef(req.body.dinero));
@@ -145,6 +143,11 @@ exports.importarStatsAgrupadas = async (req, res) => {
     setIfDefined(extrasUpdate, "falls", numOrUndef(req.body.falls));
     setIfDefined(extrasUpdate, "medallas_ganadas", numOrUndef(req.body.medallas_ganadas));
     setIfDefined(extrasUpdate, "racha_dias", numOrUndef(req.body.racha_dias));
+
+    // ✅ ANÁRQUICO: si el plugin los envía, guardarlos; si no, NO tocar
+    setIfDefined(extrasUpdate, "killstreak_max", numOrUndef(req.body.killstreak_max));
+    // opcional para competitivo:
+    setIfDefined(extrasUpdate, "muertes_pvp", numOrUndef(req.body.muertes_pvp));
   }
 
   const { data: existing, error: findErr } = await db
@@ -275,9 +278,10 @@ exports.obtenerLeaderboards = async (req, res) => {
 
     "bloques_minados",
     "bloques_colocados",
-    "mobs_matados",
+    "mobs_matZZZ matados",
     "kills_pvp",
     "muertes",
+    "muertes_pvp",
     "tiempo_jugado",
     "saltos",
     "distancia_caminada",
@@ -291,9 +295,7 @@ exports.obtenerLeaderboards = async (req, res) => {
     "dano_infligido",
     "dano_recibido",
 
-    // ✅ anárquico extras (si existen en tabla)
     "killstreak_max",
-    "damage_dealt",
 
     "dinero",
     "power_mcmmo",
@@ -413,7 +415,6 @@ exports.obtenerLeaderboards = async (req, res) => {
     return res.json({ total: count, resultados: data });
   }
 
-  // ✅ NUEVO: ANPoints
   if (tipo === "anpoints") {
     let q = db
       .from("vista_leaderboard_anpoints")
