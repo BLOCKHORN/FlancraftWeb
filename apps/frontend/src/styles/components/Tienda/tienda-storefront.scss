@@ -1,11 +1,7 @@
-/* src/styles/components/Tienda/tienda-storefront.scss */
 @use "../../base/_variables" as *;
 
 @import url("https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Nunito:wght@800;900&display=swap");
 
-/* =========================
-   Helpers
-   ========================= */
 @mixin stroke-white($w: 2px, $o: rgba(0,0,0,0.92)) {
   color: #fff;
   text-shadow:
@@ -27,9 +23,6 @@
     inset 0 0 0 2px rgba(255,255,255,0.06);
 }
 
-/* =========================
-   Animations
-   ========================= */
 @keyframes tsfShine {
   0%   { transform: translateX(-160%) skewX(-18deg); opacity: 0; }
   18%  { opacity: 1; }
@@ -71,33 +64,40 @@
   100% { transform: translate(-50%, -50%); }
 }
 
-/* =========================
-   Root
-   ========================= */
+@keyframes tsfTabIconFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+@keyframes tsfParticleFloat {
+  0%   { transform: translate3d(0, 18px, 0) scale(1); opacity: 0; }
+  12%  { opacity: 0.9; }
+  70%  { opacity: 0.55; }
+  100% { transform: translate3d(0, -22px, 0) scale(1.18); opacity: 0; }
+}
+
+@keyframes tsfParticleBlink {
+  0%, 100% { opacity: 0.25; }
+  50%      { opacity: 0.9; }
+}
+
 .tienda-storefront.tsf-brawl2 {
-  /* =========================
-     Global scale
-     (equivale a tu zoom 80% aprox)
-     ========================= */
-  --ui-scale: 0.8;
+  --ui-scale: 0.74;
 
-  /* =========================
-     Layout vars (scaled)
-     ========================= */
-  --content-w: calc(62rem * var(--ui-scale));
-  --gap: calc(clamp(0.9rem, 1.2vw, 1.4rem) * var(--ui-scale));
+  --content-w: calc(60rem * var(--ui-scale));
+  --gap: calc(clamp(0.85rem, 1.15vw, 1.35rem) * var(--ui-scale));
 
-  --rank-size: calc(clamp(12.6rem, 18.2vw, 15.8rem) * var(--ui-scale));
+  --rank-size: calc(clamp(12.2rem, 17.6vw, 15.2rem) * var(--ui-scale));
 
-  --coin-w: calc(clamp(9.6rem, 11vw, 10.6rem) * var(--ui-scale));
-  --coin-gap: calc(clamp(0.8rem, 1.4vw, 1.6rem) * var(--ui-scale));
+  --coin-w: calc(clamp(9.2rem, 10.6vw, 10.2rem) * var(--ui-scale));
+  --coin-gap: calc(clamp(0.75rem, 1.25vw, 1.45rem) * var(--ui-scale));
 
-  --sign-w: calc(clamp(15rem, 32vw, 17rem) * var(--ui-scale));
+  --sign-w: calc(clamp(14.2rem, 30vw, 16.4rem) * var(--ui-scale));
   --sign-ar: 1.5;
   --sign-h: calc(var(--sign-w) / var(--sign-ar));
 
-  --sign-clear: calc(clamp(5rem, 8.5vw, 10rem) * var(--ui-scale));
-  --sign-top: calc(clamp(-3.6rem, -3.2vw, -3.4rem) * var(--ui-scale));
+  --sign-clear: calc(clamp(5.2rem, 8.2vw, 9.2rem) * var(--ui-scale));
+  --sign-top: calc(clamp(-3.35rem, -3.0vw, -3.25rem) * var(--ui-scale));
 
   position: relative;
   width: 100%;
@@ -120,9 +120,6 @@
   margin: 0 auto;
 }
 
-/* =========================
-   Header
-   ========================= */
 .tsf-header {
   position: absolute;
   top: var(--sign-top);
@@ -205,9 +202,6 @@
     drop-shadow(0 0.25rem 0.55rem rgba(0, 0, 0, 0.35));
 }
 
-/* =========================
-   Loading/Error
-   ========================= */
 .tsf-state {
   flex: 1;
   min-height: 0;
@@ -251,9 +245,6 @@
 .tsf-retry:hover { filter: brightness(1.05); transform: translateY(-1px); }
 .tsf-retry:active { transform: translateY(1px) scale(0.99); }
 
-/* =========================
-   RANGOS (sin cambios)
-   ========================= */
 .tsf-ranks { position: relative; z-index: 3; }
 
 .tsf-ranksRow {
@@ -354,9 +345,80 @@
   user-select: none;
 
   filter: none;
+  z-index: 1;
 }
 
 .tsf-rank.inmortal .tsf-deg { transform: rotate(-2.5deg); }
+
+.tsf-rankParticles {
+  position: absolute;
+  inset: -16%;
+  pointer-events: none;
+  z-index: 2;
+  opacity: 0.95;
+  filter: drop-shadow(0 0 10px rgba(255,255,255,0.10));
+}
+
+.tsf-rankParticles::before,
+.tsf-rankParticles::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-repeat: no-repeat;
+  opacity: 0.95;
+}
+
+.tsf-rankParticles::before {
+  background-image:
+    radial-gradient(circle, var(--p1) 0 2px, rgba(0,0,0,0) 3px),
+    radial-gradient(circle, var(--p2) 0 1.6px, rgba(0,0,0,0) 3px),
+    radial-gradient(circle, var(--p3) 0 1.8px, rgba(0,0,0,0) 3px),
+    radial-gradient(circle, var(--p4) 0 1.4px, rgba(0,0,0,0) 3px),
+    radial-gradient(circle, var(--p1) 0 2px, rgba(0,0,0,0) 3px),
+    radial-gradient(circle, var(--p2) 0 1.6px, rgba(0,0,0,0) 3px);
+
+  background-size: 6px 6px, 6px 6px, 7px 7px, 6px 6px, 7px 7px, 6px 6px;
+  background-position: 10% 70%, 25% 30%, 38% 85%, 58% 25%, 72% 78%, 88% 35%;
+  animation: tsfParticleBlink 1.8s ease-in-out infinite;
+}
+
+.tsf-rankParticles::after {
+  background-image:
+    radial-gradient(circle, var(--p1) 0 2px, rgba(0,0,0,0) 4px),
+    radial-gradient(circle, var(--p2) 0 1.8px, rgba(0,0,0,0) 4px),
+    radial-gradient(circle, var(--p3) 0 1.9px, rgba(0,0,0,0) 4px),
+    radial-gradient(circle, var(--p4) 0 1.5px, rgba(0,0,0,0) 4px),
+    radial-gradient(circle, var(--p1) 0 2px, rgba(0,0,0,0) 4px),
+    radial-gradient(circle, var(--p2) 0 1.6px, rgba(0,0,0,0) 4px);
+
+  background-size: 10px 10px, 10px 10px, 11px 11px, 10px 10px, 11px 11px, 10px 10px;
+  background-position: 12% 90%, 28% 80%, 44% 92%, 60% 82%, 76% 90%, 92% 84%;
+  animation: tsfParticleFloat 1.95s ease-in-out infinite;
+}
+
+.tsf-rank.nova .tsf-rankParticles {
+  --p1: rgba(120,255,140,0.95);
+  --p2: rgba(140,255,170,0.75);
+  --p3: rgba(90,230,120,0.72);
+  --p4: rgba(180,255,210,0.62);
+  filter: drop-shadow(0 0 12px rgba(120,255,140,0.18));
+}
+
+.tsf-rank.alpha .tsf-rankParticles {
+  --p1: rgba(120,200,255,0.95);
+  --p2: rgba(160,220,255,0.78);
+  --p3: rgba(90,170,255,0.72);
+  --p4: rgba(210,240,255,0.60);
+  filter: drop-shadow(0 0 12px rgba(120,200,255,0.18));
+}
+
+.tsf-rank.inmortal .tsf-rankParticles {
+  --p1: rgba(255,125,90,0.96);
+  --p2: rgba(255,175,95,0.78);
+  --p3: rgba(255,95,70,0.72);
+  --p4: rgba(255,220,170,0.58);
+  filter: drop-shadow(0 0 12px rgba(255,140,90,0.18));
+}
 
 .tsf-best {
   position: absolute;
@@ -419,9 +481,9 @@
 .tsf-icon {
   position: absolute;
   left: 50%;
-  top: 52%;
-  width: 55%;
-  height: 55%;
+  top: 54%;
+  width: 58%;
+  height: 58%;
   transform: translate(-50%, -50%);
   object-fit: contain;
   image-rendering: pixelated;
@@ -446,7 +508,11 @@
 
 .tsf-iconFallback {
   position: absolute;
-  inset: 18%;
+  left: 50%;
+  top: 54%;
+  width: 58%;
+  height: 58%;
+  transform: translate(-50%, -50%);
   border-radius: 0.7rem;
   background: rgba(0,0,0,0.25);
 }
@@ -544,13 +610,7 @@
   pointer-events: auto;
 }
 
-/* =========================
-   COINS
-   ========================= */
-.tsf-coins {
-  position: relative;
-  z-index: 2;
-}
+.tsf-coins { position: relative; z-index: 2; }
 
 .tsf-coinsHeader {
   display: grid;
@@ -609,12 +669,9 @@
   will-change: transform;
 }
 
-/* ====== MARCO ====== */
 .tsf-coinFrame {
   position: relative;
   width: 100%;
-
-  /* Marco.png es 1742x2048 aprox */
   aspect-ratio: 1742 / 2048;
 
   background: url("/tienda/assets/marco.png") center / 100% 100% no-repeat;
@@ -622,7 +679,6 @@
   transform: translateZ(0);
   isolation: isolate;
 
-  /* para hover */
   transition: filter 220ms cubic-bezier(.16,1,.3,1), transform 220ms cubic-bezier(.16,1,.3,1);
 }
 
@@ -646,7 +702,6 @@
     drop-shadow(0 0 16px rgba(255,232,169,0.14));
 }
 
-/* Área superior dentro del marco (medida por porcentajes del asset) */
 .tsf-coinCard {
   position: absolute;
   left: 12%;
@@ -655,11 +710,8 @@
   height: 63%;
 
   display: grid;
-
-  /* 3 filas: amount / icon / precios */
   grid-template-rows: 1.05fr 2.25fr 0.9fr;
 
-  /* padding interno para separar del marco */
   padding: 0.5rem 0rem 0.2rem;
 
   border-radius: 0.55rem;
@@ -676,7 +728,6 @@
   isolation: isolate;
 }
 
-/* TEXTURA “ROCA” + viñeta suave */
 .tsf-coinCard::before {
   content: "";
   position: absolute;
@@ -686,12 +737,9 @@
   z-index: -1;
 
   background:
-    /* manchas/moteado (roca) */
     radial-gradient(140% 120% at 20% 18%, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.00) 55%),
     radial-gradient(120% 120% at 78% 22%, rgba(0,0,0,0.18) 0%, rgba(0,0,0,0.00) 55%),
     radial-gradient(120% 120% at 35% 78%, rgba(0,0,0,0.22) 0%, rgba(0,0,0,0.00) 58%),
-
-    /* “grano” súper sutil (sin imagen) */
     repeating-linear-gradient(
       0deg,
       rgba(255,255,255,0.018) 0px,
@@ -706,8 +754,6 @@
       rgba(0,0,0,0.014) 2px,
       rgba(0,0,0,0.014) 3px
     ),
-
-    /* viñeta oscura para “encajar” moneda/números */
     radial-gradient(120% 95% at 50% 45%,
       rgba(0,0,0,0.00) 45%,
       rgba(0,0,0,0.22) 76%,
@@ -718,7 +764,6 @@
   opacity: 0.95;
 }
 
-/* PATRÓN “TELA/TOPO” (las curvas finas del ejemplo) */
 .tsf-coinCard::after {
   content: "";
   position: absolute;
@@ -740,9 +785,6 @@
   filter: blur(0.15px);
 }
 
-.tsf-coinWrap:hover .tsf-coinCard::before { opacity: 1; }
-
-/* Badges: overlay, NO afectan altura */
 .tsf-coinBadges {
   position: absolute;
   top: 0rem;
@@ -786,7 +828,6 @@
   background: linear-gradient(180deg, #ffb0be, #ff5c7a);
 }
 
-/* Amount (altura fija) */
 .tsf-coinAmount {
   text-align: center;
   font-family: "Luckiest Guy", system-ui, sans-serif;
@@ -795,8 +836,6 @@
 
   position: relative;
   z-index: 6;
-
-  /* Lo sube sin romper layout */
   align-self: start;
   margin-top: 0rem;
 }
@@ -843,7 +882,6 @@
   filter: drop-shadow(0 0.5rem 0.7rem rgba(0,0,0,0.22));
 }
 
-/* Icon */
 .tsf-coinIcon {
   display: grid;
   place-items: center;
@@ -855,14 +893,13 @@
 }
 
 .tsf-coinIcon img {
-  width: clamp(4.9rem, 7.2vw, 7rem);
+  width: clamp(4.7rem, 6.9vw, 6.7rem);
   height: auto;
   object-fit: contain;
   image-rendering: pixelated;
   transform: translateY(clamp(-0.1rem, -0.2vw, -0.2rem));
 }
 
-/* Prices */
 .tsf-coinPrices {
   display: flex;
   align-items: baseline;
@@ -894,11 +931,8 @@
   opacity: 0.95;
 }
 
-/* ====== BUY BAR dentro de la cajita del marco ====== */
 .tsf-buyBar {
   position: absolute;
-
-  /* slot inferior del marco */
   left: 11%;
   right: 11%;
   top: 75.5%;
@@ -911,7 +945,6 @@
   overflow: hidden;
   z-index: 0;
 
-  /* base “comprar” */
   background: linear-gradient(180deg, #7bff7a, #25d04e);
   box-shadow:
     0 1.05rem 1.55rem rgba(0,0,0,0.40),
@@ -921,9 +954,7 @@
   transform: translateZ(0);
 }
 
-.tsf-buyBar.is-in {
-  background: linear-gradient(180deg, #ffe8a9, #f7c55d);
-}
+.tsf-buyBar.is-in { background: linear-gradient(180deg, #ffe8a9, #f7c55d); }
 
 .tsf-buySeg {
   border: 0;
@@ -964,11 +995,9 @@
   font-size: clamp(1.05rem, 1.35vw, 1.18rem);
 }
 
-/* separadores internos para que se note “un solo botón” */
 .tsf-buySeg--dec { box-shadow: inset -2px 0 0 rgba(0,0,0,0.18), inset -1px 0 0 rgba(255,255,255,0.18); }
 .tsf-buySeg--inc { box-shadow: inset  2px 0 0 rgba(0,0,0,0.18), inset  1px 0 0 rgba(255,255,255,0.18); }
 
-/* Shine solo en el segmento central */
 .tsf-buySeg--main::after {
   content: "";
   position: absolute;
@@ -986,9 +1015,6 @@
   animation: tsfShine 1.05s ease-in-out 0.12s both;
 }
 
-/* =========================
-   Tabs
-   ========================= */
 .tsf-tabs {
   position: relative;
   z-index: 2;
@@ -998,7 +1024,7 @@
 
   display: grid;
   grid-auto-flow: column;
-  grid-auto-columns: clamp(12rem, 22vw, 16.2rem);
+  grid-auto-columns: clamp(11.4rem, 21vw, 15.6rem);
 
   align-items: center;
   justify-content: center;
@@ -1029,6 +1055,10 @@
 
 .tsf-tab:hover { transform: translateY(-1px); filter: brightness(1.06); }
 
+.tsf-tab.is-active .tsf-tabIcon {
+  animation: tsfTabIconFloat 2.6s ease-in-out infinite;
+}
+
 .tsf-tabBadge {
   position: absolute;
   top: -0.55rem;
@@ -1054,8 +1084,8 @@
 }
 
 .tsf-tabIcon {
-  width: clamp(1.45rem, 2.1vw, 2rem);
-  height: clamp(1.45rem, 2.1vw, 2rem);
+  width: clamp(1.4rem, 2.0vw, 1.9rem);
+  height: clamp(1.4rem, 2.0vw, 1.9rem);
   object-fit: contain;
   image-rendering: auto;
   filter: drop-shadow(0 0.7rem 0.9rem rgba(0,0,0,0.45));
@@ -1066,7 +1096,7 @@
   display: block;
   text-align: center;
   font-family: "Luckiest Guy", system-ui, sans-serif;
-  font-size: clamp(0.95rem, 1.25vw, 1.05rem);
+  font-size: clamp(0.92rem, 1.2vw, 1.02rem);
   letter-spacing: 0.03em;
   @include stroke-white(2px);
   padding-right: 1.1rem;
@@ -1102,9 +1132,6 @@
   animation: tsfOrbPulse 1.25s ease-in-out infinite;
 }
 
-/* =========================
-   Empty
-   ========================= */
 .tsf-empty {
   font-family: "Nunito", system-ui, sans-serif;
   font-weight: 900;
@@ -1115,15 +1142,12 @@
   box-shadow: 0 1.2rem 2rem rgba(0,0,0,0.30);
 }
 
-/* =========================
-   Responsive
-   ========================= */
 @media (max-width: 62rem) {
-  .tienda-storefront.tsf-brawl2 { --content-w: 54rem; }
+  .tienda-storefront.tsf-brawl2 { --content-w: 52rem; }
 }
 
 @media (max-width: 56rem) {
-  .tienda-storefront.tsf-brawl2 { --content-w: 48rem; }
+  .tienda-storefront.tsf-brawl2 { --content-w: 46rem; }
 }
 
 @media (max-width: 52rem) {
