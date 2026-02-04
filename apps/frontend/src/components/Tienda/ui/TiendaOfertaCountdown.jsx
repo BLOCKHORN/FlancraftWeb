@@ -109,59 +109,38 @@ export default function TiendaOfertaCountdown() {
       ? sale.discount
       : 0;
 
-  const titleText =
-    d > 0
-      ? `${d} días, ${pad2(h)}:${pad2(m)}:${pad2(s)}`
-      : `${pad2(h)}:${pad2(m)}:${pad2(s)}`;
+  const timeText =
+    d > 0 ? `${d}d ${pad2(h)}:${pad2(m)}:${pad2(s)}` : `${pad2(h)}:${pad2(m)}:${pad2(s)}`;
 
   return (
-    <div className="tienda-oferta-banner" aria-label="Oferta activa">
+    <div className="tienda-oferta-strip" aria-label="Oferta activa">
       <span className="sr-only" role="status" aria-live="polite">
         {announce}
       </span>
 
-      <div className="tienda-oferta-artWrap" aria-hidden="true">
+      <div className="tienda-oferta-cta" aria-hidden="true">
+        <span className="cta-particles" />
         <img
-          src="/tienda/assets/ofertas-ultra.webp"
+          src="/tienda/assets/ofertas-ultra.png"
           alt=""
           className="tienda-oferta-image"
           draggable="false"
         />
       </div>
 
-      <div className="tienda-oferta-panel" title={`Termina en ${titleText}`}>
-        <div className="tienda-oferta-header">
-          <div className="tienda-oferta-timer-inline" aria-label={`Termina en ${titleText}`}>
-            {d > 0 && (
-              <>
-                <div className="timer-block">
-                  <span className="timer-value">{d}</span>
-                  <span className="timer-unit">DÍAS</span>
-                </div>
-                <span className="timer-sep">:</span>
-              </>
-            )}
-
-            <div className="timer-block">
-              <span className="timer-value">{pad2(h)}</span>
-              <span className="timer-unit">HORAS</span>
-            </div>
-            <span className="timer-sep">:</span>
-            <div className="timer-block">
-              <span className="timer-value">{pad2(m)}</span>
-              <span className="timer-unit">MIN</span>
-            </div>
-            <span className="timer-sep">:</span>
-            <div className="timer-block">
-              <span className="timer-value">{pad2(s)}</span>
-              <span className="timer-unit">SEG</span>
-            </div>
+      <div className="tienda-oferta-panel" title={`Termina en ${timeText}`}>
+        <div className="tienda-oferta-row">
+          <div className="tienda-oferta-line" aria-label={`Termina en ${timeText}`}>
+            <span className="tienda-oferta-text">Descuentos activos</span>
+            <span className="tienda-oferta-dot">•</span>
+            <span className="tienda-oferta-time">
+              <span className="time-label">Termina en</span>
+              <span className="time-value">{timeText}</span>
+            </span>
           </div>
 
           {percent > 0 && <span className="tienda-oferta-percent">-{percent}%</span>}
         </div>
-
-        <div className="tienda-oferta-sub">Descuentos activos en la tienda.</div>
 
         <div className="tienda-oferta-bar" aria-hidden="true">
           <span className="tienda-oferta-barFill" style={{ width: `${progress * 100}%` }} />

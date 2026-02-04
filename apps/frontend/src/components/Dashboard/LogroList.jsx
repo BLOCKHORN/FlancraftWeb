@@ -31,7 +31,7 @@ const TABS_MISION = [
 const SERVIDORES = [
   { nombre: "Todos", valor: null },
   {
-    nombre: "Survival Clásico",
+    nombre: "Survival Towny",
     valor: "survival",
     imagen: "/assets/reinos/survival-clasico.webp",
   },

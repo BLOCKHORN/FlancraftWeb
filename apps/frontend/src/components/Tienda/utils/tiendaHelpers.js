@@ -1,24 +1,14 @@
 // src/components/Tienda/utils/tiendaHelpers.js
 
 export const API_URL =
-  import.meta.env.VITE_BACKEND_URL ||
-  "https://flancraft-backend.onrender.com";
+  import.meta.env.VITE_BACKEND_URL || "https://flancraft-backend.onrender.com";
 
-/* =========================
-   BASE + endpoints Tebex (robusto)
-   ========================= */
 export const API_BASE = String(API_URL || "").replace(/\/$/, "");
 
-// Forzable desde .env: VITE_TEBEX_PATH=/api/tebex (o /tebex)
 export const TEBEX_PATH = import.meta.env.VITE_TEBEX_PATH || "/api/tebex";
 export const TEBEX_URL = `${API_BASE}${TEBEX_PATH}`;
-
-// Fallback por si el backend lo montó sin /api
 export const TEBEX_URL_FALLBACK = `${API_BASE}/tebex`;
 
-/* =========================
-   Fetch helper (timeout)
-   ========================= */
 async function fetchWithTimeout(url, options = {}, timeoutMs = 15000) {
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), timeoutMs);
@@ -37,9 +27,6 @@ async function fetchWithTimeout(url, options = {}, timeoutMs = 15000) {
   }
 }
 
-/**
- * Cache-bust: añade/actualiza ?v=<bust> respetando hash y query existentes.
- */
 export function withCacheBust(url = "", bust = null) {
   const u = String(url || "").trim();
   const b = bust != null ? String(bust).trim() : "";
@@ -57,11 +44,6 @@ export function withCacheBust(url = "", bust = null) {
   return `${base}${qs ? `?${qs}` : ""}${hash ? `#${hash}` : ""}`;
 }
 
-/**
- * Fetch robusto Tebex:
- * - Intenta TEBEX_URL + path
- * - Si 404, intenta TEBEX_URL_FALLBACK + path
- */
 export async function fetchTebex(path, options) {
   const p = String(path || "");
   const safePath = p.startsWith("/") ? p : `/${p}`;
@@ -72,23 +54,12 @@ export async function fetchTebex(path, options) {
   return fetchWithTimeout(`${TEBEX_URL_FALLBACK}${safePath}`, options);
 }
 
-/**
- * Catálogo público.
- * Endpoint esperado: /api/tebex/public-catalog (o /tebex/public-catalog)
- */
 export async function fetchPublicCatalog() {
   const r = await fetchTebex("/public-catalog", { method: "GET" });
   if (!r.ok) throw new Error("No se pudo cargar el catálogo público.");
   return r.json();
 }
 
-/**
- * Sale activa (para inferir precio original si el backend solo devuelve price).
- * Intenta:
- * - /sale-activa/:server
- * - /sale-activa?sv=:server
- * - /sale-activa
- */
 export async function fetchSaleActiva(serverKey) {
   const sv = String(serverKey || "").trim().toLowerCase();
 
@@ -108,20 +79,16 @@ export async function fetchSaleActiva(serverKey) {
       const active = Boolean(data?.active ?? data?.data?.active ?? sale);
 
       return { active, sale: active ? sale : null, raw: data };
-    } catch {
-      // sigue probando
-    }
+    } catch {}
   }
 
   return { active: false, sale: null, raw: null };
 }
 
-/** Quita acentos sin alterar mayúsculas/espacios. */
 export function stripAccents(str = "") {
   return String(str).normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
 
-/** Slug seguro (sin acentos, minúsculas, guiones). */
 export function slugify(str = "") {
   return String(str)
     .normalize("NFD")
@@ -138,28 +105,18 @@ function toNumber(v, fallback = 0) {
   return Number.isFinite(n) ? n : fallback;
 }
 
-/** Id de paquete (id / package_id). */
 export function getPackageId(pkg) {
   return pkg?.id ?? pkg?.package_id ?? null;
 }
 
-/** Nombre de paquete (best-effort). */
 export function getPackageName(pkg) {
-  return (
-    pkg?.name ??
-    pkg?.nombre ??
-    pkg?.package_name ??
-    pkg?.title ??
-    "Producto"
-  );
+  return pkg?.name ?? pkg?.nombre ?? pkg?.package_name ?? pkg?.title ?? "Producto";
 }
 
-/** Precio final (ya con rebajas si backend las aplica). */
 export function getPackagePrice(pkg) {
   return toNumber(pkg?.price ?? pkg?.precio ?? 0, 0);
 }
 
-/** Precio original (para tachado), si existe. */
 export function getPackageOriginalPrice(pkg) {
   const v = pkg?.original_price ?? pkg?.precio_original ?? null;
   if (v === null || v === undefined) return null;
@@ -167,7 +124,6 @@ export function getPackageOriginalPrice(pkg) {
   return Number.isFinite(n) ? n : null;
 }
 
-/** Imagen del paquete (best-effort). */
 export function getPackageImage(pkg) {
   return (
     pkg?.image_url ||
@@ -178,7 +134,6 @@ export function getPackageImage(pkg) {
   );
 }
 
-/** Normaliza un paquete para carrito (id/name/price + cantidad). */
 export function normalizeProductForCart(pkg, cantidad = 1) {
   const id = getPackageId(pkg);
   return {
@@ -192,7 +147,6 @@ export function normalizeProductForCart(pkg, cantidad = 1) {
   };
 }
 
-/** Total del carrito (suma price * cantidad). */
 export function calcularTotal(carrito = []) {
   const total = (carrito || []).reduce((acc, it) => {
     const price = toNumber(it?.price ?? it?.precio ?? 0, 0);
@@ -203,80 +157,57 @@ export function calcularTotal(carrito = []) {
   return total.toFixed(2);
 }
 
-/**
- * Tiles principales de la tienda (portada).
- * Incluye tile sintético "GENS".
- */
+/* =========================================================
+   TILES PORTADA (CANÓNICOS)
+   ========================================================= */
+
 export const PORTADA_TILES = [
   {
-    server: "lobby",
+    key: "rangos",
     name: "RANGOS",
-    slug: "rangos",
+    to: "/tienda/rangos",
+    isGlobal: true,
     image: "https://i.ibb.co/k6yZSyN4/rangos.webp",
   },
   {
-    server: "lobby",
-    name: "TAGS",
-    slug: "tags",
-    image: "/assets/reinos/tags.png",
-  },
-  {
-    server: "lobby",
+    key: "gens",
     name: "GENS",
-    slug: "gens",
+    to: "/tienda/gens",
+    isGlobal: false,
     image: "/assets/reinos/gens.webp",
   },
   {
-    server: "clasico",
-    name: "SURVIVAL CLASICO",
-    slug: "survival-clasico",
-    image: "https://i.ibb.co/rfT6fp5k/survival-clasico.webp",
-  },
-  {
-    server: "oneblock",
+    key: "oneblock",
     name: "ONEBLOCK",
-    slug: "oneblock",
+    to: "/tienda/oneblock",
+    isGlobal: false,
     image: "/assets/reinos/oneblock.webp",
   },
 ];
 
-/** Tile específica para aviso a padres. */
 export const AVISO_PADRES_TILE = {
-  server: "lobby",
+  key: "antes-de-comprar",
   name: "ANTES DE COMPRAR",
-  slug: "antes-de-comprar",
+  to: "/tienda/antes-de-comprar",
+  isGlobal: true,
   image: "https://i.imgur.com/6HSMUZu.png",
 };
 
-/**
- * Subcategorías reales visibles dentro de cada tile sintética.
- * Clave: `${server}|${slugCategoria}`.
- * Los nombres deben coincidir con Tebex (case-insensitive).
- */
+/* =========================================================
+   SUBCATS / FILTROS (si lo usas en otras vistas)
+   ========================================================= */
+
 export const SUBCATS_PER_TILE = {
-  "lobby|rangos": ["RANGOS"],
-  "lobby|tags": ["TAGS"],
+  // Rangos (aunque sea /tienda/rangos, en Tebex están en "gens")
+  "gens|rangos": ["RANGOS"],
 
-  // Importante: debe existir una categoría real en Tebex con nombre "GENS" (o ajusta el string).
-  "lobby|gens": ["GENS"],
+  // GENS coins (depende de cómo los tengas nombrados)
+  "gens|coins": ["GENS", "Coins", "COINS"],
 
-  "lobby|antes-de-comprar": [],
-
-  "clasico|survival-clasico": [
-    "Protecciones",
-    "Items OP Survival",
-    "Llaves Survival",
-    "Dinero Survival",
-    "Experiencia Survival",
-  ],
-
-  "oneblock|oneblock": ["Items OP Oneblock", "Llaves Oneblock", "Dinero Oneblock"],
+  // ONEBLOCK coins
+  "oneblock|coins": ["ONEBLOCK", "Coins OB", "COINS OB", "Coins", "COINS"],
 };
 
-/**
- * Cruza categorías de la API con una lista permitida por nombre.
- * Devuelve [{id,name,slug}, ...]. Si namesAllowed está vacío, devuelve todas.
- */
 export function pickSubcatsFromApi(apiCategories = [], namesAllowed = []) {
   const allowed = Array.isArray(namesAllowed) ? namesAllowed : [];
   const allowedLower = new Set(allowed.map((n) => String(n).toLowerCase()));
@@ -295,14 +226,12 @@ export function pickSubcatsFromApi(apiCategories = [], namesAllowed = []) {
   return out;
 }
 
-/** Encuentra una categoría real por slug (slugify(name) === slug). */
 export function findCategoryBySlug(apiCategories = [], slug = "") {
   const cats = pickSubcatsFromApi(apiCategories, []);
   const target = String(slug || "").toLowerCase();
   return cats.find((c) => String(c.slug).toLowerCase() === target) || null;
 }
 
-/** Filtra paquetes por una categoría (id). */
 export function filterPackagesByCategoryId(paquetes = [], categoryId) {
   if (!categoryId) return [];
   const wanted = String(categoryId);
@@ -319,7 +248,6 @@ export function filterPackagesByCategoryId(paquetes = [], categoryId) {
   });
 }
 
-/** Filtra paquetes por subcategorías (array de {id,name,slug}). */
 export function filterPackagesBySubcats(paquetes = [], subcats = []) {
   const subcatIds = new Set((subcats || []).map((s) => String(s.id)));
 
@@ -332,5 +260,86 @@ export function filterPackagesBySubcats(paquetes = [], subcats = []) {
       null;
 
     return cid && subcatIds.has(String(cid));
+  });
+}
+/* =========================================================
+   STOREFRONT (Brawl-like) config + helpers
+   ========================================================= */
+
+export const STOREFRONT_CONFIG = {
+  rangos: {
+    // nombres de categorías donde Tebex guarda los rangos
+    // (puedes meter aquí más variantes si tu catálogo las usa)
+    categoryNames: ["RANGOS", "Rangos", "Ranks", "RANKS"],
+  },
+
+  // Tabs de servidor (abajo)
+  // IMPORTANTE: categoryNames son nombres de categorías del catálogo de Tebex
+  // donde están los paquetes de ese “servidor”.
+  servers: [
+    {
+      key: "survival",
+      label: "Survival Towny",
+      categoryNames: ["SURVIVAL", "Survival", "Towny", "COINS", "Coins"],
+    },
+    {
+      key: "gens",
+      label: "Gens",
+      categoryNames: ["GENS", "Coins", "COINS"],
+    },
+    {
+      key: "oneblock",
+      label: "Oneblock",
+      categoryNames: ["ONEBLOCK", "Coins", "COINS"],
+    },
+  ],
+};
+
+// Devuelve IDs de categorías cuyo nombre coincide con alguno de los names (case-insensitive)
+export function findCategoriesByNames(apiCategories = [], names = []) {
+  const wanted = new Set((names || []).map((n) => String(n).trim().toLowerCase()).filter(Boolean));
+  if (wanted.size === 0) return [];
+
+  const out = [];
+  for (const c of apiCategories || []) {
+    const name = String(c?.name || c?.category_name || "").trim().toLowerCase();
+    const id = c?.id ?? c?.category_id ?? null;
+    if (!id || !name) continue;
+    if (wanted.has(name)) out.push(String(id));
+  }
+
+  // fallback “contains” por si tu categoría es “GENS Coins” etc
+  if (out.length === 0) {
+    for (const c of apiCategories || []) {
+      const raw = String(c?.name || c?.category_name || "").trim().toLowerCase();
+      const id = c?.id ?? c?.category_id ?? null;
+      if (!id || !raw) continue;
+
+      for (const w of wanted) {
+        if (raw.includes(w)) {
+          out.push(String(id));
+          break;
+        }
+      }
+    }
+  }
+
+  return [...new Set(out)];
+}
+
+// Filtra paquetes por una lista de category IDs (acepta ids como string/number)
+export function filterPackagesByCategoryIds(paquetes = [], categoryIds = []) {
+  const set = new Set((categoryIds || []).map((x) => String(x)));
+  if (set.size === 0) return [];
+
+  return (paquetes || []).filter((p) => {
+    const cid =
+      p?.category?.id ??
+      p?.category_id ??
+      p?.categories?.[0]?.id ??
+      p?.categories?.[0]?.category_id ??
+      null;
+
+    return cid !== null && set.has(String(cid));
   });
 }

@@ -32,10 +32,53 @@ function RankDelta({ delta }) {
   );
 }
 
+/**
+ * ✅ KDR:
+ * - Preferimos muertes_pvp si existe y parece real.
+ * - Si muertes_pvp = 0 pero muertes > 0 => fallback a muertes (porque seguramente aún no trackeas muertes_pvp).
+ * - Si muertes (o muertes_pvp real) = 0 => ∞
+ */
+function computeKDRRow(p) {
+  const kills = Number(p?.kills_pvp ?? 0);
+  if (!Number.isFinite(kills) || kills <= 0) return null;
+
+  const totalDeaths = Number(p?.muertes ?? 0);
+  const pvpDeaths = Number(p?.muertes_pvp ?? 0);
+
+  const hasTotalDeaths = Number.isFinite(totalDeaths);
+  const hasPvpDeaths = Number.isFinite(pvpDeaths);
+
+  // Si no hay datos coherentes
+  if (!hasTotalDeaths && !hasPvpDeaths) return null;
+
+  // ✅ decidir qué deaths usar
+  let deathsToUse = totalDeaths;
+
+  // muertes_pvp "real" si es > 0
+  if (hasPvpDeaths && pvpDeaths > 0) {
+    deathsToUse = pvpDeaths;
+  } else if (hasPvpDeaths && pvpDeaths === 0) {
+    // Si pvpDeaths=0 pero totalDeaths=0 => realmente 0 muertes (perfect)
+    if (hasTotalDeaths && totalDeaths === 0) {
+      deathsToUse = 0;
+    } else {
+      // Si totalDeaths>0 y pvpDeaths=0 => normalmente significa "no trackeado", hacemos fallback a total
+      deathsToUse = totalDeaths;
+    }
+  }
+
+  if (!Number.isFinite(deathsToUse)) return null;
+  if (deathsToUse === 0) return Infinity;
+
+  return kills / deathsToUse;
+}
+
 function formatValue({ key, value, formatearTiempo, formatearTiempoParkour }) {
   if (value === null || value === undefined) return "—";
 
-  if (key === "phase_actual") {
+  const k = String(key || "").toLowerCase();
+
+  if (k === "phase_actual") {
     if (typeof value === "string") {
       const s = value.trim();
       if (!s || s === "-" || s === "—") return "—";
@@ -45,27 +88,32 @@ function formatValue({ key, value, formatearTiempo, formatearTiempoParkour }) {
     return Number.isFinite(n) && n > 0 ? `Fase ${fmtInt(n)}` : "—";
   }
 
+  if (k === "kdr") {
+    if (value === Infinity) return "∞";
+    const n = Number(value);
+    return Number.isFinite(n) ? n.toFixed(2) : "—";
+  }
+
   const n = Number(value);
 
-  if (key === "genpoints") return Number.isFinite(n) ? fmtInt(n) : "—";
-  if (key === "svpoints") return Number.isFinite(n) ? fmtInt(Math.round(n)) : "—";
-  if (key === "obpoints") return Number.isFinite(n) ? fmtInt(Math.round(n)) : "—";
-  if (key === "anpoints") return Number.isFinite(n) ? fmtInt(Math.round(n)) : "—";
+  if (k === "genpoints") return Number.isFinite(n) ? fmtInt(n) : "—";
+  if (k === "svpoints") return Number.isFinite(n) ? fmtInt(Math.round(n)) : "—";
+  if (k === "obpoints") return Number.isFinite(n) ? fmtInt(Math.round(n)) : "—";
+  if (k === "anpoints") return Number.isFinite(n) ? fmtInt(Math.round(n)) : "—";
 
-  if (key === "tiempo_jugado") return formatearTiempo(n);
-  if (key === "mejor_tiempo") return formatearTiempoParkour(n);
+  if (k === "tiempo_jugado") return formatearTiempo(n);
+  if (k === "mejor_tiempo") return formatearTiempoParkour(n);
 
-  if (key === "dinero") return formatMoney(n);
-  if (key === "coins_balance") return fmtInt(n);
-  if (key === "nivel") return fmtInt(n);
+  if (k === "dinero") return formatMoney(n);
+  if (k === "coins_balance") return fmtInt(n);
+  if (k === "nivel") return fmtInt(n);
 
-  if (key === "gens_value_total") {
+  if (k === "gens_value_total") {
     const info = getGensValorTierInfo(n);
     const suffix = info?.nextMin != null ? ` • ${info.pct}%` : "";
     return `${info.name}${suffix}`;
   }
 
-  if (key === "kdr") return Number.isFinite(n) ? n.toFixed(2) : "—";
   return Number.isFinite(n) ? fmtInt(n) : "—";
 }
 
@@ -116,7 +164,11 @@ function StatCell({ stat, p, value, servidorApi, formatearTiempo, formatearTiemp
         content={<GensValorTooltip info={info} incomeH={p?.gens_income_h} tierMax={p?.gens_highest_tier} />}
         maxWidth={380}
       >
-        <span className={cn("num num--full num--pill num--tier", `gens-tier-${info.idx}`, `tier-text-${info.idx}`)} data-stat="gens_value_total" data-tier={info.idx}>
+        <span
+          className={cn("num num--full num--pill num--tier", `gens-tier-${info.idx}`, `tier-text-${info.idx}`)}
+          data-stat="gens_value_total"
+          data-tier={info.idx}
+        >
           <FitText text={display} {...FT_TIER} />
         </span>
       </Tooltip>
@@ -235,29 +287,13 @@ export default function LeaderboardsTable({
 
               if (isGens && st !== "genpoints") {
                 return (
-                  <StatHeader
-                    key={st}
-                    stat={st}
-                    servidorApi={servidorApi}
-                    active={false}
-                    ordenAsc={false}
-                    sortable={false}
-                    helpOverride={STAT_HELP[st]}
-                  />
+                  <StatHeader key={st} stat={st} servidorApi={servidorApi} active={false} ordenAsc={false} sortable={false} helpOverride={STAT_HELP[st]} />
                 );
               }
 
               if (isGens && st === "genpoints") {
                 return (
-                  <StatHeader
-                    key={st}
-                    stat={st}
-                    servidorApi={servidorApi}
-                    active={true}
-                    ordenAsc={false}
-                    sortable={false}
-                    helpOverride={STAT_HELP.genpoints}
-                  />
+                  <StatHeader key={st} stat={st} servidorApi={servidorApi} active={true} ordenAsc={false} sortable={false} helpOverride={STAT_HELP.genpoints} />
                 );
               }
 
@@ -280,9 +316,7 @@ export default function LeaderboardsTable({
           {loading &&
             [...Array(limit)].map((_, i) => (
               <tr key={`sk-${i}`} className="lb-row sk-row">
-                <td>
-                  <span className="sk sk--pos" />
-                </td>
+                <td><span className="sk sk--pos" /></td>
                 <td>
                   <div className="lb-player">
                     <span className="sk sk--head" />
@@ -293,9 +327,7 @@ export default function LeaderboardsTable({
                   </div>
                 </td>
                 {STATS.map((st) => (
-                  <td key={st}>
-                    <span className="sk sk--num" />
-                  </td>
+                  <td key={st}><span className="sk sk--num" /></td>
                 ))}
               </tr>
             ))}
@@ -353,21 +385,17 @@ export default function LeaderboardsTable({
                   </td>
 
                   {STATS.map((st) => {
+                    const key = String(st || "").toLowerCase();
+
                     const rawValue =
-                      st === "phase_actual"
+                      key === "phase_actual"
                         ? p?.phase_nombre || "—"
-                        : st === "island_level"
+                        : key === "island_level"
                         ? getIslandLevelLocal(p)
-                        : st === "genpoints"
+                        : key === "genpoints"
                         ? safeNum(p?.genpoints) || computeGensScore(p)
-                        : st === "kdr"
-                        ? (() => {
-                            const k = safeNum(p?.kills_pvp);
-                            const d = safeNum(p?.muertes_pvp ?? p?.muertes);
-                            if (!Number.isFinite(k) || !Number.isFinite(d)) return null;
-                            if (d <= 0) return k;
-                            return k / d;
-                          })()
+                        : key === "kdr"
+                        ? computeKDRRow(p)
                         : p?.[st];
 
                     return (

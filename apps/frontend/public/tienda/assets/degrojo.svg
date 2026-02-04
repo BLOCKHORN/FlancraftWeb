@@ -1,0 +1,226 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="900" viewBox="0 0 1200 900">
+  <defs>
+    <!-- Interior (clip) -->
+    <clipPath id="clipInner">
+      <rect x="78" y="78" width="1044" height="744"/>
+    </clipPath>
+
+    <!-- Fondo rojo/naranja -->
+    <radialGradient id="bgRad" cx="50%" cy="50%" r="90%">
+      <stop offset="0%" stop-color="#FFB34A" stop-opacity="0.95"/>
+      <stop offset="35%" stop-color="#FF5A2E" stop-opacity="0.96"/>
+      <stop offset="100%" stop-color="#2A0710" stop-opacity="1"/>
+    </radialGradient>
+
+    <!-- Glow central fuerte (más “sol”) -->
+    <radialGradient id="sunGlow" cx="50%" cy="50%" r="40%">
+      <stop offset="0%" stop-color="#FFF6A8" stop-opacity="0.95"/>
+      <stop offset="28%" stop-color="#FFD34A" stop-opacity="0.55"/>
+      <stop offset="60%" stop-color="#FF7A2A" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#FF2E2A" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Vignette -->
+    <radialGradient id="vignette" cx="50%" cy="50%" r="92%">
+      <stop offset="55%" stop-color="#000" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#000" stop-opacity="0.62"/>
+    </radialGradient>
+
+    <!-- Rayos -->
+    <linearGradient id="rayA" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#FFD34A" stop-opacity="0.26"/>
+      <stop offset="100%" stop-color="#B70F1A" stop-opacity="0.18"/>
+    </linearGradient>
+    <linearGradient id="rayB" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#FF6A3A" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#6F0712" stop-opacity="0.16"/>
+    </linearGradient>
+
+    <!-- Marco rojo -->
+    <linearGradient id="borderRed" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"  stop-color="#FF9A62"/>
+      <stop offset="55%" stop-color="#FF2F2A"/>
+      <stop offset="100%" stop-color="#6F0712"/>
+    </linearGradient>
+
+    <!-- Glow marco -->
+    <filter id="neonGlow" x="-25%" y="-25%" width="150%" height="150%">
+      <feGaussianBlur stdDeviation="7" result="b"/>
+      <feColorMatrix in="b" type="matrix"
+        values="1 0 0 0 0
+                0 1 0 0 0
+                0 0 1 0 0
+                0 0 0 0.55 0" result="g"/>
+      <feMerge>
+        <feMergeNode in="g"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Partículas -->
+    <filter id="sparkGlow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="4" result="b"/>
+      <feMerge>
+        <feMergeNode in="b"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Grano -->
+    <filter id="grain" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="2" stitchTiles="stitch" result="n"/>
+      <feColorMatrix in="n" type="matrix"
+        values="0 0 0 0 0.35
+                0 0 0 0 0.35
+                0 0 0 0 0.35
+                0 0 0 0.10 0" result="gn"/>
+      <feBlend in="SourceGraphic" in2="gn" mode="overlay"/>
+    </filter>
+
+    <!-- Sombra asset -->
+    <filter id="drop" x="-25%" y="-25%" width="150%" height="150%">
+      <feDropShadow dx="0" dy="18" stdDeviation="20" flood-color="#000" flood-opacity="0.30"/>
+    </filter>
+
+    <!-- ===== Llamas inferiores (estilo Brawl-like) ===== -->
+    <linearGradient id="flameOuter" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0%"  stop-color="#FF2A2A"/>
+      <stop offset="55%" stop-color="#FF7A12"/>
+      <stop offset="100%" stop-color="#FFE86A"/>
+    </linearGradient>
+
+    <linearGradient id="flameInner" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0%"  stop-color="#FF7A12"/>
+      <stop offset="60%" stop-color="#FFD04A"/>
+      <stop offset="100%" stop-color="#FFF6B0"/>
+    </linearGradient>
+
+    <filter id="flameGlow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="8" result="b"/>
+      <feColorMatrix in="b" type="matrix"
+        values="1 0 0 0 0
+                0 1 0 0 0
+                0 0 1 0 0
+                0 0 0 0.45 0" result="g"/>
+      <feMerge>
+        <feMergeNode in="g"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <g filter="url(#drop)">
+    <!-- ===== Interior ===== -->
+    <g clip-path="url(#clipInner)">
+      <rect x="78" y="78" width="1044" height="744" fill="url(#bgRad)"/>
+
+      <!-- Rayos 14 -->
+      <g transform="translate(600 450)" opacity="0.92">
+        <path d="M0 0 L2200 -320 L2200 320 Z" fill="url(#rayA)"/>
+        <g transform="rotate(25.714)"><path d="M0 0 L2200 -320 L2200 320 Z" fill="url(#rayB)"/></g>
+        <g transform="rotate(51.428)"><path d="M0 0 L2200 -320 L2200 320 Z" fill="url(#rayA)"/></g>
+        <g transform="rotate(77.142)"><path d="M0 0 L2200 -320 L2200 320 Z" fill="url(#rayB)"/></g>
+        <g transform="rotate(102.856)"><path d="M0 0 L2200 -320 L2200 320 Z" fill="url(#rayA)"/></g>
+        <g transform="rotate(128.57)"><path d="M0 0 L2200 -320 L2200 320 Z" fill="url(#rayB)"/></g>
+        <g transform="rotate(154.284)"><path d="M0 0 L2200 -320 L2200 320 Z" fill="url(#rayA)"/></g>
+        <g transform="rotate(180)"><path d="M0 0 L2200 -320 L2200 320 Z" fill="url(#rayB)"/></g>
+        <g transform="rotate(205.714)"><path d="M0 0 L2200 -320 L2200 320 Z" fill="url(#rayA)"/></g>
+        <g transform="rotate(231.428)"><path d="M0 0 L2200 -320 L2200 320 Z" fill="url(#rayB)"/></g>
+        <g transform="rotate(257.142)"><path d="M0 0 L2200 -320 L2200 320 Z" fill="url(#rayA)"/></g>
+        <g transform="rotate(282.856)"><path d="M0 0 L2200 -320 L2200 320 Z" fill="url(#rayB)"/></g>
+        <g transform="rotate(308.57)"><path d="M0 0 L2200 -320 L2200 320 Z" fill="url(#rayA)"/></g>
+        <g transform="rotate(334.284)"><path d="M0 0 L2200 -320 L2200 320 Z" fill="url(#rayB)"/></g>
+      </g>
+
+      <!-- Sol central -->
+      <circle cx="600" cy="450" r="360" fill="url(#sunGlow)"/>
+
+      <!-- Partículas tipo polvo + cuadraditos -->
+      <g filter="url(#sparkGlow)">
+        <rect x="195" y="150" width="30" height="30" rx="6" fill="#FFD04A" opacity="0.22"/>
+        <rect x="980" y="170" width="26" height="26" rx="6" fill="#FFD04A" opacity="0.18"/>
+        <rect x="940" y="640" width="28" height="28" rx="6" fill="#FFD04A" opacity="0.20"/>
+        <rect x="250" y="650" width="22" height="22" rx="6" fill="#FFD04A" opacity="0.16"/>
+
+        <circle cx="320" cy="310" r="6" fill="#FFF2B0" opacity="0.16"/>
+        <circle cx="430" cy="540" r="5" fill="#FFF2B0" opacity="0.12"/>
+        <circle cx="860" cy="320" r="6" fill="#FFF2B0" opacity="0.14"/>
+        <circle cx="780" cy="585" r="5" fill="#FFF2B0" opacity="0.11"/>
+
+        <!-- polvo -->
+        <circle cx="520" cy="220" r="3.5" fill="#FFECA0" opacity="0.10"/>
+        <circle cx="560" cy="260" r="2.8" fill="#FFECA0" opacity="0.10"/>
+        <circle cx="610" cy="240" r="3.2" fill="#FFECA0" opacity="0.10"/>
+        <circle cx="680" cy="290" r="2.6" fill="#FFECA0" opacity="0.10"/>
+      </g>
+
+      <!-- ===== Llamas abajo (DENTRO) ===== -->
+      <g transform="translate(600 720)" filter="url(#flameGlow)">
+        <!-- Base llama grande (dos alas) -->
+        <path d="
+          M -420 120
+          C -300 60, -240 0, -170 -40
+          C -130 -62, -120 -92, -150 -118
+          C -185 -150, -160 -200, -95 -205
+          C -50 -210, -35 -245, -25 -280
+          C 0 -240, 15 -210, 55 -205
+          C 120 -200, 145 -150, 110 -118
+          C 80 -92, 90 -62, 130 -40
+          C 200 0, 260 60, 420 120
+          C 260 150, 120 170, 0 170
+          C -120 170, -260 150, -420 120
+          Z"
+          fill="url(#flameOuter)" opacity="1"/>
+
+        <!-- Interior más claro -->
+        <path d="
+          M -310 120
+          C -220 70, -170 20, -120 -10
+          C -90 -28, -92 -55, -115 -75
+          C -140 -98, -120 -130, -80 -132
+          C -45 -134, -30 -158, -20 -182
+          C -5 -160, 10 -134, 45 -132
+          C 85 -130, 105 -98, 80 -75
+          C 57 -55, 55 -28, 85 -10
+          C 140 20, 190 70, 310 120
+          C 200 140, 95 150, 0 150
+          C -95 150, -200 140, -310 120
+          Z"
+          fill="url(#flameInner)" opacity="0.95"/>
+
+        <!-- Llamitas pequeñas laterales -->
+        <path d="M -460 95 C -500 60, -500 25, -470 0 C -440 -25, -415 -10, -420 15 C -425 40, -400 55, -385 70 C -410 82, -435 92, -460 95 Z"
+              fill="url(#flameOuter)" opacity="0.92"/>
+        <path d="M 460 95 C 500 60, 500 25, 470 0 C 440 -25, 415 -10, 420 15 C 425 40, 400 55, 385 70 C 410 82, 435 92, 460 95 Z"
+              fill="url(#flameOuter)" opacity="0.92"/>
+
+        <!-- Brillitos -->
+        <circle cx="-240" cy="60" r="6" fill="#FFF6B0" opacity="0.18"/>
+        <circle cx="230" cy="70" r="5" fill="#FFF6B0" opacity="0.16"/>
+      </g>
+
+      <!-- Vignette + grain -->
+      <rect x="78" y="78" width="1044" height="744" fill="url(#vignette)"/>
+      <g filter="url(#grain)" opacity="0.85">
+        <rect x="78" y="78" width="1044" height="744" fill="transparent"/>
+      </g>
+    </g>
+
+    <!-- ===== Bordes (igual que azul/verde) ===== -->
+    <!-- Borde exterior negro -->
+    <rect x="48" y="48" width="1104" height="804"
+          fill="none" stroke="#000" stroke-opacity="0.92"
+          stroke-width="32" stroke-linejoin="miter" stroke-miterlimit="12"/>
+
+    <!-- Borde rojo glow -->
+    <rect x="68" y="68" width="1064" height="764"
+          fill="none" stroke="url(#borderRed)"
+          stroke-width="18" stroke-linejoin="miter" stroke-miterlimit="12"
+          filter="url(#neonGlow)"/>
+
+    <!-- Línea interior -->
+    <rect x="86" y="86" width="1028" height="728"
+          fill="none" stroke="#FFD7B0" stroke-opacity="0.12"
+          stroke-width="6" stroke-linejoin="miter" stroke-miterlimit="12"/>
+  </g>
+</svg>

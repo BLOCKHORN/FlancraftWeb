@@ -12,27 +12,33 @@
   flex: 1 1 auto;
 }
 
+/* =========================================
+   ✅ MARCO PNG exterior (bordecarrito.png)
+   - .carrito-panel = frame holder
+   - ::before = dibuja el PNG (sin inventar nada)
+   - .carrito-panel-inner = tu panel real (beige, sombras)
+   ========================================= */
 .carrito-panel {
   width: 100%;
   height: 100%;
   min-height: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
+  position: relative;
 
-  padding: 0.55rem;
-  border-radius: 0.7rem;
+  /* Ajuste del “hueco” interior para que el contenido no pise el marco.
+     Está calibrado para tu PNG (borde aprox. 9% en X y 6% en Y).
+     Puedes tocar estos 2 valores si quieres más/menos aire. */
+  --framePadX: clamp(18px, 3vw, 25px);
+  --framePadY: clamp(18px, 3vw, 32px);
 
-  border: 2px solid #d2b071;
-  background: #f7e2b2;
-
-  box-shadow:
-    0 0 0 1px rgba(90, 59, 23, 0.35),
-    0 14px 30px rgba(0, 0, 0, 0.65);
-
+  padding: var(--framePadY) var(--framePadX);
   box-sizing: border-box;
-  color: #3a2816;
 
+  background: transparent;
+  border: 0;
+  border-radius: 0; /* el PNG manda */
+  box-shadow: none;
+
+  color: #3a2816;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 
   --btnLift: -7px;
@@ -48,6 +54,50 @@
   --tMed: 220ms;
   --easeLift: cubic-bezier(0.16, 1, 0.3, 1);
   --easePress: cubic-bezier(0.2, 0.9, 0.2, 1);
+}
+
+/* El PNG como overlay perfecto */
+.carrito-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+
+  background-image: url("/tienda/assets/bordecarrito.png");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 100% 100%;
+
+  /* Suaviza un poco el escalado en algunos navegadores */
+  image-rendering: auto;
+}
+
+/* Contenido real dentro del marco */
+.carrito-panel-inner {
+  position: relative;
+  z-index: 1;
+
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+
+  padding: 0.55rem;
+
+  /* esto es lo que antes estaba en .carrito-panel */
+  border-radius: 0.7rem;
+  border: 2px solid #d2b071;
+  background: #f7e2b2;
+
+  box-shadow:
+    0 0 0 1px rgba(90, 59, 23, 0.35),
+    0 14px 30px rgba(0, 0, 0, 0.65);
+
+  box-sizing: border-box;
 }
 
 /* ===========================
@@ -201,7 +251,6 @@
 
 .cuenta-btn-account { text-align: center; }
 
-/* ✅ moneda: click en todo + foco visible via focus-within */
 .cuenta-btn-currency {
   position: relative;
   display: flex;
@@ -292,7 +341,6 @@
   &::-webkit-scrollbar-thumb:hover { background: #c18d53; }
 }
 
-/* Vacío (DESKTOP/BASE) */
 .basket-empty-state {
   height: 100%;
   display: flex;
@@ -328,7 +376,6 @@
   text-align: center;
 }
 
-/* Item */
 .basket-item {
   display: flex;
   align-items: center;
@@ -381,7 +428,6 @@
 
 .basket-item-right { display: flex; align-items: center; gap: 0.35rem; }
 
-/* REMOVE */
 .basket-item-remove {
   width: 28px;
   height: 28px;
@@ -394,7 +440,6 @@
   --btnPress: 3px;
 }
 
-/* Footer */
 .basket-footer {
   flex: 0 0 auto;
   padding: 0.55rem 0.7rem 0.65rem;
@@ -408,7 +453,6 @@
 .basket-total { display: flex; justify-content: space-between; font-size: 0.9rem; }
 .basket-total-label, .basket-total-value { font-weight: 900; }
 
-/* CHECKOUT */
 .basket-checkout {
   position: relative;
   width: 100%;
@@ -491,9 +535,6 @@
   100% { transform: translateY(0) scale(1); }
 }
 
-/* =========================
-   STEPPER +/- CANTIDAD
-   ========================= */
 .qty-stepper {
   display: inline-flex;
   align-items: center;
@@ -537,7 +578,6 @@
   text-shadow: 0 2px 0 rgba(0, 0, 0, 0.35);
 }
 
-/* Reduce motion */
 @media (prefers-reduced-motion: reduce) {
   .basket-checkout::before { animation: none !important; }
   .cuenta-btn,
@@ -546,16 +586,23 @@
 }
 
 /* =========================================================
-   MOBILE: carrito “compacto” cuando está vacío
+   MOBILE
    ========================================================= */
 @media (max-width: 960px) {
-  /* clave: NO forzar 100% altura en el stack móvil */
   .carrito-lateral {
     height: auto;
     min-height: 0;
   }
 
   .carrito-panel {
+    height: auto;
+    min-height: 0;
+    /* un pelín menos de padding para que el marco no se coma el contenido */
+    --framePadX: clamp(14px, 4.2vw, 26px);
+    --framePadY: clamp(14px, 4.8vw, 32px);
+  }
+
+  .carrito-panel-inner {
     height: auto;
     min-height: 0;
     gap: 0.55rem;
@@ -565,19 +612,16 @@
       0 12px 26px rgba(0, 0, 0, 0.45);
   }
 
-  /* basket deja de “rellenar” */
   .basket {
     flex: 0 0 auto;
     min-height: 0;
   }
 
-  /* Lista con límite suave (para que no se coma toda la pantalla) */
   .basket-list {
     flex: 0 0 auto;
     max-height: min(32vh, 260px);
   }
 
-  /* Vacío: ocupa mínimo (sin icono grande, sin min-height) */
   .basket.is-empty .basket-list {
     max-height: none;
     overflow: hidden;
@@ -607,7 +651,6 @@
     letter-spacing: 0.14em;
   }
 
-  /* Checkout algo más compacto en móvil */
   .basket-checkout {
     height: 56px;
     font-size: 0.92rem;

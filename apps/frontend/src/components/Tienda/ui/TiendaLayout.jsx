@@ -7,13 +7,12 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { Route, Routes, useLocation } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 
 import "../../../styles/components/Tienda/tienda-layout.scss";
 
 import { UserContext } from "../../../context/UserContext";
-import TiendaPortada from "./TiendaPortada";
-import TiendaCategoriaVista from "./TiendaCategoriaVista";
+import TiendaStorefront from "./TiendaStorefront";
 import TiendaCarritoLateral from "./TiendaCarritoLateral";
 import TiendaModalJugador from "../modals/TiendaModalJugador";
 import useTiendaCarrito from "../hooks/useTiendaCarrito";
@@ -50,6 +49,7 @@ const TiendaLayout = () => {
   const {
     carrito,
     toggleProducto,
+    agregar,
     eliminar,
     vaciar,
     total,
@@ -66,7 +66,9 @@ const TiendaLayout = () => {
   const serverFromPath = useMemo(() => {
     const parts = String(location.pathname || "").split("/").filter(Boolean);
     if (parts[0] !== "tienda") return "global";
-    return parts[1] || "global";
+    const next = String(parts[1] || "").toLowerCase();
+    if (next === "gens" || next === "oneblock" || next === "survival") return next;
+    return "global";
   }, [location.pathname]);
 
   const [webUser, setWebUser] = useState(() => readWebUser());
@@ -151,7 +153,6 @@ const TiendaLayout = () => {
     };
   }, []);
 
-  // Auto-set cuenta tienda desde user web
   useEffect(() => {
     const ctxLogged = Boolean(user?.loggedIn && user?.username);
 
@@ -272,7 +273,6 @@ const TiendaLayout = () => {
         />
       )}
 
-      {/* Flyers layer */}
       <div className="tienda-fly-layer" aria-hidden="true">
         {flyers.map((f) => (
           <img
@@ -292,7 +292,6 @@ const TiendaLayout = () => {
         ))}
       </div>
 
-      {/* ZONA PRINCIPAL */}
       <main className="tienda-layout-main">
         <section className="tienda-layout-left">
           <div className="tienda-shelf-frame">
@@ -303,18 +302,26 @@ const TiendaLayout = () => {
               }
             >
               <Routes>
-                <Route path="/" element={<TiendaPortada />} />
                 <Route
-                  path="/:server/:categoria"
+                  path="/"
                   element={
-                    <TiendaCategoriaVista
+                    <TiendaStorefront
                       carrito={carrito}
                       toggleProducto={toggleProducto}
+                      // ✅ CLAVE: handlers reales para cantidades
+                      onAgregar={agregar}
+                      onCambiarCantidad={cambiarCantidad}
+                      onSetCantidad={setCantidad}
                     />
                   }
-                >
-                  <Route path=":subcategoria" element={<></>} />
-                </Route>
+                />
+
+                <Route path="/rangos" element={<Navigate to="/tienda" replace />} />
+                <Route path="/gens" element={<Navigate to="/tienda" replace />} />
+                <Route path="/oneblock" element={<Navigate to="/tienda" replace />} />
+                <Route path="/survival" element={<Navigate to="/tienda" replace />} />
+                <Route path="/antes-de-comprar" element={<Navigate to="/tienda" replace />} />
+                <Route path="/:server/:categoria/*" element={<Navigate to="/tienda" replace />} />
               </Routes>
             </div>
           </div>
@@ -327,7 +334,8 @@ const TiendaLayout = () => {
 
               <TiendaCarritoLateral
                 carrito={carrito}
-                onAgregar={toggleProducto}
+                // ✅ CLAVE: sumar debe ser agregar, no toggle
+                onAgregar={agregar}
                 eliminarItem={eliminar}
                 vaciarCarrito={vaciar}
                 total={total}

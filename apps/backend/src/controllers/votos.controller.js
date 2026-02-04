@@ -1,21 +1,15 @@
-// apps/backend/src/controllers/votos.controller.js
 const crypto = require("crypto");
 const supabase = require("../models/db");
 
 const COOLDOWN_MS = 24 * 60 * 60 * 1000;
 
-// =========================
-// Utils
-// =========================
 function safeLower(s) {
   return String(s || "").trim().toLowerCase();
 }
 
 function isUuid(v) {
   const s = String(v || "").trim();
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-    s
-  );
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(s);
 }
 
 function parseVoteTime(ts) {
@@ -23,8 +17,8 @@ function parseVoteTime(ts) {
 
   const n = Number(ts);
   if (Number.isFinite(n)) {
-    if (n > 0 && n < 100000000000) return new Date(n * 1000); // seconds -> ms
-    return new Date(n); // already ms
+    if (n > 0 && n < 100000000000) return new Date(n * 1000);
+    return new Date(n);
   }
 
   const d = new Date(String(ts));
@@ -50,7 +44,6 @@ function getUtcDayStart(date = new Date()) {
 }
 
 function getClientIp(req) {
-  // Render/Proxy: x-forwarded-for suele venir como "ip1, ip2, ..."
   const xf = String(req.headers["x-forwarded-for"] || "").trim();
   if (xf) return xf.split(",")[0].trim();
   const xr = String(req.headers["x-real-ip"] || "").trim();
@@ -58,7 +51,6 @@ function getClientIp(req) {
   return String(req.ip || "").trim();
 }
 
-// Mapeo “best effort” de serviceName -> id del widget (v1..v5)
 const SITE_MATCH = [
   { id: "v1", patterns: ["servidoresdeminecraft", "servidores de minecraft", "sdm"] },
   { id: "v2", patterns: ["minecraft-server", "minecraft server"] },
@@ -78,25 +70,20 @@ async function resolveUserUuidFromKey(key) {
 
   if (isUuid(k)) return k;
 
-  // Intentar mapear username -> usuarios.uuid (case-insensitive)
   try {
     const { data, error } = await supabase
       .from("usuarios")
       .select("uuid")
-      .ilike("uid", k) // exact case-insensitive
+      .ilike("uid", k)
       .limit(1)
       .maybeSingle();
 
     if (!error && data?.uuid) return data.uuid;
-  } catch {
-    // ignore
-  }
+  } catch {}
 
   return null;
 }
 
-// Busca último voto (vote_time) para un usuario filtrando por service “parecido”
-// Prioridad: uuid -> username -> ip
 async function fetchLastVoteForSite({ userUuid, username, ip }, siteId) {
   const patterns = patternsForSiteId(siteId);
   if (!patterns.length) return null;
@@ -108,16 +95,10 @@ async function fetchLastVoteForSite({ userUuid, username, ip }, siteId) {
       .order("vote_time", { ascending: false })
       .limit(1);
 
-    if (userUuid) {
-      q = q.eq("user_uuid", userUuid);
-    } else if (username) {
-      // exact (sin %), case-insensitive
-      q = q.ilike("username", String(username).trim());
-    } else if (ip) {
-      q = q.eq("ip", ip);
-    } else {
-      return null;
-    }
+    if (userUuid) q = q.eq("user_uuid", userUuid);
+    else if (username) q = q.ilike("username", String(username).trim());
+    else if (ip) q = q.eq("ip", ip);
+    else return null;
 
     q = q.ilike("service", `%${p}%`);
 
@@ -131,20 +112,12 @@ async function fetchLastVoteForSite({ userUuid, username, ip }, siteId) {
   return null;
 }
 
-// =========================
-// POST /api/votos/ingest
-// Header: x-vote-ingest-secret
-// Body: { username, service, ip, timestamp }
-// =========================
 async function ingestVote(req, res) {
   const secretHeader = req.headers["x-vote-ingest-secret"];
   const secretEnv = process.env.VOTE_INGEST_SECRET;
 
   if (!secretEnv) {
-    return res.status(500).json({
-      ok: false,
-      error: "VOTE_INGEST_SECRET no configurado en el backend",
-    });
+    return res.status(500).json({ ok: false, error: "VOTE_INGEST_SECRET no configurado en el backend" });
   }
 
   if (!timingSafeEqual(secretHeader, secretEnv)) {
@@ -162,7 +135,6 @@ async function ingestVote(req, res) {
 
   const voteTime = parseVoteTime(timestamp);
 
-  // 1) Intentar enlazar con usuarios.uuid por usuarios.uid (case-insensitive)
   let user_uuid = null;
   try {
     const { data: u, error: uErr } = await supabase
@@ -173,11 +145,8 @@ async function ingestVote(req, res) {
       .maybeSingle();
 
     if (!uErr && u?.uuid) user_uuid = u.uuid;
-  } catch {
-    // ignore
-  }
+  } catch {}
 
-  // 2) Insert en votos
   try {
     const payload = {
       vote_time: voteTime.toISOString(),
@@ -196,41 +165,18 @@ async function ingestVote(req, res) {
 
     if (error) {
       if (error.code === "23505") {
-        return res.status(200).json({
-          ok: true,
-          inserted: false,
-          duplicate: true,
-          username,
-          service,
-        });
+        return res.status(200).json({ ok: true, inserted: false, duplicate: true, username, service });
       }
 
-      return res.status(500).json({
-        ok: false,
-        error: "Error insertando voto",
-        details: error.message || String(error),
-      });
+      return res.status(500).json({ ok: false, error: "Error insertando voto", details: error.message || String(error) });
     }
 
-    return res.status(200).json({
-      ok: true,
-      inserted: true,
-      duplicate: false,
-      vote: data,
-    });
+    return res.status(200).json({ ok: true, inserted: true, duplicate: false, vote: data });
   } catch (e) {
-    return res.status(500).json({
-      ok: false,
-      error: "Excepción insertando voto",
-      details: e?.message || String(e),
-    });
+    return res.status(500).json({ ok: false, error: "Excepción insertando voto", details: e?.message || String(e) });
   }
 }
 
-// =========================
-// GET /api/votos/ranking
-// Query: limit, offset, order=total|30d
-// =========================
 async function getRanking(req, res) {
   const limitRaw = Number(req.query?.limit ?? 50);
   const offsetRaw = Number(req.query?.offset ?? 0);
@@ -250,32 +196,15 @@ async function getRanking(req, res) {
       .range(offset, offset + limit - 1);
 
     if (error) {
-      return res.status(500).json({
-        ok: false,
-        error: "Error obteniendo ranking",
-        details: error.message || String(error),
-      });
+      return res.status(500).json({ ok: false, error: "Error obteniendo ranking", details: error.message || String(error) });
     }
 
-    return res.status(200).json({
-      ok: true,
-      limit,
-      offset,
-      order: orderCol,
-      items: data || [],
-    });
+    return res.status(200).json({ ok: true, limit, offset, order: orderCol, items: data || [] });
   } catch (e) {
-    return res.status(500).json({
-      ok: false,
-      error: "Excepción obteniendo ranking",
-      details: e?.message || String(e),
-    });
+    return res.status(500).json({ ok: false, error: "Excepción obteniendo ranking", details: e?.message || String(e) });
   }
 }
 
-// =========================
-// GET /api/votos/resumen
-// =========================
 async function getResumen(req, res) {
   try {
     const now = new Date();
@@ -284,28 +213,15 @@ async function getResumen(req, res) {
     const start30d = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
     const totalQ = supabase.from("votos").select("id", { count: "exact", head: true });
-    const hoyQ = supabase
-      .from("votos")
-      .select("id", { count: "exact", head: true })
-      .gte("vote_time", startTodayUtc.toISOString());
-    const d7Q = supabase
-      .from("votos")
-      .select("id", { count: "exact", head: true })
-      .gte("vote_time", start7d.toISOString());
-    const d30Q = supabase
-      .from("votos")
-      .select("id", { count: "exact", head: true })
-      .gte("vote_time", start30d.toISOString());
+    const hoyQ = supabase.from("votos").select("id", { count: "exact", head: true }).gte("vote_time", startTodayUtc.toISOString());
+    const d7Q = supabase.from("votos").select("id", { count: "exact", head: true }).gte("vote_time", start7d.toISOString());
+    const d30Q = supabase.from("votos").select("id", { count: "exact", head: true }).gte("vote_time", start30d.toISOString());
 
     const [totalR, hoyR, d7R, d30R] = await Promise.all([totalQ, hoyQ, d7Q, d30Q]);
 
-    const anyErr = totalR.error || hoyR.error || d7R.error || d30Q.error;
+    const anyErr = totalR.error || hoyR.error || d7R.error || d30R.error;
     if (anyErr) {
-      return res.status(500).json({
-        ok: false,
-        error: "Error calculando resumen",
-        details: String(anyErr?.message || anyErr),
-      });
+      return res.status(500).json({ ok: false, error: "Error calculando resumen", details: String(anyErr?.message || anyErr) });
     }
 
     return res.status(200).json({
@@ -321,18 +237,10 @@ async function getResumen(req, res) {
       },
     });
   } catch (e) {
-    return res.status(500).json({
-      ok: false,
-      error: "Excepción calculando resumen",
-      details: e?.message || String(e),
-    });
+    return res.status(500).json({ ok: false, error: "Excepción calculando resumen", details: e?.message || String(e) });
   }
 }
 
-// =========================
-// GET /api/votos/top?range=30d|total&limit=10&page=0
-// Devuelve: { ok, list:[{uid, uuid, rango_usuario, es_premium, votos}], total, page, limit }
-// =========================
 async function getTop(req, res) {
   const range = String(req.query?.range || "30d").toLowerCase();
   const limitRaw = Number(req.query?.limit ?? 10);
@@ -352,11 +260,7 @@ async function getTop(req, res) {
       .range(offset, offset + limit - 1);
 
     if (error) {
-      return res.status(500).json({
-        ok: false,
-        error: "Error obteniendo top",
-        details: error.message || String(error),
-      });
+      return res.status(500).json({ ok: false, error: "Error obteniendo top", details: error.message || String(error) });
     }
 
     const rows = data || [];
@@ -364,13 +268,11 @@ async function getTop(req, res) {
       .map((r) => String(r.jugador || r.username_lower || "").trim())
       .filter(Boolean);
 
-    // Lookup de meta (uuid/rango/premium) desde usuarios
-    // NOTA: .in es sensible a mayúsculas si tu DB lo está; aun así hacemos match case-insensitive en JS.
     let usersMeta = [];
     if (names.length) {
       const { data: uu, error: uErr } = await supabase
         .from("usuarios")
-        .select("uuid, uid, rango_usuario, es_premium")
+        .select("uuid, uid, rango_usuario")
         .in("uid", names);
 
       if (!uErr && Array.isArray(uu)) usersMeta = uu;
@@ -380,14 +282,12 @@ async function getTop(req, res) {
       const uid = String(r.jugador || r.username_lower || "Desconocido").trim();
       const votos = Number(r[col] || 0) || 0;
 
-      const meta =
-        usersMeta.find((u) => safeLower(u.uid) === safeLower(uid)) || null;
+      const meta = usersMeta.find((u) => safeLower(u.uid) === safeLower(uid)) || null;
 
       return {
         uid,
         uuid: meta?.uuid || null,
         rango_usuario: meta?.rango_usuario || null,
-        es_premium: typeof meta?.es_premium === "boolean" ? meta.es_premium : false,
         votos,
       };
     });
@@ -400,39 +300,26 @@ async function getTop(req, res) {
       list,
     });
   } catch (e) {
-    return res.status(500).json({
-      ok: false,
-      error: "Excepción obteniendo top",
-      details: e?.message || String(e),
-    });
+    return res.status(500).json({ ok: false, error: "Excepción obteniendo top", details: e?.message || String(e) });
   }
 }
 
-// =========================
-// GET /api/votos/status/:id
-// - id puede ser uuid, username o "anon"
-// - si id="anon" o vacío -> fallback por IP real
-// Query opcional: ?u=NombreJugador  (para invitados)
-// Devuelve: server_now_ms, items con next_available_ms, cooldown_ms...
-// =========================
 async function getStatus(req, res) {
   const rawId = String(req.params?.id || "").trim();
   const qUser = String(req.query?.u || "").trim();
   const ip = getClientIp(req);
 
-  // id "anon" => no forzamos usuario; podemos usar u=... si lo pasan
   const id = rawId && rawId.toLowerCase() !== "anon" ? rawId : "";
   const username = qUser || (id && !isUuid(id) ? id : "");
 
   try {
     const userUuid = id ? await resolveUserUuidFromKey(id) : null;
 
-    // meta del usuario (si existe)
     let me = null;
     if (userUuid) {
       const { data: u, error: uErr } = await supabase
         .from("usuarios")
-        .select("uuid, uid, rango_usuario, es_premium, nivel")
+        .select("uuid, uid, rango_usuario, nivel")
         .eq("uuid", userUuid)
         .maybeSingle();
 
@@ -440,7 +327,7 @@ async function getStatus(req, res) {
     } else if (username) {
       const { data: u, error: uErr } = await supabase
         .from("usuarios")
-        .select("uuid, uid, rango_usuario, es_premium, nivel")
+        .select("uuid, uid, rango_usuario, nivel")
         .ilike("uid", username)
         .maybeSingle();
 
@@ -448,15 +335,11 @@ async function getStatus(req, res) {
     }
 
     const nowMs = Date.now();
-
     const sites = ["v1", "v2", "v3", "v4", "v5"];
     const items = [];
 
     for (const siteId of sites) {
-      const lastDate = await fetchLastVoteForSite(
-        { userUuid, username, ip },
-        siteId
-      );
+      const lastDate = await fetchLastVoteForSite({ userUuid, username, ip }, siteId);
 
       const lastVoteMs = lastDate ? lastDate.getTime() : 0;
       const nextAvailMs = lastVoteMs ? lastVoteMs + COOLDOWN_MS : 0;
@@ -495,11 +378,7 @@ async function getStatus(req, res) {
       },
     });
   } catch (e) {
-    return res.status(500).json({
-      ok: false,
-      error: "Excepción obteniendo status",
-      details: e?.message || String(e),
-    });
+    return res.status(500).json({ ok: false, error: "Excepción obteniendo status", details: e?.message || String(e) });
   }
 }
 

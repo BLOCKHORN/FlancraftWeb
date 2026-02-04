@@ -21,7 +21,7 @@ export const RANGOS_MODAL = {
   kits: {
     nova: {
       title: "Kit NOVA",
-      subtitle: "Disponible en Survival Clásico y OneBlock",
+      subtitle: "Disponible en Survival Towny y OneBlock",
       cooldown: "Cada 6 horas",
       armor: [
         {
@@ -79,7 +79,7 @@ export const RANGOS_MODAL = {
 
     alpha: {
       title: "Kit ALPHA",
-      subtitle: "Disponible en Survival Clásico y OneBlock",
+      subtitle: "Disponible en Survival Towny y OneBlock",
       cooldown: "Cada 6 horas",
       armor: [
         {
@@ -125,7 +125,7 @@ export const RANGOS_MODAL = {
 
     inmortal: {
       title: "Kit INMORTAL",
-      subtitle: "Disponible en Survival Clásico y OneBlock",
+      subtitle: "Disponible en Survival Towny y OneBlock",
       cooldown: "Cada 6 horas",
       armor: [
         {

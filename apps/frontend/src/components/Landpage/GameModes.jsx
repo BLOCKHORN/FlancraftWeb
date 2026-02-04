@@ -5,7 +5,7 @@ import "../../styles/components/Landpage/_gamemodes.scss";
 const modes = [
   {
     id: "survival",
-    name: "Survival Clásico",
+    name: "Survival Towny",
     description:
       "La experiencia survival de siempre, con economía, clanes y un mundo vivo en constante expansión.",
     image: "/assets/modes/survival.webp",

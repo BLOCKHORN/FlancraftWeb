@@ -1,37 +1,46 @@
 /* src/styles/components/Tienda/tienda-rangos-flancraft.scss */
 
 .fcr {
-  /* Más compacto */
+  /* Layout */
   --perkW: 300px;
   --rowH: 82px;
 
-  --novaA: rgba(144, 216, 112, 0.42);
-  --novaB: rgba(144, 216, 112, 0.30);
+  /* =========================================================
+     ✅ NUEVA PALETA DARK (menos pastel, más contraste)
+     ========================================================= */
 
-  --alphaA: rgba(142, 205, 244, 0.42);
-  --alphaB: rgba(142, 205, 244, 0.30);
+  /* Tintes base (más oscuros) */
+  --novaA: rgba(78, 182, 108, 0.32);
+  --novaB: rgba(58, 148, 88, 0.22);
 
-  --inmA: rgba(255, 118, 72, 0.40);
-  --inmB: rgba(255, 118, 72, 0.28);
+  --alphaA: rgba(74, 156, 210, 0.32);
+  --alphaB: rgba(56, 118, 170, 0.22);
 
-  --ink: rgba(20, 17, 14, 0.92);
-  --ink2: rgba(20, 17, 14, 0.70);
+  --inmA: rgba(236, 122, 64, 0.30);
+  --inmB: rgba(180, 86, 42, 0.20);
 
-  /* ✅ Café/madera */
-  --woodA: rgba(92, 66, 44, 0.96);
-  --woodB: rgba(64, 44, 30, 0.96);
-  --woodC: rgba(110, 78, 52, 0.92);
-  --woodD: rgba(46, 30, 20, 0.92);
+  /* Tinta / texto */
+  --ink: rgba(16, 14, 12, 0.96);
+  --ink2: rgba(16, 14, 12, 0.70);
 
-  --goldA: rgba(255, 232, 194, 0.92);
-  --goldB: rgba(224, 196, 148, 0.86);
+  /* Madera más profunda */
+  --woodA: rgba(56, 38, 26, 0.98);
+  --woodB: rgba(28, 18, 12, 0.98);
+  --woodC: rgba(70, 46, 30, 0.92);
+  --woodD: rgba(18, 12, 9, 0.94);
 
-  --paper: rgba(246, 230, 196, 0.62);
+  /* Oro más sobrio */
+  --goldA: rgba(255, 226, 175, 0.92);
+  --goldB: rgba(208, 176, 126, 0.84);
 
-  --shadow1: 0 14px 30px rgba(0, 0, 0, 0.20);
-  --shadow2: 0 24px 60px rgba(0, 0, 0, 0.30);
+  /* Pergamino menos pastel */
+  --paper: rgba(230, 214, 182, 0.52);
 
-  /* ✅ MÁS COMPACTO cuando colapsa arriba */
+  /* Sombras más “peso” */
+  --shadow1: 0 18px 34px rgba(0, 0, 0, 0.32);
+  --shadow2: 0 30px 70px rgba(0, 0, 0, 0.46);
+
+  /* Compacto cuando colapsa arriba */
   --cardHExp: 196px;
   --cardHCol: 96px;
 
@@ -94,10 +103,18 @@
   bottom: 0;
   border-radius: 3px;
 
+  /* ✅ madera oscura + textura */
   background:
-    radial-gradient(120% 180% at 20% 10%, rgba(255, 255, 255, 0.10), rgba(255, 255, 255, 0)),
-    linear-gradient(180deg, var(--woodA), var(--woodB));
-  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.16);
+    radial-gradient(120% 180% at 18% 10%, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0)),
+    linear-gradient(180deg, var(--woodA), var(--woodB)),
+    repeating-linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.025) 0,
+      rgba(255, 255, 255, 0.025) 2px,
+      rgba(0, 0, 0, 0) 2px,
+      rgba(0, 0, 0, 0) 6px
+    );
+  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.28);
   border: 1px solid rgba(255, 255, 255, 0.10);
   pointer-events: none;
 }
@@ -130,13 +147,21 @@
   border-radius: 3px;
   overflow: hidden;
 
+  /* ✅ “stone-paper” más dark */
   background:
-    radial-gradient(120% 120% at 30% 10%, rgba(255,255,255,0.10), rgba(255,255,255,0)),
-    linear-gradient(180deg, rgba(246, 230, 196, 0.62), rgba(246, 230, 196, 0.50));
-  border: 1px solid rgba(0, 0, 0, 0.10);
+    radial-gradient(120% 120% at 30% 10%, rgba(255,255,255,0.07), rgba(255,255,255,0)),
+    linear-gradient(180deg, rgba(210, 194, 164, 0.46), rgba(190, 176, 148, 0.40)),
+    repeating-linear-gradient(
+      0deg,
+      rgba(0,0,0,0.03) 0,
+      rgba(0,0,0,0.03) 1px,
+      rgba(0,0,0,0) 1px,
+      rgba(0,0,0,0) 5px
+    );
+  border: 1px solid rgba(0, 0, 0, 0.18);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.26),
-    0 12px 22px rgba(0, 0, 0, 0.12);
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    0 14px 28px rgba(0, 0, 0, 0.18);
 
   padding: 10px 10px 10px;
   display: grid;
@@ -145,59 +170,6 @@
   transition: padding 220ms ease;
   padding-top: calc(10px - (var(--c) * 2px));
   padding-bottom: calc(10px - (var(--c) * 2px));
-}
-
-.fcr-sideHead {
-  display: grid;
-  gap: 8px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid rgba(0,0,0,0.10);
-  margin-bottom: 10px;
-
-  opacity: calc(1 - (var(--c) * 0.05));
-}
-
-.fcr-sideKicker {
-  font-weight: 1000;
-  letter-spacing: 0.06em;
-  font-size: 12px;
-  color: rgba(20, 17, 14, 0.70);
-  text-transform: uppercase;
-}
-
-.fcr-sideCurrent {
-  display: grid;
-  grid-auto-flow: column;
-  align-items: center;
-  justify-content: start;
-  gap: 10px;
-}
-
-.fcr-sideIcon {
-  width: 30px;
-  height: 30px;
-  border-radius: 3px;
-  display: grid;
-  place-items: center;
-  overflow: hidden;
-  background: rgba(0,0,0,0.08);
-  border: 1px solid rgba(0,0,0,0.10);
-}
-
-.fcr-sideIcon img {
-  width: 24px;
-  height: 24px;
-  object-fit: contain;
-}
-
-.fcr-sideName {
-  font-weight: 1000;
-  letter-spacing: 0.02em;
-  font-size: 14px;
-  color: rgba(20, 17, 14, 0.88);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .fcr-sideGrid {
@@ -209,15 +181,17 @@
 
 .fcr-sideBtn {
   appearance: none;
-  border: 1px solid rgba(0,0,0,0.12);
+  border: 1px solid rgba(0,0,0,0.22);
   border-radius: 3px;
   cursor: pointer;
+
+  /* ✅ botoncitos más “metal oscuro” */
   background:
-    radial-gradient(120% 140% at 30% 15%, rgba(255,255,255,0.12), rgba(255,255,255,0)),
-    linear-gradient(180deg, rgba(255,255,255,0.18), rgba(0,0,0,0.04));
+    radial-gradient(120% 140% at 30% 15%, rgba(255,255,255,0.10), rgba(255,255,255,0)),
+    linear-gradient(180deg, rgba(30, 24, 20, 0.14), rgba(0, 0, 0, 0.08));
   box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.28),
-    0 10px 18px rgba(0,0,0,0.10);
+    inset 0 1px 0 rgba(255,255,255,0.18),
+    0 12px 22px rgba(0,0,0,0.16);
 
   transition: transform 160ms ease, filter 160ms ease, box-shadow 200ms ease, border-color 200ms ease;
   padding: 0;
@@ -230,18 +204,18 @@
   filter: brightness(1.03);
   transform: translateY(-1px);
   box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.30),
-    0 14px 26px rgba(0,0,0,0.14);
+    inset 0 1px 0 rgba(255,255,255,0.22),
+    0 16px 30px rgba(0,0,0,0.20);
 }
 
 .fcr-sideBtn:active { transform: translateY(1px) scale(0.99); }
 
 .fcr-sideBtn:focus-visible {
   box-shadow:
-    0 0 0 2px rgba(92, 66, 44, 0.22),
-    0 14px 26px rgba(0,0,0,0.14),
-    inset 0 1px 0 rgba(255,255,255,0.30);
-  border-color: rgba(92, 66, 44, 0.30);
+    0 0 0 2px rgba(255, 200, 120, 0.12),
+    0 16px 30px rgba(0,0,0,0.20),
+    inset 0 1px 0 rgba(255,255,255,0.22);
+  border-color: rgba(255, 200, 120, 0.18);
 }
 
 .fcr-sideBtnInner {
@@ -259,8 +233,8 @@
   border-radius: 3px;
   display: grid;
   place-items: center;
-  background: rgba(0,0,0,0.07);
-  border: 1px solid rgba(0,0,0,0.10);
+  background: rgba(0,0,0,0.12);
+  border: 1px solid rgba(0,0,0,0.20);
   overflow: hidden;
 }
 
@@ -268,14 +242,14 @@
   width: 24px;
   height: 24px;
   object-fit: contain;
-  filter: drop-shadow(0 8px 10px rgba(0,0,0,0.18));
+  filter: drop-shadow(0 10px 14px rgba(0,0,0,0.22));
 }
 
 .fcr-sideBtnLabel {
   font-weight: 1000;
   font-size: 12px;
   letter-spacing: 0.02em;
-  color: rgba(20,17,14,0.86);
+  color: rgba(18,16,14,0.88);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -285,23 +259,23 @@
   width: 8px;
   height: 8px;
   border-radius: 999px;
-  background: rgba(0,0,0,0.16);
-  box-shadow: 0 0 0 5px rgba(0,0,0,0.05);
+  background: rgba(0,0,0,0.22);
+  box-shadow: 0 0 0 5px rgba(0,0,0,0.06);
 }
 
 .fcr-sideBtn.is-active {
-  border-color: rgba(92, 66, 44, 0.24);
+  border-color: rgba(255, 200, 120, 0.22);
   box-shadow:
-    0 0 0 2px rgba(92, 66, 44, 0.10),
-    0 14px 26px rgba(0,0,0,0.14),
-    inset 0 1px 0 rgba(255,255,255,0.30);
+    0 0 0 2px rgba(255, 200, 120, 0.10),
+    0 16px 30px rgba(0,0,0,0.20),
+    inset 0 1px 0 rgba(255,255,255,0.22);
 }
 
 .fcr-sideBtn.is-active .fcr-sideBtnDot {
-  background: rgba(255, 170, 85, 0.90);
+  background: rgba(255, 176, 92, 0.92);
   box-shadow:
-    0 0 0 5px rgba(255, 170, 85, 0.12),
-    0 0 14px rgba(255, 170, 85, 0.18);
+    0 0 0 5px rgba(255, 176, 92, 0.14),
+    0 0 14px rgba(255, 176, 92, 0.22);
 }
 
 .fcr-sideEmpty {
@@ -317,17 +291,6 @@
 .fcr[data-cstate="mid"] .fcr-sideGrid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
-}
-.fcr[data-cstate="mid"] .fcr-sideHead {
-  gap: 6px;
-  padding-bottom: 8px;
-  margin-bottom: 8px;
-}
-.fcr[data-cstate="mid"] .fcr-sideKicker {
-  display: none;
-}
-.fcr[data-cstate="mid"] .fcr-sideName {
-  font-size: 13px;
 }
 .fcr[data-cstate="mid"] .fcr-sideBtnInner {
   grid-template-columns: 28px 1fr;
@@ -350,9 +313,6 @@
 .fcr[data-cstate="collapsed"] .fcr-sideBox {
   padding: 6px;
   grid-template-rows: 1fr;
-}
-.fcr[data-cstate="collapsed"] .fcr-sideHead {
-  display: none;
 }
 .fcr[data-cstate="collapsed"] .fcr-sideGrid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -394,10 +354,18 @@
   border-radius: 3px;
   overflow: hidden;
 
+  /* ✅ más dark + grain */
   background:
-    radial-gradient(120% 90% at 50% 10%, rgba(255, 255, 255, 0.08), rgba(0, 0, 0, 0.12)),
-    linear-gradient(180deg, rgba(86, 60, 40, 0.95), rgba(52, 34, 22, 0.95));
-  border: 1px solid rgba(255, 255, 255, 0.12);
+    radial-gradient(120% 90% at 50% 10%, rgba(255, 255, 255, 0.07), rgba(0, 0, 0, 0.18)),
+    linear-gradient(180deg, rgba(44, 30, 22, 0.98), rgba(18, 12, 10, 0.98)),
+    repeating-linear-gradient(
+      135deg,
+      rgba(255,255,255,0.02) 0,
+      rgba(255,255,255,0.02) 2px,
+      rgba(0,0,0,0) 2px,
+      rgba(0,0,0,0) 7px
+    );
+  border: 1px solid rgba(255, 255, 255, 0.10);
   box-shadow: var(--shadow1);
 
   height: calc((var(--cardHExp) * (1 - var(--c))) + (var(--cardHCol) * var(--c)));
@@ -415,7 +383,7 @@
 .fcr-card.is-inmortal:hover,
 .fcr-card.is-nova:hover {
   box-shadow: var(--shadow2);
-  filter: brightness(1.02);
+  filter: brightness(1.03);
 }
 
 /* ===== Ribbon ===== */
@@ -435,7 +403,15 @@
   font-size: 12px;
   color: rgba(255, 255, 255, 0.92);
 
-  background: linear-gradient(180deg, rgba(155, 24, 24, 0.96), rgba(118, 12, 12, 0.96));
+  background:
+    linear-gradient(180deg, rgba(170, 34, 34, 0.96), rgba(110, 14, 14, 0.98)),
+    repeating-linear-gradient(
+      90deg,
+      rgba(255,255,255,0.05) 0,
+      rgba(255,255,255,0.05) 1px,
+      rgba(0,0,0,0) 1px,
+      rgba(0,0,0,0) 6px
+    );
   clip-path: polygon(0 0, 100% 0, calc(100% - 18px) 100%, 0 100%);
   border-bottom-right-radius: 3px;
 
@@ -484,31 +460,31 @@
 .fcr-card:hover .fcr-emblemImg {
   transform: translateY(-6px) scale(1.05);
   filter:
-    drop-shadow(0 16px 22px rgba(0, 0, 0, 0.50))
-    drop-shadow(0 0 18px rgba(255, 255, 255, 0.12));
+    drop-shadow(0 18px 26px rgba(0, 0, 0, 0.62))
+    drop-shadow(0 0 18px rgba(255, 255, 255, 0.10));
 }
 
 .fcr-card.is-nova:hover .fcr-emblemImg {
   filter:
-    drop-shadow(0 16px 22px rgba(0, 0, 0, 0.50))
-    drop-shadow(0 0 18px rgba(144, 216, 112, 0.24));
+    drop-shadow(0 18px 26px rgba(0, 0, 0, 0.62))
+    drop-shadow(0 0 18px rgba(78, 182, 108, 0.26));
 }
 .fcr-card.is-alpha:hover .fcr-emblemImg {
   filter:
-    drop-shadow(0 16px 22px rgba(0, 0, 0, 0.50))
-    drop-shadow(0 0 18px rgba(142, 205, 244, 0.24));
+    drop-shadow(0 18px 26px rgba(0, 0, 0, 0.62))
+    drop-shadow(0 0 18px rgba(74, 156, 210, 0.26));
 }
 .fcr-card.is-inmortal:hover .fcr-emblemImg {
   filter:
-    drop-shadow(0 16px 22px rgba(0, 0, 0, 0.50))
-    drop-shadow(0 0 18px rgba(255, 118, 72, 0.24));
+    drop-shadow(0 18px 26px rgba(0, 0, 0, 0.62))
+    drop-shadow(0 0 18px rgba(236, 122, 64, 0.26));
 }
 
 .fcr-emblemImg {
   width: 64px;
   height: 64px;
   object-fit: contain;
-  filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.42));
+  filter: drop-shadow(0 12px 20px rgba(0, 0, 0, 0.50));
   transform: translateY(0) scale(1);
   transition: transform 180ms ease, filter 180ms ease;
 }
@@ -517,15 +493,15 @@
   font-weight: 1000;
   letter-spacing: 0.05em;
   font-size: 20px;
-  color: rgba(255, 245, 232, 0.92);
+  color: rgba(255, 246, 236, 0.92);
 }
 
 .fcr-rankDot {
   width: 7px;
   height: 7px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.34);
-  box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.26);
+  box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.05);
 }
 
 /* ===== Mini header ===== */
@@ -559,12 +535,19 @@
   color: rgba(255, 255, 255, 1);
 
   background:
-    radial-gradient(140% 120% at 50% 30%, rgba(255, 255, 255, 0.10), rgba(0, 0, 0, 0.18)),
-    linear-gradient(180deg, rgba(86, 60, 40, 0.98), rgba(46, 28, 18, 0.98));
-  border: 1px solid rgba(255, 255, 255, 0.12);
+    radial-gradient(140% 120% at 50% 30%, rgba(255, 255, 255, 0.08), rgba(0, 0, 0, 0.20)),
+    linear-gradient(180deg, rgba(38, 26, 20, 0.98), rgba(16, 10, 8, 0.98)),
+    repeating-linear-gradient(
+      90deg,
+      rgba(255,255,255,0.03) 0,
+      rgba(255,255,255,0.03) 1px,
+      rgba(0,0,0,0) 1px,
+      rgba(0,0,0,0) 6px
+    );
+  border: 1px solid rgba(255, 255, 255, 0.10);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.18),
-    0 10px 22px rgba(0, 0, 0, 0.22);
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    0 12px 26px rgba(0, 0, 0, 0.30);
 }
 
 /* ===== Buy button ===== */
@@ -575,7 +558,7 @@
   margin-top: auto;
 
   border-radius: 3px;
-  border: 1px solid rgba(0, 0, 0, 0.26);
+  border: 1px solid rgba(0, 0, 0, 0.36);
 
   font-weight: 1000;
   letter-spacing: 0.02em;
@@ -588,8 +571,8 @@
   overflow: hidden;
 
   box-shadow:
-    inset 0 2px 0 rgba(255, 255, 255, 0.22),
-    0 14px 28px rgba(0, 0, 0, 0.20);
+    inset 0 2px 0 rgba(255, 255, 255, 0.16),
+    0 18px 34px rgba(0, 0, 0, 0.30);
 
   transform: translateY(0);
   transition: transform 160ms ease, filter 160ms ease, box-shadow 160ms ease;
@@ -599,9 +582,9 @@
   content: "";
   position: absolute;
   inset: -50% -60%;
-  background: radial-gradient(45% 35% at 30% 30%, rgba(255, 255, 255, 0.26), rgba(255, 255, 255, 0));
+  background: radial-gradient(45% 35% at 30% 30%, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0));
   transform: translateX(-20%) rotate(18deg);
-  opacity: 0.85;
+  opacity: 0.70;
   pointer-events: none;
 }
 
@@ -615,7 +598,7 @@
   background: linear-gradient(
     90deg,
     rgba(255, 255, 255, 0),
-    rgba(255, 255, 255, 0.22),
+    rgba(255, 255, 255, 0.18),
     rgba(255, 255, 255, 0)
   );
   transform: skewX(-18deg);
@@ -626,8 +609,8 @@
 .fcr-buy:hover {
   filter: brightness(1.05);
   box-shadow:
-    inset 0 2px 0 rgba(255, 255, 255, 0.26),
-    0 18px 38px rgba(0, 0, 0, 0.24);
+    inset 0 2px 0 rgba(255, 255, 255, 0.18),
+    0 22px 44px rgba(0, 0, 0, 0.34);
 }
 
 .fcr-buy:hover::after {
@@ -650,32 +633,50 @@
   cursor: not-allowed;
 }
 
+/* ✅ Botones menos pastel, más “gem / metal” */
 .fcr-buy.is-nova {
-  background: linear-gradient(180deg, rgba(170, 230, 145, 0.96), rgba(122, 194, 96, 0.96));
-  color: rgba(18, 16, 14, 0.90);
+  background:
+    radial-gradient(80% 120% at 50% 20%, rgba(140, 255, 190, 0.22), rgba(0,0,0,0)),
+    linear-gradient(180deg, rgba(56, 160, 106, 0.98), rgba(28, 112, 74, 0.98));
+  color: rgba(10, 10, 10, 0.92);
+  border-color: rgba(0,0,0,0.42);
 }
 
 .fcr-buy.is-alpha {
-  background: linear-gradient(180deg, rgba(187, 225, 250, 0.96), rgba(132, 194, 238, 0.96));
-  color: rgba(18, 16, 14, 0.90);
+  background:
+    radial-gradient(80% 120% at 50% 20%, rgba(160, 230, 255, 0.20), rgba(0,0,0,0)),
+    linear-gradient(180deg, rgba(70, 150, 210, 0.98), rgba(36, 92, 142, 0.98));
+  color: rgba(10, 10, 10, 0.92);
+  border-color: rgba(0,0,0,0.42);
 }
 
 .fcr-buy.is-inmortal {
-  background: linear-gradient(180deg, rgba(255, 188, 128, 0.96), rgba(255, 116, 52, 0.96));
-  color: rgba(18, 16, 14, 0.92);
+  background:
+    radial-gradient(80% 120% at 50% 20%, rgba(255, 210, 160, 0.20), rgba(0,0,0,0)),
+    linear-gradient(180deg, rgba(226, 122, 64, 0.98), rgba(150, 66, 30, 0.98));
+  color: rgba(10, 10, 10, 0.92);
+  border-color: rgba(0,0,0,0.46);
 }
 
 /* Estado “en carrito” */
 .fcr-buy[data-state="in"] {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.10), rgba(0, 0, 0, 0.16));
-  color: rgba(255, 255, 255, 0.90);
-  border-color: rgba(255, 255, 255, 0.14);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.10), rgba(0, 0, 0, 0.20)),
+    repeating-linear-gradient(
+      90deg,
+      rgba(255,255,255,0.03) 0,
+      rgba(255,255,255,0.03) 1px,
+      rgba(0,0,0,0) 1px,
+      rgba(0,0,0,0) 6px
+    );
+  color: rgba(255, 255, 255, 0.92);
+  border-color: rgba(255, 255, 255, 0.16);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.12),
-    0 18px 38px rgba(0, 0, 0, 0.26);
+    0 22px 44px rgba(0, 0, 0, 0.36);
 }
 
-.fcr-buy[data-state="in"]::before { opacity: 0.35; }
+.fcr-buy[data-state="in"]::before { opacity: 0.28; }
 .fcr-buy[data-state="in"]:hover { filter: brightness(1.06); }
 
 /* ===== Perks header row ===== */
@@ -696,10 +697,17 @@
   border-radius: 3px;
 
   background:
-    radial-gradient(70% 160% at 50% 20%, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0)),
-    linear-gradient(180deg, rgba(98, 70, 46, 0.96), rgba(52, 34, 22, 0.96));
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.20);
+    radial-gradient(70% 160% at 50% 20%, rgba(255, 255, 255, 0.10), rgba(255, 255, 255, 0)),
+    linear-gradient(180deg, rgba(44, 30, 22, 0.98), rgba(16, 10, 8, 0.98)),
+    repeating-linear-gradient(
+      135deg,
+      rgba(255,255,255,0.02) 0,
+      rgba(255,255,255,0.02) 2px,
+      rgba(0,0,0,0) 2px,
+      rgba(0,0,0,0) 7px
+    );
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.30);
 
   display: grid;
   grid-template-columns: 1fr auto;
@@ -717,7 +725,7 @@
   position: absolute;
   inset: -40px -40px auto -40px;
   height: 110px;
-  background: radial-gradient(60% 120% at 50% 50%, rgba(255, 255, 255, 0.10), rgba(255, 255, 255, 0));
+  background: radial-gradient(60% 120% at 50% 50%, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0));
   pointer-events: none;
   opacity: 0.9;
 }
@@ -739,9 +747,9 @@
   place-items: center;
   border-radius: 3px;
   overflow: hidden;
-  background: rgba(0, 0, 0, 0.18);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.10);
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
 }
 
 .fcr-perksRealm img {
@@ -760,14 +768,14 @@
 .fcr-perksStar svg {
   width: 18px;
   height: 18px;
-  fill: rgba(255, 255, 255, 0.78);
+  fill: rgba(255, 255, 255, 0.76);
 }
 
 .fcr-perksTitle {
   font-size: 24px;
   font-weight: 1000;
   letter-spacing: 0.02em;
-  color: rgba(255, 245, 232, 0.94);
+  color: rgba(255, 246, 236, 0.92);
   text-align: center;
   position: relative;
   z-index: 2;
@@ -786,7 +794,7 @@
 .fcr-perksChevron svg {
   width: 22px;
   height: 22px;
-  fill: rgba(255, 255, 255, 0.70);
+  fill: rgba(255, 255, 255, 0.68);
   transition: transform 200ms ease;
 }
 
@@ -822,7 +830,7 @@
   align-items: stretch;
 }
 
-.fcr-row.is-alt .fcr-perkPill { background: rgba(246, 230, 196, 0.56); }
+.fcr-row.is-alt .fcr-perkPill { background: rgba(230, 214, 182, 0.48); }
 
 /* ===== Perk cells ===== */
 .fcr-perkCell {
@@ -836,11 +844,21 @@
   min-height: calc(var(--rowH) - 14px);
   border-radius: 3px;
 
-  background: var(--paper);
-  border: 1px solid rgba(0, 0, 0, 0.10);
+  /* ✅ pergamino más “sucio” y oscuro */
+  background:
+    radial-gradient(120% 120% at 25% 10%, rgba(255,255,255,0.12), rgba(255,255,255,0)),
+    linear-gradient(180deg, rgba(230, 214, 182, 0.56), rgba(214, 198, 166, 0.50)),
+    repeating-linear-gradient(
+      0deg,
+      rgba(0,0,0,0.03) 0,
+      rgba(0,0,0,0.03) 1px,
+      rgba(0,0,0,0) 1px,
+      rgba(0,0,0,0) 6px
+    );
+  border: 1px solid rgba(0, 0, 0, 0.18);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.30),
-    0 10px 16px rgba(0, 0, 0, 0.10);
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    0 14px 22px rgba(0, 0, 0, 0.16);
 
   padding: 10px 12px;
 
@@ -875,7 +893,10 @@
   padding: 10px 8px;
   min-height: var(--rowH);
 
-  border-left: 1px solid rgba(0, 0, 0, 0.10);
+  border-left: 1px solid rgba(0, 0, 0, 0.16);
+
+  /* ✅ sombreado sutil “glass dark” */
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.10);
 }
 
 .fcr-cell.has-colLabel {
@@ -883,17 +904,45 @@
   padding-top: 14px;
 }
 
-.fcr-cell.is-nova { background: linear-gradient(180deg, var(--novaA), var(--novaA)); }
-.fcr-cell.is-alpha { background: linear-gradient(180deg, var(--alphaA), var(--alphaA)); }
-.fcr-cell.is-inmortal { background: linear-gradient(180deg, var(--inmA), var(--inmA)); }
+/* ✅ columnas con overlay y textura, NO pastel plano */
+.fcr-cell.is-nova {
+  background:
+    radial-gradient(80% 120% at 50% 18%, rgba(255,255,255,0.12), rgba(255,255,255,0)),
+    linear-gradient(180deg, rgba(10, 14, 12, 0.12), rgba(10, 14, 12, 0.06)),
+    linear-gradient(180deg, var(--novaA), var(--novaA));
+}
+.fcr-cell.is-alpha {
+  background:
+    radial-gradient(80% 120% at 50% 18%, rgba(255,255,255,0.12), rgba(255,255,255,0)),
+    linear-gradient(180deg, rgba(10, 14, 12, 0.12), rgba(10, 14, 12, 0.06)),
+    linear-gradient(180deg, var(--alphaA), var(--alphaA));
+}
+.fcr-cell.is-inmortal {
+  background:
+    radial-gradient(80% 120% at 50% 18%, rgba(255,255,255,0.12), rgba(255,255,255,0)),
+    linear-gradient(180deg, rgba(10, 14, 12, 0.12), rgba(10, 14, 12, 0.06)),
+    linear-gradient(180deg, var(--inmA), var(--inmA));
+}
 
-.fcr-row.is-alt .fcr-cell.is-nova { background: linear-gradient(180deg, var(--novaB), var(--novaB)); }
-.fcr-row.is-alt .fcr-cell.is-alpha { background: linear-gradient(180deg, var(--alphaB), var(--alphaB)); }
-.fcr-row.is-alt .fcr-cell.is-inmortal { background: linear-gradient(180deg, var(--inmB), var(--inmB)); }
+.fcr-row.is-alt .fcr-cell.is-nova { background:
+  radial-gradient(80% 120% at 50% 18%, rgba(255,255,255,0.10), rgba(255,255,255,0)),
+  linear-gradient(180deg, rgba(10, 14, 12, 0.12), rgba(10, 14, 12, 0.06)),
+  linear-gradient(180deg, var(--novaB), var(--novaB));
+}
+.fcr-row.is-alt .fcr-cell.is-alpha { background:
+  radial-gradient(80% 120% at 50% 18%, rgba(255,255,255,0.10), rgba(255,255,255,0)),
+  linear-gradient(180deg, rgba(10, 14, 12, 0.12), rgba(10, 14, 12, 0.06)),
+  linear-gradient(180deg, var(--alphaB), var(--alphaB));
+}
+.fcr-row.is-alt .fcr-cell.is-inmortal { background:
+  radial-gradient(80% 120% at 50% 18%, rgba(255,255,255,0.10), rgba(255,255,255,0)),
+  linear-gradient(180deg, rgba(10, 14, 12, 0.12), rgba(10, 14, 12, 0.06)),
+  linear-gradient(180deg, var(--inmB), var(--inmB));
+}
 
 .fcr-val {
   font-weight: 1000;
-  color: rgba(20, 17, 14, 0.86);
+  color: rgba(14, 12, 10, 0.86);
   text-align: center;
   padding: 0 10px;
 }
@@ -910,12 +959,12 @@
   border-radius: 2px;
   position: relative;
 
-  filter: drop-shadow(0 10px 14px rgba(0, 0, 0, 0.18));
+  filter: drop-shadow(0 12px 18px rgba(0, 0, 0, 0.28));
   text-shadow:
-    0 2px 0 rgba(0, 0, 0, 0.50),
-    2px 0 0 rgba(0, 0, 0, 0.45),
-    -2px 0 0 rgba(0, 0, 0, 0.45),
-    0 -2px 0 rgba(0, 0, 0, 0.45);
+    0 2px 0 rgba(0, 0, 0, 0.55),
+    2px 0 0 rgba(0, 0, 0, 0.50),
+    -2px 0 0 rgba(0, 0, 0, 0.50),
+    0 -2px 0 rgba(0, 0, 0, 0.50);
 }
 
 .fcr-colLabel::before {
@@ -924,30 +973,30 @@
   inset: 1px 1px auto 1px;
   height: 44%;
   border-radius: 2px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0));
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0));
   pointer-events: none;
   opacity: 0.9;
 }
 
 .fcr-colLabel.is-nova {
-  color: rgba(150, 255, 90, 1);
+  color: rgba(130, 255, 175, 1);
   background:
-    linear-gradient(180deg, rgba(20, 24, 18, 0.16), rgba(20, 24, 18, 0)),
-    radial-gradient(120% 120% at 50% 25%, rgba(150, 255, 90, 0.28), rgba(150, 255, 90, 0));
+    linear-gradient(180deg, rgba(10, 12, 10, 0.30), rgba(10, 12, 10, 0)),
+    radial-gradient(120% 120% at 50% 25%, rgba(78, 182, 108, 0.28), rgba(78, 182, 108, 0));
 }
 
 .fcr-colLabel.is-alpha {
-  color: rgba(90, 240, 255, 1);
+  color: rgba(120, 220, 255, 1);
   background:
-    linear-gradient(180deg, rgba(18, 22, 26, 0.16), rgba(18, 22, 26, 0)),
-    radial-gradient(120% 120% at 50% 25%, rgba(90, 240, 255, 0.28), rgba(90, 240, 255, 0));
+    linear-gradient(180deg, rgba(10, 12, 10, 0.30), rgba(10, 12, 10, 0)),
+    radial-gradient(120% 120% at 50% 25%, rgba(74, 156, 210, 0.28), rgba(74, 156, 210, 0));
 }
 
 .fcr-colLabel.is-inmortal {
-  color: rgba(255, 158, 58, 1);
+  color: rgba(255, 182, 120, 1);
   background:
-    linear-gradient(180deg, rgba(26, 20, 16, 0.16), rgba(26, 20, 16, 0)),
-    radial-gradient(120% 120% at 50% 25%, rgba(255, 158, 58, 0.28), rgba(255, 158, 58, 0));
+    linear-gradient(180deg, rgba(12, 10, 10, 0.30), rgba(12, 10, 10, 0)),
+    radial-gradient(120% 120% at 50% 25%, rgba(236, 122, 64, 0.26), rgba(236, 122, 64, 0));
 }
 
 /* ✅ Prefijos */
@@ -958,15 +1007,15 @@
   font-size: 14px;
   padding: 4px 8px;
   border-radius: 3px;
-  background: rgba(255, 255, 255, 0.20);
-  border: 1px solid rgba(0, 0, 0, 0.18);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.22);
-  color: rgba(18, 16, 14, 0.92);
+  background: rgba(0, 0, 0, 0.10);
+  border: 1px solid rgba(0, 0, 0, 0.28);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.16);
+  color: rgba(12, 10, 8, 0.92);
 }
 
-.fcr-prefixText.is-nova { background: rgba(142, 220, 120, 0.26); }
-.fcr-prefixText.is-alpha { background: rgba(120, 205, 244, 0.26); }
-.fcr-prefixText.is-inmortal { background: rgba(255, 158, 58, 0.24); }
+.fcr-prefixText.is-nova { background: rgba(78, 182, 108, 0.18); }
+.fcr-prefixText.is-alpha { background: rgba(74, 156, 210, 0.18); }
+.fcr-prefixText.is-inmortal { background: rgba(236, 122, 64, 0.16); }
 
 /* ===== Marks ===== */
 .fcr-mark {
@@ -976,37 +1025,40 @@
   display: grid;
   place-items: center;
 
-  border: 3px solid rgba(0, 0, 0, 0.28);
+  border: 3px solid rgba(0, 0, 0, 0.34);
   box-shadow:
-    inset 0 2px 0 rgba(255, 255, 255, 0.35),
-    0 14px 26px rgba(0, 0, 0, 0.16);
+    inset 0 2px 0 rgba(255, 255, 255, 0.20),
+    0 18px 34px rgba(0, 0, 0, 0.22);
 }
 
 .fcr-mark svg {
   width: 22px;
   height: 22px;
-  fill: rgba(0, 0, 0, 0.56);
+  fill: rgba(0, 0, 0, 0.62);
 }
 
-.fcr-mark--ok { background: rgba(142, 220, 120, 0.80); }
-.fcr-mark--no { background: rgba(230, 168, 140, 0.76); }
+.fcr-mark--ok { background: rgba(78, 182, 108, 0.72); }
+.fcr-mark--no { background: rgba(210, 120, 90, 0.66); }
 
 /* ===== Hover focus ===== */
-.fcr[data-hover="nova"] .fcr-cell.is-nova { box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.18); }
-.fcr[data-hover="alpha"] .fcr-cell.is-alpha { box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.18); }
-.fcr[data-hover="inmortal"] .fcr-cell.is-inmortal { box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.18); }
+.fcr[data-hover="nova"] .fcr-cell.is-nova { box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.14), inset 0 1px 0 rgba(255,255,255,0.12); }
+.fcr[data-hover="alpha"] .fcr-cell.is-alpha { box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.14), inset 0 1px 0 rgba(255,255,255,0.12); }
+.fcr[data-hover="inmortal"] .fcr-cell.is-inmortal { box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.14), inset 0 1px 0 rgba(255,255,255,0.12); }
 
 /* ===== Action button in cells ===== */
 .fcr-action {
   height: 36px;
   padding: 0 12px;
   border-radius: 3px;
-  border: 1px solid rgba(0, 0, 0, 0.22);
-  background: linear-gradient(180deg, rgba(245, 230, 196, 0.90), rgba(230, 210, 170, 0.86));
-  color: rgba(18, 16, 14, 0.88);
+  border: 1px solid rgba(0, 0, 0, 0.30);
+
+  background:
+    radial-gradient(70% 130% at 50% 25%, rgba(255,255,255,0.16), rgba(255,255,255,0)),
+    linear-gradient(180deg, rgba(214, 198, 166, 0.74), rgba(186, 168, 138, 0.68));
+  color: rgba(12, 10, 8, 0.92);
   font-weight: 1000;
   cursor: pointer;
-  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.28), 0 12px 24px rgba(0, 0, 0, 0.18);
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.18), 0 14px 26px rgba(0, 0, 0, 0.20);
 }
 
 .fcr-action:active { transform: translateY(1px); }
@@ -1017,9 +1069,9 @@
   margin-left: var(--perkW);
   padding: 14px;
   border-radius: 3px;
-  background: rgba(246, 230, 196, 0.42);
-  border: 1px solid rgba(0, 0, 0, 0.10);
-  color: rgba(20, 17, 14, 0.75);
+  background: rgba(190, 176, 148, 0.30);
+  border: 1px solid rgba(0, 0, 0, 0.14);
+  color: rgba(20, 17, 14, 0.78);
   font-weight: 900;
 }
 
@@ -1027,7 +1079,7 @@
 .fcr-modalOverlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.55);
+  background: rgba(0, 0, 0, 0.62);
   z-index: 9999;
   display: grid;
   place-items: center;
@@ -1041,10 +1093,17 @@
   border-radius: 3px;
 
   background:
-    radial-gradient(120% 180% at 20% 10%, rgba(255,255,255,0.08), rgba(255,255,255,0)),
-    linear-gradient(180deg, rgba(98, 70, 46, 0.98), rgba(42, 28, 18, 0.98));
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
+    radial-gradient(120% 180% at 20% 10%, rgba(255,255,255,0.06), rgba(255,255,255,0)),
+    linear-gradient(180deg, rgba(44, 30, 22, 0.98), rgba(14, 10, 8, 0.98)),
+    repeating-linear-gradient(
+      135deg,
+      rgba(255,255,255,0.02) 0,
+      rgba(255,255,255,0.02) 2px,
+      rgba(0,0,0,0) 2px,
+      rgba(0,0,0,0) 7px
+    );
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 36px 92px rgba(0, 0, 0, 0.56);
 }
 
 .fcr-modalTop {
@@ -1056,7 +1115,7 @@
 }
 
 .fcr-modalTitle {
-  color: rgba(255, 245, 232, 0.92);
+  color: rgba(255, 246, 236, 0.92);
   font-weight: 1000;
   font-size: 18px;
   letter-spacing: 0.02em;
@@ -1086,8 +1145,10 @@
 
 /* === Filas CMD: SIN “CMD” === */
 .fcr-row.is-cmdRow .fcr-perkPill {
-  background: linear-gradient(180deg, rgba(28, 26, 24, 0.08), rgba(0, 0, 0, 0.04)), rgba(246, 230, 196, 0.60);
-  border: 1px dashed rgba(0, 0, 0, 0.22);
+  background:
+    linear-gradient(180deg, rgba(12, 10, 8, 0.10), rgba(0, 0, 0, 0.06)),
+    rgba(230, 214, 182, 0.52);
+  border: 1px dashed rgba(0, 0, 0, 0.26);
 }
 
 .fcr-row.is-cmdRow .fcr-perkTitle {
@@ -1120,10 +1181,17 @@
   border-radius: 3px;
 
   background:
-    radial-gradient(70% 160% at 50% 20%, rgba(255, 255, 255, 0.10), rgba(255, 255, 255, 0)),
-    linear-gradient(180deg, rgba(92, 66, 44, 0.94), rgba(44, 28, 18, 0.94));
+    radial-gradient(70% 160% at 50% 20%, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0)),
+    linear-gradient(180deg, rgba(44, 30, 22, 0.96), rgba(14, 10, 8, 0.96)),
+    repeating-linear-gradient(
+      135deg,
+      rgba(255,255,255,0.02) 0,
+      rgba(255,255,255,0.02) 2px,
+      rgba(0,0,0,0) 2px,
+      rgba(0,0,0,0) 7px
+    );
   border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.26);
 
   display: grid;
   grid-template-columns: 1fr auto;
@@ -1144,7 +1212,7 @@
   position: absolute;
   inset: -50px -50px auto -50px;
   height: 120px;
-  background: radial-gradient(60% 120% at 50% 50%, rgba(255, 255, 255, 0.10), rgba(255, 255, 255, 0));
+  background: radial-gradient(60% 120% at 50% 50%, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0));
   pointer-events: none;
   opacity: 0.9;
 }
@@ -1165,7 +1233,7 @@
   place-items: center;
 }
 
-.fcr-sectionStar svg { width: 18px; height: 18px; fill: rgba(255, 255, 255, 0.78); }
+.fcr-sectionStar svg { width: 18px; height: 18px; fill: rgba(255, 255, 255, 0.74); }
 
 .fcr-sectionTexts { display: grid; gap: 2px; text-align: center; }
 
@@ -1174,10 +1242,10 @@
   font-weight: 1000;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: rgba(255, 245, 232, 0.92);
+  color: rgba(255, 246, 236, 0.92);
 }
 
-.fcr-sectionHint { font-size: 12px; font-weight: 800; color: rgba(255, 245, 232, 0.72); }
+.fcr-sectionHint { font-size: 12px; font-weight: 800; color: rgba(255, 246, 236, 0.70); }
 
 .fcr-sectionChevron {
   justify-self: end;
@@ -1192,7 +1260,7 @@
 .fcr-sectionChevron svg {
   width: 22px;
   height: 22px;
-  fill: rgba(255, 255, 255, 0.70);
+  fill: rgba(255, 255, 255, 0.66);
   transition: transform 200ms ease;
 }
 
@@ -1248,7 +1316,5 @@
 
   .fcr-prefixText { font-size: 13px; }
 
-  /* En móvil, el panel de reinos a 1 columna en abierto,
-     pero al colapsar igual pasará a icon-grid por data-cstate */
   .fcr-sideGrid { grid-template-columns: 1fr; }
 }

@@ -1,285 +1,350 @@
 @use "../../base/_variables" as *;
 
-/* Utilidad accesible */
-.sr-only {
-  position: absolute !important;
-  width: 1px !important;
-  height: 1px !important;
-  padding: 0 !important;
-  margin: -1px !important;
-  overflow: hidden !important;
-  clip: rect(0, 0, 0, 0) !important;
-  white-space: nowrap !important;
-  border: 0 !important;
+@import url("https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Nunito:wght@800;900&display=swap");
+
+/* Helpers */
+@mixin stroke-white($w: 2px, $o: rgba(0,0,0,0.92)) {
+  color: #fff;
+  text-shadow:
+    (-$w) 0 $o,
+    ($w) 0 $o,
+    0 (-$w) $o,
+    0 ($w) $o,
+    (-$w) (-$w) $o,
+    ($w) (-$w) $o,
+    (-$w) ($w) $o,
+    ($w) ($w) $o,
+    0 10px 18px rgba(0,0,0,0.35);
 }
 
-.tienda-oferta-banner {
-  width: 100%;
-  max-width: 100%;
-  margin: 0 auto;
-  padding: 0;
+@mixin glass-panel-compact {
+  background: linear-gradient(180deg, rgba(40, 56, 98, 0.86), rgba(22, 30, 54, 0.88));
+  box-shadow:
+    0 1.05rem 1.55rem rgba(0,0,0,0.45),
+    inset 0 0 0 2px rgba(255,255,255,0.05);
+}
 
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.22rem;
+@keyframes ofertaPulseSoft {
+  0%, 100% { filter: drop-shadow(0 0 0 rgba(120,255,140,0)); }
+  50%      { filter: drop-shadow(0 0 16px rgba(120,255,140,0.12)); }
+}
 
-  position: relative;
+@keyframes particleFloat {
+  0%   { transform: translate3d(0, 18px, 0) scale(1); opacity: 0; }
+  12%  { opacity: 0.9; }
+  70%  { opacity: 0.55; }
+  100% { transform: translate3d(0, -22px, 0) scale(1.18); opacity: 0; }
+}
 
-  .tienda-oferta-artWrap {
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    line-height: 0;
-  }
+@keyframes particleBlink {
+  0%, 100% { opacity: 0.25; }
+  50%      { opacity: 0.9; }
+}
 
-  .tienda-oferta-image {
-    width: 100%;
-    max-width: 190px;
-    height: auto;
+/* Levitación CTA */
+@keyframes ctaFloat {
+  0%, 100% { transform: translate3d(0, 0px, 0); }
+  50%      { transform: translate3d(0, -6px, 0); }
+}
 
-    image-rendering: crisp-edges;
-    opacity: 0.92;
-    filter: drop-shadow(0 3px 10px rgba(0, 0, 0, 0.45));
+@keyframes ctaBreathe {
+  0%, 100% { filter: drop-shadow(0 0.65rem 0.95rem rgba(0,0,0,0.42)); }
+  50%      { filter: drop-shadow(0 0.85rem 1.15rem rgba(0,0,0,0.46)); }
+}
 
-    transform: translateY(0);
-    transition: transform 0.18s ease-out, opacity 0.18s ease-out;
-  }
-
-  &:hover .tienda-oferta-image {
-    transform: translateY(-1px);
-    opacity: 0.98;
-  }
-
-  .tienda-oferta-panel {
-    width: 100%;
-    max-width: 100%;
-    min-width: 0;
-
-    padding: 0.54rem 0.8rem 0.68rem;
-
-    border-radius: 4px;
-    background:
-      radial-gradient(circle at 30% 0%, rgba(255, 220, 150, 0.14), transparent 55%),
-      linear-gradient(180deg, rgba(24, 18, 12, 0.92), rgba(10, 7, 4, 0.86));
-
-    border: 1px solid rgba(255, 220, 160, 0.28);
-    box-shadow:
-      0 8px 16px rgba(0, 0, 0, 0.46),
-      inset 0 1px 0 rgba(255, 255, 255, 0.06);
-
-    backdrop-filter: blur(3px);
-  }
-
-  .tienda-oferta-header {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    column-gap: 0.55rem;
-    row-gap: 0.28rem;
-
-    margin-bottom: 0.22rem;
-    flex-wrap: wrap;
-  }
-
-  .tienda-oferta-timer-inline {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.30rem;
-    min-width: 0;
-  }
-
-  .timer-block {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    min-width: 42px;
-  }
-
-  .timer-value {
-    font-family: "Press Start 2P", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    font-size: 0.92rem;
-    letter-spacing: 0.12em;
-    font-variant-numeric: tabular-nums;
-    color: #fffbe8;
-    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.75);
-  }
-
-  .timer-unit {
-    font-family: "IM Fell English SC", serif;
-    font-size: 0.54rem;
-    letter-spacing: 0.14em;
-    color: rgba(255, 235, 200, 0.88);
-  }
-
-  .timer-sep {
-    font-family: "Press Start 2P", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    font-size: 0.74rem;
-    color: rgba(255, 235, 200, 0.75);
-    margin-top: 0.08rem;
-  }
-
-  .tienda-oferta-percent {
-    font-family: "IM Fell English SC", serif;
-    font-size: 0.86rem;
-    letter-spacing: 0.06em;
-    color: #ffe9c7;
-
-    padding: 0.18rem 0.52rem;
-    border-radius: 4px;
-
-    background: linear-gradient(180deg, #e96a45 0%, #c54633 55%, #7f231f 100%);
-    border: 1px solid rgba(0, 0, 0, 0.7);
-    box-shadow:
-      0 3px 8px rgba(0, 0, 0, 0.45),
-      inset 0 1px 0 rgba(255, 230, 190, 0.55);
-  }
-
-  .tienda-oferta-sub {
-    margin-top: 0.02rem;
-    margin-bottom: 0.32rem;
-    text-align: center;
-    font-size: 0.74rem;
-    color: rgba(255, 244, 220, 0.86);
-    letter-spacing: 0.03em;
-  }
-
-  .tienda-oferta-bar {
-    position: relative;
-    width: 100%;
-    height: 8px;
-    border-radius: 4px;
-    overflow: hidden;
-    background: rgba(255, 235, 200, 0.10);
-    border: 1px solid rgba(255, 220, 160, 0.22);
-    box-shadow: inset 0 1px 0 rgba(0, 0, 0, 0.5);
-  }
-
-  .tienda-oferta-barFill {
-    display: block;
-    height: 100%;
-    border-radius: 4px;
-
-    background: linear-gradient(90deg, #ffb347 0%, #ffcc33 50%, #ff9a3c 100%);
-    box-shadow: 0 0 10px rgba(255, 214, 140, 0.35);
-
-    transition: width 0.6s ease-out;
-  }
-
-  .tienda-oferta-barPattern {
-    position: absolute;
-    inset: -4px 0;
-    background-image: linear-gradient(
-      45deg,
-      rgba(255, 255, 255, 0.10) 25%,
-      transparent 25%,
-      transparent 50%,
-      rgba(255, 255, 255, 0.10) 50%,
-      rgba(255, 255, 255, 0.10) 75%,
-      transparent 75%,
-      transparent
-    );
-    background-size: 18px 18px;
-    mix-blend-mode: soft-light;
-    animation: oferta-bar-stripes 2.2s linear infinite;
-    pointer-events: none;
-    opacity: 0.75;
-  }
-
-  .tienda-oferta-barShine {
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(
-      90deg,
-      rgba(255, 255, 255, 0),
-      rgba(255, 255, 255, 0.18),
-      rgba(255, 255, 255, 0)
-    );
-    transform: translateX(-70%);
-    animation: oferta-bar-shine 3.2s ease-in-out infinite;
-    pointer-events: none;
-    opacity: 0.85;
-  }
+/* A11y */
+.sr-only {
+  position: absolute !important;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0,0,0,0);
+  white-space: nowrap; border: 0;
 }
 
 /* =========================================================
-   ✅ Container queries (la magia): si falta altura, compacta
+   STRIP compacto
    ========================================================= */
-@container portada (max-height: 720px) {
-  .tienda-oferta-banner {
-    gap: 0.14rem;
+.tienda-oferta-strip {
+  width: min(62rem, 96%);
+  margin: 0 auto clamp(0.35rem, 0.6vw, 0.55rem);
 
-    .tienda-oferta-image { max-width: 170px; }
-    .tienda-oferta-panel { padding: 0.46rem 0.75rem 0.58rem; }
-    .tienda-oferta-sub { font-size: 0.72rem; margin-bottom: 0.26rem; }
-    .timer-block { min-width: 40px; }
-    .timer-value { font-size: 0.88rem; }
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: clamp(0.55rem, 0.9vw, 0.85rem);
+  align-items: center;
+
+  position: relative;
+  z-index: 3;
+  animation: ofertaPulseSoft 3.2s ease-in-out infinite;
+}
+
+/* CTA izquierda (sin background) + partículas + levitación */
+.tienda-oferta-cta {
+  position: relative;
+  width: clamp(6.0rem, 8.3vw, 7.6rem);
+  height: clamp(3.2rem, 4.6vw, 4.0rem);
+  display: grid;
+  place-items: center;
+  overflow: visible;
+  pointer-events: none;
+
+  /* flotación suave */
+  animation: ctaFloat 2.8s ease-in-out infinite;
+  transform-origin: center;
+}
+
+.tienda-oferta-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transform: translateY(1px);
+  filter:
+    saturate(1.02)
+    contrast(1.02)
+    drop-shadow(0 0.65rem 0.95rem rgba(0,0,0,0.42));
+  animation: ctaBreathe 2.8s ease-in-out infinite;
+}
+
+.cta-particles {
+  position: absolute;
+  inset: -14px -16px;
+  pointer-events: none;
+  z-index: -1;
+  filter: drop-shadow(0 0 10px rgba(120, 255, 140, 0.22));
+  /* que también acompañe la levitación */
+  transform-origin: center;
+}
+
+.cta-particles::before,
+.cta-particles::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-repeat: no-repeat;
+  opacity: 0.95;
+}
+
+.cta-particles::before {
+  background-image:
+    radial-gradient(circle, rgba(120,255,140,0.85) 0 2px, rgba(120,255,140,0) 3px),
+    radial-gradient(circle, rgba(140,255,170,0.70) 0 1.6px, rgba(140,255,170,0) 3px),
+    radial-gradient(circle, rgba(90,230,120,0.65) 0 1.8px, rgba(90,230,120,0) 3px),
+    radial-gradient(circle, rgba(180,255,210,0.55) 0 1.4px, rgba(180,255,210,0) 3px),
+    radial-gradient(circle, rgba(120,255,140,0.60) 0 2px, rgba(120,255,140,0) 3px),
+    radial-gradient(circle, rgba(140,255,170,0.55) 0 1.6px, rgba(140,255,170,0) 3px);
+
+  background-size: 6px 6px, 6px 6px, 7px 7px, 6px 6px, 7px 7px, 6px 6px;
+  background-position: 10% 70%, 25% 30%, 38% 85%, 58% 25%, 72% 78%, 88% 35%;
+  animation: particleBlink 1.8s ease-in-out infinite;
+}
+
+.cta-particles::after {
+  background-image:
+    radial-gradient(circle, rgba(120,255,140,0.95) 0 2px, rgba(120,255,140,0) 4px),
+    radial-gradient(circle, rgba(140,255,170,0.78) 0 1.8px, rgba(140,255,170,0) 4px),
+    radial-gradient(circle, rgba(90,230,120,0.72) 0 1.9px, rgba(90,230,120,0) 4px),
+    radial-gradient(circle, rgba(180,255,210,0.60) 0 1.5px, rgba(180,255,210,0) 4px),
+    radial-gradient(circle, rgba(120,255,140,0.78) 0 2px, rgba(120,255,140,0) 4px),
+    radial-gradient(circle, rgba(140,255,170,0.62) 0 1.6px, rgba(140,255,170,0) 4px);
+
+  background-size: 10px 10px, 10px 10px, 11px 11px, 10px 10px, 11px 11px, 10px 10px;
+  background-position: 12% 90%, 28% 80%, 44% 92%, 60% 82%, 76% 90%, 92% 84%;
+  animation: particleFloat 1.95s ease-in-out infinite;
+}
+
+/* Panel */
+.tienda-oferta-panel {
+  @include glass-panel-compact();
+  border-radius: 0.95rem;
+  padding: 0.40rem 0.68rem 0.44rem;
+  position: relative;
+  overflow: hidden;
+
+  display: grid;
+  gap: 0.25rem;
+  align-content: center;
+  min-height: clamp(3.2rem, 4.6vw, 4.0rem);
+}
+
+.tienda-oferta-panel::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  background:
+    radial-gradient(70% 120% at 18% 35%, rgba(255, 200, 120, 0.12), rgba(255,200,120,0) 60%),
+    radial-gradient(75% 120% at 85% 55%, rgba(140, 200, 255, 0.11), rgba(140,200,255,0) 62%),
+    linear-gradient(180deg, rgba(255,255,255,0.05), rgba(0,0,0,0.05));
+  opacity: 0.82;
+  pointer-events: none;
+}
+
+.tienda-oferta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  position: relative;
+  z-index: 2;
+}
+
+/* ✅ CENTRADO: el bloque de texto ocupa el ancho y se centra */
+.tienda-oferta-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42rem;
+
+  /* clave: ocupa todo el ancho disponible y centra contenido */
+  flex: 1 1 auto;
+  justify-content: center;
+  text-align: center;
+
+  padding: 0.22rem 0.44rem;
+  border-radius: 0.75rem;
+
+  background: rgba(0,0,0,0.16);
+  box-shadow: inset 0 0 0 2px rgba(255,255,255,0.05);
+
+  /* para que no choque con el -10% */
+  margin-right: 0.25rem;
+  min-width: 0;
+}
+
+/* opcional: si la línea se hace larga, que no se rompa feo */
+.tienda-oferta-text,
+.tienda-oferta-time,
+.time-label,
+.time-value {
+  white-space: nowrap;
+}
+
+.tienda-oferta-text {
+  font-family: "Nunito", system-ui, sans-serif;
+  font-weight: 900;
+  font-size: clamp(0.74rem, 0.95vw, 0.86rem);
+  letter-spacing: 0.02em;
+  @include stroke-white(2px, rgba(0,0,0,0.65));
+  color: rgba(255,255,255,0.94);
+}
+
+.tienda-oferta-dot {
+  opacity: 0.55;
+  font-family: "Nunito", system-ui, sans-serif;
+  font-weight: 900;
+  @include stroke-white(2px, rgba(0,0,0,0.55));
+}
+
+.tienda-oferta-time {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.38rem;
+  min-width: 0;
+}
+
+.time-label {
+  font-family: "Nunito", system-ui, sans-serif;
+  font-weight: 900;
+  font-size: clamp(0.68rem, 0.9vw, 0.80rem);
+  color: rgba(255,255,255,0.82);
+  text-shadow: 0 0.55rem 0.9rem rgba(0,0,0,0.32);
+}
+
+.time-value {
+  font-family: "Luckiest Guy", system-ui, sans-serif;
+  font-size: clamp(0.92rem, 1.15vw, 1.08rem);
+  letter-spacing: 0.03em;
+  @include stroke-white(2px, rgba(0,0,0,0.84));
+}
+
+/* Badge % derecha */
+.tienda-oferta-percent {
+  flex: 0 0 auto;
+  font-family: "Nunito", system-ui, sans-serif;
+  font-weight: 900;
+  font-size: 0.76rem;
+  letter-spacing: 0.06em;
+
+  padding: 0.26rem 0.46rem 0.24rem;
+  color: #1a0f12;
+  background: linear-gradient(180deg, #ffb0be, #ff5c7a);
+
+  box-shadow:
+    0 0.9rem 1.2rem rgba(0,0,0,0.34),
+    inset 0 0 0 2px rgba(0,0,0,0.12);
+
+  clip-path: polygon(0 0,92% 0,100% 50%,92% 100%,0 100%,6% 50%);
+  filter: drop-shadow(0 0.55rem 0.75rem rgba(0,0,0,0.20));
+}
+
+/* Barra progreso fina */
+.tienda-oferta-bar {
+  height: 0.50rem;
+  border-radius: 999px;
+  position: relative;
+  overflow: hidden;
+
+  background: rgba(0,0,0,0.22);
+  box-shadow:
+    inset 0 0 0 2px rgba(255,255,255,0.05),
+    0 0.65rem 1rem rgba(0,0,0,0.30);
+
+  z-index: 2;
+}
+
+.tienda-oferta-barFill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 0%;
+  border-radius: 999px;
+
+  background: linear-gradient(
+    90deg,
+    rgba(123,255,122,0.70),
+    rgba(80, 200, 255, 0.62),
+    rgba(255, 200, 120, 0.66)
+  );
+  box-shadow: 0 0 18px rgba(120, 255, 140, 0.14);
+}
+
+.tienda-oferta-barPattern {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(255,255,255,0.10) 1px, rgba(255,255,255,0) 1px);
+  background-size: 14px 100%;
+  opacity: 0.22;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+
+.tienda-oferta-barShine {
+  content: "";
+  position: absolute;
+  inset: -30% -25%;
+  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.18), rgba(255,255,255,0) 60%);
+  opacity: 0.30;
+  pointer-events: none;
+}
+
+/* Responsive */
+@media (max-width: 52rem) {
+  .tienda-oferta-strip {
+    grid-template-columns: 1fr;
   }
-}
 
-@container portada (max-height: 660px) {
-  .tienda-oferta-banner {
-    /* fuera imagen: se convierte en “bar” premium */
-    .tienda-oferta-artWrap { display: none !important; }
-    .tienda-oferta-sub { display: none !important; }
-    .tienda-oferta-panel { padding: 0.42rem 0.70rem 0.52rem; }
-    .tienda-oferta-bar { height: 7px; }
-    .timer-unit { display: none; } /* gana altura sin perder info */
-    .timer-sep { margin-top: 0; }
+  .tienda-oferta-cta {
+    display: none;
   }
-}
 
-@container portada (max-height: 610px) {
-  .tienda-oferta-banner {
-    .tienda-oferta-panel { padding: 0.38rem 0.65rem 0.46rem; }
-    .timer-value { font-size: 0.84rem; }
-    .tienda-oferta-percent { font-size: 0.82rem; padding: 0.14rem 0.46rem; }
+  .tienda-oferta-panel {
+    min-height: auto;
+    padding: 0.46rem 0.7rem 0.50rem;
+    border-radius: 1rem;
   }
-}
 
-@keyframes oferta-bar-shine {
-  0%   { transform: translateX(-80%); opacity: 0; }
-  22%  { opacity: 1; }
-  100% { transform: translateX(120%); opacity: 0; }
-}
-
-@keyframes oferta-bar-stripes {
-  0%   { background-position: 0 0; }
-  100% { background-position: 36px 0; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .tienda-oferta-banner:hover .tienda-oferta-image { transform: none; }
-  .tienda-oferta-banner .tienda-oferta-barShine,
-  .tienda-oferta-banner .tienda-oferta-barPattern {
-    animation: none !important;
-  }
-}
-
-/* Mobile: como tenías (sin imagen) */
-@media (max-width: 960px) {
-  .tienda-oferta-banner {
-    gap: 0.20rem;
-
-    .tienda-oferta-artWrap { display: none !important; }
-
-    .tienda-oferta-panel {
-      max-width: 520px;
-      border-radius: 6px;
-
-      background:
-        radial-gradient(circle at 30% 0%, rgba(255, 220, 150, 0.18), transparent 58%),
-        linear-gradient(180deg, rgba(32, 24, 16, 0.92), rgba(12, 8, 4, 0.88));
-
-      box-shadow:
-        0 10px 20px rgba(0, 0, 0, 0.45),
-        inset 0 1px 0 rgba(255, 255, 255, 0.06);
-    }
-
-    .timer-block { min-width: 42px; }
-    .timer-value { font-size: 0.92rem; }
-    .tienda-oferta-sub { font-size: 0.74rem; }
+  .tienda-oferta-line {
+    width: 100%;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.35rem 0.5rem;
+    margin-right: 0;
   }
 }

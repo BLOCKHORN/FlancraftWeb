@@ -7,9 +7,9 @@ import "../../styles/components/Estadisticas/_perfiljugador.scss";
 const SERVER_INFO = {
   global: { label: "Global", icon: "/assets/reinos/global.webp" },
 
-  "survival-clasico": { label: "Survival Clásico", icon: "/assets/reinos/survival-clasico.webp" },
-  survival_clasico: { label: "Survival Clásico", icon: "/assets/reinos/survival-clasico.webp" },
-  survival: { label: "Survival Clásico", icon: "/assets/reinos/survival-clasico.webp" },
+  "survival-clasico": { label: "Survival Towny", icon: "/assets/reinos/survival-clasico.webp" },
+  survival_clasico: { label: "Survival Towny", icon: "/assets/reinos/survival-clasico.webp" },
+  survival: { label: "Survival Towny", icon: "/assets/reinos/survival-clasico.webp" },
 
   "survival-anarquico": { label: "Survival Anárquico", icon: "/assets/reinos/survival-anarquico.webp" },
   survival_anarquico: { label: "Survival Anárquico", icon: "/assets/reinos/survival-anarquico.webp" },

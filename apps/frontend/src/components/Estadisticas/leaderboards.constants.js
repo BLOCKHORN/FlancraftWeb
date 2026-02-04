@@ -7,7 +7,7 @@ export const SERVIDOR_API_MAP = {
 };
 
 export const SERVIDORES = [
-  { id: "survival_clasico", nombre: "Survival Clásico", imagen: "/assets/reinos/survival-clasico.webp" },
+  { id: "survival_clasico", nombre: "Survival Towny", imagen: "/assets/reinos/survival-clasico.webp" },
   { id: "oneblock", nombre: "OneBlock", imagen: "/assets/reinos/oneblock.webp" },
   { id: "gens", nombre: "Gens", imagen: "/assets/reinos/gens.webp" },
   { id: "survival_anarquico", nombre: "Survival Anárquico", imagen: "/assets/reinos/survival-anarquico.webp" },

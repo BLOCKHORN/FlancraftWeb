@@ -1,3 +1,4 @@
+// src/components/Tienda/ui/TiendaCarritoLateral.jsx
 import React, { useMemo, useState, useCallback } from "react";
 import useMinecraftProfile from "../hooks/useMinecraftProfile";
 import TiendaCheckoutModal from "../modals/TiendaCheckoutModal";
@@ -100,6 +101,8 @@ export default function TiendaCarritoLateral({
   const handleRemove = useCallback(
     (item) => {
       if (typeof eliminarItem === "function") return eliminarItem(item.id);
+      // fallback: si te pasan toggleProducto como onAgregar, esto funcionará como "quitar"
+      // si te pasan agregar, esto NO quitaría (pero normalmente eliminarItem existe siempre)
       onAgregar?.(item);
     },
     [eliminarItem, onAgregar]
@@ -108,16 +111,24 @@ export default function TiendaCarritoLateral({
   const handleQty = useCallback(
     (item, delta) => {
       const current = clampInt(item.quantity || 1, 1, 999);
-      const next = clampInt(current + delta, 1, 999);
+      const nextRaw = current + Number(delta || 0);
 
+      // ✅ Preferencia 1: cambiarCantidad (ideal para + y - y eliminar al llegar a 0)
       if (typeof onCambiarCantidad === "function") {
         return onCambiarCantidad(item.id, delta, item);
       }
+
+      // ✅ Preferencia 2: setCantidad (permitimos 0 para borrar)
       if (typeof onSetCantidad === "function") {
+        const next = clampInt(nextRaw, 0, 999); // 👈 clave: permitir 0
         return onSetCantidad(item.id, next, item);
       }
 
+      // ✅ Fallback: si no hay handlers, al restar en 1 elimina
       if (delta < 0 && current <= 1) return handleRemove(item);
+
+      // si no hay handlers y es +, no hacemos nada (evita inconsistencias)
+      return;
     },
     [onCambiarCantidad, onSetCantidad, handleRemove]
   );
@@ -177,215 +188,191 @@ export default function TiendaCarritoLateral({
           id="tienda-basket"
           data-empty={isEmpty ? "true" : "false"}
         >
-          {/* CUENTA */}
-          <section className="carrito-cuenta" aria-label="Cuenta">
-            <div className="cuenta-top">
-              <div className="cuenta-identidad">
-                <div className={`cuenta-avatar ${!nombreConfirmado ? "is-guest" : ""}`}>
-                  {nombreConfirmado ? (
-                    <img
-                      src={profile.headUrl}
-                      alt={`Avatar de ${nombreConfirmado}`}
-                      draggable={false}
-                      onError={(e) => {
-                        e.currentTarget.src = "https://crafthead.net/avatar/Steve?size=64&overlay";
-                      }}
-                    />
-                  ) : (
-                    <div className="cuenta-quest" aria-hidden="true">
-                      ?
-                    </div>
-                  )}
-                </div>
-
-                <div className="cuenta-textos">
-                  <div className="cuenta-nombre">{nombreConfirmado || "Invitado"}</div>
-                  <div className="cuenta-sub">
-                    {nombreConfirmado
-                      ? isWebLoggedIn
-                        ? "Cuenta vinculada"
-                        : "Cuenta del servidor"
-                      : "Elige cuenta para comprar"}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="cuenta-actions">
-              <button
-                className="cuenta-btn cuenta-btn-account"
-                type="button"
-                onClick={handleAccountClick}
-              >
-                {nombreConfirmado ? "Cambiar cuenta" : "Elegir cuenta"}
-              </button>
-
-              <div className="cuenta-btn cuenta-btn-currency" role="group" aria-label="Cambiar moneda">
-                <div className="currency-left">
-                  <div className="currency-icon" aria-hidden="true">
-                    $
-                  </div>
-                  <div className="currency-text">
-                    <div className="currency-label">Cambiar moneda</div>
-                    <div className="currency-current">{monedaTexto}</div>
-                  </div>
-                </div>
-
-                <div className="currency-chevron" aria-hidden="true">
-                  ▾
-                </div>
-
-                <select
-                  className="currency-select"
-                  value={currency}
-                  onChange={onMonedaChange}
-                  aria-label="Moneda"
-                >
-                  <option value="EUR">EUR</option>
-                  <option value="USD">USD</option>
-                  <option value="GBP">GBP</option>
-                </select>
-              </div>
-            </div>
-          </section>
-
-          {/* BASKET */}
-          <section className={`basket ${isEmpty ? "is-empty" : ""}`} aria-label="Carrito de compra">
-            <div className="basket-title">CARRITO</div>
-
-            <div
-              className={`basket-list ${isEmpty ? "is-empty" : ""}`}
-              role="list"
-              aria-busy={loadingCheckout}
-            >
-              {isEmpty ? (
-                <div className="basket-empty-state" data-kind={nombreConfirmado ? "empty" : "account"}>
-                  <div className="basket-empty-icon" aria-hidden="true" />
-                  <div className="basket-empty-text">
-                    {nombreConfirmado ? "(Vacío)" : "Elige una cuenta"}
-                  </div>
-                </div>
-              ) : (
-                carrito.map((it) => {
-                  const qty = clampInt(it.quantity || 1, 1, 999);
-                  const canDec = qty > 1;
-                  const canInc = qty < 999;
-
-                  return (
-                    <div className="basket-item" key={it.id} role="listitem">
-                      <div className="basket-item-left">
-                        <div className="basket-item-icon-frame" aria-hidden="true">
-                          {it.image ? (
-                            <img
-                              className="basket-item-icon"
-                              src={it.image}
-                              alt=""
-                              draggable={false}
-                              onError={(e) => {
-                                e.currentTarget.style.display = "none";
-                              }}
-                            />
-                          ) : null}
-                          <div className="basket-item-icon-fallback">
-                            <FallbackIcon />
-                          </div>
-                        </div>
-
-                        <div className="basket-item-info">
-                          <div className="basket-item-name" title={it.name}>
-                            {it.name}
-                          </div>
-                          <div className="basket-item-price">
-                            {it.priceFormatted
-                              ? it.priceFormatted
-                              : formatCurrency(Number(it.price) || 0, currency)}
-                          </div>
-                        </div>
+          {/* ✅ TODO el contenido va dentro, para que el PNG sea el borde exterior */}
+          <div className="carrito-panel-inner">
+            {/* CUENTA */}
+            <section className="carrito-cuenta" aria-label="Cuenta">
+              <div className="cuenta-top">
+                <div className="cuenta-identidad">
+                  <div className={`cuenta-avatar ${!nombreConfirmado ? "is-guest" : ""}`}>
+                    {nombreConfirmado ? (
+                      <img
+                        src={profile.headUrl}
+                        alt={`Avatar de ${nombreConfirmado}`}
+                        draggable={false}
+                        onError={(e) => {
+                          e.currentTarget.src = "https://crafthead.net/avatar/Steve?size=64&overlay";
+                        }}
+                      />
+                    ) : (
+                      <div className="cuenta-quest" aria-hidden="true">
+                        ?
                       </div>
+                    )}
+                  </div>
 
-                      <div className="basket-item-right">
-                        <div className="qty-stepper" role="group" aria-label={`Cantidad de ${it.name}`}>
-                          <button
-                            className="qty-btn"
-                            type="button"
-                            onClick={() => handleQty(it, -1)}
-                            disabled={loadingCheckout || !canDec}
-                            aria-label="Reducir cantidad"
-                          >
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                              <path
-                                d="M6 12h12"
-                                stroke="currentColor"
-                                strokeWidth="2.6"
-                                strokeLinecap="round"
-                              />
-                            </svg>
-                          </button>
-
-                          <div className="qty-value">{qty}</div>
-
-                          <button
-                            className="qty-btn"
-                            type="button"
-                            onClick={() => handleQty(it, +1)}
-                            disabled={loadingCheckout || !canInc}
-                            aria-label="Aumentar cantidad"
-                          >
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                              <path
-                                d="M12 6v12M6 12h12"
-                                stroke="currentColor"
-                                strokeWidth="2.6"
-                                strokeLinecap="round"
-                              />
-                            </svg>
-                          </button>
-                        </div>
-
-                        <button
-                          className="basket-item-remove"
-                          type="button"
-                          onClick={() => handleRemove(it)}
-                          aria-label={`Quitar ${it.name}`}
-                          disabled={loadingCheckout}
-                        >
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                            <path
-                              d="M18 6L6 18M6 6l12 12"
-                              stroke="currentColor"
-                              strokeWidth="2.4"
-                              strokeLinecap="round"
-                            />
-                          </svg>
-                        </button>
-                      </div>
+                  <div className="cuenta-textos">
+                    <div className="cuenta-nombre">{nombreConfirmado || "Invitado"}</div>
+                    <div className="cuenta-sub">
+                      {nombreConfirmado
+                        ? isWebLoggedIn
+                          ? "Cuenta vinculada"
+                          : "Cuenta del servidor"
+                        : "Elige cuenta para comprar"}
                     </div>
-                  );
-                })
-              )}
-            </div>
-
-            <div className="basket-footer">
-              <div className="basket-total" aria-live="polite">
-                <div className="basket-total-label">Total:</div>
-                <div className="basket-total-value">{formatCurrency(total, currency)}</div>
+                  </div>
+                </div>
               </div>
 
-              <div
-                className={`checkout-wrap ${checkoutDisabledReason ? "is-disabled" : ""}`}
-                data-tooltip={checkoutDisabledReason || ""}
-              >
-                <button
-                  className="basket-checkout"
-                  type="button"
-                  disabled={Boolean(checkoutDisabledReason)}
-                  onClick={handleCheckout}
-                >
-                  {checkoutLabel}
+              <div className="cuenta-actions">
+                <button className="cuenta-btn cuenta-btn-account" type="button" onClick={handleAccountClick}>
+                  {nombreConfirmado ? "Cambiar cuenta" : "Elegir cuenta"}
                 </button>
+
+                <div className="cuenta-btn cuenta-btn-currency" role="group" aria-label="Cambiar moneda">
+                  <div className="currency-left">
+                    <div className="currency-icon" aria-hidden="true">
+                      $
+                    </div>
+                    <div className="currency-text">
+                      <div className="currency-label">Cambiar moneda</div>
+                      <div className="currency-current">{monedaTexto}</div>
+                    </div>
+                  </div>
+
+                  <div className="currency-chevron" aria-hidden="true">
+                    ▾
+                  </div>
+
+                  <select className="currency-select" value={currency} onChange={onMonedaChange} aria-label="Moneda">
+                    <option value="EUR">EUR</option>
+                    <option value="USD">USD</option>
+                    <option value="GBP">GBP</option>
+                  </select>
+                </div>
               </div>
-            </div>
-          </section>
+            </section>
+
+            {/* BASKET */}
+            <section className={`basket ${isEmpty ? "is-empty" : ""}`} aria-label="Carrito de compra">
+              <div className="basket-title">CARRITO</div>
+
+              <div className={`basket-list ${isEmpty ? "is-empty" : ""}`} role="list" aria-busy={loadingCheckout}>
+                {isEmpty ? (
+                  <div className="basket-empty-state" data-kind={nombreConfirmado ? "empty" : "account"}>
+                    <div className="basket-empty-icon" aria-hidden="true" />
+                    <div className="basket-empty-text">{nombreConfirmado ? "(Vacío)" : "Elige una cuenta"}</div>
+                  </div>
+                ) : (
+                  carrito.map((it) => {
+                    const qty = clampInt(it.quantity || 1, 1, 999);
+
+                    // ✅ clave: permitir DEC también en 1 (para que pueda eliminar)
+                    const canDec = qty >= 1;
+                    const canInc = qty < 999;
+
+                    return (
+                      <div className="basket-item" key={it.id} role="listitem">
+                        <div className="basket-item-left">
+                          <div className="basket-item-icon-frame" aria-hidden="true">
+                            {it.image ? (
+                              <img
+                                className="basket-item-icon"
+                                src={it.image}
+                                alt=""
+                                draggable={false}
+                                onError={(e) => {
+                                  e.currentTarget.style.display = "none";
+                                }}
+                              />
+                            ) : null}
+                            <div className="basket-item-icon-fallback">
+                              <FallbackIcon />
+                            </div>
+                          </div>
+
+                          <div className="basket-item-info">
+                            <div className="basket-item-name" title={it.name}>
+                              {it.name}
+                            </div>
+                            <div className="basket-item-price">
+                              {it.priceFormatted ? it.priceFormatted : formatCurrency(Number(it.price) || 0, currency)}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="basket-item-right">
+                          <div className="qty-stepper" role="group" aria-label={`Cantidad de ${it.name}`}>
+                            <button
+                              className="qty-btn"
+                              type="button"
+                              onClick={() => handleQty(it, -1)}
+                              disabled={loadingCheckout || !canDec}
+                              aria-label={qty <= 1 ? "Quitar del carrito" : "Reducir cantidad"}
+                              title={qty <= 1 ? "Quitar" : "Restar 1"}
+                            >
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                                <path d="M6 12h12" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" />
+                              </svg>
+                            </button>
+
+                            <div className="qty-value">{qty}</div>
+
+                            <button
+                              className="qty-btn"
+                              type="button"
+                              onClick={() => handleQty(it, +1)}
+                              disabled={loadingCheckout || !canInc}
+                              aria-label="Aumentar cantidad"
+                            >
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                                <path
+                                  d="M12 6v12M6 12h12"
+                                  stroke="currentColor"
+                                  strokeWidth="2.6"
+                                  strokeLinecap="round"
+                                />
+                              </svg>
+                            </button>
+                          </div>
+
+                          <button
+                            className="basket-item-remove"
+                            type="button"
+                            onClick={() => handleRemove(it)}
+                            aria-label={`Quitar ${it.name}`}
+                            disabled={loadingCheckout}
+                          >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                              <path
+                                d="M18 6L6 18M6 6l12 12"
+                                stroke="currentColor"
+                                strokeWidth="2.4"
+                                strokeLinecap="round"
+                              />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+
+              <div className="basket-footer">
+                <div className="basket-total" aria-live="polite">
+                  <div className="basket-total-label">Total:</div>
+                  <div className="basket-total-value">{formatCurrency(total, currency)}</div>
+                </div>
+
+                <div className={`checkout-wrap ${checkoutDisabledReason ? "is-disabled" : ""}`} data-tooltip={checkoutDisabledReason || ""}>
+                  <button className="basket-checkout" type="button" disabled={Boolean(checkoutDisabledReason)} onClick={handleCheckout}>
+                    {checkoutLabel}
+                  </button>
+                </div>
+              </div>
+            </section>
+          </div>
         </div>
       </aside>
 

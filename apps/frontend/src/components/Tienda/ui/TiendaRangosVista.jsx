@@ -164,25 +164,31 @@ const RANK_ICONS = {
 
 /**
  * /public/assets/reinos/...
+ * ✅ chunklock y hardcore fuera
+ * ✅ survival ahora es Survival Towny (solo label front)
  */
 const SERVER_META = {
   lobby: { label: "Lobby", icon: "/assets/reinos/global.webp" },
-  survival: { label: "Survival", icon: "/assets/reinos/survival-clasico.webp" },
+  survival: { label: "Survival Towny", icon: "/assets/reinos/survival-clasico.webp" },
   oneblock: { label: "OneBlock", icon: "/assets/reinos/oneblock.webp" },
-  chunklock: { label: "ChunkLock", icon: "/assets/reinos/chunklock.webp" },
-  hardcore: { label: "Hardcore", icon: "/assets/reinos/survival-hardcore.webp" },
   anarq: { label: "Anárquico", icon: "/assets/reinos/survival-anarquico.webp" },
 };
 
+/**
+ * ✅ FIX CRÍTICO:
+ * - NO usar params.categoria/cat/mode porque en rutas como /tienda/gens/rangos
+ *   "rangos" NO es un servidor y te rompe el serverKey.
+ * - Aquí solo miramos params.server/params.servidor.
+ * - Además: si estás en /tienda/gens/rangos (server = gens), abrimos el "global" (lobby).
+ */
 function getServerFromParams(params) {
-  const raw =
-    params?.servidor ||
-    params?.server ||
-    params?.categoria ||
-    params?.cat ||
-    params?.mode ||
-    "";
-  return String(raw || "").toLowerCase();
+  const raw = params?.server || params?.servidor || "";
+  const sv = String(raw || "").toLowerCase().trim();
+
+  if (sv === "gens") return "lobby";
+  if (sv === "oneblock") return "oneblock";
+
+  return sv || "lobby";
 }
 
 /* Action button solo para KIT */
@@ -484,8 +490,6 @@ export default function TiendaRangosVista({ productos = [], carrito = [], toggle
               {/* ✅ Panel izquierdo: selector de reinos (se adapta al colapso) */}
               <aside className="fcr-side" aria-label="Selector de reinos">
                 <div className="fcr-sideBox">
-
-
                   {serversAvailable.length > 1 ? (
                     <div className="fcr-sideGrid" role="tablist" aria-label="Reinos">
                       {serversAvailable.map((k) => {
@@ -612,11 +616,7 @@ export default function TiendaRangosVista({ productos = [], carrito = [], toggle
                 No hay perks configuradas para <b>{serverTitle}</b>.
               </div>
             ) : (
-              <div
-                key={`${serverKey}_${swapTick}`}
-                className="fcr-swap"
-                data-open={openGlobals ? "1" : "0"}
-              >
+              <div key={`${serverKey}_${swapTick}`} className="fcr-swap" data-open={openGlobals ? "1" : "0"}>
                 {(() => {
                   let dataCount = 0;
 
@@ -679,9 +679,9 @@ export default function TiendaRangosVista({ productos = [], carrito = [], toggle
                     return (
                       <div
                         key={`${row.key}-${idx}`}
-                        className={`fcr-row ${idx % 2 ? "is-alt" : ""} ${
-                          isCmdRow ? "is-cmdRow" : ""
-                        } ${isFirstDataRow ? "is-firstData" : ""} ${
+                        className={`fcr-row ${idx % 2 ? "is-alt" : ""} ${isCmdRow ? "is-cmdRow" : ""} ${
+                          isFirstDataRow ? "is-firstData" : ""
+                        } ${
                           !openGlobals && (isCmdRow || isCmdHeader) ? "is-afterCollapsedGlobals" : ""
                         }`}
                         role="row"

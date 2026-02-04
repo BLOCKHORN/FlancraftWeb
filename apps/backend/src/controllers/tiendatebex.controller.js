@@ -136,7 +136,7 @@ const obtenerDatosTienda = async (req, res) => {
   const server = getServerKey(req);
   const c = cache[server];
 
-  // ✅ permite forzar refresh: /api/tebex/:server?refresh=1
+  // ✅ permite forzar refresh: /api/tebex/datos?sv=oneblock&refresh=1
   const force =
     String(req.query.refresh || "").trim() === "1" ||
     String(req.query.refresh || "").toLowerCase() === "true";
@@ -153,7 +153,6 @@ const obtenerDatosTienda = async (req, res) => {
     const ready = cache[server];
     const bustKey = ready.cacheAt || nowSec();
 
-    // ✅ cache-bust para que Tebex/CDN no te sirva la imagen vieja
     const paquetesBusted = applyImageBustToPackages(ready.paquetes, bustKey);
 
     return res.json({
@@ -167,14 +166,23 @@ const obtenerDatosTienda = async (req, res) => {
   } catch (err) {
     console.error(
       "Error al obtener datos de tienda:",
+      `[server=${server}]`,
       err?.status || "",
       err?.message || err
     );
-    const code = err?.status >= 500 && err?.status < 600 ? 502 : 500;
-    return res.status(code).json({
+
+    // ✅ Si Tebex falla, es un "bad gateway" (no un 500 genérico)
+    const upstream = Number(err?.status);
+    const status =
+      Number.isFinite(upstream) && upstream >= 400 && upstream < 600
+        ? 502
+        : 500;
+
+    return res.status(status).json({
       ok: false,
       server,
       error: "No se pudo obtener datos de Tebex",
+      upstreamStatus: Number.isFinite(upstream) ? upstream : null,
       detail: err?.message || "unknown",
     });
   }
@@ -213,7 +221,6 @@ const obtenerDescripcionProducto = async (req, res) => {
     if (ONLY_VISIBLE && isHiddenOrDisabled(data))
       return res.status(404).json({ error: "Paquete no disponible." });
 
-    // ✅ cache-bust aquí también (por si abres /package/:id)
     const bustKey = cache?.[server]?.cacheAt || nowSec();
     const raw = pickPkgImageRaw(data);
     const image_url = raw ? withCacheBust(raw, bustKey) : "";
@@ -228,6 +235,7 @@ const obtenerDescripcionProducto = async (req, res) => {
   } catch (err) {
     console.error(
       "[Tebex /package] Error",
+      `[server=${server}]`,
       err?.status || "",
       err?.message || err
     );

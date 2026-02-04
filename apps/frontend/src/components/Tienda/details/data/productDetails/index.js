@@ -1,21 +1,10 @@
 // src/components/Tienda/details/data/productDetails/index.js
-
-import { TAGS_DETAILS } from "./tags.details.js";
-import { PROTECCIONES_DETAILS } from "./protecciones.details.js";
-import { ITEMSOP_DETAILS } from "./itemsop.details.js";
-import { ITEMSOP_ONEBLOCK_DETAILS } from "./itemsop.oneblock.details.js";
-import { LLAVES_DETAILS } from "./llaves.details.js";
-import { LLAVES_ONEBLOCK_DETAILS } from "./llaves.oneblock.details.js";
-import { GENS_DETAILS } from "./gens.details.js"; // ✅ AÑADIR
+import { GENS_DETAILS } from "./gens.details.js";
+import { ONEBLOCK_DETAILS } from "./oneblock.details.js";
 
 export const PRODUCT_DETAILS_REGISTRY = {
-  ...TAGS_DETAILS,
-  ...PROTECCIONES_DETAILS,
-  ...ITEMSOP_DETAILS,
-  ...ITEMSOP_ONEBLOCK_DETAILS,
-  ...LLAVES_DETAILS,
-  ...LLAVES_ONEBLOCK_DETAILS,
-  ...GENS_DETAILS, // ✅ AÑADIR
+  ...GENS_DETAILS,
+  ...ONEBLOCK_DETAILS,
 };
 
 /** Normaliza clave */
@@ -72,6 +61,7 @@ export function resolveProductDetails(key, scope = null) {
   };
 
   const kNorm = normKey(key);
+
   if (scope && !kNorm.includes("/")) {
     const sc = normKey(scope);
     const candidates = [
