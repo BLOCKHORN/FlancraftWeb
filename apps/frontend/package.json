@@ -4,6 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "coinshop:build": "node scripts/coinshop-yml-to-json.mjs",
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
@@ -38,6 +39,7 @@
     "color-thief-browser": "^2.0.2",
     "framer-motion": "^12.10.4",
     "howler": "^2.2.4",
+    "js-yaml": "^4.1.1",
     "lucide-react": "^0.487.0",
     "ngrok": "^5.0.0-beta.2",
     "phosphor-react": "^1.4.1",

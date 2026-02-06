@@ -1,6 +1,9 @@
+// src/components/Tienda/ui/TiendaStorefront.jsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import "../../../styles/components/Tienda/tienda-storefront.scss";
 import TiendaOfertaCountdown from "./TiendaOfertaCountdown";
+import CoinshopModal from "../coinshop/CoinshopModal";
+import DailyFreeClaimCard from "./DailyFreeClaimCard";
 
 import {
   fetchTebex,
@@ -14,9 +17,6 @@ import {
   withCacheBust,
 } from "../utils/tiendaHelpers";
 
-/* =========================
-   Utils
-   ========================= */
 function truthy(v) {
   return v === true || v === 1 || v === "1" || String(v).toLowerCase() === "true";
 }
@@ -156,9 +156,13 @@ function parseCoinsFromPkg(pkg) {
   let n = parseCoinsFromText(name);
   if (n) return n;
 
-  const extraTexts = [pkg?.description, pkg?.short_description, pkg?.shortDescription, pkg?.details, pkg?.meta?.description].filter(
-    Boolean
-  );
+  const extraTexts = [
+    pkg?.description,
+    pkg?.short_description,
+    pkg?.shortDescription,
+    pkg?.details,
+    pkg?.meta?.description,
+  ].filter(Boolean);
 
   for (const t of extraTexts) {
     n = parseCoinsFromText(t);
@@ -242,21 +246,51 @@ function getDiscountMeta(pkg) {
   return { onSale: true, discountPct: pct, original, price };
 }
 
-function BonusArrowRight({ className = "" }) {
+function BonusArrowUp({ className = "" }) {
   return (
     <svg className={className} width="26" height="26" viewBox="0 0 64 64" aria-hidden="true">
       <defs>
-        <linearGradient id="bArrG" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0" stopColor="#CCFFE0" />
-          <stop offset="1" stopColor="#2FE764" />
+        <linearGradient id="bUpMain" x1="0" y1="1" x2="0" y2="0">
+          <stop offset="0" stopColor="#19C94B" />
+          <stop offset="0.55" stopColor="#59FF8E" />
+          <stop offset="1" stopColor="#D6FFE7" />
         </linearGradient>
+        <linearGradient id="bUpShine" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="rgba(255,255,255,0.85)" />
+          <stop offset="0.55" stopColor="rgba(255,255,255,0.12)" />
+          <stop offset="1" stopColor="rgba(255,255,255,0)" />
+        </linearGradient>
+        <filter id="bUpDrop" x="-30%" y="-30%" width="160%" height="160%">
+          <feDropShadow dx="0" dy="2" stdDeviation="2" floodColor="rgba(0,0,0,0.35)" />
+        </filter>
       </defs>
+
       <path
-        d="M10 32c0-3 2.5-5.5 5.5-5.5H36V18c0-2.2 2.6-3.4 4.3-2l16.5 13.5c1.3 1.1 1.3 3.1 0 4.2L40.3 47.2c-1.7 1.4-4.3.2-4.3-2v-8.7H15.5C12.5 36.5 10 35 10 32z"
-        fill="url(#bArrG)"
-        stroke="rgba(0,0,0,0.35)"
+        d="M32 8c1.8 0 3.3.7 4.5 2l15.5 16.8c1.2 1.3 1.4 3.2.5 4.7-.9 1.5-2.5 2.4-4.2 2.4H41v18.3c0 2.8-2.3 5-5 5H28c-2.8 0-5-2.2-5-5V34.6h-7.3c-1.7 0-3.3-.9-4.2-2.4-.9-1.5-.7-3.4.5-4.7L27.5 10c1.2-1.3 2.7-2 4.5-2z"
+        fill="url(#bUpMain)"
+        stroke="rgba(0,0,0,0.38)"
         strokeWidth="3"
         strokeLinejoin="round"
+        filter="url(#bUpDrop)"
+      />
+
+      <path d="M16 40 L48 18" stroke="rgba(255,255,255,0.22)" strokeWidth="6" strokeLinecap="round" opacity="0.55" />
+      <path d="M16 40 L48 18" stroke="rgba(0,0,0,0.30)" strokeWidth="2" strokeLinecap="round" opacity="0.45" />
+
+      <path
+        d="M32 11c1 0 1.9.4 2.6 1.1l13.9 15.1c.3.3.2.7-.1.9-.2.2-.5.3-.8.3H39c-1.1 0-2 .9-2 2v0.2c0 0 0 0 0 0
+           C37 21.5 34.2 11 32 11z"
+        fill="url(#bUpShine)"
+        opacity="0.55"
+      />
+
+      <path
+        d="M32 12c.9 0 1.7.3 2.3 1l14.4 15.7c.4.5.1 1.2-.6 1.2H40.5c-1.4 0-2.5 1.1-2.5 2.5v19.8c0 1.7-1.3 3-3 3H29c-1.7 0-3-1.3-3-3V32.4c0-1.4-1.1-2.5-2.5-2.5H15.9c-.7 0-1-0.7-.6-1.2L29.7 13c.6-.7 1.4-1 2.3-1z"
+        fill="none"
+        stroke="rgba(255,255,255,0.18)"
+        strokeWidth="2"
+        strokeLinejoin="round"
+        opacity="0.9"
       />
     </svg>
   );
@@ -278,7 +312,82 @@ export default function TiendaStorefront({ carrito, toggleProducto, onCambiarCan
   const tabTimerRef = useRef(null);
 
   const [activeRank, setActiveRank] = useState(null);
+  const [hoverFx, setHoverFx] = useState(null);
   const wrapRef = useRef(null);
+
+  const [coinshopOpen, setCoinshopOpen] = useState(false);
+  const [coinshopFromRect, setCoinshopFromRect] = useState(null);
+
+  const openCoinshopFromEl = (el) => {
+    const r = el?.getBoundingClientRect?.();
+    if (r) {
+      setCoinshopFromRect({
+        left: r.left,
+        top: r.top,
+        width: r.width,
+        height: r.height,
+        right: r.right,
+        bottom: r.bottom,
+      });
+    } else {
+      setCoinshopFromRect(null);
+    }
+    setCoinshopOpen(true);
+  };
+
+  const openCoinshopFromEvent = (ev) => openCoinshopFromEl(ev?.currentTarget);
+
+  const closeCoinshop = () => {
+    setCoinshopOpen(false);
+  };
+
+  useEffect(() => {
+    const root = wrapRef.current;
+    if (!root) return;
+
+    const BASE_W = 1280;
+    const BASE_H = 820;
+    const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+    const apply = () => {
+      const vv = window.visualViewport;
+      const vw = vv?.width || window.innerWidth || 1200;
+      const vh = vv?.height || window.innerHeight || 800;
+
+      const safeTop = 0;
+      const safeBottom = 16;
+      const usableH = Math.max(520, vh - safeTop - safeBottom);
+
+      const scaleW = vw / BASE_W;
+      const scaleH = usableH / BASE_H;
+
+      const scale = clamp(Math.min(scaleW, scaleH), 0.56, 0.78);
+
+      root.style.setProperty("--ui-scale", scale.toFixed(3));
+      root.style.setProperty("--vvh", `${vh}px`);
+      root.style.setProperty("--vvw", `${vw}px`);
+    };
+
+    apply();
+
+    const onResize = () => apply();
+    window.addEventListener("resize", onResize);
+    window.addEventListener("orientationchange", onResize);
+
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener("resize", onResize);
+      window.visualViewport.addEventListener("scroll", onResize);
+    }
+
+    return () => {
+      window.removeEventListener("resize", onResize);
+      window.removeEventListener("orientationchange", onResize);
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener("resize", onResize);
+        window.visualViewport.removeEventListener("scroll", onResize);
+      }
+    };
+  }, []);
 
   const [ready, setReady] = useState(false);
   useEffect(() => {
@@ -543,257 +652,300 @@ export default function TiendaStorefront({ carrito, toggleProducto, onCambiarCan
     }, 280);
   };
 
+  const rootFxClass = hoverFx ? `fx-${hoverFx}` : "";
+
   return (
-    <div className={`tienda-storefront tsf-brawl2 ${ready ? "is-ready" : ""}`} ref={wrapRef}>
-      <header className="tsf-header">
+    <div className={`tienda-storefront tsf-brawl2 ${ready ? "is-ready" : ""} ${rootFxClass}`} ref={wrapRef}>
+      <div className="tsf-bgFX" aria-hidden="true" />
+
+      <CoinshopModal open={coinshopOpen} fromRect={coinshopFromRect} onClose={closeCoinshop} />
+
+      <header className="tsf-header tsf-header--fixed">
         <div className="tsf-signImg" aria-label="Tienda">
           <img src="/tienda/assets/cartel.png" alt="TIENDA" draggable="false" />
         </div>
       </header>
+<div className="tsf-dailyClaimFloat">
+  <DailyFreeClaimCard />
+</div>
+      <div className="tsf-scroll">
+        {loading && (
+          <div className="tsf-state">
+            <div className="tsf-loader" />
+            <div className="tsf-state-text">Cargando tienda…</div>
+          </div>
+        )}
 
-      {loading && (
-        <div className="tsf-state">
-          <div className="tsf-loader" />
-          <div className="tsf-state-text">Cargando tienda…</div>
-        </div>
-      )}
+        {!loading && err && (
+          <div className="tsf-state tsf-state--error">
+            <div className="tsf-state-text">{err}</div>
+            <button className="tsf-retry" onClick={() => window.location.reload()}>
+              Reintentar
+            </button>
+          </div>
+        )}
 
-      {!loading && err && (
-        <div className="tsf-state tsf-state--error">
-          <div className="tsf-state-text">{err}</div>
-          <button className="tsf-retry" onClick={() => window.location.reload()}>
-            Reintentar
-          </button>
-        </div>
-      )}
-
-      {!loading && !err && (
-        <>
-          <section className="tsf-ranks" aria-label="Rangos">
-            <div className="tsf-content">
-              <div className="tsf-ranksRow">
-                {rankCards.map((r, idx) => {
-                  const pkg = r.pkg;
-                  const price = pkg ? getPackagePrice(pkg) : null;
-                  const tebexImg = pkg ? withCacheBust(getPackageImage(pkg), dataByServer.gens.bust) : "";
-                  const active = activeRank === r.key;
-                  const cart = isInCart(pkg);
-
-                  return (
-                    <article
-                      key={r.key}
-                      className={`tsf-rank ${r.key} ${active ? "is-active" : ""} ${cart ? "is-inCart" : ""}`}
-                      style={{ "--i": idx }}
-                      onClick={() => onRankTap(r.key)}
-                      role="button"
-                      tabIndex={0}
-                      aria-label={`Rango ${r.label}`}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") onRankTap(r.key);
-                      }}
-                      onMouseMove={(ev) => setTiltVars(ev.currentTarget, ev)}
-                      onMouseLeave={(ev) => {
-                        ev.currentTarget.style.removeProperty("--rx");
-                        ev.currentTarget.style.removeProperty("--ry");
-                        ev.currentTarget.style.removeProperty("--mx");
-                        ev.currentTarget.style.removeProperty("--my");
-                      }}
-                    >
-                      <div className="tsf-rankLabel">
-                        <span className="tsf-rankTop">Rango</span>
-                        <span className="tsf-rankName">{r.label}</span>
-                      </div>
-
-                      <div className="tsf-square">
-                        <img className="tsf-deg" src={r.deg} alt="" draggable="false" />
-                        <span className="tsf-rankParticles" aria-hidden="true" />
-
-                        {r.best && <div className="tsf-best">TOP</div>}
-
-                        <div className="tsf-perma" aria-hidden="true">
-                          PERMANENTE
-                        </div>
-
-                        {tebexImg ? (
-                          <img className="tsf-icon" src={tebexImg} alt="" draggable="false" />
-                        ) : (
-                          <div className="tsf-iconFallback" />
-                        )}
-
-                        <div className="tsf-squareCta">
-                          <button
-                            type="button"
-                            className={`tsf-cta ${cart ? "is-in" : ""}`}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (!pkg) return;
-                              handleBuyRank(pkg, e);
-                            }}
-                            disabled={!pkg}
-                          >
-                            <span className="t">{cart ? "EN CARRITO" : "COMPRAR"}</span>
-                            <span className="p">{price != null ? formatEur(price) : "—"}</span>
-                          </button>
-                        </div>
-                      </div>
-                    </article>
-                  );
-                })}
-              </div>
-            </div>
-          </section>
-
-          <section className="tsf-coins" aria-label="Coins">
-            <div className="tsf-content">
-              <div className="tsf-coinsHeader" aria-label="Selector de servidor coins">
-                <TiendaOfertaCountdown />
-                <nav className="tsf-tabs tsf-tabs--inHeader" aria-label="Selector de servidor">
-                  {serverTabs.map((t) => {
-                    const active = t.key === serverTab;
-                    const pct = tabDiscountPctByServer.get(t.key) ?? null;
+        {!loading && !err && (
+          <>
+            <section className="tsf-ranks" aria-label="Rangos">
+              <div className="tsf-content">
+                <div className="tsf-ranksRow">
+                  {rankCards.map((r, idx) => {
+                    const pkg = r.pkg;
+                    const price = pkg ? getPackagePrice(pkg) : null;
+                    const tebexImg = pkg ? withCacheBust(getPackageImage(pkg), dataByServer.gens.bust) : "";
+                    const active = activeRank === r.key;
+                    const cart = isInCart(pkg);
 
                     return (
-                      <button
-                        key={t.key}
-                        type="button"
-                        className={`tsf-tab ${active ? "is-active" : ""}`}
-                        onClick={() => changeServerTabWithDeck(t.key)}
+                      <article
+                        key={r.key}
+                        className={`tsf-rank ${r.key} ${active ? "is-active" : ""} ${cart ? "is-inCart" : ""}`}
+                        style={{ "--i": idx }}
+                        onClick={() => onRankTap(r.key)}
+                        role="button"
+                        tabIndex={0}
+                        aria-label={`Rango ${r.label}`}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") onRankTap(r.key);
+                        }}
+                        onMouseEnter={() => setHoverFx(r.key)}
+                        onMouseLeave={() => setHoverFx(null)}
+                        onMouseMove={(ev) => setTiltVars(ev.currentTarget, ev)}
+                        onMouseLeaveCapture={(ev) => {
+                          ev.currentTarget.style.removeProperty("--rx");
+                          ev.currentTarget.style.removeProperty("--ry");
+                          ev.currentTarget.style.removeProperty("--mx");
+                          ev.currentTarget.style.removeProperty("--my");
+                        }}
                       >
-                        {pct != null && pct > 0 && <span className="tsf-tabBadge">-{pct}%</span>}
-                        <img className="tsf-tabIcon" src={t.icon} alt="" draggable="false" />
-                        <span className="tsf-tabText">{t.label}</span>
-                        <span className="tsf-orb" aria-hidden="true" />
-                      </button>
+                        <div className="tsf-rankLabel">
+                          <span className="tsf-rankTop">Rango</span>
+                          <span className="tsf-rankName">{r.label}</span>
+                        </div>
+
+                        <div className="tsf-square">
+                          <img className="tsf-deg" src={r.deg} alt="" draggable="false" />
+                          <span className="tsf-rankParticles" aria-hidden="true" />
+
+                          {r.best && <div className="tsf-best">TOP</div>}
+
+                          <div className="tsf-perma" aria-hidden="true">
+                            PERMANENTE
+                          </div>
+
+                          {tebexImg ? <img className="tsf-icon" src={tebexImg} alt="" draggable="false" /> : <div className="tsf-iconFallback" />}
+
+                          <div className="tsf-squareCta">
+                            <button
+                              type="button"
+                              className={`tsf-cta ${cart ? "is-in" : ""}`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (!pkg) return;
+                                handleBuyRank(pkg, e);
+                              }}
+                              disabled={!pkg}
+                            >
+                              <span className="t">{cart ? "EN CARRITO" : "COMPRAR"}</span>
+                              <span className="p">{price != null ? formatEur(price) : "—"}</span>
+                            </button>
+                          </div>
+                        </div>
+                      </article>
                     );
                   })}
-                </nav>
+                </div>
               </div>
+            </section>
 
-              <div className="tsf-coinsGridWrap" aria-label={`Packs de coins ${serverTab}`}>
-                {coinsPackages?.length ? (
-                  <div
-                    className={`tsf-coinsGrid ${tabAnim === "out" ? "is-out" : "is-in"} ${switchedOnce ? "tsf-switched" : ""}`}
-                  >
-                    {coinsPackages.map((p, idx) => {
-                      const idRaw = getPackageId(p);
-                      const idKey = String(idRaw ?? getPackageName(p));
+            <section className="tsf-coins" aria-label="Coins">
+              <div className="tsf-content">
+                <div className="tsf-coinsHeader" aria-label="Selector de servidor coins">
+                  <div className="tsf-tabsStack" aria-label="Oferta y selector">
+                    <TiendaOfertaCountdown variant="tabs" />
 
-                      const name = getPackageName(p);
+                    <div className="tsf-tabsRow" aria-label="Fila tabs coinshop">
+                      <nav className="tsf-tabs tsf-tabs--inHeader" aria-label="Selector de servidor">
+                        {serverTabs.map((t) => {
+                          const active = t.key === serverTab;
+                          const pct = tabDiscountPctByServer.get(t.key) ?? null;
 
-                      const disc = getDiscountMeta(p);
-                      const price = disc.price;
-                      const onSale = disc.onSale;
-                      const original = disc.original;
-                      const discountPct = disc.discountPct;
+                          return (
+                            <button
+                              key={t.key}
+                              type="button"
+                              className={`tsf-tab ${active ? "is-active" : ""}`}
+                              onClick={() => changeServerTabWithDeck(t.key)}
+                            >
+                              {pct != null && pct > 0 && <span className="tsf-tabBadge">-{pct}%</span>}
+                              <img className="tsf-tabIcon" src={t.icon} alt="" draggable="false" />
+                              <span className="tsf-tabText">{t.label}</span>
+                              <span className="tsf-orb" aria-hidden="true" />
+                            </button>
+                          );
+                        })}
+                      </nav>
 
-                      const img = withCacheBust(getPackageImage(p), activeData.bust);
-                      const amount = parseCoinsFromPkg(p);
-                      const qty = getQtyInCart(p);
+                      <button
+  type="button"
+  className="tsf-openShopBtn"
+  onClick={openCoinshopFromEvent}
+  aria-label="Abrir catálogo in-game"
+  title="Ver catálogo in-game"
+>
+  <span
+    className="tsf-openShopInner"
+    aria-hidden="true"
+    style={{ "--os-mask": "url(/tienda/assets/openshop.png)" }}
+  >
+    <img src="/tienda/assets/openshop.png" alt="Abrir catálogo" draggable="false" />
+  </span>
+</button>
 
-                      const meta = coinsValue?.map?.get(idKey) || { isBest: false, extraNice: 0 };
-                      const hasBonus = amount != null && meta.extraNice >= 500 && meta.extraNice < amount;
-
-                      const baseAmount = hasBonus ? Math.max(0, amount - meta.extraNice) : null;
-                      const bonusAmount = hasBonus ? meta.extraNice : null;
-
-                      return (
-                        <article
-                          className={`tsf-coinWrap ${qty > 0 ? "is-inCart" : ""}`}
-                          key={idKey}
-                          style={{ "--i": idx }}
-                          onMouseMove={(ev) => setTiltVars(ev.currentTarget, ev)}
-                          onMouseLeave={(ev) => {
-                            ev.currentTarget.style.removeProperty("--rx");
-                            ev.currentTarget.style.removeProperty("--ry");
-                            ev.currentTarget.style.removeProperty("--mx");
-                            ev.currentTarget.style.removeProperty("--my");
-                          }}
-                        >
-                          <div className="tsf-coinFrame" aria-label={`Pack ${name}`}>
-                            <div className="tsf-coinCard">
-                              <div className="tsf-coinBadges" aria-hidden="true">
-                                {discountPct != null && discountPct > 0 && onSale && (
-                                  <span className="tsf-badge tsf-badge--sale">-{discountPct}%</span>
-                                )}
-                              </div>
-
-                              <div className="tsf-coinAmount">
-                                <div className="tsf-amountMain">X{amount != null ? fmtInt(amount) : "—"}</div>
-
-                                {hasBonus && baseAmount != null && bonusAmount != null && (
-                                  <div className="tsf-amountBonus" aria-label="Bonus">
-                                    <span className="tsf-bonusText">
-                                      {fmtInt(baseAmount)} + {fmtInt(bonusAmount)} BONUS
-                                    </span>
-                                    <BonusArrowRight className="tsf-bonusIcon" />
-                                  </div>
-                                )}
-                              </div>
-
-                              <div className="tsf-coinIcon" aria-hidden="true">
-                                <img src={img} alt="" draggable="false" />
-                              </div>
-
-                              <div className="tsf-coinPrices" aria-label="Precio">
-                                <span className="tsf-priceNow">{formatEur(price)}</span>
-                                {onSale && original != null && <span className="tsf-priceOld">{formatEur(original)}</span>}
-                              </div>
-                            </div>
-
-                            <div className={`tsf-buyBar ${qty > 0 ? "is-in" : ""}`} role="group" aria-label={`Cantidad ${name}`}>
-                              <button
-                                type="button"
-                                className="tsf-buySeg tsf-buySeg--dec"
-                                onClick={(ev) => {
-                                  ev.stopPropagation();
-                                  if (qty <= 0) return;
-                                  changeCoinsQty(p, -1, ev);
-                                }}
-                                disabled={qty <= 0}
-                                aria-label="Restar"
-                              >
-                                −
-                              </button>
-
-                              <button
-                                type="button"
-                                className="tsf-buySeg tsf-buySeg--main"
-                                onClick={(ev) => {
-                                  ev.stopPropagation();
-                                  changeCoinsQty(p, +1, ev);
-                                }}
-                                aria-label={`Añadir ${name}`}
-                              >
-                                {qty > 0 ? `X${qty}` : "COMPRAR"}
-                              </button>
-
-                              <button
-                                type="button"
-                                className="tsf-buySeg tsf-buySeg--inc"
-                                onClick={(ev) => {
-                                  ev.stopPropagation();
-                                  if (qty >= 999) return;
-                                  changeCoinsQty(p, +1, ev);
-                                }}
-                                disabled={qty >= 999}
-                                aria-label="Sumar"
-                              >
-                                +
-                              </button>
-                            </div>
-                          </div>
-                        </article>
-                      );
-                    })}
+                    </div>
                   </div>
-                ) : (
-                  <div className="tsf-empty">No hay productos para este servidor (o no se ha encontrado la categoría).</div>
-                )}
+                </div>
+
+                <div className="tsf-coinsGridWrap" aria-label={`Packs de coins ${serverTab}`}>
+                  {coinsPackages?.length ? (
+                    <div className={`tsf-coinsGrid ${tabAnim === "out" ? "is-out" : "is-in"} ${switchedOnce ? "tsf-switched" : ""}`}>
+                      {coinsPackages.map((p, idx) => {
+                        const idRaw = getPackageId(p);
+                        const idKey = String(idRaw ?? getPackageName(p));
+
+                        const name = getPackageName(p);
+
+                        const disc = getDiscountMeta(p);
+                        const price = disc.price;
+                        const onSale = disc.onSale;
+                        const original = disc.original;
+                        const discountPct = disc.discountPct;
+
+                        const img = withCacheBust(getPackageImage(p), activeData.bust);
+                        const amount = parseCoinsFromPkg(p);
+                        const qty = getQtyInCart(p);
+
+                        const meta = coinsValue?.map?.get(idKey) || { isBest: false, extraNice: 0 };
+                        const hasBonus = amount != null && meta.extraNice >= 500 && meta.extraNice < amount;
+
+                        const baseAmount = hasBonus ? Math.max(0, amount - meta.extraNice) : null;
+                        const bonusAmount = hasBonus ? meta.extraNice : null;
+
+                        return (
+                          <article
+                            className={`tsf-coinWrap ${qty > 0 ? "is-inCart" : ""}`}
+                            key={idKey}
+                            style={{ "--i": idx }}
+                            onMouseMove={(ev) => setTiltVars(ev.currentTarget, ev)}
+                            onMouseLeave={(ev) => {
+                              ev.currentTarget.style.removeProperty("--rx");
+                              ev.currentTarget.style.removeProperty("--ry");
+                              ev.currentTarget.style.removeProperty("--mx");
+                              ev.currentTarget.style.removeProperty("--my");
+                            }}
+                          >
+                            <div
+                              className="tsf-coinFrame"
+                              aria-label={`Pack ${name}`}
+                              role="button"
+                              tabIndex={0}
+                              onClick={openCoinshopFromEvent}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" || e.key === " ") openCoinshopFromEl(e.currentTarget);
+                              }}
+                            >
+                              <div className="tsf-coinCard">
+                                <div className="tsf-coinBadges" aria-hidden="true">
+                                  {discountPct != null && discountPct > 0 && onSale && <span className="tsf-badge tsf-badge--sale">-{discountPct}%</span>}
+                                </div>
+
+                                <div className="tsf-coinAmount">
+                                  <div className="tsf-amountMain">X{amount != null ? fmtInt(amount) : "—"}</div>
+
+                                  {hasBonus && baseAmount != null && bonusAmount != null && (
+                                    <div className="tsf-amountBonus" aria-label="Bonus">
+                                      <span className="tsf-bonusText">
+                                        <span className="tsf-bonusLine">
+                                          {fmtInt(baseAmount)} + {fmtInt(bonusAmount)}
+                                        </span>
+                                      </span>
+                                      <BonusArrowUp className="tsf-bonusIcon" />
+                                    </div>
+                                  )}
+                                </div>
+
+                                <div className="tsf-coinIcon" aria-hidden="true">
+                                  <img src={img} alt="" draggable="false" />
+                                </div>
+
+                                <div className="tsf-coinPrices" aria-label="Precio">
+                                  <span className="tsf-priceNow">{formatEur(price)}</span>
+                                  {onSale && original != null && <span className="tsf-priceOld">{formatEur(original)}</span>}
+                                </div>
+                              </div>
+
+                              <div
+                                className={`tsf-buyBar ${qty > 0 ? "is-in" : ""}`}
+                                role="group"
+                                aria-label={`Cantidad ${name}`}
+                                onClick={(e) => e.stopPropagation()}
+                                onMouseDown={(e) => e.stopPropagation()}
+                              >
+                                <button
+                                  type="button"
+                                  className="tsf-buySeg tsf-buySeg--dec"
+                                  onClick={(ev) => {
+                                    ev.stopPropagation();
+                                    if (qty <= 0) return;
+                                    changeCoinsQty(p, -1, ev);
+                                  }}
+                                  disabled={qty <= 0}
+                                  aria-label="Restar"
+                                >
+                                  −
+                                </button>
+
+                                <button
+                                  type="button"
+                                  className="tsf-buySeg tsf-buySeg--main"
+                                  onClick={(ev) => {
+                                    ev.stopPropagation();
+                                    changeCoinsQty(p, +1, ev);
+                                  }}
+                                  aria-label={`Añadir ${name}`}
+                                >
+                                  {qty > 0 ? `X${qty}` : "COMPRAR"}
+                                </button>
+
+                                <button
+                                  type="button"
+                                  className="tsf-buySeg tsf-buySeg--inc"
+                                  onClick={(ev) => {
+                                    ev.stopPropagation();
+                                    if (qty >= 999) return;
+                                    changeCoinsQty(p, +1, ev);
+                                  }}
+                                  disabled={qty >= 999}
+                                  aria-label="Sumar"
+                                >
+                                  +
+                                </button>
+                              </div>
+                            </div>
+                          </article>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="tsf-empty">No hay productos para este servidor (o no se ha encontrado la categoría).</div>
+                  )}
+                </div>
               </div>
-            </div>
-          </section>
-        </>
-      )}
+            </section>
+          </>
+        )}
+      </div>
     </div>
   );
 }

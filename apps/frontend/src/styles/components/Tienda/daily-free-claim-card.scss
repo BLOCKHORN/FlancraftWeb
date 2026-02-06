@@ -1,0 +1,473 @@
+.dailyClaimCard {
+  position: relative;
+  border-radius: 16px;
+  padding: 16px 16px 14px;
+  overflow: hidden;
+  display: grid;
+  gap: 10px;
+
+  background: linear-gradient(180deg, rgba(26, 34, 62, 0.92), rgba(16, 20, 38, 0.92));
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(700px 220px at 20% -10%, rgba(90, 160, 255, 0.20), transparent 60%),
+      radial-gradient(520px 200px at 90% 0%, rgba(255, 190, 90, 0.12), transparent 60%),
+      radial-gradient(420px 220px at 45% 120%, rgba(120, 255, 200, 0.10), transparent 60%);
+    pointer-events: none;
+  }
+
+  &.is-cooldown::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(10, 12, 22, 0.45), rgba(10, 12, 22, 0.60));
+    pointer-events: none;
+  }
+
+  &.is-locked {
+    opacity: 0.88;
+  }
+}
+
+.dailyClaimCard__title {
+  position: relative;
+  z-index: 1;
+  font-family: "Luckiest Guy", system-ui, sans-serif;
+  letter-spacing: 0.03em;
+  font-size: 18px;
+  line-height: 1.05;
+  color: #fff;
+  text-shadow:
+    0 2px 0 rgba(0, 0, 0, 0.55),
+    0 10px 22px rgba(0, 0, 0, 0.35);
+}
+
+.dailyClaimCard__desc {
+  position: relative;
+  z-index: 1;
+  font-family: "Nunito", system-ui, sans-serif;
+  font-weight: 800;
+  font-size: 12.5px;
+  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.dailyClaimCard__ready,
+.dailyClaimCard__cooldown {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+
+  padding: 8px 10px;
+  border-radius: 999px;
+
+  font-family: "Nunito", system-ui, sans-serif;
+  font-weight: 900;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(6px);
+}
+
+.dailyClaimCard__ready {
+  color: rgba(255, 255, 255, 0.92);
+  background: linear-gradient(180deg, rgba(70, 170, 255, 0.30), rgba(10, 100, 255, 0.14));
+}
+
+.dailyClaimCard__cooldown {
+  color: rgba(255, 255, 255, 0.80);
+  background: linear-gradient(180deg, rgba(255, 180, 90, 0.20), rgba(255, 120, 40, 0.10));
+}
+
+.dailyClaimCard button {
+  position: relative;
+  z-index: 2;
+
+  height: 44px;
+  width: 100%;
+  border-radius: 14px;
+
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: linear-gradient(180deg, rgba(90, 210, 255, 0.22), rgba(30, 130, 255, 0.16));
+  box-shadow:
+    0 12px 22px rgba(0, 0, 0, 0.30),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14);
+
+  font-family: "Nunito", system-ui, sans-serif;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-size: 12.5px;
+  color: #fff;
+
+  cursor: pointer;
+  transition: transform 140ms ease, filter 140ms ease, opacity 140ms ease;
+
+  &:hover { transform: translateY(-1px); filter: brightness(1.08); }
+  &:active { transform: translateY(0px); filter: brightness(0.98); }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.62;
+    transform: none;
+    filter: none;
+  }
+}
+
+/* =========================
+   MODAL DOPAMÍNICO
+   ========================= */
+
+.dailyClaimModal {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+}
+
+.dailyClaimModal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(6, 8, 16, 0.74);
+  backdrop-filter: blur(8px);
+}
+
+.dailyClaimModal__panel {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+
+  width: min(720px, calc(100vw - 26px));
+  border-radius: 22px;
+  padding: 18px;
+
+  background: radial-gradient(900px 520px at 50% 0%, rgba(90, 160, 255, 0.18), rgba(0,0,0,0) 60%),
+              linear-gradient(180deg, rgba(30, 40, 78, 0.96), rgba(12, 16, 30, 0.96));
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow:
+    0 30px 70px rgba(0, 0, 0, 0.60),
+    inset 0 1px 0 rgba(255, 255, 255, 0.10);
+
+  animation: dailyModalIn 200ms ease-out;
+  overflow: hidden;
+}
+
+.dailyClaimModal__panel--big {
+  padding: 22px 22px 18px;
+  min-height: 360px;
+}
+
+@keyframes dailyModalIn {
+  from { transform: translate(-50%, -50%) scale(0.96); opacity: 0; }
+  to   { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+}
+
+.dailyClaimModal__x {
+  position: absolute;
+  right: 14px;
+  top: 12px;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(0,0,0,0.20);
+  color: rgba(255,255,255,0.92);
+
+  cursor: pointer;
+  z-index: 5;
+
+  transition: transform 140ms ease, filter 140ms ease;
+  &:hover { transform: translateY(-1px); filter: brightness(1.06); }
+  &:active { transform: translateY(0px); filter: brightness(0.98); }
+}
+
+.dailyClaimModal__clickCatcher {
+  position: absolute;
+  inset: 0;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  z-index: 1;
+}
+
+.dailyClaimModal__fx {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.dailyClaimModal__glow {
+  position: absolute;
+  inset: -80px;
+  background:
+    radial-gradient(420px 220px at 50% 35%, rgba(255, 220, 120, 0.16), transparent 60%),
+    radial-gradient(520px 260px at 20% 15%, rgba(90, 170, 255, 0.16), transparent 60%),
+    radial-gradient(520px 260px at 85% 20%, rgba(120, 255, 200, 0.10), transparent 60%);
+  filter: blur(0px);
+  opacity: 1;
+}
+
+.dailyClaimModal__shine {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, rgba(255,255,255,0) 30%, rgba(255,255,255,0.18) 45%, rgba(255,255,255,0) 60%);
+  transform: translateX(-45%);
+  animation: dailyShine 1300ms ease-in-out infinite;
+  opacity: 0.7;
+}
+
+@keyframes dailyShine {
+  0% { transform: translateX(-55%); }
+  55% { transform: translateX(65%); }
+  100% { transform: translateX(65%); }
+}
+
+.dailyClaimModal__burst {
+  position: absolute;
+  left: 50%;
+  top: 52%;
+  width: 480px;
+  height: 480px;
+  transform: translate(-50%, -50%) scale(0.92);
+  background:
+    radial-gradient(circle at center, rgba(255,255,255,0.20), rgba(255,255,255,0) 58%),
+    conic-gradient(from 0deg, rgba(255,220,140,0.18), rgba(90,170,255,0.14), rgba(120,255,200,0.10), rgba(255,220,140,0.18));
+  filter: blur(0.2px);
+  opacity: 0.55;
+  animation: dailyBurst 900ms ease-out infinite;
+}
+
+@keyframes dailyBurst {
+  0% { transform: translate(-50%, -50%) scale(0.88); opacity: 0.20; }
+  50% { transform: translate(-50%, -50%) scale(0.98); opacity: 0.55; }
+  100% { transform: translate(-50%, -50%) scale(0.90); opacity: 0.22; }
+}
+
+.dailyClaimModal__top {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.dailyClaimModal__badge {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 10px;
+
+  padding: 10px 12px;
+  border-radius: 14px;
+
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(0,0,0,0.18);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.10);
+
+  .t {
+    font-family: "Nunito", system-ui, sans-serif;
+    font-weight: 1000;
+    letter-spacing: 0.12em;
+    font-size: 11px;
+    color: rgba(255,255,255,0.88);
+  }
+  .s {
+    font-family: "Nunito", system-ui, sans-serif;
+    font-weight: 900;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    color: rgba(255,220,140,0.95);
+    text-transform: uppercase;
+  }
+}
+
+.dailyClaimModal__steps {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+
+  .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.22);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.10);
+  }
+  .dot.is-on {
+    width: 18px;
+    background: rgba(255,255,255,0.82);
+  }
+}
+
+.dailyClaimModal__center {
+  position: relative;
+  z-index: 2;
+  margin-top: 18px;
+
+  display: grid;
+  justify-items: center;
+  text-align: center;
+  gap: 10px;
+}
+
+.dailyClaimModal__server {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+
+  img {
+    width: 74px;
+    height: 74px;
+    border-radius: 18px;
+    border: 1px solid rgba(255,255,255,0.14);
+    box-shadow:
+      0 18px 26px rgba(0,0,0,0.30),
+      inset 0 1px 0 rgba(255,255,255,0.10);
+    background: rgba(0,0,0,0.18);
+  }
+}
+
+.dailyClaimModal__serverName {
+  font-family: "Nunito", system-ui, sans-serif;
+  font-weight: 1000;
+  letter-spacing: 0.10em;
+  font-size: 12px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.84);
+}
+
+.dailyClaimModal__title {
+  font-family: "Luckiest Guy", system-ui, sans-serif;
+  letter-spacing: 0.03em;
+  font-size: 26px;
+  color: #fff;
+  text-shadow:
+    0 2px 0 rgba(0,0,0,0.55),
+    0 16px 30px rgba(0,0,0,0.35);
+}
+
+.dailyClaimModal__amountBig {
+  display: grid;
+  gap: 2px;
+  margin-top: 2px;
+
+  .n {
+    font-family: "Luckiest Guy", system-ui, sans-serif;
+    font-size: 64px;
+    line-height: 1;
+    letter-spacing: 0.02em;
+    color: #fff;
+    text-shadow:
+      0 3px 0 rgba(0,0,0,0.62),
+      0 22px 44px rgba(0,0,0,0.45);
+    animation: dailyPop 520ms ease-out;
+  }
+
+  .u {
+    font-family: "Nunito", system-ui, sans-serif;
+    font-weight: 1000;
+    letter-spacing: 0.22em;
+    font-size: 12px;
+    color: rgba(255,255,255,0.78);
+  }
+}
+
+@keyframes dailyPop {
+  0% { transform: translateY(6px) scale(0.92); opacity: 0; }
+  55% { transform: translateY(-2px) scale(1.04); opacity: 1; }
+  100% { transform: translateY(0px) scale(1); opacity: 1; }
+}
+
+.dailyClaimModal__hint {
+  font-family: "Nunito", system-ui, sans-serif;
+  font-weight: 900;
+  font-size: 13px;
+  color: rgba(255,255,255,0.78);
+}
+
+.dailyClaimModal__ctaRow {
+  margin-top: 8px;
+  width: min(420px, 100%);
+}
+
+.dailyClaimBtn {
+  width: 100%;
+  height: 54px;
+  border-radius: 16px;
+
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(0,0,0,0.22);
+  color: rgba(255,255,255,0.92);
+
+  font-family: "Nunito", system-ui, sans-serif;
+  font-weight: 1000;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: 13px;
+
+  box-shadow:
+    0 18px 28px rgba(0,0,0,0.35),
+    inset 0 1px 0 rgba(255,255,255,0.12);
+
+  cursor: pointer;
+  transition: transform 140ms ease, filter 140ms ease;
+
+  &:hover { transform: translateY(-1px); filter: brightness(1.08); }
+  &:active { transform: translateY(0px); filter: brightness(0.98); }
+}
+
+.dailyClaimBtn--primary {
+  background: linear-gradient(180deg, rgba(255, 205, 120, 0.22), rgba(255, 135, 60, 0.12)),
+              linear-gradient(180deg, rgba(90, 210, 255, 0.16), rgba(30, 130, 255, 0.12));
+}
+
+/* Partículas */
+.dailyClaimModal__particles {
+  position: absolute;
+  left: 50%;
+  top: 52%;
+  width: 0;
+  height: 0;
+}
+
+.dailyClaimParticle {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+
+  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.95), rgba(255,255,255,0.18) 55%, rgba(255,255,255,0) 75%);
+  box-shadow:
+    0 0 18px rgba(255, 240, 180, 0.22),
+    0 0 26px rgba(90, 170, 255, 0.18);
+
+  transform: translate(0, 0) scale(var(--ps, 1));
+  opacity: 0;
+
+  animation: dailyParticle var(--pd, 700ms) ease-out var(--pdelay, 0ms) forwards;
+}
+
+@keyframes dailyParticle {
+  0% { transform: translate(0, 0) scale(var(--ps, 1)); opacity: 0; }
+  18% { opacity: 1; }
+  100% { transform: translate(var(--dx, 0px), var(--dy, 0px)) scale(calc(var(--ps, 1) * 0.6)); opacity: 0; }
+}
+
+.dailyClaimModal.is-error .dailyClaimModal__panel {
+  background: linear-gradient(180deg, rgba(80, 26, 26, 0.96), rgba(18, 10, 12, 0.96));
+}

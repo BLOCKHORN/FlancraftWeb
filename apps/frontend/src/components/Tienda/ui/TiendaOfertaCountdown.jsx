@@ -48,7 +48,9 @@ function announceTextFromMinutes(minLeft) {
   return `La oferta termina en ${m} minutos.`;
 }
 
-export default function TiendaOfertaCountdown() {
+export default function TiendaOfertaCountdown({ variant = "default" }) {
+  const isTabs = variant === "tabs";
+
   const [sale, setSale] = useState(null);
   const [now, setNow] = useState(() => Date.now());
 
@@ -110,25 +112,31 @@ export default function TiendaOfertaCountdown() {
       : 0;
 
   const timeText =
-    d > 0 ? `${d}d ${pad2(h)}:${pad2(m)}:${pad2(s)}` : `${pad2(h)}:${pad2(m)}:${pad2(s)}`;
+    d > 0
+      ? `${d}d ${pad2(h)}:${pad2(m)}:${pad2(s)}`
+      : `${pad2(h)}:${pad2(m)}:${pad2(s)}`;
 
   return (
-    <div className="tienda-oferta-strip" aria-label="Oferta activa">
+    <div
+      className={`tienda-oferta-strip ${isTabs ? "tienda-oferta-strip--tabs" : ""}`}
+      aria-label="Oferta activa"
+    >
       <span className="sr-only" role="status" aria-live="polite">
         {announce}
       </span>
 
-      <div className="tienda-oferta-cta" aria-hidden="true">
-        <span className="cta-particles" />
-        <img
-          src="/tienda/assets/ofertas-ultra.png"
-          alt=""
-          className="tienda-oferta-image"
-          draggable="false"
-        />
-      </div>
-
       <div className="tienda-oferta-panel" title={`Termina en ${timeText}`}>
+        {/* CTA DENTRO (en el margen libre) */}
+        <div className="tienda-oferta-cta" aria-hidden="true">
+          <span className="cta-particles" />
+          <img
+            src="/tienda/assets/ofertas-ultra.png"
+            alt=""
+            className="tienda-oferta-image"
+            draggable="false"
+          />
+        </div>
+
         <div className="tienda-oferta-row">
           <div className="tienda-oferta-line" aria-label={`Termina en ${timeText}`}>
             <span className="tienda-oferta-text">Descuentos activos</span>

@@ -72,6 +72,7 @@ app.use("/api/reset", resetRoutes);
 app.use("/api/vincular", vincularRoutes);
 app.use("/api/usuarios", usuariosRoutes);
 app.use("/api/recompensas", recompensasRoutes);
+app.use("/api/daily-claim", require("./routes/dailyClaim.routes"));
 app.use("/api/comandos-pendientes", comandosRoutes);
 
 app.use("/api/logros", logrosRoutes);

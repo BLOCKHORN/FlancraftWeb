@@ -1,0 +1,1397 @@
+{
+  "generatedAt": "2026-02-05T01:37:33.463Z",
+  "sourceDir": "public/coinshop-yml",
+  "main": {
+    "file": "coinshop_menu.yml",
+    "menu_title": "&fCOINSHOP",
+    "size": 45,
+    "open_command": "coinshop"
+  },
+  "categories": [
+    {
+      "id": "keys",
+      "target": "coinshop_keys",
+      "file": "coinshop_keys.yml",
+      "slot": 6,
+      "title": "&b&lLlaves",
+      "description": [
+        "",
+        "&7Las llaves se usan para abrir",
+        "&7cajas con recompensas unicas.",
+        "&7Usa tus monedas para conseguir llaves!",
+        "",
+        "&e➥ Click Izquierdo para abrir"
+      ],
+      "icon": { "material": "TRIPWIRE_HOOK", "model_data": null, "amount": 1 },
+      "valid": true
+    },
+    {
+      "id": "deatheffects",
+      "target": "coinshop_deatheffects",
+      "file": "coinshop_deatheffects.yml",
+      "slot": 7,
+      "title": "&c&lEfectos Muerte",
+      "description": [
+        "",
+        "&7Efecto Muerte son efectos que aparecen",
+        "&7cuando el jugador muere.",
+        "&7Usa las COINS para tenerlos!",
+        "",
+        "&e➥ Click Izquierdo para abrir"
+      ],
+      "icon": { "material": "IRON_SWORD", "model_data": null, "amount": 1 },
+      "valid": true
+    },
+    {
+      "id": "commands",
+      "target": "coinshop_commands",
+      "file": "coinshop_commands.yml",
+      "slot": 8,
+      "title": "&c&lComandos",
+      "description": [
+        "",
+        "&7Compra comandos unicos con COINS",
+        "",
+        "&e➥ Click Izquierdo para abrir"
+      ],
+      "icon": { "material": "PRISMARINE_SHARD", "model_data": null, "amount": 1 },
+      "valid": true
+    },
+    {
+      "id": "furniture",
+      "target": "coinshop_furniture",
+      "file": "coinshop_furniture.yml",
+      "slot": 15,
+      "title": "&#9E5A31&lDecoracion",
+      "description": [
+        "",
+        "&7Compre muebles para adornar y tener",
+        "&7una experiencia mas realista!",
+        "",
+        "&e➥ Click Izquierdo para abrir"
+      ],
+      "icon": { "material": "PAPER", "model_data": 5980, "amount": 1 },
+      "valid": true
+    },
+    {
+      "id": "backpacks",
+      "target": "coinshop_backpacks",
+      "file": "coinshop_backpacks.yml",
+      "slot": 16,
+      "title": "&6&lMochilas",
+      "description": [
+        "",
+        "&7Mochilas que pueden usarse para guardar",
+        "&7items como en el Enderchest",
+        "&7Use sus COINS para comprar mochilas!",
+        "",
+        "&e➥ Click Izquierdo para abrir"
+      ],
+      "icon": { "material": "PAPER", "model_data": 5972, "amount": 1 },
+      "valid": true
+    },
+    {
+      "id": "toolskins",
+      "target": "coinshop_toolskins",
+      "file": "coinshop_toolskins.yml",
+      "slot": 17,
+      "title": "&b&lSkins Herramientas",
+      "description": [
+        "",
+        "&7Las skins de herramientas son skins que se",
+        "&7pueden usar en herramientas de",
+        "&7diamante y netherite!",
+        "",
+        "&e➥ Click Izquierdo para abrir"
+      ],
+      "icon": { "material": "DIAMOND_PICKAXE", "model_data": 50001, "amount": 1 },
+      "valid": true
+    },
+    {
+      "id": "sellwands",
+      "target": "coinshop_sellwands",
+      "file": "coinshop_sellwands.yml",
+      "slot": 24,
+      "title": "&e&lSellwands",
+      "description": [
+        "",
+        "&7Sellwands son varitas para vender",
+        "&7el contenido de los cofres de ",
+        "&7una sola vez. Es muy Eficiente!",
+        "",
+        "&e➥ Click Izquierdo para abrir"
+      ],
+      "icon": { "material": "DIAMOND_HOE", "model_data": null, "amount": 1 },
+      "valid": true
+    },
+    {
+      "id": "pets",
+      "target": "coinshop_pets",
+      "file": "coinshop_pets.yml",
+      "slot": 25,
+      "title": "&a&lPets",
+      "description": [
+        "",
+        "&7Pets son mobs tipo mascota que ",
+        "&7lo seguiran en todo momento.",
+        "&7Use sus COINS para comprarlos!",
+        "",
+        "&e➥ Click Izquierdo para abrir"
+      ],
+      "icon": { "material": "PAPER", "model_data": 5974, "amount": 1 },
+      "valid": true
+    },
+    {
+      "id": "hats",
+      "target": "coinshop_hats",
+      "file": "coinshop_hats.yml",
+      "slot": 26,
+      "title": "&e&lSombreros",
+      "description": [
+        "",
+        "&7Hats son sombreros que pueden usarse",
+        "&7en la cabeza para tener un stilo unico.",
+        "&7Use sus COINS para comprarlos!",
+        "",
+        "&e➥ Click Izquierdo para abrir"
+      ],
+      "icon": {
+        "material": "basehead-eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvNzgyNTYzODQwMDIxNGRmYzljMWY3NjU5MTBlYmMwZTIyN2YyY2JkOTg0MzYzZGFhMzkyMDQwYmNlYjdkZWRjMiJ9fX0=",
+        "model_data": null,
+        "amount": 1
+      },
+      "valid": true
+    },
+    {
+      "id": "particles",
+      "target": "coinshop_particles",
+      "file": "coinshop_particles.yml",
+      "slot": 33,
+      "title": "&b&lParticulas",
+      "description": [
+        "",
+        "&7Particles son efectos especiales",
+        "&7que apareceran alrededor del jugador.",
+        "&7Use sus COINS para comprarlos!",
+        "",
+        "&e➥ Click Izquierdo para abrir"
+      ],
+      "icon": { "material": "BLAZE_POWDER", "model_data": null, "amount": 1 },
+      "valid": true
+    },
+    {
+      "id": "projectileeffects",
+      "target": "coinshop_projectileeffects",
+      "file": "coinshop_projectileeffects.yml",
+      "slot": 34,
+      "title": "&6&lEfectos Proyectiles",
+      "description": [
+        "",
+        "&7Los efectos de proyectiles son efectos que",
+        "&7te permite cambiar el efecto de un disparo.",
+        "&7Usa COINS para comprarlos!",
+        "",
+        "&e➥ Click Izquierdo para abrir"
+      ],
+      "icon": { "material": "ARROW", "model_data": null, "amount": 1 },
+      "valid": true
+    },
+    {
+      "id": "itemsop",
+      "target": "coinshop_itemsop",
+      "file": "coinshop_itemsop.yml",
+      "slot": 35,
+      "title": "&b&lItems OP",
+      "description": [
+        "",
+        "&7Consigue Items OP para ser mas",
+        "&7eficiente y trabar mas rapido!",
+        "&7Use sus COINS para comprarlos!",
+        "",
+        "&e➥ Click Izquierdo para abrir"
+      ],
+      "icon": { "material": "NETHERITE_PICKAXE", "model_data": null, "amount": 1 },
+      "valid": true
+    }
+  ],
+  "itemsByCategory": {
+    "keys": [
+      {
+        "key": "buy_commonkey",
+        "slot": 0,
+        "material": "TRIPWIRE_HOOK",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&f&l1x &a&lLlave Comun",
+        "lore": ["&8Coinshop Item", "", "&6Precio: &f75 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_rarekey",
+        "slot": 1,
+        "material": "TRIPWIRE_HOOK",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&f&l1x &b&lLlave Rara",
+        "lore": ["&8Coinshop Item", "", "&6Precio: &f150 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_epickey",
+        "slot": 2,
+        "material": "TRIPWIRE_HOOK",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&f&l1x &d&lLlave Epica",
+        "lore": ["&8Coinshop Item", "", "&6Precio: &f250 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_superiorkey",
+        "slot": 3,
+        "material": "TRIPWIRE_HOOK",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&f&l1x &e&lLlave Superior",
+        "lore": ["&8Coinshop Item", "", "&6Precio: &f450 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      }
+    ],
+    "deatheffects": [
+      {
+        "key": "buy_Explosion",
+        "slot": 0,
+        "material": "TNT",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&c&lExplosion",
+        "lore": ["&8Articulo de Coinshop", "", "&6Precio: &f150 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_FireworkRocket",
+        "slot": 1,
+        "material": "FIREWORK_ROCKET",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&c&lCohete de Fuegos Artificiales",
+        "lore": ["&8Articulo de Coinshop", "", "&6Precio: &f150 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_Lightning",
+        "slot": 2,
+        "material": "DAYLIGHT_DETECTOR",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&c&lRayo",
+        "lore": ["&8Articulo de Coinshop", "", "&6Precio: &f150 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      }
+    ],
+    "commands": [
+      {
+        "key": "buy_backcommand",
+        "slot": 0,
+        "material": "PRISMARINE_SHARD",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&f&lComando &c&l/Back",
+        "lore": ["&8Coinshop Item", "", "&6Precio: &f250 Coins", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_feedcommand",
+        "slot": 1,
+        "material": "PRISMARINE_SHARD",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&f&lComando &c&l/Feed",
+        "lore": ["&8Coinshop Item", "", "&6Precio: &f450 Coins", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_healcommand",
+        "slot": 2,
+        "material": "PRISMARINE_SHARD",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&f&lComando &c&l/Heal",
+        "lore": ["&8Coinshop Item", "", "&6Precio: &f750 Coins", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_repaircommand",
+        "slot": 3,
+        "material": "PRISMARINE_SHARD",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&f&lComando &c&l/Repair",
+        "lore": ["&8Coinshop Item", "", "&6Precio: &f1200 Coins", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_flycommand",
+        "slot": 4,
+        "material": "PRISMARINE_SHARD",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&f&lComando &c&l/Fly",
+        "lore": ["&8Coinshop Item", "", "&6Precio: &f2,500 Coins", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      }
+    ],
+    "furniture": [
+      {
+        "key": "buy_furniture1",
+        "slot": 0,
+        "material": "BOOK",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&f&l1x &#9E5A31&lCama Moderna 4x3",
+        "lore": ["&8Articulo de Coinshop", "", "&6Precio: &f50 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_furniture2",
+        "slot": 1,
+        "material": "BOOK",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&f&l1x &#9E5A31&lMesa de Noche 1x1",
+        "lore": ["&8Articulo de Coinshop", "", "&6Precio: &f50 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_furniture3",
+        "slot": 2,
+        "material": "BOOK",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&f&l1x &#9E5A31&lPiano 3x3",
+        "lore": ["&8Articulo de Coinshop", "", "&6Precio: &f50 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_furniture4",
+        "slot": 3,
+        "material": "BOOK",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&f&l1x &#9E5A31&lSofa Simple 3x1",
+        "lore": ["&8Articulo de Coinshop", "", "&6Precio: &f50 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      }
+    ],
+    "backpacks": [
+      {
+        "key": "leather_backpack_notbought",
+        "slot": 0,
+        "material": "PAPER",
+        "model_data": 5972,
+        "amount": 1,
+        "display_name": "&6&lMochila de Cuero",
+        "lore": [
+          "&8Coinshop Item",
+          "",
+          "&7Compre esta mochila Tier 1 para",
+          "&7desbloquear la mochila de 9 slots!",
+          "",
+          "&6Precio: &f50 COINS",
+          ""
+        ],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "bronze_backpack_notbought",
+        "slot": 1,
+        "material": "PAPER",
+        "model_data": 5975,
+        "amount": 1,
+        "display_name": "&6&lMochila de Bronce",
+        "lore": [
+          "&8Coinshop Item",
+          "",
+          "&7Compre la mochila Tier 2 para",
+          "&7desbloquear la mochila de 18 slots!",
+          "",
+          "&6Precio: &f125 COINS",
+          ""
+        ],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "silver_backpack_notbought",
+        "slot": 2,
+        "material": "PAPER",
+        "model_data": 5976,
+        "amount": 1,
+        "display_name": "&6&lMochila de Plata",
+        "lore": [
+          "&8Coinshop Item",
+          "",
+          "&7Compre la mochila Tier 3 para",
+          "&7desbloquear la mochila de 27 slots!",
+          "",
+          "&6Precio: &f250 COINS",
+          ""
+        ],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "gold_backpack_notbought",
+        "slot": 3,
+        "material": "PAPER",
+        "model_data": 5977,
+        "amount": 1,
+        "display_name": "&6&lMochila de Oro",
+        "lore": [
+          "&8Coinshop Item",
+          "",
+          "&7Compre la mochila Tier 4 para",
+          "&7desbloquear la mochila de 36 slots!",
+          "",
+          "&6Precio: &f450 COINS",
+          ""
+        ],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "diamond_backpack_notbought",
+        "slot": 4,
+        "material": "PAPER",
+        "model_data": 5978,
+        "amount": 1,
+        "display_name": "&6&lMochila de Diamante",
+        "lore": [
+          "&8Coinshop Item",
+          "",
+          "&7Compre la mochila Tier 5 para",
+          "&7desbloquear la mochila de 45 slots!",
+          "",
+          "&6Precio: &f700 COINS",
+          ""
+        ],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "netherite_backpack_notbought",
+        "slot": 5,
+        "material": "PAPER",
+        "model_data": 5979,
+        "amount": 1,
+        "display_name": "&6&lMochila de Netherite",
+        "lore": [
+          "&8Coinshop Item",
+          "",
+          "&7Compre la mochila Tier 6 para",
+          "&7desbloquear la mochila de 54 slots!",
+          "",
+          "&6Precio: &f1000 COINS",
+          ""
+        ],
+        "left_click_commands": [],
+        "right_click_commands": []
+      }
+    ],
+    "toolskins": [
+      {
+        "key": "buy_randomtoolskin",
+        "slot": 0,
+        "material": "BOOK",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&b&l1x Random Toolskin",
+        "lore": ["&8Coinshop Item", "", "&6Precio: &f150 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      }
+    ],
+    "sellwands": [
+      {
+        "key": "buy_tier1",
+        "slot": 0,
+        "material": "WOODEN_HOE",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&e&l1x Varita de Venta &7(&eNivel 1&7)",
+        "lore": ["&8Objeto de la Tienda", "", "&6Precio: &f50 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_tier2",
+        "slot": 1,
+        "material": "STONE_HOE",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&e&l1x Varita de Venta &7(&eNivel 2&7)",
+        "lore": ["&8Objeto de la Tienda", "", "&6Precio: &f100 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_tier3",
+        "slot": 2,
+        "material": "IRON_HOE",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&e&l1x Varita de Venta &7(&eNivel 3&7)",
+        "lore": ["&8Objeto de la Tienda", "", "&6Precio: &f200 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_tier4",
+        "slot": 3,
+        "material": "GOLDEN_HOE",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&e&l1x Varita de Venta &7(&eNivel 4&7)",
+        "lore": ["&8Objeto de la Tienda", "", "&6Precio: &f400 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_tier5",
+        "slot": 4,
+        "material": "DIAMOND_HOE",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&e&l1x Varita de Venta &7(&eNivel 5&7)",
+        "lore": ["&8Objeto de la Tienda", "", "&6Precio: &f600 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_tier6",
+        "slot": 5,
+        "material": "NETHERITE_HOE",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&e&l1x Varita de Venta &7(&eNivel 6&7)",
+        "lore": ["&8Objeto de la Tienda", "", "&6Precio: &f800 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      }
+    ],
+    "pets": [
+      {
+        "key": "buy_piggypet",
+        "slot": 0,
+        "material": "PIG_SPAWN_EGG",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&a&lCerdito Mascota",
+        "lore": ["&8Articulo de Coinshop", "", "&6Precio: &f150 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_easterbunnypet",
+        "slot": 1,
+        "material": "RABBIT_SPAWN_EGG",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&a&lConejito de Pascua Mascota",
+        "lore": ["&8Articulo de Coinshop", "", "&6Precio: &f150 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_cowpet",
+        "slot": 2,
+        "material": "COW_SPAWN_EGG",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&a&lVaca Mascota",
+        "lore": ["&8Articulo de Coinshop", "", "&6Precio: &f150 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_mooshroompet",
+        "slot": 3,
+        "material": "MOOSHROOM_SPAWN_EGG",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&a&lMooshroom Mascota",
+        "lore": ["&8Articulo de Coinshop", "", "&6Precio: &f150 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_dogpet",
+        "slot": 4,
+        "material": "WOLF_SPAWN_EGG",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&a&lPerro Mascota",
+        "lore": ["&8Articulo de Coinshop", "", "&6Precio: &f150 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_chickpet",
+        "slot": 5,
+        "material": "CHICKEN_SPAWN_EGG",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&a&lPollito Mascota",
+        "lore": ["&8Articulo de Coinshop", "", "&6Precio: &f150 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_sheeppet",
+        "slot": 9,
+        "material": "SHEEP_SPAWN_EGG",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&a&lOveja Mascota",
+        "lore": ["&8Articulo de Coinshop", "", "&6Precio: &f150 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_frogpet",
+        "slot": 10,
+        "material": "FROG_SPAWN_EGG",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&a&lRana Mascota",
+        "lore": ["&8Articulo de Coinshop", "", "&6Precio: &f150 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_allaypet",
+        "slot": 11,
+        "material": "ALLAY_SPAWN_EGG",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&a&lAllay Mascota",
+        "lore": ["&8Articulo de Coinshop", "", "&6Precio: &f150 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_axolotlpet",
+        "slot": 12,
+        "material": "AXOLOTL_SPAWN_EGG",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&a&lAxolote Mascota",
+        "lore": ["&8Articulo de Coinshop", "", "&6Precio: &f150 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_beepet",
+        "slot": 13,
+        "material": "BEE_SPAWN_EGG",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&a&lAbeja Mascota",
+        "lore": ["&8Articulo de Coinshop", "", "&6Precio: &f150 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_pandapet",
+        "slot": 14,
+        "material": "PANDA_SPAWN_EGG",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&a&lPanda Mascota",
+        "lore": ["&8Articulo de Coinshop", "", "&6Precio: &f150 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_foxpet",
+        "slot": 18,
+        "material": "FOX_SPAWN_EGG",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&a&lZorro Mascota",
+        "lore": ["&8Articulo de Coinshop", "", "&6Precio: &f150 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_kittypet",
+        "slot": 19,
+        "material": "OCELOT_SPAWN_EGG",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&a&lGatita Mascota",
+        "lore": ["&8Articulo de Coinshop", "", "&6Precio: &f150 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      }
+    ],
+    "hats": [
+      {
+        "key": "buy_Astronaut",
+        "slot": 0,
+        "material": "basehead-eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvM2U4YWFkNjczMTU3YzkyMzE3YTg4YjFmODZmNTI3MWYxY2Q3Mzk3ZDdmYzhlYzMyODFmNzMzZjc1MTYzNCJ9fX0=",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&e&lAstronauta",
+        "lore": ["&8Coinshop Item", "", "&6Precio: &f150 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_Scared",
+        "slot": 1,
+        "material": "basehead-eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvNjM2ZTI2YzQ0NjU5ZTgxNDhlZDU4YWE3OWU0ZDYwZGI1OTVmNDI2NDQyMTE2ZjgxYjU0MTVjMjQ0NmVkOCJ9fX0=",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&e&lAsustado",
+        "lore": ["&8Coinshop Item", "", "&6Precio: &f150 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_Sad",
+        "slot": 2,
+        "material": "basehead-eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMTQ5NjhhYzVhZjMxNDY4MjZmYTJiMGQ0ZGQxMTRmZGExOTdmOGIyOGY0NzUwNTUzZjNmODg4MzZhMjFmYWM5In19fQ==",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&e&lTriste",
+        "lore": ["&8Coinshop Item", "", "&6Precio: &f150 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_Cool",
+        "slot": 3,
+        "material": "basehead-eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvODY4ZjRjZWY5NDlmMzJlMzNlYzVhZTg0NWY5YzU2OTgzY2JlMTMzNzVhNGRlYzQ2ZTViYmZiN2RjYjYifX19",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&e&lCool",
+        "lore": ["&8Coinshop Item", "", "&6Precio: &f150 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_Wink",
+        "slot": 4,
+        "material": "basehead-eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZjRlYTJkNmY5MzlmZWZlZmY1ZDEyMmU2M2RkMjZmYThhNDI3ZGY5MGIyOTI4YmMxZmE4OWE4MjUyYTdlIn19fQ==",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&e&lWink",
+        "lore": ["&8Coinshop Item", "", "&6Precio: &f150 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_Diamond",
+        "slot": 5,
+        "material": "basehead-eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvOTYzMTU5N2RjZTRlNDA1MWU4ZDVhNTQzNjQxOTY2YWI1NGZiZjI1YTBlZDYwNDdmMTFlNjE0MGQ4OGJmNDhmIn19fQ==",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&e&lDiamante",
+        "lore": ["&8Coinshop Item", "", "&6Precio: &f150 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_Chicken",
+        "slot": 9,
+        "material": "basehead-eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvY2EzNTgyY2U0ODg5MzMzZGFkMzI5ZTRlMjQzNzJhMDNhNWRhYTJjMzQyODBjNTYyNTZhZjUyODNlZGIwNDNmOCJ9fX0=",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&e&lPollo",
+        "lore": ["&8Coinshop Item", "", "&6Precio: &f150 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_Cow",
+        "slot": 10,
+        "material": "basehead-eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvYjY2N2MwZTEwN2JlNzlkNzY3OWJmZTg5YmJjNTdjNmJmMTk4ZWNiNTI5YTMyOTVmY2ZkZmQyZjI0NDA4ZGNhMyJ9fX0=",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&e&lVaca",
+        "lore": ["&8Coinshop Item", "", "&6Precio: &f150 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_Golem",
+        "slot": 11,
+        "material": "basehead-eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvNDI3MTkxM2EzZmM4ZjU2YmRmNmI5MGE0YjRlZDZhMDVjNTYyY2UwMDc2YjUzNDRkNDQ0ZmIyYjA0MGFlNTdkIn19fQ==",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&e&lGolem",
+        "lore": ["&8Coinshop Item", "", "&6Precio: &f150 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_Enderman",
+        "slot": 12,
+        "material": "basehead-eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZGE0NDM4OGViMjU1ZWZmMWE2NDZmZmFhMmY4YWUxZWU4Nzk5MGFkZjk0YjI3MTEwZWI1NWNmMDRlMGU4YzM1NyJ9fX0=",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&e&lEnderman",
+        "lore": ["&8Coinshop Item", "", "&6Precio: &f150 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_Creeper",
+        "slot": 13,
+        "material": "basehead-eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMTYzYmYzMTM3YjM3ZmYxNWRjYTkyNGY2ODFkZDc4YTQ5NWQ4YTMwYTg2MTQwZmVjNjZkNGZhZGRlNTc3ZTQzYiJ9fX0=",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&e&lCreeper",
+        "lore": ["&8Coinshop Item", "", "&6Precio: &f150 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_Blaze",
+        "slot": 14,
+        "material": "basehead-eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvYjIwNjU3ZTI0YjU2ZTFiMmY4ZmMyMTlkYTFkZTc4OGMwYzI0ZjM2Mzg4YjFhNDA5ZDBjZDJkOGRiYTQ0YWEzYiJ9fX0=",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&e&lBlaze",
+        "lore": ["&8Coinshop Item", "", "&6Precio: &f150 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_Turtle",
+        "slot": 18,
+        "material": "basehead-eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMGE0MDUwZTdhYWNjNDUzOTIwMjY1OGZkYzMzOWRkMTgyZDdlMzIyZjlmYmNjNGQ1Zjk5YjU3MThhIn19fQ==",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&e&lTortuga",
+        "lore": ["&8Coinshop Item", "", "&6Precio: &f150 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_Mario",
+        "slot": 19,
+        "material": "basehead-eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvYTBjMjU0OWE4OTM3MjY5ODhmMzQyOGJlZjc5OTg3NWJhODcxNjg4YWU2NGViMGNmZGM0M2Y3ZDZlMjRjNmMifX19",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&e&lMario",
+        "lore": ["&8Coinshop Item", "", "&6Precio: &f150 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_Batman",
+        "slot": 20,
+        "material": "basehead-eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvY2NmY2Y0Mzk2ODE0NzUxNDY1ODk0MzM4ZWUyZGNhYTA2YTI5ODJkOWRiZTg2MTM1Y2JmYmE5NTY3ODYzOGYifX19",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&e&lBatman",
+        "lore": ["&8Coinshop Item", "", "&6Precio: &f150 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_Chest",
+        "slot": 21,
+        "material": "basehead-eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZDVjNmRjMmJiZjUxYzM2Y2ZjNzcxNDU4NWE2YTU2ODNlZjJiMTRkNDdkOGZmNzE0NjU0YTg5M2Y1ZGE2MjIifX19",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&e&lCofre",
+        "lore": ["&8Coinshop Item", "", "&6Precio: &f150 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_Ghost",
+        "slot": 22,
+        "material": "basehead-eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvNjhkMjE4MzY0MDIxOGFiMzMwYWM1NmQyYWFiN2UyOWE5NzkwYTU0NWY2OTE2MTllMzg1NzhlYTRhNjlhZTBiNiJ9fX0=",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&e&lFantasma",
+        "lore": ["&8Coinshop Item", "", "&6Precio: &f150 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_Santa",
+        "slot": 23,
+        "material": "basehead-eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvN2Q2YjMyYTk0MTJmYzEyYmY0NThmMTQzNjhiMTk2OWMwYmM5MTNkMzAyN2ZiNjZlMTFhNGJhZjI4Mzk4YWQifX19",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&e&lSanta",
+        "lore": ["&8Coinshop Item", "", "&6Precio: &f150 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      }
+    ],
+    "particles": [
+      {
+        "key": "buy_snowcloud",
+        "slot": 0,
+        "material": "SNOWBALL",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&b&lSnow Cloud",
+        "lore": ["&8Coinshop Item", "", "&6Precio: &f150 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_bloodhelix",
+        "slot": 1,
+        "material": "FERMENTED_SPIDER_EYE",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&b&lBlood Helix",
+        "lore": ["&8Coinshop Item", "", "&6Precio: &f150 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_frostlord",
+        "slot": 2,
+        "material": "SNOW_BLOCK",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&b&lFrost Lord",
+        "lore": ["&8Coinshop Item", "", "&6Precio: &f150 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_flamerings",
+        "slot": 3,
+        "material": "FIRE_CHARGE",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&b&lFlame Rings",
+        "lore": ["&8Coinshop Item", "", "&6Precio: &f150 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_greensparks",
+        "slot": 4,
+        "material": "EMERALD",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&b&lGreen Sparks",
+        "lore": ["&8Coinshop Item", "", "&6Precio: &f150 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_frozenwalk",
+        "slot": 5,
+        "material": "SNOW",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&b&lFrozen Walk",
+        "lore": ["&8Coinshop Item", "", "&6Precio: &f150 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_music",
+        "slot": 9,
+        "material": "MUSIC_DISC_CHIRP",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&b&lMusic",
+        "lore": ["&8Coinshop Item", "", "&6Precio: &f150 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_inferno",
+        "slot": 10,
+        "material": "CAMPFIRE",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&b&lInferno",
+        "lore": ["&8Coinshop Item", "", "&6Precio: &f150 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_angelwings",
+        "slot": 11,
+        "material": "FEATHER",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&b&lAngel Wings",
+        "lore": ["&8Coinshop Item", "", "&6Precio: &f150 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_superhero",
+        "slot": 12,
+        "material": "ENCHANTED_GOLDEN_APPLE",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&b&lSuperhero",
+        "lore": ["&8Coinshop Item", "", "&6Precio: &f150 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_santahat",
+        "slot": 13,
+        "material": "IRON_HELMET",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&b&lSanta Hat",
+        "lore": ["&8Coinshop Item", "", "&6Precio: &f150 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_enderaura",
+        "slot": 14,
+        "material": "ENDER_PEARL",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&b&lEnder Aura",
+        "lore": ["&8Coinshop Item", "", "&6Precio: &f150 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_crushedcandycane",
+        "slot": 18,
+        "material": "GLOW_BERRIES",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&b&lCrushed Candy Cane",
+        "lore": ["&8Coinshop Item", "", "&6Precio: &f150 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_inlove",
+        "slot": 19,
+        "material": "RED_DYE",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&b&lIn Love",
+        "lore": ["&8Coinshop Item", "", "&6Precio: &f150 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_magicalrods",
+        "slot": 20,
+        "material": "BLAZE_ROD",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&b&lMagical Rods",
+        "lore": ["&8Coinshop Item", "", "&6Precio: &f150 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      }
+    ],
+    "projectileeffects": [
+      {
+        "key": "buy_Rainbow",
+        "slot": 0,
+        "material": "LIME_WOOL",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&6&lRainbow",
+        "lore": ["&8Coinshop Item", "", "&6Precio: &f150 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_Christmas",
+        "slot": 1,
+        "material": "SNOW_BLOCK",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&6&lChristmas",
+        "lore": ["&8Coinshop Item", "", "&6Precio: &f150 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_Spark",
+        "slot": 2,
+        "material": "FIREWORK_ROCKET",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&6&lSpark",
+        "lore": ["&8Coinshop Item", "", "&6Precio: &f150 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_Redstone",
+        "slot": 3,
+        "material": "REDSTONE",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&6&lRedstone",
+        "lore": ["&8Coinshop Item", "", "&6Precio: &f150 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_Flame",
+        "slot": 4,
+        "material": "TORCH",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&6&lFlame",
+        "lore": ["&8Coinshop Item", "", "&6Precio: &f150 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_Water",
+        "slot": 5,
+        "material": "WATER_BUCKET",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&6&lWater",
+        "lore": ["&8Coinshop Item", "", "&6Precio: &f150 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_Witch",
+        "slot": 9,
+        "material": "BREWING_STAND",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&6&lWitch",
+        "lore": ["&8Coinshop Item", "", "&6Precio: &f150 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_Emerald",
+        "slot": 10,
+        "material": "EMERALD",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&6&lEmerald",
+        "lore": ["&8Coinshop Item", "", "&6Precio: &f150 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_Note",
+        "slot": 11,
+        "material": "NOTE_BLOCK",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&6&lNote",
+        "lore": ["&8Coinshop Item", "", "&6Precio: &f150 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_Love",
+        "slot": 12,
+        "material": "PINK_WOOL",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&6&lLove",
+        "lore": ["&8Coinshop Item", "", "&6Precio: &f150 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_Lava",
+        "slot": 13,
+        "material": "LAVA_BUCKET",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&6&lLava",
+        "lore": ["&8Coinshop Item", "", "&6Precio: &f150 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_Snow",
+        "slot": 14,
+        "material": "SNOWBALL",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&6&lSnow",
+        "lore": ["&8Coinshop Item", "", "&6Precio: &f150 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_Slime",
+        "slot": 18,
+        "material": "SLIME_BALL",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&6&lSlime",
+        "lore": ["&8Coinshop Item", "", "&6Precio: &f150 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_Crit",
+        "slot": 19,
+        "material": "IRON_SWORD",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&6&lCrit",
+        "lore": ["&8Coinshop Item", "", "&6Precio: &f150 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_Explosion",
+        "slot": 20,
+        "material": "TNT",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&6&lExplosion",
+        "lore": ["&8Coinshop Item", "", "&6Precio: &f150 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_Cloud",
+        "slot": 21,
+        "material": "WHITE_WOOL",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&6&lCloud",
+        "lore": ["&8Coinshop Item", "", "&6Precio: &f150 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_Smoke",
+        "slot": 22,
+        "material": "GRAY_WOOL",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&6&lSmoke",
+        "lore": ["&8Coinshop Item", "", "&6Precio: &f150 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_Portal",
+        "slot": 23,
+        "material": "OBSIDIAN",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&6&lPortal",
+        "lore": ["&8Coinshop Item", "", "&6Precio: &f150 COINS", ""],
+        "left_click_commands": [],
+        "right_click_commands": []
+      }
+    ],
+    "itemsop": [
+      {
+        "key": "buy_pico",
+        "slot": 0,
+        "material": "NETHERITE_PICKAXE",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&e&lPico Celestial",
+        "lore": [
+          "&8Articulo de Coinshop",
+          "",
+          "&d&lENCANTAMIENTOS",
+          "&8&m------------------",
+          "&r&fFortuna: &r&eVII",
+          "&r&fEficiencia: &r&eXV",
+          "&r&fIrrompibilidad: &r&eX",
+          "&r&fReparacion: &r&eI",
+          "&8&m------------------",
+          "",
+          "&6Precio: &f4000 COINS",
+          ""
+        ],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_hacha",
+        "slot": 1,
+        "material": "NETHERITE_AXE",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&e&lHacha Celestial",
+        "lore": [
+          "&8Articulo de Coinshop",
+          "",
+          "&d&lENCANTAMIENTOS",
+          "&8&m------------------",
+          "&r&fFortuna: &r&eVII",
+          "&r&fEficiencia: &r&eXV",
+          "&r&fIrrompibilidad: &r&eX",
+          "&r&fReparacion: &r&eI",
+          "&8&m------------------",
+          "",
+          "&6Precio: &f3500 COINS",
+          ""
+        ],
+        "left_click_commands": [],
+        "right_click_commands": []
+      },
+      {
+        "key": "buy_pala",
+        "slot": 2,
+        "material": "NETHERITE_SHOVEL",
+        "model_data": null,
+        "amount": 1,
+        "display_name": "&e&lPala Celestial",
+        "lore": [
+          "&8Articulo de Coinshop",
+          "",
+          "&d&lENCANTAMIENTOS",
+          "&8&m------------------",
+          "&r&fFortuna: &r&eVII",
+          "&r&fEficiencia: &r&eXV",
+          "&r&fIrrompibilidad: &r&eX",
+          "&r&fReparacion: &r&eI",
+          "&8&m------------------",
+          "",
+          "&6Precio: &f3500 COINS",
+          ""
+        ],
+        "left_click_commands": [],
+        "right_click_commands": []
+      }
+    ]
+  }
+}

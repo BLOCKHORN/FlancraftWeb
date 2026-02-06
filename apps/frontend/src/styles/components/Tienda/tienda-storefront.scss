@@ -1,7 +1,11 @@
+@use "sass:list";
 @use "../../base/_variables" as *;
 
 @import url("https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Nunito:wght@800;900&display=swap");
 
+/* =========================
+   Mixins base
+   ========================= */
 @mixin stroke-white($w: 2px, $o: rgba(0,0,0,0.92)) {
   color: #fff;
   text-shadow:
@@ -23,6 +27,81 @@
     inset 0 0 0 2px rgba(255,255,255,0.06);
 }
 
+/* =========================
+   BTN PHYSICS (unificado)
+   ========================= */
+.tienda-storefront.tsf-brawl2 {
+  --btnLift: -7px;
+  --btnPress: 4px;
+
+  --btnShadowRest: 0 4px 0 rgba(0,0,0,0.42);
+  --btnShadowHover:
+    0 9px 0 rgba(0,0,0,0.55),
+    0 16px 32px rgba(0,0,0,0.22);
+  --btnShadowPress: 0 1px 0 rgba(0,0,0,0.62);
+
+  --tFast: 160ms;
+  --tMed: 220ms;
+  --easeLift: cubic-bezier(0.16, 1, 0.3, 1);
+  --easePress: cubic-bezier(0.2, 0.9, 0.2, 1);
+}
+
+/* Mixin botón con soporte opcional de "inset shadow"
+   -> evita repetir hover/active en cada botón */
+@mixin tsfBtnPhysics($bg, $border: rgba(0,0,0,0.38), $color: #f6efe6, $extraShadow...) {
+  position: relative;
+  border-radius: 0.85rem;
+  border: 2px solid $border;
+  background: $bg;
+  color: $color;
+
+  transform: translateY(0) translateZ(0);
+  filter: saturate(1.02);
+  cursor: pointer;
+
+  will-change: transform, box-shadow, filter;
+  transition:
+    transform var(--tMed) var(--easeLift),
+    box-shadow var(--tMed) var(--easeLift),
+    filter var(--tFast) ease,
+    background var(--tFast) ease,
+    border-color var(--tFast) ease,
+    opacity var(--tFast) ease;
+
+  // box-shadow base + extras (si existen)
+  box-shadow: var(--btnShadowRest) #{if(list.length($extraShadow) > 0, ", " + $extraShadow, "")};
+
+  &:hover:not(:disabled) {
+    transform: translateY(var(--btnLift)) translateZ(0);
+    filter: brightness(1.06);
+    box-shadow: var(--btnShadowHover) #{if(list.length($extraShadow) > 0, ", " + $extraShadow, "")};
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(var(--btnPress)) translateZ(0);
+    filter: brightness(0.98);
+    box-shadow: var(--btnShadowPress) #{if(list.length($extraShadow) > 0, ", " + $extraShadow, "")};
+  }
+
+  &:focus { outline: none; }
+  &:focus-visible {
+    outline: 2px solid rgba(210, 176, 113, 0.65);
+    outline-offset: 2px;
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none;
+    filter: none;
+    box-shadow: var(--btnShadowRest) #{if(list.length($extraShadow) > 0, ", " + $extraShadow, "")};
+  }
+}
+
+
+/* =========================
+   Keyframes (solo usados)
+   ========================= */
 @keyframes tsfShine {
   0%   { transform: translateX(-160%) skewX(-18deg); opacity: 0; }
   18%  { opacity: 1; }
@@ -64,11 +143,6 @@
   100% { transform: translate(-50%, -50%); }
 }
 
-@keyframes tsfTabIconFloat {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-4px); }
-}
-
 @keyframes tsfParticleFloat {
   0%   { transform: translate3d(0, 18px, 0) scale(1); opacity: 0; }
   12%  { opacity: 0.9; }
@@ -81,6 +155,9 @@
   50%      { opacity: 0.9; }
 }
 
+/* =========================
+   Layout base
+   ========================= */
 .tienda-storefront.tsf-brawl2 {
   --ui-scale: 0.74;
 
@@ -120,6 +197,9 @@
   margin: 0 auto;
 }
 
+/* =========================
+   Header / Sign
+   ========================= */
 .tsf-header {
   position: absolute;
   top: var(--sign-top);
@@ -202,6 +282,9 @@
     drop-shadow(0 0.25rem 0.55rem rgba(0, 0, 0, 0.35));
 }
 
+/* =========================
+   States
+   ========================= */
 .tsf-state {
   flex: 1;
   min-height: 0;
@@ -230,21 +313,23 @@
   color: #ffd7d7;
 }
 
+/* Retry: ya NO duplicamos hover/active fuera */
 .tsf-retry {
-  border: 0;
-  padding: 0.65rem 0.9rem;
-  border-radius: 0.85rem;
-  cursor: pointer;
   font-family: "Nunito", system-ui, sans-serif;
   font-weight: 900;
-  color: #121212;
-  background: linear-gradient(180deg, #ffe8a9, #f7c55d);
-  box-shadow: 0 0.9rem 1.3rem rgba(0,0,0,0.35), inset 0 0 0 2px rgba(0,0,0,0.18);
-  transition: transform 0.12s ease, filter 0.12s ease;
-}
-.tsf-retry:hover { filter: brightness(1.05); transform: translateY(-1px); }
-.tsf-retry:active { transform: translateY(1px) scale(0.99); }
+  padding: 0.65rem 0.9rem;
 
+  @include tsfBtnPhysics(
+    linear-gradient(180deg, #ffe8a9, #f7c55d),
+    rgba(0,0,0,0.18),
+    #121212,
+    inset 0 0 0 2px rgba(0,0,0,0.18)
+  );
+}
+
+/* =========================
+   Ranks
+   ========================= */
 .tsf-ranks { position: relative; z-index: 3; }
 
 .tsf-ranksRow {
@@ -546,13 +631,11 @@
   z-index: -1;
 }
 
+/* CTA: sin hover/active duplicados (lo hace el mixin) */
 .tsf-cta {
   position: relative;
   width: min(92%, 18rem);
-  border: 0;
-  border-radius: 0.85rem;
   padding: 0.72rem 0.85rem;
-  cursor: pointer;
 
   display: flex;
   align-items: center;
@@ -563,11 +646,21 @@
   letter-spacing: 0.04em;
   font-size: 0.95rem;
 
-  background: linear-gradient(180deg, #7bff7a, #25d04e);
-  color: #0f1a10;
-
-  transition: transform 0.12s ease, filter 0.12s ease;
   overflow: hidden;
+
+  @include tsfBtnPhysics(
+    linear-gradient(180deg, #7bff7a, #25d04e),
+    rgba(0,0,0,0.22),
+    #0f1a10
+  );
+}
+
+.tsf-cta.is-in {
+  @include tsfBtnPhysics(
+    linear-gradient(180deg, #ffe8a9, #f7c55d),
+    rgba(0,0,0,0.18),
+    #1a1308
+  );
 }
 
 .tsf-cta::after {
@@ -592,12 +685,6 @@
   @include stroke-white(2px, rgba(0,0,0,0.62));
 }
 
-.tsf-cta:hover { filter: brightness(1.06); transform: translateY(-1px); }
-.tsf-cta:active { transform: translateY(1px) scale(0.99); }
-.tsf-cta:disabled { opacity: 0.55; cursor: not-allowed; }
-
-.tsf-cta.is-in { background: linear-gradient(180deg, #ffe8a9, #f7c55d); }
-
 .tsf-rank:hover .tsf-square,
 .tsf-rank.is-active .tsf-square {
   filter: brightness(1.2) saturate(1.06);
@@ -610,6 +697,9 @@
   pointer-events: auto;
 }
 
+/* =========================
+   Coins
+   ========================= */
 .tsf-coins { position: relative; z-index: 2; }
 
 .tsf-coinsHeader {
@@ -641,6 +731,7 @@
   animation: tsfDeckOut 260ms cubic-bezier(.2,.9,.2,1) both;
   animation-delay: calc(var(--i, 0) * 22ms);
 }
+
 .tsf-coinsGrid.is-in.tsf-switched .tsf-coinWrap {
   opacity: 0;
   animation: tsfDeckIn 420ms cubic-bezier(.16,1,.3,1) both;
@@ -674,7 +765,7 @@
   width: 100%;
   aspect-ratio: 1742 / 2048;
 
-  background: url("/tienda/assets/marco.png") center / 100% 100% no-repeat;
+  background: url("/tienda/assets/marco.webp") center / 100% 100% no-repeat;
   filter: drop-shadow(0 1.25rem 1.75rem rgba(0,0,0,0.55));
   transform: translateZ(0);
   isolation: isolate;
@@ -710,12 +801,13 @@
   height: 63%;
 
   display: grid;
-  grid-template-rows: 1.05fr 2.25fr 0.9fr;
+  grid-template-rows: auto 1fr auto; /* 👈 arriba / centro / abajo */
+  align-items: stretch;
 
-  padding: 0.5rem 0rem 0.2rem;
+  /* mismo padding arriba/abajo para que “respire” igual */
+  padding: 0.5rem 0rem 0.5rem;
 
   border-radius: 0.55rem;
-
   background: linear-gradient(180deg, #3a4b5f 0%, #2f3e52 38%, #243244 100%);
   box-shadow:
     inset 0 2px 0 rgba(255,255,255,0.10),
@@ -727,6 +819,7 @@
   z-index: 0;
   isolation: isolate;
 }
+
 
 .tsf-coinCard::before {
   content: "";
@@ -785,15 +878,11 @@
   filter: blur(0.15px);
 }
 
-.tsf-coinBadges {
+.tsf-coinBadges{
   position: absolute;
-  top: 0rem;
-  left: 0rem;
-  z-index: 5;
-
-  display: flex;
-  flex-wrap: wrap;
-  max-width: 60%;
+  top: 0.25rem;
+  left: 0.25rem;
+  z-index: 6;
   pointer-events: none;
 }
 
@@ -829,6 +918,7 @@
 }
 
 .tsf-coinAmount {
+  grid-row: 1;
   text-align: center;
   font-family: "Luckiest Guy", system-ui, sans-serif;
   letter-spacing: 0.04em;
@@ -836,8 +926,14 @@
 
   position: relative;
   z-index: 6;
-  align-self: start;
-  margin-top: 0rem;
+
+  /* nada de margin-top aquí: el padding del card manda */
+  margin: 0;
+
+  display: grid;
+  gap: 0.18rem;
+  justify-items: center;
+  align-content: start;
 }
 
 .tsf-amountMain {
@@ -883,13 +979,18 @@
 }
 
 .tsf-coinIcon {
+  grid-row: 2;
+
   display: grid;
   place-items: center;
+
   min-height: 0;
-  filter: drop-shadow(0 1.05rem 1.1rem rgba(0,0,0,0.55));
-  animation: tsfPulseGlow 2.4s ease-in-out infinite;
+  margin: 0; /* importante */
   position: relative;
   z-index: 2;
+
+  filter: drop-shadow(0 1.05rem 1.1rem rgba(0,0,0,0.55));
+  animation: tsfPulseGlow 2.4s ease-in-out infinite;
 }
 
 .tsf-coinIcon img {
@@ -897,7 +998,9 @@
   height: auto;
   object-fit: contain;
   image-rendering: pixelated;
-  transform: translateY(clamp(-0.1rem, -0.2vw, -0.2rem));
+
+  /* quita ese translateY que te descuadra el centrado */
+  transform: none;
 }
 
 .tsf-coinPrices {
@@ -931,6 +1034,7 @@
   opacity: 0.95;
 }
 
+/* BuyBar y segments (ya está bastante bien; solo mantengo micro-física) */
 .tsf-buyBar {
   position: absolute;
   left: 11%;
@@ -958,32 +1062,53 @@
 
 .tsf-buySeg {
   border: 0;
-  cursor: pointer;
   background: transparent;
+  cursor: pointer;
 
   display: grid;
   place-items: center;
 
   font-family: "Luckiest Guy", system-ui, sans-serif;
   letter-spacing: 0.05em;
-
   @include stroke-white(2px, rgba(0,0,0,0.62));
 
   user-select: none;
   -webkit-tap-highlight-color: transparent;
 
-  transition: filter 0.12s ease, transform 0.12s ease;
+  transform: translateY(0) translateZ(0);
+  filter: saturate(1.02);
+
+  transition:
+    transform 180ms cubic-bezier(0.16, 1, 0.3, 1),
+    filter 160ms ease,
+    opacity 160ms ease;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-2px) translateZ(0);
+    filter: brightness(1.08);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(2px) translateZ(0);
+    filter: brightness(0.98);
+  }
+
+  &:focus { outline: none; }
+  &:focus-visible {
+    outline: 2px solid rgba(210, 176, 113, 0.55);
+    outline-offset: 2px;
+  }
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    filter: grayscale(0.2);
+    transform: none;
+  }
 }
 
-.tsf-buySeg:hover { filter: brightness(1.08); }
-.tsf-buySeg:active { transform: translateY(1px) scale(0.99); }
-
-.tsf-buySeg:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-  filter: grayscale(0.2);
-  transform: none;
-}
+.tsf-buySeg--main:hover:not(:disabled) { transform: translateY(-3px) translateZ(0); }
+.tsf-buySeg--main:active:not(:disabled) { transform: translateY(2px) translateZ(0); }
 
 .tsf-buySeg--main {
   font-size: clamp(0.82rem, 0.95vw, 0.98rem);
@@ -1015,6 +1140,9 @@
   animation: tsfShine 1.05s ease-in-out 0.12s both;
 }
 
+/* =========================
+   Tabs
+   ========================= */
 .tsf-tabs {
   position: relative;
   z-index: 2;
@@ -1030,34 +1158,27 @@
   justify-content: center;
 }
 
+/* Tab: usamos mixin con inset para no duplicar hover/active */
 .tsf-tab {
-  position: relative;
   border: 0;
-  cursor: pointer;
 
   padding: 0.65rem 1rem;
   border-radius: 0.15rem;
-
-  background: linear-gradient(180deg, rgba(70, 92, 145, 0.88), rgba(40, 56, 98, 0.92));
-
-  box-shadow:
-    0 1.1rem 1.5rem rgba(0,0,0,0.48),
-    inset 0 2px 0 rgba(255,255,255,0.18),
-    inset 0 -2px 0 rgba(0,0,0,0.35);
-
-  transition: transform 0.12s ease, filter 0.12s ease, box-shadow 0.12s ease;
 
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.6rem;
+
+  @include tsfBtnPhysics(
+    linear-gradient(180deg, rgba(70, 92, 145, 0.88), rgba(40, 56, 98, 0.92)),
+    rgba(0,0,0,0.28),
+    #ffffff,
+    inset 0 2px 0 rgba(255,255,255,0.18),
+    inset 0 -2px 0 rgba(0,0,0,0.35)
+  );
 }
 
-.tsf-tab:hover { transform: translateY(-1px); filter: brightness(1.06); }
-
-.tsf-tab.is-active .tsf-tabIcon {
-  animation: tsfTabIconFloat 2.6s ease-in-out infinite;
-}
 
 .tsf-tabBadge {
   position: absolute;
@@ -1142,6 +1263,9 @@
   box-shadow: 0 1.2rem 2rem rgba(0,0,0,0.30);
 }
 
+/* =========================
+   Responsive
+   ========================= */
 @media (max-width: 62rem) {
   .tienda-storefront.tsf-brawl2 { --content-w: 52rem; }
 }
@@ -1166,4 +1290,189 @@
   .tsf-coinWrap { transition: none; }
   .tsf-coinIcon { animation: none; }
   .tsf-tab:hover { transform: none; }
+}
+.tsf-tabsRow{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap: 60px;
+}
+
+.tsf-openShopBtn{
+  appearance:none;
+  border:0;
+  background:transparent;
+  padding:0;
+  cursor:pointer;
+  display:grid;
+  place-items:center;
+
+  width: 45px;
+  height: 56px;
+
+  filter: drop-shadow(0 10px 16px rgba(0,0,0,0.35));
+  transition: transform .18s ease, filter .18s ease;
+  will-change: transform, filter;
+}
+
+.tsf-openShopInner{
+  width: 100%;
+  height: 100%;
+  display:grid;
+  place-items:center;
+  position: relative;
+
+  /* recorte del brillo SOLO dentro */
+  overflow: hidden;
+
+  animation: tsfOpenShopFloat 2.4s ease-in-out infinite;
+  will-change: transform;
+}
+
+/* Shine SOLO sobre el área de la imagen (dentro del wrapper) */
+.tsf-openShopInner::after{
+  content:"";
+  position:absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events:none;
+
+  background: linear-gradient(115deg,
+    rgba(255,255,255,0) 0%,
+    rgba(255,255,255,0) 30%,
+    rgba(255,255,255,0.55) 48%,
+    rgba(255,255,255,0) 62%,
+    rgba(255,255,255,0) 100%
+  );
+
+  /* estado base */
+  opacity: 0;
+  transform: translate3d(-140%,0,0) skewX(-12deg);
+  will-change: transform, opacity;
+}
+
+/* Imagen */
+.tsf-openShopInner img{
+  width: 90%;
+  height: 90%;
+  object-fit: contain;
+  user-select:none;
+  pointer-events:none;
+  image-rendering: auto;
+
+  transition: filter .18s ease;
+  transform: translateZ(0);
+}
+
+/* Hover: el botón hace “pop”, pero la animación de float sigue en el inner */
+.tsf-openShopBtn:hover{
+  transform: translateY(-2px) scale(1.05);
+  filter:
+    drop-shadow(0 16px 22px rgba(0,0,0,0.46))
+    drop-shadow(0 0 12px rgba(255, 220, 120, 0.22));
+}
+
+.tsf-openShopBtn:hover .tsf-openShopInner::after{
+  animation: tsfOpenShopShine .75s ease-out 1;
+}
+
+.tsf-openShopBtn:hover .tsf-openShopInner img{
+  filter: brightness(1.10) saturate(1.06);
+}
+
+.tsf-openShopBtn:active{
+  transform: translateY(-1px) scale(1.02);
+}
+
+.tsf-openShopBtn:focus-visible{
+  outline: none;
+}
+.tsf-openShopBtn:focus-visible .tsf-openShopInner{
+  box-shadow: 0 0 0 3px rgba(120, 200, 255, 0.35);
+}
+
+/* Animaciones */
+@keyframes tsfOpenShopFloat{
+  0%, 100% { transform: translate3d(0,0,0); }
+  50%      { transform: translate3d(0,-2px,0); }
+}
+
+@keyframes tsfOpenShopShine{
+  0%   { transform: translate3d(-140%,0,0) skewX(-12deg); opacity: 0; }
+  10%  { opacity: 1; }
+  100% { transform: translate3d(140%,0,0) skewX(-12deg); opacity: 0; }
+}
+
+/* Respeta reduced motion */
+@media (prefers-reduced-motion: reduce){
+  .tsf-openShopInner{ animation: none; }
+  .tsf-openShopInner::after{ animation: none !important; }
+}
+
+/* Mobile */
+@media (max-width: 740px){
+  .tsf-openShopBtn{
+    width: 54px;
+    height: 48px;
+  }
+  .tsf-openShopInner{
+    animation-duration: 2.6s;
+  }
+  .tsf-tabsRow{ gap: 10px; }
+}
+.tsf-dailyClaimFloat {
+  /* Ajustables: ancho del sidebar y separación */
+  --cart-w: 320px;
+  --cart-gap: 0px;
+
+  position: fixed;
+  right: calc(var(--cart-w) + var(--cart-gap));
+  bottom: 300px;
+  z-index: 60;
+
+  width: 300px;
+  transform-origin: bottom right;
+  transform: scale(var(--ui-scale, 1)) translateZ(0);
+
+  animation: tsfFloatSoftBR 3.2s ease-in-out infinite;
+  pointer-events: auto;
+}
+
+@keyframes tsfFloatSoftBR {
+  0%, 100% { transform: scale(var(--ui-scale, 1)) translateY(0px) translateZ(0); }
+  50% { transform: scale(var(--ui-scale, 1)) translateY(-4px) translateZ(0); }
+}
+
+/* Si el panel lateral cambia en responsive, ajusta aquí */
+@media (max-width: 1400px) {
+  .tsf-dailyClaimFloat {
+    --cart-w: 340px;
+    width: 290px;
+    bottom: 18px;
+  }
+}
+
+@media (max-width: 1100px) {
+  .tsf-dailyClaimFloat {
+    --cart-w: 320px;
+    --cart-gap: 14px;
+    width: 280px;
+  }
+}
+
+/* En móvil: mejor que no sea fixed (si ya el layout cambia) */
+@media (max-width: 900px) {
+  .tsf-dailyClaimFloat {
+    position: relative;
+    right: auto;
+    bottom: auto;
+
+    width: 100%;
+    max-width: 520px;
+    margin: 14px auto 0;
+
+    transform: none;
+    animation: none;
+    z-index: 1;
+  }
 }

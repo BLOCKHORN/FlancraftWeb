@@ -1,0 +1,25 @@
+@use "../../base/_variables" as *;
+
+.coinshopModal {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+}
+
+.coinshopModal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(2px);
+}
+
+.coinshopModal__panel {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: min(98vw, 1200px);
+  max-height: calc(100vh - 48px);
+}
