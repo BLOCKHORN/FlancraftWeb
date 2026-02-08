@@ -1,0 +1,158 @@
+@use "./mixins" as *;
+
+/* storefront/_tabs.scss */
+.tsf-coins { position: relative; z-index: 2; }
+
+.tsf-coinsHeader {
+  display: grid;
+  place-items: center;
+  padding: clamp(0.2rem, 0.6vw, 0.5rem) 0 clamp(0.7rem, 1vw, 0.9rem);
+}
+
+.tsf-tabsStack {
+  display: grid;
+  gap: 0.55rem;
+  justify-items: center;
+}
+
+.tsf-tabsRow{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.tsf-tabs{
+  position: relative;
+  z-index: 2;
+
+  margin: clamp(0.15rem, 0.6vw, 0.35rem) auto 0;
+  width: fit-content;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: clamp(0.55rem, 1.0vw, 0.95rem);
+}
+
+.tsf-tab{
+  border: 0;
+  min-width: clamp(11.4rem, 21vw, 15.6rem);
+
+  padding: 0.65rem 1rem;
+  border-radius: 0.15rem;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+
+  @include tsfBtnPhysics(
+    linear-gradient(180deg, rgba(70, 92, 145, 0.88), rgba(40, 56, 98, 0.92)),
+    rgba(0,0,0,0.28),
+    #ffffff,
+    inset 0 2px 0 rgba(255,255,255,0.18),
+    inset 0 -2px 0 rgba(0,0,0,0.35)
+  );
+}
+
+.tsf-tabBadge {
+  position: absolute;
+  top: -0.55rem;
+  left: 0.55rem;
+  z-index: 3;
+
+  padding: 0.34rem 0.55rem 0.32rem;
+  font-family: "Nunito", system-ui, sans-serif;
+  font-weight: 900;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  line-height: 1;
+
+  color: #1a0f12;
+  background: linear-gradient(180deg, #ffb0be, #ff5c7a);
+
+  box-shadow:
+    0 1rem 1.35rem rgba(0,0,0,0.38),
+    inset 0 0 0 2px rgba(0,0,0,0.12);
+
+  clip-path: polygon(0 0,92% 0,100% 50%,92% 100%,0 100%,6% 50%);
+  filter: drop-shadow(0 0.6rem 0.8rem rgba(0,0,0,0.22));
+}
+
+.tsf-tabIcon {
+  width: clamp(1.4rem, 2.0vw, 1.9rem);
+  height: clamp(1.4rem, 2.0vw, 1.9rem);
+  object-fit: contain;
+  image-rendering: auto;
+  filter: drop-shadow(0 0.7rem 0.9rem rgba(0,0,0,0.45));
+  flex: 0 0 auto;
+}
+
+.tsf-tabText {
+  display: block;
+  text-align: center;
+  font-family: "Luckiest Guy", system-ui, sans-serif;
+  font-size: clamp(0.92rem, 1.2vw, 1.02rem);
+  letter-spacing: 0.03em;
+  @include stroke-white(2px);
+  padding-right: 1.1rem;
+}
+
+.tsf-orb {
+  position: absolute;
+  right: 0.85rem;
+  top: 50%;
+  width: 0.78rem;
+  height: 0.78rem;
+  border-radius: 999px;
+  transform: translateY(-50%);
+  opacity: 0;
+
+  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.95), rgba(120,200,255,0.70), rgba(40,90,180,0.10));
+  box-shadow:
+    0 0 10px rgba(120, 200, 255, 0.55),
+    0 0 18px rgba(120, 200, 255, 0.35);
+}
+
+.tsf-tab.is-active {
+  filter: brightness(1.12);
+  background: linear-gradient(180deg, rgba(110, 140, 220, 0.92), rgba(55, 78, 140, 0.96));
+  box-shadow:
+    0 1.4rem 2rem rgba(0,0,0,0.58),
+    inset 0 2px 0 rgba(255,255,255,0.22),
+    inset 0 -2px 0 rgba(0,0,0,0.35);
+}
+
+.tsf-tab.is-active .tsf-orb {
+  opacity: 1;
+  animation: tsfOrbPulse 1.25s ease-in-out infinite;
+}
+
+.tsf-openShopBtn{
+  flex: 0 0 auto;
+  margin-inline: clamp(0.15rem, 0.35vw, 0.35rem);
+}
+
+.tsf-tab.is-active{
+  transform: translateY(2px) !important;
+  box-shadow:
+    0 0.95rem 1.35rem rgba(0,0,0,0.48),
+    inset 0 2px 0 rgba(255,255,255,0.20),
+    inset 0 -3px 0 rgba(0,0,0,0.48) !important;
+}
+
+.tsf-tab.is-active:hover,
+.tsf-tab.is-active:active{
+  transform: translateY(2px) !important;
+}
+
+@media (max-width: 740px){
+  .tsf-tabs{
+    gap: 0.5rem;
+  }
+  .tsf-tab{
+    min-width: clamp(9.4rem, 38vw, 12.2rem);
+    padding: 0.6rem 0.8rem;
+  }
+}

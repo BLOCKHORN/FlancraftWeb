@@ -1,0 +1,501 @@
+@use "./mixins" as *;
+
+/* storefront/_ranks.scss */
+.tsf-ranks { position: relative; z-index: 3; }
+
+.tsf-ranksRow {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: start;
+  justify-items: center;
+}
+
+.tienda-storefront.tsf-brawl2.is-ready .tsf-rank {
+  opacity: 0;
+  animation: tsfDeckIn 560ms cubic-bezier(.16,1,.3,1) both;
+  animation-delay: calc(180ms + (var(--i, 0) * 90ms));
+  will-change: transform, opacity, filter;
+}
+
+.tsf-rank {
+  --rx: 0;
+  --ry: 0;
+  --mx: 50%;
+  --my: 50%;
+
+  position: relative;
+  width: 100%;
+  max-width: var(--rank-size);
+
+  display: grid;
+  justify-items: center;
+  cursor: pointer;
+
+  /* ====== CTA vars (ajuste fino sin hardcode) ====== */
+  --cta-inset-x: -7%;
+  --cta-inset-y: -10%;
+  --cta-bottom: 7.5%;
+  --cta-height: 32px;
+  --cta-tilt: -3deg;
+  --cta-shear: 3.6%;
+  --cta-border: rgba(0,0,0,.60);
+  --cta-shadow: rgba(0,0,0,.42);
+
+  --cta-usd-a: #7dff6a;
+  --cta-usd-b: #39e65a;
+  --cta-usd-c: #18b84b;
+
+  --cta-coins-a: #fff6b8;
+  --cta-coins-b: #ffe07a;
+  --cta-coins-c: #f7bf44;
+}
+
+.tsf-rankLabel {
+  position: absolute;
+  top: clamp(-0.5rem, -1.6vw, -1.65rem);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 6;
+  pointer-events: none;
+
+  display: grid;
+  justify-items: center;
+  line-height: 1;
+}
+
+.tsf-rankTop {
+  font-family: "Nunito", system-ui, sans-serif;
+  font-weight: 900;
+  font-size: clamp(0.9rem, 1.05vw, 1rem);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  @include stroke-white(2px, rgba(0,0,0,0.78));
+}
+
+.tsf-rankName {
+  font-family: "Luckiest Guy", system-ui, sans-serif;
+  font-size: clamp(1.35rem, 2.1vw, 2.05rem);
+  letter-spacing: 0.02em;
+  @include stroke-white(2px, rgba(0,0,0,0.88));
+}
+
+.tsf-rank.nova .tsf-rankName { color: #7BFF7A; }
+.tsf-rank.alpha .tsf-rankName { color: #6EBBFF; }
+.tsf-rank.inmortal .tsf-rankName { color: #FF7A5A; }
+
+.tsf-square {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 0.55rem;
+
+  transform:
+    perspective(900px)
+    rotateX(calc(var(--rx) * 1deg))
+    rotateY(calc(var(--ry) * 1deg))
+    translateZ(0);
+
+  perspective: 900px;
+  transform-style: preserve-3d;
+
+  transition: transform 240ms cubic-bezier(.16,1,.3,1), filter 240ms cubic-bezier(.16,1,.3,1), box-shadow 240ms cubic-bezier(.16,1,.3,1);
+  overflow: visible;
+  will-change: transform, filter;
+}
+
+.tsf-deg {
+  position: absolute;
+  inset: -14%;
+  width: calc(100% + 28%);
+  height: calc(100% + 28%);
+  max-width: none;
+  max-height: none;
+
+  object-fit: contain;
+  transform: rotate(-3deg);
+  transform-origin: center;
+  pointer-events: none;
+  user-select: none;
+
+  z-index: 1;
+}
+
+.tsf-rank.inmortal .tsf-deg { transform: rotate(-2.5deg); }
+
+.tsf-rankParticles {
+  position: absolute;
+  inset: -16%;
+  pointer-events: none;
+  z-index: 2;
+  opacity: 0.95;
+  filter: drop-shadow(0 0 10px rgba(255,255,255,0.10));
+}
+
+.tsf-rankParticles::before,
+.tsf-rankParticles::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-repeat: no-repeat;
+  opacity: 0.95;
+}
+
+.tsf-rankParticles::before {
+  background-image:
+    radial-gradient(circle, var(--p1) 0 2px, rgba(0,0,0,0) 3px),
+    radial-gradient(circle, var(--p2) 0 1.6px, rgba(0,0,0,0) 3px),
+    radial-gradient(circle, var(--p3) 0 1.8px, rgba(0,0,0,0) 3px),
+    radial-gradient(circle, var(--p4) 0 1.4px, rgba(0,0,0,0) 3px),
+    radial-gradient(circle, var(--p1) 0 2px, rgba(0,0,0,0) 3px),
+    radial-gradient(circle, var(--p2) 0 1.6px, rgba(0,0,0,0) 3px);
+
+  background-size: 6px 6px, 6px 6px, 7px 7px, 6px 6px, 7px 7px, 6px 6px;
+  background-position: 10% 70%, 25% 30%, 38% 85%, 58% 25%, 72% 78%, 88% 35%;
+  animation: tsfParticleBlink 1.8s ease-in-out infinite;
+}
+
+.tsf-rankParticles::after {
+  background-image:
+    radial-gradient(circle, var(--p1) 0 2px, rgba(0,0,0,0) 4px),
+    radial-gradient(circle, var(--p2) 0 1.8px, rgba(0,0,0,0) 4px),
+    radial-gradient(circle, var(--p3) 0 1.9px, rgba(0,0,0,0) 4px),
+    radial-gradient(circle, var(--p4) 0 1.5px, rgba(0,0,0,0) 4px),
+    radial-gradient(circle, var(--p1) 0 2px, rgba(0,0,0,0) 4px),
+    radial-gradient(circle, var(--p2) 0 1.6px, rgba(0,0,0,0) 4px);
+
+  background-size: 10px 10px, 10px 10px, 11px 11px, 10px 10px, 11px 11px, 10px 10px;
+  background-position: 12% 90%, 28% 80%, 44% 92%, 60% 82%, 76% 90%, 92% 84%;
+  animation: tsfParticleFloat 1.95s ease-in-out infinite;
+}
+
+.tsf-rank.nova .tsf-rankParticles {
+  --p1: rgba(120,255,140,0.95);
+  --p2: rgba(140,255,170,0.75);
+  --p3: rgba(90,230,120,0.72);
+  --p4: rgba(180,255,210,0.62);
+  filter: drop-shadow(0 0 12px rgba(120,255,140,0.18));
+}
+
+.tsf-rank.alpha .tsf-rankParticles {
+  --p1: rgba(120,200,255,0.95);
+  --p2: rgba(160,220,255,0.78);
+  --p3: rgba(90,170,255,0.72);
+  --p4: rgba(210,240,255,0.60);
+  filter: drop-shadow(0 0 12px rgba(120,200,255,0.18));
+}
+
+.tsf-rank.inmortal .tsf-rankParticles {
+  --p1: rgba(255,125,90,0.96);
+  --p2: rgba(255,175,95,0.78);
+  --p3: rgba(255,95,70,0.72);
+  --p4: rgba(255,220,170,0.58);
+  filter: drop-shadow(0 0 12px rgba(255,140,90,0.18));
+}
+
+.tsf-best {
+  position: absolute;
+  top: -0.55rem;
+  right: -0.55rem;
+  z-index: 7;
+
+  font-family: "Luckiest Guy", system-ui, sans-serif;
+  font-weight: 900;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+
+  padding: 0.46rem 0.72rem 0.44rem;
+  color: #1a1308;
+
+  background: linear-gradient(180deg, #ffe8a9, #f7c55d);
+  box-shadow:
+    0 1.1rem 1.7rem rgba(0,0,0,0.42),
+    inset 0 0 0 2px rgba(0,0,0,0.14);
+
+  transform: rotate(4deg);
+  filter: drop-shadow(0 0.65rem 0.95rem rgba(0,0,0,0.25));
+}
+
+.tsf-best::after {
+  content: "";
+  position: absolute;
+  inset: 2px;
+  clip-path: inherit;
+  background: radial-gradient(circle at 30% 25%, rgba(255,255,255,0.35), rgba(255,255,255,0) 60%);
+  opacity: 0.65;
+  pointer-events: none;
+}
+
+.tsf-perma {
+  position: absolute;
+  left: 50%;
+  top: 25%;
+  transform: translate(-50%, -50%);
+  z-index: 6;
+
+  font-family: "Luckiest Guy", system-ui, sans-serif;
+  letter-spacing: 0.06em;
+  font-size: clamp(1.0rem, 1.25vw, 1.2rem);
+  @include stroke-white(2px, rgba(0,0,0,0.90));
+
+  opacity: 0;
+  filter: drop-shadow(0 0 14px rgba(255,255,255,0.12));
+  transition: opacity 220ms cubic-bezier(.16,1,.3,1), transform 220ms cubic-bezier(.16,1,.3,1);
+  pointer-events: none;
+}
+
+.tsf-rank:hover .tsf-perma,
+.tsf-rank.is-active .tsf-perma {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1.02);
+}
+
+.tsf-icon {
+  position: absolute;
+  left: 50%;
+  top: 54%;
+  width: 58%;
+  height: 58%;
+  transform: translate(-50%, -50%);
+  object-fit: contain;
+  image-rendering: pixelated;
+  z-index: 4;
+
+  filter: drop-shadow(0 1.1rem 1.1rem rgba(0,0,0,0.55));
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  will-change: transform, filter;
+
+  transition: transform 420ms cubic-bezier(.16,1,.3,1), filter 260ms cubic-bezier(.16,1,.3,1);
+  animation: none;
+}
+
+.tsf-rank:hover .tsf-icon,
+.tsf-rank.is-active .tsf-icon {
+  animation: tsfRankFloat 1.9s ease-in-out infinite;
+  filter:
+    drop-shadow(0 1.4rem 1.6rem rgba(0,0,0,0.55))
+    drop-shadow(0 0 14px rgba(255,255,255,0.18));
+}
+
+.tsf-iconFallback {
+  position: absolute;
+  left: 50%;
+  top: 54%;
+  width: 58%;
+  height: 58%;
+  transform: translate(-50%, -50%);
+  border-radius: 0.7rem;
+  background: rgba(0,0,0,0.25);
+}
+
+/* =======================================================
+   CTA: ENCAJADA EN EL PIE del square (adaptable por vars)
+   ======================================================= */
+.tsf-squareCta{
+  position: absolute;
+  left: var(--cta-inset-x);
+  right: var(--cta-inset-y);
+  bottom: var(--cta-bottom);
+  z-index: 9;
+
+  display: grid;
+  place-items: stretch;
+
+  pointer-events: auto;
+}
+
+/* =======================================================
+   BOTÓN DOBLE (USD / COINS) — adaptativo + divisor diagonal
+   + animación por mitad (solo verde o solo amarillo)
+   ======================================================= */
+.tsf-ctaSplit{
+  position: relative;
+  width: 100%;
+  height: var(--cta-height);
+
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+
+  overflow: hidden;
+  border-radius: 0;
+
+  transform: rotate(var(--cta-tilt));
+  transform-origin: center;
+
+  filter: drop-shadow(0 0.95rem 1.25rem var(--cta-shadow));
+  transition: filter 160ms ease;
+}
+
+.tsf-ctaSplit:hover{
+  filter:
+    drop-shadow(0 1.1rem 1.35rem rgba(0,0,0,0.46))
+    drop-shadow(0 0 14px rgba(255,255,255,0.08));
+}
+
+.tsf-ctaSplit:active{
+  filter: drop-shadow(0 0.75rem 1.05rem rgba(0,0,0,0.36));
+}
+
+.tsf-ctaSplit:disabled{
+  cursor: not-allowed;
+  opacity: 0.92;
+}
+
+/* lados */
+.tsf-ctaSplitSide{
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50%;
+  z-index: 2;
+
+  display: grid;
+  place-items: center;
+  padding: 0 10px;
+
+  transform: translateY(0);
+  transition: transform 160ms cubic-bezier(.16,1,.3,1), filter 160ms ease;
+  will-change: transform, filter;
+}
+
+/* profundidad por mitad */
+.tsf-ctaSplitSide::after{
+  content:"";
+  position:absolute;
+  left: 0;
+  right: 0;
+  bottom: -6px;
+  height: 8px;
+  z-index: -1;
+  opacity: 0.9;
+
+  background: linear-gradient(180deg, rgba(0,0,0,0.26), rgba(0,0,0,0.62));
+  filter: blur(0.2px);
+  pointer-events: none;
+}
+
+/* USD */
+.tsf-ctaSplitSide--usd{
+  left: 0;
+
+  background:
+    radial-gradient(140% 120% at 50% 0%, rgba(255,255,255,0.20), rgba(255,255,255,0) 55%),
+    linear-gradient(180deg, var(--cta-usd-a) 0%, var(--cta-usd-b) 50%, var(--cta-usd-c) 100%);
+
+  box-shadow:
+    inset 0 3px 0 rgba(255,255,255,0.22),
+    inset 0 -3px 0 rgba(0,0,0,0.22);
+}
+
+/* COINS */
+.tsf-ctaSplitSide--coins{
+  right: 0;
+
+  background:
+    radial-gradient(140% 120% at 50% 0%, rgba(255,255,255,0.22), rgba(255,255,255,0) 55%),
+    linear-gradient(180deg, var(--cta-coins-a) 0%, var(--cta-coins-b) 48%, var(--cta-coins-c) 100%);
+
+  box-shadow:
+    inset 0 3px 0 rgba(255,255,255,0.22),
+    inset 0 -3px 0 rgba(0,0,0,0.22);
+}
+
+/* marco general */
+.tsf-ctaSplit::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index: 7;
+  pointer-events:none;
+
+  box-shadow:
+    inset 0 0 0 2px var(--cta-border);
+}
+
+/* divisor diagonal real */
+
+
+/* animación por mitad: hover solo la mitad bajo el puntero */
+.tsf-ctaSplit:hover .tsf-ctaSplitSide{
+  transform: translateY(0);
+}
+
+.tsf-ctaSplit:has(.tsf-ctaSplitSide--usd:hover) .tsf-ctaSplitSide--usd{
+  transform: translateY(-2px);
+  filter: drop-shadow(0 0.55rem 0.9rem rgba(0,0,0,0.25));
+}
+
+.tsf-ctaSplit:has(.tsf-ctaSplitSide--coins:hover) .tsf-ctaSplitSide--coins{
+  transform: translateY(-2px);
+  filter: drop-shadow(0 0.55rem 0.9rem rgba(0,0,0,0.25));
+}
+
+.tsf-ctaSplit:has(.tsf-ctaSplitSide--usd:active) .tsf-ctaSplitSide--usd{
+  transform: translateY(1px);
+  filter: none;
+}
+
+.tsf-ctaSplit:has(.tsf-ctaSplitSide--coins:active) .tsf-ctaSplitSide--coins{
+  transform: translateY(1px);
+  filter: none;
+}
+
+/* fallback si algún navegador no soporta :has */
+@supports not selector(:has(*)) {
+  .tsf-ctaSplitSide--usd:hover,
+  .tsf-ctaSplitSide--coins:hover { transform: translateY(-2px); }
+
+  .tsf-ctaSplitSide--usd:active,
+  .tsf-ctaSplitSide--coins:active { transform: translateY(1px); }
+}
+
+/* texto */
+.tsf-ctaSplitValue{
+  font-family: "Luckiest Guy", system-ui, sans-serif;
+  letter-spacing: 0.04em;
+  font-size: 1.02rem;
+  line-height: 1;
+  @include stroke-white(2px, rgba(0,0,0,0.72));
+}
+
+/* coins: número + coin a la derecha */
+.tsf-ctaSplitCoins{
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.tsf-ctaCoinIcon{
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 0.35rem 0.55rem rgba(0,0,0,0.30));
+}
+
+/* shine sutil */
+.tsf-ctaSplitShine{
+  position: absolute;
+  inset: -18px;
+  z-index: 8;
+  pointer-events: none;
+
+  background: linear-gradient(120deg,
+    rgba(255,255,255,0) 34%,
+    rgba(255,255,255,0.26) 46%,
+    rgba(255,255,255,0) 58%);
+
+  transform: translateX(-70%);
+  mix-blend-mode: screen;
+  opacity: 0;
+}
+
+.tsf-rank:hover .tsf-ctaSplitShine{
+  opacity: 0.85;
+  animation: tsfShine 1.1s ease-in-out 0.15s both;
+}

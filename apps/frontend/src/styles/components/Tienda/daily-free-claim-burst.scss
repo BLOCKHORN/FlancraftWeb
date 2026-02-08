@@ -1,0 +1,609 @@
+/* src/styles/components/Tienda/daily-free-claim-burst.scss */
+@import url("https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Nunito:wght@800;900;1000&display=swap");
+
+:root{
+  --dc-panel-w: min(520px);
+  --dc-panel-r: 4px;
+}
+
+/* =========================
+   OVERLAY
+   ========================= */
+.dailyClaimModal{
+  position: fixed;
+  inset: 0;
+  z-index: 999999;
+  display: grid;
+  place-items: center;
+  isolation: isolate;
+}
+
+.dailyClaimModal__backdrop{
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(900px 520px at 50% 30%, rgba(40, 170, 255, 0.10), rgba(0,0,0,0) 62%),
+    rgba(6, 8, 16, 0.78);
+  backdrop-filter: blur(10px);
+  animation: dcBackdropIn 180ms ease-out both;
+}
+
+@keyframes dcBackdropIn{
+  from{ opacity: 0; }
+  to{ opacity: 1; }
+}
+
+/* =========================
+   PANEL
+   ========================= */
+.dailyClaimModal__panel{
+  position: relative;
+  width: var(--dc-panel-w);
+  border-radius: var(--dc-panel-r);
+  padding: 18px;
+  overflow: hidden;
+
+  /* base azul consistente (sin bandas laterales) */
+  background:
+    radial-gradient(120% 140% at 50% 35%,
+      rgba(60, 210, 255, 0.18),
+      rgba(0,0,0,0) 62%),
+    linear-gradient(180deg,
+      rgba(18, 74, 176, 0.96),
+      rgba(9, 18, 40, 0.98));
+
+  border: 1px solid rgba(255,255,255,0.14);
+
+  box-shadow:
+    0 38px 90px rgba(0,0,0,0.68),
+    0 10px 26px rgba(0,0,0,0.42),
+    inset 0 1px 0 rgba(255,255,255,0.10);
+
+  transform-origin: 50% 60%;
+  animation: dcPanelIn 420ms cubic-bezier(.12,1.2,.22,1) both;
+}
+
+.dailyClaimModal__panel--big{
+  padding: 22px 22px 18px;
+  min-height: 360px;
+}
+
+@keyframes dcPanelIn{
+  0%   { transform: scale(0.86) translateY(18px); opacity: 0; filter: saturate(0.92) brightness(0.92); }
+  42%  { transform: scale(1.04) translateY(-2px); opacity: 1; filter: saturate(1.12) brightness(1.06); }
+  62%  { transform: scale(0.99) translateY(0px); }
+  78%  { transform: scale(1.01) translateY(0px); }
+  100% { transform: scale(1) translateY(0px); opacity: 1; filter: none; }
+}
+
+.dailyClaimModal__panel::before{
+  content:"";
+  position:absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow:
+    inset 0 0 0 2px rgba(0,0,0,0.42),
+    inset 0 0 0 1px rgba(255,255,255,0.10);
+  opacity: 0.9;
+  z-index: 2;
+}
+
+.dailyClaimModal__panel::after{
+  content:"";
+  position:absolute;
+  inset:-40%;
+  pointer-events:none;
+  background: radial-gradient(circle at 50% 45%,
+    rgba(255,255,255,0.20),
+    rgba(255,255,255,0.00) 62%);
+  opacity: 0;
+  z-index: 1;
+  animation: dcFlash 520ms ease-out both;
+}
+
+@keyframes dcFlash{
+  0%{ opacity: 0; transform: scale(0.9); }
+  20%{ opacity: 0.55; }
+  100%{ opacity: 0; transform: scale(1.08); }
+}
+
+/* =========================
+   CERRAR
+   ========================= */
+.dailyClaimModal__x{
+  position: absolute;
+  right: 14px;
+  top: 12px;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(0,0,0,0.22);
+  color: rgba(255,255,255,0.92);
+
+  cursor: pointer;
+  z-index: 8;
+
+  display: grid;
+  place-items: center;
+
+  transition: transform 140ms ease, filter 140ms ease, background 140ms ease;
+
+  &:hover{ transform: translateY(-1px); filter: brightness(1.06); background: rgba(0,0,0,0.28); }
+  &:active{ transform: translateY(0px); filter: brightness(0.98); }
+}
+
+/* click-catcher por debajo del contenido/botones */
+.dailyClaimModal__clickCatcher{
+  position: absolute;
+  inset: 0;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  z-index: 3;
+}
+
+/* =========================
+   FX
+   ========================= */
+.dailyClaimModal__fx{
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* capa de fondo dentro del panel (uniforme + centro brillante) */
+.dailyClaimModal__fx::before{
+  content:"";
+  position:absolute;
+  inset: 0;
+  border-radius: inherit;
+  background:
+    radial-gradient(60% 55% at 50% 48%,
+      rgba(110, 245, 255, 0.40) 0%,
+      rgba(70, 210, 255, 0.22) 22%,
+      rgba(20, 120, 240, 0.10) 52%,
+      rgba(0,0,0,0.00) 74%),
+    radial-gradient(120% 120% at 50% 45%,
+      rgba(255,255,255,0.08),
+      rgba(0,0,0,0) 62%);
+  opacity: 0.95;
+  z-index: 0;
+}
+
+/* === RAYOS (sin bandas laterales) ===
+   - ocupan más que el panel
+   - sin mix-blend-mode (para evitar “franjas” y cambios raros en bordes)
+   - rotación constante y lenta
+*/
+.dailyClaimModal__rays{
+  position: absolute;
+  left: 50%;
+  top: 55%;
+  width: 340%;
+  height: 340%;
+  transform: translate3d(-50%, -50%, 0) rotate(0deg);
+  transform-origin: 50% 50%;
+  will-change: transform, opacity, filter;
+  opacity: 0.26;
+
+  background:
+    /* “fog” central suave para que no se note el patrón en bordes */
+    radial-gradient(circle at 50% 50%,
+      rgba(120, 250, 255, 0.22) 0%,
+      rgba(30, 170, 255, 0.12) 30%,
+      rgba(0,0,0,0.00) 68%),
+    /* rayos */
+    repeating-conic-gradient(
+      from 0deg,
+      rgba(210,245,255,0.00) 0deg,
+      rgba(210,245,255,0.00) 5deg,
+      rgba(210,245,255,0.18) 5deg,
+      rgba(210,245,255,0.18) 11.5deg,
+      rgba(0,0,0,0.00) 11.5deg,
+      rgba(0,0,0,0.00) 19deg
+    );
+
+  filter: saturate(1.25) contrast(1.05);
+  animation: dcRaysSpin 10.5s linear infinite, dcRaysPulse 2.6s ease-in-out infinite;
+}
+
+@keyframes dcRaysSpin{
+  from{ transform: translate3d(-50%, -50%, 0) rotate(0deg); }
+  to{ transform: translate3d(-50%, -50%, 0) rotate(360deg); }
+}
+
+@keyframes dcRaysPulse{
+  0%,100%{ opacity: 0.20; filter: saturate(1.18) contrast(1.04) brightness(1.00); }
+  50%{ opacity: 0.30; filter: saturate(1.30) contrast(1.08) brightness(1.03); }
+}
+
+/* reveal: más energía, misma rotación */
+.dailyClaimModal__panel.is-reveal .dailyClaimModal__rays{
+  opacity: 0.38;
+  animation: dcRaysSpin 10.5s linear infinite, dcRaysPulseHot 1.7s ease-in-out infinite;
+}
+
+@keyframes dcRaysPulseHot{
+  0%,100%{ opacity: 0.32; filter: saturate(1.32) contrast(1.08) brightness(1.01); }
+  50%{ opacity: 0.46; filter: saturate(1.44) contrast(1.12) brightness(1.05); }
+}
+
+/* glow + shine */
+.dailyClaimModal__glow{
+  position: absolute;
+  inset: -90px;
+  background:
+    radial-gradient(520px 260px at 50% 18%, rgba(255, 220, 120, 0.14), transparent 62%),
+    radial-gradient(560px 280px at 18% 20%, rgba(40, 190, 255, 0.24), transparent 62%),
+    radial-gradient(560px 280px at 86% 26%, rgba(120, 255, 220, 0.10), transparent 62%);
+  opacity: 1;
+  animation: dcGlowPulse 1400ms ease-in-out infinite;
+}
+
+@keyframes dcGlowPulse{
+  0%,100%{ transform: scale(1); filter: saturate(1) brightness(1); opacity: 0.95; }
+  50%{ transform: scale(1.02); filter: saturate(1.1) brightness(1.03); opacity: 1; }
+}
+
+.dailyClaimModal__shine{
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg,
+    rgba(255,255,255,0) 32%,
+    rgba(255,255,255,0.16) 46%,
+    rgba(255,255,255,0) 60%);
+  transform: translateX(-55%);
+  animation: dcShine 1300ms ease-in-out infinite;
+  opacity: 0.65;
+}
+
+@keyframes dcShine{
+  0% { transform: translateX(-55%); }
+  55% { transform: translateX(70%); }
+  100% { transform: translateX(70%); }
+}
+
+/* burst */
+.dailyClaimModal__burst{
+  position: absolute;
+  left: 50%;
+  top: 54%;
+  width: min(520px, 92vw);
+  height: min(520px, 92vw);
+  transform: translate(-50%, -50%) scale(0.92);
+  opacity: 0.0;
+
+  background:
+    radial-gradient(circle at center, rgba(255,255,255,0.18), rgba(255,255,255,0) 58%),
+    conic-gradient(from 0deg,
+      rgba(255,220,140,0.18),
+      rgba(40,190,255,0.16),
+      rgba(120,255,220,0.10),
+      rgba(255,220,140,0.18));
+
+  filter: blur(0.2px);
+}
+
+.dailyClaimModal__panel.is-reveal .dailyClaimModal__burst{
+  animation: dcBurstPop 680ms cubic-bezier(.12,1.1,.22,1) both;
+}
+
+@keyframes dcBurstPop{
+  0%   { transform: translate(-50%, -50%) scale(0.76); opacity: 0; }
+  35%  { transform: translate(-50%, -50%) scale(1.03); opacity: 0.62; }
+  60%  { transform: translate(-50%, -50%) scale(0.96); opacity: 0.50; }
+  100% { transform: translate(-50%, -50%) scale(0.98); opacity: 0.32; }
+}
+
+/* partículas */
+.dailyClaimModal__particles{
+  position: absolute;
+  left: 50%;
+  top: 54%;
+  width: 0;
+  height: 0;
+}
+
+.dailyClaimParticle{
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+
+  background: radial-gradient(circle at 30% 30%,
+    rgba(255,255,255,0.95),
+    rgba(255,255,255,0.18) 55%,
+    rgba(255,255,255,0) 75%);
+
+  box-shadow:
+    0 0 18px rgba(255, 240, 180, 0.22),
+    0 0 26px rgba(40, 190, 255, 0.22);
+
+  transform: translate(0,0) scale(var(--ps, 1));
+  opacity: 0;
+
+  animation: dcParticle var(--pd, 700ms) ease-out var(--pdelay, 0ms) forwards;
+}
+
+@keyframes dcParticle{
+  0% { transform: translate(0, 0) scale(var(--ps, 1)); opacity: 0; }
+  18% { opacity: 1; }
+  100% { transform: translate(var(--dx, 0px), var(--dy, 0px)) scale(calc(var(--ps, 1) * 0.62)); opacity: 0; }
+}
+
+/* =========================
+   CONTENIDO
+   ========================= */
+.dailyClaimModal__top,
+.dailyClaimModal__center{
+  position: relative;
+  z-index: 6;
+}
+
+.dailyClaimModal__top{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.dailyClaimModal__badge{
+  display: inline-flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 3px;
+
+  background:
+    radial-gradient(110% 140% at 50% 0%, rgba(255,255,255,0.12), rgba(255,255,255,0) 55%),
+    linear-gradient(180deg, rgba(255,255,255,0.08), rgba(0,0,0,0.16));
+
+  border: 1px solid rgba(255,255,255,0.14);
+
+  box-shadow:
+    0 14px 36px rgba(0,0,0,0.42),
+    inset 0 1px 0 rgba(255,255,255,0.10);
+
+  .t{
+    font-family: "Nunito", system-ui, sans-serif;
+    font-weight: 1000;
+    font-size: 12px;
+    letter-spacing: 0.10em;
+    color: rgba(255,255,255,0.92);
+    text-transform: uppercase;
+  }
+
+  .s{
+    font-family: "Luckiest Guy", system-ui, sans-serif;
+    font-size: 14px;
+    letter-spacing: 0.06em;
+    color: rgba(255, 235, 170, 0.95);
+    text-shadow: 0 12px 26px rgba(0,0,0,0.35);
+  }
+}
+
+.dailyClaimModal__steps{
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+
+  .dot{
+    width: 9px;
+    height: 9px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.20);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.12);
+
+    &.is-on{
+      background: rgba(255,255,255,0.82);
+      box-shadow:
+        0 0 18px rgba(255,255,255,0.18),
+        inset 0 1px 0 rgba(255,255,255,0.22);
+    }
+  }
+}
+
+.dailyClaimModal__center{
+  display: grid;
+  justify-items: center;
+  text-align: center;
+  gap: 10px;
+  padding: 10px 8px 6px;
+}
+
+.dailyClaimModal__server{
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  margin-top: 2px;
+
+  img{
+    width: 72px;
+    height: 72px;
+    object-fit: contain;
+    border-radius: 3px;
+
+    border: 2px solid rgba(0,0,0,0.55);
+    box-shadow:
+      0 18px 44px rgba(0,0,0,0.52),
+      inset 0 1px 0 rgba(255,255,255,0.10);
+
+    background: rgba(0,0,0,0.15);
+  }
+}
+
+.dailyClaimModal__serverName{
+  font-family: "Nunito", system-ui, sans-serif;
+  font-weight: 1000;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  font-size: 12px;
+  color: rgba(255,255,255,0.86);
+}
+
+.dailyClaimModal__title{
+  font-family: "Luckiest Guy", system-ui, sans-serif;
+  letter-spacing: 0.04em;
+  font-size: clamp(22px, 3.2vw, 30px);
+  line-height: 1;
+  color: rgba(255,255,255,0.98);
+  text-shadow: 0 18px 44px rgba(0,0,0,0.55);
+}
+
+.dailyClaimModal__hint{
+  font-family: "Nunito", system-ui, sans-serif;
+  font-weight: 900;
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  color: rgba(255,255,255,0.72);
+  max-width: 520px;
+}
+
+/* cantidad: numero + icono coin al lado */
+.dailyClaimModal__amountBig{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 2px;
+  margin-bottom: 2px;
+
+  .n{
+    font-family: "Luckiest Guy", system-ui, sans-serif;
+    font-size: clamp(44px, 7vw, 64px);
+    line-height: 1;
+    color: rgba(255, 235, 170, 0.98);
+    text-shadow:
+      0 20px 52px rgba(0,0,0,0.62),
+      0 0 18px rgba(255,235,170,0.16);
+    transform: translateZ(0);
+    animation: dcNumberPop 520ms cubic-bezier(.12,1.2,.22,1) both;
+  }
+
+  .coin{
+    height: clamp(44px, 7vw, 64px);
+    width: auto;
+    image-rendering: pixelated;
+    filter:
+      drop-shadow(0 14px 34px rgba(0,0,0,0.52))
+      drop-shadow(0 0 18px rgba(40, 200, 255, 0.16));
+    transform: translateY(2px) rotate(-10deg);
+    animation: dcCoinPop 520ms cubic-bezier(.12,1.2,.22,1) both;
+  }
+}
+
+@keyframes dcNumberPop{
+  0%{ transform: translateY(10px) scale(0.92); opacity: 0; }
+  45%{ transform: translateY(0px) scale(1.05); opacity: 1; }
+  70%{ transform: translateY(0px) scale(0.99); }
+  100%{ transform: translateY(0px) scale(1); }
+}
+
+@keyframes dcCoinPop{
+  0%{ transform: translateY(10px) scale(0.90) rotate(-18deg); opacity: 0; }
+  45%{ transform: translateY(2px) scale(1.05) rotate(-8deg); opacity: 1; }
+  70%{ transform: translateY(2px) scale(0.99) rotate(-10deg); }
+  100%{ transform: translateY(2px) scale(1) rotate(-10deg); }
+}
+
+.dailyClaimModal__ctaRow{
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 10px;
+  padding-top: 4px;
+  position: relative;
+  z-index: 7;
+}
+
+.dailyClaimBtn{
+  border: 0;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+
+  padding: 12px 16px;
+  border-radius: 4px;
+
+  font-family: "Nunito", system-ui, sans-serif;
+  font-weight: 1000;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 12px;
+
+  color: rgba(255,255,255,0.92);
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.14);
+
+  box-shadow:
+    0 18px 44px rgba(0,0,0,0.52),
+    inset 0 1px 0 rgba(255,255,255,0.10);
+
+  transition: transform 140ms ease, filter 140ms ease;
+
+  &:hover{ transform: translateY(-1px); filter: brightness(1.06); }
+  &:active{ transform: translateY(0px); filter: brightness(0.98); }
+}
+
+.dailyClaimBtn--primary{
+  background:
+    radial-gradient(140% 120% at 50% 0%, rgba(255,255,255,0.18), rgba(255,255,255,0) 55%),
+    linear-gradient(180deg, rgba(255, 200, 90, 0.98), rgba(245, 150, 30, 0.98));
+  border: 1px solid rgba(0,0,0,0.38);
+  color: rgba(18, 12, 6, 0.92);
+  box-shadow:
+    0 22px 54px rgba(0,0,0,0.58),
+    inset 0 1px 0 rgba(255,255,255,0.18);
+}
+
+/* =========================
+   FASES
+   ========================= */
+.dailyClaimModal__panel.is-intro .dailyClaimModal__burst{ opacity: 0; }
+.dailyClaimModal__panel.is-done .dailyClaimModal__burst{ opacity: 0.18; }
+
+.dailyClaimModal__panel.is-intro{
+  animation: dcPanelIn 420ms cubic-bezier(.12,1.2,.22,1) both, dcPanelIdle 1400ms ease-in-out 520ms infinite;
+}
+
+@keyframes dcPanelIdle{
+  0%,100%{ transform: scale(1) translateY(0px); }
+  50%{ transform: scale(1.01) translateY(-2px); }
+}
+
+.dailyClaimModal__panel.is-reveal{
+  animation: dcPanelIn 420ms cubic-bezier(.12,1.2,.22,1) both, dcRevealWiggle 320ms ease-out 0ms 1;
+}
+
+@keyframes dcRevealWiggle{
+  0%{ transform: scale(1) rotate(0deg); }
+  20%{ transform: scale(1.01) rotate(-0.35deg); }
+  45%{ transform: scale(1.02) rotate(0.30deg); }
+  70%{ transform: scale(1.01) rotate(-0.18deg); }
+  100%{ transform: scale(1) rotate(0deg); }
+}
+
+.dailyClaimModal.is-error .dailyClaimModal__panel{
+  animation: dcPanelIn 420ms cubic-bezier(.12,1.2,.22,1) both, dcErrorShake 420ms ease-out 0ms 1;
+}
+
+@keyframes dcErrorShake{
+  0%{ transform: scale(1) translateX(0); }
+  15%{ transform: scale(1) translateX(-8px); }
+  30%{ transform: scale(1) translateX(7px); }
+  45%{ transform: scale(1) translateX(-6px); }
+  60%{ transform: scale(1) translateX(5px); }
+  75%{ transform: scale(1) translateX(-3px); }
+  100%{ transform: scale(1) translateX(0); }
+}
+
+@media (max-width: 520px){
+  .dailyClaimModal__panel--big{ min-height: 330px; }
+  .dailyClaimModal__badge{ padding: 9px 10px; }
+  .dailyClaimModal__server img{ width: 64px; height: 64px; }
+}

@@ -1,0 +1,74 @@
+@use "sass:list";
+@use "../../../base/variables" as *;
+
+@import url("https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Nunito:wght@800;900&display=swap");
+
+@mixin stroke-white($w: 2px, $o: rgba(0,0,0,0.92)) {
+  color: #fff;
+  text-shadow:
+    (-$w) 0 $o,
+    ($w) 0 $o,
+    0 (-$w) $o,
+    0 ($w) $o,
+    (-$w) (-$w) $o,
+    ($w) (-$w) $o,
+    (-$w) ($w) $o,
+    ($w) ($w) $o,
+    0 10px 18px rgba(0,0,0,0.35);
+}
+
+@mixin glass-panel {
+  background: linear-gradient(180deg, rgba(40, 56, 98, 0.92), rgba(22, 30, 54, 0.92));
+  box-shadow:
+    0 1.6rem 2.4rem rgba(0,0,0,0.52),
+    inset 0 0 0 2px rgba(255,255,255,0.06);
+}
+
+@mixin tsfBtnPhysics($bg, $border: rgba(0,0,0,0.38), $color: #f6efe6, $extraShadow...) {
+  position: relative;
+  border-radius: 0.85rem;
+  border: 2px solid $border;
+  background: $bg;
+  color: $color;
+
+  transform: translateY(0) translateZ(0);
+  filter: saturate(1.02);
+  cursor: pointer;
+
+  will-change: transform, box-shadow, filter;
+  transition:
+    transform var(--tMed) var(--easeLift),
+    box-shadow var(--tMed) var(--easeLift),
+    filter var(--tFast) ease,
+    background var(--tFast) ease,
+    border-color var(--tFast) ease,
+    opacity var(--tFast) ease;
+
+  box-shadow: var(--btnShadowRest) #{if(list.length($extraShadow) > 0, ", " + $extraShadow, "")};
+
+  &:hover:not(:disabled) {
+    transform: translateY(var(--btnLift)) translateZ(0);
+    filter: brightness(1.06);
+    box-shadow: var(--btnShadowHover) #{if(list.length($extraShadow) > 0, ", " + $extraShadow, "")};
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(var(--btnPress)) translateZ(0);
+    filter: brightness(0.98);
+    box-shadow: var(--btnShadowPress) #{if(list.length($extraShadow) > 0, ", " + $extraShadow, "")};
+  }
+
+  &:focus { outline: none; }
+  &:focus-visible {
+    outline: 2px solid rgba(210, 176, 113, 0.65);
+    outline-offset: 2px;
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none;
+    filter: none;
+    box-shadow: var(--btnShadowRest) #{if(list.length($extraShadow) > 0, ", " + $extraShadow, "")};
+  }
+}

@@ -1,6 +1,8 @@
 // src/components/Tienda/ui/DailyFreeClaimCard.jsx
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import "../../../styles/components/Tienda/daily-free-claim-card.scss";
+import "../../../styles/components/Tienda/daily-free-claim-burst.scss";
 
 const API = import.meta.env.VITE_API_URL || "https://flancraft-backend.onrender.com";
 
@@ -9,12 +11,12 @@ const SERVER_META = {
   gens: { label: "Gens", icon: "/assets/reinos/gens.webp" },
 };
 
-function msToHMS(ms) {
+function msToShort(ms) {
   const s = Math.max(0, Math.floor(ms / 1000));
   const h = Math.floor(s / 3600);
   const m = Math.floor((s % 3600) / 60);
-  const ss = s % 60;
-  return `${h}h ${m}m ${ss}s`;
+  if (h <= 0) return `${m}min`;
+  return `${h}h ${m}min`;
 }
 
 function clamp(n, a, b) {
@@ -81,8 +83,6 @@ export default function DailyFreeClaimCard() {
   const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(true);
   const [claiming, setClaiming] = useState(false);
-
-  // modal: null | { error } | { steps, stepIndex, phase, nextClaimAt, particlesKey }
   const [modal, setModal] = useState(null);
 
   const token = localStorage.getItem("token");
@@ -92,7 +92,6 @@ export default function DailyFreeClaimCard() {
     return new Date(status.nextClaimAt).getTime() - Date.now();
   }, [status?.nextClaimAt]);
 
-  // ---- Modal helpers (hooks SIEMPRE ejecutados) ----
   const modalStep = useMemo(() => {
     if (!modal || modal.error || !modal.steps) return null;
     return modal.steps[modal.stepIndex] || null;
@@ -111,7 +110,6 @@ export default function DailyFreeClaimCard() {
     return buildParticles(modal.phase === "done" ? 26 : 18);
   }, [modal?.particlesKey]);
 
-  // ---- Fetch status ----
   useEffect(() => {
     let alive = true;
 
@@ -144,14 +142,12 @@ export default function DailyFreeClaimCard() {
     };
   }, [token]);
 
-  // tick de cooldown
   useEffect(() => {
     if (!status?.claimedToday) return;
     const t = setInterval(() => setStatus((s) => ({ ...(s || {}) })), 1000);
     return () => clearInterval(t);
   }, [status?.claimedToday]);
 
-  // ESC + lock scroll modal
   useEffect(() => {
     if (!modal) return;
     const onKey = (e) => e.key === "Escape" && setModal(null);
@@ -224,151 +220,155 @@ export default function DailyFreeClaimCard() {
   const isLocked = !token || status?.notLogged;
   const disabled = !!(status?.claimedToday || claiming);
 
-  // --- Render (UN SOLO RETURN) ---
+  const timerText = status?.claimedToday ? msToShort(nextMs) : null;
+  const ctaText = isLocked ? "BLOQUEADO" : status?.claimedToday ? "RECLAMADO" : claiming ? "RECLAMANDO..." : "GRATIS";
+
   if (loading) return null;
+
+  const modalNode =
+    modal &&
+    createPortal(
+      <div className={`dailyClaimModal dailyClaimModal--dopamine ${modal?.error ? "is-error" : ""}`} role="dialog" aria-modal="true">
+        <div className="dailyClaimModal__backdrop" onClick={() => setModal(null)} />
+
+        <div className={`dailyClaimModal__panel dailyClaimModal__panel--big ${modal?.phase ? `is-${modal.phase}` : ""}`}>
+          {!modal.error ? (
+            <>
+              <div className="dailyClaimModal__fx" aria-hidden="true">
+                <div className="dailyClaimModal__rays" />
+                <div className="dailyClaimModal__shine" />
+                <div className="dailyClaimModal__glow" />
+                <div className="dailyClaimModal__burst" />
+                <div className="dailyClaimModal__particles">
+                  {particles.map((p) => (
+                    <i
+                      key={p.id}
+                      className="dailyClaimParticle"
+                      style={{
+                        "--dx": `${p.dx.toFixed(1)}px`,
+                        "--dy": `${p.dy.toFixed(1)}px`,
+                        "--ps": p.s.toFixed(2),
+                        "--pd": `${p.d.toFixed(0)}ms`,
+                        "--pdelay": `${p.delay.toFixed(0)}ms`,
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <div className="dailyClaimModal__top">
+                <div className="dailyClaimModal__badge">
+                  <span className="t">RECOMPENSA DIARIA</span>
+                  <span className="s">Gratis</span>
+                </div>
+
+                {modal?.steps?.length > 1 && (
+                  <div className="dailyClaimModal__steps">
+                    {modal.steps.map((_, i) => (
+                      <span key={i} className={`dot ${i === modal.stepIndex ? "is-on" : ""}`} />
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="dailyClaimModal__center">
+                {stepMeta?.icon ? (
+                  <div className="dailyClaimModal__server">
+                    <img src={stepMeta.icon} alt={stepMeta.label} draggable="false" />
+                    <div className="dailyClaimModal__serverName">{stepMeta.label}</div>
+                  </div>
+                ) : (
+                  <div className="dailyClaimModal__serverName">{stepMeta?.label}</div>
+                )}
+
+                {modal.phase === "intro" && (
+                  <>
+                    <div className="dailyClaimModal__title">Preparando recompensa…</div>
+                    <div className="dailyClaimModal__hint">Toca para revelar</div>
+                    <div className="dailyClaimModal__ctaRow">
+                      <button type="button" className="dailyClaimBtn dailyClaimBtn--primary" onClick={nextStep}>
+                        Revelar
+                      </button>
+                    </div>
+                  </>
+                )}
+
+                {modal.phase === "reveal" && (
+                  <>
+                    <div className="dailyClaimModal__title">Has ganado</div>
+
+                    <div className="dailyClaimModal__amountBig" aria-label="Cantidad de coins ganados">
+                      <span className="n">{formatInt(countVal)}</span>
+                      <img className="coin" src="/tienda/assets/coin.png" alt="Coin" draggable="false" />
+                    </div>
+
+                    <div className="dailyClaimModal__hint">Se entregan automáticamente en el servidor</div>
+
+                    <div className="dailyClaimModal__ctaRow">
+                      <button type="button" className="dailyClaimBtn dailyClaimBtn--primary" onClick={nextStep}>
+                        {modal.stepIndex < modal.steps.length - 1 ? "Siguiente" : "Continuar"}
+                      </button>
+                    </div>
+                  </>
+                )}
+
+                {modal.phase === "done" && (
+                  <>
+                    <div className="dailyClaimModal__title">Completado</div>
+                    <div className="dailyClaimModal__hint">Vuelve mañana para tu próxima recompensa.</div>
+                    <div className="dailyClaimModal__ctaRow">
+                      <button type="button" className="dailyClaimBtn" onClick={() => setModal(null)}>
+                        Cerrar
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              <button className="dailyClaimModal__x" type="button" aria-label="Cerrar" onClick={() => setModal(null)}>
+                ✕
+              </button>
+
+              <button className="dailyClaimModal__clickCatcher" type="button" aria-label="Siguiente" onClick={nextStep} />
+            </>
+          ) : (
+            <>
+              <div className="dailyClaimModal__title">No se pudo reclamar</div>
+              <div className="dailyClaimModal__hint">{modal.error}</div>
+              <div className="dailyClaimModal__ctaRow">
+                <button type="button" className="dailyClaimBtn" onClick={() => setModal(null)}>
+                  Cerrar
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>,
+      document.body
+    );
 
   return (
     <>
-      {isLocked ? (
-        <div className="dailyClaimCard is-locked">
-          <div className="dailyClaimCard__title">Recompensa diaria</div>
-          <div className="dailyClaimCard__desc">Vincula tu cuenta y entra para reclamar.</div>
-          <button type="button" disabled>
-            Bloqueado
-          </button>
+      <div className={`dailyClaimCard ${disabled ? "is-cooldown" : ""} ${isLocked ? "is-locked" : ""}`}>
+        <div className="dailyClaimCard__title">REGALO DIARIO</div>
+
+        <div className="dailyClaimCard__timer" aria-hidden="true">
+          {timerText ? timerText : "Disponible"}
         </div>
-      ) : (
-        <div className={`dailyClaimCard ${disabled ? "is-cooldown" : ""}`}>
-          <div className="dailyClaimCard__title">Claim gratuito diario</div>
-          <div className="dailyClaimCard__desc">Recibe entre 10 y 35 coins.</div>
 
-          {status?.claimedToday ? (
-            <div className="dailyClaimCard__cooldown">Vuelve en {msToHMS(nextMs)}</div>
-          ) : (
-            <div className="dailyClaimCard__ready">Disponible ahora</div>
-          )}
-
-          <button type="button" onClick={handleClaim} disabled={disabled}>
-            {claiming ? "Reclamando..." : status?.claimedToday ? "Reclamado" : "Reclamar"}
-          </button>
-        </div>
-      )}
-
-      {modal && (
-        <div className={`dailyClaimModal dailyClaimModal--dopamine ${modal?.error ? "is-error" : ""}`} role="dialog" aria-modal="true">
-          <div className="dailyClaimModal__backdrop" onClick={() => setModal(null)} />
-
-          <div className={`dailyClaimModal__panel dailyClaimModal__panel--big ${modal?.phase ? `is-${modal.phase}` : ""}`}>
-            {!modal.error ? (
-              <>
-                <div className="dailyClaimModal__fx" aria-hidden="true">
-                  <div className="dailyClaimModal__shine" />
-                  <div className="dailyClaimModal__glow" />
-                  <div className="dailyClaimModal__burst" />
-                  <div className="dailyClaimModal__particles">
-                    {particles.map((p) => (
-                      <i
-                        key={p.id}
-                        className="dailyClaimParticle"
-                        style={{
-                          "--dx": `${p.dx.toFixed(1)}px`,
-                          "--dy": `${p.dy.toFixed(1)}px`,
-                          "--ps": p.s.toFixed(2),
-                          "--pd": `${p.d.toFixed(0)}ms`,
-                          "--pdelay": `${p.delay.toFixed(0)}ms`,
-                        }}
-                      />
-                    ))}
-                  </div>
-                </div>
-
-                <div className="dailyClaimModal__top">
-                  <div className="dailyClaimModal__badge">
-                    <span className="t">RECOMPENSA DIARIA</span>
-                    <span className="s">Gratis</span>
-                  </div>
-
-                  {modal?.steps?.length > 1 && (
-                    <div className="dailyClaimModal__steps">
-                      {modal.steps.map((_, i) => (
-                        <span key={i} className={`dot ${i === modal.stepIndex ? "is-on" : ""}`} />
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <div className="dailyClaimModal__center">
-                  {stepMeta?.icon ? (
-                    <div className="dailyClaimModal__server">
-                      <img src={stepMeta.icon} alt={stepMeta.label} draggable="false" />
-                      <div className="dailyClaimModal__serverName">{stepMeta.label}</div>
-                    </div>
-                  ) : (
-                    <div className="dailyClaimModal__serverName">{stepMeta?.label}</div>
-                  )}
-
-                  {modal.phase === "intro" && (
-                    <>
-                      <div className="dailyClaimModal__title">Preparando recompensa…</div>
-                      <div className="dailyClaimModal__hint">Toca para revelar</div>
-                      <div className="dailyClaimModal__ctaRow">
-                        <button type="button" className="dailyClaimBtn dailyClaimBtn--primary" onClick={nextStep}>
-                          Revelar
-                        </button>
-                      </div>
-                    </>
-                  )}
-
-                  {modal.phase === "reveal" && (
-                    <>
-                      <div className="dailyClaimModal__title">Has ganado</div>
-                      <div className="dailyClaimModal__amountBig">
-                        <span className="n">{formatInt(countVal)}</span>
-                        <span className="u">COINS</span>
-                      </div>
-                      <div className="dailyClaimModal__hint">Se entregan automáticamente en el servidor</div>
-
-                      <div className="dailyClaimModal__ctaRow">
-                        <button type="button" className="dailyClaimBtn dailyClaimBtn--primary" onClick={nextStep}>
-                          {modal.stepIndex < modal.steps.length - 1 ? "Siguiente" : "Continuar"}
-                        </button>
-                      </div>
-                    </>
-                  )}
-
-                  {modal.phase === "done" && (
-                    <>
-                      <div className="dailyClaimModal__title">Completado</div>
-                      <div className="dailyClaimModal__hint">Vuelve mañana para tu próxima recompensa.</div>
-                      <div className="dailyClaimModal__ctaRow">
-                        <button type="button" className="dailyClaimBtn" onClick={() => setModal(null)}>
-                          Cerrar
-                        </button>
-                      </div>
-                    </>
-                  )}
-                </div>
-
-                <button className="dailyClaimModal__x" type="button" aria-label="Cerrar" onClick={() => setModal(null)}>
-                  ✕
-                </button>
-
-                <button className="dailyClaimModal__clickCatcher" type="button" aria-label="Siguiente" onClick={nextStep} />
-              </>
-            ) : (
-              <>
-                <div className="dailyClaimModal__title">No se pudo reclamar</div>
-                <div className="dailyClaimModal__hint">{modal.error}</div>
-                <div className="dailyClaimModal__ctaRow">
-                  <button type="button" className="dailyClaimBtn" onClick={() => setModal(null)}>
-                    Cerrar
-                  </button>
-                </div>
-              </>
-            )}
+        <div className="dailyClaimCard__sheet">
+          <div className="dailyClaimCard__art" aria-hidden="true">
+            <img className="dailyClaimCard__coin coin--back" src="/tienda/assets/coin.png" alt="" draggable="false" />
+            <img className="dailyClaimCard__coin coin--front" src="/tienda/assets/coin.png" alt="" draggable="false" />
           </div>
         </div>
-      )}
+
+        <button type="button" className="dailyClaimCard__cta" onClick={!disabled && !isLocked ? handleClaim : undefined} disabled={disabled || isLocked}>
+          <span className="dailyClaimCard__ctaLabel">{ctaText}</span>
+        </button>
+      </div>
+
+      {modalNode}
     </>
   );
 }

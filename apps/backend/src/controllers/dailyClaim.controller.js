@@ -1,46 +1,108 @@
 // src/controllers/dailyClaim.controller.js
 const db = require("../models/db");
 
-function getMadridDayKey(date = new Date()) {
-  const fmt = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Europe/Madrid",
+const TZ = "Europe/Madrid";
+const DEBUG = String(process.env.DAILY_CLAIM_DEBUG || "").trim() === "1" || process.env.NODE_ENV !== "production";
+
+// Objetivo mensual POR SERVIDOR
+const MONTH_TARGET_PER_SERVER = 600;
+
+// Servidores a los que se entrega siempre
+const SERVIDORES = ["oneblock", "gens"];
+
+function num(v, def) {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : def;
+}
+
+/**
+ * CAP diario "no se pasa de la raya".
+ * Puedes dejarlo automático o forzarlo con env:
+ * - DAILY_CLAIM_HARD_CAP=50  -> nunca más de 50
+ */
+function getHardCap(lastDay) {
+  const forced = num(process.env.DAILY_CLAIM_HARD_CAP, 0);
+  if (forced > 0) return Math.max(1, Math.floor(forced));
+
+  // Auto: promedio mensual * multiplicador, con límites globales.
+  const avg = MONTH_TARGET_PER_SERVER / Math.max(1, lastDay);
+  const mult = num(process.env.DAILY_CLAIM_CAP_MULT, 2.2);
+  const minCap = num(process.env.DAILY_CLAIM_MIN_CAP, 20);
+  const maxCap = num(process.env.DAILY_CLAIM_MAX_CAP, 80);
+
+  const cap = Math.round(avg * mult);
+  return Math.max(1, Math.max(minCap, Math.min(maxCap, cap)));
+}
+
+// ---- Fechas Madrid seguras ----
+function fmtMadridParts(date = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: TZ,
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
-  });
-  return fmt.format(date); // YYYY-MM-DD
-}
+  }).formatToParts(date);
 
-function getMadridNowDate() {
-  return new Date(new Date().toLocaleString("en-US", { timeZone: "Europe/Madrid" }));
-}
-
-function getMonthMetaMadrid() {
-  const now = getMadridNowDate();
-  const y = now.getFullYear();
-  const m = now.getMonth(); // 0..11
-
-  const firstUTC = new Date(Date.UTC(y, m, 1));
-  const nextUTC = new Date(Date.UTC(y, m + 1, 1));
-  const lastDay = new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
+  const map = {};
+  for (const p of parts) map[p.type] = p.value;
 
   return {
-    firstISO: firstUTC.toISOString().slice(0, 10),
-    nextISO: nextUTC.toISOString().slice(0, 10),
-    lastDay,
-    dayOfMonth: now.getDate(),
+    y: Number(map.year),
+    m: Number(map.month), // 1..12
+    d: Number(map.day),   // 1..31
   };
 }
 
-function randomInt(min, max) {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
+function madridDayKey(date = new Date()) {
+  const { y, m, d } = fmtMadridParts(date);
+  return `${String(y).padStart(4, "0")}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+}
+
+function monthMetaMadrid(date = new Date()) {
+  const { y, m, d } = fmtMadridParts(date); // m 1..12
+  const lastDay = new Date(Date.UTC(y, m, 0)).getUTCDate(); // último día del mes m
+  const firstISO = `${String(y).padStart(4, "0")}-${String(m).padStart(2, "0")}-01`;
+
+  const nextY = m === 12 ? y + 1 : y;
+  const nextM = m === 12 ? 1 : m + 1;
+  const nextISO = `${String(nextY).padStart(4, "0")}-${String(nextM).padStart(2, "0")}-01`;
+
+  return { y, m, dayOfMonth: d, lastDay, firstISO, nextISO };
 }
 
 function nextMidnightMadridISO() {
-  const nowMadrid = getMadridNowDate();
-  const next = new Date(nowMadrid);
-  next.setHours(24, 0, 0, 0);
-  return next.toISOString();
+  // Visual: mañana 00:00 (aprox). El control real es claim_date (Madrid).
+  const { y, m, d } = fmtMadridParts(new Date());
+  const baseUTC = new Date(Date.UTC(y, m - 1, d));
+  baseUTC.setUTCDate(baseUTC.getUTCDate() + 1);
+  return baseUTC.toISOString();
+}
+
+// ---- Helpers ----
+function randomInt(min, max) {
+  const a = Math.ceil(min);
+  const b = Math.floor(max);
+  return Math.floor(Math.random() * (b - a + 1)) + a;
+}
+
+/**
+ * Random "sesgado" alrededor de un centro, sin salir de [lo, hi]
+ * Usa spreadRatio para acotar variación alrededor del avg.
+ */
+function pickBiased(lo, hi, center, spreadRatio = 0.35) {
+  if (lo >= hi) return lo;
+
+  const range = hi - lo;
+  const span = Math.max(1, Math.round(range * spreadRatio));
+
+  const c = Math.round(center);
+  const a = Math.max(lo, c - span);
+  const b = Math.min(hi, c + span);
+
+  // triangular distribution (más probabilidad cerca del centro)
+  const r = (Math.random() + Math.random()) / 2; // 0..1
+  const val = Math.round(a + r * (b - a));
+  return Math.max(lo, Math.min(hi, val));
 }
 
 async function getMonthSum(uuid, firstISO, nextISO) {
@@ -55,30 +117,95 @@ async function getMonthSum(uuid, firstISO, nextISO) {
 
   const total = (data || []).reduce((acc, r) => acc + (Number(r.amount) || 0), 0);
   const daysClaimed = (data || []).length;
-
   return { total, daysClaimed };
 }
 
-function computeTodayAmount({ totalSoFar, dayOfMonth, lastDay, target, min, max }) {
-  const daysLeft = (lastDay - dayOfMonth) + 1; // contando hoy
-  const remaining = target - totalSoFar;
+/**
+ * Exacto si se puede, sin "dump" final:
+ *
+ * - CAP diario duro: nunca se pasa.
+ * - Si remaining es alcanzable con daysLeft * cap:
+ *     elegimos amount en un rango [lo, hi] que GARANTIZA que el resto de días
+ *     (dando como máximo cap y como mínimo 1) puede cerrar exacto.
+ * - Si NO es alcanzable (no fue constante): no compensamos -> damos normal (1..cap)
+ *
+ * Último día:
+ * - Si remaining <= cap -> se da remaining (cierre exacto)
+ * - Si remaining > cap -> se da cap y no se llega (por no constancia / imposible)
+ */
+function computeTodayAmountExactIfPossible({ totalSoFar, dayOfMonth, lastDay, target, cap }) {
+  const daysLeft = lastDay - dayOfMonth + 1;
+  const remaining = Math.max(0, target - totalSoFar);
+  const spread = num(process.env.DAILY_CLAIM_SPREAD, 0.35);
 
-  const low = Math.max(min, remaining - (daysLeft - 1) * max);
-  const high = Math.min(max, remaining - (daysLeft - 1) * min);
+  // Si ya llegó (o se pasó por pruebas), no inflamos: damos 1 (o 0 si quieres)
+  if (remaining <= 0) {
+    return {
+      amount: 1,
+      debug: { reason: "already_reached_target", daysLeft, remaining, totalSoFar, target, cap },
+    };
+  }
 
-  if (low > high) return null;
-  return randomInt(low, high);
+  // Último día: cierre exacto si cabe en cap, si no, cap y ya está
+  if (daysLeft <= 1) {
+    const amount = Math.min(cap, remaining);
+    return {
+      amount,
+      debug: { reason: remaining <= cap ? "last_day_exact" : "last_day_capped_not_feasible", daysLeft, remaining, totalSoFar, target, cap },
+    };
+  }
+
+  // ¿Es posible llegar al target con lo que queda sin pasar el cap?
+  const feasible = remaining <= daysLeft * cap;
+
+  // Centro = promedio necesario
+  const avgNeeded = remaining / daysLeft;
+
+  if (feasible) {
+    // Rango que garantiza cierre exacto en los días restantes:
+    // mínimo hoy para que el resto no tenga que superar cap
+    const lo = Math.max(1, remaining - (daysLeft - 1) * cap);
+    // máximo hoy para que el resto al menos con 1 por día pueda completar exacto
+    const hi = Math.min(cap, remaining - (daysLeft - 1) * 1);
+
+    if (lo > hi) {
+      // raro, pero por seguridad: caemos a algo estable
+      const amount = Math.min(cap, Math.max(1, Math.round(avgNeeded)));
+      return {
+        amount,
+        debug: { reason: "feasible_but_bounds_invalid_fallback", daysLeft, remaining, totalSoFar, target, cap, avg: avgNeeded, lo, hi },
+      };
+    }
+
+    const amount = pickBiased(lo, hi, avgNeeded, spread);
+    return {
+      amount,
+      debug: { reason: "exact_feasible", daysLeft, remaining, totalSoFar, target, cap, avg: avgNeeded, lo, hi },
+    };
+  }
+
+  // NOT FEASIBLE: el jugador no fue constante o ya es imposible cerrar sin superar cap.
+  // No compensamos. Damos algo razonable 1..cap (sesgado a avg, pero limitado).
+  const lo = 1;
+  const hi = cap;
+  const amount = pickBiased(lo, hi, Math.min(cap, avgNeeded), spread);
+  return {
+    amount,
+    debug: { reason: "not_feasible_no_compensation", daysLeft, remaining, totalSoFar, target, cap, avg: avgNeeded, lo, hi },
+  };
 }
 
 // POST /api/daily-claim
 exports.claimDaily = async (req, res) => {
+  let step = "start";
   try {
     const uuid = req.usuario?.uuid;
     if (!uuid) return res.status(401).json({ error: "No autorizado." });
 
-    const today = getMadridDayKey(new Date());
+    step = "today_key";
+    const today = madridDayKey(new Date());
 
-    // 1) Jugador
+    step = "fetch_usuario";
     const { data: jugador, error: errJugador } = await db
       .from("usuarios")
       .select("uuid, uid")
@@ -89,7 +216,7 @@ exports.claimDaily = async (req, res) => {
     if (!jugador) return res.status(404).json({ error: "Jugador no encontrado." });
     if (!jugador.uid) return res.status(400).json({ error: "Usuario no vinculado correctamente." });
 
-    // 2) Ya reclamado hoy? (historial)
+    step = "check_claim_today";
     const { data: yaHoy, error: errYa } = await db
       .from("daily_claims_log")
       .select("amount")
@@ -106,31 +233,42 @@ exports.claimDaily = async (req, res) => {
       });
     }
 
-    // 3) Objetivo mensual y límites
-    const TARGET = Number(process.env.DAILY_CLAIM_MONTH_TARGET || 800);
-    const MIN = Number(process.env.DAILY_CLAIM_MIN || 10);
-    const MAX = Number(process.env.DAILY_CLAIM_MAX || 35);
+    step = "month_meta";
+    const { firstISO, nextISO, lastDay, dayOfMonth, y, m } = monthMetaMadrid(new Date());
 
-    // 4) Suma del mes (historial)
-    const { firstISO, nextISO, lastDay, dayOfMonth } = getMonthMetaMadrid();
+    step = "month_sum";
     const { total: totalSoFar, daysClaimed } = await getMonthSum(uuid, firstISO, nextISO);
 
-    const amount = computeTodayAmount({
+    const target = MONTH_TARGET_PER_SERVER;
+    const cap = getHardCap(lastDay);
+
+    step = "compute_amount";
+    const { amount, debug } = computeTodayAmountExactIfPossible({
       totalSoFar,
       dayOfMonth,
       lastDay,
-      target: TARGET,
-      min: MIN,
-      max: MAX,
+      target,
+      cap,
     });
 
-    if (amount === null) {
-      return res.status(500).json({
-        error: "Configuración inválida del claim mensual (rango imposible).",
+    if (DEBUG) {
+      console.log("[DAILY_CLAIM DEBUG]", {
+        uuid,
+        today,
+        month: `${y}-${String(m).padStart(2, "0")}`,
+        firstISO,
+        nextISO,
+        dayOfMonth,
+        lastDay,
+        targetPerServer: target,
+        hardCap: cap,
+        sum: { totalSoFar, daysClaimed },
+        calc: debug,
+        playerUid: jugador.uid,
       });
     }
 
-    // 5) Insert del día en historial (PK evita doble claim real)
+    step = "insert_daily_claims_log";
     const { error: errInsert } = await db
       .from("daily_claims_log")
       .insert({ uuid_jugador: uuid, claim_date: today, amount });
@@ -146,35 +284,39 @@ exports.claimDaily = async (req, res) => {
       throw errInsert;
     }
 
-    // 6) Comandos pendientes (oneblock + gens)
+    step = "insert_comandos_pendientes";
     const player = jugador.uid;
     const cmd = `coins give ${player} ${amount}`;
-    const servidores = ["oneblock", "gens"];
+    const servidores = SERVIDORES;
 
-    const { error: errCmds } = await db
-      .from("comandos_pendientes")
-      .insert(
-        servidores.map((s) => ({
-          uuid_jugador: uuid,
-          nombre_jugador: player,
-          comando: cmd,
-          servidor: s,
-        }))
-      );
+    const { error: errCmds } = await db.from("comandos_pendientes").insert(
+      servidores.map((s) => ({
+        uuid_jugador: String(uuid), // TEXT en tabla
+        nombre_jugador: player,
+        comando: cmd,
+        servidor: s,
+      }))
+    );
 
-    if (errCmds) throw errCmds;
+    if (errCmds) {
+      // Rollback: si falla comandos, eliminamos el claim del día para no bloquear al user
+      await db.from("daily_claims_log").delete().eq("uuid_jugador", uuid).eq("claim_date", today);
+      throw errCmds;
+    }
 
-    // 7) Upsert estado resumen (tu tabla daily_claims actual)
-    const nuevoStreak = (daysClaimed || 0) + 1; // (si luego quieres streak real consecutivo, lo cambiamos)
+    step = "upsert_daily_claims";
+    const nuevoStreak = (daysClaimed || 0) + 1;
+    const nowISO = new Date().toISOString();
+
     const { error: errUpsert } = await db
       .from("daily_claims")
       .upsert(
         {
           uuid_jugador: uuid,
-          last_claim_at: new Date().toISOString(),
+          last_claim_at: nowISO,
           last_amount: amount,
           streak: nuevoStreak,
-          updated_at: new Date().toISOString(),
+          updated_at: nowISO,
         },
         { onConflict: "uuid_jugador" }
       );
@@ -186,24 +328,36 @@ exports.claimDaily = async (req, res) => {
       amount,
       servers: servidores,
       nextClaimAt: nextMidnightMadridISO(),
-      monthTarget: TARGET,
-      monthSoFar: totalSoFar + amount,
+      monthTargetPerServer: target,
+      monthSoFarPerServer: totalSoFar + amount,
       dayIndex: nuevoStreak,
+      debug: DEBUG ? { today, firstISO, nextISO, lastDay, dayOfMonth, totalSoFar, daysClaimed, cap, calc: debug } : undefined,
     });
   } catch (err) {
-    console.error("[DAILY CLAIM ERROR]", err);
-    return res.status(500).json({ error: "Error interno al reclamar recompensa diaria." });
+    console.error("[DAILY CLAIM ERROR]", { step, err });
+
+    return res.status(500).json({
+      error: "Error interno al reclamar recompensa diaria.",
+      step,
+      details: err?.message || String(err),
+      code: err?.code || null,
+      hint: err?.hint || null,
+      where: err?.details || null,
+    });
   }
 };
 
 // GET /api/daily-claim/status
 exports.getDailyStatus = async (req, res) => {
+  let step = "start";
   try {
     const uuid = req.usuario?.uuid;
     if (!uuid) return res.status(401).json({ error: "No autorizado." });
 
-    const today = getMadridDayKey(new Date());
+    step = "today_key";
+    const today = madridDayKey(new Date());
 
+    step = "fetch_today_log";
     const { data: hoyRow, error: errHoy } = await db
       .from("daily_claims_log")
       .select("amount, created_at")
@@ -213,18 +367,40 @@ exports.getDailyStatus = async (req, res) => {
 
     if (errHoy) throw errHoy;
 
-    const { firstISO, nextISO } = getMonthMetaMadrid();
+    step = "month_meta";
+    const { firstISO, nextISO, lastDay, dayOfMonth } = monthMetaMadrid(new Date());
+
+    step = "month_sum";
     const { total: monthSoFar, daysClaimed } = await getMonthSum(uuid, firstISO, nextISO);
+
+    const cap = getHardCap(lastDay);
+
+    // Info útil (opcional) para UI: si aún es posible llegar exacto sin dump
+    const daysLeft = lastDay - dayOfMonth + 1;
+    const remaining = Math.max(0, MONTH_TARGET_PER_SERVER - monthSoFar);
+    const feasibleToCloseExact = remaining <= daysLeft * cap;
 
     return res.status(200).json({
       claimedToday: !!hoyRow,
       lastAmount: hoyRow?.amount ?? null,
       nextClaimAt: nextMidnightMadridISO(),
-      monthSoFar,
+      monthSoFarPerServer: monthSoFar,
       daysClaimed,
+      monthTargetPerServer: MONTH_TARGET_PER_SERVER,
+      dailyHardCap: cap,
+      feasibleToCloseExact,
+      debug: DEBUG ? { today, firstISO, nextISO, cap, remaining, daysLeft } : undefined,
     });
   } catch (err) {
-    console.error("[DAILY STATUS ERROR]", err);
-    return res.status(500).json({ error: "Error interno al obtener estado diario." });
+    console.error("[DAILY STATUS ERROR]", { step, err });
+
+    return res.status(500).json({
+      error: "Error interno al obtener estado diario.",
+      step,
+      details: err?.message || String(err),
+      code: err?.code || null,
+      hint: err?.hint || null,
+      where: err?.details || null,
+    });
   }
 };
