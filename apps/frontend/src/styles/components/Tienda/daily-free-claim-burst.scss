@@ -602,8 +602,3 @@
   100%{ transform: scale(1) translateX(0); }
 }
 
-@media (max-width: 520px){
-  .dailyClaimModal__panel--big{ min-height: 330px; }
-  .dailyClaimModal__badge{ padding: 9px 10px; }
-  .dailyClaimModal__server img{ width: 64px; height: 64px; }
-}

@@ -1,29 +1,880 @@
-@use "./mixins" as *;
+/* src/styles/components/Tienda/storefront/_responsive.scss */
 
+/* ==========================================================================
+   01) HEADER SIGN (cartel "TIENDA" colgado del navbar)
+   - Desktop: no tocamos.
+   - Responsive: más pequeño + más arriba (no invade los rangos).
+   ========================================================================== */
 
-/* storefront/_responsive.scss */
-@media (max-width: 62rem) {
-  .tienda-storefront.tsf-brawl2 { --content-w: 52rem; }
+@media (max-width: 1024px) {
+  .tienda-storefront.tsf-brawl2 {
+    --tsf-sign-w: clamp(180px, 30vw, 280px);
+    --tsf-sign-drop: clamp(-24px, -2.2vw, -14px);
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-header--fixed { top: env(safe-area-inset-top); }
+
+  .tienda-storefront.tsf-brawl2 .tsf-signImg {
+    width: var(--tsf-sign-w);
+    margin: 0 auto;
+    transform: translateY(var(--tsf-sign-drop));
+    transform-origin: top center;
+    filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.42));
+    pointer-events: none;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-signImg > img {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
 }
 
-@media (max-width: 56rem) {
-  .tienda-storefront.tsf-brawl2 { --content-w: 46rem; }
+@media (max-width: 768px) {
+  .tienda-storefront.tsf-brawl2 {
+    --tsf-sign-w: clamp(160px, 44vw, 230px);
+    --tsf-sign-drop: clamp(-28px, -3.4vw, -18px);
+  }
 }
 
-@media (max-width: 52rem) {
-  .tsf-ranksRow { grid-template-columns: 1fr; }
-  .tsf-rank { max-width: min(24rem, 92%); }
-  .tsf-tabs { grid-auto-flow: row; grid-auto-columns: unset; width: min(26rem, 96%); }
-  .tienda-storefront.tsf-brawl2 { --sign-clear: clamp(5.8rem, 12vw, 8.6rem); }
+@media (max-width: 480px) {
+  .tienda-storefront.tsf-brawl2 {
+    --tsf-sign-w: clamp(145px, 54vw, 205px);
+    --tsf-sign-drop: -22px;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-signImg {
+    filter: drop-shadow(0 9px 16px rgba(0, 0, 0, 0.44));
+  }
 }
 
-@media (max-width: 40rem) {
-  .tsf-coinsGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .tsf-coinBadges { max-width: 72%; }
+@media (max-width: 360px) {
+  .tienda-storefront.tsf-brawl2 {
+    --tsf-sign-w: clamp(135px, 60vw, 190px);
+    --tsf-sign-drop: -22px;
+  }
 }
+
+/* ==========================================================================
+   03) RANK CARDS
+   - Móvil: 1 columna + separación real del cartel.
+   - Ajuste pedido: el square SUBE un poco para que "NOVA/ALPHA" quede centrado
+     entre el borde superior del square y el texto PERMANENTE (más “en medio”).
+   ========================================================================== */
+
+@media (max-width: 1024px) {
+  .tienda-storefront.tsf-brawl2 .tsf-ranksRow { gap: 14px; }
+  .tienda-storefront.tsf-brawl2 { --rank-size: clamp(170px, 22vw, 240px); }
+  .tienda-storefront.tsf-brawl2 .tsf-rankLabel { top: clamp(-0.45rem, -1.2vw, -1.05rem); }
+  .tienda-storefront.tsf-brawl2 .tsf-ctaSplitValue { font-size: 0.98rem; }
+  .tienda-storefront.tsf-brawl2 .tsf-ctaCoinIcon { width: 16px; height: 16px; }
+}
+
+@media (max-width: 768px) {
+  .tienda-storefront.tsf-brawl2 .tsf-ranks { margin-top: 118px; }
+
+  .tienda-storefront.tsf-brawl2 .tsf-ranksRow {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    gap: 28px;
+  }
+
+  .tienda-storefront.tsf-brawl2 { --rank-size: min(86vw, 320px); }
+
+  .tienda-storefront.tsf-brawl2 .tsf-rank{
+    max-width: var(--rank-size);
+
+    --cta-height: 38px;
+    --cta-bottom: 6.5%;
+    --cta-tilt: -2.5deg;
+    --cta-inset-x: -6%;
+    --cta-inset-y: -8%;
+
+    /* Anclas */
+    --m-label-top: -0.95rem;
+    --m-perma-offset: 2.20rem;
+
+    /* NUEVO: cuánto subimos el square */
+    --m-square-lift: 10px;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-rankLabel{
+    top: var(--m-label-top);
+    display: grid;
+    justify-items: center;
+    line-height: 1;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-rankTop { font-size: 0.90rem; }
+  .tienda-storefront.tsf-brawl2 .tsf-rankName { font-size: 1.78rem; }
+
+  .tienda-storefront.tsf-brawl2 .tsf-perma{
+    left: 50%;
+    top: calc(var(--m-label-top) + var(--m-perma-offset));
+    transform: translateX(-50%);
+    z-index: 7;
+    opacity: 1;
+    pointer-events: none;
+    font-size: 1.02rem;
+    line-height: 1;
+  }
+
+  /* ✅ Ajuste: subir el square SIN mover el bloque de rangos global */
+  .tienda-storefront.tsf-brawl2 .tsf-square{
+    margin-top: calc(16px - var(--m-square-lift));
+  }
+
+  /* y damos un pelín más de aire al primer contenido del square para que no “muerda” */
+  .tienda-storefront.tsf-brawl2 .tsf-squareCta{
+    bottom: calc(var(--cta-bottom) - 0.3%);
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-ctaSplitValue { font-size: 1.02rem; }
+  .tienda-storefront.tsf-brawl2 .tsf-ctaCoinIcon { width: 18px; height: 18px; }
+
+  .tienda-storefront.tsf-brawl2 .tsf-best{
+    top: -0.45rem;
+    right: -0.45rem;
+    font-size: 0.72rem;
+    padding: 0.42rem 0.64rem 0.40rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .tienda-storefront.tsf-brawl2 .tsf-ranks { margin-top: 126px; }
+  .tienda-storefront.tsf-brawl2 { --rank-size: min(90vw, 300px); }
+
+  .tienda-storefront.tsf-brawl2 .tsf-rank{
+    --cta-height: 36px;
+    --cta-bottom: 6%;
+    --cta-tilt: -2.25deg;
+
+    --m-label-top: -0.90rem;
+    --m-perma-offset: 2.10rem;
+
+    /* un pelín menos lift en móviles pequeños */
+    --m-square-lift: 8px;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-rankName { font-size: 1.65rem; }
+  .tienda-storefront.tsf-brawl2 .tsf-perma { font-size: 0.98rem; }
+  .tienda-storefront.tsf-brawl2 .tsf-ctaSplitValue { font-size: 0.98rem; }
+
+  .tienda-storefront.tsf-brawl2 .tsf-square{
+    margin-top: calc(16px - var(--m-square-lift));
+  }
+}
+
+@media (max-width: 360px) {
+  .tienda-storefront.tsf-brawl2 .tsf-ranks { margin-top: 132px; }
+  .tienda-storefront.tsf-brawl2 { --rank-size: 94vw; }
+
+  .tienda-storefront.tsf-brawl2 .tsf-rank{
+    --cta-height: 34px;
+    --cta-bottom: 5.5%;
+
+    --m-label-top: -0.88rem;
+    --m-perma-offset: 2.05rem;
+
+    --m-square-lift: 7px;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-rankName { font-size: 1.55rem; }
+  .tienda-storefront.tsf-brawl2 .tsf-perma { font-size: 0.94rem; }
+
+  .tienda-storefront.tsf-brawl2 .tsf-ctaSplitCoins { gap: 5px; }
+  .tienda-storefront.tsf-brawl2 .tsf-ctaCoinIcon { width: 16px; height: 16px; }
+
+  .tienda-storefront.tsf-brawl2 .tsf-square{
+    margin-top: calc(16px - var(--m-square-lift));
+  }
+}
+
+/* ==========================================================================
+   00) TAP / SELECCIÓN (quita highlight/selección rara en móvil)
+   ========================================================================== */
 
 @media (hover: none) and (pointer: coarse) {
-  .tsf-coinWrap { transition: none; }
-  .tsf-coinIcon { animation: none; }
-  .tsf-tab:hover { transform: none; }
+  .tienda-storefront.tsf-brawl2,
+  .tienda-storefront.tsf-brawl2 * {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+  }
+
+  .tienda-storefront.tsf-brawl2 { user-select: none; }
+
+  .tienda-storefront.tsf-brawl2 button,
+  .tienda-storefront.tsf-brawl2 [role="button"],
+  .tienda-storefront.tsf-brawl2 a {
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    outline: none;
+  }
+
+  .tienda-storefront.tsf-brawl2 button:focus:not(:focus-visible),
+  .tienda-storefront.tsf-brawl2 [role="button"]:focus:not(:focus-visible),
+  .tienda-storefront.tsf-brawl2 a:focus:not(:focus-visible) {
+    outline: none !important;
+  }
+}
+/* ==========================================================================
+   04) TABS (selector servidor coins + botón coinshop)
+   - Desktop: no tocamos.
+   - Tablet/móvil: compacta anchos, reduce padding, ajusta iconos/texto.
+   - Anti tap-select / highlight en touch.
+   ========================================================================== */
+
+/* Tablet */
+@media (max-width: 1024px) {
+  .tienda-storefront.tsf-brawl2 .tsf-coinsHeader{
+    padding: 0.35rem 0 0.75rem;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-tabs{
+    gap: 0.6rem;
+    margin-top: 0.25rem;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-tab{
+    min-width: clamp(10.2rem, 26vw, 13.2rem);
+    padding: 0.6rem 0.9rem;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-tabIcon{
+    width: 1.65rem;
+    height: 1.65rem;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-tabText{
+    font-size: 0.98rem;
+    padding-right: 1.0rem;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-orb{
+    right: 0.78rem;
+    width: 0.72rem;
+    height: 0.72rem;
+  }
+}
+
+/* Móvil */
+@media (max-width: 768px) {
+  .tienda-storefront.tsf-brawl2 .tsf-coinsHeader{
+    padding: 0.25rem 0 0.65rem;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-tabsStack{
+    gap: 0.45rem;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-tabs{
+    /* clave: que no se “estire” ni haga overflow raro */
+    width: min(96vw, 520px);
+    justify-content: center;
+    gap: 0.5rem;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-tab{
+    /* dos tabs + botón central sin romper */
+    min-width: 0;
+    flex: 1 1 0;
+    padding: 0.56rem 0.72rem;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-tabIcon{
+    width: 1.45rem;
+    height: 1.45rem;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-tabText{
+    font-size: 0.92rem;
+    padding-right: 0.85rem;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-tabBadge{
+    top: -0.5rem;
+    left: 0.45rem;
+    font-size: 0.68rem;
+    padding: 0.30rem 0.48rem 0.28rem;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-orb{
+    right: 0.62rem;
+    width: 0.66rem;
+    height: 0.66rem;
+  }
+
+  /* botón central (open shop) compactado */
+  .tienda-storefront.tsf-brawl2 .tsf-openShopBtn{
+    margin-inline: 0.25rem;
+    flex: 0 0 auto;
+  }
+}
+
+/* Móvil pequeño */
+@media (max-width: 480px) {
+  .tienda-storefront.tsf-brawl2 .tsf-tabs{
+    width: 94vw;
+    gap: 0.45rem;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-tab{
+    padding: 0.52rem 0.62rem;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-tabText{
+    font-size: 0.88rem;
+    padding-right: 0.78rem;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-tabIcon{
+    width: 1.35rem;
+    height: 1.35rem;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-orb{
+    right: 0.56rem;
+  }
+}
+
+/* Ultra pequeño */
+@media (max-width: 360px) {
+  .tienda-storefront.tsf-brawl2 .tsf-tabs{
+    width: 96vw;
+    gap: 0.4rem;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-tab{
+    padding: 0.5rem 0.55rem;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-tabText{
+    font-size: 0.84rem;
+    padding-right: 0.72rem;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-tabIcon{
+    width: 1.28rem;
+    height: 1.28rem;
+  }
+}
+
+/* ==========================================================================
+   05) Anti "tap select" / highlight (touch)
+   - Evita el recuadro/selección rara al tocar botones en móvil.
+   - No rompe el :focus-visible para teclado.
+   ========================================================================== */
+@media (hover: none) and (pointer: coarse) {
+  .tienda-storefront.tsf-brawl2 .tsf-tabs,
+  .tienda-storefront.tsf-brawl2 .tsf-tab,
+  .tienda-storefront.tsf-brawl2 .tsf-openShopBtn{
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  /* quita el “focus” feo al tap, manteniendo focus-visible */
+  .tienda-storefront.tsf-brawl2 .tsf-tab:focus:not(:focus-visible),
+  .tienda-storefront.tsf-brawl2 .tsf-openShopBtn:focus:not(:focus-visible){
+    outline: none;
+  }
+}
+/* ==========================================================================
+   06) COINS GRID (packs + daily claim)
+   - Desktop: NO tocamos tu grid base.
+   - Tablet: 3 columnas (más aire).
+   - Móvil: 2 columnas (mejor equilibrio) + daily claim ocupa 2.
+   - Opción 1 columna incluida (comentada).
+   ========================================================================== */
+
+/* Tablet */
+@media (max-width: 1024px) {
+  .tienda-storefront.tsf-brawl2{
+    --coin-gap: 14px;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-coinsGrid.tsf-coinsGrid--linear4{
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: start;
+  }
+}
+
+/* Móvil / Tablet */
+@media (max-width: 768px) {
+  .tienda-storefront.tsf-brawl2{
+    --coin-gap: 12px;
+  }
+
+  /* 2 POR FILA (recomendado) */
+  .tienda-storefront.tsf-brawl2 .tsf-coinsGrid.tsf-coinsGrid--linear4{
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+
+  /* Daily claim: que sea “cabecera” y ocupe las 2 columnas */
+  .tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily{
+    grid-column: 1 / -1;
+  }
+
+  /* Evita que el tilt/margenes creen overflow lateral raro */
+  .tienda-storefront.tsf-brawl2 .tsf-coinsGridWrap{
+    overflow: hidden;
+  }
+
+  /* Reduce un pelín la perspectiva/hover en touch (sin cargarte el look) */
+  .tienda-storefront.tsf-brawl2 .tsf-coinWrap{
+    transform:
+      perspective(900px)
+      rotateX(calc(var(--rx) * 0.55deg))
+      rotateY(calc(var(--ry) * 0.55deg))
+      translateZ(0);
+  }
+
+  /* En touch, el hover “fake” puede dar saltitos: lo suavizamos */
+  @media (hover: none) and (pointer: coarse) {
+    .tienda-storefront.tsf-brawl2 .tsf-coinWrap:hover{
+      transform:
+        perspective(900px)
+        rotateX(calc(var(--rx) * 0.55deg))
+        rotateY(calc(var(--ry) * 0.55deg))
+        translateZ(0);
+    }
+  }
+}
+
+/* Móvil pequeño */
+@media (max-width: 480px) {
+  .tienda-storefront.tsf-brawl2{
+    --coin-gap: 10px;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-coinsGrid.tsf-coinsGrid--linear4{
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Ultra pequeño */
+@media (max-width: 360px) {
+  .tienda-storefront.tsf-brawl2{
+    --coin-gap: 9px;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-coinsGrid.tsf-coinsGrid--linear4{
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+/* ==========================================================================
+   07) COINS PANEL + COIN CARDS (responsive fine-tuning)
+   - Mantiene el look Brawl.
+   - Ajusta tamaños para 2 columnas en móvil.
+   - Mejora touch: sin highlight/selección rara.
+   ========================================================================== */
+
+/* --- Touch UX (evitar selección / highlight azul / recuadros raros) --- */
+@media (max-width: 1024px) {
+  .tienda-storefront.tsf-brawl2,
+  .tienda-storefront.tsf-brawl2 * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .tienda-storefront.tsf-brawl2 {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+    touch-action: manipulation;
+  }
+
+  /* permitimos seleccionar texto solo donde interese (si lo necesitas) */
+  .tienda-storefront.tsf-brawl2 input,
+  .tienda-storefront.tsf-brawl2 textarea {
+    -webkit-user-select: text;
+    user-select: text;
+    touch-action: auto;
+  }
+}
+
+/* Tablet */
+@media (max-width: 1024px) {
+  .tienda-storefront.tsf-brawl2 .tsf-coinsPanel{
+    border-radius: 14px;
+    padding: 16px 14px 14px;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-coinsPanelHeader{
+    border-radius: 11px;
+    padding: 5px;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-coinsPanelTitle{
+    font-size: 1.08rem;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-coinsPanel .tsf-coinsGridWrap{
+    padding-top: 18px;
+  }
+
+  /* carta un pelín menos “inclinada” en tablet */
+  .tienda-storefront.tsf-brawl2 .tsf-coinFrame{
+    transform: translateZ(0) rotate(1.15deg);
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-coinQtyTop{
+    right: 9px;
+    top: 9px;
+    border-radius: 9px;
+    font-size: 1.05rem;
+  }
+}
+
+/* Móvil */
+@media (max-width: 768px) {
+  .tienda-storefront.tsf-brawl2 .tsf-coinsPanel{
+    border-radius: 12px;
+    padding: 14px 12px 12px;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-coinsPanelHeader{
+    border-radius: 10px;
+    padding: 4px;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-coinsPanelTitle{
+    font-size: 1.02rem;
+    letter-spacing: 0.055em;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-coinsPanel .tsf-coinsGridWrap{
+    padding-top: 16px;
+  }
+
+  /* Cards: en 2 columnas conviene compactar un poco altura */
+  .tienda-storefront.tsf-brawl2 .tsf-coinFrame{
+    aspect-ratio: 160 / 210; /* antes 230; más compacto en móvil */
+    transform: translateZ(0) rotate(0.85deg);
+  }
+
+  /* Hover no tiene sentido en touch: evitamos “saltitos” */
+  @media (hover: none) and (pointer: coarse) {
+    .tienda-storefront.tsf-brawl2 .tsf-coinWrap:hover .tsf-coinFrame{
+      transform: translateZ(0) rotate(0.85deg);
+      filter: none;
+    }
+    .tienda-storefront.tsf-brawl2 .tsf-buyBtn:hover{
+      transform: none;
+      filter: drop-shadow(0 1.05rem 1.55rem rgba(0,0,0,0.42));
+    }
+  }
+
+  /* Cantidad arriba derecha */
+  .tienda-storefront.tsf-brawl2 .tsf-coinQtyTop{
+    right: 8px;
+    top: 8px;
+    padding: 0.18rem 0.46rem 0.16rem;
+    border-radius: 9px;
+    border-width: 3px;
+    font-size: 0.98rem;
+  }
+
+  /* Imagen centrada: ajusta para 2 columnas */
+  .tienda-storefront.tsf-brawl2 .tsf-coinArtBtn{
+    top: 34px;
+    bottom: 60px; /* deja sitio a banda + footer, más compacto */
+    border-radius: 12px;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-coinImg{
+    width: min(86%, 136px);
+    animation-duration: 2.6s;
+  }
+
+  /* Banda bonus */
+  .tienda-storefront.tsf-brawl2 .tsf-coinBand{
+    bottom: 33px;
+    height: 30px;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-coinBandText{
+    font-size: 0.76rem;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-coinBandIcon{
+    width: 0.98rem;
+    height: 0.98rem;
+  }
+
+  /* Botón compra */
+  .tienda-storefront.tsf-brawl2 .tsf-buyBtn{
+    height: 40px;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-buyPrice{
+    font-size: 0.98rem;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-buyOld{
+    font-size: 0.74rem;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-buyQtyPill{
+    right: -0.28rem;
+    top: -0.28rem;
+    padding: 0.24rem 0.48rem 0.22rem;
+    font-size: 0.74rem;
+  }
+
+  /* Badges: un poco menos fuera para que no corten */
+  .tienda-storefront.tsf-brawl2 .tsf-saleBadge{
+    right: -8px;
+    top: -12px;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-bestBadge{
+    left: -4px;
+    top: -16px;
+  }
+}
+
+/* Móvil pequeño */
+@media (max-width: 480px) {
+  .tienda-storefront.tsf-brawl2 .tsf-coinsPanel{
+    padding: 13px 10px 11px;
+    border-radius: 12px;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-coinsPanelHeader{
+    border-radius: 10px;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-coinsPanelTitle{
+    font-size: 0.98rem;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-coinFrame{
+    aspect-ratio: 160 / 205;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-coinImg{
+    width: min(86%, 128px);
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-coinBand{
+    height: 29px;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-buyBtn{
+    height: 39px;
+  }
+}
+
+/* Ultra pequeño */
+@media (max-width: 360px) {
+  .tienda-storefront.tsf-brawl2 .tsf-coinsPanel{
+    padding: 12px 9px 10px;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-coinFrame{
+    aspect-ratio: 160 / 198;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-coinQtyTop{
+    font-size: 0.92rem;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-buyPrice{
+    font-size: 0.94rem;
+  }
+}
+/* ==========================================================================
+   08) COINS GRID responsive + DAILY tile (hero controlado)
+   ========================================================================== */
+
+/* Tablet */
+@media (max-width: 1024px) {
+  .tienda-storefront.tsf-brawl2{
+    --coin-gap: 14px;
+    --coin-w: minmax(0, 1fr);
+  }
+
+  /* En tablet: 2 columnas (daily ocupa 2, packs normal) */
+  .tienda-storefront.tsf-brawl2 .tsf-coinsGrid.tsf-coinsGrid--linear4{
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+
+  /* daily HERO arriba ocupando las 2 columnas */
+  .tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily{
+    grid-column: 1 / -1;
+    justify-self: center;
+    width: min(100%, 720px);
+  }
+
+  /* el frame daily: más “banner” y menos poster */
+  .tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily .tsf-coinFrame{
+    aspect-ratio: 520 / 260;
+  }
+}
+
+/* Móvil */
+@media (max-width: 768px) {
+  .tienda-storefront.tsf-brawl2{
+    --coin-gap: 12px;
+  }
+
+  /* Móvil: 2 columnas (como tu captura) */
+  .tienda-storefront.tsf-brawl2 .tsf-coinsGrid.tsf-coinsGrid--linear4{
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+
+  /* Daily hero ocupa las 2 columnas pero NO se hace gigante */
+  .tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily{
+    grid-column: 1 / -1;
+    justify-self: center;
+    width: min(100%, 560px);
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily .tsf-coinFrame{
+    aspect-ratio: 520 / 240;
+  }
+}
+
+/* Móvil pequeño */
+@media (max-width: 480px) {
+  .tienda-storefront.tsf-brawl2 .tsf-coinsGrid.tsf-coinsGrid--linear4{
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily{
+    width: 100%;
+  }
+
+  /* aún más bajita para que no coma pantalla */
+  .tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily .tsf-coinFrame{
+    aspect-ratio: 520 / 228;
+  }
+}
+
+/* Ultra pequeño */
+@media (max-width: 360px) {
+  .tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily .tsf-coinFrame{
+    aspect-ratio: 520 / 220;
+  }
+}
+
+/* ==========================================================================
+   09) DAILY FREE CLAIM CARD (ajuste para hero en grid)
+   - Se adapta al frame más bajo (aspect-ratio reducido)
+   ========================================================================== */
+
+/* Tablet */
+@media (max-width: 1024px) {
+  .tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily .dailyClaimCard__sheet{
+    inset: 42px 12px 54px 12px;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily .dailyClaimCard__art{
+    width: 60%;
+    height: 60%;
+    top: -6%;
+    right: -2%;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily .dailyClaimCard__coin.coin--front{
+    width: min(62%, 170px);
+    top: 8px;
+    right: 10px;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily .dailyClaimCard__coin.coin--back{
+    width: min(58%, 160px);
+    transform: translate(-10px, -10px) rotate(-10deg);
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily .dailyClaimCard__cta{
+    height: 44px;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily .dailyClaimCard__ctaLabel{
+    font-size: 1.10rem;
+  }
+}
+
+/* Móvil */
+@media (max-width: 768px) {
+  .tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily .dailyClaimCard__title{
+    top: 10px;
+    right: 10px;
+    font-size: 0.84rem;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily .dailyClaimCard__timer{
+    top: -22px;
+    left: 0;
+  }
+
+  /* baja el “poster effect” */
+  .tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily .dailyClaimCard__sheet{
+    inset: 40px 12px 56px 12px;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily .dailyClaimCard__art{
+    width: 62%;
+    height: 62%;
+    top: -6%;
+    right: -2%;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily .dailyClaimCard__coin.coin--front{
+    width: min(64%, 165px);
+    top: 8px;
+    right: 10px;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily .dailyClaimCard__coin.coin--back{
+    width: min(60%, 154px);
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily .dailyClaimCard__cta{
+    height: 46px;
+    bottom: -3px;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily .dailyClaimCard__ctaLabel{
+    font-size: 1.12rem;
+  }
+
+  /* Touch: nada de highlight/selección rara */
+  .tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily .dailyClaimCard__cta,
+  .tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily .dailyClaimCard__coin,
+  .tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily .dailyClaimCard__title{
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+  }
+}
+
+/* Móvil pequeño */
+@media (max-width: 480px) {
+  .tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily .dailyClaimCard__sheet{
+    inset: 38px 12px 58px 12px;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily .dailyClaimCard__art{
+    width: 64%;
+    height: 64%;
+    top: -6%;
+    right: -2%;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily .dailyClaimCard__ctaLabel{
+    font-size: 1.08rem;
+  }
+}
+
+/* Ultra pequeño */
+@media (max-width: 360px) {
+  .tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily .dailyClaimCard__ctaLabel{
+    font-size: 1.04rem;
+  }
 }

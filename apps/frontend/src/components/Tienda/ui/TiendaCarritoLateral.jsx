@@ -59,6 +59,10 @@ export default function TiendaCarritoLateral({
 
   server = "oneblock",
   basketPulse = false,
+
+  // ✅ nuevo
+  mode = "desktop", // "desktop" | "mobileDrawer"
+  onRequestClose,
 }) {
   const [loadingCheckout, setLoadingCheckout] = useState(false);
 
@@ -101,8 +105,6 @@ export default function TiendaCarritoLateral({
   const handleRemove = useCallback(
     (item) => {
       if (typeof eliminarItem === "function") return eliminarItem(item.id);
-      // fallback: si te pasan toggleProducto como onAgregar, esto funcionará como "quitar"
-      // si te pasan agregar, esto NO quitaría (pero normalmente eliminarItem existe siempre)
       onAgregar?.(item);
     },
     [eliminarItem, onAgregar]
@@ -113,21 +115,16 @@ export default function TiendaCarritoLateral({
       const current = clampInt(item.quantity || 1, 1, 999);
       const nextRaw = current + Number(delta || 0);
 
-      // ✅ Preferencia 1: cambiarCantidad (ideal para + y - y eliminar al llegar a 0)
       if (typeof onCambiarCantidad === "function") {
         return onCambiarCantidad(item.id, delta, item);
       }
 
-      // ✅ Preferencia 2: setCantidad (permitimos 0 para borrar)
       if (typeof onSetCantidad === "function") {
-        const next = clampInt(nextRaw, 0, 999); // 👈 clave: permitir 0
+        const next = clampInt(nextRaw, 0, 999);
         return onSetCantidad(item.id, next, item);
       }
 
-      // ✅ Fallback: si no hay handlers, al restar en 1 elimina
       if (delta < 0 && current <= 1) return handleRemove(item);
-
-      // si no hay handlers y es +, no hacemos nada (evita inconsistencias)
       return;
     },
     [onCambiarCantidad, onSetCantidad, handleRemove]
@@ -182,13 +179,16 @@ export default function TiendaCarritoLateral({
 
   return (
     <>
-      <aside className="carrito-lateral" aria-label="Carrito">
+      <aside
+        className={`carrito-lateral ${mode === "mobileDrawer" ? "is-drawer" : "is-desktop"}`}
+        aria-label="Carrito"
+      >
         <div
           className={`carrito-panel ${basketPulse ? "is-pulse" : ""}`}
           id="tienda-basket"
           data-empty={isEmpty ? "true" : "false"}
+          data-mode={mode}
         >
-          {/* ✅ TODO el contenido va dentro, para que el PNG sea el borde exterior */}
           <div className="carrito-panel-inner">
             {/* CUENTA */}
             <section className="carrito-cuenta" aria-label="Cuenta">
@@ -225,7 +225,11 @@ export default function TiendaCarritoLateral({
               </div>
 
               <div className="cuenta-actions">
-                <button className="cuenta-btn cuenta-btn-account" type="button" onClick={handleAccountClick}>
+                <button
+                  className="cuenta-btn cuenta-btn-account"
+                  type="button"
+                  onClick={handleAccountClick}
+                >
                   {nombreConfirmado ? "Cambiar cuenta" : "Elegir cuenta"}
                 </button>
 
@@ -244,7 +248,12 @@ export default function TiendaCarritoLateral({
                     ▾
                   </div>
 
-                  <select className="currency-select" value={currency} onChange={onMonedaChange} aria-label="Moneda">
+                  <select
+                    className="currency-select"
+                    value={currency}
+                    onChange={onMonedaChange}
+                    aria-label="Moneda"
+                  >
                     <option value="EUR">EUR</option>
                     <option value="USD">USD</option>
                     <option value="GBP">GBP</option>
@@ -266,8 +275,6 @@ export default function TiendaCarritoLateral({
                 ) : (
                   carrito.map((it) => {
                     const qty = clampInt(it.quantity || 1, 1, 999);
-
-                    // ✅ clave: permitir DEC también en 1 (para que pueda eliminar)
                     const canDec = qty >= 1;
                     const canInc = qty < 999;
 
@@ -365,8 +372,16 @@ export default function TiendaCarritoLateral({
                   <div className="basket-total-value">{formatCurrency(total, currency)}</div>
                 </div>
 
-                <div className={`checkout-wrap ${checkoutDisabledReason ? "is-disabled" : ""}`} data-tooltip={checkoutDisabledReason || ""}>
-                  <button className="basket-checkout" type="button" disabled={Boolean(checkoutDisabledReason)} onClick={handleCheckout}>
+                <div
+                  className={`checkout-wrap ${checkoutDisabledReason ? "is-disabled" : ""}`}
+                  data-tooltip={checkoutDisabledReason || ""}
+                >
+                  <button
+                    className="basket-checkout"
+                    type="button"
+                    disabled={Boolean(checkoutDisabledReason)}
+                    onClick={handleCheckout}
+                  >
                     {checkoutLabel}
                   </button>
                 </div>
@@ -385,6 +400,8 @@ export default function TiendaCarritoLateral({
         currencyHint={currency}
         onPaid={() => {
           if (typeof vaciarCarrito === "function") vaciarCarrito();
+          // opcional: si estás en drawer, lo cierras al pagar
+          if (typeof onRequestClose === "function") onRequestClose();
         }}
         onClose={() => setCheckoutOpen(false)}
       />

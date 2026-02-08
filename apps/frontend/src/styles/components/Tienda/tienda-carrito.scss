@@ -13,10 +13,7 @@
 }
 
 /* =========================================
-   ✅ MARCO PNG exterior (bordecarrito.png)
-   - .carrito-panel = frame holder
-   - ::before = dibuja el PNG (sin inventar nada)
-   - .carrito-panel-inner = tu panel real (beige, sombras)
+   MARCO (desktop) + Panel real
    ========================================= */
 .carrito-panel {
   width: 100%;
@@ -24,9 +21,6 @@
   min-height: 0;
   position: relative;
 
-  /* Ajuste del “hueco” interior para que el contenido no pise el marco.
-     Está calibrado para tu PNG (borde aprox. 9% en X y 6% en Y).
-     Puedes tocar estos 2 valores si quieres más/menos aire. */
   --framePadX: clamp(18px, 3vw, 25px);
   --framePadY: clamp(18px, 3vw, 32px);
 
@@ -35,7 +29,7 @@
 
   background: transparent;
   border: 0;
-  border-radius: 0; /* el PNG manda */
+  border-radius: 0;
   box-shadow: none;
 
   color: #3a2816;
@@ -56,7 +50,7 @@
   --easePress: cubic-bezier(0.2, 0.9, 0.2, 1);
 }
 
-/* El PNG como overlay perfecto */
+/* PNG overlay (solo cuando NO es drawer) */
 .carrito-panel::before {
   content: "";
   position: absolute;
@@ -69,11 +63,10 @@
   background-position: center;
   background-size: 100% 100%;
 
-  /* Suaviza un poco el escalado en algunos navegadores */
   image-rendering: auto;
 }
 
-/* Contenido real dentro del marco */
+/* Panel real */
 .carrito-panel-inner {
   position: relative;
   z-index: 1;
@@ -88,7 +81,6 @@
 
   padding: 0.55rem;
 
-  /* esto es lo que antes estaba en .carrito-panel */
   border-radius: 0.7rem;
   border: 2px solid #d2b071;
   background: #f7e2b2;
@@ -101,7 +93,7 @@
 }
 
 /* ===========================
-   MIXIN “BOTÓN FÍSICO”
+   BOTÓN FÍSICO
    =========================== */
 @mixin btnPhysics($bg: #7a6a5b, $border: rgba(0,0,0,0.38), $color: #f6efe6) {
   position: relative;
@@ -586,74 +578,35 @@
 }
 
 /* =========================================================
-   MOBILE
+   MODO DRAWER (mobile)
+   - Quitamos el marco PNG para que no se coma el espacio
+   - Ajustamos padding y sombras para integrarlo con el sheet
    ========================================================= */
-@media (max-width: 960px) {
-  .carrito-lateral {
-    height: auto;
-    min-height: 0;
-  }
+.carrito-lateral.is-drawer {
+  height: auto;
+}
 
-  .carrito-panel {
-    height: auto;
-    min-height: 0;
-    /* un pelín menos de padding para que el marco no se coma el contenido */
-    --framePadX: clamp(14px, 4.2vw, 26px);
-    --framePadY: clamp(14px, 4.8vw, 32px);
-  }
+.carrito-lateral.is-drawer .carrito-panel {
+  height: auto;
+  min-height: 0;
 
-  .carrito-panel-inner {
-    height: auto;
-    min-height: 0;
-    gap: 0.55rem;
-    padding: 0.5rem;
-    box-shadow:
-      0 0 0 1px rgba(90, 59, 23, 0.35),
-      0 12px 26px rgba(0, 0, 0, 0.45);
-  }
+  padding: 0; /* sin framePad */
+}
 
-  .basket {
-    flex: 0 0 auto;
-    min-height: 0;
-  }
+.carrito-lateral.is-drawer .carrito-panel::before {
+  display: none; /* adiós marco en drawer */
+}
 
-  .basket-list {
-    flex: 0 0 auto;
-    max-height: min(32vh, 260px);
-  }
+.carrito-lateral.is-drawer .carrito-panel-inner {
+  border-radius: 14px;
+  padding: 10px;
+  box-shadow:
+    0 0 0 1px rgba(255, 220, 150, 0.12),
+    0 14px 32px rgba(0,0,0,0.45);
+  border-color: rgba(210, 176, 113, 0.55);
+}
 
-  .basket.is-empty .basket-list {
-    max-height: none;
-    overflow: hidden;
-    padding: 0.42rem 0.7rem 0.15rem;
-  }
-
-  .basket.is-empty .basket-empty-state {
-    height: auto;
-    flex-direction: row;
-    justify-content: center;
-    align-items: center;
-    gap: 0.45rem;
-    padding: 0.15rem 0;
-  }
-
-  .basket.is-empty .basket-empty-icon {
-    width: 18px;
-    height: 18px;
-    border-width: 2px;
-    border-radius: 0.35rem;
-
-    &::after { display: none; }
-  }
-
-  .basket.is-empty .basket-empty-text {
-    font-size: 0.78rem;
-    letter-spacing: 0.14em;
-  }
-
-  .basket-checkout {
-    height: 56px;
-    font-size: 0.92rem;
-    letter-spacing: 0.13em;
-  }
+/* ajuste de alturas en drawer: lista con max alto razonable */
+.carrito-lateral.is-drawer .basket-list {
+  max-height: min(42dvh, 360px);
 }
