@@ -1,18 +1,20 @@
+/* ==========================================================================
+   src/styles/components/Tienda/daily-free-claim-card.scss
+   (COMPLETO) — Doble moneda tipo “baraja” + NO recorte + rayos/glow
+   ========================================================================== */
 @use "./storefront/mixins" as *;
 
 @import url("https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Nunito:wght@800;900;1000&display=swap");
 
 /* =========================
-   BADGE: REGALO DIARIO (amarillo tipo pill)
+   BADGE: REGALO DIARIO
    ========================= */
 .dailyClaimCard__title{
   position: absolute;
   right: 8px;
   top: 10px;
-  left: auto;
   z-index: 8;
 
-  height: auto;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -62,55 +64,192 @@
   color: rgba(255,255,255,0.92);
 }
 
-/* CUERPO */
+/* =========================
+   CUERPO (sheet)
+   - OJO: aquí NO se recorta nada. El control se hace con padding/clamps.
+   ========================= */
 .dailyClaimCard__sheet{
   position: absolute;
   inset: 52px 10px 52px 10px;
   z-index: 5;
+
   display: grid;
   place-items: center;
+
+  /* 👇 NO recortamos aquí */
+  overflow: visible;
+  border-radius: 10px;
+
+  padding: 16px 12px 10px 12px;
 }
 
-/* ART */
+/* =========================
+   ART (reward style)
+   - El “escenario” donde vive la baraja
+   ========================= */
 .dailyClaimCard__art{
   position: relative;
-  width: 70%;
-  height: 70%;
-  top: -12%;
-  right: -5%;
+  width: 100%;
+  height: 100%;
   display: grid;
   place-items: center;
+
+  /* Controles globales */
+  --dc-scale: 1;
+
+  /* lift vertical global: negativo = sube, positivo = baja */
+  --dc-lift: -2%;
+
+  /* Tamaños base (se refinan en container queries del responsive) */
+  --dc-front-w: min(76%, 150px);
+  --dc-back-w:  min(70%, 140px);
+
+  /* Stack offsets (baraja) */
+  --dc-front-x: 0%;
+  --dc-front-y: 0%;
+  --dc-back-x:  -18%;
+  --dc-back-y:  -10%;
+
+  /* Rotaciones */
+  --dc-front-rot: 0deg;
+  --dc-back-rot: -12deg;
+
+  /* Fondo: evita cortes del brillo */
+  overflow: visible;
 }
 
+/* Glow central suave */
+.dailyClaimCard__art::before{
+  content:"";
+  position: absolute;
+  inset: -60px;
+  pointer-events: none;
+
+  background:
+    radial-gradient(closest-side at 50% 60%,
+      rgba(255,255,255,0.24),
+      rgba(255,255,255,0.00) 68%);
+  mix-blend-mode: screen;
+  opacity: 0.62;
+}
+
+/* Rayos tipo recompensa */
+.dailyClaimCard__art::after{
+  content:"";
+  position: absolute;
+  inset: -70px;
+  pointer-events: none;
+
+  background:
+    radial-gradient(closest-side at 50% 58%, rgba(255,255,255,0.12), rgba(255,255,255,0.00) 70%),
+    repeating-conic-gradient(
+      from -12deg,
+      rgba(255,255,255,0.12) 0deg 10deg,
+      rgba(255,255,255,0.00) 10deg 18deg
+    );
+
+  -webkit-mask: radial-gradient(circle at 50% 58%, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 70%);
+  mask: radial-gradient(circle at 50% 58%, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 70%);
+
+  opacity: 0.42;
+
+  /* usa el lift global para que “nazca” donde toca */
+  transform: translateY(var(--dc-lift)) scale(1.05);
+}
+
+/* =========================
+   MONEDAS (stack real)
+   - Centradas SIEMPRE
+   - Tamaños/offsets por variables (sin hardcode por viewport)
+   ========================= */
 .dailyClaimCard__coin{
   position: absolute;
   height: auto;
   object-fit: contain;
   image-rendering: pixelated;
-  animation: dailyClaimPulse 2.4s ease-in-out infinite;
+
+  left: 50%;
+  top: 50%;
+  transform-origin: center;
+  will-change: transform;
+
+  /* Vars por moneda (default) */
+  --w: 140px;
+  --x: 0%;
+  --y: 0%;
+  --rot: 0deg;
+  --z: 2;
+  --pulse: 1;
+
+  width: var(--w);
+  z-index: var(--z);
+
   filter: drop-shadow(0 1.10rem 1.15rem rgba(0,0,0,0.52));
+
+  /* Centro real + lift + offsets */
+  transform:
+    translate(-50%, -50%)
+    translateY(var(--dc-lift))
+    scale(var(--dc-scale))
+    translate(var(--x), var(--y))
+    rotate(var(--rot));
+
+  animation: dcCoinPulse 2.2s ease-in-out infinite;
 }
 
-.dailyClaimCard__coin.coin--front{
-  width: min(82%, 150px);
-  transform: translateY(-2px);
-  z-index: 2;
-  top: 15px;
-  right: 20px;
-}
-
+/* back coin */
 .dailyClaimCard__coin.coin--back{
-  width: min(78%, 144px);
-  transform: translate(-12px, -10px) rotate(-10deg);
-  opacity: 0.92;
-  z-index: 1;
+  --w: var(--dc-back-w);
+  --x: var(--dc-back-x);
+  --y: var(--dc-back-y);
+  --rot: var(--dc-back-rot);
+  --z: 1;
+  --pulse: 0.85;
+
+  opacity: 0.93;
+
   filter:
-    drop-shadow(0 0.9rem 1.0rem rgba(0,0,0,0.42))
+    drop-shadow(0 0.95rem 1.05rem rgba(0,0,0,0.44))
+    saturate(1.08)
+    brightness(1.02);
+}
+
+/* front coin */
+.dailyClaimCard__coin.coin--front{
+  --w: var(--dc-front-w);
+  --x: var(--dc-front-x);
+  --y: var(--dc-front-y);
+  --rot: var(--dc-front-rot);
+  --z: 2;
+  --pulse: 1.0;
+
+  filter:
+    drop-shadow(0 1.15rem 1.20rem rgba(0,0,0,0.54))
     saturate(1.05);
 }
 
+/* pulso sin romper el stack */
+@keyframes dcCoinPulse{
+  0%,100%{
+    transform:
+      translate(-50%, -50%)
+      translateY(var(--dc-lift))
+      scale(var(--dc-scale))
+      translate(var(--x), var(--y))
+      rotate(var(--rot));
+  }
+  50%{
+    transform:
+      translate(-50%, -50%)
+      translateY(var(--dc-lift))
+      scale(calc(var(--dc-scale) * (1 + (0.035 * var(--pulse)))))
+      translate(var(--x), var(--y))
+      rotate(var(--rot));
+  }
+}
+
 /* =========================
-   CTA: botón (face + depth)
+   CTA
    ========================= */
 .dailyClaimCard__cta{
   position:absolute;
@@ -127,7 +266,6 @@
   -webkit-tap-highlight-color: transparent;
 
   background: transparent;
-
   overflow: hidden;
 
   filter: drop-shadow(0 1.05rem 1.55rem rgba(0,0,0,0.42));
@@ -168,9 +306,8 @@
   pointer-events: none;
 }
 
-/* =========================
-   GRATIS (BRAWL STYLE)
-   ========================= */
+/* LABEL */
+/* GRATIS — luz desde arriba: arriba limpio, peso abajo */
 .dailyClaimCard__ctaLabel{
   position: relative;
   z-index: 3;
@@ -180,52 +317,66 @@
   height: 100%;
 
   font-family:"Luckiest Guy", system-ui, sans-serif;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.02em;
   font-size: 1.16rem;
   line-height: 1;
 
-  color: #7CFF4D;
+  /* relleno (variable para suavizar estados) */
+  color: var(--fill, #F4F1DA);
 
-  -webkit-text-stroke: 3px rgba(0,0,0,0.95);
-  paint-order: stroke fill;
+  /* colores del borde/sombra (tinte verdoso como la referencia) */
+  --stroke: rgba(8, 36, 16, 0.95);   /* contorno base (verde muy oscuro) */
+  --strokeDown: rgba(0, 0, 0, 0.92); /* peso extra SOLO abajo */
+  --shadow: rgba(0, 0, 0, 0.55);
 
   text-shadow:
-    -3px 0 rgba(0,0,0,0.95),
-     3px 0 rgba(0,0,0,0.95),
-     0 -3px rgba(0,0,0,0.95),
-     0  3px rgba(0,0,0,0.95),
-    -3px -3px rgba(0,0,0,0.95),
-     3px -3px rgba(0,0,0,0.95),
-    -3px  3px rgba(0,0,0,0.95),
-     3px  3px rgba(0,0,0,0.95),
-     0 3px 0 rgba(0,0,0,0.70),
-     0 12px 18px rgba(0,0,0,0.28);
+    /* 1) CONTORNO FINO UNIFORME (2px) */
+    -2px  0   0 var(--stroke),
+     2px  0   0 var(--stroke),
+     0   -2px 0 var(--stroke),
+     0    2px 0 var(--stroke),
+    -2px -2px 0 var(--stroke),
+     2px -2px 0 var(--stroke),
+    -2px  2px 0 var(--stroke),
+     2px  2px 0 var(--stroke),
 
-  filter:
-    drop-shadow(0 3px 0 rgba(0,0,0,0.70))
-    drop-shadow(0 10px 14px rgba(0,0,0,0.32));
+    /* 2) PESO EXTRA (4px) SOLO EN LA MITAD INFERIOR (sin sombras hacia arriba) */
+    -4px  0   0 var(--strokeDown),
+     4px  0   0 var(--strokeDown),
+     0    4px 0 var(--strokeDown),
+    -4px  4px 0 var(--strokeDown),
+     4px  4px 0 var(--strokeDown),
 
+    /* 3) BLOQUE DE SOMBRA ABAJO (pegatina) */
+     0    6px 0 var(--shadow),
+     0   14px 18px rgba(0,0,0,0.18),
+
+    /* 4) “luz” arriba para que el borde superior no se vea pesado */
+     0   -1px 0 rgba(255,255,255,0.22);
+
+  filter: none;
   animation: dailyClaimGratisPulse 1200ms ease-in-out infinite;
 }
 
+/* highlight superior suave */
 .dailyClaimCard__ctaLabel::before{
   content:"";
   position:absolute;
-  left: 10%;
-  right: 10%;
-  top: 18%;
-  height: 38%;
+  left: 12%;
+  right: 12%;
+  top: 14%;
+  height: 40%;
   pointer-events: none;
   z-index: 4;
 
   background: radial-gradient(70% 120% at 50% 0%,
-    rgba(255,255,255,0.35),
+    rgba(255,255,255,0.20),
     rgba(255,255,255,0.00) 70%);
-
   mix-blend-mode: screen;
   opacity: 0.55;
 }
 
+/* shine diagonal sutil */
 .dailyClaimCard__ctaLabel::after{
   content:"";
   position:absolute;
@@ -235,12 +386,12 @@
 
   background: linear-gradient(115deg,
     rgba(255,255,255,0.00) 38%,
-    rgba(255,255,255,0.45) 48%,
+    rgba(255,255,255,0.20) 48%,
     rgba(255,255,255,0.00) 58%);
 
   transform: translateX(-110%);
   mix-blend-mode: screen;
-  opacity: 0.35;
+  opacity: 0.26;
 
   animation: dailyClaimShine 1800ms ease-in-out infinite;
 }
@@ -274,45 +425,40 @@
   opacity: 0.92;
 }
 
-/* estado gris */
+/* =========================
+   ESTADOS (RECLAMADO / BLOQUEADO)
+   - Mismo render premium que GRATIS (mismo text-shadow)
+   - Solo cambiamos variables para que no quede “bloque tosco”
+   ========================= */
 .dailyClaimCard.is-cooldown .dailyClaimCard__cta::before,
 .dailyClaimCard.is-locked .dailyClaimCard__cta::before{
   background:
-    radial-gradient(140% 120% at 50% 0%, rgba(255,255,255,0.12), rgba(255,255,255,0) 55%),
-    linear-gradient(180deg, #8aa3b4 0%, #5c7a8f 55%, #3a5266 100%);
+    radial-gradient(140% 120% at 50% 0%, rgba(255,255,255,0.20), rgba(255,255,255,0) 55%),
+    linear-gradient(180deg, #9ab2c3 0%, #6f8ea5 55%, #415c71 100%);
 }
 
+/* Texto: mismo sistema, pero más suave y frío */
 .dailyClaimCard.is-cooldown .dailyClaimCard__ctaLabel,
 .dailyClaimCard.is-locked .dailyClaimCard__ctaLabel{
-  color: rgba(255,255,255,0.90);
-  -webkit-text-stroke: 3px rgba(0,0,0,0.80);
-  animation: none;
+  --fill: rgba(255,255,255,0.92);
 
-  text-shadow:
-    -3px 0 rgba(0,0,0,0.80),
-     3px 0 rgba(0,0,0,0.80),
-     0 -3px rgba(0,0,0,0.80),
-     0  3px rgba(0,0,0,0.80),
-    -3px -3px rgba(0,0,0,0.80),
-     3px -3px rgba(0,0,0,0.80),
-    -3px  3px rgba(0,0,0,0.80),
-     3px  3px rgba(0,0,0,0.80),
-     0 3px 0 rgba(0,0,0,0.55),
-     0 12px 18px rgba(0,0,0,0.25);
+  /* contorno más fino visualmente (sin “placa negra”) */
+  --stroke: rgba(10, 18, 32, 0.88);
+  --strokeDown: rgba(0, 0, 0, 0.62);
+  --shadow: rgba(0, 0, 0, 0.42);
+
+  animation: none;
+  filter: none;
 }
 
+/* Highlights/shine más sutiles */
 .dailyClaimCard.is-cooldown .dailyClaimCard__ctaLabel::before,
 .dailyClaimCard.is-locked .dailyClaimCard__ctaLabel::before{
-  opacity: 0.18;
+  opacity: 0.16;
 }
 
 .dailyClaimCard.is-cooldown .dailyClaimCard__ctaLabel::after,
 .dailyClaimCard.is-locked .dailyClaimCard__ctaLabel::after{
   opacity: 0.12;
   animation: none;
-}
-
-@keyframes dailyClaimPulse{
-  0%,100%{ transform: translateY(0) scale(1); }
-  50%{ transform: translateY(-2px) scale(1.035); }
 }

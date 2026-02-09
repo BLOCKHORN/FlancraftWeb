@@ -91,6 +91,11 @@ export default function TiendaStorefront({ carrito, toggleProducto, onCambiarCan
     []
   );
 
+  const activeTabMeta = useMemo(() => {
+    const found = serverTabs.find((t) => t.key === serverTab);
+    return found || { key: serverTab, label: String(serverTab || "").toUpperCase(), icon: null };
+  }, [serverTabs, serverTab]);
+
   const activeData = dataByServer[renderTab] || { cats: [], packs: [], bust: null };
 
   useEffect(() => {
@@ -412,7 +417,17 @@ export default function TiendaStorefront({ carrito, toggleProducto, onCambiarCan
 
                 <div className="tsf-coinsPanel" aria-label={`Lotes de coins ${serverTab}`}>
                   <div className="tsf-coinsPanelHeader" aria-label="Título lotes de coins">
-                    <h2 className="tsf-coinsPanelTitle">LOTES DE COINS</h2>
+                    {/* ✅ TÍTULO DINÁMICO CON ICONO SEGÚN TAB */}
+                    <h2 className="tsf-coinsPanelTitle">
+                      <span className="tsf-coinsPanelTitleInner">
+                        {activeTabMeta?.icon ? (
+                          <img className="tsf-coinsPanelTitleIcon" src={activeTabMeta.icon} alt="" draggable="false" />
+                        ) : null}
+                        <span className="tsf-coinsPanelTitleText">
+                          LOTES DE COINS {String(activeTabMeta?.label || "").toUpperCase()}
+                        </span>
+                      </span>
+                    </h2>
                   </div>
 
                   <div className="tsf-coinsGridWrap" aria-label={`Packs de coins ${serverTab}`}>

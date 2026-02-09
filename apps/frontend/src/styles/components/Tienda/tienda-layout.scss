@@ -167,9 +167,91 @@
 }
 
 /* =========================================================
-   TABLET (<= 1024)
+   COMPACT MODE (a prueba de 1024x600 y tablets raras)
+   - 1 columna
+   - scroll natural (sin overflow hidden)
+   - sin sidebar
+   - deja hueco para la barra inferior
    ========================================================= */
-@media (max-width: 1023.98px) {
+.tienda-layout.is-compact {
+  --sidebar-w: 0px;
+
+  /* en compact queremos scroll natural */
+  height: auto;
+  min-height: calc(100dvh - var(--top-offset));
+  overflow: visible;
+
+  /* padding general más “universal” (tablets + landscape bajas) */
+  --pad-x: clamp(10px, 2vw, 18px);
+  --pad-y: clamp(10px, 1.6vw, 16px);
+  --gap-x: clamp(12px, 2vw, 18px);
+}
+
+.tienda-layout.is-compact::before {
+  right: 0;
+  background: url("/assets/tienda.webp") center top / cover no-repeat;
+}
+
+.tienda-layout.is-compact .tienda-layout-main {
+  height: auto;
+  min-height: 0;
+  overflow: visible;
+
+  display: flex;
+  flex-direction: column;
+  gap: clamp(8px, 2.0vw, 14px);
+
+  /* hueco para la barra inferior (sticky) */
+  padding: var(--pad-y) var(--pad-x) calc(var(--pad-y) + 84px);
+}
+
+.tienda-layout.is-compact .tienda-layout-sidebar {
+  display: none !important;
+}
+
+.tienda-layout.is-compact .tienda-layout-left {
+  overflow: visible;
+}
+
+.tienda-layout.is-compact .tienda-shelf-frame {
+  justify-content: stretch;
+}
+
+.tienda-layout.is-compact .tienda-shelf-inner {
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  overflow: visible;
+  padding: 0;
+}
+
+.tienda-layout.is-compact.is-contenido .tienda-shelf-inner {
+  height: auto;
+  overflow: visible;
+}
+
+/* Tebex embed a ancho completo en compact */
+.tienda-layout.is-compact .tienda-shelf-inner .tienda-tebex {
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  justify-content: stretch !important;
+  align-items: stretch !important;
+  --frameSize: 11px;
+  --frameRadius: 0.75rem;
+}
+
+.tienda-layout.is-compact .tienda-shelf-inner .tienda-tebex .tienda-contenido {
+  padding: 0.5rem 0 !important;
+  width: 100%;
+  max-width: none;
+  box-sizing: border-box;
+}
+
+/* =========================================================
+   TABLET (<= 1024) - si NO está en compact (por si lo usas en otro sitio)
+   ========================================================= */
+@media (max-width: 1024px) {
   .tienda-layout {
     --gap-x: clamp(12px, 2vw, 18px);
     --pad-x: clamp(12px, 2.2vw, 18px);
@@ -195,86 +277,25 @@
 
 /* =========================================================
    MOBILE (<= 768)
-   - Solo layout + embed rules
-   - Sticky bar/drawer están en tienda-layout-sticky.scss
+   - Solo detalles finos encima de compact
    ========================================================= */
 @media (max-width: 767.98px) {
-  .tienda-layout {
-    height: auto;
-    min-height: calc(100dvh - var(--top-offset));
-    overflow: visible;
-
+  .tienda-layout.is-compact {
     --m-gutter: 0px;
     --pad-x: 0px;
     --pad-y: clamp(6px, 2vw, 10px);
     --gap-x: 0px;
-    --sidebar-w: 100%;
   }
 
-  .tienda-layout::before {
-    right: 0;
-    background: url("/assets/tienda.webp") center top / cover no-repeat;
-    opacity: 1;
-  }
-
-  .tienda-layout-main {
-    height: auto;
-    min-height: 0;
-    overflow: visible;
-
-    display: flex;
-    flex-direction: column;
-    gap: clamp(8px, 2.4vw, 12px);
-
-    /* deja hueco para la barra inferior (sticky) */
-    padding: var(--pad-y) 0 calc(var(--pad-y) + 78px);
-  }
-
-  .tienda-layout-sidebar { display: none; }
-
-  .tienda-layout-left {
-    overflow: visible;
-    justify-content: stretch;
-  }
-
-  .tienda-shelf-frame { justify-content: stretch; }
-
-  .tienda-shelf-inner {
-    width: 100%;
-    max-width: 100%;
-    height: auto;
-    overflow: visible;
-    padding: 0;
-  }
-
-  .tienda-layout.is-contenido .tienda-shelf-inner {
-    height: auto;
-    overflow: visible;
-  }
-
-  /* Tebex embed a ancho completo en mobile */
-  .tienda-shelf-inner .tienda-tebex {
-    width: 100%;
-    max-width: 100%;
-    margin: 0;
-    justify-content: stretch !important;
-    align-items: stretch !important;
-    --frameSize: 11px;
-    --frameRadius: 0.75rem;
-  }
-
-  .tienda-shelf-inner .tienda-tebex .tienda-contenido {
-    padding: 0.5rem 0 !important;
-    width: 100%;
-    max-width: none;
-    box-sizing: border-box;
+  .tienda-layout.is-compact .tienda-layout-main {
+    padding: var(--pad-y) 0 calc(var(--pad-y) + 84px);
   }
 }
 
-/* micro-ajuste móvil pequeño (solo layout) */
+/* micro-ajuste móvil pequeño */
 @media (max-width: 479.98px) {
-  .tienda-layout-main {
-    padding-bottom: calc(var(--pad-y) + 78px);
+  .tienda-layout.is-compact .tienda-layout-main {
+    padding-bottom: calc(var(--pad-y) + 84px);
   }
 }
 

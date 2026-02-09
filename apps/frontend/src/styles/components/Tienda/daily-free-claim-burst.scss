@@ -602,3 +602,457 @@
   100%{ transform: scale(1) translateX(0); }
 }
 
+/* ==========================================================================
+   src/styles/components/Tienda/daily-free-claim-burst.responsive.scss
+   (COMPLETO) — Responsive del MODAL “Daily Claim Burst”
+   - Sin hardcode por dispositivo: usa clamp() + dvh + (cuando hay) container-ish sizing
+   - Evita overflow en móviles pequeños (altura/teclado/safe-area)
+   - Escala rayos/burst/partículas para que no se vean gigantes en pantallas estrechas
+   - Mantiene estética “dopamina” sin bandas laterales
+   ========================================================================== */
+
+/* ----------------------------------------------------------
+   0) Variables responsive (se recalculan por viewport)
+   - NO toco tu base, solo ajusto “tokens” en media queries
+   ---------------------------------------------------------- */
+
+/* Desktop amplio: un poco más grande + más aire */
+@media (min-width: 1100px) {
+  :root{
+    --dc-panel-w: min(560px, 92vw);
+    --dc-panel-r: 6px;
+  }
+
+  .dailyClaimModal__panel--big{
+    min-height: 380px;
+    padding: 24px 24px 20px;
+  }
+
+  .dailyClaimModal__server img{
+    width: 78px;
+    height: 78px;
+  }
+}
+
+/* ----------------------------------------------------------
+   1) Tablet / laptops pequeños (<= 1024)
+   ---------------------------------------------------------- */
+@media (max-width: 1024px) {
+  :root{
+    --dc-panel-w: min(520px, 92vw);
+    --dc-panel-r: 5px;
+  }
+
+  .dailyClaimModal{
+    /* evita que se “corte” por barras del navegador móvil */
+    padding: 16px 14px;
+    align-items: center;
+  }
+
+  .dailyClaimModal__panel{
+    width: var(--dc-panel-w);
+    max-width: 92vw;
+  }
+
+  .dailyClaimModal__panel--big{
+    min-height: 350px;
+    padding: 20px 20px 16px;
+  }
+
+  /* X más compacta pero aún cómoda */
+  .dailyClaimModal__x{
+    right: 12px;
+    top: 10px;
+    width: 38px;
+    height: 38px;
+    border-radius: 11px;
+  }
+
+  /* FX más comedidos */
+  .dailyClaimModal__rays{
+    width: 320%;
+    height: 320%;
+    opacity: 0.24;
+  }
+
+  .dailyClaimModal__burst{
+    width: min(500px, 92vw);
+    height: min(500px, 92vw);
+    top: 54%;
+  }
+
+  .dailyClaimModal__glow{
+    inset: -86px;
+  }
+
+  .dailyClaimModal__title{
+    font-size: clamp(20px, 3.2vw, 28px);
+  }
+
+  .dailyClaimModal__hint{
+    font-size: 13px;
+    max-width: 520px;
+  }
+
+  .dailyClaimModal__server img{
+    width: 70px;
+    height: 70px;
+  }
+}
+
+/* ----------------------------------------------------------
+   2) Móvil / tablet vertical (<= 768)
+   - Clave: que el panel NUNCA sobrepase la altura visible
+   - Usa dvh (mejor que vh en móvil), + safe-area
+   ---------------------------------------------------------- */
+@media (max-width: 768px) {
+  :root{
+    --dc-panel-w: min(520px, calc(100vw - 28px));
+    --dc-panel-r: 5px;
+  }
+
+  .dailyClaimModal{
+    padding:
+      calc(14px + env(safe-area-inset-top))
+      14px
+      calc(14px + env(safe-area-inset-bottom));
+    place-items: center;
+  }
+
+  .dailyClaimModal__panel{
+    width: var(--dc-panel-w);
+    max-width: 100%;
+    /* ✅ no se sale de pantalla: */
+    max-height: calc(100dvh - (28px + env(safe-area-inset-top) + env(safe-area-inset-bottom)));
+    overflow: hidden; /* tu base ya lo tiene, lo reforzamos */
+  }
+
+  .dailyClaimModal__panel--big{
+    min-height: 0;
+    padding: 18px 16px 14px;
+  }
+
+  /* Top row compacto */
+  .dailyClaimModal__top{
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .dailyClaimModal__badge{
+    padding: 9px 10px;
+    gap: 9px;
+
+    .t{ font-size: 11px; letter-spacing: 0.10em; }
+    .s{ font-size: 13px; }
+  }
+
+  .dailyClaimModal__steps{
+    gap: 7px;
+    .dot{ width: 8px; height: 8px; }
+  }
+
+  /* Centro: menos padding vertical para que quepa mejor */
+  .dailyClaimModal__center{
+    gap: 9px;
+    padding: 8px 6px 6px;
+  }
+
+  .dailyClaimModal__server{
+    gap: 7px;
+    img{
+      width: 64px;
+      height: 64px;
+    }
+  }
+
+  .dailyClaimModal__serverName{
+    font-size: 11px;
+    letter-spacing: 0.10em;
+  }
+
+  .dailyClaimModal__title{
+    font-size: clamp(20px, 5.1vw, 28px);
+  }
+
+  .dailyClaimModal__hint{
+    font-size: 12.5px;
+    max-width: 92%;
+  }
+
+  /* Cantidad grande: que no se coma el panel */
+  .dailyClaimModal__amountBig{
+    gap: 9px;
+    margin-top: 1px;
+    margin-bottom: 1px;
+
+    .n{
+      font-size: clamp(36px, 9.5vw, 56px);
+      text-shadow:
+        0 18px 44px rgba(0,0,0,0.62),
+        0 0 16px rgba(255,235,170,0.14);
+    }
+
+    .coin{
+      height: clamp(36px, 9.5vw, 56px);
+      transform: translateY(1px) rotate(-10deg);
+    }
+  }
+
+  /* CTA: botones más anchos en móvil */
+  .dailyClaimModal__ctaRow{
+    gap: 10px;
+    margin-top: 10px;
+    padding-top: 2px;
+  }
+
+  .dailyClaimBtn{
+    padding: 12px 14px;
+    font-size: 12px;
+    border-radius: 4px;
+    min-width: min(220px, 70vw);
+  }
+
+  /* X: accesible, sin ocupar mucho */
+  .dailyClaimModal__x{
+    right: 10px;
+    top: 10px;
+    width: 36px;
+    height: 36px;
+    border-radius: 11px;
+  }
+
+  /* FX: ajusta para que no se vean “enormes” en móvil */
+  .dailyClaimModal__rays{
+    top: 58%;
+    width: 300%;
+    height: 300%;
+    opacity: 0.22;
+    animation-duration: 11.5s, 2.8s;
+  }
+
+  .dailyClaimModal__panel.is-reveal .dailyClaimModal__rays{
+    opacity: 0.34;
+    animation-duration: 11.5s, 1.85s;
+  }
+
+  .dailyClaimModal__glow{
+    inset: -80px;
+    animation-duration: 1500ms;
+  }
+
+  .dailyClaimModal__shine{
+    opacity: 0.58;
+    animation-duration: 1400ms;
+  }
+
+  .dailyClaimModal__burst{
+    width: min(460px, 92vw);
+    height: min(460px, 92vw);
+    top: 56%;
+  }
+
+  /* partículas: un pelín más pequeñas para densidad */
+  .dailyClaimParticle{
+    width: 7px;
+    height: 7px;
+  }
+
+  /* si se queda sin altura, permite scroll interno suave */
+  @supports (overflow: clip) {
+    .dailyClaimModal__panel{
+      overflow: clip;
+    }
+  }
+
+  /* fallback scroll vertical (solo si hace falta por contenido largo) */
+  .dailyClaimModal__panel{
+    display: block;
+  }
+  .dailyClaimModal__top,
+  .dailyClaimModal__center{
+    position: relative;
+  }
+}
+
+/* ----------------------------------------------------------
+   3) Móvil pequeño (<= 480)
+   - Prioridad: que NUNCA desborde en alto
+   ---------------------------------------------------------- */
+@media (max-width: 480px) {
+  :root{
+    --dc-panel-w: calc(100vw - 22px);
+    --dc-panel-r: 5px;
+  }
+
+  .dailyClaimModal{
+    padding:
+      calc(12px + env(safe-area-inset-top))
+      11px
+      calc(12px + env(safe-area-inset-bottom));
+  }
+
+  .dailyClaimModal__panel--big{
+    padding: 16px 14px 12px;
+  }
+
+  .dailyClaimModal__top{
+    margin-bottom: 10px;
+  }
+
+  .dailyClaimModal__badge{
+    padding: 8px 10px;
+    .t{ font-size: 10.5px; }
+    .s{ font-size: 12.5px; }
+  }
+
+  .dailyClaimModal__server img{
+    width: 58px;
+    height: 58px;
+  }
+
+  .dailyClaimModal__title{
+    font-size: clamp(19px, 6.0vw, 26px);
+  }
+
+  .dailyClaimModal__hint{
+    font-size: 12px;
+  }
+
+  .dailyClaimModal__amountBig{
+    .n{ font-size: clamp(34px, 10.5vw, 52px); }
+    .coin{ height: clamp(34px, 10.5vw, 52px); }
+  }
+
+  .dailyClaimBtn{
+    min-width: min(240px, 78vw);
+    padding: 12px 14px;
+  }
+
+  .dailyClaimModal__x{
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+  }
+
+  .dailyClaimModal__rays{
+    width: 290%;
+    height: 290%;
+    opacity: 0.20;
+  }
+
+  .dailyClaimModal__burst{
+    width: min(420px, 92vw);
+    height: min(420px, 92vw);
+  }
+
+  .dailyClaimParticle{
+    width: 6px;
+    height: 6px;
+  }
+}
+
+/* ----------------------------------------------------------
+   4) Ultra pequeño (<= 360)
+   - Ajuste fino para que aún se lea
+   ---------------------------------------------------------- */
+@media (max-width: 360px) {
+  :root{
+    --dc-panel-w: calc(100vw - 18px);
+  }
+
+  .dailyClaimModal__panel--big{
+    padding: 14px 12px 11px;
+  }
+
+  .dailyClaimModal__badge{
+    padding: 7px 9px;
+    gap: 8px;
+    .t{ font-size: 10px; letter-spacing: 0.095em; }
+    .s{ font-size: 12px; }
+  }
+
+  .dailyClaimModal__steps .dot{
+    width: 7px;
+    height: 7px;
+  }
+
+  .dailyClaimModal__server img{
+    width: 54px;
+    height: 54px;
+  }
+
+  .dailyClaimModal__title{
+    font-size: clamp(18px, 6.4vw, 24px);
+  }
+
+  .dailyClaimModal__amountBig{
+    gap: 8px;
+    .n{ font-size: clamp(32px, 11.2vw, 48px); }
+    .coin{ height: clamp(32px, 11.2vw, 48px); }
+  }
+
+  .dailyClaimBtn{
+    min-width: 82vw;
+    font-size: 11.5px;
+    padding: 11px 12px;
+  }
+
+  .dailyClaimModal__rays{
+    width: 280%;
+    height: 280%;
+  }
+
+  .dailyClaimModal__burst{
+    width: min(380px, 92vw);
+    height: min(380px, 92vw);
+  }
+}
+
+/* ----------------------------------------------------------
+   5) Dispositivos muy bajitos (landscape móvil / ventanas pequeñas)
+   - Si la altura útil es poca, hacemos el panel scrollable internamente
+   ---------------------------------------------------------- */
+@media (max-height: 520px) {
+  .dailyClaimModal{
+    place-items: center;
+    padding:
+      calc(10px + env(safe-area-inset-top))
+      10px
+      calc(10px + env(safe-area-inset-bottom));
+  }
+
+  .dailyClaimModal__panel{
+    max-height: calc(100dvh - (20px + env(safe-area-inset-top) + env(safe-area-inset-bottom)));
+  }
+
+  /* permite scroll vertical SIN fastidiar el fondo */
+  .dailyClaimModal__panel{
+    overflow: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* FX menos invasivos */
+  .dailyClaimModal__rays{
+    opacity: 0.18;
+  }
+  .dailyClaimModal__burst{
+    opacity: 0.10;
+  }
+}
+
+/* ----------------------------------------------------------
+   6) Reduce motion (accesibilidad)
+   ---------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .dailyClaimModal__backdrop,
+  .dailyClaimModal__panel,
+  .dailyClaimModal__rays,
+  .dailyClaimModal__shine,
+  .dailyClaimModal__glow,
+  .dailyClaimModal__burst,
+  .dailyClaimParticle{
+    animation: none !important;
+    transition: none !important;
+  }
+}

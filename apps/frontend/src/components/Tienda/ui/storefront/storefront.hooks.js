@@ -1,54 +1,98 @@
 // src/components/Tienda/ui/storefront/storefront.hooks.js
-import { useEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState, useEffect } from "react";
 import { fetchTebex } from "../../utils/tiendaHelpers";
 
 export function useUiScale(wrapRef) {
-  useEffect(() => {
+  useLayoutEffect(() => {
     const root = wrapRef.current;
     if (!root) return;
 
     const BASE_W = 1280;
     const BASE_H = 820;
+
     const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
+    let raf = 0;
+
+    let last = {
+      cw: 0,
+      ch: 0,
+      vvh: 0,
+      vvw: 0,
+      vvTop: 0,
+      s: "",
+    };
+
     const apply = () => {
+      const r = root.getBoundingClientRect();
+
+      const cw = Math.max(320, Math.round(r.width || root.clientWidth || 0));
+      const ch = Math.max(520, Math.round(r.height || root.clientHeight || 0));
+
       const vv = window.visualViewport;
-      const vw = vv?.width || window.innerWidth || 1200;
-      const vh = vv?.height || window.innerHeight || 800;
+      const vvh = Math.round(vv?.height || window.innerHeight || ch);
+      const vvw = Math.round(vv?.width || window.innerWidth || cw);
 
-      const safeTop = 0;
-      const safeBottom = 16;
-      const usableH = Math.max(520, vh - safeTop - safeBottom);
+      const vvTop = Math.round(vv?.offsetTop || 0);
 
-      const scaleW = vw / BASE_W;
+      const usableH = Math.max(520, Math.min(ch, vvh - vvTop) - 16);
+
+      const scaleW = cw / BASE_W;
       const scaleH = usableH / BASE_H;
 
       const scale = clamp(Math.min(scaleW, scaleH), 0.56, 0.78);
-
       const s = scale.toFixed(3);
+
+      const changed =
+        last.s !== s ||
+        last.cw !== cw ||
+        last.ch !== ch ||
+        last.vvh !== vvh ||
+        last.vvw !== vvw ||
+        last.vvTop !== vvTop;
+
+      if (!changed) return;
+
+      last = { cw, ch, vvh, vvw, vvTop, s };
+
       root.style.setProperty("--ui-scale", s);
       root.style.setProperty("--ui-scale-auto", s);
-      root.style.setProperty("--vvh", `${vh}px`);
-      root.style.setProperty("--vvw", `${vw}px`);
+
+      root.style.setProperty("--vvh", `${vvh}px`);
+      root.style.setProperty("--vvw", `${vvw}px`);
+      root.style.setProperty("--cwh", `${ch}px`);
+      root.style.setProperty("--cww", `${cw}px`);
+      root.style.setProperty("--vvtop", `${vvTop}px`);
+    };
+
+    const schedule = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(apply);
     };
 
     apply();
 
-    const onResize = () => apply();
-    window.addEventListener("resize", onResize);
-    window.addEventListener("orientationchange", onResize);
+    const ro = new ResizeObserver(schedule);
+    ro.observe(root);
+
+    window.addEventListener("resize", schedule, { passive: true });
+    window.addEventListener("orientationchange", schedule, { passive: true });
 
     if (window.visualViewport) {
-      window.visualViewport.addEventListener("resize", onResize);
-      window.visualViewport.addEventListener("scroll", onResize);
+      window.visualViewport.addEventListener("resize", schedule);
+      window.visualViewport.addEventListener("scroll", schedule);
     }
 
     return () => {
-      window.removeEventListener("resize", onResize);
-      window.removeEventListener("orientationchange", onResize);
+      cancelAnimationFrame(raf);
+      ro.disconnect();
+
+      window.removeEventListener("resize", schedule);
+      window.removeEventListener("orientationchange", schedule);
+
       if (window.visualViewport) {
-        window.visualViewport.removeEventListener("resize", onResize);
-        window.visualViewport.removeEventListener("scroll", onResize);
+        window.visualViewport.removeEventListener("resize", schedule);
+        window.visualViewport.removeEventListener("scroll", schedule);
       }
     };
   }, [wrapRef]);
@@ -61,8 +105,10 @@ export function useOutsideClose(wrapRef, onOutside) {
       if (!root) return;
       if (!root.contains(e.target)) onOutside?.();
     };
+
     document.addEventListener("mousedown", onDown);
     document.addEventListener("touchstart", onDown, { passive: true });
+
     return () => {
       document.removeEventListener("mousedown", onDown);
       document.removeEventListener("touchstart", onDown);
@@ -153,5 +199,13 @@ export function useTabDeck(initialKey = "gens") {
     };
   }, []);
 
-  return { serverTab, renderTab, tabAnim, switchedOnce, setServerTab, setRenderTab, changeServerTabWithDeck };
+  return {
+    serverTab,
+    renderTab,
+    tabAnim,
+    switchedOnce,
+    setServerTab,
+    setRenderTab,
+    changeServerTabWithDeck,
+  };
 }

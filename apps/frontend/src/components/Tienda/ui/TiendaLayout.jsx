@@ -32,15 +32,18 @@ const readWebUser = () => {
 
 const uid = () => Math.random().toString(16).slice(2);
 
-function useIsMobileQuery(maxWidth = 767.98) {
-  const [isMobile, setIsMobile] = useState(() => {
+/**
+ * MediaQuery hook (max-width)
+ */
+function useIsMobileQuery(maxWidth = 1024) {
+  const [isMatch, setIsMatch] = useState(() => {
     if (typeof window === "undefined") return false;
     return window.matchMedia(`(max-width: ${maxWidth}px)`).matches;
   });
 
   useEffect(() => {
     const mq = window.matchMedia(`(max-width: ${maxWidth}px)`);
-    const onChange = () => setIsMobile(mq.matches);
+    const onChange = () => setIsMatch(mq.matches);
 
     if (mq.addEventListener) mq.addEventListener("change", onChange);
     else mq.addListener(onChange);
@@ -53,7 +56,35 @@ function useIsMobileQuery(maxWidth = 767.98) {
     };
   }, [maxWidth]);
 
-  return isMobile;
+  return isMatch;
+}
+
+/**
+ * MediaQuery hook (max-height)
+ * Útil para pantallas tipo 1024x600 / Nest Hub / landscape bajas.
+ */
+function useIsShortHeight(maxHeight = 700) {
+  const [isMatch, setIsMatch] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.matchMedia(`(max-height: ${maxHeight}px)`).matches;
+  });
+
+  useEffect(() => {
+    const mq = window.matchMedia(`(max-height: ${maxHeight}px)`);
+    const onChange = () => setIsMatch(mq.matches);
+
+    if (mq.addEventListener) mq.addEventListener("change", onChange);
+    else mq.addListener(onChange);
+
+    onChange();
+
+    return () => {
+      if (mq.removeEventListener) mq.removeEventListener("change", onChange);
+      else mq.removeListener(onChange);
+    };
+  }, [maxHeight]);
+
+  return isMatch;
 }
 
 // ===== icons (pro, sin emojis) =====
@@ -92,7 +123,11 @@ const TiendaLayout = () => {
     useTiendaCarrito(nombreConfirmado);
 
   const location = useLocation();
-  const isMobile = useIsMobileQuery(767.98);
+
+  // ✅ COMPACTO = tablets (<=1024) + pantallas bajitas (<=700px de alto)
+  const isNarrow = useIsMobileQuery(1024);
+  const isShort = useIsShortHeight(700);
+  const isCompact = Boolean(isNarrow || isShort);
 
   const esPortada = useMemo(() => {
     return location.pathname === "/tienda" || location.pathname === "/tienda/";
@@ -245,16 +280,16 @@ const TiendaLayout = () => {
   };
 
   // =========================================================
-  // Mobile cart drawer (bottom sheet)
+  // Compact cart drawer (bottom sheet)
   // =========================================================
   const [cartOpenMobile, setCartOpenMobile] = useState(false);
 
   useEffect(() => {
-    if (!isMobile) setCartOpenMobile(false);
-  }, [isMobile]);
+    if (!isCompact) setCartOpenMobile(false);
+  }, [isCompact]);
 
   useEffect(() => {
-    if (!isMobile) return;
+    if (!isCompact) return;
     if (!cartOpenMobile) return;
 
     const prev = document.body.style.overflow;
@@ -262,7 +297,7 @@ const TiendaLayout = () => {
     return () => {
       document.body.style.overflow = prev || "";
     };
-  }, [isMobile, cartOpenMobile]);
+  }, [isCompact, cartOpenMobile]);
 
   // =========================================================
   // FX: Fly-to-basket + basket pulse
@@ -360,7 +395,8 @@ const TiendaLayout = () => {
         "tienda-layout",
         esPortada ? "is-portada" : "is-contenido",
         expandiendo ? "is-expanding" : "",
-        isMobile ? "is-mobile" : "is-desktop",
+        isCompact ? "is-compact" : "",
+        isCompact ? "is-mobile" : "is-desktop",
       ].join(" ")}
     >
       {mostrarLogin && (
@@ -419,7 +455,7 @@ const TiendaLayout = () => {
           </div>
         </section>
 
-        {!isMobile && (
+        {!isCompact && (
           <aside className="tienda-layout-sidebar">
             <div className="tienda-sidebar-card">
               <div className="tienda-cart-wrap">
@@ -450,8 +486,8 @@ const TiendaLayout = () => {
         )}
       </main>
 
-      {/* MOBILE: barra inferior + bottom-sheet */}
-      {isMobile && (
+      {/* COMPACTO: barra inferior + bottom-sheet */}
+      {isCompact && (
         <>
           <button
             type="button"
@@ -465,7 +501,6 @@ const TiendaLayout = () => {
             data-basket-anchor="true"
             aria-label="Abrir carrito"
           >
-            {/* mitad izquierda (carrito) */}
             <div className="tmb-left" aria-label={`Carrito: ${totalQty} artículos`}>
               <div className="tmb-pill">
                 <span className="tmb-pill-icon" aria-hidden="true">
@@ -476,7 +511,6 @@ const TiendaLayout = () => {
               </div>
             </div>
 
-            {/* mitad derecha (comprar) */}
             <div className="tmb-cta" aria-label={`Comprar por ${totalFormatted}`}>
               <span className="tmb-ctaText">COMPRAR</span>
               <span className="tmb-ctaPrice">{totalFormatted}</span>

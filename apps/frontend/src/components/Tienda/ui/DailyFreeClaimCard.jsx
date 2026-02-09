@@ -1,6 +1,7 @@
 // src/components/Tienda/ui/DailyFreeClaimCard.jsx
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import LoginModal from "../../Auth/LoginModal";
 import "../../../styles/components/Tienda/daily-free-claim-card.scss";
 import "../../../styles/components/Tienda/daily-free-claim-burst.scss";
 
@@ -83,9 +84,14 @@ export default function DailyFreeClaimCard() {
   const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(true);
   const [claiming, setClaiming] = useState(false);
-  const [modal, setModal] = useState(null);
 
-  const token = localStorage.getItem("token");
+  const [modal, setModal] = useState(null);
+  const [showLogin, setShowLogin] = useState(false);
+
+  // ✅ token en state para que, al cerrar LoginModal, podamos refrescar status sin recargar página
+  const [token, setToken] = useState(() => localStorage.getItem("token"));
+
+  const isLocked = !token; // si no hay token, tratamos como no logueado
 
   const nextMs = useMemo(() => {
     if (!status?.nextClaimAt) return 0;
@@ -110,12 +116,13 @@ export default function DailyFreeClaimCard() {
     return buildParticles(modal.phase === "done" ? 26 : 18);
   }, [modal?.particlesKey]);
 
+  // ---------- STATUS ----------
   useEffect(() => {
     let alive = true;
 
     if (!token) {
       setLoading(false);
-      setStatus({ notLogged: true });
+      setStatus({ claimedToday: false });
       return () => {};
     }
 
@@ -125,6 +132,16 @@ export default function DailyFreeClaimCard() {
         const r = await fetch(`${API}/api/daily-claim/status`, {
           headers: { Authorization: `Bearer ${token}` },
         });
+
+        // token inválido/expirado => UX coherente: “no logueado”
+        if (r.status === 401) {
+          localStorage.removeItem("token");
+          if (!alive) return;
+          setToken(null);
+          setStatus({ claimedToday: false });
+          return;
+        }
+
         const d = await r.json();
         if (!alive) return;
         setStatus(d);
@@ -159,6 +176,7 @@ export default function DailyFreeClaimCard() {
     };
   }, [modal]);
 
+  // ---------- MODAL FLOWS ----------
   const openRewardModal = ({ amount, servers, nextClaimAt }) => {
     const list = Array.isArray(servers) && servers.length ? servers : ["oneblock", "gens"];
     const steps = list.map((sv) => ({ serverKey: sv, amount }));
@@ -171,9 +189,17 @@ export default function DailyFreeClaimCard() {
     });
   };
 
+  const openAuthModal = () => {
+    setModal({
+      phase: "auth",
+      particlesKey: `${Date.now()}_${Math.random()}`,
+    });
+  };
+
   const nextStep = () => {
     setModal((m) => {
       if (!m || m.error) return m;
+      if (m.phase === "auth") return m;
 
       if (m.phase === "intro") return { ...m, phase: "reveal", particlesKey: `${Date.now()}_${Math.random()}` };
 
@@ -192,6 +218,7 @@ export default function DailyFreeClaimCard() {
     });
   };
 
+  // ---------- CLAIM ----------
   const handleClaim = async () => {
     setClaiming(true);
     try {
@@ -217,14 +244,34 @@ export default function DailyFreeClaimCard() {
     }
   };
 
-  const isLocked = !token || status?.notLogged;
+  // ✅ solo se desactiva si está reclamando o ya se reclamó hoy
   const disabled = !!(status?.claimedToday || claiming);
 
-  const timerText = status?.claimedToday ? msToShort(nextMs) : null;
-  const ctaText = isLocked ? "BLOQUEADO" : status?.claimedToday ? "RECLAMADO" : claiming ? "RECLAMANDO..." : "GRATIS";
+  // ✅ ya no engañamos: si no hay login, el CTA sigue siendo “GRATIS”
+  const ctaText = status?.claimedToday ? "RECLAMADO" : claiming ? "RECLAMANDO..." : "GRATIS";
+
+  // ✅ pill superior: guía rápida sin “BLOQUEADO”
+  const timerText = status?.claimedToday ? msToShort(nextMs) : isLocked ? "Inicia sesión" : "Disponible";
 
   if (loading) return null;
 
+  const isRewardFlow = !!(modal && !modal.error && modal.phase !== "auth");
+
+  // ---------- LOGIN MODAL NODE ----------
+  const loginNode =
+    showLogin &&
+    createPortal(
+      <LoginModal
+        onClose={() => {
+          setShowLogin(false);
+          // al cerrar login, refrescamos token (si se logueó, lo habrá metido en localStorage)
+          setToken(localStorage.getItem("token"));
+        }}
+      />,
+      document.body
+    );
+
+  // ---------- DAILY MODAL NODE ----------
   const modalNode =
     modal &&
     createPortal(
@@ -259,10 +306,10 @@ export default function DailyFreeClaimCard() {
               <div className="dailyClaimModal__top">
                 <div className="dailyClaimModal__badge">
                   <span className="t">RECOMPENSA DIARIA</span>
-                  <span className="s">Gratis</span>
+                  <span className="s">{modal.phase === "auth" ? "Requiere cuenta" : "Gratis"}</span>
                 </div>
 
-                {modal?.steps?.length > 1 && (
+                {modal?.steps?.length > 1 && modal.phase !== "auth" && (
                   <div className="dailyClaimModal__steps">
                     {modal.steps.map((_, i) => (
                       <span key={i} className={`dot ${i === modal.stepIndex ? "is-on" : ""}`} />
@@ -272,55 +319,86 @@ export default function DailyFreeClaimCard() {
               </div>
 
               <div className="dailyClaimModal__center">
-                {stepMeta?.icon ? (
-                  <div className="dailyClaimModal__server">
-                    <img src={stepMeta.icon} alt={stepMeta.label} draggable="false" />
-                    <div className="dailyClaimModal__serverName">{stepMeta.label}</div>
-                  </div>
-                ) : (
-                  <div className="dailyClaimModal__serverName">{stepMeta?.label}</div>
-                )}
-
-                {modal.phase === "intro" && (
+                {/* AUTH */}
+                {modal.phase === "auth" && (
                   <>
-                    <div className="dailyClaimModal__title">Preparando recompensa…</div>
-                    <div className="dailyClaimModal__hint">Toca para revelar</div>
+                    <div className="dailyClaimModal__title">Inicia sesión para reclamar</div>
+                    <div className="dailyClaimModal__hint">
+                      Para reclamar el regalo diario, primero vincula tu cuenta en el servidor con <b>/vincular</b> y luego inicia sesión aquí.
+                    </div>
+
                     <div className="dailyClaimModal__ctaRow">
-                      <button type="button" className="dailyClaimBtn dailyClaimBtn--primary" onClick={nextStep}>
-                        Revelar
+                      <button
+                        type="button"
+                        className="dailyClaimBtn dailyClaimBtn--primary"
+                        onClick={() => {
+                          setModal(null);
+                          setShowLogin(true);
+                        }}
+                      >
+                        Iniciar sesión
                       </button>
-                    </div>
-                  </>
-                )}
 
-                {modal.phase === "reveal" && (
-                  <>
-                    <div className="dailyClaimModal__title">Has ganado</div>
-
-                    <div className="dailyClaimModal__amountBig" aria-label="Cantidad de coins ganados">
-                      <span className="n">{formatInt(countVal)}</span>
-                      <img className="coin" src="/tienda/assets/coin.png" alt="Coin" draggable="false" />
-                    </div>
-
-                    <div className="dailyClaimModal__hint">Se entregan automáticamente en el servidor</div>
-
-                    <div className="dailyClaimModal__ctaRow">
-                      <button type="button" className="dailyClaimBtn dailyClaimBtn--primary" onClick={nextStep}>
-                        {modal.stepIndex < modal.steps.length - 1 ? "Siguiente" : "Continuar"}
-                      </button>
-                    </div>
-                  </>
-                )}
-
-                {modal.phase === "done" && (
-                  <>
-                    <div className="dailyClaimModal__title">Completado</div>
-                    <div className="dailyClaimModal__hint">Vuelve mañana para tu próxima recompensa.</div>
-                    <div className="dailyClaimModal__ctaRow">
                       <button type="button" className="dailyClaimBtn" onClick={() => setModal(null)}>
                         Cerrar
                       </button>
                     </div>
+                  </>
+                )}
+
+                {/* REWARD FLOW */}
+                {modal.phase !== "auth" && (
+                  <>
+                    {stepMeta?.icon ? (
+                      <div className="dailyClaimModal__server">
+                        <img src={stepMeta.icon} alt={stepMeta.label} draggable="false" />
+                        <div className="dailyClaimModal__serverName">{stepMeta.label}</div>
+                      </div>
+                    ) : (
+                      <div className="dailyClaimModal__serverName">{stepMeta?.label}</div>
+                    )}
+
+                    {modal.phase === "intro" && (
+                      <>
+                        <div className="dailyClaimModal__title">Preparando recompensa…</div>
+                        <div className="dailyClaimModal__ctaRow">
+                          <button type="button" className="dailyClaimBtn dailyClaimBtn--primary" onClick={nextStep}>
+                            Revelar
+                          </button>
+                        </div>
+                      </>
+                    )}
+
+                    {modal.phase === "reveal" && (
+                      <>
+                        <div className="dailyClaimModal__title">Has ganado</div>
+
+                        <div className="dailyClaimModal__amountBig" aria-label="Cantidad de coins ganados">
+                          <span className="n">{formatInt(countVal)}</span>
+                          <img className="coin" src="/tienda/assets/coin.png" alt="Coin" draggable="false" />
+                        </div>
+
+                        <div className="dailyClaimModal__hint">Se entregan automáticamente en el servidor</div>
+
+                        <div className="dailyClaimModal__ctaRow">
+                          <button type="button" className="dailyClaimBtn dailyClaimBtn--primary" onClick={nextStep}>
+                            {modal.stepIndex < modal.steps.length - 1 ? "Siguiente" : "Continuar"}
+                          </button>
+                        </div>
+                      </>
+                    )}
+
+                    {modal.phase === "done" && (
+                      <>
+                        <div className="dailyClaimModal__title">Completado</div>
+                        <div className="dailyClaimModal__hint">Vuelve mañana para tu próxima recompensa.</div>
+                        <div className="dailyClaimModal__ctaRow">
+                          <button type="button" className="dailyClaimBtn" onClick={() => setModal(null)}>
+                            Cerrar
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </>
                 )}
               </div>
@@ -329,7 +407,8 @@ export default function DailyFreeClaimCard() {
                 ✕
               </button>
 
-              <button className="dailyClaimModal__clickCatcher" type="button" aria-label="Siguiente" onClick={nextStep} />
+              {/* click-catcher SOLO en el flow recompensa */}
+              {isRewardFlow && <button className="dailyClaimModal__clickCatcher" type="button" aria-label="Siguiente" onClick={nextStep} />}
             </>
           ) : (
             <>
@@ -349,11 +428,11 @@ export default function DailyFreeClaimCard() {
 
   return (
     <>
-      <div className={`dailyClaimCard ${disabled ? "is-cooldown" : ""} ${isLocked ? "is-locked" : ""}`}>
+      <div className={`dailyClaimCard ${disabled ? "is-cooldown" : ""} ${isLocked ? "is-auth" : ""}`}>
         <div className="dailyClaimCard__title">REGALO DIARIO</div>
 
         <div className="dailyClaimCard__timer" aria-hidden="true">
-          {timerText ? timerText : "Disponible"}
+          {timerText}
         </div>
 
         <div className="dailyClaimCard__sheet">
@@ -363,12 +442,22 @@ export default function DailyFreeClaimCard() {
           </div>
         </div>
 
-        <button type="button" className="dailyClaimCard__cta" onClick={!disabled && !isLocked ? handleClaim : undefined} disabled={disabled || isLocked}>
+        <button
+          type="button"
+          className="dailyClaimCard__cta"
+          disabled={disabled}
+          onClick={() => {
+            if (disabled) return;
+            if (isLocked) return openAuthModal();
+            return handleClaim();
+          }}
+        >
           <span className="dailyClaimCard__ctaLabel">{ctaText}</span>
         </button>
       </div>
 
       {modalNode}
+      {loginNode}
     </>
   );
 }
