@@ -1,10 +1,11 @@
 // src/components/Tienda/ui/TiendaStorefront.jsx
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "../../../styles/components/Tienda/tienda-storefront.scss";
 import TiendaOfertaCountdown from "./TiendaOfertaCountdown";
 import CoinshopModal from "../coinshop/CoinshopModal";
 import DailyFreeClaimCard from "./DailyFreeClaimCard";
 import BonusArrowUp from "./icons/BonusArrowUp";
+import RangosComparativaPanel from "../details/RangosComparativaPanel";
 
 import {
   getPackageId,
@@ -29,7 +30,11 @@ import {
   parseCoinsFromPkg,
 } from "./storefront/storefront.utils";
 
-import { useOutsideClose, useStorefrontData, useTabDeck, useUiScale } from "./storefront/storefront.hooks";
+import {
+  useStorefrontData,
+  useTabDeck,
+  useUiScale,
+} from "./storefront/storefront.hooks";
 
 const COINS_PER_USD = 1000 / 6;
 
@@ -47,21 +52,44 @@ function coinsFromUsdDouble(usd) {
   return roundNiceCoins(coins);
 }
 
-export default function TiendaStorefront({ carrito, toggleProducto, onCambiarCantidad, onSetCantidad, onAgregar }) {
+export default function TiendaStorefront({
+  carrito,
+  toggleProducto,
+  onCambiarCantidad,
+  onSetCantidad,
+  onAgregar,
+}) {
   const wrapRef = useRef(null);
 
   const { loading, err, dataByServer } = useStorefrontData();
-  const { serverTab, renderTab, tabAnim, switchedOnce, changeServerTabWithDeck, setServerTab, setRenderTab } = useTabDeck("gens");
+  const {
+    serverTab,
+    renderTab,
+    tabAnim,
+    switchedOnce,
+    changeServerTabWithDeck,
+    setServerTab,
+    setRenderTab,
+  } = useTabDeck("gens");
 
   const [ready, setReady] = useState(false);
+
+  // ✅ Comparativa en MODAL (portal), sin colapsar layout
   const [activeRank, setActiveRank] = useState(null);
+const openRankDetails = useCallback((key) => {
+  setActiveRank(key);
+}, []);
+
+const closeRankDetails = useCallback(() => {
+  setActiveRank(null);
+}, []);
+
   const [hoverFx, setHoverFx] = useState(null);
 
   const [coinshopOpen, setCoinshopOpen] = useState(false);
   const [coinshopFromRect, setCoinshopFromRect] = useState(null);
 
   useUiScale(wrapRef);
-  useOutsideClose(wrapRef, () => setActiveRank(null));
 
   useEffect(() => {
     if (!loading && !err) {
@@ -70,10 +98,18 @@ export default function TiendaStorefront({ carrito, toggleProducto, onCambiarCan
     }
   }, [loading, err]);
 
+
   const openCoinshopFromEl = (el) => {
     const r = el?.getBoundingClientRect?.();
     if (r) {
-      setCoinshopFromRect({ left: r.left, top: r.top, width: r.width, height: r.height, right: r.right, bottom: r.bottom });
+      setCoinshopFromRect({
+        left: r.left,
+        top: r.top,
+        width: r.width,
+        height: r.height,
+        right: r.right,
+        bottom: r.bottom,
+      });
     } else {
       setCoinshopFromRect(null);
     }
@@ -214,7 +250,10 @@ export default function TiendaStorefront({ carrito, toggleProducto, onCambiarCan
     if (delta > 0 && getQtyInCart(pkg) <= 0) return toggleProducto(norm);
   };
 
-  const onRankTap = (key) => setActiveRank((cur) => (cur === key ? null : key));
+  const onRankTap = (key) => {
+    if (activeRank === key) return closeRankDetails();
+    return openRankDetails(key);
+  };
 
   const coinsValue = useMemo(() => {
     return buildCoinsValueMap(coinsPackages, {
@@ -237,7 +276,7 @@ export default function TiendaStorefront({ carrito, toggleProducto, onCambiarCan
     const isLeft = w > 0 ? x <= w / 2 : true;
 
     if (isLeft) {
-      handleBuyRank(pkg, ev); // USD (carrito normal)
+      handleBuyRank(pkg, ev);
       return;
     }
 
@@ -246,10 +285,23 @@ export default function TiendaStorefront({ carrito, toggleProducto, onCambiarCan
   };
 
   return (
-    <div className={`tienda-storefront tsf-brawl2 ${ready ? "is-ready" : ""} ${rootFxClass}`} ref={wrapRef}>
+    <div
+      className={`tienda-storefront tsf-brawl2 ${ready ? "is-ready" : ""} ${rootFxClass}`}
+      ref={wrapRef}
+    >
       <div className="tsf-bgFX" aria-hidden="true" />
 
       <CoinshopModal open={coinshopOpen} fromRect={coinshopFromRect} onClose={closeCoinshop} />
+
+      {/* ✅ MODAL COMPARATIVA (Portal) */}
+      {activeRank ? (
+  <RangosComparativaPanel
+    rankKey={activeRank}
+    onClose={closeRankDetails}
+    onPickRank={(rk) => setActiveRank(rk)}
+  />
+) : null}
+
 
       <header className="tsf-header tsf-header--fixed">
         <div className="tsf-signImg" aria-label="Tienda">
@@ -281,8 +333,8 @@ export default function TiendaStorefront({ carrito, toggleProducto, onCambiarCan
                 <div className="tsf-ranksRow">
                   {rankCards.map((r, idx) => {
                     const pkg = r.pkg;
-                    const price = pkg ? getPackagePrice(pkg) : null; // USD
-                    const coinsPrice = price != null ? coinsFromUsdDouble(price) : null; // coins (doble, redondeado)
+                    const price = pkg ? getPackagePrice(pkg) : null;
+                    const coinsPrice = price != null ? coinsFromUsdDouble(price) : null;
                     const tebexImg = pkg ? withCacheBust(getPackageImage(pkg), dataByServer.gens.bust) : "";
                     const active = activeRank === r.key;
                     const cart = isInCart(pkg);
@@ -324,9 +376,12 @@ export default function TiendaStorefront({ carrito, toggleProducto, onCambiarCan
                             PERMANENTE
                           </div>
 
-                          {tebexImg ? <img className="tsf-icon" src={tebexImg} alt="" draggable="false" /> : <div className="tsf-iconFallback" />}
+                          {tebexImg ? (
+                            <img className="tsf-icon" src={tebexImg} alt="" draggable="false" />
+                          ) : (
+                            <div className="tsf-iconFallback" />
+                          )}
 
-                          {/* CTA SIEMPRE VISIBLE, ENCAJADA EN EL PIE DEL “SQUARE” */}
                           <div className="tsf-squareCta">
                             <button
                               type="button"
@@ -363,6 +418,7 @@ export default function TiendaStorefront({ carrito, toggleProducto, onCambiarCan
               </div>
             </section>
 
+            {/* ✅ YA NO HAY slots colapsables: la comparativa vive en MODAL */}
             <section className="tsf-coins" aria-label="Coins">
               <div className="tsf-content">
                 <div className="tsf-coinsHeader" aria-label="Selector de servidor coins">
@@ -376,7 +432,12 @@ export default function TiendaStorefront({ carrito, toggleProducto, onCambiarCan
                           const pct = tabDiscountPctByServer.get(t.key) ?? null;
 
                           return (
-                            <button key={t.key} type="button" className={`tsf-tab ${active ? "is-active" : ""}`} onClick={() => changeServerTabWithDeck(t.key)}>
+                            <button
+                              key={t.key}
+                              type="button"
+                              className={`tsf-tab ${active ? "is-active" : ""}`}
+                              onClick={() => changeServerTabWithDeck(t.key)}
+                            >
                               {pct != null && pct > 0 && <span className="tsf-tabBadge">-{pct}%</span>}
                               <img className="tsf-tabIcon" src={t.icon} alt="" draggable="false" />
                               <span className="tsf-tabText">{t.label}</span>
@@ -402,7 +463,12 @@ export default function TiendaStorefront({ carrito, toggleProducto, onCambiarCan
                           const pct = tabDiscountPctByServer.get(t.key) ?? null;
 
                           return (
-                            <button key={t.key} type="button" className={`tsf-tab ${active ? "is-active" : ""}`} onClick={() => changeServerTabWithDeck(t.key)}>
+                            <button
+                              key={t.key}
+                              type="button"
+                              className={`tsf-tab ${active ? "is-active" : ""}`}
+                              onClick={() => changeServerTabWithDeck(t.key)}
+                            >
                               {pct != null && pct > 0 && <span className="tsf-tabBadge">-{pct}%</span>}
                               <img className="tsf-tabIcon" src={t.icon} alt="" draggable="false" />
                               <span className="tsf-tabText">{t.label}</span>
@@ -417,7 +483,6 @@ export default function TiendaStorefront({ carrito, toggleProducto, onCambiarCan
 
                 <div className="tsf-coinsPanel" aria-label={`Lotes de coins ${serverTab}`}>
                   <div className="tsf-coinsPanelHeader" aria-label="Título lotes de coins">
-                    {/* ✅ TÍTULO DINÁMICO CON ICONO SEGÚN TAB */}
                     <h2 className="tsf-coinsPanelTitle">
                       <span className="tsf-coinsPanelTitleInner">
                         {activeTabMeta?.icon ? (
@@ -432,7 +497,11 @@ export default function TiendaStorefront({ carrito, toggleProducto, onCambiarCan
 
                   <div className="tsf-coinsGridWrap" aria-label={`Packs de coins ${serverTab}`}>
                     {coinsPackages?.length ? (
-                      <div className={`tsf-coinsGrid tsf-coinsGrid--linear4 ${tabAnim === "out" ? "is-out" : "is-in"} ${switchedOnce ? "tsf-switched" : ""}`}>
+                      <div
+                        className={`tsf-coinsGrid tsf-coinsGrid--linear4 ${tabAnim === "out" ? "is-out" : "is-in"} ${
+                          switchedOnce ? "tsf-switched" : ""
+                        }`}
+                      >
                         <article
                           className="tsf-coinWrap tsf-coinWrap--daily"
                           key="daily-claim"

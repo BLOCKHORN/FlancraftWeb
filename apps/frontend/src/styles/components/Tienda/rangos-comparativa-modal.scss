@@ -1,0 +1,732 @@
+/* src/styles/components/Tienda/rangos-comparativa-modal.scss */
+
+/* Fonts estilo “cartoon UI” (solo si no las tienes ya en global) */
+@import url("https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Nunito:wght@800;900;1000&display=swap");
+
+/* =========================================================
+   RANGOS COMPARATIVA — MODAL (PRO / POWER / BRAWL)
+   IMPORTANTÍSIMO: variables definidas EN el modal (portal a body)
+   ========================================================= */
+
+.tsf-rcModal{
+  /* Variables locales (sí aplican aunque esté en <body>) */
+  --rc-r: 18px;
+
+  --rc-ink: rgba(0,0,0,0.86);
+  --rc-outline: rgba(0,0,0,0.78);
+  --rc-outline2: rgba(255,255,255,0.08);
+
+  /* Overlay más luminoso (menos “apagón”) */
+  --rc-overlay: rgba(8, 10, 18, 0.42);
+
+  /* Panel MUCHO menos transparente */
+  --rc-panelTop: rgba(32, 38, 56, 0.98);
+  --rc-panelBot: rgba(16, 18, 26, 0.985);
+
+  /* Tabla más sólida */
+  --rc-tableTop: rgba(28, 32, 48, 0.98);
+  --rc-tableBot: rgba(14, 16, 24, 0.985);
+
+  /* Colores rank */
+  --rk-nova: rgba(80, 255, 160, 0.92);
+  --rk-alpha: rgba(90, 170, 255, 0.92);
+  --rk-inmortal: rgba(255, 120, 60, 0.94);
+
+  --rk-nova-bg: rgba(80, 255, 160, 0.18);
+  --rk-alpha-bg: rgba(90, 170, 255, 0.18);
+  --rk-inmortal-bg: rgba(255, 120, 60, 0.18);
+
+  --glow-nova: rgba(80,255,160,0.26);
+  --glow-alpha: rgba(90,170,255,0.26);
+  --glow-inmortal: rgba(255,120,60,0.26);
+
+  position: fixed;
+  inset: 0;
+  z-index: 999900;
+  display: grid;
+  place-items: center;
+  padding: clamp(10px, 2vw, 22px);
+  isolation: isolate;
+}
+
+/* =========================================================
+   Backdrop (más color, menos “opaquísimo”)
+   ========================================================= */
+@keyframes rcBackdropPulse{
+  0%,100% { filter: saturate(1.05) brightness(1); }
+  50% { filter: saturate(1.18) brightness(1.06); }
+}
+
+.tsf-rcModalBackdrop{
+  position: absolute;
+  inset: 0;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+
+  background:
+    radial-gradient(1200px 640px at 50% 14%, rgba(90,170,255,0.24), rgba(0,0,0,0) 62%),
+    radial-gradient(1100px 620px at 18% 78%, rgba(255,120,60,0.16), rgba(0,0,0,0) 62%),
+    radial-gradient(1100px 620px at 86% 76%, rgba(80,255,160,0.16), rgba(0,0,0,0) 62%),
+    linear-gradient(180deg, rgba(0,0,0,0.10), rgba(0,0,0,0.18)),
+    var(--rc-overlay);
+
+  backdrop-filter: blur(6px);
+  animation: rcBackdropPulse 2.6s ease-in-out infinite;
+}
+
+/* =========================================================
+   Sheet + animación entrada
+   ========================================================= */
+@keyframes rcIn {
+  from { transform: translateY(10px) scale(.985); opacity: 0; }
+  to   { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+.tsf-rcModalSheet{
+  position: relative;
+  width: min(1180px, calc(100vw - 22px));
+  max-height: calc(100svh - 22px);
+  display: flex;
+  z-index: 1;
+  animation: rcIn 180ms cubic-bezier(.16,1,.3,1) both;
+}
+
+/* =========================================================
+   Panel (MUY sólido, outline fuerte, brillo)
+   ========================================================= */
+@keyframes rcSheen {
+  0% { transform: translateX(-20%) skewX(-12deg); opacity: 0; }
+  18% { opacity: 0.55; }
+  42% { opacity: 0.12; }
+  100% { transform: translateX(120%) skewX(-12deg); opacity: 0; }
+}
+
+.tsf-rcPanel{
+  width: 100%;
+  border-radius: var(--rc-r);
+
+  background:
+    radial-gradient(120% 160% at 50% 0%, rgba(255,255,255,0.16), rgba(255,255,255,0) 56%),
+    radial-gradient(900px 520px at 20% 20%, rgba(90,170,255,0.22), rgba(0,0,0,0) 62%),
+    radial-gradient(900px 520px at 80% 30%, rgba(0,210,255,0.14), rgba(0,0,0,0) 62%),
+    linear-gradient(180deg, var(--rc-panelTop), var(--rc-panelBot));
+
+  border: 3px solid var(--rc-outline);
+  box-shadow:
+    0 28px 70px rgba(0,0,0,0.72),
+    0 0 0 1px rgba(255,255,255,0.06) inset,
+    inset 0 2px 0 rgba(255,255,255,0.16),
+    inset 0 -20px 34px rgba(0,0,0,0.30);
+
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+
+  font-family: "Nunito", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  color: rgba(255,255,255,0.94);
+  position: relative;
+}
+
+.tsf-rcPanel::after{
+  content:"";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.14) 48%, rgba(255,255,255,0) 100%);
+  width: 40%;
+  transform: translateX(-40%) skewX(-12deg);
+  animation: rcSheen 4.5s ease-in-out infinite;
+  opacity: 0.0;
+}
+
+/* =========================================================
+   Top bar
+   ========================================================= */
+.tsf-rcBar{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+
+  background:
+    radial-gradient(130% 220% at 50% 0%, rgba(255,255,255,0.14), rgba(255,255,255,0) 58%),
+    linear-gradient(180deg, rgba(0,0,0,0.10), rgba(0,0,0,0.26));
+
+  border-bottom: 2px solid rgba(0,0,0,0.55);
+  box-shadow:
+    0 10px 16px rgba(0,0,0,0.24),
+    inset 0 1px 0 rgba(255,255,255,0.10);
+}
+
+.tsf-rcRankPills{
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* =========================================================
+   Rank buttons (más Brawl: más color y contorno)
+   ========================================================= */
+@keyframes rcGlow {
+  0%,100% { filter: brightness(1.02) saturate(1.02); }
+  50%     { filter: brightness(1.14) saturate(1.12); }
+}
+
+.tsf-rcRankBtn{
+  appearance: none;
+  cursor: pointer;
+  border-radius: 14px;
+  padding: 8px 10px;
+
+  border: 2px solid rgba(0,0,0,0.72);
+  background:
+    radial-gradient(130% 140% at 35% 20%, rgba(255,255,255,0.18), rgba(255,255,255,0) 58%),
+    linear-gradient(180deg, rgba(255,255,255,0.06), rgba(0,0,0,0.18)),
+    rgba(0,0,0,0.18);
+
+  box-shadow:
+    0 12px 22px rgba(0,0,0,0.34),
+    inset 0 1px 0 rgba(255,255,255,0.14);
+
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+
+  transition: transform 140ms ease, filter 140ms ease;
+  color: rgba(255,255,255,0.94);
+  position: relative;
+  overflow: hidden;
+}
+
+.tsf-rcRankBtn::before{
+  content:"";
+  position:absolute;
+  inset:-2px;
+  opacity: 0.0;
+  pointer-events:none;
+  transition: opacity 160ms ease;
+  background: radial-gradient(120% 120% at 50% 0%, rgba(255,255,255,0.18), rgba(255,255,255,0) 60%);
+}
+
+.tsf-rcRankBtn:hover{ transform: translateY(-1px); }
+.tsf-rcRankBtn:hover::before{ opacity: .55; }
+.tsf-rcRankBtn:active{ transform: translateY(1px) scale(0.99); }
+
+.tsf-rcRankBtn img{
+  height: 34px;
+  width: auto;
+  display: block;
+  object-fit: contain;
+  filter: drop-shadow(0 12px 16px rgba(0,0,0,0.35));
+}
+
+/* activo */
+.tsf-rcRankBtn.is-active{
+  animation: rcGlow 1.1s ease-in-out infinite;
+  transform: translateY(-1px);
+}
+
+/* tintes por rank */
+.tsf-rcRankBtn.is-nova.is-active{
+  box-shadow:
+    0 12px 22px rgba(0,0,0,0.34),
+    0 0 0 2px rgba(80,255,160,0.22),
+    0 0 26px rgba(80,255,160,0.20);
+}
+.tsf-rcRankBtn.is-alpha.is-active{
+  box-shadow:
+    0 12px 22px rgba(0,0,0,0.34),
+    0 0 0 2px rgba(90,170,255,0.22),
+    0 0 26px rgba(90,170,255,0.20);
+}
+.tsf-rcRankBtn.is-inmortal.is-active{
+  box-shadow:
+    0 12px 22px rgba(0,0,0,0.34),
+    0 0 0 2px rgba(255,120,60,0.24),
+    0 0 28px rgba(255,120,60,0.22);
+}
+
+.tsf-rcBestTag{
+  font-size: 11px;
+  font-weight: 1000;
+  letter-spacing: .10em;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(0,0,0,0.32);
+  border: 2px solid rgba(0,0,0,0.55);
+}
+
+/* =========================================================
+   Close button (más sólido)
+   ========================================================= */
+.tsf-rcClose{
+  flex: 0 0 auto;
+  appearance: none;
+  border: 2px solid rgba(0,0,0,0.72);
+
+  background:
+    radial-gradient(140% 140% at 30% 25%, rgba(255,255,255,0.18), rgba(255,255,255,0) 52%),
+    linear-gradient(180deg, rgba(255,255,255,0.08), rgba(0,0,0,0.22)),
+    rgba(0,0,0,0.18);
+
+  color: rgba(255,255,255,0.94);
+  border-radius: 14px;
+  padding: 10px 12px;
+  cursor: pointer;
+
+  box-shadow: 0 12px 22px rgba(0,0,0,0.36);
+  transition: transform 140ms ease, filter 140ms ease;
+}
+.tsf-rcClose:hover{ transform: translateY(-1px); filter: brightness(1.08); }
+.tsf-rcClose:active{ transform: translateY(1px) scale(0.98); }
+
+/* =========================================================
+   Scroll interno + scrollbar
+   ========================================================= */
+.tsf-rcScroll{
+  padding: 10px 12px;
+  overflow: auto;
+  scrollbar-gutter: stable both-edges;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tsf-rcScroll::-webkit-scrollbar{ width: 12px; }
+.tsf-rcScroll::-webkit-scrollbar-track{
+  background: rgba(0,0,0,0.26);
+  border-left: 1px solid rgba(255,255,255,0.06);
+}
+.tsf-rcScroll::-webkit-scrollbar-thumb{
+  background: linear-gradient(180deg, rgba(255,220,120,0.95), rgba(255,170,60,0.95));
+  border: 2px solid rgba(0,0,0,0.38);
+  border-radius: 999px;
+}
+
+/* =========================================================
+   Secciones por servidor (header “banner” con rayos)
+   ========================================================= */
+.tsf-rcSection{ margin-bottom: 12px; }
+
+@keyframes rcRays{
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.tsf-rcSectionHead{
+  position: sticky;
+  top: 0;
+  z-index: 8;
+
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 10px 10px;
+  border-radius: 14px;
+  border: 2px solid rgba(0,0,0,0.74);
+
+  background:
+    radial-gradient(160% 220% at 40% 0%, rgba(255,255,255,0.14), rgba(255,255,255,0) 58%),
+    linear-gradient(180deg, rgba(0,0,0,0.12), rgba(0,0,0,0.36));
+
+  box-shadow:
+    0 16px 26px rgba(0,0,0,0.32),
+    inset 0 1px 0 rgba(255,255,255,0.10);
+
+  cursor: pointer;
+  user-select: none;
+  position: sticky;
+  overflow: hidden;
+}
+
+/* rayos detrás */
+.tsf-rcSectionHead::before{
+  content:"";
+  position:absolute;
+  inset:-80px;
+  opacity: 0.10;
+  pointer-events:none;
+  background:
+    repeating-conic-gradient(
+      from 0deg,
+      rgba(255,255,255,0.22) 0deg,
+      rgba(255,255,255,0.22) 8deg,
+      rgba(255,255,255,0) 8deg,
+      rgba(255,255,255,0) 18deg
+    );
+  animation: rcRays 18s linear infinite;
+  filter: blur(0.2px);
+}
+
+/* tintes por servidor */
+.tsf-rcSection[data-server="oneblock"] .tsf-rcSectionHead{
+  background:
+    radial-gradient(160% 220% at 30% 0%, rgba(90,170,255,0.26), rgba(0,0,0,0) 58%),
+    radial-gradient(140% 220% at 70% 0%, rgba(170,90,255,0.18), rgba(0,0,0,0) 58%),
+    linear-gradient(180deg, rgba(0,0,0,0.12), rgba(0,0,0,0.38));
+}
+.tsf-rcSection[data-server="gens"] .tsf-rcSectionHead{
+  background:
+    radial-gradient(160% 220% at 30% 0%, rgba(80,255,160,0.22), rgba(0,0,0,0) 58%),
+    radial-gradient(140% 220% at 70% 0%, rgba(255,210,90,0.16), rgba(0,0,0,0) 58%),
+    linear-gradient(180deg, rgba(0,0,0,0.12), rgba(0,0,0,0.38));
+}
+
+.tsf-rcSectionLeft{
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  position: relative;
+  z-index: 1;
+}
+
+.tsf-rcServerIcon{
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+
+  background: rgba(0,0,0,0.30);
+  border: 2px solid rgba(0,0,0,0.60);
+  overflow: hidden;
+
+  box-shadow: 0 12px 18px rgba(0,0,0,0.26);
+}
+.tsf-rcServerIcon img{
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  display: block;
+}
+
+.tsf-rcServerLabel{
+  font-family: "Luckiest Guy", "Nunito", system-ui, sans-serif;
+  font-size: 20px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.98);
+  text-shadow:
+    0 3px 0 rgba(0,0,0,0.55),
+    0 10px 18px rgba(0,0,0,0.38);
+  position: relative;
+  z-index: 1;
+}
+
+.tsf-rcSectionRight{
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  opacity: .95;
+  position: relative;
+  z-index: 1;
+}
+
+.tsf-rcChevron{
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  border: 2px solid rgba(0,0,0,0.60);
+  background: rgba(0,0,0,0.22);
+  box-shadow: 0 12px 18px rgba(0,0,0,0.22);
+}
+
+/* Body colapsable */
+.tsf-rcSectionBody{
+  margin-top: 8px;
+  transition: max-height 320ms cubic-bezier(.16,1,.3,1), opacity 220ms ease, transform 320ms cubic-bezier(.16,1,.3,1);
+  transform-origin: top;
+}
+
+.tsf-rcSection.is-collapsed .tsf-rcSectionBody{
+  max-height: 0;
+  opacity: 0;
+  transform: translateY(-6px) scaleY(0.98);
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.tsf-rcSection.is-open .tsf-rcSectionBody{
+  max-height: 2400px;
+  opacity: 1;
+  transform: translateY(0) scaleY(1);
+}
+
+/* =========================================================
+   Tabla (cero “lavado”, base sólida, outline potente)
+   ========================================================= */
+.tsf-rcTable{
+  border-radius: 16px;
+  border: 2px solid rgba(0,0,0,0.78);
+
+  background:
+    radial-gradient(120% 160% at 50% 0%, rgba(255,255,255,0.14), rgba(255,255,255,0) 55%),
+    linear-gradient(180deg, var(--rc-tableTop), var(--rc-tableBot));
+
+  overflow: hidden;
+
+  box-shadow:
+    0 18px 30px rgba(0,0,0,0.30),
+    inset 0 1px 0 rgba(255,255,255,0.08);
+}
+
+.tsf-rcHeaderRow,
+.tsf-rcRow{
+  display: grid;
+  grid-template-columns: minmax(260px, 1.6fr) minmax(0, 1fr);
+}
+
+.tsf-rcHeaderRow{
+  border-bottom: 2px solid rgba(0,0,0,0.55);
+  background:
+    radial-gradient(140% 220% at 50% 0%, rgba(255,255,255,0.12), rgba(255,255,255,0) 60%),
+    linear-gradient(180deg, rgba(0,0,0,0.14), rgba(0,0,0,0.30));
+}
+
+.tsf-rcHCell{
+  padding: 10px 12px;
+  font-weight: 1000;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  color: rgba(255,255,255,0.95);
+  text-shadow:
+    0 3px 0 rgba(0,0,0,0.45),
+    0 10px 18px rgba(0,0,0,0.30);
+}
+
+.tsf-rcHCell--perk{
+  justify-content: flex-start;
+}
+
+.tsf-rcRankHeads,
+.tsf-rcRankCells{
+  display: grid;
+  grid-template-columns: repeat(3, minmax(90px, 1fr));
+}
+
+/* headers por rank con “punch” */
+.tsf-rcHCell--rank{
+  justify-content: center;
+  border-left: 2px solid rgba(0,0,0,0.42);
+  position: relative;
+}
+
+.tsf-rcHCell--rank.is-nova{
+  background:
+    radial-gradient(140% 220% at 50% 0%, rgba(80,255,160,0.34), rgba(0,0,0,0) 60%),
+    rgba(0,0,0,0.12);
+}
+.tsf-rcHCell--rank.is-alpha{
+  background:
+    radial-gradient(140% 220% at 50% 0%, rgba(90,170,255,0.34), rgba(0,0,0,0) 60%),
+    rgba(0,0,0,0.12);
+}
+.tsf-rcHCell--rank.is-inmortal{
+  background:
+    radial-gradient(140% 220% at 50% 0%, rgba(255,120,60,0.36), rgba(0,0,0,0) 60%),
+    rgba(0,0,0,0.12);
+}
+
+.tsf-rcHCell--rank.is-focus{
+  box-shadow: inset 0 0 0 999px rgba(255,255,255,0.08);
+}
+
+.tsf-rcRankIcon{
+  height: 30px;
+  width: auto;
+  object-fit: contain;
+  display: block;
+  filter: drop-shadow(0 12px 16px rgba(0,0,0,0.35));
+}
+
+/* =========================================================
+   Rows
+   ========================================================= */
+.tsf-rcBody .tsf-rcRow{
+  border-top: 2px solid rgba(255,255,255,0.06);
+  transition: transform 140ms ease, filter 140ms ease, background 140ms ease;
+}
+
+.tsf-rcBody .tsf-rcRow:hover{
+  filter: brightness(1.06) saturate(1.05);
+}
+
+.tsf-rcCell{
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 46px;
+}
+
+.tsf-rcCell--perk{
+  justify-content: flex-start;
+  font-weight: 1000;
+  border-right: 2px solid rgba(0,0,0,0.32);
+  text-shadow: 0 10px 18px rgba(0,0,0,0.28);
+}
+
+.tsf-rcPerk{
+  opacity: 0.98;
+  line-height: 1.18;
+  font-size: 14px;
+}
+
+/* celdas rank con más color */
+.tsf-rcCell--rank{
+  border-left: 2px solid rgba(0,0,0,0.34);
+  position: relative;
+  background: rgba(0,0,0,0.08);
+}
+
+/* por rank (base) */
+.tsf-rcCell--rank[data-rank="nova"]{
+  background:
+    radial-gradient(140% 220% at 50% 0%, rgba(80,255,160,0.18), rgba(0,0,0,0) 60%),
+    rgba(0,0,0,0.10);
+}
+.tsf-rcCell--rank[data-rank="alpha"]{
+  background:
+    radial-gradient(140% 220% at 50% 0%, rgba(90,170,255,0.18), rgba(0,0,0,0) 60%),
+    rgba(0,0,0,0.10);
+}
+.tsf-rcCell--rank[data-rank="inmortal"]{
+  background:
+    radial-gradient(140% 220% at 50% 0%, rgba(255,120,60,0.20), rgba(0,0,0,0) 60%),
+    rgba(0,0,0,0.10);
+}
+
+/* foco real (columna) */
+.tsf-rcPanel[data-focus="nova"] .tsf-rcCell--rank[data-rank="nova"],
+.tsf-rcPanel[data-focus="nova"] .tsf-rcHCell--rank.is-nova{
+  box-shadow:
+    inset 0 0 0 999px rgba(255,255,255,0.06),
+    0 0 0 2px rgba(80,255,160,0.10);
+}
+
+.tsf-rcPanel[data-focus="alpha"] .tsf-rcCell--rank[data-rank="alpha"],
+.tsf-rcPanel[data-focus="alpha"] .tsf-rcHCell--rank.is-alpha{
+  box-shadow:
+    inset 0 0 0 999px rgba(255,255,255,0.06),
+    0 0 0 2px rgba(90,170,255,0.10);
+}
+
+.tsf-rcPanel[data-focus="inmortal"] .tsf-rcCell--rank[data-rank="inmortal"],
+.tsf-rcPanel[data-focus="inmortal"] .tsf-rcHCell--rank.is-inmortal{
+  box-shadow:
+    inset 0 0 0 999px rgba(255,255,255,0.06),
+    0 0 0 2px rgba(255,120,60,0.10);
+}
+
+/* checks con glow por rank */
+.tsf-rcYes{
+  color: rgba(255,255,255,0.98);
+  filter: drop-shadow(0 12px 16px rgba(0,0,0,0.35));
+}
+
+.tsf-rcCell--rank[data-rank="nova"] .tsf-rcYes{
+  color: var(--rk-nova);
+  text-shadow: 0 0 18px var(--glow-nova);
+}
+.tsf-rcCell--rank[data-rank="alpha"] .tsf-rcYes{
+  color: var(--rk-alpha);
+  text-shadow: 0 0 18px var(--glow-alpha);
+}
+.tsf-rcCell--rank[data-rank="inmortal"] .tsf-rcYes{
+  color: var(--rk-inmortal);
+  text-shadow: 0 0 18px var(--glow-inmortal);
+}
+
+.tsf-rcNo{
+  color: rgba(255,255,255,0.32);
+}
+
+.tsf-rcVal{
+  font-weight: 1000;
+  letter-spacing: .02em;
+  font-size: 14px;
+  color: rgba(255,255,255,0.96);
+  text-shadow:
+    0 3px 0 rgba(0,0,0,0.40),
+    0 10px 18px rgba(0,0,0,0.28);
+}
+
+/* kit images */
+.tsf-rcCell--image .tsf-rcImgFrame{
+  width: 100%;
+  max-width: 138px;
+  border-radius: 12px;
+  border: 2px solid rgba(0,0,0,0.62);
+  background: rgba(0,0,0,0.26);
+  box-shadow: 0 14px 22px rgba(0,0,0,0.30);
+  overflow: hidden;
+}
+.tsf-rcCell--image img{
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: contain;
+}
+
+.tsf-rcEmpty{
+  padding: 14px 12px;
+  opacity: .90;
+  border-top: 2px solid rgba(255,255,255,0.06);
+}
+
+/* =========================================================
+   Responsive (cards)
+   ========================================================= */
+@media (max-width: 820px){
+  .tsf-rcModalSheet{
+    width: calc(100vw - 14px);
+    max-height: calc(100svh - 14px);
+  }
+
+  .tsf-rcScroll{
+    padding: 10px;
+  }
+
+  .tsf-rcHeaderRow{
+    display: none;
+  }
+
+  .tsf-rcRow{
+    grid-template-columns: 1fr;
+    padding: 10px;
+    gap: 10px;
+  }
+
+  .tsf-rcCell--perk{
+    border-right: none;
+    border-bottom: 2px solid rgba(0,0,0,0.28);
+    padding-bottom: 10px;
+  }
+
+  .tsf-rcRankCells{
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .tsf-rcCell--rank{
+    border-left: none;
+    border: 2px solid rgba(0,0,0,0.55);
+    border-radius: 14px;
+    overflow: hidden;
+
+    padding: 10px 10px;
+    min-height: 64px;
+  }
+
+  .tsf-rcPerk{ font-size: 14px; }
+  .tsf-rcVal{ font-size: 14px; }
+}
