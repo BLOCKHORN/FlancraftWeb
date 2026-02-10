@@ -294,11 +294,17 @@ const closeRankDetails = useCallback(() => {
       <CoinshopModal open={coinshopOpen} fromRect={coinshopFromRect} onClose={closeCoinshop} />
 
       {/* ✅ MODAL COMPARATIVA (Portal) */}
-      {activeRank ? (
+{activeRank ? (
   <RangosComparativaPanel
     rankKey={activeRank}
     onClose={closeRankDetails}
     onPickRank={(rk) => setActiveRank(rk)}
+    rankCards={rankCards}
+    bust={dataByServer.gens.bust}
+    onBuyEur={(pkg, ev) => handleBuyRank(pkg, ev)}
+    onBuyCoins={(pkg, ev) => {
+      ev?.stopPropagation?.();
+    }}
   />
 ) : null}
 

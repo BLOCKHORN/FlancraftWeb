@@ -1,11 +1,11 @@
 // src/components/Tienda/details/RangosComparativaPanel.jsx
-import React, { useEffect, useMemo, useState, useCallback } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import RANGOS_BENEFICIOS from "./data/productDetails/rangosComparativa";
-
-// IMPORTA el SCSS del modal (recomendado)
-// Ajusta ruta según tu proyecto:
+import RANGOS_PERKS_TOOLTIPS from "./data/productDetails/rangosPerksTooltips";
 import "../../../styles/components/Tienda/rangos-comparativa-modal.scss";
+
+import { getPackagePrice, getPackageImage, withCacheBust } from "../utils/tiendaHelpers";
 
 // =========================================================
 // Iconos (pro)
@@ -25,13 +25,25 @@ const IconChevron = ({ size = 18, up = false }) => (
     aria-hidden="true"
     style={{ transform: up ? "rotate(180deg)" : "rotate(0deg)" }}
   >
-    <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
+    <path
+      d="M6 9l6 6 6-6"
+      stroke="currentColor"
+      strokeWidth="2.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
   </svg>
 );
 
 const IconCheck = ({ size = 16 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-    <path d="M20 6 9 17l-5-5" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
+    <path
+      d="M20 6 9 17l-5-5"
+      stroke="currentColor"
+      strokeWidth="2.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
   </svg>
 );
 
@@ -42,14 +54,38 @@ const IconMinus = ({ size = 16 }) => (
 );
 
 // =========================================================
+// Tooltip (Portal + fixed) -> nunca se recorta por overflow
+// =========================================================
+function TooltipPortal({ tip }) {
+  if (!tip?.open) return null;
+
+  return createPortal(
+    <div
+      className="tsf-rcTip"
+      role="tooltip"
+      style={{
+        left: `${tip.left}px`,
+        top: `${tip.top}px`,
+      }}
+    >
+      <div className="tsf-rcTip__bubble">
+        <div className="tsf-rcTip__text">{tip.text}</div>
+        <span className="tsf-rcTip__arrow" aria-hidden="true" />
+      </div>
+    </div>,
+    document.body
+  );
+}
+
+// =========================================================
 // Meta
 // =========================================================
 const RANKS = ["nova", "alpha", "inmortal"];
 
 const RANK_META = {
-  nova: { label: "NOVA", cls: "is-nova", img: "/assets/rangos/nova.webp" },
-  alpha: { label: "ALPHA", cls: "is-alpha", img: "/assets/rangos/alpha.webp" },
-  inmortal: { label: "INMORTAL", cls: "is-inmortal", img: "/assets/rangos/inmortal.webp", best: true },
+  nova: { label: "NOVA", cls: "is-nova", deg: "/tienda/assets/degverde.svg" },
+  alpha: { label: "ALPHA", cls: "is-alpha", deg: "/tienda/assets/degazul.svg" },
+  inmortal: { label: "INMORTAL", cls: "is-inmortal", deg: "/tienda/assets/degrojo.svg", best: true },
 };
 
 const SERVER_META = {
@@ -58,6 +94,41 @@ const SERVER_META = {
 };
 
 const SERVER_ORDER = ["oneblock", "gens"];
+
+// Mascota arriba a la izquierda (solo ONEBLOCK)
+const RANKSKIN_IMG = "/tienda/assets/rankskin.png";
+
+// Icono coins en la tabla
+const COINS_ICON = "/tienda/assets/coin.png";
+
+// =========================================================
+// Perk icons
+// =========================================================
+const PERK_BASE = "/tienda/assets/perks";
+const PERK_ICONS = {
+  prefix: `${PERK_BASE}/prefijo.webp`,
+  full_access: `${PERK_BASE}/acceso.webp`,
+  prev_ranks: `${PERK_BASE}/rankup.webp`,
+  coins: `${PERK_BASE}/coins.webp`,
+  money: `${PERK_BASE}/dinero.webp`,
+  generators: `${PERK_BASE}/gens.webp`,
+  homes: `${PERK_BASE}/homes.webp`,
+  kit: `${PERK_BASE}/kitexclusivo.webp`,
+
+  "cmd:/back": `${PERK_BASE}/back.webp`,
+  "cmd:/disposal": `${PERK_BASE}/disposal.webp`,
+  "cmd:/enderchest": `${PERK_BASE}/enderchest.webp`,
+  "cmd:/feed": `${PERK_BASE}/feed.webp`,
+  "cmd:/fly": `${PERK_BASE}/fly.webp`,
+  "cmd:/near": `${PERK_BASE}/near.webp`,
+  "cmd:/nick": `${PERK_BASE}/nick.webp`,
+  "cmd:/repair": `${PERK_BASE}/repair.webp`,
+  "cmd:/workbench": `${PERK_BASE}/workbench.webp`,
+};
+
+function getPerkIcon(rowKey) {
+  return PERK_ICONS[rowKey] || null;
+}
 
 // =========================================================
 // Helpers parse/normaliza
@@ -78,6 +149,7 @@ function parseIntLoose(s) {
 function canonicalizePerk(raw) {
   if (!raw) return null;
 
+  // prefijo con imagen
   if (typeof raw === "object" && raw.type === "prefix") {
     return {
       key: "prefix",
@@ -87,7 +159,8 @@ function canonicalizePerk(raw) {
     };
   }
 
-  if (typeof raw === "object" && (raw.type === "image" || raw.src)) {
+  // imagen/kit
+  if (typeof raw === "object" && (raw.type === "image" || raw.src || raw.image)) {
     return {
       key: "kit",
       label: "Kit exclusivo",
@@ -101,6 +174,10 @@ function canonicalizePerk(raw) {
 
   if (t.includes("servidor") && t.includes("lleno")) {
     return { key: "full_access", label: "Acceso cuando el servidor está lleno", kind: "bool", value: true };
+  }
+
+  if (t.includes("beneficios") && t.includes("rangos") && (t.includes("anteriore") || t.includes("anteriores"))) {
+    return { key: "prev_ranks", label: "Beneficios de rangos anteriores", kind: "bool", value: true };
   }
 
   if (t.includes("prefijo") && (t.includes("chat") || t.includes("tab"))) {
@@ -126,6 +203,10 @@ function canonicalizePerk(raw) {
   }
 
   if (t.includes("/homes") || t.includes(" homes")) {
+    if (t.includes("infinit") || t.includes("ilimitad")) {
+      return { key: "homes", label: "Límite de /homes", kind: "number", value: "Infinitos" };
+    }
+
     const m = txt.match(/(\d+)\s*\/homes/i) || txt.match(/(\d+)\s*homes/i);
     const v = Number(m?.[1] || NaN);
     return { key: "homes", label: "Límite de /homes", kind: "number", value: Number.isFinite(v) ? v : true };
@@ -166,7 +247,6 @@ function buildMatrixFromRangos(data) {
   const rest = detected.filter((k) => !SERVER_ORDER.includes(k));
   const servers = [...ordered, ...rest].filter(Boolean);
 
-  // “Perk para todos”: fusionamos lobby/general dentro de cada server
   const GLOBAL_KEYS = ["lobby", "general"];
   const matrix = new Map();
 
@@ -204,8 +284,7 @@ function buildMatrixFromRangos(data) {
       }
     }
 
-    const ORDER = ["prefix", "full_access", "coins", "money", "generators", "homes", "kit"];
-
+    const ORDER = ["prefix", "full_access", "prev_ranks", "coins", "money", "generators", "homes", "kit"];
     const rows = Array.from(perkMap.values()).sort((a, b) => {
       const ia = ORDER.indexOf(a.key);
       const ib = ORDER.indexOf(b.key);
@@ -234,13 +313,48 @@ function formatNumber(n) {
   return new Intl.NumberFormat("es-ES").format(Number(n));
 }
 
-function Cell({ kind, value, isFocus, rankKey }) {
+function formatEur(amount) {
+  const n = Number(amount);
+  if (!Number.isFinite(n)) return "—";
+  return new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR", maximumFractionDigits: 2 }).format(n);
+}
+
+function fmtInt(n) {
+  const v = Number(n);
+  if (!Number.isFinite(v)) return "—";
+  return new Intl.NumberFormat("es-ES", { maximumFractionDigits: 0 }).format(Math.round(v));
+}
+
+// =========================================================
+// Coins (mismo cálculo que storefront)
+// =========================================================
+const COINS_PER_USD = 1000 / 6;
+
+function roundNiceCoins(n) {
+  const v = Number(n) || 0;
+  const step = 100;
+  return Math.max(0, Math.round(v / step) * step);
+}
+
+function coinsFromUsdDouble(usd) {
+  if (usd == null) return null;
+  const u = Number(usd);
+  if (!Number.isFinite(u) || u <= 0) return null;
+  const coins = u * 2 * COINS_PER_USD;
+  return roundNiceCoins(coins);
+}
+
+// =========================================================
+// Celdas tabla (con zoom en imágenes)
+// =========================================================
+function Cell({ kind, value, rankKey, rowKey, onZoom }) {
   const meta = RANK_META[rankKey];
-  const cls = `tsf-rcCell tsf-rcCell--rank ${meta?.cls || ""} ${isFocus ? "is-focus" : ""}`;
+  const cls = `tsf-rcCell ${meta?.cls || ""}`;
+  const rankLabel = meta?.label || String(rankKey || "").toUpperCase();
 
   if (value == null || value === false) {
     return (
-      <div className={cls} data-rank={rankKey}>
+      <div className={cls} data-rank={rankLabel}>
         <span className="tsf-rcNo" aria-hidden="true">
           <IconMinus />
         </span>
@@ -249,19 +363,60 @@ function Cell({ kind, value, isFocus, rankKey }) {
   }
 
   if (kind === "image" && typeof value === "string") {
+    const canZoom = Boolean(onZoom);
     return (
-      <div className={`${cls} tsf-rcCell--image`} data-rank={rankKey}>
-        <span className="tsf-rcImgFrame">
-          <img src={value} alt="" draggable="false" />
-        </span>
+      <div className={`${cls} tsf-rcCell--image`} data-rank={rankLabel}>
+        <button
+          type="button"
+          className={`tsf-rcImgBtn ${canZoom ? "is-zoomable" : ""}`}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (canZoom) onZoom(value, { rowKey, rankKey });
+          }}
+          aria-label="Ampliar imagen"
+          title="Click para ampliar"
+        >
+          <span className="tsf-rcImgFrame">
+            <img src={value} alt="" draggable="false" />
+          </span>
+        </button>
       </div>
     );
   }
 
   if (kind === "number") {
+    const n = Number(value);
+    const hasNumber = Number.isFinite(n);
     const txt = formatNumber(value) || "✓";
+
+    // Coins incluidos => número + icono
+    if (rowKey === "coins" && hasNumber) {
+      return (
+        <div className={cls} data-rank={rankLabel}>
+          <span className="tsf-rcValWrap">
+            <span className="tsf-rcVal tsf-rcVal--coins">{txt}</span>
+            <img className="tsf-rcInlineCoin" src={COINS_ICON} alt="" draggable="false" />
+          </span>
+        </div>
+      );
+    }
+
+    // Dinero incluido => número + $
+    if (rowKey === "money" && hasNumber) {
+      return (
+        <div className={cls} data-rank={rankLabel}>
+          <span className="tsf-rcValWrap">
+            <span className="tsf-rcVal tsf-rcVal--money">{txt}</span>
+            <span className="tsf-rcInlineDollar tsf-rcInlineDollar--money" aria-hidden="true">
+              $
+            </span>
+          </span>
+        </div>
+      );
+    }
+
     return (
-      <div className={cls} data-rank={rankKey}>
+      <div className={cls} data-rank={rankLabel}>
         <span className="tsf-rcVal">{txt}</span>
       </div>
     );
@@ -269,7 +424,7 @@ function Cell({ kind, value, isFocus, rankKey }) {
 
   if (value === true) {
     return (
-      <div className={cls} data-rank={rankKey}>
+      <div className={cls} data-rank={rankLabel}>
         <span className="tsf-rcYes" aria-hidden="true">
           <IconCheck />
         </span>
@@ -278,24 +433,238 @@ function Cell({ kind, value, isFocus, rankKey }) {
   }
 
   return (
-    <div className={cls} data-rank={rankKey}>
+    <div className={cls} data-rank={rankLabel}>
       <span className="tsf-rcVal">{String(value)}</span>
     </div>
   );
 }
 
 // =========================================================
-// Panel (modal + capas por servidor colapsables)
+// Rank Card superior
 // =========================================================
-export default function RangosComparativaPanel({ rankKey, onClose, onPickRank }) {
-  const [focus, setFocus] = useState(rankKey || "nova");
-  const { servers, matrix } = useMemo(() => buildMatrixFromRangos(RANGOS_BENEFICIOS), []);
+function RankCardTop({ rk, pkg, bust, isActive, onPickRank, onBuyEur, onBuyCoins }) {
+  const rm = RANK_META[rk] || { label: String(rk || "").toUpperCase(), cls: "" };
 
+  const price = pkg ? getPackagePrice(pkg) : null;
+  const coinsPrice = price != null ? coinsFromUsdDouble(price) : null;
+
+  const imgRaw = pkg ? getPackageImage(pkg) : null;
+  const img = imgRaw ? withCacheBust(imgRaw, bust) : null;
+
+  const onSplitClick = (ev) => {
+    ev.stopPropagation();
+    if (!pkg) return;
+
+    const btn = ev.currentTarget;
+    const rect = btn?.getBoundingClientRect?.();
+    const x = (ev.clientX ?? 0) - (rect?.left ?? 0);
+    const w = rect?.width ?? 0;
+    const isLeft = w > 0 ? x <= w / 2 : true;
+
+    if (isLeft) return onBuyEur?.(pkg, ev);
+    return onBuyCoins?.(pkg, ev);
+  };
+
+  return (
+    <article className={`tsf-rcRankCardTop ${rm.cls} ${isActive ? "is-active" : ""}`} data-rank={rk}>
+      <button
+        type="button"
+        className="tsf-rcRankTopSquare"
+        onClick={() => onPickRank?.(rk)}
+        aria-label={`Ver ${rm.label}`}
+      >
+        <img className="tsf-rcRankTopDeg" src={rm.deg} alt="" draggable="false" />
+
+        <div className="tsf-rcRankTopTitle">
+          <span className="tsf-rcRankTopSmall">Rango</span>
+          <span className="tsf-rcRankTopBig">{rm.label}</span>
+        </div>
+
+        {img ? (
+          <img className="tsf-rcRankTopIcon" src={img} alt="" draggable="false" />
+        ) : (
+          <span className="tsf-rcRankTopIconFallback" />
+        )}
+      </button>
+
+      <button
+        type="button"
+        className="tsf-rcRankTopCta"
+        onClick={onSplitClick}
+        disabled={!pkg}
+        aria-label={`Comprar ${rm.label} (EUR o Coins)`}
+        title="Izquierda: EUR · Derecha: Coins"
+        data-rk={rm.label}
+      >
+        <span className="tsf-rcRankTopCtaSide tsf-rcRankTopCtaSide--eur">
+          <span className="tsf-rcRankTopCtaVal">{price != null ? formatEur(price) : "—"}</span>
+        </span>
+
+        <span className="tsf-rcRankTopCtaSide tsf-rcRankTopCtaSide--coins">
+          <span className="tsf-rcRankTopCtaCoins">
+            <span className="tsf-rcRankTopCtaVal">{coinsPrice != null ? fmtInt(coinsPrice) : "—"}</span>
+            <img className="tsf-rcRankTopCoinIcon" src="/tienda/assets/coin.png" alt="" draggable="false" />
+          </span>
+        </span>
+
+        <span className="tsf-rcRankTopCtaDivider" aria-hidden="true" />
+        <span className="tsf-rcRankTopCtaShine" aria-hidden="true" />
+      </button>
+    </article>
+  );
+}
+
+// =========================================================
+// Panel (modal)
+// =========================================================
+export default function RangosComparativaPanel({
+  onClose,
+  rankKey = null,
+  onPickRank,
+  rankCards = [],
+  bust = null,
+  onBuyEur,
+  onBuyCoins,
+}) {
+  const { servers, matrix } = useMemo(() => buildMatrixFromRangos(RANGOS_BENEFICIOS), []);
   const [openSections, setOpenSections] = useState(() => new Set(servers || []));
 
+  // Compact estable (sin jitter) basado en el scroll del contenedor interno
+  const scrollRef = useRef(null);
+  const [isCompact, setIsCompact] = useState(false);
+
+  // Zoom de imágenes (kits, prefix, etc)
+  const [zoomSrc, setZoomSrc] = useState(null);
+  const openZoom = useCallback((src) => {
+    if (!src) return;
+    setZoomSrc(src);
+  }, []);
+  const closeZoom = useCallback(() => setZoomSrc(null), []);
+
+  // Tooltip state
+  const [tip, setTip] = useState({ open: false, id: null, text: "", left: 0, top: 0 });
+  const tipAnchorRef = useRef(null);
+  const tipKeepIdRef = useRef(null);
+
+  const computeTipPos = useCallback(() => {
+    const el = tipAnchorRef.current;
+    if (!el) return null;
+    const r = el.getBoundingClientRect();
+    const left = r.left + r.width / 2;
+    const top = r.top - 10; // un pelín por encima del botón
+    return { left, top };
+  }, []);
+
+  const closeTip = useCallback(() => {
+    tipAnchorRef.current = null;
+    tipKeepIdRef.current = null;
+    setTip((prev) => (prev.open ? { open: false, id: null, text: "", left: 0, top: 0 } : prev));
+  }, []);
+
+  const openTip = useCallback(
+    (anchorEl, id, text) => {
+      if (!anchorEl || !text) return;
+      tipAnchorRef.current = anchorEl;
+      tipKeepIdRef.current = id;
+
+      const pos = computeTipPos();
+      if (!pos) return;
+
+      setTip({ open: true, id, text, left: pos.left, top: pos.top });
+    },
+    [computeTipPos]
+  );
+
+  // Reposicionar tooltip en scroll/resize mientras esté abierto
   useEffect(() => {
-    if (rankKey) setFocus(rankKey);
-  }, [rankKey]);
+    if (!tip.open) return;
+
+    const update = () => {
+      const pos = computeTipPos();
+      if (!pos) return;
+      setTip((prev) => (prev.open ? { ...prev, left: pos.left, top: pos.top } : prev));
+    };
+
+    const onResize = () => update();
+    window.addEventListener("resize", onResize);
+
+    const sc = scrollRef.current;
+    const onInnerScroll = () => update();
+    sc?.addEventListener("scroll", onInnerScroll, { passive: true });
+
+    // Cerrar si click fuera (tooltip o botón)
+    const onPointerDown = (e) => {
+      const anchor = tipAnchorRef.current;
+      const target = e.target;
+      if (!anchor || !(target instanceof Node)) return closeTip();
+      if (anchor.contains(target)) return; // click en el botón => lo gestionamos en onClick
+      // Si clicas en cualquier otro sitio -> cerrar
+      closeTip();
+    };
+    window.addEventListener("pointerdown", onPointerDown, true);
+
+    // ESC para cerrar tooltip
+    const onKey = (e) => {
+      if (e.key === "Escape") closeTip();
+    };
+    window.addEventListener("keydown", onKey);
+
+    return () => {
+      window.removeEventListener("resize", onResize);
+      sc?.removeEventListener("scroll", onInnerScroll);
+      window.removeEventListener("pointerdown", onPointerDown, true);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [tip.open, computeTipPos, closeTip]);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    const mq = window.matchMedia("(max-width: 860px)");
+    let raf = 0;
+
+    const compute = () => {
+      const y = Math.max(0, el.scrollTop || 0);
+      const enter = mq.matches ? 22 : 90;
+      const exit = 2;
+
+      setIsCompact((prev) => {
+        if (!prev && y > enter) return true;
+        if (prev && y <= exit) return false;
+        return prev;
+      });
+    };
+
+    const onScroll = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(compute);
+    };
+
+    el.addEventListener("scroll", onScroll, { passive: true });
+
+    const onMq = () => compute();
+    if (mq.addEventListener) mq.addEventListener("change", onMq);
+    else mq.addListener?.(onMq);
+
+    compute();
+
+    return () => {
+      el.removeEventListener("scroll", onScroll);
+      cancelAnimationFrame(raf);
+      if (mq.removeEventListener) mq.removeEventListener("change", onMq);
+      else mq.removeListener?.(onMq);
+    };
+  }, []);
+
+  const rankPkgByKey = useMemo(() => {
+    const out = { nova: null, alpha: null, inmortal: null };
+    (rankCards || []).forEach((r) => {
+      if (!r?.key) return;
+      out[r.key] = r.pkg || null;
+    });
+    return out;
+  }, [rankCards]);
 
   useEffect(() => {
     setOpenSections(new Set(servers || []));
@@ -310,9 +679,16 @@ export default function RangosComparativaPanel({ rankKey, onClose, onPickRank })
     });
   }, []);
 
+  // ESC: si hay zoom -> cierra zoom; si no -> cierra modal
+  // + lock scroll del documento
   useEffect(() => {
     const onKey = (e) => {
-      if (e.key === "Escape") onClose?.();
+      if (e.key === "Escape") {
+        // prioridad: tooltip -> zoom -> modal
+        if (tip.open) closeTip();
+        else if (zoomSrc) closeZoom();
+        else onClose?.();
+      }
     };
     window.addEventListener("keydown", onKey);
 
@@ -323,113 +699,180 @@ export default function RangosComparativaPanel({ rankKey, onClose, onPickRank })
       window.removeEventListener("keydown", onKey);
       document.documentElement.style.overflow = prevOverflow || "";
     };
-  }, [onClose]);
+  }, [onClose, zoomSrc, closeZoom, tip.open, closeTip]);
 
   const modal = (
     <div className="tsf-rcModal" role="dialog" aria-modal="true" aria-label="Comparativa de rangos">
-      <button type="button" className="tsf-rcModalBackdrop" onClick={onClose} aria-label="Cerrar comparativa" />
+      <button type="button" className="tsf-rcBackdrop" onClick={onClose} aria-label="Cerrar comparativa" />
 
-      <div className="tsf-rcModalSheet" role="document" onClick={(e) => e.stopPropagation()}>
-        <div className="tsf-rcPanel" data-focus={focus}>
-          {/* Barra superior: RANGOS + cerrar */}
-          <div className="tsf-rcBar">
+      <div className="tsf-rcSheet" role="document" onClick={(e) => e.stopPropagation()}>
+        <button type="button" className="tsf-rcClose" onClick={onClose} aria-label="Cerrar" title="Cerrar">
+          <IconClose />
+        </button>
 
+        {/* HERO fijo (NO scrollea) */}
+        <header className={`tsf-rcHero ${isCompact ? "is-compact" : ""}`} aria-label="Rangos">
+          <div className="tsf-rcHeroGrid" aria-label="Rangos disponibles">
+            <div className="tsf-rcHeroSpacer" aria-hidden="true" />
 
-            <button type="button" className="tsf-rcClose" onClick={onClose} aria-label="Cerrar" title="Cerrar">
-              <IconClose />
-            </button>
+            {RANKS.map((rk) => (
+              <RankCardTop
+                key={rk}
+                rk={rk}
+                pkg={rankPkgByKey?.[rk]}
+                bust={bust}
+                isActive={rankKey === rk}
+                onPickRank={onPickRank}
+                onBuyEur={onBuyEur}
+                onBuyCoins={onBuyCoins}
+              />
+            ))}
           </div>
+        </header>
 
-          {/* Scroll interno */}
-          <div className="tsf-rcScroll" role="group" aria-label="Comparativa por servidor">
-            {servers.map((sv) => {
-              const meta = SERVER_META[sv] || { label: sv, icon: null };
-              const rows = matrix.get(sv) || [];
-              const isOpen = openSections.has(sv);
+        {/* SOLO esto scrollea */}
+        <div className="tsf-rcScroll" ref={scrollRef}>
+          <div className="tsf-rcPanel">
+            <div className="tsf-rcSections" role="group" aria-label="Comparativa por servidor">
+              {servers.map((sv) => {
+                const meta = SERVER_META[sv] || { label: sv, icon: null };
+                const rows = matrix.get(sv) || [];
+                const isOpen = openSections.has(sv);
 
-              return (
-                <section
-                  className={`tsf-rcSection ${isOpen ? "is-open" : "is-collapsed"}`}
-                  key={sv}
-                  data-server={sv}
-                  aria-label={meta.label}
-                >
-                  <button
-                    type="button"
-                    className="tsf-rcSectionHead"
-                    onClick={() => toggleSection(sv)}
-                    aria-expanded={isOpen}
-                    aria-controls={`rc-body-${sv}`}
-                  >
-                    <span className="tsf-rcSectionLeft">
-                      <span className="tsf-rcServerIcon" aria-hidden="true">
-                        {meta.icon ? <img src={meta.icon} alt="" draggable="false" /> : null}
+                return (
+                  <section className={`tsf-rcSection ${isOpen ? "is-open" : "is-collapsed"}`} key={sv} data-server={sv}>
+                    {/* Mascota ONEBLOCK */}
+                    {sv === "oneblock" ? (
+                      <span className="tsf-rcMascot" aria-hidden="true">
+                        <img src={RANKSKIN_IMG} alt="" draggable="false" />
                       </span>
-                      <span className="tsf-rcServerLabel">{meta.label}</span>
-                    </span>
+                    ) : null}
 
-                    <span className="tsf-rcSectionRight" aria-hidden="true">
-                      <span className="tsf-rcChevron">
+                    <button
+                      type="button"
+                      className="tsf-rcServerHead"
+                      onClick={() => toggleSection(sv)}
+                      aria-expanded={isOpen}
+                      aria-controls={`rc-body-${sv}`}
+                    >
+                      <span className="tsf-rcServerHeadCenter">
+                        {meta.icon ? (
+                          <span className="tsf-rcServerIcon" aria-hidden="true">
+                            <img src={meta.icon} alt="" draggable="false" />
+                          </span>
+                        ) : null}
+                        <span className="tsf-rcServerLabel">{meta.label}</span>
+                      </span>
+
+                      <span className="tsf-rcServerChevron" aria-hidden="true">
                         <IconChevron up={isOpen} />
                       </span>
-                    </span>
-                  </button>
+                    </button>
 
-                  <div className="tsf-rcSectionBody" id={`rc-body-${sv}`}>
-                    <div className="tsf-rcTable" role="table" aria-label={`Tabla ${meta.label}`}>
-                      <div className="tsf-rcHeaderRow" role="row">
-                        <div className="tsf-rcHCell tsf-rcHCell--perk" role="columnheader">
-                          Beneficio
+                    <div className="tsf-rcSectionBody" id={`rc-body-${sv}`}>
+                      <div className="tsf-rcTable" role="table" aria-label={`Tabla ${meta.label}`}>
+                        <div className="tsf-rcBody" role="rowgroup">
+                          {rows.length ? (
+                            rows.map((row) => {
+                              const perkIcon = getPerkIcon(row.key);
+                              const tipText = RANGOS_PERKS_TOOLTIPS?.[row.key] || "";
+                              const tipId = `${sv}::${row.key}`;
+
+                              return (
+                                <div className="tsf-rcRow" role="row" key={row.key}>
+                                  <div className="tsf-rcPerkCell" role="cell">
+                                    <div className="tsf-rcPerkWrap">
+                                      {perkIcon ? (
+                                        <span className="tsf-rcPerkIcon" aria-hidden="true">
+                                          <img src={perkIcon} alt="" draggable="false" />
+                                        </span>
+                                      ) : null}
+
+                                      <div className="tsf-rcPerk">
+                                        {row.label}
+                                        {tipText ? (
+                                          <button
+                                            type="button"
+                                            className={`tsf-rcPerkHelp ${tip.open && tip.id === tipId ? "is-open" : ""}`}
+                                            aria-label={`Qué significa: ${row.label}`}
+                                            onMouseEnter={(e) => openTip(e.currentTarget, tipId, tipText)}
+                                            onMouseLeave={() => {
+                                              // solo cerramos si NO lo han fijado con click
+                                              if (tipKeepIdRef.current !== tipId) closeTip();
+                                            }}
+                                            onFocus={(e) => openTip(e.currentTarget, tipId, tipText)}
+                                            onBlur={() => {
+                                              if (tipKeepIdRef.current !== tipId) closeTip();
+                                            }}
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              // click/tap: toggle fijo
+                                              if (tip.open && tip.id === tipId) {
+                                                closeTip();
+                                              } else {
+                                                tipKeepIdRef.current = tipId; // fijar
+                                                openTip(e.currentTarget, tipId, tipText);
+                                              }
+                                            }}
+                                          >
+                                            <span className="tsf-rcPerkHelpMark" aria-hidden="true">
+                                              ?
+                                            </span>
+                                          </button>
+                                        ) : null}
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {RANKS.map((rk) => (
+                                    <Cell
+                                      key={`${row.key}-${rk}`}
+                                      rowKey={row.key}
+                                      kind={row.kind}
+                                      value={row.values?.[rk]}
+                                      rankKey={rk}
+                                      onZoom={openZoom}
+                                    />
+                                  ))}
+                                </div>
+                              );
+                            })
+                          ) : (
+                            <div className="tsf-rcEmpty">No hay datos para este servidor.</div>
+                          )}
                         </div>
-
-                        <div className="tsf-rcRankHeads" role="row">
-                          {RANKS.map((rk) => {
-                            const rm = RANK_META[rk];
-                            return (
-                              <div
-                                key={rk}
-                                className={`tsf-rcHCell tsf-rcHCell--rank ${rm.cls} ${focus === rk ? "is-focus" : ""}`}
-                                role="columnheader"
-                              >
-                                {rm.img ? <img className="tsf-rcRankIcon" src={rm.img} alt={rm.label} draggable="false" /> : rm.label}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-
-                      <div className="tsf-rcBody" role="rowgroup">
-                        {rows.length ? (
-                          rows.map((row) => (
-                            <div className="tsf-rcRow" role="row" key={row.key}>
-                              <div className="tsf-rcCell tsf-rcCell--perk" role="cell">
-                                <div className="tsf-rcPerk">{row.label}</div>
-                              </div>
-
-                              <div className="tsf-rcRankCells" role="cell">
-                                {RANKS.map((rk) => (
-                                  <Cell
-                                    key={`${row.key}-${rk}`}
-                                    kind={row.kind}
-                                    value={row.values?.[rk]}
-                                    isFocus={focus === rk}
-                                    rankKey={rk}
-                                  />
-                                ))}
-                              </div>
-                            </div>
-                          ))
-                        ) : (
-                          <div className="tsf-rcEmpty">No hay datos para este servidor.</div>
-                        )}
                       </div>
                     </div>
-                  </div>
-                </section>
-              );
-            })}
+                  </section>
+                );
+              })}
+            </div>
           </div>
         </div>
+
+        {/* TOOLTIP (Portal, no se recorta) */}
+        <TooltipPortal tip={tip} />
+
+        {/* ZOOM IMAGEN */}
+        {zoomSrc ? (
+          <div className="tsf-rcImgModal" role="dialog" aria-modal="true" aria-label="Vista ampliada">
+            <button
+              type="button"
+              className="tsf-rcImgBackdrop"
+              onClick={closeZoom}
+              aria-label="Cerrar vista ampliada"
+            />
+            <div className="tsf-rcImgSheet" role="document" onClick={(e) => e.stopPropagation()}>
+              <button type="button" className="tsf-rcImgClose" onClick={closeZoom} aria-label="Cerrar" title="Cerrar">
+                <IconClose />
+              </button>
+
+              <div className="tsf-rcImgWrap">
+                <img className="tsf-rcImgZoom" src={zoomSrc} alt="" draggable="false" />
+              </div>
+            </div>
+          </div>
+        ) : null}
       </div>
     </div>
   );

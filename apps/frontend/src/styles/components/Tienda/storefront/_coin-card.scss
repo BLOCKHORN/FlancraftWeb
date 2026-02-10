@@ -14,9 +14,8 @@
     inset 0 2px 0 rgba(255,255,255,0.10),
     inset 0 -12px 22px rgba(0,0,0,0.18);
 
-  padding: 18px 16px 16px;
+  padding: 38px 16px 16px;
 
-  /* ✅ anti-desborde general del panel */
   width: 100%;
   max-width: 100%;
   overflow: hidden; /* evita que el title + icon se salga del panel */
@@ -457,33 +456,7 @@
   background: linear-gradient(180deg, #ffe27a, #ffbf3a);
 }
 
-/* =========================
-   Responsive micro-fix del título (evita desborde con zoom)
-   ========================= */
-@media (max-width: 767.98px) {
-  .tsf-coinsPanelTitleInner{
-    gap: 8px;
-    max-width: 100%;
-  }
-  .tsf-coinsPanelTitleIcon{
-    width: 22px;
-    height: 22px;
-    border-radius: 7px;
-  }
-  .tsf-coinsPanelTitle{
-    letter-spacing: 0.05em;
-  }
-}
 
-@media (max-width: 380px) {
-  .tsf-coinsPanelTitleIcon{
-    width: 20px;
-    height: 20px;
-  }
-  .tsf-coinsPanelTitle{
-    font-size: 0.98rem;
-  }
-}
 
 /* Pulse */
 @keyframes tsfPulseGlow{
