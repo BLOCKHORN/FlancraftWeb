@@ -2,13 +2,12 @@
 const db = require("../models/db");
 
 const TZ = "Europe/Madrid";
-const DEBUG = String(process.env.DAILY_CLAIM_DEBUG || "").trim() === "1" || process.env.NODE_ENV !== "production";
+const DEBUG =
+  String(process.env.DAILY_CLAIM_DEBUG || "").trim() === "1" ||
+  process.env.NODE_ENV !== "production";
 
-// Objetivo mensual POR SERVIDOR
-const MONTH_TARGET_PER_SERVER = 600;
-
-// Servidores a los que se entrega siempre
-const SERVIDORES = ["oneblock", "gens"];
+// Objetivo mensual TOTAL (Wallet)
+const MONTH_TARGET_WALLET = 600;
 
 function num(v, def) {
   const n = Number(v);
@@ -16,16 +15,14 @@ function num(v, def) {
 }
 
 /**
- * CAP diario "no se pasa de la raya".
- * Puedes dejarlo automático o forzarlo con env:
+ * CAP diario duro.
  * - DAILY_CLAIM_HARD_CAP=50  -> nunca más de 50
  */
 function getHardCap(lastDay) {
   const forced = num(process.env.DAILY_CLAIM_HARD_CAP, 0);
   if (forced > 0) return Math.max(1, Math.floor(forced));
 
-  // Auto: promedio mensual * multiplicador, con límites globales.
-  const avg = MONTH_TARGET_PER_SERVER / Math.max(1, lastDay);
+  const avg = MONTH_TARGET_WALLET / Math.max(1, lastDay);
   const mult = num(process.env.DAILY_CLAIM_CAP_MULT, 2.2);
   const minCap = num(process.env.DAILY_CLAIM_MIN_CAP, 20);
   const maxCap = num(process.env.DAILY_CLAIM_MAX_CAP, 80);
@@ -49,7 +46,7 @@ function fmtMadridParts(date = new Date()) {
   return {
     y: Number(map.year),
     m: Number(map.month), // 1..12
-    d: Number(map.day),   // 1..31
+    d: Number(map.day), // 1..31
   };
 }
 
@@ -71,7 +68,6 @@ function monthMetaMadrid(date = new Date()) {
 }
 
 function nextMidnightMadridISO() {
-  // Visual: mañana 00:00 (aprox). El control real es claim_date (Madrid).
   const { y, m, d } = fmtMadridParts(new Date());
   const baseUTC = new Date(Date.UTC(y, m - 1, d));
   baseUTC.setUTCDate(baseUTC.getUTCDate() + 1);
@@ -79,15 +75,12 @@ function nextMidnightMadridISO() {
 }
 
 // ---- Helpers ----
-function randomInt(min, max) {
-  const a = Math.ceil(min);
-  const b = Math.floor(max);
-  return Math.floor(Math.random() * (b - a + 1)) + a;
+function clamp(n, a, b) {
+  return Math.max(a, Math.min(b, n));
 }
 
 /**
- * Random "sesgado" alrededor de un centro, sin salir de [lo, hi]
- * Usa spreadRatio para acotar variación alrededor del avg.
+ * Random sesgado alrededor de un centro, sin salir de [lo, hi]
  */
 function pickBiased(lo, hi, center, spreadRatio = 0.35) {
   if (lo >= hi) return lo;
@@ -99,8 +92,7 @@ function pickBiased(lo, hi, center, spreadRatio = 0.35) {
   const a = Math.max(lo, c - span);
   const b = Math.min(hi, c + span);
 
-  // triangular distribution (más probabilidad cerca del centro)
-  const r = (Math.random() + Math.random()) / 2; // 0..1
+  const r = (Math.random() + Math.random()) / 2; // triangular
   const val = Math.round(a + r * (b - a));
   return Math.max(lo, Math.min(hi, val));
 }
@@ -121,24 +113,13 @@ async function getMonthSum(uuid, firstISO, nextISO) {
 }
 
 /**
- * Exacto si se puede, sin "dump" final:
- *
- * - CAP diario duro: nunca se pasa.
- * - Si remaining es alcanzable con daysLeft * cap:
- *     elegimos amount en un rango [lo, hi] que GARANTIZA que el resto de días
- *     (dando como máximo cap y como mínimo 1) puede cerrar exacto.
- * - Si NO es alcanzable (no fue constante): no compensamos -> damos normal (1..cap)
- *
- * Último día:
- * - Si remaining <= cap -> se da remaining (cierre exacto)
- * - Si remaining > cap -> se da cap y no se llega (por no constancia / imposible)
+ * Exacto si se puede (sin dump final), con CAP.
  */
 function computeTodayAmountExactIfPossible({ totalSoFar, dayOfMonth, lastDay, target, cap }) {
   const daysLeft = lastDay - dayOfMonth + 1;
   const remaining = Math.max(0, target - totalSoFar);
   const spread = num(process.env.DAILY_CLAIM_SPREAD, 0.35);
 
-  // Si ya llegó (o se pasó por pruebas), no inflamos: damos 1 (o 0 si quieres)
   if (remaining <= 0) {
     return {
       amount: 1,
@@ -146,30 +127,29 @@ function computeTodayAmountExactIfPossible({ totalSoFar, dayOfMonth, lastDay, ta
     };
   }
 
-  // Último día: cierre exacto si cabe en cap, si no, cap y ya está
   if (daysLeft <= 1) {
     const amount = Math.min(cap, remaining);
     return {
       amount,
-      debug: { reason: remaining <= cap ? "last_day_exact" : "last_day_capped_not_feasible", daysLeft, remaining, totalSoFar, target, cap },
+      debug: {
+        reason: remaining <= cap ? "last_day_exact" : "last_day_capped_not_feasible",
+        daysLeft,
+        remaining,
+        totalSoFar,
+        target,
+        cap,
+      },
     };
   }
 
-  // ¿Es posible llegar al target con lo que queda sin pasar el cap?
   const feasible = remaining <= daysLeft * cap;
-
-  // Centro = promedio necesario
   const avgNeeded = remaining / daysLeft;
 
   if (feasible) {
-    // Rango que garantiza cierre exacto en los días restantes:
-    // mínimo hoy para que el resto no tenga que superar cap
     const lo = Math.max(1, remaining - (daysLeft - 1) * cap);
-    // máximo hoy para que el resto al menos con 1 por día pueda completar exacto
     const hi = Math.min(cap, remaining - (daysLeft - 1) * 1);
 
     if (lo > hi) {
-      // raro, pero por seguridad: caemos a algo estable
       const amount = Math.min(cap, Math.max(1, Math.round(avgNeeded)));
       return {
         amount,
@@ -184,8 +164,6 @@ function computeTodayAmountExactIfPossible({ totalSoFar, dayOfMonth, lastDay, ta
     };
   }
 
-  // NOT FEASIBLE: el jugador no fue constante o ya es imposible cerrar sin superar cap.
-  // No compensamos. Damos algo razonable 1..cap (sesgado a avg, pero limitado).
   const lo = 1;
   const hi = cap;
   const amount = pickBiased(lo, hi, Math.min(cap, avgNeeded), spread);
@@ -193,6 +171,24 @@ function computeTodayAmountExactIfPossible({ totalSoFar, dayOfMonth, lastDay, ta
     amount,
     debug: { reason: "not_feasible_no_compensation", daysLeft, remaining, totalSoFar, target, cap, avg: avgNeeded, lo, hi },
   };
+}
+
+/**
+ * Sumar a wallet (atómico) + ledger
+ * Requiere la función SQL public.wallet_add(...)
+ */
+async function addToWallet({ uuid, amount, meta }) {
+  const { data, error } = await db.rpc("wallet_add", {
+    p_uuid: uuid,
+    p_amount: amount,
+    p_motivo: "daily_claim",
+    p_fuente: "daily_claim",
+    p_meta: meta || {},
+  });
+
+  if (error) throw error;
+  // Supabase RPC devuelve `data` como el return (balance bigint)
+  return Number(data) || 0;
 }
 
 // POST /api/daily-claim
@@ -208,7 +204,7 @@ exports.claimDaily = async (req, res) => {
     step = "fetch_usuario";
     const { data: jugador, error: errJugador } = await db
       .from("usuarios")
-      .select("uuid, uid")
+      .select("uuid, uid, wallet_coins")
       .eq("uuid", uuid)
       .maybeSingle();
 
@@ -239,7 +235,7 @@ exports.claimDaily = async (req, res) => {
     step = "month_sum";
     const { total: totalSoFar, daysClaimed } = await getMonthSum(uuid, firstISO, nextISO);
 
-    const target = MONTH_TARGET_PER_SERVER;
+    const target = MONTH_TARGET_WALLET;
     const cap = getHardCap(lastDay);
 
     step = "compute_amount";
@@ -260,7 +256,7 @@ exports.claimDaily = async (req, res) => {
         nextISO,
         dayOfMonth,
         lastDay,
-        targetPerServer: target,
+        targetWallet: target,
         hardCap: cap,
         sum: { totalSoFar, daysClaimed },
         calc: debug,
@@ -284,24 +280,23 @@ exports.claimDaily = async (req, res) => {
       throw errInsert;
     }
 
-    step = "insert_comandos_pendientes";
-    const player = jugador.uid;
-    const cmd = `coins give ${player} ${amount}`;
-    const servidores = SERVIDORES;
-
-    const { error: errCmds } = await db.from("comandos_pendientes").insert(
-      servidores.map((s) => ({
-        uuid_jugador: String(uuid), // TEXT en tabla
-        nombre_jugador: player,
-        comando: cmd,
-        servidor: s,
-      }))
-    );
-
-    if (errCmds) {
-      // Rollback: si falla comandos, eliminamos el claim del día para no bloquear al user
+    // ✅ WALLET: sumar coins (atómico) + movimiento
+    step = "wallet_add";
+    let walletBalance = 0;
+    try {
+      walletBalance = await addToWallet({
+        uuid,
+        amount,
+        meta: {
+          claim_date: today,
+          month: `${y}-${String(m).padStart(2, "0")}`,
+          hardCap: cap,
+        },
+      });
+    } catch (e) {
+      // rollback: si falla wallet, deshacemos el log del claim para no bloquear al user
       await db.from("daily_claims_log").delete().eq("uuid_jugador", uuid).eq("claim_date", today);
-      throw errCmds;
+      throw e;
     }
 
     step = "upsert_daily_claims";
@@ -324,14 +319,16 @@ exports.claimDaily = async (req, res) => {
     if (errUpsert) throw errUpsert;
 
     return res.status(200).json({
-      message: "Recompensa diaria registrada.",
+      message: "Recompensa diaria añadida a tu Wallet.",
       amount,
-      servers: servidores,
+      walletBalance,
       nextClaimAt: nextMidnightMadridISO(),
-      monthTargetPerServer: target,
-      monthSoFarPerServer: totalSoFar + amount,
+      monthTargetWallet: target,
+      monthSoFarWallet: totalSoFar + amount,
       dayIndex: nuevoStreak,
-      debug: DEBUG ? { today, firstISO, nextISO, lastDay, dayOfMonth, totalSoFar, daysClaimed, cap, calc: debug } : undefined,
+      debug: DEBUG
+        ? { today, firstISO, nextISO, lastDay, dayOfMonth, totalSoFar, daysClaimed, cap, calc: debug }
+        : undefined,
     });
   } catch (err) {
     console.error("[DAILY CLAIM ERROR]", { step, err });
@@ -367,6 +364,15 @@ exports.getDailyStatus = async (req, res) => {
 
     if (errHoy) throw errHoy;
 
+    step = "wallet_balance";
+    const { data: u, error: errU } = await db
+      .from("usuarios")
+      .select("wallet_coins")
+      .eq("uuid", uuid)
+      .maybeSingle();
+
+    if (errU) throw errU;
+
     step = "month_meta";
     const { firstISO, nextISO, lastDay, dayOfMonth } = monthMetaMadrid(new Date());
 
@@ -375,20 +381,20 @@ exports.getDailyStatus = async (req, res) => {
 
     const cap = getHardCap(lastDay);
 
-    // Info útil (opcional) para UI: si aún es posible llegar exacto sin dump
     const daysLeft = lastDay - dayOfMonth + 1;
-    const remaining = Math.max(0, MONTH_TARGET_PER_SERVER - monthSoFar);
+    const remaining = Math.max(0, MONTH_TARGET_WALLET - monthSoFar);
     const feasibleToCloseExact = remaining <= daysLeft * cap;
 
     return res.status(200).json({
       claimedToday: !!hoyRow,
       lastAmount: hoyRow?.amount ?? null,
       nextClaimAt: nextMidnightMadridISO(),
-      monthSoFarPerServer: monthSoFar,
+      monthSoFarWallet: monthSoFar,
       daysClaimed,
-      monthTargetPerServer: MONTH_TARGET_PER_SERVER,
+      monthTargetWallet: MONTH_TARGET_WALLET,
       dailyHardCap: cap,
       feasibleToCloseExact,
+      walletBalance: Number(u?.wallet_coins) || 0,
       debug: DEBUG ? { today, firstISO, nextISO, cap, remaining, daysLeft } : undefined,
     });
   } catch (err) {

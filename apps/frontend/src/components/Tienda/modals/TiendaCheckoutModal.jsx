@@ -1,5 +1,6 @@
 // src/components/Tienda/modals/TiendaCheckoutModal.jsx
 import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { createPortal } from "react-dom";
 import "../../../styles/components/Tienda/tienda-checkout-modal.scss";
 
 const API_BASE = import.meta.env.VITE_BACKEND_URL || "http://localhost:10000";
@@ -30,18 +31,8 @@ function IconInfo() {
         stroke="currentColor"
         strokeWidth="2.2"
       />
-      <path
-        d="M12 10v7"
-        stroke="currentColor"
-        strokeWidth="2.2"
-        strokeLinecap="round"
-      />
-      <path
-        d="M12 7h.01"
-        stroke="currentColor"
-        strokeWidth="3.4"
-        strokeLinecap="round"
-      />
+      <path d="M12 10v7" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+      <path d="M12 7h.01" stroke="currentColor" strokeWidth="3.4" strokeLinecap="round" />
     </svg>
   );
 }
@@ -49,18 +40,8 @@ function IconInfo() {
 function IconWarn() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path
-        d="M12 9v4"
-        stroke="currentColor"
-        strokeWidth="2.4"
-        strokeLinecap="round"
-      />
-      <path
-        d="M12 17h.01"
-        stroke="currentColor"
-        strokeWidth="3.6"
-        strokeLinecap="round"
-      />
+      <path d="M12 9v4" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
+      <path d="M12 17h.01" stroke="currentColor" strokeWidth="3.6" strokeLinecap="round" />
       <path
         d="M10.3 4.2 2.4 18a2 2 0 0 0 1.7 3h15.8a2 2 0 0 0 1.7-3L13.7 4.2a2 2 0 0 0-3.4 0Z"
         stroke="currentColor"
@@ -116,6 +97,29 @@ export default function TiendaCheckoutModal({
   useEffect(() => { openRef.current = open; }, [open]);
   useEffect(() => { identRef.current = safeIdent; }, [safeIdent]);
   useEffect(() => { phaseRef.current = phase; }, [phase]);
+
+  // ✅ PORTAL ROOT (para estar por encima de todo y evitar stacking contexts por transform)
+  const portalRef = useRef(null);
+  useEffect(() => {
+    const el = document.createElement("div");
+    el.setAttribute("data-wcc-portal", "true");
+    portalRef.current = el;
+    document.body.appendChild(el);
+
+    return () => {
+      try { el.remove(); } catch {}
+      portalRef.current = null;
+    };
+  }, []);
+
+  // ✅ cuando se abre, re-append para ser el último nodo del body (gana en empate de z-index)
+  useEffect(() => {
+    if (!open) return;
+    const el = portalRef.current;
+    if (el && el.parentNode === document.body) {
+      document.body.appendChild(el); // mover al final
+    }
+  }, [open]);
 
   const close = useCallback(() => {
     setError("");
@@ -186,10 +190,10 @@ export default function TiendaCheckoutModal({
     if (!id) return { ok: false, paid: false };
 
     try {
-      const r = await fetch(`${API_BASE}/api/tebex/checkout-status/${encodeURIComponent(id)}`, {
-        method: "GET",
-        headers: { "Accept": "application/json" },
-      });
+      const r = await fetch(
+        `${API_BASE}/api/tebex/checkout-status/${encodeURIComponent(id)}`,
+        { method: "GET", headers: { "Accept": "application/json" } }
+      );
       const data = await r.json().catch(() => ({}));
       if (!r.ok) return { ok: false, paid: false, data };
       return { ok: true, paid: Boolean(data?.paid), data };
@@ -201,7 +205,7 @@ export default function TiendaCheckoutModal({
   const mountCheckout = useCallback(() => {
     const Tebex = window?.Tebex;
     if (!Tebex?.checkout?.init || !Tebex?.checkout?.render) {
-      setError("Tebex.js no está cargado. Revisa el <script defer src=\"https://js.tebex.io/v/1.js\"></script>.");
+      setError('Tebex.js no está cargado. Revisa el <script defer src="https://js.tebex.io/v/1.js"></script>.');
       return;
     }
 
@@ -285,7 +289,7 @@ export default function TiendaCheckoutModal({
         });
       }
     });
-  }, [close, showSuccess, showMaybePaid, verifyPaid, devForceSuccess]);
+  }, [showSuccess, showMaybePaid, verifyPaid, devForceSuccess]);
 
   // abrir: reset + render
   useEffect(() => {
@@ -347,9 +351,7 @@ export default function TiendaCheckoutModal({
         return;
       }
 
-      if (tries < 48) {
-        setTimeout(tick, 2500);
-      }
+      if (tries < 48) setTimeout(tick, 2500);
     };
 
     const t0 = setTimeout(tick, 3000);
@@ -372,7 +374,7 @@ export default function TiendaCheckoutModal({
     return { head, rest };
   }, [cartItems]);
 
-  return (
+  const content = (
     <div
       className={`wcc ${open ? "wcc--open" : ""}`}
       role="dialog"
@@ -492,4 +494,9 @@ export default function TiendaCheckoutModal({
       </div>
     </div>
   );
+
+  // Si aún no existe el portal root (primer render), no pintamos nada
+  if (!portalRef.current) return null;
+
+  return createPortal(content, portalRef.current);
 }

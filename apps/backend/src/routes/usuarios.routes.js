@@ -22,7 +22,6 @@ router.get("/vinculados", async (req, res) => {
   }
 });
 
-router.get("/rangos-expirados", controller.obtenerRangosExpirados);
 
 router.patch("/rango", controller.asignarRangoUsuario);
 

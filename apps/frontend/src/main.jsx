@@ -1,6 +1,6 @@
 // src/main.jsx
-import "./config/lucidePatch"; // 👈 parches de lucide primero
-import "./utils/devBackendProxy"; // 👈 proxy SOLO en dev para redirigir Render → localhost
+import "./config/lucidePatch";
+import "./utils/devBackendProxy"; 
 
 import React from "react";
 import ReactDOM from "react-dom/client";

@@ -1,37 +1,41 @@
-import {
-  useEffect,
-  useState,
-  useRef,
-  useLayoutEffect,
-  useCallback,
-} from "react";
+import { useEffect, useState, useRef, useLayoutEffect, useCallback } from "react";
 import { Lock, CheckCircle } from "lucide-react";
 import "../../styles/components/Dashboard/_rewardlist.scss";
 
+// Niveles: 1,5,10,15,20,25,30,35,40,45,50
 const RECOMPENSAS = [
-  { nivel: 1, descripcion: "200 ECOS", tipo: "eco" },
-  { nivel: 5, descripcion: "600 ECOS", tipo: "eco" },
-  { nivel: 10, descripcion: "1000 ECOS", tipo: "eco" },
-  { nivel: 15, descripcion: "1500 ECOS", tipo: "eco" },
-  { nivel: 20, descripcion: "2000 ECOS", tipo: "eco" },
-  { nivel: 25, descripcion: "2600 ECOS", tipo: "eco" },
-  { nivel: 30, descripcion: "3200 ECOS", tipo: "eco" },
-  { nivel: 35, descripcion: "4000 ECOS", tipo: "eco" },
-  { nivel: 40, descripcion: "4800 ECOS", tipo: "eco" },
-  { nivel: 45, descripcion: "5600 ECOS", tipo: "eco" },
-  { nivel: 50, descripcion: "9500 ECOS + PRESTIGIO", tipo: "eco" },
+  { nivel: 1, descripcion: "12 COINS", tipo: "coin" },
+  { nivel: 5, descripcion: "94 COINS", tipo: "coin" },
+  { nivel: 10, descripcion: "178 COINS", tipo: "coin" },
+  { nivel: 15, descripcion: "246 COINS", tipo: "coin" },
+  { nivel: 20, descripcion: "302 COINS", tipo: "coin" },
+  { nivel: 25, descripcion: "351 COINS", tipo: "coin" },
+  { nivel: 30, descripcion: "393 COINS", tipo: "coin" },
+  { nivel: 35, descripcion: "432 COINS", tipo: "coin" },
+  { nivel: 40, descripcion: "469 COINS", tipo: "coin" },
+  { nivel: 45, descripcion: "502 COINS", tipo: "coin" },
+  { nivel: 50, descripcion: "521 COINS", tipo: "coin" },
 ];
-// suma total = 35.000 ECOS
+
+const COIN_ICON = "/tienda/assets/coin.png";
+
+const API_BASE =
+  import.meta.env.VITE_BACKEND_URL || "https://flancraft-backend.onrender.com";
 
 export default function RewardList({
   user,
   xpData,
-  ecosRef,
+  coinsRef,
+  ecosRef, // compat
   onActualizarMonedas,
 }) {
+  const saldoRef = coinsRef || ecosRef;
+
   const [reclamadas, setReclamadas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const [claimingNivel, setClaimingNivel] = useState(null);
 
   const scrollRef = useRef(null);
   const nodo1Ref = useRef(null);
@@ -44,34 +48,44 @@ export default function RewardList({
   // CARGAR RECOMPENSAS YA RECLAMADAS
   // ==========================
   useEffect(() => {
-    fetch(
-      `https://flancraft-backend.onrender.com/api/recompensas/reclamadas/${user.uuid}`
-    )
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.error) throw new Error(data.error);
-        setReclamadas(data);
-      })
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false));
-  }, [user.uuid]);
+    if (!user?.uuid) return;
+
+    let cancelled = false;
+
+    (async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const res = await fetch(`${API_BASE}/api/recompensas/reclamadas/${user.uuid}`);
+        const data = await res.json();
+        if (!res.ok) throw new Error(data?.error || "Error al cargar reclamadas");
+
+        if (!cancelled) setReclamadas(Array.isArray(data) ? data : []);
+      } catch (err) {
+        if (!cancelled) setError(err.message || "Error");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [user?.uuid]);
 
   // ==========================
-  // LÓGICA DE PROGRESO VISUAL (RESPETADA)
+  // LÓGICA DE PROGRESO VISUAL
   // ==========================
   const calcularProgresoVisual = useCallback(() => {
     if (!xpData) return 0;
 
-    const niveles = xpData.niveles;
-    const xpActual = xpData.xp_total_actual;
+    const niveles = xpData.niveles || [];
+    const xpActual = Number(xpData.xp_total_actual || 0);
 
-    const xpMinimo =
-      niveles.find((n) => n.nivel === 1)?.xp_total_acumulada || 0;
+    const xpMinimo = niveles.find((n) => n.nivel === 1)?.xp_total_acumulada || 0;
     if (xpActual <= xpMinimo) return 0;
 
     const nodos = RECOMPENSAS.map(
-      (r) =>
-        niveles.find((n) => n.nivel === r.nivel)?.xp_total_acumulada || 0
+      (r) => niveles.find((n) => n.nivel === r.nivel)?.xp_total_acumulada || 0
     );
 
     const totalTramos = nodos.length - 1;
@@ -80,45 +94,41 @@ export default function RewardList({
       const inicio = nodos[i];
       const fin = nodos[i + 1];
 
-      // si ya has pasado este nodo, seguimos
       if (xpActual >= fin) continue;
 
       const progresoRelativo = (xpActual - inicio) / (fin - inicio);
       return ((i + progresoRelativo) / totalTramos) * 100;
     }
 
-    // has pasado todos los nodos
     return 100;
   }, [xpData]);
 
   useLayoutEffect(() => {
     if (nodo1Ref.current && nodoFinalRef.current && xpData) {
-      const left =
-        nodo1Ref.current.offsetLeft +
-        nodo1Ref.current.offsetWidth / 2;
-
+      const left = nodo1Ref.current.offsetLeft + nodo1Ref.current.offsetWidth / 2;
       setOffsetNodo1(left);
 
       const totalWidth =
-        nodoFinalRef.current.offsetLeft +
-        nodoFinalRef.current.offsetWidth / 2 -
-        left;
+        nodoFinalRef.current.offsetLeft + nodoFinalRef.current.offsetWidth / 2 - left;
 
       const porcentaje = calcularProgresoVisual();
 
-      if (porcentaje <= 0) {
-        setAnchoBarra("0px");
-      } else if (porcentaje >= 100) {
-        setAnchoBarra(`${totalWidth}px`);
-      } else {
-        setAnchoBarra(`${(totalWidth * porcentaje) / 100}px`);
-      }
+      if (porcentaje <= 0) setAnchoBarra("0px");
+      else if (porcentaje >= 100) setAnchoBarra(`${totalWidth}px`);
+      else setAnchoBarra(`${(totalWidth * porcentaje) / 100}px`);
     }
   }, [xpData, calcularProgresoVisual]);
 
   // ==========================
-  // ANIMACIONES MONEDAS + CONTADOR
+  // HELPERS
   // ==========================
+  const readNumberFromRef = (ref) => {
+    if (!ref?.current) return 0;
+    const raw = String(ref.current.textContent || "");
+    const digits = raw.replace(/[^\d]/g, "");
+    return parseInt(digits || "0", 10) || 0;
+  };
+
   const animateCounter = (start, end, duration, updateFn) => {
     const startTime = performance.now();
 
@@ -127,10 +137,7 @@ export default function RewardList({
       const progress = Math.min(elapsed / duration, 1);
       const current = Math.floor(start + (end - start) * progress);
       updateFn(current);
-
-      if (progress < 1) {
-        requestAnimationFrame(step);
-      }
+      if (progress < 1) requestAnimationFrame(step);
     };
 
     requestAnimationFrame(step);
@@ -143,7 +150,7 @@ export default function RewardList({
 
     for (let i = 0; i < maxMonedas; i++) {
       const moneda = document.createElement("img");
-      moneda.src = "/assets/eco.webp";
+      moneda.src = COIN_ICON;
       moneda.className = "eco-fly";
       document.body.appendChild(moneda);
 
@@ -158,10 +165,8 @@ export default function RewardList({
       moneda.style.width = "24px";
       moneda.style.pointerEvents = "none";
       moneda.style.zIndex = "9999";
-      moneda.style.transition =
-        "transform 0.6s ease-in-out, opacity 0.6s ease-in-out";
+      moneda.style.transition = "transform 0.6s ease-in-out, opacity 0.6s ease-in-out";
 
-      // forzar reflow
       moneda.getBoundingClientRect();
 
       moneda.style.transform = `translate(${
@@ -169,111 +174,103 @@ export default function RewardList({
       }px, ${endY - startY + (Math.random() * 30 - 15)}px) scale(0.5)`;
       moneda.style.opacity = "0";
 
-      setTimeout(
-        () => moneda.remove(),
-        700 + Math.random() * 300
-      );
+      setTimeout(() => moneda.remove(), 700 + Math.random() * 300);
     }
   };
 
   // ==========================
-  // RECLAMAR RECOMPENSA
+  // RECLAMAR RECOMPENSA (wallet real)
   // ==========================
   const handleReclamar = async (nivel) => {
+    if (!user?.uuid) return;
+    if (claimingNivel) return;
+
+    setClaimingNivel(nivel);
+    setError(null);
+
     const recompensa = RECOMPENSAS.find((r) => r.nivel === nivel);
-    const cantidadEco = parseInt(recompensa.descripcion, 10);
+    const cantidadUI = parseInt(recompensa?.descripcion || "0", 10) || 0;
 
     try {
-      const res = await fetch(
-        "https://flancraft-backend.onrender.com/api/recompensas/reclamar",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ uuid: user.uuid, nivel }),
-        }
-      );
+      const res = await fetch(`${API_BASE}/api/recompensas/reclamar`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ uuid: user.uuid, nivel }),
+      });
+
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Error");
+      if (!res.ok) throw new Error(data?.error || "Error");
 
-      // animación visual
-      const indexSlot =
-        RECOMPENSAS.findIndex((r) => r.nivel === nivel) + 1;
-      const nodo = document.querySelector(
-        `.reward-slot:nth-child(${indexSlot}) .reward-icon`
-      );
-      const destino = ecosRef?.current;
+      const coinsAñadidos = Number(data?.coinsAñadidos) || cantidadUI;
+      const nuevoSaldoCoins =
+        Number.isFinite(Number(data?.nuevoSaldoCoins)) ? Number(data?.nuevoSaldoCoins) : null;
 
-      if (nodo && destino) {
-        lanzarMonedasAnimadas(nodo, destino, cantidadEco);
+      const nodo = document.querySelector(`.reward-slot[data-nivel="${nivel}"] .reward-icon`);
+      const destino = saldoRef?.current;
+
+      if (nodo && destino && coinsAñadidos > 0) {
+        lanzarMonedasAnimadas(nodo, destino, coinsAñadidos);
       }
 
-      // animar contador local
-      if (ecosRef?.current) {
-        const prevEcos = parseInt(
-          ecosRef.current.textContent || "0",
-          10
-        );
-        const nuevoTotal = prevEcos + cantidadEco;
+      if (saldoRef?.current && coinsAñadidos > 0) {
+        const prev = readNumberFromRef(saldoRef);
 
-        animateCounter(prevEcos, nuevoTotal, 900, (val) => {
-          if (ecosRef.current) ecosRef.current.textContent = val;
-        });
+        if (nuevoSaldoCoins !== null) {
+          animateCounter(prev, nuevoSaldoCoins, 900, (val) => {
+            if (saldoRef.current) saldoRef.current.textContent = String(val);
+          });
+        } else {
+          const nuevoTotal = prev + coinsAñadidos;
+          animateCounter(prev, nuevoTotal, 900, (val) => {
+            if (saldoRef.current) saldoRef.current.textContent = String(val);
+          });
+        }
       }
 
-      setReclamadas((prev) => [...prev, nivel]);
+      setReclamadas((prev) => (prev.includes(nivel) ? prev : [...prev, nivel]));
 
-      // refrescar desde backend si hace falta
       if (typeof onActualizarMonedas === "function") {
         onActualizarMonedas();
       }
     } catch (err) {
       console.error("Error reclamando recompensa:", err.message);
+      setError(err.message || "Error reclamando recompensa");
+    } finally {
+      setClaimingNivel(null);
     }
   };
 
-  // estado visual de cada nodo (progresado / siguiente / pendiente)
   const calcularProgreso = (nivel, index) => {
     if (!xpData) return "pendiente";
 
     const nodoXP =
-      xpData.niveles.find((n) => n.nivel === nivel)
-        ?.xp_total_acumulada || 0;
-    const progresoActual = xpData.xp_total_actual;
+      xpData.niveles?.find((n) => n.nivel === nivel)?.xp_total_acumulada || 0;
+
+    const progresoActual = Number(xpData.xp_total_actual || 0);
 
     if (progresoActual >= nodoXP) return "progresado";
 
     const anteriorNodo = RECOMPENSAS[index - 1];
     const xpAnterior = anteriorNodo
-      ? xpData.niveles.find((n) => n.nivel === anteriorNodo.nivel)
-          ?.xp_total_acumulada || 0
+      ? xpData.niveles?.find((n) => n.nivel === anteriorNodo.nivel)?.xp_total_acumulada || 0
       : 0;
 
-    if (progresoActual >= xpAnterior && progresoActual < nodoXP) {
-      return "siguiente";
-    }
-
+    if (progresoActual >= xpAnterior && progresoActual < nodoXP) return "siguiente";
     return "pendiente";
   };
 
   const scrollBy = (direction) => {
     if (scrollRef.current) {
-      scrollRef.current.scrollBy({
-        left: direction * 320,
-        behavior: "smooth",
-      });
+      scrollRef.current.scrollBy({ left: direction * 320, behavior: "smooth" });
     }
   };
 
-  // ==========================
-  // RENDER
-  // ==========================
   return (
     <section className="reward-pass">
       <h2 className="titulo-reward">Camino al Prestigio</h2>
 
       <div className="recompensas-subtitulo">
-        Completa aventuras, sube de nivel y consigue ECOS
-        en tu camino al Prestigio.
+        Completa aventuras, sube de nivel y consigue COINS en tu camino al Prestigio.
       </div>
 
       <div className="rewards-scroll-container">
@@ -295,74 +292,48 @@ export default function RewardList({
 
         <div className="rewards-wrapper" ref={scrollRef}>
           <div className="rewards-row">
-            {/* Línea de progreso global */}
             <div className="progreso-wrapper">
               <div className="linea-fondo" />
-              <div
-                className="linea-relleno"
-                style={{
-                  width: anchoBarra,
-                  left: `${offsetNodo1}px`,
-                }}
-              />
+              <div className="linea-relleno" style={{ width: anchoBarra, left: `${offsetNodo1}px` }} />
             </div>
 
-            {/* Tarjetas de recompensa */}
             {RECOMPENSAS.map((r, i) => {
               const estadoNodo = calcularProgreso(r.nivel, i);
               const yaReclamada = reclamadas.includes(r.nivel);
-              const puedeReclamar =
-                estadoNodo === "progresado" && !yaReclamada;
+              const puedeReclamar = estadoNodo === "progresado" && !yaReclamada;
+              const isClaimingThis = claimingNivel === r.nivel;
 
-              const icono = (
-                <img src="/assets/eco.webp" alt="ECO" />
-              );
+              const icono = <img src={COIN_ICON} alt="COIN" />;
 
               return (
                 <div
                   key={r.nivel}
                   className="reward-slot"
-                  ref={
-                    i === 0
-                      ? nodo1Ref
-                      : i === RECOMPENSAS.length - 1
-                      ? nodoFinalRef
-                      : null
-                  }
+                  data-nivel={r.nivel}
+                  ref={i === 0 ? nodo1Ref : i === RECOMPENSAS.length - 1 ? nodoFinalRef : null}
                 >
                   <div
                     className={[
                       "reward-box",
-                      estadoNodo !== "pendiente"
-                        ? "unlocked"
-                        : "locked",
+                      estadoNodo !== "pendiente" ? "unlocked" : "locked",
                       yaReclamada ? "claimed" : "",
-                    ]
-                      .filter(Boolean)
-                      .join(" ")}
+                    ].filter(Boolean).join(" ")}
                   >
                     <div className="reward-icon">
-                      {estadoNodo !== "pendiente" ? (
-                        icono
-                      ) : (
-                        <Lock size={20} />
-                      )}
+                      {estadoNodo !== "pendiente" ? icono : <Lock size={20} />}
                     </div>
 
-                    <div className="reward-desc">
-                      {r.descripcion}
-                    </div>
-                    <div className="reward-nivel">
-                      Nivel {r.nivel}
-                    </div>
+                    <div className="reward-desc">{r.descripcion}</div>
+                    <div className="reward-nivel">Nivel {r.nivel}</div>
 
                     {puedeReclamar && (
                       <button
                         type="button"
                         onClick={() => handleReclamar(r.nivel)}
                         className="reclamar-btn"
+                        disabled={!!claimingNivel}
                       >
-                        Reclamar
+                        {isClaimingThis ? "Reclamando..." : "Reclamar"}
                       </button>
                     )}
 
@@ -378,9 +349,7 @@ export default function RewardList({
                       "nodo",
                       `nodo-${estadoNodo}`,
                       yaReclamada ? "nodo-claimed" : "",
-                    ]
-                      .filter(Boolean)
-                      .join(" ")}
+                    ].filter(Boolean).join(" ")}
                   >
                     <span>{r.nivel}</span>
                   </div>
@@ -391,12 +360,8 @@ export default function RewardList({
         </div>
       </div>
 
-      {loading && (
-        <p className="estado">Cargando recompensas...</p>
-      )}
-      {error && (
-        <p className="estado error">Error: {error}</p>
-      )}
+      {loading && <p className="estado">Cargando recompensas...</p>}
+      {error && <p className="estado error">Error: {error}</p>}
     </section>
   );
 }

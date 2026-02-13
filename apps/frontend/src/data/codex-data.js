@@ -1,73 +1,81 @@
+// src/data/codex-data.js
 const codexData = [
   {
-    title: "El Mundo Olvidado",
-    subtitle: "Donde Comenzó Todo",
-    badge: "Origen Sagrado",
-    badgeColor: "#66ccff",
+    title: "HECHO POR GENTE REAL",
+    subtitle: "un equipo pequeño, con una idea clara",
+    badgeColor: "#7fd9ff",
     bg: "/assets/comic/panel1.webp",
     thumb: "/assets/comic/panel1.webp",
     description:
-      "Hace eras, cuando los bloques aún eran caos, una chispa resonó en la oscuridad. No fue creación, fue recuerdo. Una memoria cósmica reactivó los cimientos del mundo. Así nació la Resonancia: la vibración arcana que une todos los planos. Dormía... hasta ahora.",
+      "Detrás de FlanCraft no hay un “equipo invisible”.\n" +
+      "Somos un grupo reducido de personas que llevamos tiempo construyendo esto con calma y con criterio.\n" +
+      "Nos importa que el servidor se sienta cuidado: el ambiente, los detalles y la experiencia de jugar.",
   },
   {
-    title: "La Llamada del Eco",
-    subtitle: "Ruido en el Silencio",
-    badge: "Anomalía Rúnica",
+    title: "ESTO VA EN SERIO",
+    subtitle: "estructura para crecer a largo plazo",
     badgeColor: "#7ae582",
     bg: "/assets/comic/panel2.webp",
     thumb: "/assets/comic/panel2.webp",
     description:
-      "Primero fueron tormentas sin nubes. Luego mobs sin alma. Y después... los portales comenzaron a temblar. La Resonancia hablaba. Un susurro en las mazmorras más profundas, en las hojas del bioma más lejano. Nadie entendía el mensaje. Nadie... excepto él.",
+      "FlanCraft no está planteado como un proyecto de “temporada”.\n" +
+      "Estamos dando el paso de construirlo con estructura real: Blockhorn.\n" +
+      "La intención es clara: continuidad, estabilidad y una base sólida para seguir mejorando durante años.",
   },
   {
-    title: "Flan, el Resonador",
-    subtitle: "El Primero que Escuchó",
-    badge: "Portador de la Llama Interior",
+    title: "POR QUÉ EXISTE FLANCRAFT",
+    subtitle: "un servidor con rumbo y continuidad",
     badgeColor: "#fbc531",
     bg: "/assets/comic/panel3.webp",
     thumb: "/assets/comic/panel3.webp",
     description:
-      "Flan no fue elegido. Fue obsesionado. Guiado por voces invisibles y fragmentos de códices prohibidos, emprendió un viaje entre planos, ruinas, y universos. No buscaba poder. Buscaba la Fuente. Y la encontró. Porque el Eco solo se revela a quienes realmente escuchan.",
+      "Muchos servidores aparecen con fuerza y desaparecen igual de rápido.\n" +
+      "Nosotros queríamos lo contrario: un lugar al que puedas volver y sientas que sigue avanzando.\n" +
+      "Buen ambiente, normas claras y cambios que tienen sentido.",
   },
   {
-    title: "La Fuente del Eco",
-    subtitle: "Corazón del Mundo",
-    badge: "Cristal de la Realidad",
+    title: "NUESTRO ENFOQUE",
+    subtitle: "menos promesas, más resultado",
     badgeColor: "#a29bfe",
     bg: "/assets/comic/panel4.webp",
     thumb: "/assets/comic/panel4.webp",
     description:
-      "En un templo más allá del Nether, donde las leyes físicas lloran y las texturas respiran, Flan halló el Eco. Era una energía pura, viva, impaciente. No podía contenerse. No podía romperse. Solo resonar. Y él… resonó con ella.",
+      "Preferimos avanzar paso a paso, pero con calidad.\n" +
+      "Antes de lanzar algo, lo probamos, lo ajustamos y lo dejamos fino.\n" +
+      "Si algo falla, se arregla. Y si algo no está al nivel, se rehace.",
   },
-    {
-    title: "El ECO Desatado",
-    subtitle: "Forma Suprema del Eco",
-    badge: "Energía Absoluta",
-    badgeColor: "#00ffff",
+  {
+    title: "CONSTRUCCIÓN PROPIA",
+    subtitle: "coherencia entre web y juego",
+    badgeColor: "#ff8bd1",
     bg: "/assets/comic/panel5.webp",
     thumb: "/assets/comic/panel5.webp",
     description:
-      "El Eco no se deja dominar. Pero si se estabiliza, si se purifica... cristaliza. Y de esa cristalización nace el ECO. Un núcleo de realidad, una fuente inagotable de creación. Con él, Flan reconstruyó el orden, y otros... comenzaron a desearlo.",
+      "Nos obsesiona que todo encaje.\n" +
+      "Por eso hemos creado sistemas conectados a tu cuenta: perfil, progreso y funciones vinculadas.\n" +
+      "La idea es simple: que lo que haces dentro del servidor tenga continuidad y se note el trabajo detrás.",
   },
   {
-    title: "El Mercado Interdimensional",
-    subtitle: "Donde Todo Se Intercambia",
-    badge: "Nexo Prohibido",
-    badgeColor: "#e17055",
+    title: "LA COMUNIDAD CUENTA",
+    subtitle: "escuchar, ajustar, mejorar",
+    badgeColor: "#ffb86b",
     bg: "/assets/comic/panel6.webp",
     thumb: "/assets/comic/panel6.webp",
     description:
-      "En los registros ocultos del End, Flan descubrió el Mercado Interdimensional: un lugar fuera del tiempo donde todo tiene precio. Armaduras imposibles, portales extintos, poderes de dioses caídos. ¿La única moneda aceptada? Eco puro. Lo invisible hecho materia.",
+      "No vamos a venderte humo: esto se construye con gente.\n" +
+      "Leemos feedback, revisamos lo que no encaja y reforzamos lo que funciona.\n" +
+      "Queremos que FlanCraft crezca contigo, no a tu costa.",
   },
   {
-    title: "La Era del Eco",
-    subtitle: "El Poder Tiene Precio",
-    badge: "Moneda Suprema",
+    title: "SI TE QUEDAS, CRECEMOS",
+    subtitle: "bienvenido a FlanCraft",
     badgeColor: "#00d2ff",
     bg: "/assets/comic/panel7.webp",
     thumb: "/assets/comic/panel7.webp",
     description:
-      "Hoy, el ECO es codiciado por todos. Quien lo posee, reescribe las normas del mundo. Es moneda, es magia, es llave. El que lo entienda, lo tendrá. Y solo a través del ritual, solo quienes recorren este camino... podrán reclamarlo.",
+      "Gracias por llegar hasta aquí.\n" +
+      "Si te apetece formar parte, vincula tu cuenta y entra al Dashboard.\n" +
+      "Ahí verás tu perfil y tu progreso, y accederás a todo lo que vamos conectando al juego con el tiempo.",
   },
 ];
 

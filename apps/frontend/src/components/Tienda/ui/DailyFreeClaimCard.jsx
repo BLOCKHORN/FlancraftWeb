@@ -7,11 +7,6 @@ import "../../../styles/components/Tienda/daily-free-claim-burst.scss";
 
 const API = import.meta.env.VITE_API_URL || "https://flancraft-backend.onrender.com";
 
-const SERVER_META = {
-  oneblock: { label: "Oneblock", icon: "/assets/reinos/oneblock.webp" },
-  gens: { label: "Gens", icon: "/assets/reinos/gens.webp" },
-};
-
 function msToShort(ms) {
   const s = Math.max(0, Math.floor(ms / 1000));
   const h = Math.floor(s / 3600);
@@ -88,28 +83,16 @@ export default function DailyFreeClaimCard() {
   const [modal, setModal] = useState(null);
   const [showLogin, setShowLogin] = useState(false);
 
-  // ✅ token en state para que, al cerrar LoginModal, podamos refrescar status sin recargar página
   const [token, setToken] = useState(() => localStorage.getItem("token"));
-
-  const isLocked = !token; // si no hay token, tratamos como no logueado
+  const isLocked = !token;
 
   const nextMs = useMemo(() => {
     if (!status?.nextClaimAt) return 0;
     return new Date(status.nextClaimAt).getTime() - Date.now();
   }, [status?.nextClaimAt]);
 
-  const modalStep = useMemo(() => {
-    if (!modal || modal.error || !modal.steps) return null;
-    return modal.steps[modal.stepIndex] || null;
-  }, [modal]);
-
-  const stepMeta = useMemo(() => {
-    if (!modalStep) return null;
-    return SERVER_META[modalStep.serverKey] || { label: String(modalStep.serverKey || ""), icon: null };
-  }, [modalStep]);
-
-  const showCount = !!(modal && !modal.error && modal.phase === "reveal" && modalStep);
-  const countVal = useCountUp(showCount, modalStep?.amount ?? 0, 900);
+  const showCount = !!(modal && !modal.error && modal.phase === "reveal");
+  const countVal = useCountUp(showCount, modal?.amount ?? 0, 900);
 
   const particles = useMemo(() => {
     if (!modal || modal.error) return [];
@@ -133,7 +116,6 @@ export default function DailyFreeClaimCard() {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        // token inválido/expirado => UX coherente: “no logueado”
         if (r.status === 401) {
           localStorage.removeItem("token");
           if (!alive) return;
@@ -177,13 +159,11 @@ export default function DailyFreeClaimCard() {
   }, [modal]);
 
   // ---------- MODAL FLOWS ----------
-  const openRewardModal = ({ amount, servers, nextClaimAt }) => {
-    const list = Array.isArray(servers) && servers.length ? servers : ["oneblock", "gens"];
-    const steps = list.map((sv) => ({ serverKey: sv, amount }));
+  const openRewardModal = ({ amount, walletBalance, nextClaimAt }) => {
     setModal({
-      steps,
-      stepIndex: 0,
       phase: "intro",
+      amount,
+      walletBalance: Number(walletBalance) || 0,
       nextClaimAt,
       particlesKey: `${Date.now()}_${Math.random()}`,
     });
@@ -202,18 +182,7 @@ export default function DailyFreeClaimCard() {
       if (m.phase === "auth") return m;
 
       if (m.phase === "intro") return { ...m, phase: "reveal", particlesKey: `${Date.now()}_${Math.random()}` };
-
-      if (m.phase === "reveal") {
-        const last = m.stepIndex >= m.steps.length - 1;
-        if (last) return { ...m, phase: "done", particlesKey: `${Date.now()}_${Math.random()}` };
-        return {
-          ...m,
-          stepIndex: m.stepIndex + 1,
-          phase: "intro",
-          particlesKey: `${Date.now()}_${Math.random()}`,
-        };
-      }
-
+      if (m.phase === "reveal") return { ...m, phase: "done", particlesKey: `${Date.now()}_${Math.random()}` };
       return m;
     });
   };
@@ -226,17 +195,23 @@ export default function DailyFreeClaimCard() {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       });
+
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Error");
 
-      openRewardModal({ amount: data.amount, servers: data.servers, nextClaimAt: data.nextClaimAt });
+      openRewardModal({
+        amount: data.amount,
+        walletBalance: data.walletBalance,
+        nextClaimAt: data.nextClaimAt,
+      });
 
-      setStatus({
+      setStatus((s) => ({
+        ...(s || {}),
         claimedToday: true,
         nextClaimAt: data.nextClaimAt,
         lastAmount: data.amount,
-        streak: data.streak,
-      });
+        walletBalance: data.walletBalance,
+      }));
     } catch (e) {
       setModal({ error: e.message });
     } finally {
@@ -244,34 +219,26 @@ export default function DailyFreeClaimCard() {
     }
   };
 
-  // ✅ solo se desactiva si está reclamando o ya se reclamó hoy
   const disabled = !!(status?.claimedToday || claiming);
-
-  // ✅ ya no engañamos: si no hay login, el CTA sigue siendo “GRATIS”
   const ctaText = status?.claimedToday ? "RECLAMADO" : claiming ? "RECLAMANDO..." : "GRATIS";
-
-  // ✅ pill superior: guía rápida sin “BLOQUEADO”
   const timerText = status?.claimedToday ? msToShort(nextMs) : isLocked ? "Inicia sesión" : "Disponible";
 
   if (loading) return null;
 
   const isRewardFlow = !!(modal && !modal.error && modal.phase !== "auth");
 
-  // ---------- LOGIN MODAL NODE ----------
   const loginNode =
     showLogin &&
     createPortal(
       <LoginModal
         onClose={() => {
           setShowLogin(false);
-          // al cerrar login, refrescamos token (si se logueó, lo habrá metido en localStorage)
           setToken(localStorage.getItem("token"));
         }}
       />,
       document.body
     );
 
-  // ---------- DAILY MODAL NODE ----------
   const modalNode =
     modal &&
     createPortal(
@@ -308,14 +275,6 @@ export default function DailyFreeClaimCard() {
                   <span className="t">RECOMPENSA DIARIA</span>
                   <span className="s">{modal.phase === "auth" ? "Requiere cuenta" : "Gratis"}</span>
                 </div>
-
-                {modal?.steps?.length > 1 && modal.phase !== "auth" && (
-                  <div className="dailyClaimModal__steps">
-                    {modal.steps.map((_, i) => (
-                      <span key={i} className={`dot ${i === modal.stepIndex ? "is-on" : ""}`} />
-                    ))}
-                  </div>
-                )}
               </div>
 
               <div className="dailyClaimModal__center">
@@ -346,17 +305,10 @@ export default function DailyFreeClaimCard() {
                   </>
                 )}
 
-                {/* REWARD FLOW */}
+                {/* REWARD FLOW (WALLET) */}
                 {modal.phase !== "auth" && (
                   <>
-                    {stepMeta?.icon ? (
-                      <div className="dailyClaimModal__server">
-                        <img src={stepMeta.icon} alt={stepMeta.label} draggable="false" />
-                        <div className="dailyClaimModal__serverName">{stepMeta.label}</div>
-                      </div>
-                    ) : (
-                      <div className="dailyClaimModal__serverName">{stepMeta?.label}</div>
-                    )}
+                    <div className="dailyClaimModal__serverName">Wallet</div>
 
                     {modal.phase === "intro" && (
                       <>
@@ -378,11 +330,13 @@ export default function DailyFreeClaimCard() {
                           <img className="coin" src="/tienda/assets/coin.png" alt="Coin" draggable="false" />
                         </div>
 
-                        <div className="dailyClaimModal__hint">Se entregan automáticamente en el servidor</div>
+                        <div className="dailyClaimModal__hint">
+                          Se han añadido a tu <b>Wallet</b>. Desde ahí podrás gastarlas en la tienda o enviarlas a un servidor.
+                        </div>
 
                         <div className="dailyClaimModal__ctaRow">
                           <button type="button" className="dailyClaimBtn dailyClaimBtn--primary" onClick={nextStep}>
-                            {modal.stepIndex < modal.steps.length - 1 ? "Siguiente" : "Continuar"}
+                            Continuar
                           </button>
                         </div>
                       </>
@@ -407,7 +361,6 @@ export default function DailyFreeClaimCard() {
                 ✕
               </button>
 
-              {/* click-catcher SOLO en el flow recompensa */}
               {isRewardFlow && <button className="dailyClaimModal__clickCatcher" type="button" aria-label="Siguiente" onClick={nextStep} />}
             </>
           ) : (

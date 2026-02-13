@@ -22,7 +22,7 @@ import GestionStaff from "./components/Admin/GestionStaff";
 import NoticiasAdmin from "./components/Admin/NoticiasAdmin";
 import EditarNoticia from "./components/Noticias/EditarNoticia";
 
-// 🛍️ Tienda con rutas internas
+// Tienda
 import TiendaLayout from "@/components/Tienda/ui/TiendaLayout";
 import "@fortawesome/fontawesome-free/css/all.min.css";
 
@@ -36,7 +36,7 @@ const App = () => {
       {showLogin && <LoginModal onClose={() => setShowLogin(false)} />}
 
       <Routes>
-        {/* 🌐 Público */}
+        {/* Público */}
         <Route path="/" element={<Home onLoginClick={() => setShowLogin(true)} />} />
         <Route path="/news" element={<AllNews />} />
         <Route path="/news/:slug" element={<NewsDetail />} />
@@ -45,12 +45,12 @@ const App = () => {
         <Route path="/leaderboards" element={<Leaderboards />} />
         <Route path="/perfil/:nombre" element={<PerfilJugador />} />
 
-        {/* 🛡️ Admin Paneles */}
+        {/* Admin Paneles */}
         <Route path="/admin" element={<GestionStaff />} />
         <Route path="/admin/noticias" element={<NoticiasAdmin />} />
         <Route path="/admin/noticias/editar/:id" element={<EditarNoticia />} />
 
-        {/* ⚖️ Tribunal System */}
+        {/* Tribunal System */}
         <Route path="/tribunal" element={<TribunalMain />} />
         <Route path="/tribunal/admin" element={<TribunalAdmin />} />
       </Routes>

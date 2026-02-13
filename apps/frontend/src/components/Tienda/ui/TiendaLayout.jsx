@@ -21,6 +21,8 @@ import useTiendaCarrito from "../hooks/useTiendaCarrito";
 import TiendaFooter from "./TiendaFooter";
 import TiendaTopDonatorPip from "./TiendaTopDonatorPip";
 
+const API_BASE = import.meta.env.VITE_BACKEND_URL || "http://localhost:10000";
+
 const readWebUser = () => {
   try {
     const raw = localStorage.getItem("flan_user");
@@ -32,9 +34,42 @@ const readWebUser = () => {
 
 const uid = () => Math.random().toString(16).slice(2);
 
-/**
- * MediaQuery hook (max-width)
- */
+function pickFxRate(fxData, currencyUpper) {
+  const base = String(fxData?.base || "EUR").toUpperCase();
+  const c = String(currencyUpper || base).toUpperCase();
+  if (c === base) return 1;
+
+  const r =
+    fxData?.rates?.[c] ??
+    fxData?.rates?.[c.toLowerCase?.()] ??
+    fxData?.[c] ??
+    fxData?.[c.toLowerCase?.()];
+
+  const n = Number(r);
+  return Number.isFinite(n) && n > 0 ? n : 1;
+}
+
+function formatCurrency(amount, currency) {
+  const n = Number(amount);
+  const cur = String(currency || "EUR").toUpperCase();
+  if (!Number.isFinite(n)) return "—";
+
+  // Evita "US$" en es-ES si te molesta: usa locale específico por moneda.
+  const locale =
+    cur === "USD" ? "en-US" : cur === "GBP" ? "en-GB" : "es-ES";
+
+  try {
+    return new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency: cur,
+      maximumFractionDigits: 2,
+      currencyDisplay: "symbol",
+    }).format(n);
+  } catch {
+    return `${n.toFixed(2)} ${cur}`;
+  }
+}
+
 function useIsMobileQuery(maxWidth = 1024) {
   const [isMatch, setIsMatch] = useState(() => {
     if (typeof window === "undefined") return false;
@@ -59,10 +94,6 @@ function useIsMobileQuery(maxWidth = 1024) {
   return isMatch;
 }
 
-/**
- * MediaQuery hook (max-height)
- * Útil para pantallas tipo 1024x600 / Nest Hub / landscape bajas.
- */
 function useIsShortHeight(maxHeight = 700) {
   const [isMatch, setIsMatch] = useState(() => {
     if (typeof window === "undefined") return false;
@@ -87,7 +118,6 @@ function useIsShortHeight(maxHeight = 700) {
   return isMatch;
 }
 
-// ===== icons (pro, sin emojis) =====
 const IconCart = ({ size = 18 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
     <path d="M6 6h15l-2 8H8L6 6Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
@@ -96,12 +126,6 @@ const IconCart = ({ size = 18 }) => (
       d="M9 20a1 1 0 1 0 0-2 1 1 0 0 0 0 2ZM18 20a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z"
       fill="currentColor"
     />
-  </svg>
-);
-
-const IconClose = ({ size = 18 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-    <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" />
   </svg>
 );
 
@@ -117,14 +141,15 @@ const TiendaLayout = () => {
     () => localStorage.getItem("uuidJugador") || ""
   );
 
-  const [moneda, setMoneda] = useState(() => localStorage.getItem("monedaSeleccionada") || "EUR");
+  const [moneda, setMoneda] = useState(
+    () => localStorage.getItem("monedaSeleccionada") || "EUR"
+  );
 
   const { carrito, toggleProducto, agregar, eliminar, vaciar, total, cambiarCantidad, setCantidad } =
     useTiendaCarrito(nombreConfirmado);
 
   const location = useLocation();
 
-  // ✅ COMPACTO = tablets (<=1024) + pantallas bajitas (<=700px de alto)
   const isNarrow = useIsMobileQuery(1024);
   const isShort = useIsShortHeight(700);
   const isCompact = Boolean(isNarrow || isShort);
@@ -168,7 +193,6 @@ const TiendaLayout = () => {
     prevEsPortadaRef.current = esPortada;
   }, [esPortada]);
 
-  // ====== altura navbar ======
   useLayoutEffect(() => {
     const host = rootRef.current;
     if (!host) return;
@@ -220,7 +244,6 @@ const TiendaLayout = () => {
     };
   }, []);
 
-  // ====== sync nombre/uuid ======
   useEffect(() => {
     const ctxLogged = Boolean(user?.loggedIn && user?.username);
 
@@ -279,14 +302,16 @@ const TiendaLayout = () => {
     setMostrarLogin(true);
   };
 
-  // =========================================================
-  // Compact cart drawer (bottom sheet)
-  // =========================================================
   const [cartOpenMobile, setCartOpenMobile] = useState(false);
 
   useEffect(() => {
     if (!isCompact) setCartOpenMobile(false);
   }, [isCompact]);
+
+  useEffect(() => {
+    if (!isCompact) return;
+    setCartOpenMobile(false);
+  }, [location.pathname, isCompact]);
 
   useEffect(() => {
     if (!isCompact) return;
@@ -299,11 +324,18 @@ const TiendaLayout = () => {
     };
   }, [isCompact, cartOpenMobile]);
 
-  // =========================================================
-  // FX: Fly-to-basket + basket pulse
-  // =========================================================
+  useEffect(() => {
+    if (!cartOpenMobile) return;
+    const onKey = (e) => {
+      if (e.key === "Escape") setCartOpenMobile(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [cartOpenMobile]);
+
   const [flyers, setFlyers] = useState([]);
   const [basketPulse, setBasketPulse] = useState(false);
+  const pulseTimerRef = useRef(0);
 
   useEffect(() => {
     const onFly = (ev) => {
@@ -336,8 +368,8 @@ const TiendaLayout = () => {
       }, 900);
 
       setBasketPulse(true);
-      window.clearTimeout(onFly.__t);
-      onFly.__t = window.setTimeout(() => setBasketPulse(false), 320);
+      window.clearTimeout(pulseTimerRef.current);
+      pulseTimerRef.current = window.setTimeout(() => setBasketPulse(false), 320);
     };
 
     document.addEventListener("tienda:fly", onFly);
@@ -348,42 +380,68 @@ const TiendaLayout = () => {
     setFlyers((prev) => prev.filter((f) => f.id !== id));
   };
 
-  // =========================================================
-  // Mini cart metrics
-  // =========================================================
   const distinctCount = carrito?.length || 0;
 
   const totalQty = useMemo(() => {
     return (carrito || []).reduce((acc, it) => acc + (Number(it.quantity) || 1), 0);
   }, [carrito]);
 
-  const currencyUpper = useMemo(() => String(moneda || "EUR").toUpperCase(), [moneda]);
+  // FX desde backend
+  const [fx, setFx] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const ctrl = new AbortController();
+
+    const load = async () => {
+      try {
+        const r = await fetch(`${API_BASE}/api/tebex/fx`, { signal: ctrl.signal });
+        const data = await r.json().catch(() => null);
+        if (!r.ok) throw new Error(data?.error || "fx");
+        if (!cancelled) setFx(data);
+      } catch {
+        if (!cancelled) setFx(null);
+      }
+    };
+
+    load();
+    const t = window.setInterval(load, 10 * 60 * 1000);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(t);
+      ctrl.abort();
+    };
+  }, []);
+
+  const baseCurrency = useMemo(() => String(fx?.base || "EUR").toUpperCase(), [fx]);
+  const currencyUpper = useMemo(
+    () => String(moneda || baseCurrency).toUpperCase(),
+    [moneda, baseCurrency]
+  );
+
+  const fxRate = useMemo(() => pickFxRate(fx, currencyUpper), [fx, currencyUpper]);
+
+  const totalDisplay = useMemo(() => {
+    const base = Number(total) || 0;
+    const out = base * (Number.isFinite(fxRate) ? fxRate : 1);
+    return Number.isFinite(out) ? out : base;
+  }, [total, fxRate]);
 
   const totalFormatted = useMemo(() => {
-    const n = Number(total) || 0;
-    try {
-      return new Intl.NumberFormat("es-ES", {
-        style: "currency",
-        currency: currencyUpper,
-        maximumFractionDigits: 2,
-      }).format(n);
-    } catch {
-      return `${n.toFixed(2)} ${currencyUpper}`;
-    }
-  }, [total, currencyUpper]);
+    return formatCurrency(totalDisplay, currencyUpper);
+  }, [totalDisplay, currencyUpper]);
 
-  // =========================================================
-  // Badge pop (pro) al añadir / cambiar cantidad
-  // =========================================================
   const [badgePop, setBadgePop] = useState(false);
   const prevQtyRef = useRef(totalQty);
+  const badgeTimerRef = useRef(0);
 
   useEffect(() => {
     const prev = prevQtyRef.current;
     if (totalQty > prev) {
       setBadgePop(true);
-      window.clearTimeout(prevQtyRef.__t);
-      prevQtyRef.__t = window.setTimeout(() => setBadgePop(false), 220);
+      window.clearTimeout(badgeTimerRef.current);
+      badgeTimerRef.current = window.setTimeout(() => setBadgePop(false), 220);
     }
     prevQtyRef.current = totalQty;
   }, [totalQty]);
@@ -400,7 +458,10 @@ const TiendaLayout = () => {
       ].join(" ")}
     >
       {mostrarLogin && (
-        <TiendaModalJugador onConfirmar={confirmarNombre} onCerrar={() => setMostrarLogin(false)} />
+        <TiendaModalJugador
+          onConfirmar={confirmarNombre}
+          onCerrar={() => setMostrarLogin(false)}
+        />
       )}
 
       <div className="tienda-fly-layer" aria-hidden="true">
@@ -427,7 +488,8 @@ const TiendaLayout = () => {
           <div className="tienda-shelf-frame">
             <div
               className={
-                "tienda-shelf-inner " + (esPortada ? "tienda-shelf-portada" : "tienda-shelf-contenido")
+                "tienda-shelf-inner " +
+                (esPortada ? "tienda-shelf-portada" : "tienda-shelf-contenido")
               }
             >
               <Routes>
@@ -440,6 +502,8 @@ const TiendaLayout = () => {
                       onAgregar={agregar}
                       onCambiarCantidad={cambiarCantidad}
                       onSetCantidad={setCantidad}
+                      monedaSeleccionada={currencyUpper}
+                      fx={fx}
                     />
                   }
                 />
@@ -471,7 +535,7 @@ const TiendaLayout = () => {
                   onSetCantidad={setCantidad}
                   nombreConfirmado={nombreConfirmado}
                   uuidConfirmado={uuidConfirmado}
-                  monedaSeleccionada={moneda}
+                  monedaSeleccionada={currencyUpper}
                   onMonedaChange={handleMonedaChange}
                   onAbrirLogin={abrirModalCuenta}
                   onCambiarCuenta={cambiarCuenta}
@@ -479,6 +543,7 @@ const TiendaLayout = () => {
                   server={serverFromPath}
                   basketPulse={basketPulse}
                   mode="desktop"
+                  fx={fx}
                 />
               </div>
             </div>
@@ -486,7 +551,6 @@ const TiendaLayout = () => {
         )}
       </main>
 
-      {/* COMPACTO: barra inferior + bottom-sheet */}
       {isCompact && (
         <>
           <button
@@ -497,9 +561,10 @@ const TiendaLayout = () => {
               distinctCount === 0 ? "is-empty" : "has-items",
               badgePop ? "is-pop" : "",
             ].join(" ")}
-            onClick={() => setCartOpenMobile(true)}
+            onClick={() => setCartOpenMobile((v) => !v)}
             data-basket-anchor="true"
             aria-label="Abrir carrito"
+            aria-expanded={cartOpenMobile ? "true" : "false"}
           >
             <div className="tmb-left" aria-label={`Carrito: ${totalQty} artículos`}>
               <div className="tmb-pill">
@@ -519,7 +584,7 @@ const TiendaLayout = () => {
 
           {cartOpenMobile &&
             createPortal(
-              <div className="tienda-cartDrawer" role="dialog" aria-modal="true">
+              <div className="tienda-cartDrawer" role="dialog" aria-modal="true" aria-label="Carrito">
                 <button
                   type="button"
                   className="tcd-backdrop"
@@ -527,25 +592,8 @@ const TiendaLayout = () => {
                   onClick={() => setCartOpenMobile(false)}
                 />
 
-                <div className="tcd-sheet">
+                <div className="tcd-sheet" role="document">
                   <div className="tcd-grab" aria-hidden="true" />
-                  <div className="tcd-head">
-                    <div className="tcd-title">
-                      <span className="tcd-titleIcon" aria-hidden="true">
-                        <IconCart size={18} />
-                      </span>
-                      Carrito
-                    </div>
-
-                    <button
-                      type="button"
-                      className="tcd-close"
-                      onClick={() => setCartOpenMobile(false)}
-                      aria-label="Cerrar"
-                    >
-                      <IconClose size={18} />
-                    </button>
-                  </div>
 
                   <div className="tcd-body">
                     <TiendaTopDonatorPip server={serverFromPath} />
@@ -560,7 +608,7 @@ const TiendaLayout = () => {
                       onSetCantidad={setCantidad}
                       nombreConfirmado={nombreConfirmado}
                       uuidConfirmado={uuidConfirmado}
-                      monedaSeleccionada={moneda}
+                      monedaSeleccionada={currencyUpper}
                       onMonedaChange={handleMonedaChange}
                       onAbrirLogin={abrirModalCuenta}
                       onCambiarCuenta={cambiarCuenta}
@@ -569,6 +617,7 @@ const TiendaLayout = () => {
                       basketPulse={basketPulse}
                       mode="mobileDrawer"
                       onRequestClose={() => setCartOpenMobile(false)}
+                      fx={fx}
                     />
                   </div>
                 </div>

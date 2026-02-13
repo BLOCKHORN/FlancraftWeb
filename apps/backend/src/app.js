@@ -1,3 +1,4 @@
+// apps/backend/src/app.js
 require("dotenv").config();
 
 const express = require("express");
@@ -7,6 +8,9 @@ const app = express();
 
 app.set("trust proxy", true);
 
+// ======================================================================
+// CORS
+// ======================================================================
 const allowedOriginsExact = new Set([
   "http://localhost:5173",
   "https://flancraftweb.vercel.app",
@@ -44,9 +48,15 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.options("*", cors(corsOptions));
 
+// ======================================================================
+// Body parsing
+// ======================================================================
 app.use(express.json({ limit: "5mb" }));
 app.use(express.urlencoded({ extended: true, limit: "5mb" }));
 
+// ======================================================================
+// Routes
+// ======================================================================
 const pingRoute = require("./routes/ping");
 const resetRoutes = require("./routes/reset.routes");
 const usuariosRoutes = require("./routes/usuarios.routes");
@@ -65,6 +75,8 @@ const noticiasRoutes = require("./routes/noticias.routes");
 const tiendaTebexRoutes = require("./routes/tiendatebex.routes");
 const minecraftRoutes = require("./routes/minecraft.routes");
 const votosRoutes = require("./routes/votos.routes");
+const monedasRoutes = require("./routes/monedas.routes");
+const walletRoutes = require("./routes/wallet.routes");
 
 app.use("/ping", pingRoute);
 
@@ -74,12 +86,13 @@ app.use("/api/usuarios", usuariosRoutes);
 app.use("/api/recompensas", recompensasRoutes);
 app.use("/api/daily-claim", require("./routes/dailyClaim.routes"));
 app.use("/api/comandos-pendientes", comandosRoutes);
+app.use("/api/wallet", walletRoutes);
 
 app.use("/api/logros", logrosRoutes);
 app.use("/api/logros", logrosEstadisticasRoutes);
 app.use("/api/misiones", dailysRoutes);
 
-app.use("/api/monedas", require("./routes/monedas.routes"));
+app.use("/api/monedas", monedasRoutes);
 app.use("/api/jails", jailsRoutes);
 app.use("/api/sanciones", sancionesRoutes);
 app.use("/api/permisos-admin", permisosAdminRoutes);
@@ -90,10 +103,6 @@ app.use("/api/tebex", tiendaTebexRoutes);
 app.use("/api/minecraft", minecraftRoutes);
 
 app.use("/api/votos", votosRoutes);
-
-const limpiarRangosExpirados = require("./tasks/rangosExpiradosTask");
-limpiarRangosExpirados();
-setInterval(() => limpiarRangosExpirados(), 5 * 60 * 1000);
 
 app.use((req, res) => {
   res.status(404).json({ error: "Ruta no encontrada" });

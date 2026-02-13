@@ -20,7 +20,6 @@ import {
 import {
   buildCoinsValueMap,
   fmtInt,
-  formatEur,
   getDiscountMeta,
   pickCoinsPackages,
   pickRangosPackages,
@@ -36,7 +35,47 @@ import {
   useUiScale,
 } from "./storefront/storefront.hooks";
 
-const COINS_PER_USD = 1000 / 6;
+function pickFxRate(fxData, currencyUpper) {
+  const base = String(fxData?.base || "EUR").toUpperCase();
+  const c = String(currencyUpper || base).toUpperCase();
+  if (c === base) return 1;
+
+  const r =
+    fxData?.rates?.[c] ??
+    fxData?.rates?.[c.toLowerCase?.()] ??
+    fxData?.[c] ??
+    fxData?.[c.toLowerCase?.()];
+
+  const n = Number(r);
+  return Number.isFinite(n) && n > 0 ? n : 1;
+}
+
+function formatCurrency(amount, currency) {
+  const n = Number(amount);
+  const cur = String(currency || "EUR").toUpperCase();
+  if (!Number.isFinite(n)) return "—";
+
+  const locale =
+    cur === "USD" ? "en-US" : cur === "GBP" ? "en-GB" : "es-ES";
+
+  try {
+    return new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency: cur,
+      maximumFractionDigits: 2,
+      currencyDisplay: "symbol",
+    }).format(n);
+  } catch {
+    return `${n.toFixed(2)} ${cur}`;
+  }
+}
+
+function median(nums) {
+  const a = (nums || []).filter((n) => Number.isFinite(n) && n > 0).sort((x, y) => x - y);
+  if (!a.length) return null;
+  const m = Math.floor(a.length / 2);
+  return a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2;
+}
 
 function roundNiceCoins(n) {
   const v = Number(n) || 0;
@@ -44,12 +83,12 @@ function roundNiceCoins(n) {
   return Math.max(0, Math.round(v / step) * step);
 }
 
-function coinsFromUsdDouble(usd) {
-  if (usd == null) return null;
-  const u = Number(usd);
-  if (!Number.isFinite(u) || u <= 0) return null;
-  const coins = u * 2 * COINS_PER_USD;
-  return roundNiceCoins(coins);
+function coinsFromMoney(baseMoney, coinsPerBaseUnit) {
+  const m = Number(baseMoney);
+  const r = Number(coinsPerBaseUnit);
+  if (!Number.isFinite(m) || m <= 0) return null;
+  if (!Number.isFinite(r) || r <= 0) return null;
+  return roundNiceCoins(m * r);
 }
 
 export default function TiendaStorefront({
@@ -58,6 +97,8 @@ export default function TiendaStorefront({
   onCambiarCantidad,
   onSetCantidad,
   onAgregar,
+  monedaSeleccionada = "EUR",
+  fx = null,
 }) {
   const wrapRef = useRef(null);
 
@@ -74,15 +115,9 @@ export default function TiendaStorefront({
 
   const [ready, setReady] = useState(false);
 
-  // ✅ Comparativa en MODAL (portal), sin colapsar layout
   const [activeRank, setActiveRank] = useState(null);
-const openRankDetails = useCallback((key) => {
-  setActiveRank(key);
-}, []);
-
-const closeRankDetails = useCallback(() => {
-  setActiveRank(null);
-}, []);
+  const openRankDetails = useCallback((key) => setActiveRank(key), []);
+  const closeRankDetails = useCallback(() => setActiveRank(null), []);
 
   const [hoverFx, setHoverFx] = useState(null);
 
@@ -97,7 +132,6 @@ const closeRankDetails = useCallback(() => {
       return () => clearTimeout(t);
     }
   }, [loading, err]);
-
 
   const openCoinshopFromEl = (el) => {
     const r = el?.getBoundingClientRect?.();
@@ -144,8 +178,38 @@ const closeRankDetails = useCallback(() => {
     }
   }, [dataByServer, setServerTab, setRenderTab]);
 
+  // ---- moneda visual (base del FX viene del backend)
+  const baseCurrency = useMemo(() => String(fx?.base || "EUR").toUpperCase(), [fx]);
+  const viewCurrency = useMemo(
+    () => String(monedaSeleccionada || baseCurrency).toUpperCase(),
+    [monedaSeleccionada, baseCurrency]
+  );
+  const fxRate = useMemo(() => pickFxRate(fx, viewCurrency), [fx, viewCurrency]);
+
+  const money = useCallback(
+    (baseAmount) => {
+      const n = Number(baseAmount);
+      if (!Number.isFinite(n)) return null;
+      const out = n * (Number.isFinite(fxRate) ? fxRate : 1);
+      return Number.isFinite(out) ? out : n;
+    },
+    [fxRate]
+  );
+
+  const fmtMoney = useCallback(
+    (baseAmount) => {
+      const v = money(baseAmount);
+      return v == null ? "—" : formatCurrency(v, viewCurrency);
+    },
+    [money, viewCurrency]
+  );
+
+  // ---- rangos
   const rangosAll = useMemo(() => {
-    return pickRangosPackages({ apiCats: dataByServer.gens.cats, packs: dataByServer.gens.packs });
+    return pickRangosPackages({
+      apiCats: dataByServer.gens.cats,
+      packs: dataByServer.gens.packs,
+    });
   }, [dataByServer.gens.cats, dataByServer.gens.packs]);
 
   const rankCards = useMemo(() => {
@@ -170,8 +234,13 @@ const closeRankDetails = useCallback(() => {
     ];
   }, [rangosAll]);
 
+  // ---- coins packs
   const coinsPackages = useMemo(() => {
-    return pickCoinsPackages({ serverKey: renderTab, apiCats: activeData.cats, packs: activeData.packs }).sort(sortByPriceAsc);
+    return pickCoinsPackages({
+      serverKey: renderTab,
+      apiCats: activeData.cats,
+      packs: activeData.packs,
+    }).sort(sortByPriceAsc);
   }, [renderTab, activeData.cats, activeData.packs]);
 
   const tabDiscountPctByServer = useMemo(() => {
@@ -263,6 +332,25 @@ const closeRankDetails = useCallback(() => {
     });
   }, [coinsPackages]);
 
+  // Derivar coins por unidad de moneda base SOLO desde la API (sin hardcode)
+  const coinsPerBaseUnit = useMemo(() => {
+    const ratios = [];
+    for (const sv of ["gens", "oneblock"]) {
+      const data = dataByServer[sv] || { cats: [], packs: [] };
+      const list = pickCoinsPackages({ serverKey: sv, apiCats: data.cats, packs: data.packs });
+      for (const p of list) {
+        const amount = parseCoinsFromPkg(p, getPackageName);
+        const price = getPackagePrice(p);
+        const a = Number(amount);
+        const pr = Number(price);
+        if (Number.isFinite(a) && a > 0 && Number.isFinite(pr) && pr > 0) {
+          ratios.push(a / pr);
+        }
+      }
+    }
+    return median(ratios);
+  }, [dataByServer]);
+
   const rootFxClass = hoverFx ? `fx-${hoverFx}` : "";
 
   const onRankBuySplitClick = (pkg, ev) => {
@@ -280,7 +368,7 @@ const closeRankDetails = useCallback(() => {
       return;
     }
 
-    // COINS (solo front por ahora)
+    // compra con coins (solo UI por ahora)
     return;
   };
 
@@ -293,21 +381,19 @@ const closeRankDetails = useCallback(() => {
 
       <CoinshopModal open={coinshopOpen} fromRect={coinshopFromRect} onClose={closeCoinshop} />
 
-      {/* ✅ MODAL COMPARATIVA (Portal) */}
-{activeRank ? (
-  <RangosComparativaPanel
-    rankKey={activeRank}
-    onClose={closeRankDetails}
-    onPickRank={(rk) => setActiveRank(rk)}
-    rankCards={rankCards}
-    bust={dataByServer.gens.bust}
-    onBuyEur={(pkg, ev) => handleBuyRank(pkg, ev)}
-    onBuyCoins={(pkg, ev) => {
-      ev?.stopPropagation?.();
-    }}
-  />
-) : null}
-
+      {activeRank ? (
+        <RangosComparativaPanel
+          rankKey={activeRank}
+          onClose={closeRankDetails}
+          onPickRank={(rk) => setActiveRank(rk)}
+          rankCards={rankCards}
+          bust={dataByServer.gens.bust}
+          onBuyEur={(pkg, ev) => handleBuyRank(pkg, ev)}
+          onBuyCoins={(pkg, ev) => {
+            ev?.stopPropagation?.();
+          }}
+        />
+      ) : null}
 
       <header className="tsf-header tsf-header--fixed">
         <div className="tsf-signImg" aria-label="Tienda">
@@ -339,16 +425,24 @@ const closeRankDetails = useCallback(() => {
                 <div className="tsf-ranksRow">
                   {rankCards.map((r, idx) => {
                     const pkg = r.pkg;
-                    const price = pkg ? getPackagePrice(pkg) : null;
-                    const coinsPrice = price != null ? coinsFromUsdDouble(price) : null;
-                    const tebexImg = pkg ? withCacheBust(getPackageImage(pkg), dataByServer.gens.bust) : "";
+
+                    const priceBase = pkg ? getPackagePrice(pkg) : null;
+                    const coinsPrice =
+                      priceBase != null ? coinsFromMoney(priceBase, coinsPerBaseUnit) : null;
+
+                    const tebexImg = pkg
+                      ? withCacheBust(getPackageImage(pkg), dataByServer.gens.bust)
+                      : "";
+
                     const active = activeRank === r.key;
                     const cart = isInCart(pkg);
 
                     return (
                       <article
                         key={r.key}
-                        className={`tsf-rank ${r.key} ${active ? "is-active" : ""} ${cart ? "is-inCart" : ""}`}
+                        className={`tsf-rank ${r.key} ${active ? "is-active" : ""} ${
+                          cart ? "is-inCart" : ""
+                        }`}
                         style={{ "--i": idx }}
                         onClick={() => onRankTap(r.key)}
                         role="button"
@@ -397,16 +491,20 @@ const closeRankDetails = useCallback(() => {
                                 onRankBuySplitClick(pkg, e);
                               }}
                               disabled={!pkg}
-                              aria-label={`Comprar ${r.label} (EUR o Coins)`}
-                              title="Izquierda: EUR · Derecha: Coins"
+                              aria-label={`Comprar ${r.label} (dinero o coins)`}
+                              title="Izquierda: dinero · Derecha: coins"
                             >
                               <span className="tsf-ctaSplitSide tsf-ctaSplitSide--usd" aria-label="Comprar con dinero">
-                                <span className="tsf-ctaSplitValue">{price != null ? formatEur(price) : "—"}</span>
+                                <span className="tsf-ctaSplitValue">
+                                  {priceBase != null ? fmtMoney(priceBase) : "—"}
+                                </span>
                               </span>
 
                               <span className="tsf-ctaSplitSide tsf-ctaSplitSide--coins" aria-label="Comprar con coins">
                                 <span className="tsf-ctaSplitCoins">
-                                  <span className="tsf-ctaSplitValue">{coinsPrice != null ? fmtInt(coinsPrice) : "—"}</span>
+                                  <span className="tsf-ctaSplitValue">
+                                    {coinsPrice != null ? fmtInt(coinsPrice) : "—"}
+                                  </span>
                                   <img className="tsf-ctaCoinIcon" src="/tienda/assets/coin.png" alt="" draggable="false" />
                                 </span>
                               </span>
@@ -424,7 +522,6 @@ const closeRankDetails = useCallback(() => {
               </div>
             </section>
 
-            {/* ✅ YA NO HAY slots colapsables: la comparativa vive en MODAL */}
             <section className="tsf-coins" aria-label="Coins">
               <div className="tsf-content">
                 <div className="tsf-coinsHeader" aria-label="Selector de servidor coins">
@@ -504,9 +601,9 @@ const closeRankDetails = useCallback(() => {
                   <div className="tsf-coinsGridWrap" aria-label={`Packs de coins ${serverTab}`}>
                     {coinsPackages?.length ? (
                       <div
-                        className={`tsf-coinsGrid tsf-coinsGrid--linear4 ${tabAnim === "out" ? "is-out" : "is-in"} ${
-                          switchedOnce ? "tsf-switched" : ""
-                        }`}
+                        className={`tsf-coinsGrid tsf-coinsGrid--linear4 ${
+                          tabAnim === "out" ? "is-out" : "is-in"
+                        } ${switchedOnce ? "tsf-switched" : ""}`}
                       >
                         <article
                           className="tsf-coinWrap tsf-coinWrap--daily"
@@ -535,9 +632,9 @@ const closeRankDetails = useCallback(() => {
                           const name = getPackageName(p);
 
                           const disc = getDiscountMeta(p, getPackagePrice, getPackageOriginalPrice);
-                          const price = disc.price;
+                          const priceBase = disc.price;
                           const onSale = disc.onSale;
-                          const original = disc.original;
+                          const originalBase = disc.original;
                           const discountPct = disc.discountPct;
 
                           const img = withCacheBust(getPackageImage(p), activeData.bust);
@@ -546,13 +643,16 @@ const closeRankDetails = useCallback(() => {
                           const qty = getQtyInCart(p);
 
                           const meta = coinsValue?.map?.get(idKey) || { isBest: false, extraNice: 0 };
-                          const hasBonus = amount != null && meta.extraNice >= 500 && meta.extraNice < amount;
+                          const hasBonus =
+                            amount != null && meta.extraNice >= 500 && meta.extraNice < amount;
                           const baseAmount = hasBonus ? Math.max(0, amount - meta.extraNice) : null;
                           const bonusAmount = hasBonus ? meta.extraNice : null;
 
                           return (
                             <article
-                              className={`tsf-coinWrap ${qty > 0 ? "is-inCart" : ""} ${meta?.isBest ? "is-best" : ""}`}
+                              className={`tsf-coinWrap ${qty > 0 ? "is-inCart" : ""} ${
+                                meta?.isBest ? "is-best" : ""
+                              }`}
                               key={idKey}
                               style={{ "--i": gridIndex }}
                               onMouseMove={(ev) => setTiltVars(ev.currentTarget, ev)}
@@ -599,10 +699,10 @@ const closeRankDetails = useCallback(() => {
                                   aria-label={`Comprar ${name}`}
                                 >
                                   <span className="tsf-buyBtnFace">
-                                    <span className="tsf-buyPrice">{formatEur(price)}</span>
-                                    {onSale && original != null && (
+                                    <span className="tsf-buyPrice">{fmtMoney(priceBase)}</span>
+                                    {onSale && originalBase != null && (
                                       <span className="tsf-buyOld" aria-label="Precio anterior">
-                                        {formatEur(original)}
+                                        {fmtMoney(originalBase)}
                                       </span>
                                     )}
                                   </span>
@@ -632,7 +732,9 @@ const closeRankDetails = useCallback(() => {
                         })}
                       </div>
                     ) : (
-                      <div className="tsf-empty">No hay productos para este servidor (o no se ha encontrado la categoría).</div>
+                      <div className="tsf-empty">
+                        No hay productos para este servidor (o no se ha encontrado la categoría).
+                      </div>
                     )}
                   </div>
                 </div>

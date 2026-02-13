@@ -982,7 +982,6 @@ $sky-gradient:
 /* ============================
    RESPONSIVE
    ============================ */
-
 @media (max-width: 768px) {
   .hero-flancraft {
     padding: 2rem 1rem;
@@ -1024,25 +1023,43 @@ $sky-gradient:
         }
       }
 
+      /* CTA RETOS - FIX tamaño imagen + spacing (solo móvil) */
       .hero-quests-cta {
         flex-direction: column;
-        padding: 0.9rem 0.8rem;
         max-width: 100%;
+
+        /* compacta sin cambiar estructura */
+        margin: 1.35rem auto 0;  /* antes “se sentía” muy separado */
+        gap: 0.75rem;            /* antes 1.2rem */
+        padding: 0.75rem 0.8rem; /* antes 0.9rem 0.8rem */
 
         .hero-quests-cta__image {
           flex: 0 0 auto;
+
+          /* CLAVE: no ocupar todo el ancho */
+          width: min(320px, 88%);
+          max-width: 320px;
+          margin: 0 auto;
+        }
+
+        .hero-quests-cta__image img {
           width: 100%;
+          height: auto;
+          display: block;
         }
 
         .hero-quests-cta__text {
           text-align: center;
 
+          /* un pelín más apretado */
+          gap: 0.18rem;
+
           .cta-line1 {
-            font-size: 1.1rem;
+            font-size: 1.06rem; /* antes 1.1 */
           }
 
           .cta-line2 {
-            font-size: 0.9rem;
+            font-size: 0.88rem; /* antes 0.9 */
           }
         }
 
@@ -1076,5 +1093,28 @@ $sky-gradient:
     width: 100%;
     text-align: center;
     justify-content: center;
+  }
+}
+
+/* Remate en móviles pequeños (recomendado) */
+@media (max-width: 480px) {
+  .hero-flancraft {
+    .hero-content {
+      .hero-quests-cta {
+        margin: 1.05rem auto 0;
+        gap: 0.6rem;
+        padding: 0.65rem 0.7rem;
+
+        .hero-quests-cta__image {
+          width: min(280px, 86%);
+          max-width: 280px;
+        }
+
+        .hero-quests-cta__text {
+          .cta-line1 { font-size: 1.02rem; }
+          .cta-line2 { font-size: 0.86rem; }
+        }
+      }
+    }
   }
 }

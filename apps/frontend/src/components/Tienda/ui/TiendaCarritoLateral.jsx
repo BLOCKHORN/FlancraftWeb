@@ -1,8 +1,9 @@
-// src/components/Tienda/ui/TiendaCarritoLateral.jsx
-import React, { useMemo, useState, useCallback } from "react";
+import React, { useMemo, useState, useCallback, useEffect, useRef } from "react";
 import useMinecraftProfile from "../hooks/useMinecraftProfile";
 import TiendaCheckoutModal from "../modals/TiendaCheckoutModal";
 import "../../../styles/components/Tienda/tienda-carrito.scss";
+
+import { pickFxRate } from "../utils/tiendaHelpers";
 
 const API_BASE = import.meta.env.VITE_BACKEND_URL || "http://localhost:10000";
 
@@ -20,10 +21,60 @@ function formatCurrency(amount, currency = "EUR") {
   }
 }
 
+function getCurrencySymbol(currency = "EUR") {
+  const c = String(currency || "EUR").toUpperCase();
+  try {
+    const parts = new Intl.NumberFormat("es-ES", {
+      style: "currency",
+      currency: c,
+      currencyDisplay: "narrowSymbol",
+      maximumFractionDigits: 0,
+    }).formatToParts(0);
+    return parts.find((p) => p.type === "currency")?.value || c;
+  } catch {
+    return c;
+  }
+}
+
 function clampInt(n, min, max) {
   const x = Math.trunc(Number(n));
   if (!Number.isFinite(x)) return min;
   return Math.max(min, Math.min(max, x));
+}
+
+function uniqUpper(list) {
+  const out = [];
+  const seen = new Set();
+  for (const v of list || []) {
+    const c = String(v || "").trim().toUpperCase();
+    if (!c) continue;
+    if (seen.has(c)) continue;
+    seen.add(c);
+    out.push(c);
+  }
+  return out;
+}
+
+// ✅ Opciones de moneda SIN hardcode
+function buildCurrencyOptions(fx, fallbackBase = "EUR") {
+  const base = String(fx?.base || fallbackBase || "EUR").toUpperCase();
+
+  // si backend manda currencies, usamos eso (mejor)
+  const fromApi = Array.isArray(fx?.currencies) ? fx.currencies : null;
+
+  // fallback: keys de rates
+  const fromRates =
+    fx?.rates && typeof fx.rates === "object" ? Object.keys(fx.rates) : [];
+
+  const raw = fromApi && fromApi.length ? fromApi : [base, ...fromRates];
+
+  // uniq + asegurar base
+  const uniq = uniqUpper(raw);
+  if (!uniq.includes(base)) uniq.unshift(base);
+
+  // Orden: base primero + resto alfabético
+  const rest = uniq.filter((c) => c !== base).sort((a, b) => a.localeCompare(b));
+  return [base, ...rest];
 }
 
 const FallbackIcon = () => (
@@ -39,47 +90,112 @@ const FallbackIcon = () => (
   </svg>
 );
 
+const IconCoins = ({ size = 18 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path
+      d="M12 4c4.418 0 8 1.343 8 3s-3.582 3-8 3-8-1.343-8-3 3.582-3 8-3Z"
+      stroke="currentColor"
+      strokeWidth="2"
+    />
+    <path
+      d="M4 7v5c0 1.657 3.582 3 8 3s8-1.343 8-3V7"
+      stroke="currentColor"
+      strokeWidth="2"
+    />
+    <path
+      d="M4 12v5c0 1.657 3.582 3 8 3s8-1.343 8-3v-5"
+      stroke="currentColor"
+      strokeWidth="2"
+    />
+  </svg>
+);
+
+const IconInfo = ({ size = 16 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path
+      d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10Z"
+      stroke="currentColor"
+      strokeWidth="2"
+    />
+    <path d="M12 10v7" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" />
+    <path d="M12 7h.01" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" />
+  </svg>
+);
+
+const IconChevron = ({ up = false, size = 18 }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    aria-hidden="true"
+    style={{ transform: up ? "rotate(180deg)" : "none" }}
+  >
+    <path
+      d="M6 9l6 6 6-6"
+      stroke="currentColor"
+      strokeWidth="2.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
 export default function TiendaCarritoLateral({
   carrito = [],
   onAgregar,
   eliminarItem,
   vaciarCarrito,
   total: totalFromHook,
-
   onCambiarCantidad,
   onSetCantidad,
-
   nombreConfirmado,
   monedaSeleccionada,
   onMonedaChange,
-
   onAbrirLogin,
   onCambiarCuenta,
   isWebLoggedIn = false,
-
   server = "oneblock",
   basketPulse = false,
-
-  // ✅ nuevo
-  mode = "desktop", // "desktop" | "mobileDrawer"
+  mode = "desktop",
   onRequestClose,
+  fx = null,
 }) {
   const [loadingCheckout, setLoadingCheckout] = useState(false);
-
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [checkoutIdent, setCheckoutIdent] = useState("");
+
+  // ✅ dropdown moneda
+  const [currencyOpen, setCurrencyOpen] = useState(false);
+  const [currencyClosing, setCurrencyClosing] = useState(false);
+  const currencyRef = useRef(null);
 
   const profile = useMinecraftProfile(nombreConfirmado);
 
   const currency = useMemo(
-    () => String(monedaSeleccionada || "EUR").toUpperCase(),
-    [monedaSeleccionada]
+    () => String(monedaSeleccionada || (fx?.base || "EUR")).toUpperCase(),
+    [monedaSeleccionada, fx?.base]
   );
+
+  // ✅ lista de divisas dinámica
+  const currencyOptions = useMemo(() => {
+    const opts = buildCurrencyOptions(fx, "EUR");
+    if (currency && !opts.includes(currency)) return [currency, ...opts];
+    return opts;
+  }, [fx, currency]);
+
+  const currencySymbols = useMemo(() => {
+    const map = {};
+    for (const c of currencyOptions) map[c] = getCurrencySymbol(c);
+    return map;
+  }, [currencyOptions]);
+
+  const fxRate = useMemo(() => pickFxRate(fx, currency), [fx, currency]);
 
   const distinctCount = carrito.length;
   const isEmpty = distinctCount === 0;
 
-  const total = useMemo(() => {
+  const totalBase = useMemo(() => {
     if (typeof totalFromHook === "number") return totalFromHook;
     return carrito.reduce(
       (acc, it) => acc + (Number(it.price) || 0) * clampInt(it.quantity || 1, 1, 999),
@@ -87,11 +203,15 @@ export default function TiendaCarritoLateral({
     );
   }, [carrito, totalFromHook]);
 
-  const monedaTexto = useMemo(() => {
-    if (currency === "USD") return "$ USD";
-    if (currency === "GBP") return "£ GBP";
-    return "€ EUR";
-  }, [currency]);
+  const totalDisplay = useMemo(() => {
+    const out = (Number(totalBase) || 0) * (Number.isFinite(fxRate) ? fxRate : 1);
+    return Number.isFinite(out) ? out : Number(totalBase) || 0;
+  }, [totalBase, fxRate]);
+
+  const currencyMeta = useMemo(() => {
+    const sym = currencySymbols[currency] || getCurrencySymbol(currency);
+    return { symbol: sym, text: `(${sym}) ${currency}` };
+  }, [currency, currencySymbols]);
 
   const canCheckout = Boolean(nombreConfirmado) && distinctCount > 0 && !loadingCheckout;
 
@@ -104,10 +224,12 @@ export default function TiendaCarritoLateral({
 
   const handleRemove = useCallback(
     (item) => {
+      if (!item?.id) return;
       if (typeof eliminarItem === "function") return eliminarItem(item.id);
-      onAgregar?.(item);
+      if (typeof onSetCantidad === "function") return onSetCantidad(item.id, 0, item);
+      if (typeof onCambiarCantidad === "function") return onCambiarCantidad(item.id, -999, item);
     },
-    [eliminarItem, onAgregar]
+    [eliminarItem, onSetCantidad, onCambiarCantidad]
   );
 
   const handleQty = useCallback(
@@ -125,9 +247,9 @@ export default function TiendaCarritoLateral({
       }
 
       if (delta < 0 && current <= 1) return handleRemove(item);
-      return;
+      if (delta > 0 && typeof onAgregar === "function") return onAgregar(item, 1);
     },
-    [onCambiarCantidad, onSetCantidad, handleRemove]
+    [onCambiarCantidad, onSetCantidad, onAgregar, handleRemove]
   );
 
   const handleAccountClick = useCallback(() => {
@@ -177,6 +299,60 @@ export default function TiendaCarritoLateral({
     return "IR A PAGAR";
   }, [loadingCheckout, nombreConfirmado, distinctCount]);
 
+  // ==========================
+  // ✅ Dropdown moneda: open/close suave + click fuera + ESC
+  // ==========================
+  const closeCurrency = useCallback(() => {
+    if (!currencyOpen || currencyClosing) return;
+    setCurrencyClosing(true);
+    window.setTimeout(() => {
+      setCurrencyOpen(false);
+      setCurrencyClosing(false);
+    }, 160);
+  }, [currencyOpen, currencyClosing]);
+
+  const toggleCurrency = useCallback(() => {
+    if (currencyOpen) return closeCurrency();
+    setCurrencyOpen(true);
+  }, [currencyOpen, closeCurrency]);
+
+  const handlePickCurrency = useCallback(
+    (code) => {
+      const next = String(code || "").toUpperCase();
+      if (!next) return;
+
+      // respeta tu API actual (espera event)
+      onMonedaChange?.({ target: { value: next } });
+
+      closeCurrency();
+    },
+    [onMonedaChange, closeCurrency]
+  );
+
+  useEffect(() => {
+    if (!currencyOpen) return;
+
+    const onDown = (e) => {
+      const root = currencyRef.current;
+      if (!root) return;
+      if (!root.contains(e.target)) closeCurrency();
+    };
+
+    const onKey = (e) => {
+      if (e.key === "Escape") closeCurrency();
+    };
+
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("touchstart", onDown, { passive: true });
+    document.addEventListener("keydown", onKey);
+
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("touchstart", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [currencyOpen, closeCurrency]);
+
   return (
     <>
       <aside
@@ -190,7 +366,6 @@ export default function TiendaCarritoLateral({
           data-mode={mode}
         >
           <div className="carrito-panel-inner">
-            {/* CUENTA */}
             <section className="carrito-cuenta" aria-label="Cuenta">
               <div className="cuenta-top">
                 <div className="cuenta-identidad">
@@ -233,36 +408,61 @@ export default function TiendaCarritoLateral({
                   {nombreConfirmado ? "Cambiar cuenta" : "Elegir cuenta"}
                 </button>
 
-                <div className="cuenta-btn cuenta-btn-currency" role="group" aria-label="Cambiar moneda">
-                  <div className="currency-left">
-                    <div className="currency-icon" aria-hidden="true">
-                      $
-                    </div>
-                    <div className="currency-text">
-                      <div className="currency-label">Cambiar moneda</div>
-                      <div className="currency-current">{monedaTexto}</div>
-                    </div>
-                  </div>
-
-                  <div className="currency-chevron" aria-hidden="true">
-                    ▾
-                  </div>
-
-                  <select
-                    className="currency-select"
-                    value={currency}
-                    onChange={onMonedaChange}
-                    aria-label="Moneda"
+                {/* ✅ DROPDOWN moneda (sin lift/press + cascada) */}
+                <div
+                  ref={currencyRef}
+                  className={`currencyDrop ${currencyOpen ? "is-open" : ""} ${
+                    currencyClosing ? "is-closing" : ""
+                  }`}
+                >
+                  <button
+                    className="currencyDrop-trigger"
+                    type="button"
+                    onClick={toggleCurrency}
+                    aria-haspopup="listbox"
+                    aria-expanded={currencyOpen ? "true" : "false"}
+                    disabled={!currencyOptions?.length}
                   >
-                    <option value="EUR">EUR</option>
-                    <option value="USD">USD</option>
-                    <option value="GBP">GBP</option>
-                  </select>
+                    <div className="currencyDrop-head">
+                      <div className="currencyDrop-headLeft">
+
+                        <span className="currencyDrop-title">CAMBIAR DIVISA</span>
+
+                      </div>
+
+                      <span className="currencyDrop-chevron" aria-hidden="true">
+                        <IconChevron up={currencyOpen && !currencyClosing} />
+                      </span>
+                    </div>
+
+                    <div className="currencyDrop-currentLine">{currencyMeta.text}</div>
+                  </button>
+
+                  <div className="currencyDrop-menu" role="listbox" aria-label="Change currency">
+                    {currencyOptions.map((c, idx) => {
+                      const sym = currencySymbols[c] || getCurrencySymbol(c);
+                      const active = c === currency;
+                      return (
+                        <button
+                          key={c}
+                          type="button"
+                          role="option"
+                          aria-selected={active ? "true" : "false"}
+                          className={`currencyDrop-option ${active ? "is-active" : ""}`}
+                          style={{ "--i": idx }}
+                          onClick={() => handlePickCurrency(c)}
+                        >
+                          <span className="currencyDrop-optText">
+                            ({sym}) {c}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
             </section>
 
-            {/* BASKET */}
             <section className={`basket ${isEmpty ? "is-empty" : ""}`} aria-label="Carrito de compra">
               <div className="basket-title">CARRITO</div>
 
@@ -270,13 +470,18 @@ export default function TiendaCarritoLateral({
                 {isEmpty ? (
                   <div className="basket-empty-state" data-kind={nombreConfirmado ? "empty" : "account"}>
                     <div className="basket-empty-icon" aria-hidden="true" />
-                    <div className="basket-empty-text">{nombreConfirmado ? "(Vacío)" : "Elige una cuenta"}</div>
+                    <div className="basket-empty-text">
+                      {nombreConfirmado ? "(Vacío)" : "Elige una cuenta"}
+                    </div>
                   </div>
                 ) : (
                   carrito.map((it) => {
                     const qty = clampInt(it.quantity || 1, 1, 999);
                     const canDec = qty >= 1;
                     const canInc = qty < 999;
+
+                    const priceBase = Number(it.price) || 0;
+                    const priceDisplay = priceBase * (Number.isFinite(fxRate) ? fxRate : 1);
 
                     return (
                       <div className="basket-item" key={it.id} role="listitem">
@@ -302,9 +507,7 @@ export default function TiendaCarritoLateral({
                             <div className="basket-item-name" title={it.name}>
                               {it.name}
                             </div>
-                            <div className="basket-item-price">
-                              {it.priceFormatted ? it.priceFormatted : formatCurrency(Number(it.price) || 0, currency)}
-                            </div>
+                            <div className="basket-item-price">{formatCurrency(priceDisplay, currency)}</div>
                           </div>
                         </div>
 
@@ -369,19 +572,11 @@ export default function TiendaCarritoLateral({
               <div className="basket-footer">
                 <div className="basket-total" aria-live="polite">
                   <div className="basket-total-label">Total:</div>
-                  <div className="basket-total-value">{formatCurrency(total, currency)}</div>
+                  <div className="basket-total-value">{formatCurrency(totalDisplay, currency)}</div>
                 </div>
 
-                <div
-                  className={`checkout-wrap ${checkoutDisabledReason ? "is-disabled" : ""}`}
-                  data-tooltip={checkoutDisabledReason || ""}
-                >
-                  <button
-                    className="basket-checkout"
-                    type="button"
-                    disabled={Boolean(checkoutDisabledReason)}
-                    onClick={handleCheckout}
-                  >
+                <div className={`checkout-wrap ${checkoutDisabledReason ? "is-disabled" : ""}`} data-tooltip={checkoutDisabledReason || ""}>
+                  <button className="basket-checkout" type="button" disabled={Boolean(checkoutDisabledReason)} onClick={handleCheckout}>
                     {checkoutLabel}
                   </button>
                 </div>
@@ -400,7 +595,6 @@ export default function TiendaCarritoLateral({
         currencyHint={currency}
         onPaid={() => {
           if (typeof vaciarCarrito === "function") vaciarCarrito();
-          // opcional: si estás en drawer, lo cierras al pagar
           if (typeof onRequestClose === "function") onRequestClose();
         }}
         onClose={() => setCheckoutOpen(false)}

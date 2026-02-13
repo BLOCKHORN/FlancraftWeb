@@ -279,8 +279,8 @@ export const STOREFRONT_CONFIG = {
   servers: [
     {
       key: "survival",
-      label: "Survival Towny",
-      categoryNames: ["SURVIVAL", "Survival", "Towny", "COINS", "Coins"],
+      label: "Survival",
+      categoryNames: ["SURVIVAL", "Survival", "COINS", "Coins"],
     },
     {
       key: "gens",
@@ -342,4 +342,144 @@ export function filterPackagesByCategoryIds(paquetes = [], categoryIds = []) {
 
     return cid !== null && set.has(String(cid));
   });
+}
+/* =========================================================
+   FX (cambio de divisa REAL) — Frankfurter (ECB)
+   - Convierte importes NUMÉRICOS (no solo símbolo)
+   - Cache: memoria + localStorage (TTL 6h)
+   ========================================================= */
+
+export const STORE_BASE_CURRENCY = String(
+  import.meta.env.VITE_TEBEX_CURRENCY || "EUR"
+)
+  .toUpperCase()
+  .trim();
+
+const FX_TTL_MS = Number(import.meta.env.VITE_FX_TTL_MS || 6 * 60 * 60 * 1000);
+
+const fxMem = {
+  byBase: new Map(), // base -> { data, ts }
+};
+
+function fxKey(base) {
+  return `flan_fx_${String(base || "").toUpperCase()}`;
+}
+
+function safeUpper(v, fallback = "EUR") {
+  const s = String(v || "").toUpperCase().trim();
+  return s || fallback;
+}
+
+/**
+ * Devuelve:
+ * {
+ *   base: "EUR",
+ *   date: "YYYY-MM-DD",
+ *   rates: { USD: 1.08, GBP: 0.86, ... },
+ *   ts: 1234567890
+ * }
+ */
+export async function fetchFxRates({
+  base = STORE_BASE_CURRENCY,
+  to = ["USD", "GBP"],
+  force = false,
+} = {}) {
+  const BASE = safeUpper(base, "EUR");
+  const targets = Array.from(
+    new Set((Array.isArray(to) ? to : [to]).map((x) => safeUpper(x)))
+  ).filter((c) => c && c !== BASE);
+
+  // Si no hay targets, devolvemos “vacío” (rate 1 para base)
+  if (!targets.length) {
+    return { base: BASE, date: null, rates: {}, ts: Date.now() };
+  }
+
+  const now = Date.now();
+
+  // 1) cache memoria
+  const mem = fxMem.byBase.get(BASE);
+  if (!force && mem?.data && now - (mem.ts || 0) < FX_TTL_MS) {
+    return mem.data;
+  }
+
+  // 2) cache localStorage
+  if (!force) {
+    try {
+      const raw = localStorage.getItem(fxKey(BASE));
+      if (raw) {
+        const cached = JSON.parse(raw);
+        const ts = Number(cached?.ts || 0);
+        if (cached?.rates && ts && now - ts < FX_TTL_MS) {
+          fxMem.byBase.set(BASE, { data: cached, ts });
+          return cached;
+        }
+      }
+    } catch {}
+  }
+
+  // 3) fetch Frankfurter (ECB)
+  const url =
+    `https://api.frankfurter.app/latest?from=${encodeURIComponent(BASE)}` +
+    `&to=${encodeURIComponent(targets.join(","))}`;
+
+  const r = await fetchWithTimeout(
+    url,
+    {
+      method: "GET",
+      credentials: "omit",
+      headers: { Accept: "application/json" },
+    },
+    12000
+  );
+
+  if (!r.ok) {
+    // Si falla la red, intenta devolver lo último que haya en memoria
+    if (mem?.data) return mem.data;
+    throw new Error(`FX HTTP ${r.status}`);
+  }
+
+  const data = await r.json().catch(() => null);
+  const rates = data?.rates && typeof data.rates === "object" ? data.rates : {};
+  const payload = {
+    base: safeUpper(data?.base || BASE, BASE),
+    date: data?.date || null,
+    rates,
+    ts: now,
+  };
+
+  fxMem.byBase.set(BASE, { data: payload, ts: now });
+
+  try {
+    localStorage.setItem(fxKey(BASE), JSON.stringify(payload));
+  } catch {}
+
+  return payload;
+}
+
+/**
+ * Rate para ir de fx.base -> toCurrency
+ * - si toCurrency === base => 1
+ * - si no existe => 1
+ */
+export function pickFxRate(fx, toCurrency) {
+  const to = safeUpper(toCurrency, STORE_BASE_CURRENCY);
+  const base = safeUpper(fx?.base || STORE_BASE_CURRENCY, STORE_BASE_CURRENCY);
+
+  if (to === base) return 1;
+
+  const r = Number(fx?.rates?.[to]);
+  return Number.isFinite(r) && r > 0 ? r : 1;
+}
+
+/**
+ * Convierte amount numérico desde fx.base -> toCurrency
+ */
+export function convertFx(amount, fx, toCurrency) {
+  const n = Number(amount);
+  if (!Number.isFinite(n)) return NaN;
+
+  const rate = pickFxRate(fx, toCurrency);
+  const out = n * (Number.isFinite(rate) ? rate : 1);
+
+  return Number.isFinite(out) ? out : n;
 }

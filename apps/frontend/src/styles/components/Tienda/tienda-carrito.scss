@@ -1,5 +1,12 @@
 @use "../../base/_variables" as *;
 
+/* ======================================================================
+   src/styles/components/Tienda/tienda-carrito.scss
+   - Carrito lateral (desktop + drawer)
+   - Dropdown moneda estilo “CHANGE CURRENCY” (sin lift/press + cascada)
+   - FIX: el drop no queda por debajo del marco PNG ni recortado
+   ====================================================================== */
+
 /* CONTENEDOR */
 .carrito-lateral {
   width: 100%;
@@ -21,6 +28,10 @@
   min-height: 0;
   position: relative;
 
+  /* crea un stacking context propio:
+     evita que el overlay y z-index “se mezclen” raro */
+  isolation: isolate;
+
   --framePadX: clamp(18px, 3vw, 25px);
   --framePadY: clamp(18px, 3vw, 32px);
 
@@ -38,11 +49,9 @@
   --btnLift: -7px;
   --btnPress: 4px;
 
-  --btnShadowRest: 0 4px 0 rgba(0,0,0,0.42);
-  --btnShadowHover:
-    0 9px 0 rgba(0,0,0,0.55),
-    0 16px 32px rgba(0,0,0,0.22);
-  --btnShadowPress: 0 1px 0 rgba(0,0,0,0.62);
+  --btnShadowRest: 0 4px 0 rgba(0, 0, 0, 0.42);
+  --btnShadowHover: 0 9px 0 rgba(0, 0, 0, 0.55), 0 16px 32px rgba(0, 0, 0, 0.22);
+  --btnShadowPress: 0 1px 0 rgba(0, 0, 0, 0.62);
 
   --tFast: 160ms;
   --tMed: 220ms;
@@ -50,13 +59,14 @@
   --easePress: cubic-bezier(0.2, 0.9, 0.2, 1);
 }
 
-/* PNG overlay (solo cuando NO es drawer) */
+/* PNG overlay (solo cuando NO es drawer)
+   FIX: debe ir detrás, no tapar dropdowns */
 .carrito-panel::before {
   content: "";
   position: absolute;
   inset: 0;
   pointer-events: none;
-  z-index: 2;
+  z-index: 0; /* ✅ antes estaba alto y tapaba el menú */
 
   background-image: url("/tienda/assets/bordecarrito.png");
   background-repeat: no-repeat;
@@ -69,7 +79,7 @@
 /* Panel real */
 .carrito-panel-inner {
   position: relative;
-  z-index: 1;
+  z-index: 1; /* ✅ siempre por encima del overlay */
 
   width: 100%;
   height: 100%;
@@ -85,17 +95,15 @@
   border: 2px solid #d2b071;
   background: #f7e2b2;
 
-  box-shadow:
-    0 0 0 1px rgba(90, 59, 23, 0.35),
-    0 14px 30px rgba(0, 0, 0, 0.65);
-
+  box-shadow: 0 0 0 1px rgba(90, 59, 23, 0.35), 0 14px 30px rgba(0, 0, 0, 0.65);
   box-sizing: border-box;
 }
 
 /* ===========================
-   BOTÓN FÍSICO
+   BOTÓN FÍSICO (general)
+   - OJO: el dropdown de moneda NO lo usa
    =========================== */
-@mixin btnPhysics($bg: #7a6a5b, $border: rgba(0,0,0,0.38), $color: #f6efe6) {
+@mixin btnPhysics($bg: #7a6a5b, $border: rgba(0, 0, 0, 0.38), $color: #f6efe6) {
   position: relative;
   border-radius: 0.45rem;
   border: 2px solid $border;
@@ -110,12 +118,8 @@
   cursor: pointer;
 
   will-change: transform, box-shadow, filter;
-  transition:
-    transform var(--tMed) var(--easeLift),
-    box-shadow var(--tMed) var(--easeLift),
-    filter var(--tFast) ease,
-    background var(--tFast) ease,
-    border-color var(--tFast) ease,
+  transition: transform var(--tMed) var(--easeLift), box-shadow var(--tMed) var(--easeLift),
+    filter var(--tFast) ease, background var(--tFast) ease, border-color var(--tFast) ease,
     opacity var(--tFast) ease;
 
   &:hover:not(:disabled) {
@@ -130,7 +134,9 @@
     filter: brightness(0.98);
   }
 
-  &:focus { outline: none; }
+  &:focus {
+    outline: none;
+  }
 
   &:focus-visible {
     outline: 2px solid rgba(210, 176, 113, 0.65);
@@ -151,7 +157,14 @@
    ========================================================= */
 .carrito-cuenta {
   border-radius: 0.55rem;
-  overflow: hidden;
+
+  /* ✅ FIX CLAVE: si está hidden, recorta el menú */
+  overflow: visible;
+
+  /* ✅ para que pinte por encima del basket */
+  position: relative;
+  z-index: 20;
+
   background: #8b7a67;
   border: 2px solid rgba(0, 0, 0, 0.25);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
@@ -230,6 +243,9 @@
   gap: 0.5rem;
   background: rgba(0, 0, 0, 0.10);
   border-top: 2px solid rgba(0, 0, 0, 0.18);
+
+  /* ✅ por si algún wrapper interno recorta */
+  overflow: visible;
 }
 
 .cuenta-btn {
@@ -238,57 +254,245 @@
   font-weight: 900;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  @include btnPhysics(#7a6a5b, rgba(0,0,0,0.38), #f6efe6);
+  @include btnPhysics(#7a6a5b, rgba(0, 0, 0, 0.38), #f6efe6);
 }
 
-.cuenta-btn-account { text-align: center; }
+.cuenta-btn-account {
+  text-align: center;
+}
 
-.cuenta-btn-currency {
+/* =========================================================
+   DROPDOWN MONEDA (estilo captura + cascada)
+   - Sin lift/press
+   ========================================================= */
+.currencyDrop {
   position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  padding-right: 0.45rem;
-  background: #6f6053;
+  width: 100%;
+  z-index: 30; /* ✅ por encima del resto del panel */
+}
 
-  &:focus-within {
+.currencyDrop-trigger {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  padding: 10px 10px 9px;
+
+  border-radius: 6px;
+  border: 2px solid rgba(0, 0, 0, 0.38);
+
+  background: #6f6053;
+  color: #f6efe6;
+
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.10);
+
+  cursor: pointer;
+  user-select: none;
+
+  transition: filter 160ms ease, background 160ms ease, border-color 160ms ease, opacity 160ms ease;
+
+  &:hover:not(:disabled) {
+    filter: brightness(1.04);
+  }
+
+  &:active:not(:disabled) {
+    filter: brightness(0.99);
+  }
+
+  &:focus {
+    outline: none;
+  }
+
+  &:focus-visible {
     outline: 2px solid rgba(210, 176, 113, 0.65);
     outline-offset: 2px;
   }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    filter: none;
+  }
 }
 
-.currency-left {
+.currencyDrop-head {
   display: flex;
   align-items: center;
-  gap: 0.45rem;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.currencyDrop-headLeft {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   min-width: 0;
 }
 
-.currency-icon { font-size: 1rem; flex: 0 0 auto; opacity: 0.95; }
+.currencyDrop-ico,
+.currencyDrop-info,
+.currencyDrop-chevron {
+  display: grid;
+  place-items: center;
+  opacity: 0.95;
+  flex: 0 0 auto;
 
-.currency-text { display: flex; flex-direction: column; line-height: 1.05; min-width: 0; }
-.currency-label { font-size: 0.62rem; opacity: 0.9; }
-.currency-current {
-  font-size: 0.82rem;
+  svg {
+    display: block;
+  }
+}
+
+.currencyDrop-title {
+  font-size: 0.78rem;
   font-weight: 900;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+
+  color: rgba(255, 255, 255, 0.95);
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.55);
+
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.currency-chevron { font-size: 1.05rem; opacity: 0.9; flex: 0 0 auto; }
+.currencyDrop-currentLine {
+  font-size: 0.92rem;
+  font-weight: 900;
+  letter-spacing: 0.03em;
 
-.currency-select {
+  color: #ffffff;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.60);
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Menú */
+.currencyDrop-menu {
   position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
+  left: 0;
+  right: 0;
+  top: calc(100% - 2px);
+
+  z-index: 80; /* ✅ el menú por encima del panel */
+
+  border: 2px solid rgba(0, 0, 0, 0.38);
+  border-top: 0;
+
+  border-radius: 0 0 6px 6px;
+
+  background: #7a6a5b;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+
+  padding: 6px;
+
+  max-height: 0;
   opacity: 0;
+  transform: translateY(-6px);
+  pointer-events: none;
+
+  overflow-x: hidden;
+  overflow-y: auto;
+
+  transition: max-height 220ms cubic-bezier(0.16, 1, 0.3, 1), opacity 160ms ease,
+    transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
+
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.35) rgba(0, 0, 0, 0.15);
+
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+  &::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.18);
+  }
+  &::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.28);
+    border-radius: 999px;
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.40);
+  }
+}
+
+.currencyDrop.is-open .currencyDrop-menu {
+  max-height: 320px;
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.currencyDrop.is-closing .currencyDrop-menu {
+  max-height: 0;
+  opacity: 0;
+  transform: translateY(-6px);
+  pointer-events: none;
+}
+
+/* Unión visual */
+.currencyDrop.is-open .currencyDrop-trigger {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+/* Opciones */
+.currencyDrop-option {
+  width: 100%;
+  display: flex;
+  align-items: center;
+
+  padding: 8px 10px;
+
+  border-radius: 6px;
+  border: 0;
+
+  background: transparent;
+  color: rgba(255, 255, 255, 0.94);
+
+  font-weight: 900;
+  letter-spacing: 0.03em;
+
   cursor: pointer;
-  appearance: none;
-  -webkit-appearance: none;
+  text-align: left;
+
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.55);
+
+  transition: background 140ms ease, filter 140ms ease;
+
+  opacity: 0;
+  transform: translateY(-8px);
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.12);
+  }
+
+  &:active {
+    filter: brightness(0.98);
+  }
+}
+
+.currencyDrop-option.is-active {
+  background: rgba(0, 0, 0, 0.18);
+  outline: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+@keyframes currencyItemIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.currencyDrop.is-open .currencyDrop-option {
+  animation: currencyItemIn 260ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: calc(var(--i, 0) * 22ms);
 }
 
 /* =========================================================
@@ -304,6 +508,10 @@
 
   background: rgba(250, 230, 188, 0.96);
   box-shadow: inset 0 0 0 1px rgba(134, 93, 40, 0.35);
+
+  /* ✅ queda por debajo del bloque cuenta/drop */
+  position: relative;
+  z-index: 1;
 }
 
 .basket-title {
@@ -327,10 +535,19 @@
   scrollbar-width: thin;
   scrollbar-color: #b1834b transparent;
 
-  &::-webkit-scrollbar { width: 8px; }
-  &::-webkit-scrollbar-track { background: rgba(212, 183, 135, 0.8); }
-  &::-webkit-scrollbar-thumb { background: #a37843; border-radius: 999px; }
-  &::-webkit-scrollbar-thumb:hover { background: #c18d53; }
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+  &::-webkit-scrollbar-track {
+    background: rgba(212, 183, 135, 0.8);
+  }
+  &::-webkit-scrollbar-thumb {
+    background: #a37843;
+    border-radius: 999px;
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    background: #c18d53;
+  }
 }
 
 .basket-empty-state {
@@ -351,6 +568,7 @@
   background: rgba(0, 0, 0, 0.03);
   position: relative;
 }
+
 .basket-empty-icon::after {
   content: "";
   position: absolute;
@@ -385,10 +603,17 @@
 
   transition: filter 160ms ease, transform 160ms ease;
 
-  &:hover { filter: brightness(1.03); }
+  &:hover {
+    filter: brightness(1.03);
+  }
 }
 
-.basket-item-left { display: flex; align-items: center; gap: 0.5rem; min-width: 0; }
+.basket-item-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
 
 .basket-item-icon-frame {
   width: 40px;
@@ -402,7 +627,11 @@
   position: relative;
 }
 
-.basket-item-icon { max-width: 90%; max-height: 90%; image-rendering: pixelated; }
+.basket-item-icon {
+  max-width: 90%;
+  max-height: 90%;
+  image-rendering: pixelated;
+}
 
 .basket-item-icon-fallback {
   position: absolute;
@@ -414,11 +643,31 @@
   pointer-events: none;
 }
 
-.basket-item-info { display: flex; flex-direction: column; min-width: 0; }
-.basket-item-name { font-size: 0.9rem; font-weight: 900; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.basket-item-price { font-size: 0.8rem; color: #f4dca3; }
+.basket-item-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
 
-.basket-item-right { display: flex; align-items: center; gap: 0.35rem; }
+.basket-item-name {
+  font-size: 0.9rem;
+  font-weight: 900;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.basket-item-price {
+  font-size: 0.8rem;
+  color: #f4dca3;
+}
+
+.basket-item-right {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
 
 .basket-item-remove {
   width: 28px;
@@ -427,7 +676,7 @@
   place-items: center;
   border-radius: 0.45rem;
   padding: 0;
-  @include btnPhysics(#4b2b2b, rgba(0,0,0,0.42), #fef7e5);
+  @include btnPhysics(#4b2b2b, rgba(0, 0, 0, 0.42), #fef7e5);
   --btnLift: -4px;
   --btnPress: 3px;
 }
@@ -442,8 +691,44 @@
   background: rgba(0, 0, 0, 0.03);
 }
 
-.basket-total { display: flex; justify-content: space-between; font-size: 0.9rem; }
-.basket-total-label, .basket-total-value { font-weight: 900; }
+.basket-total {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+}
+
+.basket-total-label,
+.basket-total-value {
+  font-weight: 900;
+}
+
+/* Tooltip simple cuando disabled */
+.checkout-wrap {
+  position: relative;
+
+  &.is-disabled:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% + 8px);
+    transform: translateX(-50%);
+    width: min(280px, 92%);
+    padding: 8px 10px;
+
+    font-size: 0.78rem;
+    font-weight: 800;
+    color: rgba(255, 255, 255, 0.95);
+
+    background: rgba(25, 18, 12, 0.92);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.35);
+    pointer-events: none;
+    text-align: center;
+    z-index: 10;
+  }
+}
 
 .basket-checkout {
   position: relative;
@@ -466,11 +751,8 @@
   overflow: hidden;
 
   will-change: transform, box-shadow, filter;
-  transition:
-    transform var(--tMed) var(--easeLift),
-    box-shadow var(--tMed) var(--easeLift),
-    filter var(--tFast) ease,
-    opacity var(--tFast) ease;
+  transition: transform var(--tMed) var(--easeLift), box-shadow var(--tMed) var(--easeLift),
+    filter var(--tFast) ease, opacity var(--tFast) ease;
 
   &:hover:not(:disabled) {
     transform: translateY(var(--btnLift)) translateZ(0);
@@ -513,20 +795,41 @@
 }
 
 @keyframes checkoutShine {
-  0%   { transform: translate3d(-200%, 0, 0); opacity: 0; }
-  10%  { opacity: 0.55; }
-  30%  { transform: translate3d(430%, 0, 0); opacity: 0; }
-  100% { transform: translate3d(430%, 0, 0); opacity: 0; }
+  0% {
+    transform: translate3d(-200%, 0, 0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.55;
+  }
+  30% {
+    transform: translate3d(430%, 0, 0);
+    opacity: 0;
+  }
+  100% {
+    transform: translate3d(430%, 0, 0);
+    opacity: 0;
+  }
 }
 
 /* Pulse al recibir un item */
-.carrito-panel.is-pulse { animation: basketPulse 320ms ease-out; }
-@keyframes basketPulse {
-  0%   { transform: translateY(0) scale(1); }
-  40%  { transform: translateY(-2px) scale(1.01); }
-  100% { transform: translateY(0) scale(1); }
+.carrito-panel.is-pulse {
+  animation: basketPulse 320ms ease-out;
 }
 
+@keyframes basketPulse {
+  0% {
+    transform: translateY(0) scale(1);
+  }
+  40% {
+    transform: translateY(-2px) scale(1.01);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Cantidad */
 .qty-stepper {
   display: inline-flex;
   align-items: center;
@@ -537,9 +840,7 @@
 
   background: #4b3a2b;
   border: 1px solid rgba(0, 0, 0, 0.45);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.10),
-    0 2px 0 rgba(0, 0, 0, 0.30);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.10), 0 2px 0 rgba(0, 0, 0, 0.30);
 }
 
 .qty-btn {
@@ -549,12 +850,14 @@
   display: grid;
   place-items: center;
 
-  @include btnPhysics(#7a6a5b, rgba(0,0,0,0.42), #fef7e5);
+  @include btnPhysics(#7a6a5b, rgba(0, 0, 0, 0.42), #fef7e5);
 
   --btnLift: -4px;
   --btnPress: 2px;
 
-  svg { display: block; }
+  svg {
+    display: block;
+  }
 }
 
 .qty-value {
@@ -570,17 +873,29 @@
   text-shadow: 0 2px 0 rgba(0, 0, 0, 0.35);
 }
 
+/* Reduce motion */
 @media (prefers-reduced-motion: reduce) {
-  .basket-checkout::before { animation: none !important; }
+  .basket-checkout::before {
+    animation: none !important;
+  }
+
   .cuenta-btn,
   .basket-item-remove,
-  .basket-checkout { transition: none !important; }
+  .basket-checkout,
+  .currencyDrop-menu {
+    transition: none !important;
+  }
+
+  .currencyDrop-option {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
 }
 
 /* =========================================================
    MODO DRAWER (mobile)
-   - Quitamos el marco PNG para que no se coma el espacio
-   - Ajustamos padding y sombras para integrarlo con el sheet
+   - Quitamos marco PNG
    ========================================================= */
 .carrito-lateral.is-drawer {
   height: auto;
@@ -589,24 +904,21 @@
 .carrito-lateral.is-drawer .carrito-panel {
   height: auto;
   min-height: 0;
-
-  padding: 0; /* sin framePad */
+  padding: 0;
 }
 
 .carrito-lateral.is-drawer .carrito-panel::before {
-  display: none; /* adiós marco en drawer */
+  display: none;
 }
 
 .carrito-lateral.is-drawer .carrito-panel-inner {
   border-radius: 14px;
   padding: 10px;
-  box-shadow:
-    0 0 0 1px rgba(255, 220, 150, 0.12),
-    0 14px 32px rgba(0,0,0,0.45);
+  box-shadow: 0 0 0 1px rgba(255, 220, 150, 0.12), 0 14px 32px rgba(0, 0, 0, 0.45);
   border-color: rgba(210, 176, 113, 0.55);
 }
 
-/* ajuste de alturas en drawer: lista con max alto razonable */
+/* Altura lista en drawer */
 .carrito-lateral.is-drawer .basket-list {
   max-height: min(42dvh, 360px);
 }

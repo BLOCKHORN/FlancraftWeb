@@ -1,5 +1,5 @@
 import { NavLink, Link, useLocation } from "react-router-dom";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import LogoutButton from "../Auth/LogoutButton";
 import LoginModal from "../Auth/LoginModal";
 
@@ -20,6 +20,16 @@ const NavIcon = ({ src, alt, className = "" }) => {
 const navClsMobile = (base) => (navData) => {
   const isActive = !!(navData?.isActive ?? navData?.match);
   return `mobile-nav-item ${base}${isActive ? " active" : ""}`;
+};
+
+const toInt = (v) => {
+  const n = Number(v);
+  return Number.isFinite(n) ? Math.max(0, Math.floor(n)) : 0;
+};
+
+const formatInt = (n) => {
+  const v = toInt(n);
+  return new Intl.NumberFormat("es-ES", { maximumFractionDigits: 0 }).format(v);
 };
 
 const NavbarMobile = ({
@@ -60,7 +70,7 @@ const NavbarMobile = ({
     };
   }, [menuOpen]);
 
-  // ✅ Tap outside (solo uno) + ESC
+  // ✅ Tap outside + ESC
   useEffect(() => {
     const onPointerDown = (e) => {
       if (!profileOpen) return;
@@ -209,6 +219,9 @@ const NavbarMobile = ({
     </span>
   );
 
+  // ✅ WALLET a mostrar
+  const walletCoins = useMemo(() => formatInt(userData?.coins ?? 0), [userData?.coins]);
+
   return (
     <>
       <div className="navbar-inner mobile-only">
@@ -327,10 +340,16 @@ const NavbarMobile = ({
               </div>
             </div>
 
+            {/* ✅ WALLET (sin ECOS) */}
             <div className="balance-wrapper">
               <div className="balance-item">
-                <img src="/assets/eco.webp" alt="ECOS" className="eco-icon-navbar" />
-                <span className="balance-text">{userData.ecos} ECOS</span>
+                <img
+                  src="/tienda/assets/coin.png"
+                  alt="COINS"
+                  className="eco-icon-navbar"
+                  draggable="false"
+                />
+                <span className="balance-text">{walletCoins}</span>
               </div>
             </div>
 

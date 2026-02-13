@@ -4,6 +4,8 @@ const express = require("express");
 const router = express.Router();
 
 const {
+  obtenerFx,
+
   obtenerDatosTienda,
   forzarActualizarCache,
   obtenerDescripcionProducto,
@@ -24,6 +26,9 @@ const {
 } = require("../controllers/tiendatebex.controller");
 
 router.get("/health", health);
+
+// FX (visualización)
+router.get("/fx", obtenerFx);
 
 router.get("/sidebar-raw", obtenerSidebarRaw);
 router.get("/top-donator", obtenerTopDonator);

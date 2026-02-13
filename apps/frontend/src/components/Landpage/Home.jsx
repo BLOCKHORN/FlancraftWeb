@@ -1,5 +1,5 @@
 // src/components/Landpage/Home.jsx
-import React, { useState, useContext, useRef, useEffect } from "react";
+import React, { useState, useContext, useRef, useEffect, useCallback } from "react";
 import "../../styles/components/Landpage/_home.scss";
 
 import MapRPG from "./MapRPG";
@@ -42,11 +42,57 @@ const mensajesCarga = [
   "Revisando magia antigua...",
 ];
 
+// Precarga segura (img + decode si existe)
+const preloadImage = (src, signal) =>
+  new Promise((resolve) => {
+    if (!src) return resolve(true);
+    const img = new Image();
+    const done = () => resolve(true);
+
+    const cleanup = () => {
+      img.onload = null;
+      img.onerror = null;
+    };
+
+    img.onload = async () => {
+      try {
+        // decode reduce flashes (si el navegador lo soporta)
+        if (img.decode) await img.decode();
+      } catch (_) {}
+      cleanup();
+      done();
+    };
+
+    img.onerror = () => {
+      cleanup();
+      done();
+    };
+
+    if (signal) {
+      if (signal.aborted) return done();
+      signal.addEventListener(
+        "abort",
+        () => {
+          cleanup();
+          done();
+        },
+        { once: true }
+      );
+    }
+
+    img.decoding = "async";
+    img.loading = "eager";
+    img.src = src;
+  });
+
 const Home = () => {
   const { user, setUser } = useContext(UserContext);
   const [showLogin, setShowLogin] = useState(false);
+
+  // ✅ loader más estable: depende de precarga crítica en vez de window.load
   const [isLoaded, setIsLoaded] = useState(false);
   const [mensajeCarga, setMensajeCarga] = useState(mensajesCarga[0]);
+
   const [playerName, setPlayerName] = useState(null);
   const [showLoginTeaser, setShowLoginTeaser] = useState(false);
 
@@ -61,7 +107,6 @@ const Home = () => {
 
   const navigate = useNavigate();
   const location = useLocation();
-  const gameModesRef = useRef(null);
 
   // audio refs + cooldowns
   const llamadaAudioRef = useRef(null);
@@ -72,7 +117,6 @@ const Home = () => {
   const roarCooldownRef = useRef(false);
   const lastRoarIndexRef = useRef(0); // 0 => roar1, 1 => roar2
   const timeoutsRef = useRef([]);
-
   const mensajeIndexRef = useRef(0);
 
   const isDragonPresent = dragonPhase !== "hidden";
@@ -117,23 +161,38 @@ const Home = () => {
     return () => clearInterval(interval);
   }, [isLoaded]);
 
-  // Cuando la página está lista -> mostrar contenido
+  // ✅ Carga “real”: precarga assets críticos y luego muestra home
   useEffect(() => {
-    const handleReady = () => {
-      const id = window.setTimeout(() => setIsLoaded(true), 400);
-      pushTimeout(id);
+    const controller = new AbortController();
+
+    const run = async () => {
+      // Añade aquí lo que sea “crítico” para tu primer paint
+      const critical = [
+        "/assets/h1.webp",
+        "/assets/ui/cta-retos-panel.webp",
+      ];
+
+      // no bloquees infinito: máximo 1.4s
+      const hardCap = new Promise((resolve) => {
+        const id = window.setTimeout(() => resolve(true), 1400);
+        pushTimeout(id);
+      });
+
+      await Promise.race([
+        Promise.all(critical.map((src) => preloadImage(src, controller.signal))),
+        hardCap,
+      ]);
+
+      if (!controller.signal.aborted) {
+        // mini delay para que el CSS termine de aplicar antes del fade-in
+        const id = window.setTimeout(() => setIsLoaded(true), 80);
+        pushTimeout(id);
+      }
     };
 
-    if (
-      document.readyState === "complete" ||
-      document.readyState === "interactive"
-    ) {
-      handleReady();
-    } else {
-      const onLoad = () => handleReady();
-      window.addEventListener("load", onLoad);
-      return () => window.removeEventListener("load", onLoad);
-    }
+    run();
+
+    return () => controller.abort();
   }, []);
 
   // Detectar si estamos dentro de la zona HERO + MAPRPG
@@ -147,10 +206,7 @@ const Home = () => {
           const entry = entries[0];
           setIsInHeroMapZone(Boolean(entry?.isIntersecting));
         },
-        {
-          root: null,
-          threshold: 0,
-        }
+        { root: null, threshold: 0 }
       );
 
       obs.observe(el);
@@ -159,7 +215,6 @@ const Home = () => {
 
     // Fallback
     let ticking = false;
-
     const handleScrollZone = () => {
       if (ticking) return;
       ticking = true;
@@ -232,28 +287,26 @@ const Home = () => {
     return () => controller.abort();
   }, [user?.loggedIn, user?.uuid]);
 
-  // Scroll suave a game-modes si viene desde la navbar
+  // ✅ Scroll suave a game-modes si viene desde la navbar (y limpia state para que no se repita)
   useEffect(() => {
     if (location.state?.scrollTo === "game-modes-section") {
       const target = document.getElementById("game-modes-section");
       if (target) {
-        const id = window.setTimeout(
-          () => target.scrollIntoView({ behavior: "smooth" }),
-          400
-        );
+        const id = window.setTimeout(() => {
+          target.scrollIntoView({ behavior: "smooth" });
+          // limpia el state para evitar re-triggers al volver atrás o re-render
+          navigate(location.pathname, { replace: true, state: {} });
+        }, 250);
         pushTimeout(id);
         return () => clearTimeout(id);
       }
     }
-  }, [location]);
+  }, [location.state, location.pathname, navigate]);
 
-  const handleMainButtonClick = () => {
-    if (!user?.loggedIn) {
-      setShowLogin(true);
-    } else {
-      navigate("/dashboard");
-    }
-  };
+  const handleMainButtonClick = useCallback(() => {
+    if (!user?.loggedIn) setShowLogin(true);
+    else navigate("/dashboard");
+  }, [user?.loggedIn, navigate]);
 
   const displayName =
     (user?.loggedIn &&
@@ -320,7 +373,7 @@ const Home = () => {
   };
 
   const handleDragonClick = () => {
-    if (!isDragonPresent) return;
+    if (dragonPhase === "hidden") return;
     if (roarCooldownRef.current) return;
 
     roarCooldownRef.current = true;
@@ -365,14 +418,11 @@ const Home = () => {
       )}
 
       <div className={`home ${isLoaded ? "visible" : "invisible"}`}>
-        {/* ZONA HERO + MAPRPG (para limitar el popup + widget voto) */}
+        {/* ZONA HERO + MAPRPG */}
         <div ref={heroMapSectionRef} className="hero-map-section">
-          {/* Widget de voto: anclado a esta sección (PIP cuando está cerrado) */}
           <VoteWidget visible={isLoaded && isInHeroMapZone} />
 
-          {/* HERO */}
           <header className="hero-flancraft">
-            {/* Estrellas de fondo */}
             <div className="stars-layer" aria-hidden="true">
               <div className="star star--1" />
               <div className="star star--2" />
@@ -383,7 +433,6 @@ const Home = () => {
               <div className="shooting-star shooting-star--1" />
             </div>
 
-            {/* Nubes animadas */}
             <div className="clouds-layer" aria-hidden="true">
               <div className="cloud cloud--1" />
               <div className="cloud cloud--2" />
@@ -392,7 +441,6 @@ const Home = () => {
               <div className="cloud cloud--5" />
             </div>
 
-            {/* Dragón */}
             <div
               className={
                 "hero-ender-dragon-wrapper" +
@@ -414,17 +462,21 @@ const Home = () => {
             <div className="hero-overlay" />
 
             <div className="hero-content">
-              {/* Logo H1 como imagen elegante */}
               <div
                 className={
                   "hero-logo" + (isDragonPresent ? " hero-logo--hidden" : "")
                 }
                 aria-hidden="true"
               >
-                <img src="/assets/h1.webp" alt="FlanCraft Minecraft Network" />
+                {/* ✅ decoding + fetchpriority para el primer paint */}
+                <img
+                  src="/assets/h1.webp"
+                  alt="FlanCraft Minecraft Network"
+                  decoding="async"
+                  fetchpriority="high"
+                />
               </div>
 
-              {/* Logo central grande – invoca al dragón */}
               <div
                 className={
                   "hero-flan" + (islandShaking ? " hero-flan--shake" : "")
@@ -459,6 +511,9 @@ const Home = () => {
                     <img
                       src="/assets/ui/cta-retos-panel.webp"
                       alt="Entrar al panel de retos"
+                      decoding="async"
+                      loading="eager"
+                      fetchpriority="high"
                     />
                   </div>
 
@@ -475,7 +530,6 @@ const Home = () => {
             </div>
           </header>
 
-          {/* POPUP FLOTANTE DE LOGIN PARA INVITADOS */}
           {!user?.loggedIn && showLoginTeaser && isInHeroMapZone && (
             <div className="login-teaser-pop">
               <button
@@ -505,11 +559,9 @@ const Home = () => {
             </div>
           )}
 
-          {/* MAPA RPG */}
           <MapRPG />
         </div>
 
-        {/* MODAL LOGIN (disponible en toda la home) */}
         {showLogin && (
           <LoginModal
             onClose={() => {
@@ -527,30 +579,22 @@ const Home = () => {
           />
         )}
 
-        {/* SECCIONES RESTO DE LA HOME */}
         <SectionDividerNews />
         <NewsHighlight />
 
         <SectionDivider />
         <RitualEko />
 
-        <div
-          ref={gameModesRef}
-          id="game-modes-section"
-          className="section-gamemodes-wrapper"
-        >
+        <div id="game-modes-section" className="section-gamemodes-wrapper">
           <SectionDividerGameModes />
           <GameModes />
         </div>
 
-        {/* TEAM */}
         <div className="team-slot">
           <TeamCarousel />
         </div>
 
-        {/* DIVISOR FINAL */}
         <SectionDivider2 />
-
         <Footer />
       </div>
     </>

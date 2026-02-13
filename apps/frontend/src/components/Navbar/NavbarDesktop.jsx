@@ -1,6 +1,6 @@
 import { NavLink, Link, useLocation } from "react-router-dom";
 import LogoutButton from "../Auth/LogoutButton";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import "../../styles/components/Navbar/navbarDesktop.scss";
 
 const NavIcon = ({ src, alt, size = 24, className = "" }) => {
@@ -69,6 +69,16 @@ const WoWQuestQuestionMark = ({ className = "" }) => {
       </svg>
     </span>
   );
+};
+
+const toInt = (v) => {
+  const n = Number(v);
+  return Number.isFinite(n) ? Math.max(0, Math.floor(n)) : 0;
+};
+
+const formatInt = (n) => {
+  const v = toInt(n);
+  return new Intl.NumberFormat("es-ES", { maximumFractionDigits: 0 }).format(v);
 };
 
 const NavbarDesktop = ({
@@ -223,6 +233,9 @@ const NavbarDesktop = ({
   const nivelNavbar =
     xpNavbar.level != null ? xpNavbar.level : userData?.userLevel ?? 1;
 
+  // ✅ SALDO A MOSTRAR: WALLET (lo que viene por props)
+  const walletCoins = useMemo(() => formatInt(userData?.coins ?? 0), [userData?.coins]);
+
   return (
     <div className="navbar-content desktop-only">
       <div className="nav-left">
@@ -375,15 +388,16 @@ const NavbarDesktop = ({
                     </div>
                   </div>
 
+                  {/* ✅ WALLET */}
                   <div className="balance-wrapper">
                     <div className="balance-item">
                       <img
-                        src="/assets/eco.webp"
-                        alt="ECOS"
+                        src="/tienda/assets/coin.png"
+                        alt="COINS"
                         className="eco-icon-navbar"
                         draggable="false"
                       />
-                      <span className="balance-text">{userData.ecos} ECOS</span>
+                      <span className="balance-text">{walletCoins}</span>
                     </div>
                   </div>
 

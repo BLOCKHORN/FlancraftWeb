@@ -1,17 +1,47 @@
+// src/pages/Dashboard/DashboardPage.jsx
 import { useEffect, useRef, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import RewardList from "./RewardList";
 import LogroList from "./LogroList";
 import "../../styles/components/Dashboard/_dashboardpage.scss";
 
+const API_BASE =
+  import.meta.env.VITE_BACKEND_URL || "https://flancraft-backend.onrender.com";
+
+const SERVERS_COINS = [
+  { key: "gens", label: "GENS" },
+  { key: "oneblock", label: "ONEBLOCK" },
+  { key: "survival", label: "SURVIVAL" },
+];
+
+const toInt = (v) => {
+  const n = Number(v);
+  return Number.isFinite(n) ? Math.max(0, Math.floor(n)) : 0;
+};
+
 export default function DashboardPage() {
   const [user, setUser] = useState(null);
   const [xpData, setXpData] = useState(null);
+  const [walletBalance, setWalletBalance] = useState(0);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const ecosRef = useRef(null);
+
+  // Transfer UI
+  const [serverSelected, setServerSelected] = useState("gens");
+  const [transferAmount, setTransferAmount] = useState("");
+  const [transferLoading, setTransferLoading] = useState(false);
+  const [transferError, setTransferError] = useState(null);
+  const [transferOk, setTransferOk] = useState(null);
+
+  // contador principal (wallet)
+  const walletRef = useRef(null);
+
   const navigate = useNavigate();
 
+  // =========================
+  // LOAD INICIAL
+  // =========================
   useEffect(() => {
     const stored = localStorage.getItem("flan_user");
     if (!stored) return navigate("/");
@@ -19,16 +49,30 @@ export default function DashboardPage() {
     const parsed = JSON.parse(stored);
     if (!parsed.uuid || !parsed.loggedIn) return navigate("/");
 
+    const token = localStorage.getItem("token");
+
     const cargarDatos = async () => {
       try {
-        const [usuarioRes, monedasRes, xpRes, usuariosRes] = await Promise.all([
-          fetch(`https://flancraft-backend.onrender.com/api/usuarios/${parsed.uuid}`),
-          fetch(`https://flancraft-backend.onrender.com/api/monedas/${parsed.uuid}`),
-          fetch(`https://flancraft-backend.onrender.com/api/usuarios/${parsed.uuid}/xp`),
-          fetch(`https://flancraft-backend.onrender.com/api/usuarios`),
-        ]);
+        const reqs = [
+          fetch(`${API_BASE}/api/usuarios/${parsed.uuid}`),
+          fetch(`${API_BASE}/api/monedas/${parsed.uuid}`),
+          fetch(`${API_BASE}/api/usuarios/${parsed.uuid}/xp`),
+          fetch(`${API_BASE}/api/usuarios`),
+        ];
 
-        if (!usuarioRes.ok || !monedasRes.ok || !xpRes.ok || !usuariosRes.ok) {
+        if (token) {
+          reqs.push(
+            fetch(`${API_BASE}/api/daily-claim/status`, {
+              headers: { Authorization: `Bearer ${token}` },
+            })
+          );
+        } else {
+          reqs.push(Promise.resolve(null));
+        }
+
+        const [usuarioRes, monedasRes, xpRes, usuariosRes, walletRes] = await Promise.all(reqs);
+
+        if (!usuarioRes?.ok || !monedasRes?.ok || !xpRes?.ok || !usuariosRes?.ok) {
           throw new Error("Error al cargar datos");
         }
 
@@ -41,7 +85,26 @@ export default function DashboardPage() {
         const rango_usuario = actual?.rango_usuario || null;
         const es_premium = actual?.es_premium || false;
 
-        setUser({ ...usuario, monedas, rango_usuario, es_premium });
+        let wallet = 0;
+        if (walletRes) {
+          if (walletRes.status === 401) {
+            localStorage.removeItem("token");
+          } else if (walletRes.ok) {
+            const w = await walletRes.json();
+            wallet = toInt(w?.walletBalance);
+          }
+        }
+
+        setWalletBalance(wallet);
+
+        setUser({
+          ...usuario,
+          monedas,
+          rango_usuario,
+          es_premium,
+          wallet_coins: wallet,
+        });
+
         setXpData(xp);
       } catch (err) {
         setError(err.message || "Error");
@@ -53,31 +116,59 @@ export default function DashboardPage() {
     cargarDatos();
   }, [navigate]);
 
+  // =========================
+  // REFRESH BALANCES
+  // =========================
   const actualizarMonedas = async () => {
     if (!user) return;
     try {
-      const res = await fetch(
-        `https://flancraft-backend.onrender.com/api/monedas/${user.uuid}`
-      );
-      if (!res.ok) throw new Error("Error al actualizar monedas");
-      const monedasActualizadas = await res.json();
-      setUser((prev) => ({ ...prev, monedas: monedasActualizadas }));
+      const token = localStorage.getItem("token");
+
+      const reqs = [
+        fetch(`${API_BASE}/api/monedas/${user.uuid}`),
+        token
+          ? fetch(`${API_BASE}/api/daily-claim/status`, {
+              headers: { Authorization: `Bearer ${token}` },
+            })
+          : Promise.resolve(null),
+      ];
+
+      const [monedasRes, walletRes] = await Promise.all(reqs);
+
+      if (!monedasRes.ok) throw new Error("Error al actualizar monedas");
+
+      const monedasActualizadas = await monedasRes.json();
+
+      let wallet = walletBalance;
+      if (walletRes) {
+        if (walletRes.status === 401) {
+          localStorage.removeItem("token");
+          wallet = 0;
+        } else if (walletRes.ok) {
+          const w = await walletRes.json();
+          wallet = toInt(w?.walletBalance);
+        }
+      }
+
+      setWalletBalance(wallet);
+      setUser((prev) => ({
+        ...prev,
+        monedas: monedasActualizadas,
+        wallet_coins: wallet,
+      }));
     } catch (err) {
-      console.error("[MONEDAS]", err.message);
+      console.error("[BALANCES]", err.message);
     }
   };
 
   const avatarUrl = user ? `https://minotar.net/armor/body/${user.uid}/160.png` : null;
 
-  const nivelInfo = xpData?.niveles.find((n) => n.nivel === user?.nivel);
+  const nivelInfo = xpData?.niveles?.find((n) => n.nivel === user?.nivel);
   const xpDelNivelActual = nivelInfo?.xp_requerida || 1;
   const porcentajeNivel = user
     ? Math.min(100, (user.xp_actual / xpDelNivelActual) * 100)
     : 0;
 
-  // =========================
-  // FONDO DINÁMICO POR RANGO
-  // =========================
   const rangoKey = useMemo(() => {
     const r = (user?.rango_usuario || "").toString().trim().toLowerCase();
     if (!r) return "none";
@@ -100,9 +191,122 @@ export default function DashboardPage() {
     }
   }, [rangoKey]);
 
+  // =========================
+  // COINS POR SERVIDOR (monedas_actuales)
+  // =========================
+  const coinsByServer = useMemo(() => {
+    const m = user?.monedas;
+    if (!m) return {};
+
+    if (m.byServer && typeof m.byServer === "object") {
+      const out = {};
+      for (const [k, v] of Object.entries(m.byServer)) out[String(k)] = toInt(v);
+      return out;
+    }
+
+    if (Array.isArray(m.balances)) {
+      const out = {};
+      for (const row of m.balances) {
+        const key = String(row?.servidor || "").trim().toLowerCase();
+        if (!key) continue;
+        out[key] = toInt(row?.coins);
+      }
+      return out;
+    }
+
+    if (m.coins != null) return { global: toInt(m.coins) };
+    if (m.ecos != null) return { global: toInt(m.ecos) };
+
+    return {};
+  }, [user?.monedas]);
+
+  // =========================
+  // WALLET (saldo principal)
+  // =========================
+  const totalCoins = useMemo(() => {
+    if (user?.wallet_coins != null) return toInt(user.wallet_coins);
+    return toInt(walletBalance);
+  }, [user?.wallet_coins, walletBalance]);
+
+  // =========================
+  // TRANSFER WALLET -> SERVER
+  // =========================
+  const handleMax = () => {
+    setTransferOk(null);
+    setTransferError(null);
+    setTransferAmount(String(totalCoins));
+  };
+
+  const handleTransfer = async () => {
+    if (!user?.uuid) return;
+
+    setTransferOk(null);
+    setTransferError(null);
+
+    const amt = toInt(transferAmount);
+    if (amt <= 0) {
+      setTransferError("Introduce una cantidad válida.");
+      return;
+    }
+
+    if (amt > totalCoins) {
+      setTransferError("No tienes suficiente saldo en la wallet.");
+      return;
+    }
+
+    setTransferLoading(true);
+
+    try {
+      const token = localStorage.getItem("token");
+      // Si quieres forzar auth real, exige token aquí:
+      // if (!token) throw new Error("Sesión caducada. Vuelve a iniciar sesión.");
+
+      const res = await fetch(`${API_BASE}/api/wallet/transfer`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          uuid: user.uuid,
+          servidor: serverSelected,
+          amount: amt,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "Error al transferir coins");
+
+      const newWallet = toInt(data?.wallet_balance);
+      const newServerBalance = toInt(data?.server_balance);
+
+      // Actualización inmediata UI
+      setWalletBalance(newWallet);
+      setUser((prev) => ({
+        ...prev,
+        wallet_coins: newWallet,
+        monedas: prev?.monedas, // lo refrescamos abajo igual
+      }));
+
+      // También animamos el contador grande si existe
+      if (walletRef?.current) walletRef.current.textContent = String(newWallet);
+
+      // Refresco “oficial” (por si tu /monedas agrega forma distinta)
+      await actualizarMonedas();
+
+      setTransferOk(
+        `Enviado: ${amt} COINS a ${String(data?.servidor || serverSelected).toUpperCase()}`
+      );
+      setTransferAmount("");
+    } catch (e) {
+      setTransferError(e.message || "Error");
+    } finally {
+      setTransferLoading(false);
+    }
+  };
+
   return (
     <section className="dashboard-epic">
-      {/* CONTENEDOR UNIFICADO (HERO + PERFIL + RECOMPENSAS + LOGROS) */}
       {!loading && !error && user && (
         <div className="dashboard-wrap fade-slide-in">
           <div className="dashboard-frame">
@@ -110,26 +314,21 @@ export default function DashboardPage() {
               <div className="epic-header-text">
                 <h1 className="epic-title">Tu Posada</h1>
                 <p className="epic-subtitle">
-                  Explora tu progreso, logros y riquezas acumuladas en el mundo
-                  de FlanCraft.
+                  Explora tu progreso, logros y riquezas acumuladas en el mundo de FlanCraft.
                 </p>
               </div>
             </header>
 
             <div className="dashboard-player-card">
-              {/* Banner posada integrado en la tarjeta */}
               <div className="player-card-banner" aria-hidden="true">
                 <div className="player-card-banner-bg" />
                 <div className="player-card-banner-overlay" />
               </div>
 
-              {/* BLOQUE PRINCIPAL: AVATAR + INFO */}
               <div className="player-main-layout">
-                {/* AVATAR + FONDO PROFILE + RANGO */}
                 <div className="player-avatar-column">
                   <div className={`avatar-frame avatar-frame--${rangoKey}`}>
                     <div className="avatar-inner">
-                      {/* ✅ FONDO DINÁMICO POR RANGO */}
                       <img
                         src={avatarBg}
                         alt="Fondo del rango"
@@ -151,7 +350,7 @@ export default function DashboardPage() {
 
                     {user.rango_usuario && (
                       <img
-                        src={`/assets/etiquetas/${user.rango_usuario.toLowerCase()}.webp`}
+                        src={`/assets/etiquetas/${user.rango_usuario.toLowerCase().trim()}.webp`}
                         alt={user.rango_usuario}
                         className="avatar-rango-badge"
                         loading="eager"
@@ -161,7 +360,6 @@ export default function DashboardPage() {
                   </div>
                 </div>
 
-                {/* INFO JUGADOR */}
                 <div className="player-info-column">
                   <div className="player-identidad">
                     <div className="player-nombre-row">
@@ -169,9 +367,7 @@ export default function DashboardPage() {
 
                       <div className="player-badges">
                         {user.rol_admin && (
-                          <span
-                            className={`badge-staff badge-${user.rol_admin.toLowerCase()}`}
-                          >
+                          <span className={`badge-staff badge-${user.rol_admin.toLowerCase()}`}>
                             {user.rol_admin.toUpperCase()}
                           </span>
                         )}
@@ -189,41 +385,122 @@ export default function DashboardPage() {
                     </div>
 
                     <p className="player-tagline">
-                      Aventura en curso. Tu leyenda en FlanCraft sigue
-                      escribiéndose.
+                      Aventura en curso. Tu leyenda en FlanCraft sigue escribiéndose.
                     </p>
                   </div>
 
                   <div className="player-stats-row">
                     <div className="stat-block saldo-block">
-                      <p className="stat-label">Saldo de FlanCraft</p>
+                      <p className="stat-label">Wallet de FlanCraft</p>
+
                       <div className="stat-saldo">
-                        <div className="saldo-info">
-                          <span
-                            className="saldo-cantidad"
-                            ref={ecosRef}
-                            id="contador-ecos"
-                          >
-                            {user.monedas?.ecos || 0}
-                          </span>
-                          <img
-                            src="/assets/eco.webp"
-                            alt="Gema ECOS"
-                            className="icono-eco pulse"
-                            loading="eager"
-                            decoding="async"
-                          />
+                        <div className="saldo-top">
+                          <div className="saldo-info">
+                            <span className="saldo-cantidad" ref={walletRef} id="contador-coins">
+                              {totalCoins}
+                            </span>
+
+                            <img
+                              src="/tienda/assets/coin.png"
+                              alt="Coins"
+                              className="icono-eco pulse"
+                              loading="eager"
+                              decoding="async"
+                              draggable="false"
+                            />
+                          </div>
+
+                          <a href="/tienda" className="btn-primario">
+                            Ir a la tienda
+                          </a>
                         </div>
-                        <a href="/rangos" className="btn-primario">
-                          Comprar rangos
-                        </a>
+
+                        <div className="saldo-servidores" aria-label="Saldos por servidor">
+                          {SERVERS_COINS.map((s) => (
+                            <div key={s.key} className={`saldo-server saldo-server--${s.key}`}>
+                              <span className="saldo-server-nombre">{s.label}</span>
+                              <span className="saldo-server-valor">{toInt(coinsByServer[s.key])}</span>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* NUEVO: transfer */}
+                        <div className="wallet-transfer">
+                          <div className="wallet-transfer-head">
+                            <div className="wallet-transfer-title">Enviar COINS al servidor</div>
+                            <div className="wallet-transfer-sub">
+                              Mueves COINS de la wallet a tu saldo del servidor elegido.
+                            </div>
+                          </div>
+
+                          <div className="wallet-transfer-grid">
+                            <div className="wallet-transfer-servers">
+                              {SERVERS_COINS.map((s) => (
+                                <button
+                                  key={s.key}
+                                  type="button"
+                                  className={[
+                                    "wallet-server-btn",
+                                    serverSelected === s.key ? "is-active" : "",
+                                  ].join(" ")}
+                                  onClick={() => {
+                                    setTransferOk(null);
+                                    setTransferError(null);
+                                    setServerSelected(s.key);
+                                  }}
+                                  disabled={transferLoading}
+                                >
+                                  {s.label}
+                                </button>
+                              ))}
+                            </div>
+
+                            <div className="wallet-transfer-amount">
+                              <input
+                                type="number"
+                                min="0"
+                                inputMode="numeric"
+                                placeholder="Cantidad"
+                                value={transferAmount}
+                                onChange={(e) => {
+                                  setTransferOk(null);
+                                  setTransferError(null);
+                                  setTransferAmount(e.target.value);
+                                }}
+                                disabled={transferLoading}
+                              />
+
+                              <button
+                                type="button"
+                                className="wallet-max-btn"
+                                onClick={handleMax}
+                                disabled={transferLoading}
+                              >
+                                Max
+                              </button>
+                            </div>
+
+                            <div className="wallet-transfer-actions">
+                              <button
+                                type="button"
+                                className="wallet-send-btn"
+                                onClick={handleTransfer}
+                                disabled={transferLoading}
+                              >
+                                {transferLoading ? "Enviando..." : "Enviar"}
+                              </button>
+                            </div>
+                          </div>
+
+                          {transferError && <div className="wallet-transfer-msg is-error">{transferError}</div>}
+                          {transferOk && <div className="wallet-transfer-msg is-ok">{transferOk}</div>}
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* BARRA DE NIVEL GLOBAL */}
               <div className="nivel-global-wrapper">
                 <div className="nivel-global-header">
                   <span className="nivel-global-label">Nivel</span>
@@ -231,10 +508,7 @@ export default function DashboardPage() {
                 </div>
 
                 <div className="nivel-global-bar">
-                  <div
-                    className="nivel-global-fill"
-                    style={{ width: `${porcentajeNivel}%` }}
-                  />
+                  <div className="nivel-global-fill" style={{ width: `${porcentajeNivel}%` }} />
                 </div>
 
                 <div className="nivel-global-text">
@@ -244,36 +518,24 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              {/* PANEL DEL CONTROL INTEGRADO */}
               {user.rol_admin && (
                 <>
                   <div className="player-card-separator" />
                   <div className="player-admin-panel">
                     <h3 className="panel-title">Panel del Control</h3>
-                    <p className="panel-desc">
-                      Accesos rápidos a las salas de gestión del reino.
-                    </p>
+                    <p className="panel-desc">Accesos rápidos a las salas de gestión del reino.</p>
 
                     <div className="player-admin-actions">
-                      <button
-                        className="admin-btn"
-                        onClick={() => navigate("/tribunal/admin")}
-                      >
+                      <button className="admin-btn" onClick={() => navigate("/tribunal/admin")}>
                         Tribunal
                       </button>
 
                       {user.rol_admin.toLowerCase() === "owner" && (
                         <>
-                          <button
-                            className="admin-btn"
-                            onClick={() => navigate("/admin")}
-                          >
+                          <button className="admin-btn" onClick={() => navigate("/admin")}>
                             Gestión de staff
                           </button>
-                          <button
-                            className="admin-btn"
-                            onClick={() => navigate("/admin/noticias")}
-                          >
+                          <button className="admin-btn" onClick={() => navigate("/admin/noticias")}>
                             Crear noticia
                           </button>
                         </>
@@ -289,7 +551,7 @@ export default function DashboardPage() {
                 <RewardList
                   user={user}
                   xpData={xpData}
-                  ecosRef={ecosRef}
+                  ecosRef={walletRef}
                   onActualizarMonedas={actualizarMonedas}
                 />
 
@@ -300,16 +562,16 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* CAPA DE CARGA / ERROR */}
       {loading && (
         <div className="loading-overlay">
           <div className="loading-orbital">
             <div className="loading-ring" />
             <div className="loading-gem-wrapper">
               <img
-                src="/assets/eco.webp"
+                src="/tienda/assets/coin.png"
                 alt="Cargando perfil"
                 className="loading-gem"
+                draggable="false"
               />
             </div>
             <div className="loading-orbit loading-orbit-1" />

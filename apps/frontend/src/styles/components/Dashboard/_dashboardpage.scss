@@ -3,19 +3,16 @@
 .dashboard-epic {
   position: relative;
   min-height: calc(100vh - 80px);
-  min-height: calc(100dvh - 80px); /* móvil moderno */
+  min-height: calc(100dvh - 80px);
   padding: 0 1.5rem 0rem;
   color: #fbe8c5;
-  font-family: "IM Fell English SC", system-ui, -apple-system,
-    BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: "IM Fell English SC", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
   overflow-x: hidden;
 }
 
 /* =========================================================
-   CONTENEDOR UNIFICADO (HEADER + PERFIL + RECOMPENSAS + LOGROS)
-   - max-width 1300px
-   - borde lateral exterior
-   - border-radius máximo 3px
+   CONTENEDOR UNIFICADO
    ========================================================= */
 
 .dashboard-wrap {
@@ -72,13 +69,11 @@
 .dashboard-frame::before { left: 0; }
 .dashboard-frame::after { right: 0; }
 
-/* Contenido interior con padding para no pisar los laterales */
 .dashboard-frame > * {
   position: relative;
   z-index: 2;
 }
 
-/* Forzamos radio máximo 3px a elementos interactivos dentro del wrap */
 .dashboard-frame button,
 .dashboard-frame a,
 .dashboard-frame input,
@@ -133,7 +128,6 @@
     0 22px 44px rgba(0, 0, 0, 0.88);
 }
 
-/* Imagen posada como fondo de TODA la card */
 .dashboard-player-card::before {
   content: "";
   position: absolute;
@@ -146,7 +140,6 @@
   z-index: 0;
 }
 
-/* Overlay oscuro global */
 .dashboard-player-card::after {
   content: "";
   position: absolute;
@@ -164,7 +157,6 @@
 
 .dashboard-player-card > * { position: relative; z-index: 1; }
 
-/* Banner superior */
 .player-card-banner {
   position: relative;
   height: 210px;
@@ -173,7 +165,6 @@
   background: transparent;
 }
 
-/* Anulamos fondos antiguos del banner */
 .player-card-banner-bg,
 .player-card-banner-overlay { display: none; }
 
@@ -187,7 +178,6 @@
   position: relative;
 }
 
-/* Panel marrón degradado detrás del contenido */
 .player-main-layout::before {
   content: "";
   position: absolute;
@@ -240,7 +230,6 @@
   overflow: visible;
 }
 
-/* ✅ Aura por rango (fino, pro y consistente) */
 .avatar-frame::after {
   content: "";
   position: absolute;
@@ -252,7 +241,6 @@
   transition: opacity 0.25s ease;
 }
 
-/* Sin rango */
 .avatar-frame--none::after {
   opacity: 0.18;
   background:
@@ -260,7 +248,6 @@
     radial-gradient(circle at 20% 80%, rgba(255, 255, 255, 0.08), transparent 58%);
 }
 
-/* Nova (verde) */
 .avatar-frame--nova::after {
   opacity: 0.34;
   background:
@@ -268,7 +255,6 @@
     radial-gradient(circle at 15% 85%, rgba(180, 255, 210, 0.10), transparent 62%);
 }
 
-/* Alpha (azul) */
 .avatar-frame--alpha::after {
   opacity: 0.36;
   background:
@@ -276,7 +262,6 @@
     radial-gradient(circle at 15% 85%, rgba(170, 220, 255, 0.10), transparent 62%);
 }
 
-/* Inmortal (rojo fuego) */
 .avatar-frame--inmortal::after {
   opacity: 0.40;
   background:
@@ -406,7 +391,14 @@
   margin-bottom: 0.35rem;
 }
 
+/* ✅ NUEVO: saldo en 2 niveles (top + servidores) */
 .stat-saldo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.saldo-top {
   display: flex;
   align-items: center;
   gap: 0.9rem;
@@ -415,24 +407,76 @@
 .saldo-info {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.55rem;
   min-width: 0;
 }
 
 .saldo-cantidad {
-  font-size: 1.5rem;
+  font-size: 1.55rem;
   font-weight: 600;
+  line-height: 1;
 }
 
-.icono-eco { width: 20px; height: 25px; }
+/* ✅ Coin redonda: nunca estirada */
+.icono-eco {
+  width: 24px;
+  height: 24px;
+  aspect-ratio: 1 / 1;
+  object-fit: contain;
+  image-rendering: auto;
+  flex: 0 0 auto;
+}
 
 .pulse { animation: ecoPulse 1.6s ease-in-out infinite; }
 
 @keyframes ecoPulse {
   0% { transform: scale(1); filter: drop-shadow(0 0 0 rgba(0, 255, 255, 0)); }
-  50% { transform: scale(1.1); filter: drop-shadow(0 0 12px rgba(0, 255, 255, 0.7)); }
+  50% { transform: scale(1.08); filter: drop-shadow(0 0 12px rgba(0, 255, 255, 0.7)); }
   100% { transform: scale(1); filter: drop-shadow(0 0 0 rgba(0, 255, 255, 0)); }
 }
+
+/* ✅ grid de 3 servidores */
+.saldo-servidores {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.saldo-server {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.03),
+    0 6px 14px rgba(0, 0, 0, 0.45);
+  padding: 0.55rem 0.6rem;
+  border-radius: 3px;
+
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem;
+  min-width: 0;
+}
+
+.saldo-server-nombre {
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.85;
+  white-space: nowrap;
+}
+
+.saldo-server-valor {
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.85);
+}
+
+/* sutil diferenciación por servidor (sin cambiar tu estética) */
+.saldo-server--gens { box-shadow: inset 0 0 0 1px rgba(140, 255, 190, 0.06), 0 6px 14px rgba(0,0,0,0.45); }
+.saldo-server--oneblock { box-shadow: inset 0 0 0 1px rgba(140, 210, 255, 0.06), 0 6px 14px rgba(0,0,0,0.45); }
+.saldo-server--survival { box-shadow: inset 0 0 0 1px rgba(255, 200, 120, 0.06), 0 6px 14px rgba(0,0,0,0.45); }
 
 .btn-primario {
   margin-left: auto;
@@ -548,12 +592,7 @@
 .player-card-separator {
   margin: 1.2rem 1.4rem 0.9rem;
   height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(200, 230, 255, 0.9),
-    transparent
-  );
+  background: linear-gradient(90deg, transparent, rgba(200, 230, 255, 0.9), transparent);
   opacity: 0.55;
 }
 
@@ -595,8 +634,7 @@
   letter-spacing: 0.14em;
   cursor: pointer;
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.7);
-  transition: transform 0.12s ease, box-shadow 0.12s ease,
-    background 0.2s ease;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.2s ease;
   text-align: center;
 }
 
@@ -633,12 +671,7 @@
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(150, 230, 255, 0.9),
-    transparent
-  );
+  background: linear-gradient(90deg, transparent, rgba(150, 230, 255, 0.9), transparent);
   filter: blur(1px);
 }
 
@@ -648,7 +681,6 @@
   gap: 1.6rem;
 }
 
-/* Subpaneles integrados */
 .dashboard-frame .reward-pass,
 .dashboard-frame .logros-epic {
   margin-top: 0;
@@ -686,9 +718,7 @@
   inset: 10px;
   border-radius: 50%;
   border: 2px solid rgba(109, 228, 255, 0.25);
-  box-shadow:
-    0 0 20px rgba(109, 228, 255, 0.35),
-    0 0 40px rgba(0, 0, 0, 0.9);
+  box-shadow: 0 0 20px rgba(109, 228, 255, 0.35), 0 0 40px rgba(0, 0, 0, 0.9);
   animation: ringSpin 2.2s linear infinite;
 }
 
@@ -698,17 +728,17 @@
   height: 64px;
   border-radius: 50%;
   background: radial-gradient(circle at 30% 0, #fffdd2, #14b8ff);
-  box-shadow:
-    0 0 20px rgba(88, 226, 255, 0.9),
-    0 0 40px rgba(0, 0, 0, 0.9);
+  box-shadow: 0 0 20px rgba(88, 226, 255, 0.9), 0 0 40px rgba(0, 0, 0, 0.9);
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .loading-gem {
-  width: 30px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
+  aspect-ratio: 1 / 1;
+  object-fit: contain;
   animation: gemSpin 1.5s ease-in-out infinite;
 }
 
@@ -834,6 +864,13 @@
     justify-content: center;
   }
 
+  .saldo-top {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .saldo-info { justify-content: center; }
+
   .nivel-global-wrapper {
     margin-inline: 1.1rem;
     width: calc(100% - 2.2rem);
@@ -919,9 +956,26 @@
 
   .stat-block { padding: 0.78rem 0.85rem; }
 
-  .saldo-cantidad { font-size: 1.35rem; }
+  .saldo-cantidad { font-size: 1.38rem; }
 
-  .icono-eco { width: 18px; height: 23px; }
+  .icono-eco { width: 22px; height: 22px; }
+
+  .saldo-servidores {
+    gap: 0.45rem;
+  }
+
+  .saldo-server {
+    padding: 0.5rem 0.55rem;
+  }
+
+  .saldo-server-nombre {
+    font-size: 0.66rem;
+    letter-spacing: 0.12em;
+  }
+
+  .saldo-server-valor {
+    font-size: 0.9rem;
+  }
 
   .btn-primario {
     padding: 0.52rem 0.9rem;
@@ -974,4 +1028,133 @@
   .avatar-frame { width: 148px; height: 178px; }
 
   .player-nombre { font-size: 1.14rem; }
+}
+.wallet-transfer {
+  margin-top: 0.9rem;
+  padding: 0.85rem 0.9rem;
+  border-radius: 3px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(0, 0, 0, 0.28);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.03), 0 10px 18px rgba(0,0,0,0.35);
+}
+
+.wallet-transfer-head {
+  margin-bottom: 0.7rem;
+}
+
+.wallet-transfer-title {
+  font-size: 0.78rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.95;
+}
+
+.wallet-transfer-sub {
+  margin-top: 0.22rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  opacity: 0.78;
+}
+
+.wallet-transfer-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.65rem;
+}
+
+.wallet-transfer-servers {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.wallet-server-btn {
+  border-radius: 3px;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid rgba(0,0,0,0.8);
+  background: linear-gradient(135deg, #3c2a1b, #20120a);
+  color: #fbe8c5;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 0 6px 12px rgba(0,0,0,0.55);
+}
+
+.wallet-server-btn.is-active {
+  background: linear-gradient(135deg, #f6c978, #e59a3b);
+  color: #3b230d;
+  box-shadow: 0 3px 0 #c47a26, 0 10px 18px rgba(0,0,0,0.5);
+}
+
+.wallet-transfer-amount {
+  display: grid;
+  grid-template-columns: 1fr 88px;
+  gap: 0.55rem;
+  align-items: center;
+}
+
+.wallet-transfer-amount input {
+  width: 100%;
+  height: 38px;
+  border-radius: 3px;
+  padding: 0 0.75rem;
+  border: 1px solid rgba(0,0,0,0.85);
+  background: rgba(10,6,3,0.78);
+  color: #fbe8c5;
+  outline: none;
+}
+
+.wallet-max-btn {
+  height: 38px;
+  border-radius: 3px;
+  border: 1px solid rgba(0,0,0,0.85);
+  background: rgba(255,255,255,0.06);
+  color: #fbe8c5;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+
+.wallet-send-btn {
+  width: 100%;
+  height: 38px;
+  border-radius: 3px;
+  border: none;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 0.76rem;
+  background: linear-gradient(135deg, #00c9ff, #92fe9d);
+  color: #0b1a14;
+  box-shadow: 0 3px 0 rgba(0,0,0,0.45), 0 10px 18px rgba(0,0,0,0.45);
+}
+
+.wallet-transfer-msg {
+  margin-top: 0.65rem;
+  padding: 0.55rem 0.7rem;
+  border-radius: 3px;
+  font-size: 0.74rem;
+  letter-spacing: 0.08em;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+.wallet-transfer-msg.is-error {
+  background: rgba(80, 10, 10, 0.78);
+  border-color: rgba(255, 90, 90, 0.7);
+}
+
+.wallet-transfer-msg.is-ok {
+  background: rgba(10, 55, 25, 0.62);
+  border-color: rgba(120, 255, 190, 0.55);
+}
+
+@media (max-width: 520px) {
+  .wallet-transfer-servers {
+    grid-template-columns: 1fr;
+  }
+  .wallet-transfer-amount {
+    grid-template-columns: 1fr 82px;
+  }
 }

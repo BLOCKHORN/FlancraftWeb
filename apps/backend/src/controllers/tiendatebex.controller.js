@@ -1,6 +1,7 @@
 "use strict";
 
 const crypto = require("crypto");
+
 const {
   ONLY_VISIBLE,
   APPLY_SALES,
@@ -37,6 +38,127 @@ const {
 } = require("./tebex.helpers");
 
 /* =========================================================
+   FX (visualización de moneda)
+   - Base = TEBEX_CURRENCY
+   - Provider: frankfurter.app (sin API key)
+   - ✅ SIN hardcode: devuelve TODAS las divisas del provider
+   ========================================================= */
+const FX_TTL_SEC = 6 * 60 * 60;
+
+let fxCache = {
+  data: null,
+  cacheAt: 0,
+  inflight: null,
+};
+
+function normalizeIso(code, fallback = "EUR") {
+  const c = String(code || "").trim().toUpperCase();
+  return /^[A-Z]{3}$/.test(c) ? c : fallback;
+}
+
+function uniqSortedUpper(list) {
+  const set = new Set(
+    (list || [])
+      .map((x) => String(x || "").trim().toUpperCase())
+      .filter(Boolean)
+  );
+  return Array.from(set).sort((a, b) => a.localeCompare(b));
+}
+
+// ✅ Frankfurter sin `to=` => devuelve rates para todas las divisas soportadas
+async function fetchFxFromFrankfurter(base) {
+  const baseISO = normalizeIso(base, "EUR");
+  const url = `https://api.frankfurter.app/latest?from=${encodeURIComponent(baseISO)}`;
+
+  const r = await fetch(url, { headers: { Accept: "application/json" } });
+  const text = await r.text().catch(() => "");
+  let data = null;
+
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch {
+    data = null;
+  }
+
+  if (!r.ok || !data?.rates || typeof data.rates !== "object") {
+    const err = new Error(`FX upstream ${r.status}`);
+    err.status = r.status;
+    err.data = data || text?.slice(0, 400);
+    throw err;
+  }
+
+  const outBase = normalizeIso(data.base || baseISO, baseISO);
+  const currencies = uniqSortedUpper([outBase, ...Object.keys(data.rates || {})]);
+
+  return {
+    base: outBase,
+    date: data.date || null,
+    rates: data.rates || {},
+    currencies,
+    provider: "frankfurter",
+  };
+}
+
+const obtenerFx = async (req, res) => {
+  try {
+    const base = normalizeIso(TEBEX_CURRENCY || "EUR", "EUR");
+
+    const force =
+      String(req.query.refresh || "").trim() === "1" ||
+      String(req.query.refresh || "").toLowerCase() === "true";
+
+    // cache válido
+    if (
+      !force &&
+      fxCache.data &&
+      fxCache.cacheAt &&
+      nowSec() - fxCache.cacheAt < FX_TTL_SEC
+    ) {
+      return res.json({
+        ok: true,
+        ...fxCache.data,
+        cacheado: new Date(fxCache.cacheAt * 1000).toISOString(),
+        ttlSec: FX_TTL_SEC,
+      });
+    }
+
+    // si hay una fetch en curso, esperamos (salvo force)
+    if (!force && fxCache.inflight) {
+      const d = await fxCache.inflight;
+      return res.json({
+        ok: true,
+        ...d,
+        cacheado: new Date(fxCache.cacheAt * 1000).toISOString(),
+        ttlSec: FX_TTL_SEC,
+      });
+    }
+
+    fxCache.inflight = (async () => {
+      const d = await fetchFxFromFrankfurter(base);
+      fxCache.data = d;
+      fxCache.cacheAt = nowSec();
+      fxCache.inflight = null;
+      return d;
+    })();
+
+    const d = await fxCache.inflight;
+    return res.json({
+      ok: true,
+      ...d,
+      cacheado: new Date(fxCache.cacheAt * 1000).toISOString(),
+      ttlSec: FX_TTL_SEC,
+    });
+  } catch (e) {
+    fxCache.inflight = null;
+    return res.status(500).json({
+      ok: false,
+      error: "No se pudo obtener FX",
+      detail: e?.data || e?.message || "unknown",
+    });
+  }
+};
+
+/* =========================================================
    ✅ Helpers cache-bust imagen
    ========================================================= */
 function withCacheBust(url, bust) {
@@ -47,14 +169,7 @@ function withCacheBust(url, bust) {
 }
 
 function pickPkgImageRaw(p) {
-  return (
-    p?.image_url ||
-    p?.image ||
-    p?.imageUrl ||
-    p?.imageUrlLarge ||
-    p?.img ||
-    ""
-  );
+  return p?.image_url || p?.image || p?.imageUrl || p?.imageUrlLarge || p?.img || "";
 }
 
 function applyImageBustToPackages(paquetes = [], bustKey) {
@@ -89,6 +204,7 @@ const health = (_req, res) => {
     onlyVisible: ONLY_VISIBLE,
     applySales: APPLY_SALES,
     headless: { hasWebstoreToken: Boolean(WEBSTORE_TOKEN) },
+    currency: String(TEBEX_CURRENCY || "EUR").toUpperCase(),
     servers: estado,
   });
 };
@@ -136,7 +252,6 @@ const obtenerDatosTienda = async (req, res) => {
   const server = getServerKey(req);
   const c = cache[server];
 
-  // ✅ permite forzar refresh: /api/tebex/datos?sv=oneblock&refresh=1
   const force =
     String(req.query.refresh || "").trim() === "1" ||
     String(req.query.refresh || "").toLowerCase() === "true";
@@ -152,12 +267,12 @@ const obtenerDatosTienda = async (req, res) => {
 
     const ready = cache[server];
     const bustKey = ready.cacheAt || nowSec();
-
     const paquetesBusted = applyImageBustToPackages(ready.paquetes, bustKey);
 
     return res.json({
       ok: true,
       server,
+      currency: String(TEBEX_CURRENCY || "EUR").toUpperCase(),
       categorias: ready.categorias,
       paquetes: paquetesBusted,
       cacheado: new Date(ready.cacheAt * 1000).toISOString(),
@@ -171,12 +286,9 @@ const obtenerDatosTienda = async (req, res) => {
       err?.message || err
     );
 
-    // ✅ Si Tebex falla, es un "bad gateway" (no un 500 genérico)
     const upstream = Number(err?.status);
     const status =
-      Number.isFinite(upstream) && upstream >= 400 && upstream < 600
-        ? 502
-        : 500;
+      Number.isFinite(upstream) && upstream >= 400 && upstream < 600 ? 502 : 500;
 
     return res.status(status).json({
       ok: false,
@@ -200,9 +312,7 @@ const forzarActualizarCache = async (req, res) => {
     });
   } catch (err) {
     console.error("Error al cachear productos:", err);
-    res
-      .status(500)
-      .json({ ok: false, server, error: String(err.message || err) });
+    res.status(500).json({ ok: false, server, error: String(err.message || err) });
   }
 };
 
@@ -213,9 +323,7 @@ const obtenerDescripcionProducto = async (req, res) => {
 
   try {
     if (!secret)
-      return res
-        .status(500)
-        .json({ error: `Falta PLUGIN secret para ${server}` });
+      return res.status(500).json({ error: `Falta PLUGIN secret para ${server}` });
 
     const data = await tebexFetchPlugin(secret, `package/${id}`);
     if (ONLY_VISIBLE && isHiddenOrDisabled(data))
@@ -227,18 +335,14 @@ const obtenerDescripcionProducto = async (req, res) => {
 
     res.json({
       server,
+      currency: String(TEBEX_CURRENCY || "EUR").toUpperCase(),
       ...data,
       image_url_raw: raw,
       image_url,
       bust: bustKey,
     });
   } catch (err) {
-    console.error(
-      "[Tebex /package] Error",
-      `[server=${server}]`,
-      err?.status || "",
-      err?.message || err
-    );
+    console.error("[Tebex /package] Error", `[server=${server}]`, err?.status || "", err?.message || err);
     const code = err?.status >= 500 && err?.status < 600 ? 502 : 500;
     res.status(code).json({ error: "No se pudo obtener la descripcion." });
   }
@@ -250,12 +354,10 @@ const crearPedidoTebex = async (req, res) => {
 
   const body = req.body || {};
   const jugador = String(body.jugador || "").trim();
-  const codigoDescuentoRaw =
-    body.codigoDescuento ?? body.coupon ?? body.codigo_descuento ?? "";
+  const codigoDescuentoRaw = body.codigoDescuento ?? body.coupon ?? body.codigo_descuento ?? "";
   const coupon = String(codigoDescuentoRaw || "").trim();
 
-  if (!jugador)
-    return res.status(400).json({ ok: false, error: 'Falta "jugador".' });
+  if (!jugador) return res.status(400).json({ ok: false, error: 'Falta "jugador".' });
 
   let basket = [];
   if (Array.isArray(body.items) && body.items.length) {
@@ -266,22 +368,14 @@ const crearPedidoTebex = async (req, res) => {
   } else if (body.productoId) {
     basket = [{ id: Number(body.productoId), quantity: 1 }];
   } else {
-    return res
-      .status(400)
-      .json({ ok: false, error: 'Faltan "items" o "productoId".' });
+    return res.status(400).json({ ok: false, error: 'Faltan "items" o "productoId".' });
   }
 
   basket = basket.filter(
-    (it) =>
-      Number.isFinite(it.id) &&
-      it.id > 0 &&
-      Number.isFinite(it.quantity) &&
-      it.quantity > 0
+    (it) => Number.isFinite(it.id) && it.id > 0 && Number.isFinite(it.quantity) && it.quantity > 0
   );
   if (!basket.length) {
-    return res
-      .status(400)
-      .json({ ok: false, error: "Carrito invalido (ids/cantidades)." });
+    return res.status(400).json({ ok: false, error: "Carrito invalido (ids/cantidades)." });
   }
 
   const token = String(WEBSTORE_TOKEN || "").trim();
@@ -338,9 +432,7 @@ const crearPedidoTebex = async (req, res) => {
   }
 
   try {
-    const createBasketUrl = `https://headless.tebex.io/api/accounts/${encodeURIComponent(
-      token
-    )}/baskets`;
+    const createBasketUrl = `https://headless.tebex.io/api/accounts/${encodeURIComponent(token)}/baskets`;
 
     const createBody = {
       complete_url: "https://flancraft.com/tienda?gracias=true",
@@ -375,9 +467,7 @@ const crearPedidoTebex = async (req, res) => {
     tlog(rid, "basket created:", { ident, username_id });
 
     for (const it of basket) {
-      const addUrl = `https://headless.tebex.io/api/baskets/${encodeURIComponent(
-        ident
-      )}/packages`;
+      const addUrl = `https://headless.tebex.io/api/baskets/${encodeURIComponent(ident)}/packages`;
 
       await fetchJson(addUrl, {
         method: "POST",
@@ -419,8 +509,7 @@ const crearPedidoTebex = async (req, res) => {
     )}/baskets/${encodeURIComponent(ident)}`;
 
     const finalBasket = await fetchJson(getBasketUrl, { method: "GET" });
-    const checkoutUrl =
-      finalBasket?.data?.links?.checkout || created?.data?.links?.checkout;
+    const checkoutUrl = finalBasket?.data?.links?.checkout || created?.data?.links?.checkout;
 
     if (!checkoutUrl) {
       return res.status(502).json({
@@ -436,10 +525,7 @@ const crearPedidoTebex = async (req, res) => {
     const data = err?.data || null;
     const title = String(data?.title || "").toLowerCase();
 
-    if (
-      err?.status === 400 &&
-      title.includes("unable to verify your username")
-    ) {
+    if (err?.status === 400 && title.includes("unable to verify your username")) {
       return res.status(400).json({
         ok: false,
         error:
@@ -456,8 +542,7 @@ const crearPedidoTebex = async (req, res) => {
     );
 
     const upstreamStatus = err?.status;
-    const status =
-      upstreamStatus >= 400 && upstreamStatus < 600 ? upstreamStatus : 500;
+    const status = upstreamStatus >= 400 && upstreamStatus < 600 ? upstreamStatus : 500;
 
     return res.status(status).json({
       ok: false,
@@ -596,8 +681,7 @@ const obtenerBasketHeadless = async (req, res) => {
   const rid = crypto.randomBytes(4).toString("hex");
   try {
     const token = String(WEBSTORE_TOKEN || "").trim();
-    if (!token)
-      return res.status(500).json({ ok: false, error: "Falta TEBEX_WEBSTORE_TOKEN." });
+    if (!token) return res.status(500).json({ ok: false, error: "Falta TEBEX_WEBSTORE_TOKEN." });
 
     const ident = String(req.params.ident || "").trim();
     if (!ident) return res.status(400).json({ ok: false, error: "Falta basket ident." });
@@ -623,8 +707,7 @@ const obtenerCheckoutStatus = async (req, res) => {
 
   try {
     const token = String(WEBSTORE_TOKEN || "").trim();
-    if (!token)
-      return res.status(500).json({ ok: false, error: "Falta TEBEX_WEBSTORE_TOKEN." });
+    if (!token) return res.status(500).json({ ok: false, error: "Falta TEBEX_WEBSTORE_TOKEN." });
 
     const ident = String(req.params.ident || "").trim();
     if (!ident) return res.status(400).json({ ok: false, error: "Falta basket ident." });
@@ -655,8 +738,7 @@ const aplicarCodigoBasket = async (req, res) => {
 
   try {
     const token = String(WEBSTORE_TOKEN || "").trim();
-    if (!token)
-      return res.status(500).json({ ok: false, error: "Falta TEBEX_WEBSTORE_TOKEN." });
+    if (!token) return res.status(500).json({ ok: false, error: "Falta TEBEX_WEBSTORE_TOKEN." });
 
     const ident = String(req.params.ident || "").trim();
     if (!ident) return res.status(400).json({ ok: false, error: "Falta basket ident." });
@@ -741,8 +823,7 @@ const quitarCodigoBasket = async (req, res) => {
 
   try {
     const token = String(WEBSTORE_TOKEN || "").trim();
-    if (!token)
-      return res.status(500).json({ ok: false, error: "Falta TEBEX_WEBSTORE_TOKEN." });
+    if (!token) return res.status(500).json({ ok: false, error: "Falta TEBEX_WEBSTORE_TOKEN." });
 
     const ident = String(req.params.ident || "").trim();
     if (!ident) return res.status(400).json({ ok: false, error: "Falta basket ident." });
@@ -795,8 +876,7 @@ const agregarPaqueteBasket = async (req, res) => {
 
   try {
     const token = String(WEBSTORE_TOKEN || "").trim();
-    if (!token)
-      return res.status(500).json({ ok: false, error: "Falta TEBEX_WEBSTORE_TOKEN." });
+    if (!token) return res.status(500).json({ ok: false, error: "Falta TEBEX_WEBSTORE_TOKEN." });
 
     const ident = String(req.params.ident || "").trim();
     if (!ident) return res.status(400).json({ ok: false, error: "Falta basket ident." });
@@ -819,9 +899,7 @@ const agregarPaqueteBasket = async (req, res) => {
     const b = basketRes?.data || basketRes;
     const username_id = b?.username_id || null;
 
-    const addUrl = `https://headless.tebex.io/api/baskets/${encodeURIComponent(
-      ident
-    )}/packages`;
+    const addUrl = `https://headless.tebex.io/api/baskets/${encodeURIComponent(ident)}/packages`;
 
     const data = await headlessFetchJson({
       rid,
@@ -907,8 +985,7 @@ const webhookHandler = async (req, res) => {
 
     const signature = req.get("X-Signature") || req.get("x-signature") || "";
     const raw = req.rawBody;
-    if (!raw || !Buffer.isBuffer(raw))
-      return res.status(400).json({ ok: false, error: "Missing raw body" });
+    if (!raw || !Buffer.isBuffer(raw)) return res.status(400).json({ ok: false, error: "Missing raw body" });
 
     const bodyHash = sha256Hex(raw);
     const expected = hmacSha256Hex(WEBHOOK_SECRET, bodyHash);
@@ -935,6 +1012,8 @@ const webhookHandler = async (req, res) => {
 
 /** ========= Exports ========= **/
 module.exports = {
+  obtenerFx,
+
   obtenerDatosTienda,
   forzarActualizarCache,
   obtenerDescripcionProducto,

@@ -14,10 +14,15 @@
   50% { opacity: .55; transform: translateX(18%); }
 }
 
+/* ✅ Overlay SIEMPRE por encima de todo */
 .wcc{
   position: fixed;
   inset: 0;
-  z-index: 99999;
+
+  /* >>> CLAVE <<< */
+  z-index: 2147483647;
+  isolation: isolate;
+
   display: grid;
   place-items: center;
 
