@@ -1,5 +1,5 @@
 // src/components/Admin/NoticiasAdmin.jsx
-import React, { useEffect, useState, useContext } from "react";
+import React, { useEffect, useMemo, useRef, useState, useContext } from "react";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
@@ -7,18 +7,427 @@ import Image from "@tiptap/extension-image";
 import TextAlign from "@tiptap/extension-text-align";
 import Color from "@tiptap/extension-color";
 import TextStyle from "@tiptap/extension-text-style";
-import axios from "../../hooks/useAxios";
-import { FaPalette, FaCode, FaLink, FaVideo } from "react-icons/fa";
-import "../../styles/components/Admin/_noticiasadmin.scss";
 import Iframe from "../../config/Iframe";
+import toast from "react-hot-toast";
+import "../../styles/components/Admin/_noticiasadmin.scss";
 import { UserContext } from "../../context/UserContext";
+
+const API_BASE = (import.meta.env.VITE_BACKEND_URL || "https://flancraft-backend.onrender.com")
+  .trim()
+  .replace(/\/$/, "");
+
+const DEFAULT_EDITOR_COLOR = "rgba(245, 248, 255, 0.92)";
 
 const SERVIDORES = [
   { id: "global", label: "Global" },
-  { id: "survival", label: "Survival" },
+  { id: "anarquico", label: "Anárquico" },
+  { id: "gens", label: "Gens" },
+  { id: "lobby", label: "Lobby" },
   { id: "oneblock", label: "OneBlock" },
-  { id: "chunklock", label: "ChunkLock" },
+  { id: "parkour", label: "Parkour" },
+  { id: "survival", label: "Survival" },
 ];
+
+const safeJsonParse = (v) => {
+  try {
+    return JSON.parse(v);
+  } catch {
+    return null;
+  }
+};
+
+const getToken = () => {
+  const stored = localStorage.getItem("flan_user");
+  const parsed = stored ? safeJsonParse(stored) : null;
+  return parsed?.token || null;
+};
+
+const slugify = (value) => {
+  const s = String(value || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+  return s
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+};
+
+const normalizeDatetimeLocal = (isoOrAny) => {
+  if (!isoOrAny) return "";
+  const s = String(isoOrAny);
+  if (s.includes("T") && s.length >= 16) return s.slice(0, 16);
+  try {
+    return new Date(s).toISOString().slice(0, 16);
+  } catch {
+    return "";
+  }
+};
+
+const isProbablyHtml = (s) => {
+  const v = String(s || "");
+  return v.includes("<") && v.includes(">");
+};
+
+const buildEmbedUrl = (url) => {
+  const raw = String(url || "").trim();
+  if (!raw) return "";
+
+  try {
+    if (raw.includes("youtube.com") || raw.includes("youtu.be")) {
+      const videoId = raw.includes("youtu.be")
+        ? raw.split("/").pop()
+        : new URL(raw).searchParams.get("v");
+      return videoId ? `https://www.youtube.com/embed/${videoId}` : "";
+    }
+
+    if (raw.includes("tiktok.com")) return raw.replace("/video/", "/embed/video/");
+
+    if (raw.includes("instagram.com")) {
+      const id = raw.split("/p/")[1]?.split("/")[0];
+      return id ? `https://www.instagram.com/p/${id}/embed` : "";
+    }
+
+    return raw;
+  } catch {
+    return raw;
+  }
+};
+
+const applyHtmlTransformForEmbeds = (html) => {
+  try {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(String(html || ""), "text/html");
+
+    const links = doc.querySelectorAll("a[href]");
+    links.forEach((link) => {
+      const href = link.getAttribute("href");
+      if (!href) return;
+
+      const embed = buildEmbedUrl(href);
+      if (!embed) return;
+
+      const iframe = doc.createElement("iframe");
+      iframe.setAttribute("src", embed);
+      iframe.setAttribute("width", "100%");
+      iframe.setAttribute("height", "400");
+      iframe.setAttribute("frameborder", "0");
+      iframe.setAttribute("allowfullscreen", "true");
+      iframe.setAttribute("loading", "lazy");
+      link.parentNode?.replaceChild(iframe, link);
+    });
+
+    return doc.body.innerHTML.trim();
+  } catch {
+    return String(html || "");
+  }
+};
+
+const ensureEditorDefaults = (editor) => {
+  if (!editor) return;
+  editor.commands.unsetColor();
+};
+
+const MenuBar = ({ editor }) => {
+  const fileInputRef = useRef(null);
+  if (!editor) return null;
+
+  const setLink = () => {
+    const prev = editor.getAttributes("link").href;
+    const url = window.prompt("URL del enlace:", prev || "https://");
+    if (url === null) return;
+    if (!String(url).trim()) {
+      editor.chain().focus().unsetLink().run();
+      return;
+    }
+    editor
+      .chain()
+      .focus()
+      .extendMarkRange("link")
+      .setLink({ href: String(url).trim() })
+      .run();
+  };
+
+  const addImageByUrl = () => {
+    const url = window.prompt("URL de la imagen:", "https://");
+    if (!url) return;
+    editor.chain().focus().setImage({ src: String(url).trim() }).run();
+  };
+
+  const onPickLocalImage = () => fileInputRef.current?.click?.();
+
+  const onLocalImageSelected = (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+
+    if (!file.type?.startsWith("image/")) {
+      toast.error("El archivo debe ser una imagen");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result;
+      if (!dataUrl) return;
+      editor.chain().focus().setImage({ src: String(dataUrl) }).run();
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const addVideo = () => {
+    const url = window.prompt("URL del vídeo (YouTube, TikTok, Instagram):", "https://");
+    if (!url) return;
+
+    const embed = buildEmbedUrl(url);
+    if (!embed) {
+      toast.error("No se pudo generar el embed. Revisa la URL.");
+      return;
+    }
+
+    editor
+      .chain()
+      .focus()
+      .insertContent({
+        type: "iframe",
+        attrs: {
+          src: embed,
+          width: "100%",
+          height: "400",
+          frameborder: "0",
+          allowfullscreen: "true",
+        },
+      })
+      .run();
+  };
+
+  const setTextColor = (color) => editor.chain().focus().setColor(color).run();
+
+  const clearFormatting = () =>
+    editor.chain().focus().unsetAllMarks().clearNodes().run();
+
+  return (
+    <div className="na-toolbar" role="toolbar" aria-label="Editor">
+      <div className="na-toolbar__group">
+        <button
+          type="button"
+          className={`na-toolbar__btn ${editor.isActive("bold") ? "is-active" : ""}`}
+          onClick={() => editor.chain().focus().toggleBold().run()}
+          title="Negrita"
+          aria-label="Negrita"
+        >
+          <i className="fa-solid fa-bold" aria-hidden="true" />
+        </button>
+
+        <button
+          type="button"
+          className={`na-toolbar__btn ${editor.isActive("italic") ? "is-active" : ""}`}
+          onClick={() => editor.chain().focus().toggleItalic().run()}
+          title="Cursiva"
+          aria-label="Cursiva"
+        >
+          <i className="fa-solid fa-italic" aria-hidden="true" />
+        </button>
+
+        <button
+          type="button"
+          className={`na-toolbar__btn ${editor.isActive("strike") ? "is-active" : ""}`}
+          onClick={() => editor.chain().focus().toggleStrike().run()}
+          title="Tachado"
+          aria-label="Tachado"
+        >
+          <i className="fa-solid fa-strikethrough" aria-hidden="true" />
+        </button>
+
+        <span className="na-toolbar__sep" />
+
+        <button
+          type="button"
+          className={`na-toolbar__btn ${editor.isActive("bulletList") ? "is-active" : ""}`}
+          onClick={() => editor.chain().focus().toggleBulletList().run()}
+          title="Lista"
+          aria-label="Lista"
+        >
+          <i className="fa-solid fa-list-ul" aria-hidden="true" />
+        </button>
+
+        <button
+          type="button"
+          className={`na-toolbar__btn ${editor.isActive("orderedList") ? "is-active" : ""}`}
+          onClick={() => editor.chain().focus().toggleOrderedList().run()}
+          title="Lista numerada"
+          aria-label="Lista numerada"
+        >
+          <i className="fa-solid fa-list-ol" aria-hidden="true" />
+        </button>
+      </div>
+
+      <div className="na-toolbar__group">
+        <button
+          type="button"
+          className={`na-toolbar__btn ${editor.isActive("heading", { level: 2 }) ? "is-active" : ""}`}
+          onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+          title="H2"
+          aria-label="H2"
+        >
+          H2
+        </button>
+
+        <button
+          type="button"
+          className={`na-toolbar__btn ${editor.isActive("heading", { level: 3 }) ? "is-active" : ""}`}
+          onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+          title="H3"
+          aria-label="H3"
+        >
+          H3
+        </button>
+
+        <button
+          type="button"
+          className={`na-toolbar__btn ${editor.isActive("blockquote") ? "is-active" : ""}`}
+          onClick={() => editor.chain().focus().toggleBlockquote().run()}
+          title="Cita"
+          aria-label="Cita"
+        >
+          <i className="fa-solid fa-quote-left" aria-hidden="true" />
+        </button>
+      </div>
+
+      <div className="na-toolbar__group">
+        <button
+          type="button"
+          className={`na-toolbar__btn ${editor.isActive({ textAlign: "left" }) ? "is-active" : ""}`}
+          onClick={() => editor.chain().focus().setTextAlign("left").run()}
+          title="Alinear izquierda"
+          aria-label="Alinear izquierda"
+        >
+          <i className="fa-solid fa-align-left" aria-hidden="true" />
+        </button>
+
+        <button
+          type="button"
+          className={`na-toolbar__btn ${editor.isActive({ textAlign: "center" }) ? "is-active" : ""}`}
+          onClick={() => editor.chain().focus().setTextAlign("center").run()}
+          title="Centrar"
+          aria-label="Centrar"
+        >
+          <i className="fa-solid fa-align-center" aria-hidden="true" />
+        </button>
+
+        <button
+          type="button"
+          className={`na-toolbar__btn ${editor.isActive({ textAlign: "right" }) ? "is-active" : ""}`}
+          onClick={() => editor.chain().focus().setTextAlign("right").run()}
+          title="Alinear derecha"
+          aria-label="Alinear derecha"
+        >
+          <i className="fa-solid fa-align-right" aria-hidden="true" />
+        </button>
+      </div>
+
+      <div className="na-toolbar__group">
+        <button
+          type="button"
+          className={`na-toolbar__btn ${editor.isActive("link") ? "is-active" : ""}`}
+          onClick={setLink}
+          title="Enlace"
+          aria-label="Enlace"
+        >
+          <i className="fa-solid fa-link" aria-hidden="true" />
+        </button>
+
+        <button
+          type="button"
+          className="na-toolbar__btn"
+          onClick={addImageByUrl}
+          title="Imagen por URL"
+          aria-label="Imagen por URL"
+        >
+          <i className="fa-regular fa-image" aria-hidden="true" />
+        </button>
+
+        <button
+          type="button"
+          className="na-toolbar__btn"
+          onClick={onPickLocalImage}
+          title="Imagen local"
+          aria-label="Imagen local"
+        >
+          <i className="fa-solid fa-upload" aria-hidden="true" />
+        </button>
+
+        <button
+          type="button"
+          className="na-toolbar__btn"
+          onClick={addVideo}
+          title="Insertar vídeo"
+          aria-label="Insertar vídeo"
+        >
+          <i className="fa-solid fa-video" aria-hidden="true" />
+        </button>
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          onChange={onLocalImageSelected}
+          style={{ display: "none" }}
+        />
+      </div>
+
+      <div className="na-toolbar__group na-toolbar__group--color">
+        <span className="na-toolbar__label">Color</span>
+       <input
+  type="color"
+  className="na-toolbar__color"
+  defaultValue="#F5F8FF"
+  onChange={(e) => setTextColor(e.target.value)}
+  aria-label="Color de texto"
+/>
+
+      </div>
+
+      <div className="na-toolbar__group">
+        <button
+          type="button"
+          className="na-toolbar__btn"
+          onClick={() => editor.chain().focus().undo().run()}
+          disabled={!editor.can().undo()}
+          title="Deshacer"
+          aria-label="Deshacer"
+        >
+          <i className="fa-solid fa-rotate-left" aria-hidden="true" />
+        </button>
+
+        <button
+          type="button"
+          className="na-toolbar__btn"
+          onClick={() => editor.chain().focus().redo().run()}
+          disabled={!editor.can().redo()}
+          title="Rehacer"
+          aria-label="Rehacer"
+        >
+          <i className="fa-solid fa-rotate-right" aria-hidden="true" />
+        </button>
+
+        <span className="na-toolbar__sep" />
+
+        <button
+          type="button"
+          className="na-toolbar__btn"
+          onClick={clearFormatting}
+          title="Limpiar formato"
+          aria-label="Limpiar formato"
+        >
+          <i className="fa-solid fa-eraser" aria-hidden="true" />
+        </button>
+      </div>
+    </div>
+  );
+};
 
 const NoticiasAdmin = () => {
   const { user } = useContext(UserContext);
@@ -30,27 +439,34 @@ const NoticiasAdmin = () => {
     servidor: "global",
     fecha: new Date().toISOString().slice(0, 16),
     usarFechaManual: true,
-    noEnviarADiscord: false,
     id: null,
   });
 
   const [noticias, setNoticias] = useState([]);
   const [htmlInput, setHtmlInput] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
   const [contenidoPendiente, setContenidoPendiente] = useState(null);
   const [filtroServidor, setFiltroServidor] = useState("todos");
-  const [verGuardadas, setVerGuardadas] = useState(false);
+  const [verGuardadas, setVerGuardadas] = useState(true);
 
-  // Modal propio para insertar vídeo
-  const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
-  const [videoUrl, setVideoUrl] = useState("");
-  const [videoError, setVideoError] = useState("");
+  const [slugTouched, setSlugTouched] = useState(false);
+  const [dirty, setDirty] = useState(false);
 
   const editor = useEditor({
     extensions: [
       StarterKit,
-      Link.configure({ openOnClick: false }),
-      Image,
+      Link.configure({
+        openOnClick: false,
+        autolink: true,
+        linkOnPaste: true,
+        HTMLAttributes: { rel: "noopener noreferrer", target: "_blank" },
+      }),
+      Image.configure({
+        inline: false,
+        allowBase64: true,
+        HTMLAttributes: { class: "na-img" },
+      }),
       TextAlign.configure({ types: ["heading", "paragraph"] }),
       Color,
       TextStyle,
@@ -59,101 +475,108 @@ const NoticiasAdmin = () => {
     content: "",
     editorProps: {
       attributes: {
-        class: "editor-contenido",
+        class: "na-tiptap",
+        spellcheck: "false",
+        style: `color: ${DEFAULT_EDITOR_COLOR}; caret-color: ${DEFAULT_EDITOR_COLOR};`,
       },
     },
+    onCreate: ({ editor }) => {
+      ensureEditorDefaults(editor);
+    },
+    onUpdate: () => setDirty(true),
   });
 
-  // Cargar noticias solo si el usuario es owner
-  useEffect(() => {
-    if (user?.loggedIn && user.rol_admin?.toLowerCase() === "owner") {
-      fetchNoticias();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  const isOwner = useMemo(
+    () => Boolean(user?.loggedIn && String(user?.rol_admin || "").toLowerCase() === "owner"),
+    [user]
+  );
 
-  // Aplicar contenido cuando se edita
+  const heroStyle = useMemo(() => {
+    const src = String(form.portada || "").trim();
+    if (!src) return undefined;
+    return { "--na-hero": `url("${src}")` };
+  }, [form.portada]);
+
+  useEffect(() => {
+    if (!dirty) return;
+
+    const onBeforeUnload = (e) => {
+      e.preventDefault();
+      e.returnValue = "";
+      return "";
+    };
+
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [dirty]);
+
+  useEffect(() => {
+    if (!form.titulo) return;
+    if (slugTouched) return;
+    setForm((p) => ({ ...p, slug: slugify(form.titulo) }));
+  }, [form.titulo, slugTouched]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const request = async (path, options = {}) => {
+    const token = getToken();
+    const headers = {
+      ...(options.headers || {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    };
+
+    const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
+    return res;
+  };
+
+  const fetchNoticias = async () => {
+    try {
+      const res = await request("/api/noticias/todas");
+      if (res.status === 401 || res.status === 403) throw new Error("NO_AUTH");
+      if (!res.ok) throw new Error("FETCH_FAIL");
+
+      const data = await res.json();
+      const ahora = new Date();
+
+      const ordenadas = (Array.isArray(data) ? data : [])
+        .filter((n) => n?.publicada && new Date(n.fecha) <= ahora)
+        .sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+
+      setNoticias(ordenadas);
+    } catch (err) {
+      if (err?.message === "NO_AUTH") toast.error("No autorizado para ver noticias");
+      else toast.error("No se pudieron cargar las noticias");
+    }
+  };
+
+  useEffect(() => {
+    if (!isOwner) return;
+    fetchNoticias();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOwner]);
+
   useEffect(() => {
     if (!editor || !contenidoPendiente) return;
 
     try {
       if (typeof contenidoPendiente === "string") {
-        const esHTML =
-          contenidoPendiente.includes("<") &&
-          contenidoPendiente.includes(">");
-
-        if (esHTML) {
-          const parser = new DOMParser();
-          const doc = parser.parseFromString(contenidoPendiente, "text/html");
-
-          // Convertir enlaces a iframes
-          const links = doc.querySelectorAll("a[href]");
-          links.forEach((link) => {
-            const href = link.getAttribute("href");
-            if (!href) return;
-
-            let embedUrl = "";
-            if (href.includes("youtube.com") || href.includes("youtu.be")) {
-              const videoId = href.includes("youtu.be")
-                ? href.split("/").pop()
-                : new URL(href).searchParams.get("v");
-              if (videoId) {
-                embedUrl = `https://www.youtube.com/embed/${videoId}`;
-              }
-            } else if (href.includes("tiktok.com")) {
-              embedUrl = href.replace("/video/", "/embed/video/");
-            } else if (href.includes("instagram.com")) {
-              const id = href.split("/p/")[1]?.split("/")[0];
-              if (id) {
-                embedUrl = `https://www.instagram.com/p/${id}/embed`;
-              }
-            }
-
-            if (embedUrl) {
-              const iframe = document.createElement("iframe");
-              iframe.src = embedUrl;
-              iframe.width = "100%";
-              iframe.height = "400";
-              iframe.setAttribute("frameborder", "0");
-              iframe.setAttribute("allowfullscreen", "true");
-              link.parentNode?.replaceChild(iframe, link);
-            }
-          });
-
-          const nuevoHTML = doc.body.innerHTML.trim();
-          if (nuevoHTML) {
-            editor.commands.setContent(nuevoHTML, false, {
-              preserveWhitespace: true,
-            });
-          }
+        if (isProbablyHtml(contenidoPendiente)) {
+          const html = applyHtmlTransformForEmbeds(contenidoPendiente);
+          editor.commands.setContent(html, false, { preserveWhitespace: true });
         } else {
-          const json = JSON.parse(contenidoPendiente);
-          if (json?.type === "doc") {
-            editor.commands.setContent(json);
-          }
+          const json = safeJsonParse(contenidoPendiente);
+          if (json?.type === "doc") editor.commands.setContent(json);
+          else editor.commands.setContent(contenidoPendiente);
         }
       } else {
         editor.commands.setContent(contenidoPendiente);
       }
-    } catch (err) {
-      console.error("Error al aplicar contenido:", err);
+    } catch {
+      editor.commands.setContent("");
     } finally {
       setContenidoPendiente(null);
+      ensureEditorDefaults(editor);
+      setDirty(false);
     }
   }, [editor, contenidoPendiente]);
-
-  const fetchNoticias = async () => {
-    try {
-      const res = await axios.get("/api/noticias/todas");
-      const ahora = new Date();
-      const ordenadas = res.data
-        .filter((n) => n.publicada && new Date(n.fecha) <= ahora)
-        .sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
-      setNoticias(ordenadas);
-    } catch (error) {
-      console.error("Error al cargar noticias", error);
-    }
-  };
 
   const resetFormulario = () => {
     setForm({
@@ -163,37 +586,41 @@ const NoticiasAdmin = () => {
       servidor: "global",
       fecha: new Date().toISOString().slice(0, 16),
       usarFechaManual: true,
-      noEnviarADiscord: false,
       id: null,
     });
-    if (editor) editor.commands.clearContent();
+    setSlugTouched(false);
+    setHtmlInput("");
+    if (editor) {
+      editor.commands.clearContent();
+      ensureEditorDefaults(editor);
+    }
+    setDirty(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleChangeTitulo = (titulo) => {
-    const slugGenerado = titulo
-      .toLowerCase()
-      .trim()
-      .replace(/[^\w\s-]/g, "")
-      .replace(/\s+/g, "-");
-
-    setForm((prev) => ({ ...prev, titulo, slug: slugGenerado }));
+    setForm((prev) => ({
+      ...prev,
+      titulo,
+      slug: slugTouched ? prev.slug : slugify(titulo),
+    }));
+    setDirty(true);
   };
 
   const handleEdit = (noticia) => {
     setForm({
-      titulo: noticia.titulo,
-      slug: noticia.slug,
+      titulo: noticia.titulo || "",
+      slug: noticia.slug || "",
       portada: noticia.portada || "",
-      servidor: noticia.servidor || "global",
-      fecha:
-        noticia.fecha?.slice(0, 16) || new Date().toISOString().slice(0, 16),
+      servidor: (noticia.servidor || "global").toLowerCase(),
+      fecha: normalizeDatetimeLocal(noticia.fecha) || new Date().toISOString().slice(0, 16),
       usarFechaManual: true,
-      noEnviarADiscord: false,
       id: noticia.id,
     });
 
-    setContenidoPendiente(noticia.contenido || noticia.contenido_html || "");
+    setSlugTouched(Boolean(noticia.slug));
+    setContenidoPendiente(noticia.contenido_html || noticia.contenido || "");
+    setDirty(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -201,48 +628,74 @@ const NoticiasAdmin = () => {
     e.preventDefault();
     if (!editor) return;
 
+    const titulo = String(form.titulo || "").trim();
+    const slug = slugify(form.slug || titulo);
+    const portada = String(form.portada || "").trim();
+    const servidor = String(form.servidor || "global").trim().toLowerCase();
+
+    if (!titulo) return toast.error("El título es obligatorio");
+    if (!slug) return toast.error("El slug es obligatorio");
+    if (!servidor) return toast.error("El servidor es obligatorio");
+
     const contenido = editor.getJSON();
     const contenidoHtml = editor.getHTML();
-    if (!form.titulo || !form.slug || !contenido) return;
 
     setIsSubmitting(true);
 
     const payload = {
-      titulo: form.titulo,
-      slug: form.slug,
-      portada: form.portada,
-      servidor: form.servidor,
+      titulo,
+      slug,
+      portada,
+      servidor,
       contenido,
       contenidoHtml,
+      contenido_html: contenidoHtml,
       publicada: true,
-      fecha: form.usarFechaManual ? form.fecha : new Date().toISOString(),
-      noEnviarDiscord: form.noEnviarADiscord,
+      fecha: form.usarFechaManual
+        ? (form.fecha || new Date().toISOString())
+        : new Date().toISOString(),
     };
 
     try {
-      if (form.id) {
-        await axios.put(`/api/noticias/${form.id}`, payload);
-      } else {
-        await axios.post("/api/noticias", payload);
-      }
+      const path = form.id ? `/api/noticias/${form.id}` : "/api/noticias";
+      const method = form.id ? "PUT" : "POST";
 
+      const res = await request(path, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (res.status === 401 || res.status === 403) throw new Error("NO_AUTH");
+      if (!res.ok) throw new Error("SAVE_FAIL");
+
+      toast.success(form.id ? "Noticia actualizada" : "Noticia publicada");
       resetFormulario();
       fetchNoticias();
-    } catch (error) {
-      console.error("Error al enviar noticia", error);
+    } catch (err) {
+      if (err?.message === "NO_AUTH") toast.error("No tienes permisos para publicar");
+      else toast.error("Error al guardar la noticia");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleDelete = async (id) => {
-    if (!confirm("¿Eliminar esta noticia?")) return;
+    const ok = window.confirm("¿Eliminar esta noticia?");
+    if (!ok) return;
+
     try {
-      await axios.delete(`/api/noticias/${id}`);
+      const res = await request(`/api/noticias/${id}`, { method: "DELETE" });
+
+      if (res.status === 401 || res.status === 403) throw new Error("NO_AUTH");
+      if (!res.ok) throw new Error("DEL_FAIL");
+
+      toast.success("Noticia eliminada");
       if (form.id === id) resetFormulario();
       fetchNoticias();
-    } catch (error) {
-      console.error("Error al eliminar", error);
+    } catch (err) {
+      if (err?.message === "NO_AUTH") toast.error("No tienes permisos para eliminar");
+      else toast.error("Error al eliminar la noticia");
     }
   };
 
@@ -254,510 +707,347 @@ const NoticiasAdmin = () => {
       const doc = parser.parseFromString(htmlInput, "text/html");
 
       const titulo =
-        doc.querySelector("h1")?.textContent.trim() ||
-        doc.querySelector("title")?.textContent.trim();
-      const primeraImagen = doc.querySelector("img")?.getAttribute("src");
+        doc.querySelector("h1")?.textContent?.trim() ||
+        doc.querySelector("title")?.textContent?.trim() ||
+        "";
 
-      if (titulo) handleChangeTitulo(titulo);
+      const primeraImagen = doc.querySelector("img")?.getAttribute("src") || "";
+
+      if (titulo) {
+        handleChangeTitulo(titulo);
+      }
       if (primeraImagen) {
         setForm((prev) => ({ ...prev, portada: primeraImagen }));
+        setDirty(true);
       }
 
-      const bodyHTML = doc.body.innerHTML.trim();
-      if (bodyHTML) {
-        editor.commands.setContent(bodyHTML, false, {
-          preserveWhitespace: true,
-        });
+      const bodyHTML = doc.body?.innerHTML?.trim() || "";
+      const finalHTML = applyHtmlTransformForEmbeds(bodyHTML);
+
+      if (finalHTML) {
+        editor.commands.setContent(finalHTML, false, { preserveWhitespace: true });
+        ensureEditorDefaults(editor);
+        setDirty(true);
       }
 
       setHtmlInput("");
-    } catch (error) {
-      console.error("Error al procesar HTML pegado:", error);
+      toast.success("HTML aplicado");
+    } catch {
+      toast.error("No se pudo procesar el HTML");
     }
-  };
-
-  const renderToolbar = () => {
-    if (!editor) return null;
-
-    return (
-      <div className="editor-toolbar">
-        <button
-          type="button"
-          onClick={() => editor.chain().focus().toggleBold().run()}
-          className={editor.isActive("bold") ? "is-active" : ""}
-        >
-          B
-        </button>
-        <button
-          type="button"
-          onClick={() => editor.chain().focus().toggleItalic().run()}
-          className={editor.isActive("italic") ? "is-active" : ""}
-        >
-          I
-        </button>
-        <button
-          type="button"
-          onClick={() =>
-            editor.chain().focus().toggleHeading({ level: 2 }).run()
-          }
-          className={
-            editor.isActive("heading", { level: 2 }) ? "is-active" : ""
-          }
-        >
-          H2
-        </button>
-        <button
-          type="button"
-          onClick={() => editor.chain().focus().toggleBulletList().run()}
-          className={editor.isActive("bulletList") ? "is-active" : ""}
-        >
-          Lista
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            const url = prompt("Introduce la URL del enlace:");
-            if (url) {
-              editor
-                .chain()
-                .focus()
-                .extendMarkRange("link")
-                .setLink({ href: url })
-                .run();
-            }
-          }}
-        >
-          <FaLink /> <span>Enlace</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            const url = prompt("URL de imagen:");
-            if (url) {
-              editor.chain().focus().setImage({ src: url }).run();
-            }
-          }}
-        >
-          Imagen
-        </button>
-        <label className="color-picker">
-          <FaPalette />
-          <input
-            type="color"
-            onChange={(e) =>
-              editor.chain().focus().setColor(e.target.value).run()
-            }
-            title="Color de texto"
-          />
-        </label>
-      </div>
-    );
-  };
-
-  // Construir URL embebida desde una URL cualquiera
-  const buildEmbedUrl = (url) => {
-    let embedUrl = "";
-
-    if (url.includes("youtube.com") || url.includes("youtu.be")) {
-      const videoId = url.includes("youtu.be")
-        ? url.split("/").pop()
-        : new URL(url).searchParams.get("v");
-      if (videoId) {
-        embedUrl = `https://www.youtube.com/embed/${videoId}`;
-      }
-    } else if (url.includes("tiktok.com")) {
-      embedUrl = url.replace("/video/", "/embed/video/");
-    } else if (url.includes("instagram.com")) {
-      const id = url.split("/p/")[1]?.split("/")[0];
-      if (id) {
-        embedUrl = `https://www.instagram.com/p/${id}/embed`;
-      }
-    } else {
-      embedUrl = url; // fallback genérico
-    }
-
-    return embedUrl;
-  };
-
-  const handleConfirmVideo = () => {
-    if (!editor) return;
-    const raw = videoUrl.trim();
-    if (!raw) {
-      setVideoError("Introduce una URL primero.");
-      return;
-    }
-
-    const embedUrl = buildEmbedUrl(raw);
-    if (!embedUrl) {
-      setVideoError("No se ha podido generar el vídeo. Revisa la URL.");
-      return;
-    }
-
-    editor
-      .chain()
-      .focus()
-      .insertContent({
-        type: "iframe",
-        attrs: {
-          src: embedUrl,
-          width: "100%",
-          height: "400",
-          frameborder: "0",
-          allowfullscreen: "true",
-        },
-      })
-      .run();
-
-    setVideoUrl("");
-    setVideoError("");
-    setIsVideoModalOpen(false);
-  };
-
-  const closeVideoModal = () => {
-    setIsVideoModalOpen(false);
-    setVideoUrl("");
-    setVideoError("");
   };
 
   const noticiasFiltradas =
     filtroServidor === "todos"
       ? noticias
-      : noticias.filter((n) => (n.servidor || "global") === filtroServidor);
+      : noticias.filter((n) => String(n?.servidor || "global").toLowerCase() === filtroServidor);
 
-  // Gandalf si no es owner
-  if (!user?.loggedIn || user.rol_admin?.toLowerCase() !== "owner") {
+  const onCancelEdit = () => {
+    if (dirty) {
+      const ok = window.confirm("Tienes cambios sin guardar. ¿Cancelar igualmente?");
+      if (!ok) return;
+    }
+    resetFormulario();
+  };
+
+  if (!isOwner) {
     return (
-      <div
-        className="admin-wrapper"
-        style={{ textAlign: "center", padding: "4rem" }}
-      >
-        <img
-          src="/assets/gandalf_minecraft.webp"
-          alt="No tienes poder aquí"
-          style={{ maxWidth: "320px", marginBottom: "1rem" }}
-        />
-        <h2
-          style={{
-            fontFamily: "'IM Fell English SC', serif",
-            fontSize: "2rem",
-          }}
-        >
-          ¡No tienes poder aquí!
-        </h2>
-        <p>Acceso denegado al panel de gestión de noticias</p>
+      <div className="na-denied">
+        <div className="na-denied__card">
+          <img
+            src="/assets/gandalf_minecraft.webp"
+            alt="Acceso denegado"
+            className="na-denied__img"
+          />
+          <h2 className="na-denied__title">¡No tienes poder aquí!</h2>
+          <p className="na-denied__text">Acceso denegado al panel de gestión de noticias.</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="noticias-admin">
-      <header className="noticias-admin__header">
-        <div className="noticias-admin__title-block">
-          <div className="noticias-admin__title-main">CREA UNA NUEVA NOTICIA</div>
-
-        </div>
-
-        {form.id && (
-          <div className="noticias-admin__status-pill">
-            Editando: <strong>{form.titulo || "Nueva noticia"}</strong>
-          </div>
-        )}
-      </header>
-
-      {/* FORMULARIO */}
-      <section className="noticias-admin__form-panel">
-        <form onSubmit={handleSubmit} className="noticias-admin__form">
-          {/* Datos generales */}
-          <div className="noticias-admin__section">
-            <h3 className="noticias-admin__section-title">
-              <span className="marker" />
-              Datos generales
-            </h3>
-            <div className="noticias-admin__grid">
-              <div className="form-group full">
-                <label>Título</label>
-                <input
-                  type="text"
-                  placeholder="Título de la noticia"
-                  value={form.titulo}
-                  onChange={(e) => handleChangeTitulo(e.target.value)}
-                />
-                <small>
-                  Título que se mostrará en la portada y en el listado de artículos.
-                </small>
-              </div>
-
-              <div className="form-group full">
-                <label>Slug</label>
-                <input
-                  type="text"
-                  placeholder="Slug personalizado"
-                  value={form.slug}
-                  onChange={(e) =>
-                    setForm((prev) => ({ ...prev, slug: e.target.value }))
-                  }
-                />
-                <small>
-                  URL legible. Ejemplo:{" "}
-                  <code>temporada-3-pase-de-batalla</code>
-                </small>
-              </div>
-
-              <div className="form-group full">
-                <label>Imagen de portada (URL)</label>
-                <input
-                  type="text"
-                  placeholder="URL de imagen de portada (opcional)"
-                  value={form.portada}
-                  onChange={(e) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      portada: e.target.value,
-                    }))
-                  }
-                />
-                <small>
-                  Imagen principal que se verá en el hero de noticias y en las
-                  tarjetas.
-                </small>
-              </div>
-            </div>
-          </div>
-
-          {/* Configuración de publicación */}
-          <div className="noticias-admin__section">
-            <h3 className="noticias-admin__section-title">
-              <span className="marker" />
-              Configuración de publicación
-            </h3>
-
-            <div className="noticias-admin__grid">
-              <div className="form-group">
-                <label>Servidor destino</label>
-                <select
-                  value={form.servidor}
-                  onChange={(e) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      servidor: e.target.value,
-                    }))
-                  }
-                >
-                  {SERVIDORES.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.label}
-                    </option>
-                  ))}
-                </select>
-                <small>
-                  Determina en qué servidor se anunciará en Discord esta noticia.
-                </small>
-              </div>
-
-              <div className="form-group">
-                <label className="checkbox-fecha">
-                  <input
-                    type="checkbox"
-                    checked={form.usarFechaManual}
-                    onChange={(e) =>
-                      setForm((prev) => ({
-                        ...prev,
-                        usarFechaManual: e.target.checked,
-                      }))
-                    }
-                  />
-                  Usar fecha manual de publicación
-                </label>
-                {form.usarFechaManual && (
-                  <div className="form-group__inline">
-                    <label>Fecha de publicación</label>
-                    <input
-                      type="datetime-local"
-                      value={form.fecha || ""}
-                      onChange={(e) =>
-                        setForm((prev) => ({
-                          ...prev,
-                          fecha: e.target.value,
-                        }))
-                      }
-                    />
-                  </div>
+    <div className="noticias-admin-page">
+      <section className="na-hero" style={heroStyle}>
+        <div className="na-hero__wrap">
+          <div className="na-hero__top">
+            <div className="na-hero__titleblock">
+              <div className="na-hero__kicker">Panel Admin</div>
+              <h1 className="na-hero__title">{form.id ? "Editar noticia" : "Crear noticia"}</h1>
+              <div className="na-hero__sub">
+                {form.id ? (
+                  <>
+                    Estás editando: <strong>{form.titulo || "Sin título"}</strong>
+                  </>
+                ) : (
+                  <>Publica noticias con portada tipo banner y editor limpio.</>
                 )}
               </div>
             </div>
 
-            <label className="checkbox-discord inline">
-              <input
-                type="checkbox"
-                checked={form.noEnviarADiscord}
-                onChange={(e) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    noEnviarADiscord: e.target.checked,
-                  }))
-                }
-              />
-              No enviar esta noticia a Discord
-            </label>
-          </div>
+            <div className="na-hero__actions">
+              <span className={`na-pill ${dirty ? "is-dirty" : "is-clean"}`}>
+                {dirty ? "Cambios sin guardar" : "Todo guardado"}
+              </span>
 
-          {/* Contenido */}
-          <div className="noticias-admin__section">
-            <h3 className="noticias-admin__section-title">
-              <span className="marker" />
-              Contenido
-            </h3>
-
-            {renderToolbar()}
-
-            <div className="editor-actions">
               <button
                 type="button"
-                className="btn-video"
-                onClick={() => {
-                  setVideoUrl("");
-                  setVideoError("");
-                  setIsVideoModalOpen(true);
-                }}
+                className="na-btn na-btn--ghost"
+                onClick={onCancelEdit}
+                disabled={isSubmitting}
               >
-                <FaVideo /> Insertar vídeo
+                <span className="na-btn__icon" aria-hidden="true">
+                  <i className="fa-solid fa-xmark" />
+                </span>
+                <span>Cancelar</span>
+              </button>
+
+              <button
+                type="submit"
+                form="na-form"
+                className="na-btn na-btn--solid"
+                disabled={isSubmitting}
+              >
+                <span className="na-btn__icon" aria-hidden="true">
+                  <i className={`fa-solid ${isSubmitting ? "fa-spinner fa-spin" : "fa-floppy-disk"}`} />
+                </span>
+                <span>{isSubmitting ? "Guardando..." : form.id ? "Guardar" : "Publicar"}</span>
               </button>
             </div>
+          </div>
 
-            {editor ? (
-              <div className="tiptap-editor-wrapper">
-                <EditorContent editor={editor} className="tiptap-editor" />
-              </div>
+          <div className="na-hero__media">
+            {form.portada ? (
+              <img className="na-hero__img" src={form.portada} alt="Portada" loading="eager" />
             ) : (
-              <p className="editor-loading">Cargando editor...</p>
-            )}
-
-            <div className="html-paste-box">
-              <div className="html-paste-box__header">
-                <FaCode />
-                <span>Pegar HTML (opcional)</span>
+              <div className="na-hero__placeholder">
+                <div className="na-hero__placeholderTitle">Sin portada</div>
+                <div className="na-hero__placeholderHint">
+                  Pega una URL de portada para ver el banner completo aquí.
+                </div>
               </div>
-              <textarea
-                value={htmlInput}
-                onChange={(e) => setHtmlInput(e.target.value)}
-                placeholder="Pega aquí código HTML de noticias antiguas o contenido externo para transformarlo."
-              />
-              <button
-                type="button"
-                onClick={handlePasteHtml}
-                className="btn-secondary"
-              >
-                Aplicar HTML
-              </button>
-            </div>
-          </div>
-
-          <div className="noticias-admin__actions">
-            <button
-              type="submit"
-              className="boton-publicar"
-              disabled={isSubmitting}
-            >
-              {isSubmitting
-                ? "Guardando..."
-                : form.id
-                ? "Actualizar noticia"
-                : "Publicar noticia"}
-            </button>
-          </div>
-        </form>
-      </section>
-
-      {/* MODAL DE VÍDEO PROPIO */}
-      {isVideoModalOpen && (
-        <div
-          className="news-video-modal-backdrop"
-          onClick={closeVideoModal}
-        >
-          <div
-            className="news-video-modal"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3>Insertar vídeo</h3>
-            <p className="news-video-modal__text">
-              Pega una URL de YouTube, TikTok o Instagram. La convertiremos en
-              un vídeo incrustado dentro de la noticia.
-            </p>
-            <input
-              type="text"
-              className="news-video-modal__input"
-              placeholder="https://www.youtube.com/watch?v=..."
-              value={videoUrl}
-              onChange={(e) => {
-                setVideoUrl(e.target.value);
-                setVideoError("");
-              }}
-            />
-            {videoError && (
-              <p className="news-video-modal__error">{videoError}</p>
             )}
-            <div className="news-video-modal__actions">
-              <button
-                type="button"
-                className="btn-modal-secondary"
-                onClick={closeVideoModal}
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                className="btn-modal-primary"
-                onClick={handleConfirmVideo}
-              >
-                Insertar
-              </button>
-            </div>
           </div>
         </div>
-      )}
+      </section>
 
-      {/* NOTICIAS GUARDADAS AL PIE */}
-      <section className="noticias-admin__saved">
-        <button
-          type="button"
-          className={
-            verGuardadas
-              ? "noticias-admin__saved-toggle is-open"
-              : "noticias-admin__saved-toggle"
-          }
-          onClick={() => setVerGuardadas((v) => !v)}
-        >
-          <span>Noticias guardadas ({noticias.length})</span>
-          <span className="caret" />
-        </button>
+      <main className="na-shell">
+        <section className="na-card na-card--form">
+          <form id="na-form" onSubmit={handleSubmit} className="na-form">
+            <div className="na-grid">
+              <aside className="na-meta">
+                <div className="na-sectionTitle">
+                  <span className="na-marker" />
+                  Datos generales
+                </div>
 
-        {verGuardadas && (
-          <div className="noticias-admin__saved-body">
-            <div className="lista-noticias__filtros">
-              <span className="lista-noticias__filtros-label">
-                Filtrar por servidor
-              </span>
-              <div className="lista-noticias__tabs">
+                <div className="na-field">
+                  <label className="na-label">Título</label>
+                  <input
+                    className="na-input"
+                    type="text"
+                    placeholder="Título de la noticia"
+                    value={form.titulo}
+                    onChange={(e) => handleChangeTitulo(e.target.value)}
+                  />
+                  <div className="na-hint">Se mostrará en el listado y en el hero.</div>
+                </div>
+
+                <div className="na-field">
+                  <label className="na-label">Slug</label>
+                  <input
+                    className="na-input"
+                    type="text"
+                    placeholder="mi-noticia-epica"
+                    value={form.slug}
+                    onChange={(e) => {
+                      setSlugTouched(true);
+                      setForm((prev) => ({ ...prev, slug: e.target.value }));
+                      setDirty(true);
+                    }}
+                  />
+                  <div className="na-hint">Se genera desde el título si no lo editas.</div>
+
+                  <div className="na-previewUrl">
+                    <span className="na-previewUrl__label">Preview:</span>
+                    <span className="na-previewUrl__value">
+                      /news/{slugify(form.slug || form.titulo) || "..."}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="na-field">
+                  <label className="na-label">Portada (URL)</label>
+                  <input
+                    className="na-input"
+                    type="text"
+                    placeholder="https://..."
+                    value={form.portada}
+                    onChange={(e) => {
+                      setForm((prev) => ({ ...prev, portada: e.target.value }));
+                      setDirty(true);
+                    }}
+                  />
+                  <div className="na-hint">
+                    Recomendado: imagen panorámica (banner apaisado).
+                  </div>
+                </div>
+
+                <div className="na-sectionTitle">
+                  <span className="na-marker" />
+                  Publicación
+                </div>
+
+                <div className="na-field">
+                  <label className="na-label">Servidor</label>
+                  <select
+                    className="na-select"
+                    value={form.servidor}
+                    onChange={(e) => {
+                      setForm((prev) => ({ ...prev, servidor: e.target.value }));
+                      setDirty(true);
+                    }}
+                  >
+                    {SERVIDORES.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.label}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="na-hint">
+                    Global engloba todo. El resto segmenta la noticia por servidor.
+                  </div>
+                </div>
+
+                <div className="na-field">
+                  <label className="na-check">
+                    <input
+                      type="checkbox"
+                      checked={form.usarFechaManual}
+                      onChange={(e) => {
+                        setForm((prev) => ({ ...prev, usarFechaManual: e.target.checked }));
+                        setDirty(true);
+                      }}
+                    />
+                    <span>Usar fecha manual</span>
+                  </label>
+
+                  {form.usarFechaManual && (
+                    <div className="na-inline">
+                      <label className="na-label">Fecha</label>
+                      <input
+                        className="na-input"
+                        type="datetime-local"
+                        value={form.fecha || ""}
+                        onChange={(e) => {
+                          setForm((prev) => ({ ...prev, fecha: e.target.value }));
+                          setDirty(true);
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {form.id && (
+                  <div className="na-metaFooter">
+                    <button
+                      type="button"
+                      className="na-btn na-btn--danger"
+                      onClick={onCancelEdit}
+                      disabled={isSubmitting}
+                    >
+                      <span className="na-btn__icon" aria-hidden="true">
+                        <i className="fa-solid fa-arrow-left" />
+                      </span>
+                      <span>Salir edición</span>
+                    </button>
+                  </div>
+                )}
+              </aside>
+
+              <section className="na-editor">
+                <div className="na-sectionTitle">
+                  <span className="na-marker" />
+                  Contenido
+                </div>
+
+                <div className="na-editorBox">
+                  <MenuBar editor={editor} />
+                  <div className="na-editorContent">
+                    {editor ? <EditorContent editor={editor} /> : <p className="na-loading">Cargando editor...</p>}
+                  </div>
+                </div>
+
+                <div className="na-htmlBox">
+                  <div className="na-htmlBox__head">
+                    <i className="fa-solid fa-code" aria-hidden="true" />
+                    <span>Pegar HTML (opcional)</span>
+                  </div>
+                  <textarea
+                    className="na-textarea"
+                    value={htmlInput}
+                    onChange={(e) => setHtmlInput(e.target.value)}
+                    placeholder="Pega aquí HTML de noticias antiguas o contenido externo para convertirlo."
+                  />
+                  <div className="na-htmlBox__actions">
+                    <button
+                      type="button"
+                      className="na-btn na-btn--ghost"
+                      onClick={() => setHtmlInput("")}
+                      disabled={!htmlInput}
+                    >
+                      <span className="na-btn__icon" aria-hidden="true">
+                        <i className="fa-solid fa-broom" />
+                      </span>
+                      <span>Limpiar</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      className="na-btn na-btn--solid"
+                      onClick={handlePasteHtml}
+                      disabled={!htmlInput}
+                    >
+                      <span className="na-btn__icon" aria-hidden="true">
+                        <i className="fa-solid fa-wand-magic-sparkles" />
+                      </span>
+                      <span>Aplicar HTML</span>
+                    </button>
+                  </div>
+                </div>
+              </section>
+            </div>
+          </form>
+        </section>
+
+        <section className="na-card na-card--list">
+          <div className="na-listHead">
+            <button
+              type="button"
+              className={verGuardadas ? "na-toggle is-open" : "na-toggle"}
+              onClick={() => setVerGuardadas((v) => !v)}
+            >
+              <span>Noticias publicadas</span>
+              <span className="na-toggle__count">({noticias.length})</span>
+              <span className="na-caret" aria-hidden="true" />
+            </button>
+
+            <div className="na-filter">
+              <span className="na-filter__label">Filtrar:</span>
+              <div className="na-tabs">
                 <button
                   type="button"
-                  className={
-                    filtroServidor === "todos"
-                      ? "tab-filtro is-active"
-                      : "tab-filtro"
-                  }
+                  className={filtroServidor === "todos" ? "na-tab is-active" : "na-tab"}
                   onClick={() => setFiltroServidor("todos")}
                 >
                   Todos
                 </button>
+
                 {SERVIDORES.map((s) => (
                   <button
                     key={s.id}
                     type="button"
-                    className={
-                      filtroServidor === s.id
-                        ? "tab-filtro is-active"
-                        : "tab-filtro"
-                    }
+                    className={filtroServidor === s.id ? "na-tab is-active" : "na-tab"}
                     onClick={() => setFiltroServidor(s.id)}
                   >
                     {s.label}
@@ -765,79 +1055,88 @@ const NoticiasAdmin = () => {
                 ))}
               </div>
             </div>
-
-            {noticiasFiltradas.length === 0 && (
-              <p className="lista-noticias__empty">
-                No hay noticias para este filtro.
-              </p>
-            )}
-
-            <div className="lista-noticias">
-              {noticiasFiltradas.map((noticia) => {
-                const servidor = noticia.servidor || "global";
-                const esEditando = noticia.id === form.id;
-
-                return (
-                  <div
-                    key={noticia.id}
-                    className={
-                      esEditando
-                        ? "noticia-item noticia-item--active"
-                        : "noticia-item"
-                    }
-                    onClick={() => handleEdit(noticia)}
-                  >
-                    {noticia.portada && (
-                      <img
-                        src={noticia.portada}
-                        alt="Portada"
-                        className="miniatura"
-                      />
-                    )}
-                    <div className="contenido">
-                      <h4>{noticia.titulo}</h4>
-                      <span className="fecha">
-                        {new Date(noticia.fecha).toLocaleDateString("es-ES", {
-                          day: "numeric",
-                          month: "short",
-                          year: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </span>
-                      <span
-                        className={`badge-servidor badge-servidor--${servidor}`}
-                      >
-                        {servidor}
-                      </span>
-                    </div>
-                    <div className="acciones">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEdit(noticia);
-                        }}
-                      >
-                        Editar
-                      </button>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDelete(noticia.id);
-                        }}
-                      >
-                        Eliminar
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
           </div>
-        )}
-      </section>
+
+          {verGuardadas && (
+            <>
+              {noticiasFiltradas.length === 0 ? (
+                <div className="na-empty">No hay noticias para este filtro.</div>
+              ) : (
+                <div className="na-list">
+                  {noticiasFiltradas.map((n) => {
+                    const servidor = String(n?.servidor || "global").toLowerCase();
+                    const isActive = n?.id === form.id;
+
+                    return (
+                      <div
+                        key={n.id}
+                        className={isActive ? "na-item is-active" : "na-item"}
+                        onClick={() => handleEdit(n)}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") handleEdit(n);
+                        }}
+                      >
+                        <div className="na-item__thumb">
+                          {n.portada ? (
+                            <img src={n.portada} alt="Portada" loading="lazy" />
+                          ) : (
+                            <div className="na-item__thumbEmpty">
+                              <i className="fa-regular fa-image" aria-hidden="true" />
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="na-item__body">
+                          <div className="na-item__title">{n.titulo}</div>
+                          <div className="na-item__meta">
+                            <span className="na-item__date">
+                              {new Date(n.fecha).toLocaleDateString("es-ES", {
+                                day: "numeric",
+                                month: "short",
+                                year: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </span>
+
+                            <span className={`na-badge na-badge--${servidor}`}>{servidor}</span>
+                          </div>
+                        </div>
+
+                        <div className="na-item__actions">
+                          <button
+                            type="button"
+                            className="na-miniBtn"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEdit(n);
+                            }}
+                          >
+                            Editar
+                          </button>
+
+                          <button
+                            type="button"
+                            className="na-miniBtn na-miniBtn--danger"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDelete(n.id);
+                            }}
+                          >
+                            Eliminar
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </>
+          )}
+        </section>
+      </main>
     </div>
   );
 };

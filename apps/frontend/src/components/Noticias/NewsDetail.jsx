@@ -1,13 +1,12 @@
-import React, { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+// src/components/Noticias/NewsDetail.jsx
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import "../../styles/components/Noticias/_newsdetail.scss";
 
 const API_URL = "https://flancraft-backend.onrender.com";
 
-// --- helpers para convertir el JSON de Tiptap a HTML ---
-
 const escapeHtml = (unsafe = "") =>
-  unsafe
+  String(unsafe)
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
@@ -61,30 +60,20 @@ const renderBlockNode = (node) => {
       return `<h${level}>${text}</h${level}>`;
     }
     case "bulletList":
-      return `<ul>${(content || [])
-        .map((child) => renderBlockNode(child))
-        .join("")}</ul>`;
+      return `<ul>${(content || []).map((child) => renderBlockNode(child)).join("")}</ul>`;
     case "orderedList":
-      return `<ol>${(content || [])
-        .map((child) => renderBlockNode(child))
-        .join("")}</ol>`;
+      return `<ol>${(content || []).map((child) => renderBlockNode(child)).join("")}</ol>`;
     case "listItem":
-      return `<li>${(content || [])
-        .map((child) => renderBlockNode(child))
-        .join("")}</li>`;
+      return `<li>${(content || []).map((child) => renderBlockNode(child)).join("")}</li>`;
     case "horizontalRule":
       return "<hr />";
     case "blockquote":
-      return `<blockquote>${(content || [])
-        .map((child) => renderBlockNode(child))
-        .join("")}</blockquote>`;
+      return `<blockquote>${(content || []).map((child) => renderBlockNode(child)).join("")}</blockquote>`;
     case "image": {
       const src = escapeHtml(node.attrs?.src || "");
       const alt = escapeHtml(node.attrs?.alt || "");
-      const title = node.attrs?.title
-        ? ` title="${escapeHtml(node.attrs.title)}"`
-        : "";
-      return `<figure><img src="${src}" alt="${alt}"${title} /></figure>`;
+      const title = node.attrs?.title ? ` title="${escapeHtml(node.attrs.title)}"` : "";
+      return `<figure class="nd-figure"><img src="${src}" alt="${alt}"${title} /></figure>`;
     }
     case "iframe": {
       const src = escapeHtml(node.attrs?.src || "");
@@ -92,16 +81,13 @@ const renderBlockNode = (node) => {
       const height = node.attrs?.height || "400";
       const frameborder = node.attrs?.frameborder || "0";
       const allowfullscreen =
-        node.attrs?.allowfullscreen === "true" ||
-        node.attrs?.allowfullscreen === true
+        node.attrs?.allowfullscreen === "true" || node.attrs?.allowfullscreen === true
           ? " allowfullscreen"
           : "";
-      return `<div class="embed-wrapper"><iframe src="${src}" width="${width}" height="${height}" frameborder="${frameborder}"${allowfullscreen}></iframe></div>`;
+      return `<div class="nd-embed"><iframe src="${src}" width="${width}" height="${height}" frameborder="${frameborder}"${allowfullscreen}></iframe></div>`;
     }
     default:
-      return (content || [])
-        .map((child) => renderBlockNode(child))
-        .join("");
+      return (content || []).map((child) => renderBlockNode(child)).join("");
   }
 };
 
@@ -110,7 +96,33 @@ const tiptapJsonToHtml = (doc) => {
   return (doc.content || []).map((node) => renderBlockNode(node)).join("");
 };
 
-// ----------------------------------------------------------------
+const stripHtml = (html = "") =>
+  String(html)
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<\/?[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const extractTextFromTiptap = (node) => {
+  if (!node) return "";
+  if (Array.isArray(node)) return node.map(extractTextFromTiptap).join(" ");
+  if (node.type === "text") return node.text || "";
+  const content = node.content || [];
+  return content.map(extractTextFromTiptap).join(" ");
+};
+
+const calcReadingMinutes = (noticia) => {
+  let text = "";
+  if (noticia?.contenido_html) text = stripHtml(noticia.contenido_html);
+  else if (typeof noticia?.contenido === "string") text = stripHtml(noticia.contenido);
+  else if (typeof noticia?.contenido === "object" && noticia?.contenido?.type === "doc")
+    text = extractTextFromTiptap(noticia.contenido);
+
+  const words = text ? text.split(/\s+/).filter(Boolean).length : 0;
+  const mins = Math.max(1, Math.round(words / 220));
+  return mins;
+};
 
 const NewsDetail = () => {
   const { slug } = useParams();
@@ -121,21 +133,27 @@ const NewsDetail = () => {
   const [status, setStatus] = useState("idle");
   const [copiado, setCopiado] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  const [progress, setProgress] = useState(0);
 
-  // usuario actual (para saber si puede editar)
-  const user = (() => {
+  const shareRef = useRef(null);
+
+  const user = useMemo(() => {
     try {
       return JSON.parse(localStorage.getItem("flan_user"));
     } catch {
       return null;
     }
-  })();
+  }, []);
 
-  const STAFF_ROLES = ["owner", "admin", "srmod", "mod"];
-  const canEdit =
-    user &&
-    (STAFF_ROLES.includes(user.rol_admin) ||
-      STAFF_ROLES.includes(user.rango_staff));
+  const STAFF_ROLES = useMemo(() => ["owner", "admin", "srmod", "mod"], []);
+  const canEdit = useMemo(() => {
+    if (!user) return false;
+    return STAFF_ROLES.includes(user.rol_admin) || STAFF_ROLES.includes(user.rango_staff);
+  }, [user, STAFF_ROLES]);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }, [slug]);
 
   useEffect(() => {
     if (!slug) return;
@@ -151,8 +169,7 @@ const NewsDetail = () => {
         const data = await res.json();
         setNoticia(data);
         setStatus("loaded");
-      } catch (err) {
-        console.error("Error al cargar noticia:", err);
+      } catch {
         setStatus("error");
       }
     };
@@ -161,12 +178,10 @@ const NewsDetail = () => {
       try {
         const res = await fetch(`${API_URL}/api/noticias`);
         const data = await res.json();
-        const otras = (data || [])
-          .filter((n) => n.slug !== slug)
-          .slice(0, 6);
+        const otras = (data || []).filter((n) => n.slug !== slug).slice(0, 8);
         setRelacionadas(otras);
-      } catch (err) {
-        console.error("Error al cargar relacionadas:", err);
+      } catch {
+        setRelacionadas([]);
       }
     };
 
@@ -174,11 +189,45 @@ const NewsDetail = () => {
     fetchRelacionadas();
   }, [slug]);
 
+  useEffect(() => {
+    const onScroll = () => {
+      const doc = document.documentElement;
+      const scrollTop = doc.scrollTop || document.body.scrollTop;
+      const scrollHeight = doc.scrollHeight || document.body.scrollHeight;
+      const clientHeight = doc.clientHeight || window.innerHeight;
+      const max = Math.max(1, scrollHeight - clientHeight);
+      setProgress(Math.min(1, Math.max(0, scrollTop / max)));
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  useEffect(() => {
+    if (!shareOpen) return;
+
+    const onDown = (e) => {
+      if (!shareRef.current) return;
+      if (!shareRef.current.contains(e.target)) setShareOpen(false);
+    };
+
+    const onKey = (e) => {
+      if (e.key === "Escape") setShareOpen(false);
+    };
+
+    window.addEventListener("mousedown", onDown);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("mousedown", onDown);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [shareOpen]);
+
   const handleCopy = () => {
     const url = window.location.href;
     navigator.clipboard.writeText(url).then(() => {
       setCopiado(true);
-      setTimeout(() => setCopiado(false), 2500);
+      setTimeout(() => setCopiado(false), 2200);
     });
   };
 
@@ -194,26 +243,19 @@ const NewsDetail = () => {
     const title = encodeURIComponent(noticia.titulo || "FlanCraft");
 
     switch (platform) {
-      case "x": {
-        const shareUrl = `https://twitter.com/intent/tweet?url=${url}&text=${title}`;
-        window.open(shareUrl, "_blank", "noopener,noreferrer");
+      case "x":
+        window.open(`https://twitter.com/intent/tweet?url=${url}&text=${title}`, "_blank", "noopener,noreferrer");
         break;
-      }
-      case "discord": {
+      case "telegram":
+        window.open(`https://t.me/share/url?url=${url}&text=${title}`, "_blank", "noopener,noreferrer");
+        break;
+      case "whatsapp":
+        window.open(`https://api.whatsapp.com/send?text=${title}%20-%20${url}`, "_blank", "noopener,noreferrer");
+        break;
+      case "discord":
         handleCopy();
         window.open("https://discord.com/app", "_blank", "noopener,noreferrer");
         break;
-      }
-      case "telegram": {
-        const shareUrl = `https://t.me/share/url?url=${url}&text=${title}`;
-        window.open(shareUrl, "_blank", "noopener,noreferrer");
-        break;
-      }
-      case "whatsapp": {
-        const shareUrl = `https://api.whatsapp.com/send?text=${title}%20-%20${url}`;
-        window.open(shareUrl, "_blank", "noopener,noreferrer");
-        break;
-      }
       case "copy":
       default:
         handleCopy();
@@ -223,273 +265,297 @@ const NewsDetail = () => {
     setShareOpen(false);
   };
 
-  const renderContenido = () => {
-    if (!noticia) return null;
+  const contentHtml = useMemo(() => {
+    if (!noticia) return "";
 
-    if (noticia.contenido_html) {
-      return (
-        <div
-          className="content"
-          dangerouslySetInnerHTML={{ __html: noticia.contenido_html }}
-        />
-      );
+    if (noticia.contenido_html) return noticia.contenido_html;
+    if (typeof noticia.contenido === "string") return noticia.contenido;
+    if (typeof noticia.contenido === "object" && noticia.contenido?.type === "doc") {
+      return tiptapJsonToHtml(noticia.contenido);
     }
+    return "";
+  }, [noticia]);
 
-    if (typeof noticia.contenido === "string") {
-      return (
-        <div
-          className="content"
-          dangerouslySetInnerHTML={{ __html: noticia.contenido }}
-        />
-      );
+  const heroSrc = useMemo(() => (noticia?.portada || noticia?.imagen || "").trim(), [noticia]);
+  const heroStyle = useMemo(
+    () => (heroSrc ? { "--nd-hero": `url("${heroSrc}")` } : undefined),
+    [heroSrc]
+  );
+
+  const authorDisplay = useMemo(
+    () => noticia?.autor_nombre || noticia?.usuarios?.uid || noticia?.autor || "",
+    [noticia]
+  );
+
+  const dateDisplay = useMemo(() => {
+    if (!noticia?.fecha) return "";
+    try {
+      return new Date(noticia.fecha).toLocaleDateString("es-ES", {
+        day: "2-digit",
+        month: "long",
+        year: "numeric",
+      });
+    } catch {
+      return "";
     }
+  }, [noticia]);
 
-    if (
-      typeof noticia.contenido === "object" &&
-      noticia.contenido !== null &&
-      noticia.contenido.type === "doc"
-    ) {
-      const html = tiptapJsonToHtml(noticia.contenido);
-      return (
-        <div className="content" dangerouslySetInnerHTML={{ __html: html }} />
-      );
-    }
-
-    return null;
-  };
+  const readingMins = useMemo(() => (noticia ? calcReadingMinutes(noticia) : 1), [noticia]);
 
   if (status === "loading") {
     return (
-      <div className="news-detail loading">
-        <div className="news-layout">
-          <div className="loading-placeholder">
-            <div className="glow-bar" />
-            <div className="glow-bar short" />
-            <div className="glow-img" />
-            <div className="glow-paragraph" />
+      <div className="news-detail nd-loading">
+        <div className="nd-progress" style={{ transform: `scaleX(${progress})` }} />
+        <section className="nd-hero nd-hero--placeholder">
+          <div className="nd-hero__wrap">
+            <div className="nd-hero__media nd-skel nd-skel--hero" />
           </div>
-        </div>
+        </section>
+        <main className="nd-shell">
+          <article className="nd-article nd-article--placeholder">
+            <div className="nd-skel nd-skel--meta" />
+            <div className="nd-skel nd-skel--title" />
+            <div className="nd-skel nd-skel--line" />
+            <div className="nd-skel nd-skel--line" />
+            <div className="nd-skel nd-skel--line short" />
+          </article>
+        </main>
       </div>
     );
   }
 
   if (status === "notfound") {
     return (
-      <div className="news-detail">
-        <div className="news-layout">
-          <p>Noticia no encontrada.</p>
-          <button className="back-btn" onClick={() => navigate("/news")}>
-            ← Volver a noticias
-          </button>
-        </div>
+      <div className="news-detail nd-state">
+        <main className="nd-shell">
+          <article className="nd-article nd-state__card">
+            <h1 className="nd-title">Noticia no encontrada</h1>
+            <p className="nd-state__text">No existe o ha sido eliminada.</p>
+            <button className="nd-btn nd-btn--solid" onClick={() => navigate("/news")}>
+              Volver a noticias
+            </button>
+          </article>
+        </main>
       </div>
     );
   }
 
   if (status === "error") {
     return (
-      <div className="news-detail">
-        <div className="news-layout">
-          <p>Ha ocurrido un error al cargar la noticia.</p>
-          <button className="back-btn" onClick={() => navigate("/news")}>
-            ← Volver a noticias
-          </button>
-        </div>
+      <div className="news-detail nd-state">
+        <main className="nd-shell">
+          <article className="nd-article nd-state__card">
+            <h1 className="nd-title">Error al cargar</h1>
+            <p className="nd-state__text">Ha ocurrido un problema cargando la noticia.</p>
+            <button className="nd-btn nd-btn--solid" onClick={() => navigate("/news")}>
+              Volver a noticias
+            </button>
+          </article>
+        </main>
       </div>
     );
   }
 
   if (!noticia) return null;
 
-  const authorDisplay =
-    noticia.autor_nombre || noticia.usuarios?.uid || noticia.autor;
-
   return (
-    <div className="news-detail loaded">
-      <div className="news-layout">
-        <div className="news-container">
-          <header className="news-header">
-            {/* TÍTULO SOLO */}
-            <h1 className="title">{noticia.titulo}</h1>
+    <div className="news-detail nd-loaded">
+      <div className="nd-progress" style={{ transform: `scaleX(${progress})` }} />
 
-            {/* LÍNEA DIVISORA JUSTO BAJO EL TÍTULO */}
-            <div className="news-header-divider" />
+      <section className="nd-hero" style={heroStyle}>
+        <div className="nd-hero__wrap">
+          <div className="nd-hero__top">
+            <button className="nd-backchip" onClick={() => navigate("/news")} type="button">
+              <span className="nd-backchip__icon" aria-hidden="true">
+                <svg viewBox="0 0 20 20" width="14" height="14" focusable="false">
+                  <path
+                    d="M12.8 4.5a1 1 0 0 1 0 1.4L9.7 9l3.1 3.1a1 1 0 1 1-1.4 1.4l-3.8-3.8a1 1 0 0 1 0-1.4l3.8-3.8a1 1 0 0 1 1.4 0Z"
+                    fill="currentColor"
+                  />
+                </svg>
+              </span>
+              <span>Noticias</span>
+            </button>
+          </div>
 
-            {/* SEGUNDA LÍNEA: AUTOR/FECHA IZQ, BOTONES DCHA */}
-            <div className="news-subheader">
-              <div className="meta-line">
-                {authorDisplay && (
-                  <span className="autor">Autor: {authorDisplay}</span>
-                )}
-                {noticia.fecha && (
-                  <span className="date">
-                    {new Date(noticia.fecha).toLocaleDateString("es-ES", {
-                      day: "2-digit",
-                      month: "long",
-                      year: "numeric",
-                    })}
+          <div className="nd-hero__media">
+            {heroSrc ? (
+              <img src={heroSrc} alt={noticia.titulo} className="nd-hero__img" loading="eager" />
+            ) : (
+              <div className="nd-hero__fallback" />
+            )}
+          </div>
+        </div>
+      </section>
+
+      <main className="nd-shell">
+        <article className="nd-article">
+          <div className="nd-toprow">
+            <div className="nd-meta">
+              {authorDisplay ? <span className="nd-meta__item">{authorDisplay}</span> : null}
+              {authorDisplay && dateDisplay ? <span className="nd-meta__dot">•</span> : null}
+              {dateDisplay ? <span className="nd-meta__item">{dateDisplay}</span> : null}
+              {(authorDisplay || dateDisplay) ? <span className="nd-meta__dot">•</span> : null}
+              <span className="nd-meta__item">{readingMins} min lectura</span>
+            </div>
+
+            <div className="nd-actions">
+              {canEdit && (
+                <button className="nd-btn nd-btn--ghost" type="button" onClick={irAEditar}>
+                  <span className="nd-btn__icon" aria-hidden="true">
+                    <svg viewBox="0 0 16 16" width="14" height="14" focusable="false">
+                      <path
+                        d="M11.3 1.5a1.4 1.4 0 0 1 2 2L7 9.8 4 10.5l.7-3L11.3 1.5Z"
+                        fill="currentColor"
+                      />
+                      <path d="M3 13.5h9v1H3z" fill="currentColor" />
+                    </svg>
                   </span>
-                )}
-              </div>
+                  <span>Editar</span>
+                </button>
+              )}
 
-              <div className="news-header-actions">
-                {canEdit && (
-                  <button
-                    className="edit-btn-rect"
-                    type="button"
-                    onClick={irAEditar}
-                  >
-                    <span className="edit-btn-rect__icon" aria-hidden="true">
-                      <svg
-                        viewBox="0 0 16 16"
-                        width="13"
-                        height="13"
-                        focusable="false"
-                      >
-                        <path
-                          d="M11.3 1.5a1.4 1.4 0 0 1 2 2L7 9.8 4 10.5l.7-3L11.3 1.5Z"
-                          fill="currentColor"
-                        />
-                        <path
-                          d="M3 13.5h9v1H3z"
-                          fill="currentColor"
-                        />
-                      </svg>
-                    </span>
-                    <span className="edit-btn-rect__label">Editar</span>
-                  </button>
-                )}
-
-                <div className="share-wrapper">
-                  <button
-                    type="button"
-                    className="share-trigger-rect"
-                    onClick={() => setShareOpen((v) => !v)}
-                    aria-label="Compartir noticia"
-                  >
-                    <svg
-                      viewBox="0 0 20 20"
-                      width="14"
-                      height="14"
-                      focusable="false"
-                    >
+              <div className="nd-share" ref={shareRef}>
+                <button
+                  type="button"
+                  className="nd-btn nd-btn--solid"
+                  onClick={() => setShareOpen((v) => !v)}
+                  aria-label="Compartir noticia"
+                  aria-expanded={shareOpen ? "true" : "false"}
+                >
+                  <span className="nd-btn__icon" aria-hidden="true">
+                    <svg viewBox="0 0 20 20" width="14" height="14" focusable="false">
                       <path
                         d="M13.8 4a2 2 0 1 1-1.58 3.23L8.7 9a2 2 0 0 1-.02 2l3.52 1.77a2 2 0 1 1-.44 1.04L8.2 12a2 2 0 1 1 0-4l3.56-1.8A2 2 0 0 1 13.8 4Z"
                         fill="currentColor"
                       />
                     </svg>
-                    <span>Compartir</span>
-                  </button>
+                  </span>
+                  <span>Compartir</span>
+                </button>
 
-                  {shareOpen && (
-  <div className="share-menu">
-    <button
-      type="button"
-      className="share-item share-x"
-      onClick={() => handleShare("x")}
-    >
-      <span className="share-item__icon">
-        <i className="fa-brands fa-x-twitter" aria-hidden="true" />
-      </span>
-      <span>X</span>
-    </button>
+                {shareOpen && (
+                  <div className="nd-shareMenu" role="menu">
+                    <button type="button" className="nd-shareItem" onClick={() => handleShare("x")} role="menuitem">
+                      <span className="nd-shareItem__icon x">
+                        <i className="fa-brands fa-x-twitter" aria-hidden="true" />
+                      </span>
+                      <span>X</span>
+                    </button>
 
-    <button
-      type="button"
-      className="share-item share-discord"
-      onClick={() => handleShare("discord")}
-    >
-      <span className="share-item__icon">
-        <i className="fa-brands fa-discord" aria-hidden="true" />
-      </span>
-      <span>Discord</span>
-    </button>
+                    <button
+                      type="button"
+                      className="nd-shareItem"
+                      onClick={() => handleShare("discord")}
+                      role="menuitem"
+                    >
+                      <span className="nd-shareItem__icon discord">
+                        <i className="fa-brands fa-discord" aria-hidden="true" />
+                      </span>
+                      <span>Discord</span>
+                    </button>
 
-    <button
-      type="button"
-      className="share-item share-telegram"
-      onClick={() => handleShare("telegram")}
-    >
-      <span className="share-item__icon">
-        <i className="fa-brands fa-telegram" aria-hidden="true" />
-      </span>
-      <span>Telegram</span>
-    </button>
+                    <button
+                      type="button"
+                      className="nd-shareItem"
+                      onClick={() => handleShare("telegram")}
+                      role="menuitem"
+                    >
+                      <span className="nd-shareItem__icon telegram">
+                        <i className="fa-brands fa-telegram" aria-hidden="true" />
+                      </span>
+                      <span>Telegram</span>
+                    </button>
 
-    <button
-      type="button"
-      className="share-item share-whatsapp"
-      onClick={() => handleShare("whatsapp")}
-    >
-      <span className="share-item__icon">
-        <i className="fa-brands fa-whatsapp" aria-hidden="true" />
-      </span>
-      <span>WhatsApp</span>
-    </button>
+                    <button
+                      type="button"
+                      className="nd-shareItem"
+                      onClick={() => handleShare("whatsapp")}
+                      role="menuitem"
+                    >
+                      <span className="nd-shareItem__icon whatsapp">
+                        <i className="fa-brands fa-whatsapp" aria-hidden="true" />
+                      </span>
+                      <span>WhatsApp</span>
+                    </button>
 
-    <button
-      type="button"
-      className="share-item share-copy"
-      onClick={() => handleShare("copy")}
-    >
-      <span className="share-item__icon">
-        <i className="fa-solid fa-link" aria-hidden="true" />
-      </span>
-      <span>Copiar enlace</span>
-    </button>
-  </div>
-)}
-
-                </div>
+                    <button type="button" className="nd-shareItem" onClick={() => handleShare("copy")} role="menuitem">
+                      <span className="nd-shareItem__icon link">
+                        <i className="fa-solid fa-link" aria-hidden="true" />
+                      </span>
+                      <span>Copiar enlace</span>
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
-          </header>
+          </div>
 
-          {(noticia.portada || noticia.imagen) && (
-            <img
-              src={noticia.portada || noticia.imagen}
-              alt={noticia.titulo}
-              className="featured-img"
-              loading="lazy"
-            />
-          )}
+          <h1 className="nd-title">{noticia.titulo}</h1>
 
-          {renderContenido()}
+          <div className="nd-divider" />
 
-          <button className="back-btn" onClick={() => navigate("/news")}>
-            ← Volver a noticias
-          </button>
+          <div className="nd-content" dangerouslySetInnerHTML={{ __html: contentHtml }} />
+
+          <div className="nd-footer">
+            <button className="nd-backlink" onClick={() => navigate("/news")} type="button">
+              Volver a noticias
+            </button>
+          </div>
+        </article>
+
+        {relacionadas.length > 0 && (
+          <section className="nd-related">
+            <div className="nd-related__head">
+              <h3 className="nd-related__title">Más noticias</h3>
+              <button className="nd-related__all" onClick={() => navigate("/news")} type="button">
+                Ver todas
+              </button>
+            </div>
+
+            <div className="nd-related__grid">
+              {relacionadas.map((n) => (
+                <button
+                  key={n.id}
+                  type="button"
+                  className="nd-card"
+                  onClick={() => navigate(`/news/${n.slug || n.id}`)}
+                >
+                  <div className="nd-card__media">
+                    <img
+                      src={n.portada || n.imagen || "/assets/placeholder.png"}
+                      alt={n.titulo}
+                      loading="lazy"
+                    />
+                  </div>
+                  <div className="nd-card__body">
+                    <div className="nd-card__title">{n.titulo}</div>
+                    <div className="nd-card__meta">
+                      {n.fecha
+                        ? new Date(n.fecha).toLocaleDateString("es-ES", { day: "2-digit", month: "short" })
+                        : ""}
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
+      </main>
+
+      {copiado && (
+        <div className="nd-toast" role="status" aria-live="polite">
+          <span className="nd-toast__icon" aria-hidden="true">
+            <svg viewBox="0 0 20 20" width="16" height="16" focusable="false">
+              <path
+                d="M8.2 13.2 4.8 9.8a1 1 0 1 0-1.4 1.4l4.1 4.1a1 1 0 0 0 1.4 0l8-8a1 1 0 1 0-1.4-1.4l-7.3 7.2Z"
+                fill="currentColor"
+              />
+            </svg>
+          </span>
+          <span>Enlace copiado</span>
         </div>
-
-        <aside className="news-sidebar">
-          <h3>Otras noticias</h3>
-          <ul className="sidebar-news-list">
-            {relacionadas.map((n) => (
-              <li
-                key={n.id}
-                onClick={() => navigate(`/news/${n.slug || n.id}`)}
-              >
-                <img
-                  src={n.portada || "/assets/placeholder.png"}
-                  alt={n.titulo}
-                  loading="lazy"
-                />
-                <div>
-                  <h4>{n.titulo}</h4>
-                  <p>
-                    {new Date(n.fecha).toLocaleDateString("es-ES", {
-                      day: "2-digit",
-                      month: "short",
-                    })}
-                  </p>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </aside>
-      </div>
-
-      {copiado && <div className="copied">Enlace copiado ✅</div>}
+      )}
     </div>
   );
 };

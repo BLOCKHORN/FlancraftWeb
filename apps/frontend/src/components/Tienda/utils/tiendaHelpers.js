@@ -110,7 +110,13 @@ export function getPackageId(pkg) {
 }
 
 export function getPackageName(pkg) {
-  return pkg?.name ?? pkg?.nombre ?? pkg?.package_name ?? pkg?.title ?? "Producto";
+  return (
+    pkg?.name ??
+    pkg?.nombre ??
+    pkg?.package_name ??
+    pkg?.title ??
+    "Producto"
+  );
 }
 
 export function getPackagePrice(pkg) {
@@ -170,18 +176,25 @@ export const PORTADA_TILES = [
     image: "https://i.ibb.co/k6yZSyN4/rangos.webp",
   },
   {
-    key: "gens",
-    name: "GENS",
-    to: "/tienda/gens",
-    isGlobal: false,
-    image: "/assets/reinos/gens.webp",
-  },
-  {
     key: "oneblock",
     name: "ONEBLOCK",
     to: "/tienda/oneblock",
     isGlobal: false,
     image: "/assets/reinos/oneblock.webp",
+  },
+  {
+    key: "survival",
+    name: "SURVIVAL",
+    to: "/tienda/survival",
+    isGlobal: false,
+    image: "/assets/reinos/survival.webp",
+  },
+  {
+    key: "gens",
+    name: "GENS",
+    to: "/tienda/gens",
+    isGlobal: false,
+    image: "/assets/reinos/gens.webp",
   },
 ];
 
@@ -201,11 +214,26 @@ export const SUBCATS_PER_TILE = {
   // Rangos (aunque sea /tienda/rangos, en Tebex están en "gens")
   "gens|rangos": ["RANGOS"],
 
-  // GENS coins (depende de cómo los tengas nombrados)
-  "gens|coins": ["GENS", "Coins", "COINS"],
+  // GENS coins
+  "gens|coins": ["GENS", "Coins", "COINS", "Coins Gens", "COINS GENS"],
 
   // ONEBLOCK coins
-  "oneblock|coins": ["ONEBLOCK", "Coins OB", "COINS OB", "Coins", "COINS"],
+  "oneblock|coins": [
+    "ONEBLOCK",
+    "Coins OB",
+    "COINS OB",
+    "Coins Oneblock",
+    "COINS ONEBLOCK",
+  ],
+
+  // SURVIVAL coins
+  "survival|coins": [
+    "SURVIVAL",
+    "Coins Surv",
+    "COINS SURV",
+    "Coins Survival",
+    "COINS SURVIVAL",
+  ],
 };
 
 export function pickSubcatsFromApi(apiCategories = [], namesAllowed = []) {
@@ -218,7 +246,10 @@ export function pickSubcatsFromApi(apiCategories = [], namesAllowed = []) {
     const id = c?.id ?? c?.category_id ?? null;
     if (!id || !name) continue;
 
-    if (allowedLower.size === 0 || allowedLower.has(String(name).toLowerCase())) {
+    if (
+      allowedLower.size === 0 ||
+      allowedLower.has(String(name).toLowerCase())
+    ) {
       out.push({ id, name, slug: slugify(name) });
     }
   }
@@ -262,47 +293,64 @@ export function filterPackagesBySubcats(paquetes = [], subcats = []) {
     return cid && subcatIds.has(String(cid));
   });
 }
+
 /* =========================================================
    STOREFRONT (Brawl-like) config + helpers
    ========================================================= */
 
 export const STOREFRONT_CONFIG = {
   rangos: {
-    // nombres de categorías donde Tebex guarda los rangos
-    // (puedes meter aquí más variantes si tu catálogo las usa)
     categoryNames: ["RANGOS", "Rangos", "Ranks", "RANKS"],
   },
 
-  // Tabs de servidor (abajo)
-  // IMPORTANTE: categoryNames son nombres de categorías del catálogo de Tebex
-  // donde están los paquetes de ese “servidor”.
+  // Orden deseado en el front: ONEBLOCK - SURVIVAL - GENS
   servers: [
+    {
+      key: "oneblock",
+      label: "Oneblock",
+      categoryNames: [
+        "ONEBLOCK",
+        "Oneblock",
+        "Coins OB",
+        "COINS OB",
+        "Coins Oneblock",
+        "COINS ONEBLOCK",
+      ],
+    },
     {
       key: "survival",
       label: "Survival",
-      categoryNames: ["SURVIVAL", "Survival", "COINS", "Coins"],
+      categoryNames: [
+        "SURVIVAL",
+        "Survival",
+        "Coins Surv",
+        "COINS SURV",
+        "Coins Survival",
+        "COINS SURVIVAL",
+      ],
     },
     {
       key: "gens",
       label: "Gens",
-      categoryNames: ["GENS", "Coins", "COINS"],
-    },
-    {
-      key: "oneblock",
-      label: "Oneblock",
-      categoryNames: ["ONEBLOCK", "Coins", "COINS"],
+      categoryNames: ["GENS", "Gens", "Coins Gens", "COINS GENS", "Coins", "COINS"],
     },
   ],
 };
 
 // Devuelve IDs de categorías cuyo nombre coincide con alguno de los names (case-insensitive)
 export function findCategoriesByNames(apiCategories = [], names = []) {
-  const wanted = new Set((names || []).map((n) => String(n).trim().toLowerCase()).filter(Boolean));
+  const wanted = new Set(
+    (names || [])
+      .map((n) => String(n).trim().toLowerCase())
+      .filter(Boolean)
+  );
   if (wanted.size === 0) return [];
 
   const out = [];
   for (const c of apiCategories || []) {
-    const name = String(c?.name || c?.category_name || "").trim().toLowerCase();
+    const name = String(c?.name || c?.category_name || "")
+      .trim()
+      .toLowerCase();
     const id = c?.id ?? c?.category_id ?? null;
     if (!id || !name) continue;
     if (wanted.has(name)) out.push(String(id));
@@ -311,7 +359,9 @@ export function findCategoriesByNames(apiCategories = [], names = []) {
   // fallback “contains” por si tu categoría es “GENS Coins” etc
   if (out.length === 0) {
     for (const c of apiCategories || []) {
-      const raw = String(c?.name || c?.category_name || "").trim().toLowerCase();
+      const raw = String(c?.name || c?.category_name || "")
+        .trim()
+        .toLowerCase();
       const id = c?.id ?? c?.category_id ?? null;
       if (!id || !raw) continue;
 
@@ -343,6 +393,7 @@ export function filterPackagesByCategoryIds(paquetes = [], categoryIds = []) {
     return cid !== null && set.has(String(cid));
   });
 }
+
 /* =========================================================
    FX (cambio de divisa REAL) — Frankfurter (ECB)
    - Convierte importes NUMÉRICOS (no solo símbolo)
@@ -389,7 +440,6 @@ export async function fetchFxRates({
     new Set((Array.isArray(to) ? to : [to]).map((x) => safeUpper(x)))
   ).filter((c) => c && c !== BASE);
 
-  // Si no hay targets, devolvemos “vacío” (rate 1 para base)
   if (!targets.length) {
     return { base: BASE, date: null, rates: {}, ts: Date.now() };
   }
@@ -433,7 +483,6 @@ export async function fetchFxRates({
   );
 
   if (!r.ok) {
-    // Si falla la red, intenta devolver lo último que haya en memoria
     if (mem?.data) return mem.data;
     throw new Error(`FX HTTP ${r.status}`);
   }

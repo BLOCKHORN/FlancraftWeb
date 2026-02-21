@@ -1,25 +1,85 @@
 // src/components/Tienda/ui/storefront/storefront.utils.js
-import { filterPackagesByCategoryId, getPackageName, getPackagePrice, getPackageOriginalPrice } from "../../utils/tiendaHelpers";
+import {
+  filterPackagesByCategoryId,
+  getPackageName,
+  getPackagePrice,
+  getPackageOriginalPrice,
+} from "../../utils/tiendaHelpers";
 
 export function truthy(v) {
-  return v === true || v === 1 || v === "1" || String(v).toLowerCase() === "true";
+  return (
+    v === true ||
+    v === 1 ||
+    v === "1" ||
+    String(v).toLowerCase() === "true"
+  );
 }
 
 export function isHiddenOrDisabledClient(pkg) {
-  const pkgFlags = [pkg?.hidden, pkg?.disabled, pkg?.archived, pkg?.deleted, pkg?.gui_disabled];
+  const pkgFlags = [
+    pkg?.hidden,
+    pkg?.disabled,
+    pkg?.archived,
+    pkg?.deleted,
+    pkg?.gui_disabled,
+  ];
 
-  if (pkg?.status && ["hidden", "disabled", "archived", "deleted"].includes(String(pkg.status).toLowerCase())) return true;
+  if (
+    pkg?.status &&
+    ["hidden", "disabled", "archived", "deleted"].includes(
+      String(pkg.status).toLowerCase()
+    )
+  )
+    return true;
   if (pkgFlags.some(truthy)) return true;
 
   const cat = pkg?.category || pkg?.categories?.[0] || {};
   const catFlags = [cat?.hidden, cat?.disabled, cat?.archived, cat?.deleted];
 
-  if (cat?.status && ["hidden", "disabled", "archived", "deleted"].includes(String(cat.status).toLowerCase())) return true;
+  if (
+    cat?.status &&
+    ["hidden", "disabled", "archived", "deleted"].includes(
+      String(cat.status).toLowerCase()
+    )
+  )
+    return true;
   if (catFlags.some(truthy)) return true;
 
   if (pkg?.price === null || typeof pkg?.name !== "string") return true;
 
   return false;
+}
+
+const RE_OB = /(\bob\b|oneblock)/i;
+const RE_SURV = /(\bsurv\b|survival)/i;
+const RE_GENS = /\bgens\b/i;
+
+function nameOf(p) {
+  return String(p?.name || p?.package_name || p?.title || "");
+}
+
+function pickServerCategory(apiCats = [], serverKey) {
+  const list = Array.isArray(apiCats) ? apiCats : [];
+  const sv = String(serverKey || "").toLowerCase();
+
+  if (!sv) return null;
+
+  const match =
+    sv === "oneblock"
+      ? (s) => RE_OB.test(s)
+      : sv === "survival"
+      ? (s) => RE_SURV.test(s)
+      : sv === "gens"
+      ? (s) => RE_GENS.test(s)
+      : null;
+
+  if (!match) return null;
+
+  return (
+    list.find((c) => match(String(c?.name || ""))) ||
+    list.find((c) => match(String(c?.slug || ""))) ||
+    null
+  );
 }
 
 export function pickCoinsCategory(apiCats = []) {
@@ -32,37 +92,60 @@ export function pickCoinsCategory(apiCats = []) {
 }
 
 export function pickCoinsPackages({ serverKey, apiCats, packs }) {
-  const visible = (Array.isArray(packs) ? packs : []).filter((p) => !isHiddenOrDisabledClient(p));
+  const visible = (Array.isArray(packs) ? packs : []).filter(
+    (p) => !isHiddenOrDisabledClient(p)
+  );
   if (!visible.length) return [];
+
+  const sv = String(serverKey || "").toLowerCase();
+
+  const svCat = pickServerCategory(apiCats, sv);
+  if (svCat?.id) {
+    const byServerCat = filterPackagesByCategoryId(visible, svCat.id);
+    if (byServerCat.length) return byServerCat;
+  }
 
   const coinsCat = pickCoinsCategory(apiCats);
   if (coinsCat?.id) {
     const byCat = filterPackagesByCategoryId(visible, coinsCat.id);
     if (byCat.length) {
-      if (serverKey === "oneblock") {
-        const ob = byCat.filter((p) => /(\bob\b|oneblock)/i.test(String(p?.name || "")));
-        return ob.length ? ob : byCat;
-      }
-      if (serverKey === "gens") {
-        const gens = byCat.filter((p) => !/(\bob\b|oneblock)/i.test(String(p?.name || "")));
-        return gens.length ? gens : byCat;
+      if (sv === "oneblock") return byCat.filter((p) => RE_OB.test(nameOf(p)));
+      if (sv === "survival") return byCat.filter((p) => RE_SURV.test(nameOf(p)));
+      if (sv === "gens") {
+        const explicit = byCat.filter((p) => RE_GENS.test(nameOf(p)));
+        if (explicit.length) return explicit;
+        return byCat.filter(
+          (p) => !RE_OB.test(nameOf(p)) && !RE_SURV.test(nameOf(p))
+        );
       }
       return byCat;
     }
   }
 
-  if (serverKey === "oneblock") {
-    const ob = visible.filter(
-      (p) => /coins?/i.test(String(p?.name || "")) && /(\bob\b|oneblock)/i.test(String(p?.name || ""))
+  if (sv === "oneblock") {
+    return visible.filter(
+      (p) => /coins?/i.test(nameOf(p)) && RE_OB.test(nameOf(p))
     );
-    if (ob.length) return ob;
   }
 
-  if (serverKey === "gens") {
-    const gens = visible.filter(
-      (p) => /coins?/i.test(String(p?.name || "")) && !/(\bob\b|oneblock)/i.test(String(p?.name || ""))
+  if (sv === "survival") {
+    return visible.filter(
+      (p) => /coins?/i.test(nameOf(p)) && RE_SURV.test(nameOf(p))
     );
-    if (gens.length) return gens;
+  }
+
+  if (sv === "gens") {
+    const explicit = visible.filter(
+      (p) => /coins?/i.test(nameOf(p)) && RE_GENS.test(nameOf(p))
+    );
+    if (explicit.length) return explicit;
+
+    return visible.filter(
+      (p) =>
+        /coins?/i.test(nameOf(p)) &&
+        !RE_OB.test(nameOf(p)) &&
+        !RE_SURV.test(nameOf(p))
+    );
   }
 
   return visible;
@@ -70,7 +153,9 @@ export function pickCoinsPackages({ serverKey, apiCats, packs }) {
 
 export function pickRangosPackages({ apiCats, packs }) {
   const cats = Array.isArray(apiCats) ? apiCats : [];
-  const visible = (Array.isArray(packs) ? packs : []).filter((p) => !isHiddenOrDisabledClient(p));
+  const visible = (Array.isArray(packs) ? packs : []).filter(
+    (p) => !isHiddenOrDisabledClient(p)
+  );
 
   const rangosCat =
     cats.find((c) => /rangos/i.test(String(c?.name || ""))) ||
@@ -82,7 +167,9 @@ export function pickRangosPackages({ apiCats, packs }) {
     return byCat.length ? byCat : visible;
   }
 
-  const byName = visible.filter((p) => /(nova|alpha|inmortal|immortal)/i.test(String(p?.name || "")));
+  const byName = visible.filter((p) =>
+    /(nova|alpha|inmortal|immortal)/i.test(String(p?.name || ""))
+  );
   return byName.length ? byName : visible;
 }
 
@@ -101,46 +188,69 @@ export function sortByPriceAsc(a, b) {
 export function formatEur(amount) {
   const n = Number(amount);
   if (!Number.isFinite(n)) return "—";
-  return new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR", maximumFractionDigits: 2 }).format(n);
+  return new Intl.NumberFormat("es-ES", {
+    style: "currency",
+    currency: "EUR",
+    maximumFractionDigits: 2,
+  }).format(n);
 }
 
 export function fmtInt(n) {
   const v = Number(n);
   if (!Number.isFinite(v)) return "—";
-  return new Intl.NumberFormat("es-ES", { maximumFractionDigits: 0 }).format(Math.round(v));
+  return new Intl.NumberFormat("es-ES", { maximumFractionDigits: 0 }).format(
+    Math.round(v)
+  );
 }
 
 export function parseCoinsFromText(text) {
-  const s = String(text || "").trim();
+  const s = String(text || "").normalize("NFKC").trim();
   if (!s) return null;
 
-  const candidates = [
-    /coins?\s*[:\-|]?\s*[x×]?\s*([\d][\d.,\s]*)/i,
-    /[x×]\s*([\d][\d.,\s]*)\s*coins?/i,
-    /\b(?:coins?)\b.*?\b([0-9][0-9.,\s]*)\b/i,
-    /\b[x×]\s*([\d][\d.,\s]*)\b/i,
-    /\b([0-9][0-9.,\s]{2,})\b/,
+  const found = [];
+
+  const pushNum = (raw) => {
+    const norm = String(raw || "").normalize("NFKC").replace(/\s+/g, "");
+    const digits = norm.replace(/[^\d]/g, "");
+    if (!digits) return;
+    const n = Number(digits);
+    if (Number.isFinite(n) && n > 0) found.push(n);
+  };
+
+  const patterns = [
+    /(?:coins?)\s*[:\-|]?\s*[x×]?\s*([0-9][0-9.,\s]*)/gi,
+    /[x×]\s*([0-9][0-9.,\s]*)\s*(?:coins?)?/gi,
+    /\b([0-9][0-9.,\s]{2,})\b/gi,
   ];
 
-  for (const re of candidates) {
-    const m = s.match(re);
-    if (!m || !m[1]) continue;
-
-    const raw = String(m[1]).replace(/\s+/g, "");
-    const digits = raw.replace(/[^\d]/g, "");
-    if (!digits) continue;
-
-    const n = Number(digits);
-    if (Number.isFinite(n) && n > 0) return n;
+  for (const re of patterns) {
+    let m;
+    while ((m = re.exec(s))) pushNum(m[1]);
   }
 
-  return null;
+  if (!found.length) return null;
+
+  const usable = found.filter((n) => n >= 100 && n <= 1000000);
+  const pool = usable.length ? usable : found;
+
+  const score = (n) => {
+    let sc = n;
+    if (n % 500 === 0) sc += 2000;
+    else if (n % 100 === 0) sc += 1200;
+    if (n >= 1000) sc += 500;
+    return sc;
+  };
+
+  pool.sort((a, b) => score(b) - score(a));
+  return pool[0];
 }
 
 export function parseCoinsFromPkg(pkg, getName) {
   if (!pkg) return null;
 
-  const name = typeof getName === "function" ? getName(pkg) : getPackageName(pkg);
+  const name =
+    typeof getName === "function" ? getName(pkg) : getPackageName(pkg);
+
   let n = parseCoinsFromText(name);
   if (n) return n;
 
@@ -156,6 +266,7 @@ export function parseCoinsFromPkg(pkg, getName) {
     n = parseCoinsFromText(t);
     if (n) return n;
   }
+
   return null;
 }
 
@@ -196,13 +307,28 @@ export function hasSaleSignal(pkg) {
   ];
 
   if (typeof pkg?.sale === "object" && pkg?.sale) {
-    if (truthy(pkg.sale.active) || truthy(pkg.sale.is_active) || truthy(pkg.sale.enabled)) return true;
-    if (typeof pkg.sale.percentage === "number" && pkg.sale.percentage > 0) return true;
+    if (
+      truthy(pkg.sale.active) ||
+      truthy(pkg.sale.is_active) ||
+      truthy(pkg.sale.enabled)
+    )
+      return true;
+    if (typeof pkg.sale.percentage === "number" && pkg.sale.percentage > 0)
+      return true;
   }
 
   if (typeof pkg?.discount === "object" && pkg?.discount) {
-    if (truthy(pkg.discount.active) || truthy(pkg.discount.is_active) || truthy(pkg.discount.enabled)) return true;
-    if (typeof pkg.discount.percentage === "number" && pkg.discount.percentage > 0) return true;
+    if (
+      truthy(pkg.discount.active) ||
+      truthy(pkg.discount.is_active) ||
+      truthy(pkg.discount.enabled)
+    )
+      return true;
+    if (
+      typeof pkg.discount.percentage === "number" &&
+      pkg.discount.percentage > 0
+    )
+      return true;
   }
 
   for (const v of any) {
@@ -213,22 +339,31 @@ export function hasSaleSignal(pkg) {
   return false;
 }
 
-export function getDiscountMeta(pkg, getPrice = getPackagePrice, getOriginal = getPackageOriginalPrice) {
+export function getDiscountMeta(
+  pkg,
+  getPrice = getPackagePrice,
+  getOriginal = getPackageOriginalPrice
+) {
   const price = Number(getPrice(pkg) || 0);
   const originalRaw = getOriginal(pkg);
   const original = Number(originalRaw);
 
   const saleSignal = hasSaleSignal(pkg);
-  if (!saleSignal) return { onSale: false, discountPct: null, original: null, price };
+  if (!saleSignal)
+    return { onSale: false, discountPct: null, original: null, price };
 
-  if (!Number.isFinite(price) || price <= 0) return { onSale: false, discountPct: null, original: null, price };
-  if (!Number.isFinite(original) || original <= 0) return { onSale: false, discountPct: null, original: null, price };
+  if (!Number.isFinite(price) || price <= 0)
+    return { onSale: false, discountPct: null, original: null, price };
+  if (!Number.isFinite(original) || original <= 0)
+    return { onSale: false, discountPct: null, original: null, price };
 
   const diff = original - price;
-  if (diff <= 0.009) return { onSale: false, discountPct: null, original: null, price };
+  if (diff <= 0.009)
+    return { onSale: false, discountPct: null, original: null, price };
 
   const pct = Math.round((1 - price / original) * 100);
-  if (!Number.isFinite(pct) || pct < 2) return { onSale: false, discountPct: null, original: null, price };
+  if (!Number.isFinite(pct) || pct < 2)
+    return { onSale: false, discountPct: null, original: null, price };
 
   return { onSale: true, discountPct: pct, original, price };
 }
@@ -243,7 +378,8 @@ export function buildCoinsValueMap(coinsPackages, { getId, getName, getPrice }) 
   });
 
   const base = list.find((x) => x.amount && x.price > 0);
-  const baseRate = base?.amount && base?.price ? base.amount / base.price : null;
+  const baseRate =
+    base?.amount && base?.price ? base.amount / base.price : null;
 
   let best = null;
   for (const it of list) {

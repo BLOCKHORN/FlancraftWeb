@@ -9,9 +9,11 @@ import Home from "./components/Landpage/Home";
 import AllNews from "./components/Noticias/AllNews";
 import NewsDetail from "./components/Noticias/NewsDetail";
 import DashboardPage from "./components/Dashboard/DashboardPage";
-import RangoSelectorAnimado from "./components/Rangos/RangoSelectorAnimado";
 import PerfilJugador from "./components/Estadisticas/PerfilJugador";
 import Leaderboards from "./components/Estadisticas/Leaderboards";
+
+// NUEVO: VOTO
+// import VotoPage from "./components/Voto/VotoPage";
 
 // Tribunal System
 import TribunalMain from "./components/Tribunal/TribunalMain";
@@ -40,7 +42,12 @@ const App = () => {
         <Route path="/" element={<Home onLoginClick={() => setShowLogin(true)} />} />
         <Route path="/news" element={<AllNews />} />
         <Route path="/news/:slug" element={<NewsDetail />} />
-<Route path="/tienda/*" element={<TiendaLayout />} />        <Route path="/rangos" element={<RangoSelectorAnimado />} />
+
+        <Route path="/tienda/*" element={<TiendaLayout />} />
+
+        {/* CAMBIO: /rangos fuera → /voto 
+        <Route path="/voto" element={<VotoPage />} />*/}
+
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/leaderboards" element={<Leaderboards />} />
         <Route path="/perfil/:nombre" element={<PerfilJugador />} />
@@ -59,4 +66,3 @@ const App = () => {
 };
 
 export default App;
-

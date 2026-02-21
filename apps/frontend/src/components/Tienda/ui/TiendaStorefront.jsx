@@ -1,4 +1,3 @@
-// src/components/Tienda/ui/TiendaStorefront.jsx
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "../../../styles/components/Tienda/tienda-storefront.scss";
 import TiendaOfertaCountdown from "./TiendaOfertaCountdown";
@@ -29,11 +28,7 @@ import {
   parseCoinsFromPkg,
 } from "./storefront/storefront.utils";
 
-import {
-  useStorefrontData,
-  useTabDeck,
-  useUiScale,
-} from "./storefront/storefront.hooks";
+import { useStorefrontData, useTabDeck, useUiScale } from "./storefront/storefront.hooks";
 
 function pickFxRate(fxData, currencyUpper) {
   const base = String(fxData?.base || "EUR").toUpperCase();
@@ -55,8 +50,7 @@ function formatCurrency(amount, currency) {
   const cur = String(currency || "EUR").toUpperCase();
   if (!Number.isFinite(n)) return "—";
 
-  const locale =
-    cur === "USD" ? "en-US" : cur === "GBP" ? "en-GB" : "es-ES";
+  const locale = cur === "USD" ? "en-US" : cur === "GBP" ? "en-GB" : "es-ES";
 
   try {
     return new Intl.NumberFormat(locale, {
@@ -71,7 +65,9 @@ function formatCurrency(amount, currency) {
 }
 
 function median(nums) {
-  const a = (nums || []).filter((n) => Number.isFinite(n) && n > 0).sort((x, y) => x - y);
+  const a = (nums || [])
+    .filter((n) => Number.isFinite(n) && n > 0)
+    .sort((x, y) => x - y);
   if (!a.length) return null;
   const m = Math.floor(a.length / 2);
   return a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2;
@@ -155,8 +151,24 @@ export default function TiendaStorefront({
 
   const serverTabs = useMemo(
     () => [
-      { key: "oneblock", label: "Oneblock", icon: "/assets/reinos/oneblock.webp" },
-      { key: "gens", label: "Gens", icon: "/assets/reinos/gens.webp" },
+      {
+        key: "oneblock",
+        label: "Oneblock",
+        icon: "/tienda/assets/tabs/oneblock.png",
+        fallbackIcon: "/assets/reinos/oneblock.webp",
+      },
+      {
+        key: "survival",
+        label: "Survival",
+        icon: "/tienda/assets/tabs/survival.png",
+        fallbackIcon: "/assets/reinos/survival-clasico.webp",
+      },
+      {
+        key: "gens",
+        label: "Gens",
+        icon: "/tienda/assets/tabs/gens.png",
+        fallbackIcon: "/assets/reinos/gens.webp",
+      },
     ],
     []
   );
@@ -166,19 +178,22 @@ export default function TiendaStorefront({
     return found || { key: serverTab, label: String(serverTab || "").toUpperCase(), icon: null };
   }, [serverTabs, serverTab]);
 
-  const activeData = dataByServer[renderTab] || { cats: [], packs: [], bust: null };
+  const activeData = dataByServer?.[renderTab] || { cats: [], packs: [], bust: null };
 
   useEffect(() => {
-    const gensEmpty = (dataByServer.gens?.packs || []).length === 0;
-    const obHas = (dataByServer.oneblock?.packs || []).length > 0;
+    const order = ["oneblock", "survival", "gens"];
+    const curHas = (dataByServer?.[serverTab]?.packs || []).length > 0;
+    if (curHas) return;
 
-    if (gensEmpty && obHas) {
-      setServerTab("oneblock");
-      setRenderTab("oneblock");
+    const first = order.find((k) => (dataByServer?.[k]?.packs || []).length > 0);
+    if (!first) return;
+
+    if (first !== serverTab) {
+      setServerTab(first);
+      setRenderTab(first);
     }
-  }, [dataByServer, setServerTab, setRenderTab]);
+  }, [dataByServer, serverTab, setServerTab, setRenderTab]);
 
-  // ---- moneda visual (base del FX viene del backend)
   const baseCurrency = useMemo(() => String(fx?.base || "EUR").toUpperCase(), [fx]);
   const viewCurrency = useMemo(
     () => String(monedaSeleccionada || baseCurrency).toUpperCase(),
@@ -204,13 +219,12 @@ export default function TiendaStorefront({
     [money, viewCurrency]
   );
 
-  // ---- rangos
   const rangosAll = useMemo(() => {
     return pickRangosPackages({
-      apiCats: dataByServer.gens.cats,
-      packs: dataByServer.gens.packs,
+      apiCats: dataByServer.gens?.cats || [],
+      packs: dataByServer.gens?.packs || [],
     });
-  }, [dataByServer.gens.cats, dataByServer.gens.packs]);
+  }, [dataByServer.gens?.cats, dataByServer.gens?.packs]);
 
   const rankCards = useMemo(() => {
     const by = { nova: [], alpha: [], inmortal: [] };
@@ -234,7 +248,6 @@ export default function TiendaStorefront({
     ];
   }, [rangosAll]);
 
-  // ---- coins packs
   const coinsPackages = useMemo(() => {
     return pickCoinsPackages({
       serverKey: renderTab,
@@ -248,7 +261,7 @@ export default function TiendaStorefront({
 
     for (const t of serverTabs) {
       const sv = t.key;
-      const data = dataByServer[sv] || { cats: [], packs: [] };
+      const data = dataByServer?.[sv] || { cats: [], packs: [] };
       const list = pickCoinsPackages({ serverKey: sv, apiCats: data.cats, packs: data.packs });
 
       let bestPct = 0;
@@ -332,11 +345,10 @@ export default function TiendaStorefront({
     });
   }, [coinsPackages]);
 
-  // Derivar coins por unidad de moneda base SOLO desde la API (sin hardcode)
   const coinsPerBaseUnit = useMemo(() => {
     const ratios = [];
-    for (const sv of ["gens", "oneblock"]) {
-      const data = dataByServer[sv] || { cats: [], packs: [] };
+    for (const sv of ["gens", "oneblock", "survival"]) {
+      const data = dataByServer?.[sv] || { cats: [], packs: [] };
       const list = pickCoinsPackages({ serverKey: sv, apiCats: data.cats, packs: data.packs });
       for (const p of list) {
         const amount = parseCoinsFromPkg(p, getPackageName);
@@ -368,15 +380,11 @@ export default function TiendaStorefront({
       return;
     }
 
-    // compra con coins (solo UI por ahora)
     return;
   };
 
   return (
-    <div
-      className={`tienda-storefront tsf-brawl2 ${ready ? "is-ready" : ""} ${rootFxClass}`}
-      ref={wrapRef}
-    >
+    <div className={`tienda-storefront tsf-brawl2 ${ready ? "is-ready" : ""} ${rootFxClass}`} ref={wrapRef}>
       <div className="tsf-bgFX" aria-hidden="true" />
 
       <CoinshopModal open={coinshopOpen} fromRect={coinshopFromRect} onClose={closeCoinshop} />
@@ -387,19 +395,13 @@ export default function TiendaStorefront({
           onClose={closeRankDetails}
           onPickRank={(rk) => setActiveRank(rk)}
           rankCards={rankCards}
-          bust={dataByServer.gens.bust}
+          bust={dataByServer.gens?.bust}
           onBuyEur={(pkg, ev) => handleBuyRank(pkg, ev)}
           onBuyCoins={(pkg, ev) => {
             ev?.stopPropagation?.();
           }}
         />
       ) : null}
-
-      <header className="tsf-header tsf-header--fixed">
-        <div className="tsf-signImg" aria-label="Tienda">
-          <img src="/tienda/assets/cartel.png" alt="TIENDA" draggable="false" />
-        </div>
-      </header>
 
       <div className="tsf-scroll">
         {loading && (
@@ -427,12 +429,9 @@ export default function TiendaStorefront({
                     const pkg = r.pkg;
 
                     const priceBase = pkg ? getPackagePrice(pkg) : null;
-                    const coinsPrice =
-                      priceBase != null ? coinsFromMoney(priceBase, coinsPerBaseUnit) : null;
+                    const coinsPrice = priceBase != null ? coinsFromMoney(priceBase, coinsPerBaseUnit) : null;
 
-                    const tebexImg = pkg
-                      ? withCacheBust(getPackageImage(pkg), dataByServer.gens.bust)
-                      : "";
+                    const tebexImg = pkg ? withCacheBust(getPackageImage(pkg), dataByServer.gens?.bust) : "";
 
                     const active = activeRank === r.key;
                     const cart = isInCart(pkg);
@@ -440,9 +439,7 @@ export default function TiendaStorefront({
                     return (
                       <article
                         key={r.key}
-                        className={`tsf-rank ${r.key} ${active ? "is-active" : ""} ${
-                          cart ? "is-inCart" : ""
-                        }`}
+                        className={`tsf-rank ${r.key} ${active ? "is-active" : ""} ${cart ? "is-inCart" : ""}`}
                         style={{ "--i": idx }}
                         onClick={() => onRankTap(r.key)}
                         role="button"
@@ -495,16 +492,12 @@ export default function TiendaStorefront({
                               title="Izquierda: dinero · Derecha: coins"
                             >
                               <span className="tsf-ctaSplitSide tsf-ctaSplitSide--usd" aria-label="Comprar con dinero">
-                                <span className="tsf-ctaSplitValue">
-                                  {priceBase != null ? fmtMoney(priceBase) : "—"}
-                                </span>
+                                <span className="tsf-ctaSplitValue">{priceBase != null ? fmtMoney(priceBase) : "—"}</span>
                               </span>
 
                               <span className="tsf-ctaSplitSide tsf-ctaSplitSide--coins" aria-label="Comprar con coins">
                                 <span className="tsf-ctaSplitCoins">
-                                  <span className="tsf-ctaSplitValue">
-                                    {coinsPrice != null ? fmtInt(coinsPrice) : "—"}
-                                  </span>
+                                  <span className="tsf-ctaSplitValue">{coinsPrice != null ? fmtInt(coinsPrice) : "—"}</span>
                                   <img className="tsf-ctaCoinIcon" src="/tienda/assets/coin.png" alt="" draggable="false" />
                                 </span>
                               </span>
@@ -529,8 +522,8 @@ export default function TiendaStorefront({
                     <TiendaOfertaCountdown variant="tabs" />
 
                     <div className="tsf-tabsRow" aria-label="Fila tabs coinshop">
-                      <nav className="tsf-tabs tsf-tabs--inHeader" aria-label="Selector de servidor">
-                        {serverTabs.slice(0, 1).map((t) => {
+                      <nav className="tsf-tabs tsf-tabs--inHeader tsf-tabs--triple" aria-label="Selector de servidor">
+                        {serverTabs.map((t) => {
                           const active = t.key === serverTab;
                           const pct = tabDiscountPctByServer.get(t.key) ?? null;
 
@@ -538,44 +531,23 @@ export default function TiendaStorefront({
                             <button
                               key={t.key}
                               type="button"
-                              className={`tsf-tab ${active ? "is-active" : ""}`}
+                              className={`tsf-tab tsf-tab--${t.key} ${active ? "is-active" : ""}`}
                               onClick={() => changeServerTabWithDeck(t.key)}
+                              aria-current={active ? "page" : undefined}
                             >
                               {pct != null && pct > 0 && <span className="tsf-tabBadge">-{pct}%</span>}
-                              <img className="tsf-tabIcon" src={t.icon} alt="" draggable="false" />
+                              <img
+                                className="tsf-tabIcon"
+                                src={t.icon}
+                                alt=""
+                                draggable="false"
+                                onError={(e) => {
+                                  if (t.fallbackIcon) e.currentTarget.src = t.fallbackIcon;
+                                }}
+                              />
                               <span className="tsf-tabText">{t.label}</span>
                               <span className="tsf-orb" aria-hidden="true" />
-                            </button>
-                          );
-                        })}
-
-                        <button
-                          type="button"
-                          className="tsf-openShopBtn tsf-openShopBtn--tab"
-                          onClick={openCoinshopFromEvent}
-                          aria-label="Abrir catálogo in-game"
-                          title="Ver catálogo in-game"
-                        >
-                          <span className="tsf-openShopInner" aria-hidden="true">
-                            <img src="/tienda/assets/openshop.png" alt="Abrir catálogo" draggable="false" />
-                          </span>
-                        </button>
-
-                        {serverTabs.slice(1, 2).map((t) => {
-                          const active = t.key === serverTab;
-                          const pct = tabDiscountPctByServer.get(t.key) ?? null;
-
-                          return (
-                            <button
-                              key={t.key}
-                              type="button"
-                              className={`tsf-tab ${active ? "is-active" : ""}`}
-                              onClick={() => changeServerTabWithDeck(t.key)}
-                            >
-                              {pct != null && pct > 0 && <span className="tsf-tabBadge">-{pct}%</span>}
-                              <img className="tsf-tabIcon" src={t.icon} alt="" draggable="false" />
-                              <span className="tsf-tabText">{t.label}</span>
-                              <span className="tsf-orb" aria-hidden="true" />
+                              <span className="tsf-tabGlow" aria-hidden="true" />
                             </button>
                           );
                         })}
@@ -586,24 +558,38 @@ export default function TiendaStorefront({
 
                 <div className="tsf-coinsPanel" aria-label={`Lotes de coins ${serverTab}`}>
                   <div className="tsf-coinsPanelHeader" aria-label="Título lotes de coins">
-                    <h2 className="tsf-coinsPanelTitle">
-                      <span className="tsf-coinsPanelTitleInner">
-                        {activeTabMeta?.icon ? (
-                          <img className="tsf-coinsPanelTitleIcon" src={activeTabMeta.icon} alt="" draggable="false" />
-                        ) : null}
-                        <span className="tsf-coinsPanelTitleText">
-                          LOTES DE COINS {String(activeTabMeta?.label || "").toUpperCase()}
+                    <div className="tsf-coinsPanelHeaderInner">
+                      <h2 className="tsf-coinsPanelTitle">
+                        <span className="tsf-coinsPanelTitleInner">
+                          {activeTabMeta?.icon ? (
+                            <img className="tsf-coinsPanelTitleIcon" src={activeTabMeta.icon} alt="" draggable="false" />
+                          ) : null}
+                          <span className="tsf-coinsPanelTitleText">
+                            LOTES DE COINS {String(activeTabMeta?.label || "").toUpperCase()}
+                          </span>
                         </span>
-                      </span>
-                    </h2>
+                      </h2>
+
+                      <button
+                        type="button"
+                        className="tsf-openShopBtn tsf-openShopBtn--panel"
+                        onClick={openCoinshopFromEvent}
+                        aria-label="Abrir catálogo in-game"
+                        title="Ver catálogo in-game"
+                      >
+                        <span className="tsf-openShopInner" aria-hidden="true">
+                          <img src="/tienda/assets/openshop.png" alt="Abrir catálogo" draggable="false" />
+                        </span>
+                      </button>
+                    </div>
                   </div>
 
                   <div className="tsf-coinsGridWrap" aria-label={`Packs de coins ${serverTab}`}>
                     {coinsPackages?.length ? (
                       <div
-                        className={`tsf-coinsGrid tsf-coinsGrid--linear4 ${
-                          tabAnim === "out" ? "is-out" : "is-in"
-                        } ${switchedOnce ? "tsf-switched" : ""}`}
+                        className={`tsf-coinsGrid tsf-coinsGrid--linear4 ${tabAnim === "out" ? "is-out" : "is-in"} ${
+                          switchedOnce ? "tsf-switched" : ""
+                        }`}
                       >
                         <article
                           className="tsf-coinWrap tsf-coinWrap--daily"
@@ -643,16 +629,13 @@ export default function TiendaStorefront({
                           const qty = getQtyInCart(p);
 
                           const meta = coinsValue?.map?.get(idKey) || { isBest: false, extraNice: 0 };
-                          const hasBonus =
-                            amount != null && meta.extraNice >= 500 && meta.extraNice < amount;
+                          const hasBonus = amount != null && meta.extraNice >= 500 && meta.extraNice < amount;
                           const baseAmount = hasBonus ? Math.max(0, amount - meta.extraNice) : null;
                           const bonusAmount = hasBonus ? meta.extraNice : null;
 
                           return (
                             <article
-                              className={`tsf-coinWrap ${qty > 0 ? "is-inCart" : ""} ${
-                                meta?.isBest ? "is-best" : ""
-                              }`}
+                              className={`tsf-coinWrap ${qty > 0 ? "is-inCart" : ""} ${meta?.isBest ? "is-best" : ""}`}
                               key={idKey}
                               style={{ "--i": gridIndex }}
                               onMouseMove={(ev) => setTiltVars(ev.currentTarget, ev)}
@@ -732,9 +715,7 @@ export default function TiendaStorefront({
                         })}
                       </div>
                     ) : (
-                      <div className="tsf-empty">
-                        No hay productos para este servidor (o no se ha encontrado la categoría).
-                      </div>
+                      <div className="tsf-empty">No hay productos para este servidor (o no se ha encontrado la categoría).</div>
                     )}
                   </div>
                 </div>

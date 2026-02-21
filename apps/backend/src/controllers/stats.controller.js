@@ -1,6 +1,78 @@
 // apps/backend/src/controllers/stats.controller.js
 const db = require("../models/db");
 
+const TIPOS_VALIDOS = new Set([
+  "genpoints",
+  "obpoints",
+  "svpoints",
+  "pkpoints",
+  "anpoints",
+  "network_points",
+
+  "bloques_minados",
+  "bloques_colocados",
+  "mobs_matados",
+  "kills_pvp",
+  "muertes",
+  "muertes_pvp",
+  "tiempo_jugado",
+  "saltos",
+  "distancia_caminada",
+  "distancia_volada",
+  "diamantes_minados",
+  "hierro_minado",
+  "oro_minado",
+  "esmeraldas_minadas",
+  "cultivos_cosechados",
+  "peces_pescados",
+  "dano_infligido",
+  "dano_recibido",
+
+  "killstreak_max",
+
+  "dinero",
+  "power_mcmmo",
+
+  "island_level",
+  "oneblock_blocks_broken",
+  "phase_actual",
+  "challenges_completados",
+
+  "coins_balance",
+  "coins_ganadas_total",
+  "dinero_ganado_total",
+  "upgrades_comprados",
+  "gens_owned",
+  "prestigios",
+
+  "gens_value_total",
+  "gens_income_h",
+  "gens_highest_tier",
+
+  "nivel",
+
+  "mejor_tiempo",
+  "completadas_total",
+  "perfect_runs",
+  "falls",
+  "medallas_ganadas",
+  "racha_dias",
+]);
+
+const VIEWS_BY_TIPO = {
+  genpoints: { view: "vista_leaderboard_genspoints_wallet", order: "genpoints", onlyServer: "gens" },
+  obpoints: { view: "vista_leaderboard_obpoints_wallet", order: "obpoints", onlyServer: "oneblock" },
+  svpoints: { view: "vista_leaderboard_svpoints_wallet", order: "svpoints", onlyServer: "survival" },
+  pkpoints: { view: "vista_leaderboard_pkpoints_wallet", order: "pkpoints", onlyServer: "parkour" },
+  anpoints: { view: "vista_leaderboard_anpoints_wallet", order: "anpoints", onlyServer: "anarquico" },
+  network_points: { view: "vista_leaderboard_network_points_wallet", order: "network_points" },
+};
+
+const parseAsc = (v) => {
+  if (typeof v === "undefined") return false;
+  return String(v).toLowerCase() === "true";
+};
+
 exports.importarStat = async (req, res) => {
   const { uuid, nombre_minecraft, servidor, tipo, categoria, valor } = req.body;
 
@@ -81,7 +153,6 @@ exports.importarStatsAgrupadas = async (req, res) => {
   const syncContext = String(req.body.sync_context || "online").toLowerCase();
   const allowExtras = syncContext === "online";
 
-  // ✅ BASE: stats que SIEMPRE envía el plugin (si algo no viene, mejor 0)
   const baseUpdate = {
     bloques_minados: num(req.body.bloques_minados),
     bloques_colocados: num(req.body.bloques_colocados),
@@ -110,7 +181,6 @@ exports.importarStatsAgrupadas = async (req, res) => {
   setIfDefined(baseUpdate, "nombre_minecraft", textOrUndef(req.body.nombre_minecraft));
   setIfDefined(baseUpdate, "plataforma", textOrUndef(req.body.plataforma));
 
-  // ✅ EXTRAS: SOLO si sync_context=online, y SOLO si vienen definidos (NO pisar con 0)
   const extrasUpdate = {};
   if (allowExtras) {
     setIfDefined(extrasUpdate, "dinero", numOrUndef(req.body.dinero));
@@ -144,9 +214,7 @@ exports.importarStatsAgrupadas = async (req, res) => {
     setIfDefined(extrasUpdate, "medallas_ganadas", numOrUndef(req.body.medallas_ganadas));
     setIfDefined(extrasUpdate, "racha_dias", numOrUndef(req.body.racha_dias));
 
-    // ✅ ANÁRQUICO: si el plugin los envía, guardarlos; si no, NO tocar
     setIfDefined(extrasUpdate, "killstreak_max", numOrUndef(req.body.killstreak_max));
-    // opcional para competitivo:
     setIfDefined(extrasUpdate, "muertes_pvp", numOrUndef(req.body.muertes_pvp));
   }
 
@@ -268,183 +336,28 @@ exports.obtenerRankingEstadisticas = async (req, res) => {
 exports.obtenerLeaderboards = async (req, res) => {
   const { tipo = "tiempo_jugado", servidor, limit = 10, offset = 0, asc } = req.query;
 
-  const tiposValidos = [
-    "genpoints",
-    "obpoints",
-    "svpoints",
-    "pkpoints",
-    "anpoints",
-    "network_points",
-
-    "bloques_minados",
-    "bloques_colocados",
-    "mobs_matZZZ matados",
-    "kills_pvp",
-    "muertes",
-    "muertes_pvp",
-    "tiempo_jugado",
-    "saltos",
-    "distancia_caminada",
-    "distancia_volada",
-    "diamantes_minados",
-    "hierro_minado",
-    "oro_minado",
-    "esmeraldas_minadas",
-    "cultivos_cosechados",
-    "peces_pescados",
-    "dano_infligido",
-    "dano_recibido",
-
-    "killstreak_max",
-
-    "dinero",
-    "power_mcmmo",
-
-    "island_level",
-    "oneblock_blocks_broken",
-    "phase_actual",
-    "challenges_completados",
-
-    "coins_balance",
-    "coins_ganadas_total",
-    "dinero_ganado_total",
-    "upgrades_comprados",
-    "gens_owned",
-    "prestigios",
-
-    "gens_value_total",
-    "gens_income_h",
-    "gens_highest_tier",
-
-    "nivel",
-
-    "mejor_tiempo",
-    "completadas_total",
-    "perfect_runs",
-    "falls",
-    "medallas_ganadas",
-    "racha_dias",
-  ];
-
-  if (!tiposValidos.includes(tipo)) {
-    return res.status(400).json({ error: "Tipo de estadística inválido.", tiposValidos });
+  if (!TIPOS_VALIDOS.has(tipo)) {
+    return res.status(400).json({ error: "Tipo de estadística inválido.", tiposValidos: Array.from(TIPOS_VALIDOS) });
   }
 
-  let ascending = false;
-  if (typeof asc !== "undefined") {
-    ascending = String(asc).toLowerCase() === "true";
-  }
+  const ascending = parseAsc(asc);
 
-  if (tipo === "genpoints") {
-    let q = db
-      .from("vista_leaderboard_genspoints")
-      .select("*", { count: "exact" })
-      .order("genpoints", { ascending })
-      .range(+offset, +offset + +limit - 1);
-
-    if (servidor && String(servidor).toLowerCase() !== "gens") {
+  const spec = VIEWS_BY_TIPO[tipo];
+  if (spec) {
+    if (spec.onlyServer && servidor && String(servidor).toLowerCase() !== spec.onlyServer) {
       return res.json({ total: 0, resultados: [] });
     }
 
-    const { data, count, error } = await q;
-    if (error) {
-      console.error("[FlanSync] Error al obtener genpoints:", error.message);
-      return res.status(500).json({ error: "Error al obtener datos." });
-    }
-
-    return res.json({ total: count, resultados: data });
-  }
-
-  if (tipo === "obpoints") {
     let q = db
-      .from("vista_leaderboard_obpoints")
+      .from(spec.view)
       .select("*", { count: "exact" })
-      .order("obpoints", { ascending })
-      .range(+offset, +offset + +limit - 1);
-
-    if (servidor && String(servidor).toLowerCase() !== "oneblock") {
-      return res.json({ total: 0, resultados: [] });
-    }
-
-    const { data, count, error } = await q;
-    if (error) {
-      console.error("[FlanSync] Error al obtener obpoints:", error.message);
-      return res.status(500).json({ error: "Error al obtener datos." });
-    }
-
-    return res.json({ total: count, resultados: data });
-  }
-
-  if (tipo === "svpoints") {
-    let q = db
-      .from("vista_leaderboard_svpoints")
-      .select("*", { count: "exact" })
-      .order("svpoints", { ascending })
-      .range(+offset, +offset + +limit - 1);
-
-    if (servidor && String(servidor).toLowerCase() !== "survival") {
-      return res.json({ total: 0, resultados: [] });
-    }
-
-    const { data, count, error } = await q;
-    if (error) {
-      console.error("[FlanSync] Error al obtener svpoints:", error.message);
-      return res.status(500).json({ error: "Error al obtener datos." });
-    }
-
-    return res.json({ total: count, resultados: data });
-  }
-
-  if (tipo === "pkpoints") {
-    let q = db
-      .from("vista_leaderboard_pkpoints")
-      .select("*", { count: "exact" })
-      .order("pkpoints", { ascending })
-      .range(+offset, +offset + +limit - 1);
-
-    if (servidor && String(servidor).toLowerCase() !== "parkour") {
-      return res.json({ total: 0, resultados: [] });
-    }
-
-    const { data, count, error } = await q;
-    if (error) {
-      console.error("[FlanSync] Error al obtener pkpoints:", error.message);
-      return res.status(500).json({ error: "Error al obtener datos." });
-    }
-
-    return res.json({ total: count, resultados: data });
-  }
-
-  if (tipo === "anpoints") {
-    let q = db
-      .from("vista_leaderboard_anpoints")
-      .select("*", { count: "exact" })
-      .order("anpoints", { ascending })
-      .range(+offset, +offset + +limit - 1);
-
-    if (servidor && String(servidor).toLowerCase() !== "anarquico") {
-      return res.json({ total: 0, resultados: [] });
-    }
-
-    const { data, count, error } = await q;
-    if (error) {
-      console.error("[FlanSync] Error al obtener anpoints:", error.message);
-      return res.status(500).json({ error: "Error al obtener datos." });
-    }
-
-    return res.json({ total: count, resultados: data });
-  }
-
-  if (tipo === "network_points") {
-    let q = db
-      .from("vista_leaderboard_network_points")
-      .select("*", { count: "exact" })
-      .order("network_points", { ascending })
+      .order(spec.order, { ascending })
       .range(+offset, +offset + +limit - 1);
 
     const { data, count, error } = await q;
+
     if (error) {
-      console.error("[FlanSync] Error al obtener network_points:", error.message);
+      console.error("[FlanSync] Error al obtener leaderboard:", error.message);
       return res.status(500).json({ error: "Error al obtener datos." });
     }
 
@@ -452,7 +365,7 @@ exports.obtenerLeaderboards = async (req, res) => {
   }
 
   let query = db
-    .from("estadisticas_agrupadas")
+    .from("vista_estadisticas_agrupadas_wallet")
     .select("*", { count: "exact" })
     .order(tipo, { ascending })
     .range(+offset, +offset + +limit - 1);

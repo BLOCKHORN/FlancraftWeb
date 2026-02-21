@@ -1,4 +1,3 @@
-// src/components/Estadisticas/parts/LeaderboardsTable.jsx
 import { cn, formatMoney, formatInt as fmtInt, safeNum } from "../leaderboards.utils";
 import { MEDALLAS, STAT_HELP } from "../leaderboards.constants";
 import { computeGensScore, getGensValorTierInfo } from "../leaderboards.gens";
@@ -32,12 +31,6 @@ function RankDelta({ delta }) {
   );
 }
 
-/**
- * ✅ KDR:
- * - Preferimos muertes_pvp si existe y parece real.
- * - Si muertes_pvp = 0 pero muertes > 0 => fallback a muertes (porque seguramente aún no trackeas muertes_pvp).
- * - Si muertes (o muertes_pvp real) = 0 => ∞
- */
 function computeKDRRow(p) {
   const kills = Number(p?.kills_pvp ?? 0);
   if (!Number.isFinite(kills) || kills <= 0) return null;
@@ -48,23 +41,15 @@ function computeKDRRow(p) {
   const hasTotalDeaths = Number.isFinite(totalDeaths);
   const hasPvpDeaths = Number.isFinite(pvpDeaths);
 
-  // Si no hay datos coherentes
   if (!hasTotalDeaths && !hasPvpDeaths) return null;
 
-  // ✅ decidir qué deaths usar
   let deathsToUse = totalDeaths;
 
-  // muertes_pvp "real" si es > 0
   if (hasPvpDeaths && pvpDeaths > 0) {
     deathsToUse = pvpDeaths;
   } else if (hasPvpDeaths && pvpDeaths === 0) {
-    // Si pvpDeaths=0 pero totalDeaths=0 => realmente 0 muertes (perfect)
-    if (hasTotalDeaths && totalDeaths === 0) {
-      deathsToUse = 0;
-    } else {
-      // Si totalDeaths>0 y pvpDeaths=0 => normalmente significa "no trackeado", hacemos fallback a total
-      deathsToUse = totalDeaths;
-    }
+    if (hasTotalDeaths && totalDeaths === 0) deathsToUse = 0;
+    else deathsToUse = totalDeaths;
   }
 
   if (!Number.isFinite(deathsToUse)) return null;
@@ -275,147 +260,169 @@ export default function LeaderboardsTable({
   const total = Math.max(0, Number(totalRows || 0));
 
   return (
-    <div className="lb-tableWrap">
-      <table className="lb-table" style={{ "--stats": STATS.length, "--wideCount": wideCount, "--mediumCount": mediumCount }}>
-        <thead>
-          <tr>
-            <th className="col-pos">Top</th>
-            <th className="col-player">Jugador</th>
+    <div className="lb-tableCard">
+      <div className="lb-tableWrap">
+        <table className="lb-table" style={{ "--stats": STATS.length, "--wideCount": wideCount, "--mediumCount": mediumCount }}>
+          <thead>
+            <tr>
+              <th className="col-pos">Top</th>
+              <th className="col-player">Jugador</th>
 
-            {STATS.map((st) => {
-              const isGens = servidorApi === "gens";
+              {STATS.map((st) => {
+                const isGens = servidorApi === "gens";
 
-              if (isGens && st !== "genpoints") {
+                if (isGens && st !== "genpoints") {
+                  return (
+                    <StatHeader
+                      key={st}
+                      stat={st}
+                      servidorApi={servidorApi}
+                      active={false}
+                      ordenAsc={false}
+                      sortable={false}
+                      helpOverride={STAT_HELP[st]}
+                    />
+                  );
+                }
+
+                if (isGens && st === "genpoints") {
+                  return (
+                    <StatHeader
+                      key={st}
+                      stat={st}
+                      servidorApi={servidorApi}
+                      active={true}
+                      ordenAsc={false}
+                      sortable={false}
+                      helpOverride={STAT_HELP.genpoints}
+                    />
+                  );
+                }
+
                 return (
-                  <StatHeader key={st} stat={st} servidorApi={servidorApi} active={false} ordenAsc={false} sortable={false} helpOverride={STAT_HELP[st]} />
+                  <StatHeader
+                    key={st}
+                    stat={st}
+                    servidorApi={servidorApi}
+                    active={orden === st}
+                    ordenAsc={ordenAsc}
+                    sortable={true}
+                    onClick={() => cambiarOrden(st)}
+                  />
                 );
-              }
-
-              if (isGens && st === "genpoints") {
-                return (
-                  <StatHeader key={st} stat={st} servidorApi={servidorApi} active={true} ordenAsc={false} sortable={false} helpOverride={STAT_HELP.genpoints} />
-                );
-              }
-
-              return (
-                <StatHeader
-                  key={st}
-                  stat={st}
-                  servidorApi={servidorApi}
-                  active={orden === st}
-                  ordenAsc={ordenAsc}
-                  sortable={true}
-                  onClick={() => cambiarOrden(st)}
-                />
-              );
-            })}
-          </tr>
-        </thead>
-
-        <tbody>
-          {loading &&
-            [...Array(limit)].map((_, i) => (
-              <tr key={`sk-${i}`} className="lb-row sk-row">
-                <td><span className="sk sk--pos" /></td>
-                <td>
-                  <div className="lb-player">
-                    <span className="sk sk--head" />
-                    <div className="sk-col">
-                      <span className="sk sk--name" />
-                      <span className="sk sk--mini" />
-                    </div>
-                  </div>
-                </td>
-                {STATS.map((st) => (
-                  <td key={st}><span className="sk sk--num" /></td>
-                ))}
-              </tr>
-            ))}
-
-          {!loading && datosFiltrados.length === 0 && (
-            <tr className="lb-row empty">
-              <td colSpan={2 + STATS.length}>No hay resultados con los filtros actuales.</td>
+              })}
             </tr>
-          )}
+          </thead>
 
-          {!loading &&
-            datosFiltrados.map((p, i) => {
-              const baseIndex = offset + i;
-              const absPos = ordenAsc && total > 0 ? total - baseIndex : baseIndex + 1;
-
-              const meta = getMeta(p.uuid);
-              const medal = MEDALLAS[absPos] || null;
-              const name = p?.nombre_minecraft;
-              const platform = getPlatform(p);
-              const delta = p?.delta_pos_24h;
-
-              return (
-                <tr key={`${p.uuid}-${absPos}`} className={cn("lb-row", { top1: absPos === 1, top2: absPos === 2, top3: absPos === 3 })}>
-                  <td className="td-pos">
-                    <div className="lb-posWrap">
-                      {medal ? <img src={medal} alt={`Top ${absPos}`} className="lb-medal" loading="lazy" /> : <span className="lb-rank">{absPos}</span>}
-                      <RankDelta delta={delta} />
-                    </div>
+          <tbody>
+            {loading &&
+              [...Array(limit)].map((_, i) => (
+                <tr key={`sk-${i}`} className="lb-row sk-row">
+                  <td>
+                    <span className="sk sk--pos" />
                   </td>
-
-                  <td className="td-player">
+                  <td>
                     <div className="lb-player">
-                      <img
-                        className="lb-head"
-                        src={`https://mc-heads.net/avatar/${name}/32`}
-                        alt=""
-                        loading="lazy"
-                        onError={(e) => (e.currentTarget.src = "/assets/default-head.png")}
-                      />
-                      <div className="lb-player__text">
-                        <div className="lb-nameRow">
-                          <NameLink player={p} className="lb-name" onOpen={onOpenPerfil} />
-                          <span className="lb-badges">
-                            {platform && (
-                              <span className={cn("lb-badge-platform", { bedrock: platform === "bedrock", java: platform === "java" })}>
-                                {platform === "bedrock" ? "BEDROCK" : "JAVA"}
-                              </span>
-                            )}
-                            {meta?.rango && <img src={`/assets/rangos/${meta.rango}.webp`} alt="" className="lb-badge-rango" loading="lazy" />}
-                          </span>
-                        </div>
-                        <div className="lb-player__sub">{meta?.rango ? meta.rango : "—"}</div>
+                      <span className="sk sk--head" />
+                      <div className="sk-col">
+                        <span className="sk sk--name" />
+                        <span className="sk sk--mini" />
                       </div>
                     </div>
                   </td>
-
-                  {STATS.map((st) => {
-                    const key = String(st || "").toLowerCase();
-
-                    const rawValue =
-                      key === "phase_actual"
-                        ? p?.phase_nombre || "—"
-                        : key === "island_level"
-                        ? getIslandLevelLocal(p)
-                        : key === "genpoints"
-                        ? safeNum(p?.genpoints) || computeGensScore(p)
-                        : key === "kdr"
-                        ? computeKDRRow(p)
-                        : p?.[st];
-
-                    return (
-                      <td key={st} className={cn("td-stat", { active: servidorApi === "gens" ? st === "genpoints" : orden === st })} data-stat={st}>
-                        <StatCell
-                          stat={st}
-                          p={p}
-                          value={rawValue}
-                          servidorApi={servidorApi}
-                          formatearTiempo={safeFormatearTiempo}
-                          formatearTiempoParkour={safeFormatearTiempoParkour}
-                        />
-                      </td>
-                    );
-                  })}
+                  {STATS.map((st) => (
+                    <td key={st}>
+                      <span className="sk sk--num" />
+                    </td>
+                  ))}
                 </tr>
-              );
-            })}
-        </tbody>
-      </table>
+              ))}
+
+            {!loading && datosFiltrados.length === 0 && (
+              <tr className="lb-row empty">
+                <td colSpan={2 + STATS.length}>No hay resultados con los filtros actuales.</td>
+              </tr>
+            )}
+
+            {!loading &&
+              datosFiltrados.map((p, i) => {
+                const baseIndex = offset + i;
+                const absPos = ordenAsc && total > 0 ? total - baseIndex : baseIndex + 1;
+
+                const meta = getMeta(p.uuid);
+                const medal = MEDALLAS[absPos] || null;
+                const name = p?.nombre_minecraft;
+                const platform = getPlatform(p);
+                const delta = p?.delta_pos_24h;
+
+                return (
+                  <tr key={`${p.uuid}-${absPos}`} className={cn("lb-row", { top1: absPos === 1, top2: absPos === 2, top3: absPos === 3 })}>
+                    <td className="td-pos">
+                      <div className="lb-posWrap">
+                        {medal ? <img src={medal} alt={`Top ${absPos}`} className="lb-medal" loading="lazy" /> : <span className="lb-rank">{absPos}</span>}
+                        <RankDelta delta={delta} />
+                      </div>
+                    </td>
+
+                    <td className="td-player">
+                      <div className="lb-player">
+                        <img
+                          className="lb-head"
+                          src={`https://mc-heads.net/avatar/${name}/32`}
+                          alt=""
+                          loading="lazy"
+                          onError={(e) => (e.currentTarget.src = "/assets/default-head.png")}
+                        />
+                        <div className="lb-player__text">
+                          <div className="lb-nameRow">
+                            <NameLink player={p} className="lb-name" onOpen={onOpenPerfil} />
+                            <span className="lb-badges">
+                              {platform && (
+                                <span className={cn("lb-badge-platform", { bedrock: platform === "bedrock", java: platform === "java" })}>
+                                  {platform === "bedrock" ? "BEDROCK" : "JAVA"}
+                                </span>
+                              )}
+                              {meta?.rango && <img src={`/assets/rangos/${meta.rango}.webp`} alt="" className="lb-badge-rango" loading="lazy" />}
+                            </span>
+                          </div>
+                          <div className="lb-player__sub">{meta?.rango ? meta.rango : "—"}</div>
+                        </div>
+                      </div>
+                    </td>
+
+                    {STATS.map((st) => {
+                      const key = String(st || "").toLowerCase();
+
+                      const rawValue =
+                        key === "phase_actual"
+                          ? p?.phase_nombre || "—"
+                          : key === "island_level"
+                          ? getIslandLevelLocal(p)
+                          : key === "genpoints"
+                          ? safeNum(p?.genpoints) || computeGensScore(p)
+                          : key === "kdr"
+                          ? computeKDRRow(p)
+                          : p?.[st];
+
+                      return (
+                        <td key={st} className={cn("td-stat", { active: servidorApi === "gens" ? st === "genpoints" : orden === st })} data-stat={st}>
+                          <StatCell
+                            stat={st}
+                            p={p}
+                            value={rawValue}
+                            servidorApi={servidorApi}
+                            formatearTiempo={safeFormatearTiempo}
+                            formatearTiempoParkour={safeFormatearTiempoParkour}
+                          />
+                        </td>
+                      );
+                    })}
+                  </tr>
+                );
+              })}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

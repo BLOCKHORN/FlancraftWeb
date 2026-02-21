@@ -1,12 +1,16 @@
 import { useEffect, useState, useRef } from "react";
-import { Filter } from "lucide-react";
+import { Filter, Clock } from "lucide-react";
 import "../../styles/components/Dashboard/_logrolist.scss";
 
 // 🔗 BASE API: configurable vía .env (VITE_BACKEND_URL)
-const API_BASE = import.meta.env.VITE_BACKEND_URL || "http://localhost:10000";
+const API_BASE =
+  import.meta.env.VITE_BACKEND_URL || "https://flancraft-backend.onrender.com";
 
 // ✅ Paginación
 const PAGE_SIZE = 10;
+
+// ✅ TOGGLE: dejar en true para bloquear UI (próximamente)
+const LOGROS_PROXIMAMENTE = true;
 
 // Tabs superiores: tipo de misión
 const TABS_MISION = [
@@ -27,7 +31,7 @@ const TABS_MISION = [
   },
 ];
 
-// Lista de reinos (solo para permanentes)
+// ✅ Lista de reinos (solo para permanentes)
 const SERVIDORES = [
   { nombre: "Todos", valor: null },
   {
@@ -36,14 +40,9 @@ const SERVIDORES = [
     imagen: "/assets/reinos/survival-clasico.webp",
   },
   {
-    nombre: "Survival Anárquico",
-    valor: "anarquico",
-    imagen: "/assets/reinos/survival-anarquico.webp",
-  },
-  {
-    nombre: "Survival Hardcore",
-    valor: "hardcore",
-    imagen: "/assets/reinos/survival-hardcore.webp",
+    nombre: "Gens",
+    valor: "gens",
+    imagen: "/assets/reinos/gens.webp",
   },
   {
     nombre: "OneBlock",
@@ -51,9 +50,9 @@ const SERVIDORES = [
     imagen: "/assets/reinos/oneblock.webp",
   },
   {
-    nombre: "Chunklock",
-    valor: "chunklock",
-    imagen: "/assets/reinos/chunklock.webp",
+    nombre: "Survival Anárquico",
+    valor: "anarquico",
+    imagen: "/assets/reinos/survival-anarquico.webp",
   },
   {
     nombre: "Parkour",
@@ -153,6 +152,7 @@ function LogroList({ user, onXpClaimed }) {
   // CAMBIO DE PESTAÑA
   // ==========================
   const manejarCambioTipoMision = (nuevoTipo) => {
+    if (LOGROS_PROXIMAMENTE) return; // 🔒 bloqueado
     if (nuevoTipo === tipoMision) return;
     setTipoMision(nuevoTipo);
 
@@ -166,6 +166,14 @@ function LogroList({ user, onXpClaimed }) {
   // ==========================
   useEffect(() => {
     const fetchLogros = async () => {
+      // 🔒 En modo "próximamente" no pedimos datos, pero dejamos toda la lógica intacta
+      if (LOGROS_PROXIMAMENTE) {
+        setError(null);
+        setLogros([]);
+        setCargando(false);
+        return;
+      }
+
       try {
         setCargando(true);
         setError(null);
@@ -222,8 +230,9 @@ function LogroList({ user, onXpClaimed }) {
       }
     };
 
+    if (!user?.uuid) return;
     fetchLogros();
-  }, [user.uuid, tipoMision]);
+  }, [user?.uuid, tipoMision]);
 
   // ==========================
   // CONTADOR (diaria / semanal)
@@ -379,7 +388,7 @@ function LogroList({ user, onXpClaimed }) {
   // reset a página 1 cuando cambias filtros/orden/tipo
   useEffect(() => {
     setPagina(1);
-  }, [tipoMision, servidorActivo, criterio, user.uuid]);
+  }, [tipoMision, servidorActivo, criterio, user?.uuid]);
 
   // si el total baja, clamp
   useEffect(() => {
@@ -410,7 +419,14 @@ function LogroList({ user, onXpClaimed }) {
   // RENDER
   // ==========================
   return (
-    <section className="logros-epic">
+    <section
+      className={[
+        "logros-epic",
+        LOGROS_PROXIMAMENTE ? "logros-proximamente-mode" : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
+    >
       {/* CABECERA */}
       <header className="logros-header">
         <h2 className="logros-titulo">Logros de Flancraft</h2>
@@ -421,7 +437,12 @@ function LogroList({ user, onXpClaimed }) {
             <button
               key={tab.id}
               type="button"
-              className={["logros-tab-tipo", tipoMision === tab.id ? "activo" : ""]
+              disabled={LOGROS_PROXIMAMENTE}
+              className={[
+                "logros-tab-tipo",
+                tipoMision === tab.id ? "activo" : "",
+                LOGROS_PROXIMAMENTE ? "bloqueado" : "",
+              ]
                 .filter(Boolean)
                 .join(" ")}
               onClick={() => manejarCambioTipoMision(tab.id)}
@@ -434,10 +455,12 @@ function LogroList({ user, onXpClaimed }) {
           ))}
         </div>
 
-        <p className="logros-subtitulo-secundario">{subtituloTab}</p>
+        <p className="logros-subtitulo-secundario">
+          {LOGROS_PROXIMAMENTE ? "Sistema en preparación" : subtituloTab}
+        </p>
 
         {/* COUNTDOWN SOLO DIARIA / SEMANAL */}
-        {tipoMision !== "permanente" && tiempoRestante && (
+        {!LOGROS_PROXIMAMENTE && tipoMision !== "permanente" && tiempoRestante && (
           <div className={`logros-countdown logros-countdown-${tipoMision}`}>
             <span className="countdown-label">
               {tipoMision === "diaria"
@@ -483,275 +506,333 @@ function LogroList({ user, onXpClaimed }) {
         )}
       </header>
 
-      {/* TOOLBAR FILTROS */}
-      <div className="logros-toolbar">
-        {/* Selector de reinos SOLO en permanentes */}
-        {tipoMision === "permanente" && (
-          <div className="logros-reinos-wrapper">
-            <button
-              type="button"
-              className={[
-                "todos-pill",
-                servidorActivo === null ? "activo" : "",
-                hayClaimables ? "todos-pill-claimable" : "",
-              ]
-                .filter(Boolean)
-                .join(" ")}
-              onClick={() => setServidorActivo(null)}
-            >
-              Todos
-            </button>
+      {/* ✅ PRÓXIMAMENTE */}
+      {LOGROS_PROXIMAMENTE ? (
+        <div className="logros-soon-wrap">
+          <div className="logros-soon-card">
+            <div className="logros-soon-icon">
+              <Clock size={22} className="logros-soon-clock" />
+            </div>
+            <div className="logros-soon-text">
+              <h3 className="logros-soon-title">PRÓXIMAMENTE DISPONIBLE</h3>
+              <p className="logros-soon-desc">
+                Estamos preparando el nuevo sistema de logros, misiones diarias y retos
+                semanales.
+              </p>
+              <p className="logros-soon-desc2">
+                Muy pronto podrás progresar y reclamar XP desde aquí.
+              </p>
+            </div>
+          </div>
 
-            <div className="reinos-grid">
-              {SERVIDORES.slice(1).map(({ nombre, valor, imagen }) => (
-                <button
+          <div className="logros-soon-reinos">
+            <p className="logros-soon-reinos-title">Reinos de lanzamiento</p>
+
+            <div className="reinos-grid reinos-grid-soon">
+              {SERVIDORES.slice(1).map(({ nombre, imagen, valor }) => (
+                <div
                   key={valor}
-                  type="button"
-                  className={[
-                    "reino-card",
-                    valor === servidorActivo ? "activo" : "",
-                    claimablePorServidor.has(valor) ? "reino-card-claimable" : "",
-                  ]
-                    .filter(Boolean)
-                    .join(" ")}
-                  onClick={() => setServidorActivo(valor)}
+                  className="reino-card reino-card--soon"
+                  title={nombre}
+                  aria-hidden="true"
                 >
                   <div className="reino-img-wrap">
                     <img src={imagen} alt={nombre} className="reino-img" />
                   </div>
                   <span className="reino-nombre">{nombre}</span>
-                </button>
+                </div>
               ))}
             </div>
           </div>
-        )}
-
-        {/* Orden */}
-        <div className="logros-filtros-orden">
-          <span className="orden-label">
-            <Filter size={15} /> Ordenar por
-          </span>
-          <select
-            className="orden-select"
-            value={criterio}
-            onChange={(e) => setCriterio(e.target.value)}
-          >
-            {CRITERIOS.map((c) => (
-              <option key={c.valor} value={c.valor}>
-                {c.nombre}
-              </option>
-            ))}
-          </select>
         </div>
-      </div>
-
-      {/* ESTADOS DE ERROR / VACÍO */}
-      {error && (
-        <p className="logros-estado logros-estado-error">
-          Error al cargar logros: {error}
-        </p>
-      )}
-
-      {!error && !cargando && !hayLogros && (
-        <p className="logros-estado">
-          {tipoMision === "permanente"
-            ? "Aún no tienes logros registrados en esta modalidad."
-            : tipoMision === "diaria"
-            ? "No hay misiones diarias activas ahora mismo."
-            : "No hay retos semanales activos ahora mismo."}
-        </p>
-      )}
-
-      {/* LISTA + OVERLAY DE CARGA */}
-      <div className="logros-list-wrapper">
-        <div ref={listaTopRef} />
-
-        {!error && hayLogros && (
-          <>
-            <ul
-              className={[
-                "logros-lista",
-                cargando ? "logros-lista-saliente" : "logros-lista-entrante",
-              ]
-                .filter(Boolean)
-                .join(" ")}
-            >
-              {logrosPagina.map((logro, index) => {
-                const progresoPercent = Math.min(
-                  100,
-                  (logro.progreso_actual / logro.objetivo) * 100
-                );
-
-                const esCompletado = !!logro.completado;
-                const esReclamado = !!logro.reclamado || logro.id === reclamadoId;
-                const claimable = esClaimable(logro);
-
-                const imagenServidor =
-                  logro.servidor && MAPA_SERVIDOR_IMAGEN[logro.servidor];
-
-                return (
-                  <li
-                    key={logro.id}
-                    className={[
-                      "logro-row",
-                      esCompletado ? "logro-completado" : "logro-progreso",
-                      esReclamado ? "logro-reclamado" : "",
-                      claimable ? "logro-claimable" : "",
-                    ]
-                      .filter(Boolean)
-                      .join(" ")}
-                    style={{ "--delay": `${index * 45}ms` }}
-                  >
-                    <span className="logro-acento" />
-
-                    <div className="logro-main">
-                      {/* TÍTULO + XP */}
-                      <div className="logro-top">
-                        <div className="logro-top-left">
-                          <h3 className="logro-nombre">
-                            {logro.nombre || logro.tipo || "Logro"}
-                          </h3>
-                          <p className="logro-descripcion">
-                            {logro.descripcion ||
-                              "Progreso de logro en este servidor."}
-                          </p>
-                        </div>
-
-                        <div className="logro-top-right">
-                          {/* ✅ SOLO 1 ICONO, a la IZQUIERDA del XP */}
-                          <div className="logro-xp-wrap">
-                            <img
-                              src={
-                                esReclamado
-                                  ? "/assets/logros/estado-reclamado.webp"
-                                  : esCompletado
-                                  ? "/assets/logros/estado-reclamar.webp"
-                                  : "/assets/logros/estado-progreso.webp"
-                              }
-                              alt={
-                                esReclamado
-                                  ? "Reclamado"
-                                  : esCompletado
-                                  ? "Listo para reclamar"
-                                  : "En progreso"
-                              }
-                              className="logro-xp-status-img"
-                              draggable="false"
-                            />
-                            <span className="logro-xp-chip">
-                              {logro.xp_otorgada} XP
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* PROGRESO */}
-                      <div className="logro-progress">
-                        <div className="logro-progress-track">
-                          <div
-                            className="logro-progress-fill"
-                            style={{ width: `${progresoPercent}%` }}
-                          />
-                        </div>
-                        <div className="logro-progress-meta">
-                          <span className="logro-progress-texto">
-                            {logro.progreso_actual} / {logro.objetivo}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* ✅ BOTÓN ABAJO CENTRADO */}
-                      {tipoMision === "permanente" && esCompletado && !esReclamado && (
-                        <div className="logro-footer">
-                          <button
-                            ref={(el) => (buttonRefs.current[logro.id] = el)}
-                            type="button"
-                            className="logro-claim-btn"
-                            onClick={() => reclamarLogro(logro.id, logro.xp_otorgada)}
-                            disabled={cargandoId === logro.id}
-                          >
-                            <span className="claim-btn-inner">
-                              {cargandoId === logro.id ? "Reclamando..." : "Reclamar XP"}
-                            </span>
-                          </button>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* FRANJA OSCURA CON ICONO DEL REINO */}
-                    {imagenServidor && (
-                      <div className="logro-reino-overlay">
-                        <div className="logro-reino-glow" />
-                        <img
-                          src={imagenServidor}
-                          alt={logro.servidor}
-                          className="logro-reino-img"
-                        />
-                      </div>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
-
-            {/* ✅ PAGINACIÓN */}
-            {!cargando && totalPaginas > 1 && (
-              <nav className="logros-paginacion" aria-label="Paginación de logros">
+      ) : (
+        <>
+          {/* TOOLBAR FILTROS */}
+          <div className="logros-toolbar">
+            {/* Selector de reinos SOLO en permanentes */}
+            {tipoMision === "permanente" && (
+              <div className="logros-reinos-wrapper">
                 <button
                   type="button"
-                  className="logros-pag-btn"
-                  onClick={() => irPagina(pagina - 1)}
-                  disabled={pagina === 1}
+                  className={[
+                    "todos-pill",
+                    servidorActivo === null ? "activo" : "",
+                    hayClaimables ? "todos-pill-claimable" : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                  onClick={() => setServidorActivo(null)}
                 >
-                  Anterior
+                  Todos
                 </button>
 
-                <div className="logros-pag-numeros">
-                  {paginasVisibles.map((n) => (
+                <div className="reinos-grid">
+                  {SERVIDORES.slice(1).map(({ nombre, valor, imagen }) => (
                     <button
-                      key={n}
+                      key={valor}
                       type="button"
-                      className={["logros-pag-num", n === pagina ? "activo" : ""]
+                      className={[
+                        "reino-card",
+                        valor === servidorActivo ? "activo" : "",
+                        claimablePorServidor.has(valor) ? "reino-card-claimable" : "",
+                      ]
                         .filter(Boolean)
                         .join(" ")}
-                      onClick={() => irPagina(n)}
+                      onClick={() => setServidorActivo(valor)}
                     >
-                      {n}
+                      <div className="reino-img-wrap">
+                        <img src={imagen} alt={nombre} className="reino-img" />
+                      </div>
+                      <span className="reino-nombre">{nombre}</span>
                     </button>
                   ))}
                 </div>
-
-                <button
-                  type="button"
-                  className="logros-pag-btn"
-                  onClick={() => irPagina(pagina + 1)}
-                  disabled={pagina === totalPaginas}
-                >
-                  Siguiente
-                </button>
-
-                <span className="logros-pag-info">
-                  Página {pagina} / {totalPaginas}
-                </span>
-              </nav>
+              </div>
             )}
-          </>
-        )}
 
-        {/* OVERLAY DE CARGA */}
-        {cargando && (
-          <div className="logros-loading-overlay">
-            <div className="logros-loading-inner">
-              <img
-                src="/assets/eco.webp"
-                alt="Cargando logros"
-                className="logros-loading-gem"
-              />
-              <p className="logros-loading-text">Invocando nuevos desafíos...</p>
+            {/* Orden */}
+            <div className="logros-filtros-orden">
+              <span className="orden-label">
+                <Filter size={15} /> Ordenar por
+              </span>
+              <select
+                className="orden-select"
+                value={criterio}
+                onChange={(e) => setCriterio(e.target.value)}
+              >
+                {CRITERIOS.map((c) => (
+                  <option key={c.valor} value={c.valor}>
+                    {c.nombre}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
-        )}
-      </div>
+
+          {/* ESTADOS DE ERROR / VACÍO */}
+          {error && (
+            <p className="logros-estado logros-estado-error">
+              Error al cargar logros: {error}
+            </p>
+          )}
+
+          {!error && !cargando && !hayLogros && (
+            <p className="logros-estado">
+              {tipoMision === "permanente"
+                ? "Aún no tienes logros registrados en esta modalidad."
+                : tipoMision === "diaria"
+                ? "No hay misiones diarias activas ahora mismo."
+                : "No hay retos semanales activos ahora mismo."}
+            </p>
+          )}
+
+          {/* LISTA + OVERLAY DE CARGA */}
+          <div className="logros-list-wrapper">
+            <div ref={listaTopRef} />
+
+            {!error && hayLogros && (
+              <>
+                <ul
+                  className={[
+                    "logros-lista",
+                    cargando ? "logros-lista-saliente" : "logros-lista-entrante",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                >
+                  {logrosPagina.map((logro, index) => {
+                    const progresoPercent = Math.min(
+                      100,
+                      (logro.progreso_actual / logro.objetivo) * 100
+                    );
+
+                    const esCompletado = !!logro.completado;
+                    const esReclamado = !!logro.reclamado || logro.id === reclamadoId;
+                    const claimable = esClaimable(logro);
+
+                    const imagenServidor =
+                      logro.servidor && MAPA_SERVIDOR_IMAGEN[logro.servidor];
+
+                    return (
+                      <li
+                        key={logro.id}
+                        className={[
+                          "logro-row",
+                          esCompletado ? "logro-completado" : "logro-progreso",
+                          esReclamado ? "logro-reclamado" : "",
+                          claimable ? "logro-claimable" : "",
+                        ]
+                          .filter(Boolean)
+                          .join(" ")}
+                        style={{ "--delay": `${index * 45}ms` }}
+                      >
+                        <span className="logro-acento" />
+
+                        <div className="logro-main">
+                          {/* TÍTULO + XP */}
+                          <div className="logro-top">
+                            <div className="logro-top-left">
+                              <h3 className="logro-nombre">
+                                {logro.nombre || logro.tipo || "Logro"}
+                              </h3>
+                              <p className="logro-descripcion">
+                                {logro.descripcion ||
+                                  "Progreso de logro en este servidor."}
+                              </p>
+                            </div>
+
+                            <div className="logro-top-right">
+                              <div className="logro-xp-wrap">
+                                <img
+                                  src={
+                                    esReclamado
+                                      ? "/assets/logros/estado-reclamado.webp"
+                                      : esCompletado
+                                      ? "/assets/logros/estado-reclamar.webp"
+                                      : "/assets/logros/estado-progreso.webp"
+                                  }
+                                  alt={
+                                    esReclamado
+                                      ? "Reclamado"
+                                      : esCompletado
+                                      ? "Listo para reclamar"
+                                      : "En progreso"
+                                  }
+                                  className="logro-xp-status-img"
+                                  draggable="false"
+                                />
+                                <span className="logro-xp-chip">
+                                  {logro.xp_otorgada} XP
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* PROGRESO */}
+                          <div className="logro-progress">
+                            <div className="logro-progress-track">
+                              <div
+                                className="logro-progress-fill"
+                                style={{ width: `${progresoPercent}%` }}
+                              />
+                            </div>
+                            <div className="logro-progress-meta">
+                              <span className="logro-progress-texto">
+                                {logro.progreso_actual} / {logro.objetivo}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* BOTÓN ABAJO CENTRADO */}
+                          {tipoMision === "permanente" &&
+                            esCompletado &&
+                            !esReclamado && (
+                              <div className="logro-footer">
+                                <button
+                                  ref={(el) => (buttonRefs.current[logro.id] = el)}
+                                  type="button"
+                                  className={[
+                                    "logro-claim-btn",
+                                    "tsf-btn",
+                                    "tsf-btn--aqua",
+                                  ].join(" ")}
+                                  onClick={() =>
+                                    reclamarLogro(logro.id, logro.xp_otorgada)
+                                  }
+                                  disabled={cargandoId === logro.id}
+                                >
+                                  <span className="tsf-btnDepth" aria-hidden="true" />
+                                  <span className="tsf-btnFace">
+                                    <span className="tsf-btnLabel">
+                                      {cargandoId === logro.id
+                                        ? "Reclamando..."
+                                        : "Reclamar XP"}
+                                    </span>
+                                  </span>
+                                </button>
+                              </div>
+                            )}
+                        </div>
+
+                        {/* FRANJA OSCURA CON ICONO DEL REINO */}
+                        {imagenServidor && (
+                          <div className="logro-reino-overlay">
+                            <div className="logro-reino-glow" />
+                            <img
+                              src={imagenServidor}
+                              alt={logro.servidor}
+                              className="logro-reino-img"
+                            />
+                          </div>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+
+                {/* PAGINACIÓN */}
+                {!cargando && totalPaginas > 1 && (
+                  <nav className="logros-paginacion" aria-label="Paginación de logros">
+                    <button
+                      type="button"
+                      className="logros-pag-btn"
+                      onClick={() => irPagina(pagina - 1)}
+                      disabled={pagina === 1}
+                    >
+                      Anterior
+                    </button>
+
+                    <div className="logros-pag-numeros">
+                      {paginasVisibles.map((n) => (
+                        <button
+                          key={n}
+                          type="button"
+                          className={[
+                            "logros-pag-num",
+                            n === pagina ? "activo" : "",
+                          ]
+                            .filter(Boolean)
+                            .join(" ")}
+                          onClick={() => irPagina(n)}
+                        >
+                          {n}
+                        </button>
+                      ))}
+                    </div>
+
+                    <button
+                      type="button"
+                      className="logros-pag-btn"
+                      onClick={() => irPagina(pagina + 1)}
+                      disabled={pagina === totalPaginas}
+                    >
+                      Siguiente
+                    </button>
+
+                    <span className="logros-pag-info">
+                      Página {pagina} / {totalPaginas}
+                    </span>
+                  </nav>
+                )}
+              </>
+            )}
+
+            {/* OVERLAY DE CARGA */}
+            {cargando && (
+              <div className="logros-loading-overlay">
+                <div className="logros-loading-inner">
+                  <img
+                    src="/assets/eco.webp"
+                    alt="Cargando logros"
+                    className="logros-loading-gem"
+                  />
+                  <p className="logros-loading-text">Invocando nuevos desafíos...</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </>
+      )}
     </section>
   );
 }

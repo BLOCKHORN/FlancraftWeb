@@ -1,8 +1,5 @@
-/* src/styles/components/Tienda/storefront/_responsive.scss */
+@use "./mixins" as *;
 
-/* ======================================================================
-   00) TOUCH UX — anti tap highlight / selección rara
-   ====================================================================== */
 @media (hover: none) and (pointer: coarse) {
   .tienda-storefront.tsf-brawl2,
   .tienda-storefront.tsf-brawl2 * {
@@ -10,7 +7,10 @@
     -webkit-touch-callout: none;
   }
 
-  .tienda-storefront.tsf-brawl2 { user-select: none; -webkit-user-select: none; }
+  .tienda-storefront.tsf-brawl2 {
+    user-select: none;
+    -webkit-user-select: none;
+  }
 
   .tienda-storefront.tsf-brawl2 input,
   .tienda-storefront.tsf-brawl2 textarea {
@@ -34,27 +34,18 @@
   }
 }
 
-/* ======================================================================
-   01) HEADER SIGN (cartel "TIENDA")
-   - Ajuste general: en tablet el cartel sube un poco
-   - Ajuste especial: en alturas bajas (1024x600 etc.) sube MÁS y reservamos más aire
-   ====================================================================== */
-
 @media (max-width: 1024px) {
-  .tienda-storefront.tsf-brawl2{
-    /* tamaño del cartel */
+  .tienda-storefront.tsf-brawl2 {
     --tsf-sign-w: clamp(170px, 26vw, 255px);
-
-    /* importante: más negativo = más arriba (evita solaparse con rangos) */
     --tsf-sign-drop: clamp(-42px, -4.2vw, -26px);
-
-    /* espacio reservado encima de los rangos (para que el cartel no “muerda”) */
     --tsf-ranks-top: clamp(40px, 6.2vh, 72px);
   }
 
-  .tienda-storefront.tsf-brawl2 .tsf-header--fixed { top: env(safe-area-inset-top); }
+  .tienda-storefront.tsf-brawl2 .tsf-header--fixed {
+    top: env(safe-area-inset-top);
+  }
 
-  .tienda-storefront.tsf-brawl2 .tsf-signImg{
+  .tienda-storefront.tsf-brawl2 .tsf-signImg {
     width: var(--tsf-sign-w);
     margin: 0 auto;
     transform: translateY(var(--tsf-sign-drop));
@@ -63,82 +54,94 @@
     pointer-events: none;
   }
 
-  .tienda-storefront.tsf-brawl2 .tsf-signImg > img{
+  .tienda-storefront.tsf-brawl2 .tsf-signImg > img {
     width: 100%;
     height: auto;
     display: block;
   }
 
-  /* ✅ clave: bajamos el bloque de rangos un poco en tablet también */
-  .tienda-storefront.tsf-brawl2 .tsf-ranks{
+  .tienda-storefront.tsf-brawl2 .tsf-ranks {
     margin-top: var(--tsf-ranks-top);
   }
 }
 
-/* Viewport BAJITO (el caso Nest Hub 1024x600 y similares) */
 @media (max-width: 1024px) and (max-height: 650px) {
-  .tienda-storefront.tsf-brawl2{
+  .tienda-storefront.tsf-brawl2 {
     --tsf-sign-w: clamp(160px, 24vw, 235px);
     --tsf-sign-drop: clamp(-54px, -5.4vw, -34px);
     --tsf-ranks-top: clamp(52px, 7.4vh, 92px);
   }
+
+  .tienda-storefront.tsf-brawl2 .tsf-coinsHeader {
+    padding: 0.25rem 0 0.55rem;
+  }
 }
 
-/* Ajustes extra para móvil */
 @media (max-width: 768px) {
-  .tienda-storefront.tsf-brawl2{
+  .tienda-storefront.tsf-brawl2 {
     --tsf-sign-w: clamp(160px, 44vw, 230px);
     --tsf-sign-drop: clamp(-48px, -5.2vw, -30px);
-    --tsf-ranks-top: clamp(92px, 10vh, 128px); /* móvil necesita más aire */
+    --tsf-ranks-top: clamp(92px, 10vh, 128px);
   }
 
-  .tienda-storefront.tsf-brawl2 .tsf-ranks{
+  .tienda-storefront.tsf-brawl2 .tsf-ranks {
     margin-top: var(--tsf-ranks-top);
   }
 }
 
 @media (max-width: 480px) {
-  .tienda-storefront.tsf-brawl2{
+  .tienda-storefront.tsf-brawl2 {
     --tsf-sign-w: clamp(145px, 54vw, 205px);
     --tsf-sign-drop: clamp(-46px, -5.6vw, -30px);
   }
 
-  .tienda-storefront.tsf-brawl2 .tsf-signImg{
+  .tienda-storefront.tsf-brawl2 .tsf-signImg {
     filter: drop-shadow(0 9px 16px rgba(0,0,0,0.44));
   }
 }
 
 @media (max-width: 360px) {
-  .tienda-storefront.tsf-brawl2{
+  .tienda-storefront.tsf-brawl2 {
     --tsf-sign-w: clamp(135px, 60vw, 190px);
     --tsf-sign-drop: clamp(-44px, -6.0vw, -30px);
   }
 }
 
-/* ======================================================================
-   03) RANK CARDS
-   - Tablet: mantiene 3 columnas pero adapta tamaños
-   - Móvil: 1 columna + ajustes internos (tu lift de square incluido)
-   ====================================================================== */
-
 @media (max-width: 1024px) {
-  .tienda-storefront.tsf-brawl2 { --rank-size: clamp(170px, 22vw, 240px); }
-  .tienda-storefront.tsf-brawl2 .tsf-ranksRow { gap: 14px; }
-  .tienda-storefront.tsf-brawl2 .tsf-rankLabel { top: clamp(-0.45rem, -1.2vw, -1.05rem); }
-  .tienda-storefront.tsf-brawl2 .tsf-ctaSplitValue { font-size: 0.98rem; }
-  .tienda-storefront.tsf-brawl2 .tsf-ctaCoinIcon { width: 16px; height: 16px; }
+  .tienda-storefront.tsf-brawl2 {
+    --rank-size: clamp(170px, 22vw, 240px);
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-ranksRow {
+    gap: 14px;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-rankLabel {
+    top: clamp(-0.45rem, -1.2vw, -1.05rem);
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-ctaSplitValue {
+    font-size: 0.98rem;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-ctaCoinIcon {
+    width: 16px;
+    height: 16px;
+  }
 }
 
 @media (max-width: 768px) {
-  .tienda-storefront.tsf-brawl2 .tsf-ranksRow{
+  .tienda-storefront.tsf-brawl2 .tsf-ranksRow {
     grid-template-columns: 1fr;
     justify-items: center;
     gap: 28px;
   }
 
-  .tienda-storefront.tsf-brawl2 { --rank-size: min(86vw, 320px); }
+  .tienda-storefront.tsf-brawl2 {
+    --rank-size: min(86vw, 320px);
+  }
 
-  .tienda-storefront.tsf-brawl2 .tsf-rank{
+  .tienda-storefront.tsf-brawl2 .tsf-rank {
     max-width: var(--rank-size);
 
     --cta-height: 38px;
@@ -153,17 +156,22 @@
     --m-square-lift: 10px;
   }
 
-  .tienda-storefront.tsf-brawl2 .tsf-rankLabel{
+  .tienda-storefront.tsf-brawl2 .tsf-rankLabel {
     top: var(--m-label-top);
     display: grid;
     justify-items: center;
     line-height: 1;
   }
 
-  .tienda-storefront.tsf-brawl2 .tsf-rankTop { font-size: 0.90rem; }
-  .tienda-storefront.tsf-brawl2 .tsf-rankName { font-size: 1.78rem; }
+  .tienda-storefront.tsf-brawl2 .tsf-rankTop {
+    font-size: 0.90rem;
+  }
 
-  .tienda-storefront.tsf-brawl2 .tsf-perma{
+  .tienda-storefront.tsf-brawl2 .tsf-rankName {
+    font-size: 1.78rem;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-perma {
     left: 50%;
     top: calc(var(--m-label-top) + var(--m-perma-offset));
     transform: translateX(-50%);
@@ -174,18 +182,24 @@
     line-height: 1;
   }
 
-  .tienda-storefront.tsf-brawl2 .tsf-square{
+  .tienda-storefront.tsf-brawl2 .tsf-square {
     margin-top: calc(16px - var(--m-square-lift));
   }
 
-  .tienda-storefront.tsf-brawl2 .tsf-squareCta{
+  .tienda-storefront.tsf-brawl2 .tsf-squareCta {
     bottom: calc(var(--cta-bottom) - 0.3%);
   }
 
-  .tienda-storefront.tsf-brawl2 .tsf-ctaSplitValue { font-size: 1.02rem; }
-  .tienda-storefront.tsf-brawl2 .tsf-ctaCoinIcon { width: 18px; height: 18px; }
+  .tienda-storefront.tsf-brawl2 .tsf-ctaSplitValue {
+    font-size: 1.02rem;
+  }
 
-  .tienda-storefront.tsf-brawl2 .tsf-best{
+  .tienda-storefront.tsf-brawl2 .tsf-ctaCoinIcon {
+    width: 18px;
+    height: 18px;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-best {
     top: -0.45rem;
     right: -0.45rem;
     font-size: 0.72rem;
@@ -194,9 +208,11 @@
 }
 
 @media (max-width: 480px) {
-  .tienda-storefront.tsf-brawl2 { --rank-size: min(90vw, 300px); }
+  .tienda-storefront.tsf-brawl2 {
+    --rank-size: min(90vw, 300px);
+  }
 
-  .tienda-storefront.tsf-brawl2 .tsf-rank{
+  .tienda-storefront.tsf-brawl2 .tsf-rank {
     --cta-height: 36px;
     --cta-bottom: 6%;
     --cta-tilt: -2.25deg;
@@ -206,19 +222,29 @@
     --m-square-lift: 8px;
   }
 
-  .tienda-storefront.tsf-brawl2 .tsf-rankName { font-size: 1.65rem; }
-  .tienda-storefront.tsf-brawl2 .tsf-perma { font-size: 0.98rem; }
-  .tienda-storefront.tsf-brawl2 .tsf-ctaSplitValue { font-size: 0.98rem; }
+  .tienda-storefront.tsf-brawl2 .tsf-rankName {
+    font-size: 1.65rem;
+  }
 
-  .tienda-storefront.tsf-brawl2 .tsf-square{
+  .tienda-storefront.tsf-brawl2 .tsf-perma {
+    font-size: 0.98rem;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-ctaSplitValue {
+    font-size: 0.98rem;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-square {
     margin-top: calc(16px - var(--m-square-lift));
   }
 }
 
 @media (max-width: 360px) {
-  .tienda-storefront.tsf-brawl2 { --rank-size: 94vw; }
+  .tienda-storefront.tsf-brawl2 {
+    --rank-size: 94vw;
+  }
 
-  .tienda-storefront.tsf-brawl2 .tsf-rank{
+  .tienda-storefront.tsf-brawl2 .tsf-rank {
     --cta-height: 34px;
     --cta-bottom: 5.5%;
 
@@ -227,135 +253,211 @@
     --m-square-lift: 7px;
   }
 
-  .tienda-storefront.tsf-brawl2 .tsf-rankName { font-size: 1.55rem; }
-  .tienda-storefront.tsf-brawl2 .tsf-perma { font-size: 0.94rem; }
+  .tienda-storefront.tsf-brawl2 .tsf-rankName {
+    font-size: 1.55rem;
+  }
 
-  .tienda-storefront.tsf-brawl2 .tsf-ctaSplitCoins { gap: 5px; }
-  .tienda-storefront.tsf-brawl2 .tsf-ctaCoinIcon { width: 16px; height: 16px; }
+  .tienda-storefront.tsf-brawl2 .tsf-perma {
+    font-size: 0.94rem;
+  }
 
-  .tienda-storefront.tsf-brawl2 .tsf-square{
+  .tienda-storefront.tsf-brawl2 .tsf-ctaSplitCoins {
+    gap: 5px;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-ctaCoinIcon {
+    width: 16px;
+    height: 16px;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-square {
     margin-top: calc(16px - var(--m-square-lift));
   }
 }
 
-/* ======================================================================
-   04) TABS (selector servidor coins + botón coinshop)
-   ====================================================================== */
-
 @media (max-width: 1024px) {
-  .tienda-storefront.tsf-brawl2 .tsf-coinsHeader{ padding: 0.35rem 0 0.75rem; }
-  .tienda-storefront.tsf-brawl2 .tsf-tabs{ gap: 0.6rem; margin-top: 0.25rem; }
+  .tienda-storefront.tsf-brawl2 .tsf-coinsHeader {
+    padding: 0.35rem 0 0.75rem;
+  }
 
-  .tienda-storefront.tsf-brawl2 .tsf-tab{
-    min-width: clamp(10.2rem, 26vw, 13.2rem);
+  .tienda-storefront.tsf-brawl2 .tsf-tabs {
+    gap: 0.6rem;
+    margin-top: 0.25rem;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-tab {
     padding: 0.6rem 0.9rem;
   }
 
-  .tienda-storefront.tsf-brawl2 .tsf-tabIcon{ width: 1.65rem; height: 1.65rem; }
-  .tienda-storefront.tsf-brawl2 .tsf-tabText{ font-size: 0.98rem; padding-right: 1.0rem; }
-  .tienda-storefront.tsf-brawl2 .tsf-orb{ right: 0.78rem; width: 0.72rem; height: 0.72rem; }
+  .tienda-storefront.tsf-brawl2 .tsf-tabIcon {
+    width: 1.65rem;
+    height: 1.65rem;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-tabText {
+    font-size: 0.98rem;
+    padding-right: 1.0rem;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-orb {
+    right: 0.78rem;
+    width: 0.72rem;
+    height: 0.72rem;
+  }
 }
 
 @media (max-width: 768px) {
-  .tienda-storefront.tsf-brawl2 .tsf-coinsHeader{ padding: 0.25rem 0 0.65rem; }
-  .tienda-storefront.tsf-brawl2 .tsf-tabsStack{ gap: 0.45rem; }
+  .tienda-storefront.tsf-brawl2 .tsf-coinsHeader {
+    padding: 0.25rem 0 0.65rem;
+  }
 
-  .tienda-storefront.tsf-brawl2 .tsf-tabs{
+  .tienda-storefront.tsf-brawl2 .tsf-tabsStack {
+    gap: 0.45rem;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-tabs {
     width: min(96vw, 520px);
     justify-content: center;
     gap: 0.5rem;
   }
 
-  .tienda-storefront.tsf-brawl2 .tsf-tab{
+  .tienda-storefront.tsf-brawl2 .tsf-tab {
     min-width: 0;
     flex: 1 1 0;
     padding: 0.56rem 0.72rem;
   }
 
-  .tienda-storefront.tsf-brawl2 .tsf-tabIcon{ width: 1.45rem; height: 1.45rem; }
-  .tienda-storefront.tsf-brawl2 .tsf-tabText{ font-size: 0.92rem; padding-right: 0.85rem; }
+  .tienda-storefront.tsf-brawl2 .tsf-tabIcon {
+    width: 1.45rem;
+    height: 1.45rem;
+  }
 
-  .tienda-storefront.tsf-brawl2 .tsf-tabBadge{
+  .tienda-storefront.tsf-brawl2 .tsf-tabText {
+    font-size: 0.92rem;
+    padding-right: 0.85rem;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-tabBadge {
     top: -0.5rem;
     left: 0.45rem;
     font-size: 0.68rem;
     padding: 0.30rem 0.48rem 0.28rem;
   }
 
-  .tienda-storefront.tsf-brawl2 .tsf-orb{ right: 0.62rem; width: 0.66rem; height: 0.66rem; }
+  .tienda-storefront.tsf-brawl2 .tsf-orb {
+    right: 0.62rem;
+    width: 0.66rem;
+    height: 0.66rem;
+  }
 
-  .tienda-storefront.tsf-brawl2 .tsf-openShopBtn{
+  .tienda-storefront.tsf-brawl2 .tsf-openShopBtn {
     margin-inline: 0.25rem;
     flex: 0 0 auto;
   }
 }
 
 @media (max-width: 480px) {
-  .tienda-storefront.tsf-brawl2 .tsf-tabs{ width: 94vw; gap: 0.45rem; }
-  .tienda-storefront.tsf-brawl2 .tsf-tab{ padding: 0.52rem 0.62rem; }
-  .tienda-storefront.tsf-brawl2 .tsf-tabText{ font-size: 0.88rem; padding-right: 0.78rem; }
-  .tienda-storefront.tsf-brawl2 .tsf-tabIcon{ width: 1.35rem; height: 1.35rem; }
-  .tienda-storefront.tsf-brawl2 .tsf-orb{ right: 0.56rem; }
+  .tienda-storefront.tsf-brawl2 .tsf-tabs {
+    width: 94vw;
+    gap: 0.45rem;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-tab {
+    padding: 0.52rem 0.62rem;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-tabText {
+    font-size: 0.88rem;
+    padding-right: 0.78rem;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-tabIcon {
+    width: 1.35rem;
+    height: 1.35rem;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-orb {
+    right: 0.56rem;
+  }
 }
 
 @media (max-width: 360px) {
-  .tienda-storefront.tsf-brawl2 .tsf-tabs{ width: 96vw; gap: 0.4rem; }
-  .tienda-storefront.tsf-brawl2 .tsf-tab{ padding: 0.5rem 0.55rem; }
-  .tienda-storefront.tsf-brawl2 .tsf-tabText{ font-size: 0.84rem; padding-right: 0.72rem; }
-  .tienda-storefront.tsf-brawl2 .tsf-tabIcon{ width: 1.28rem; height: 1.28rem; }
-}
-
-/* ======================================================================
-   06) COINS GRID (packs + daily claim) — ÚNICA versión (sin duplicados)
-   - Tablet: 2 columnas, daily hero ocupa 2
-   - Móvil: 2 columnas, daily hero ocupa 2 y no se hace gigante
-   ====================================================================== */
-
-@media (max-width: 1024px) {
-  .tienda-storefront.tsf-brawl2{
-    --coin-gap: 14px;
-    --coin-w: minmax(0, 1fr);
+  .tienda-storefront.tsf-brawl2 .tsf-tabs {
+    width: 96vw;
+    gap: 0.4rem;
   }
 
-  .tienda-storefront.tsf-brawl2 .tsf-coinsGrid.tsf-coinsGrid--linear4{
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .tienda-storefront.tsf-brawl2 .tsf-tab {
+    padding: 0.5rem 0.55rem;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-tabText {
+    font-size: 0.84rem;
+    padding-right: 0.72rem;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-tabIcon {
+    width: 1.28rem;
+    height: 1.28rem;
+  }
+}
+
+@media (max-width: 1024px) {
+  .tienda-storefront.tsf-brawl2 {
+    --coin-gap: 14px;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-coinsGrid.tsf-coinsGrid--linear4 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     align-items: start;
   }
 
-  .tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily{
+  .tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily {
     grid-column: 1 / -1;
     justify-self: center;
-    width: min(100%, 720px);
+    width: min(100%, 920px);
   }
 
-  .tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily .tsf-coinFrame{
-    aspect-ratio: 520 / 260;
+  .tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily .tsf-coinFrame {
+    aspect-ratio: 720 / 260;
   }
 }
 
 @media (max-width: 768px) {
-  .tienda-storefront.tsf-brawl2{ --coin-gap: 12px; }
+  .tienda-storefront.tsf-brawl2 {
+    --coin-gap: 12px;
+  }
 
-  .tienda-storefront.tsf-brawl2 .tsf-coinsGrid.tsf-coinsGrid--linear4{
+  .tienda-storefront.tsf-brawl2 .tsf-coinsGrid.tsf-coinsGrid--linear4 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     align-items: start;
   }
 
-  .tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily{
+  .tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily {
     grid-column: 1 / -1;
     justify-self: center;
     width: min(100%, 560px);
   }
 
-  .tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily .tsf-coinFrame{
+  .tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily .tsf-coinFrame {
     aspect-ratio: 520 / 240;
   }
 
-  /* evita overflow lateral por tilt/perspective */
-  .tienda-storefront.tsf-brawl2 .tsf-coinsGridWrap{ overflow: hidden; }
+  .tienda-storefront.tsf-brawl2 .tsf-coinsGridWrap {
+    overflow: hidden;
+  }
 
-  /* reduce el tilt en touch */
-  .tienda-storefront.tsf-brawl2 .tsf-coinWrap{
+  .tienda-storefront.tsf-brawl2 .tsf-coinWrap {
+    transform:
+      perspective(900px)
+      rotateX(calc(var(--rx) * 0.55deg))
+      rotateY(calc(var(--ry) * 0.55deg))
+      translateZ(0);
+  }
+}
+
+@media (max-width: 768px) and (hover: none) and (pointer: coarse) {
+  .tienda-storefront.tsf-brawl2 .tsf-coinWrap:hover {
     transform:
       perspective(900px)
       rotateX(calc(var(--rx) * 0.55deg))
@@ -363,68 +465,58 @@
       translateZ(0);
   }
 
-  @media (hover: none) and (pointer: coarse) {
-    .tienda-storefront.tsf-brawl2 .tsf-coinWrap:hover{
-      transform:
-        perspective(900px)
-        rotateX(calc(var(--rx) * 0.55deg))
-        rotateY(calc(var(--ry) * 0.55deg))
-        translateZ(0);
-    }
+  .tienda-storefront.tsf-brawl2 .tsf-coinWrap:hover .tsf-coinFrame {
+    transform: translateZ(0);
+    filter: none;
   }
 }
 
 @media (max-width: 480px) {
-  .tienda-storefront.tsf-brawl2{ --coin-gap: 10px; }
+  .tienda-storefront.tsf-brawl2 {
+    --coin-gap: 10px;
+  }
 
-  .tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily{
+  .tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily {
     width: 100%;
   }
 
-  .tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily .tsf-coinFrame{
+  .tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily .tsf-coinFrame {
     aspect-ratio: 520 / 228;
   }
 }
 
-@media (max-width: 360px) {
-  .tienda-storefront.tsf-brawl2{ --coin-gap: 9px; }
+@media (max-width: 420px) {
+  .tienda-storefront.tsf-brawl2 .tsf-coinsGrid.tsf-coinsGrid--linear4 {
+    grid-template-columns: 1fr;
+  }
 
-  .tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily .tsf-coinFrame{
+  .tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily .tsf-coinFrame {
     aspect-ratio: 520 / 220;
   }
 }
 
-/* ======================================================================
-   07) COINS PANEL + COIN CARDS (fine-tuning)
-   - Header "LOTES DE COINS ..." más legible en responsive
-   ====================================================================== */
-
 @media (max-width: 1024px) {
-  .tienda-storefront.tsf-brawl2 .tsf-coinsPanel{
+  .tienda-storefront.tsf-brawl2 .tsf-coinsPanel {
+    --panel-pad-x: 14px;
+    --panel-pad-top: clamp(58px, 7vw, 70px);
+    --panel-pad-bot: 14px;
     border-radius: 14px;
-    padding: 16px 14px 14px;
   }
 
-  .tienda-storefront.tsf-brawl2 .tsf-coinsPanelHeader{
+  .tienda-storefront.tsf-brawl2 .tsf-coinsPanelHeader {
     border-radius: 11px;
-    padding: 6px;
   }
 
-  .tienda-storefront.tsf-brawl2 .tsf-coinsPanelTitle{
+  .tienda-storefront.tsf-brawl2 .tsf-coinsPanelTitle {
     font-size: 1.10rem;
     line-height: 1.12;
-    padding: 2px 6px;
   }
 
-  .tienda-storefront.tsf-brawl2 .tsf-coinsPanel .tsf-coinsGridWrap{
+  .tienda-storefront.tsf-brawl2 .tsf-coinsPanel .tsf-coinsGridWrap {
     padding-top: 20px;
   }
 
-  .tienda-storefront.tsf-brawl2 .tsf-coinFrame{
-    transform: translateZ(0) rotate(1.15deg);
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-coinQtyTop{
+  .tienda-storefront.tsf-brawl2 .tsf-coinQtyTop {
     right: 9px;
     top: 9px;
     border-radius: 9px;
@@ -433,48 +525,43 @@
 }
 
 @media (max-width: 768px) {
-  .tienda-storefront.tsf-brawl2 .tsf-coinsPanel{
+  .tienda-storefront.tsf-brawl2 .tsf-coinsPanel {
+    --panel-pad-x: 12px;
+    --panel-pad-top: 62px;
+    --panel-pad-bot: 12px;
     border-radius: 12px;
-    padding: 14px 12px 12px;
   }
 
-  .tienda-storefront.tsf-brawl2 .tsf-coinsPanelHeader{
+  .tienda-storefront.tsf-brawl2 .tsf-coinsPanelHeader {
     border-radius: 10px;
-    padding: 7px 6px 6px;
+    padding: 9px 10px;
   }
 
-  .tienda-storefront.tsf-brawl2 .tsf-coinsPanelTitle{
+  .tienda-storefront.tsf-brawl2 .tsf-coinsPanelTitle {
     font-size: 1.06rem;
     letter-spacing: 0.055em;
     line-height: 1.14;
-    padding: 2px 8px 3px;
   }
 
-  .tienda-storefront.tsf-brawl2 .tsf-coinsPanelTitleInner{ gap: 9px; }
+  .tienda-storefront.tsf-brawl2 .tsf-coinsPanelTitleInner {
+    gap: 9px;
+  }
 
-  .tienda-storefront.tsf-brawl2 .tsf-coinsPanelTitleIcon{
+  .tienda-storefront.tsf-brawl2 .tsf-coinsPanelTitleIcon {
     width: 24px;
     height: 24px;
     border-radius: 7px;
   }
 
-  .tienda-storefront.tsf-brawl2 .tsf-coinsPanel .tsf-coinsGridWrap{
+  .tienda-storefront.tsf-brawl2 .tsf-coinsPanel .tsf-coinsGridWrap {
     padding-top: 22px;
   }
 
-  .tienda-storefront.tsf-brawl2 .tsf-coinFrame{
+  .tienda-storefront.tsf-brawl2 .tsf-coinFrame {
     aspect-ratio: 160 / 210;
-    transform: translateZ(0) rotate(0.85deg);
   }
 
-  @media (hover: none) and (pointer: coarse) {
-    .tienda-storefront.tsf-brawl2 .tsf-coinWrap:hover .tsf-coinFrame{
-      transform: translateZ(0) rotate(0.85deg);
-      filter: none;
-    }
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-coinQtyTop{
+  .tienda-storefront.tsf-brawl2 .tsf-coinQtyTop {
     right: 8px;
     top: 8px;
     padding: 0.18rem 0.46rem 0.16rem;
@@ -483,90 +570,131 @@
     font-size: 0.98rem;
   }
 
-  .tienda-storefront.tsf-brawl2 .tsf-coinArtBtn{
+  .tienda-storefront.tsf-brawl2 .tsf-coinArtBtn {
     top: 34px;
     bottom: 60px;
     border-radius: 12px;
   }
 
-  .tienda-storefront.tsf-brawl2 .tsf-coinImg{
+  .tienda-storefront.tsf-brawl2 .tsf-coinImg {
     width: min(86%, 136px);
     animation-duration: 2.6s;
   }
 
-  .tienda-storefront.tsf-brawl2 .tsf-coinBand{ bottom: 33px; height: 30px; }
-  .tienda-storefront.tsf-brawl2 .tsf-coinBandText{ font-size: 0.76rem; }
-  .tienda-storefront.tsf-brawl2 .tsf-coinBandIcon{ width: 0.98rem; height: 0.98rem; }
+  .tienda-storefront.tsf-brawl2 .tsf-coinBand {
+    bottom: 33px;
+    height: 30px;
+  }
 
-  .tienda-storefront.tsf-brawl2 .tsf-buyBtn{ height: 40px; }
-  .tienda-storefront.tsf-brawl2 .tsf-buyPrice{ font-size: 0.98rem; }
-  .tienda-storefront.tsf-brawl2 .tsf-buyOld{ font-size: 0.74rem; }
+  .tienda-storefront.tsf-brawl2 .tsf-coinBandText {
+    font-size: 0.76rem;
+  }
 
-  .tienda-storefront.tsf-brawl2 .tsf-buyQtyPill{
+  .tienda-storefront.tsf-brawl2 .tsf-coinBandIcon {
+    width: 0.98rem;
+    height: 0.98rem;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-buyBtn {
+    height: 40px;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-buyPrice {
+    font-size: 0.98rem;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-buyOld {
+    font-size: 0.74rem;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-buyQtyPill {
     right: -0.28rem;
     top: -0.28rem;
     padding: 0.24rem 0.48rem 0.22rem;
     font-size: 0.74rem;
   }
 
-  .tienda-storefront.tsf-brawl2 .tsf-saleBadge{ right: -8px; top: -12px; }
-  .tienda-storefront.tsf-brawl2 .tsf-bestBadge{ left: -4px; top: -16px; }
+  .tienda-storefront.tsf-brawl2 .tsf-saleBadge {
+    right: -8px;
+    top: -12px;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-bestBadge {
+    left: -4px;
+    top: -16px;
+  }
 }
 
 @media (max-width: 480px) {
-  .tienda-storefront.tsf-brawl2 .tsf-coinsPanel{
-    padding: 13px 10px 11px;
+  .tienda-storefront.tsf-brawl2 .tsf-coinsPanel {
+    --panel-pad-x: 10px;
+    --panel-pad-top: 60px;
+    --panel-pad-bot: 11px;
     border-radius: 12px;
   }
 
-  .tienda-storefront.tsf-brawl2 .tsf-coinsPanelTitle{
+  .tienda-storefront.tsf-brawl2 .tsf-coinsPanelTitle {
     font-size: 1.02rem;
     line-height: 1.14;
   }
 
-  .tienda-storefront.tsf-brawl2 .tsf-coinsPanelTitleIcon{
+  .tienda-storefront.tsf-brawl2 .tsf-coinsPanelTitleIcon {
     width: 23px;
     height: 23px;
   }
 
-  .tienda-storefront.tsf-brawl2 .tsf-coinFrame{
+  .tienda-storefront.tsf-brawl2 .tsf-coinFrame {
     aspect-ratio: 160 / 205;
   }
 
-  .tienda-storefront.tsf-brawl2 .tsf-coinImg{
+  .tienda-storefront.tsf-brawl2 .tsf-coinImg {
     width: min(86%, 128px);
   }
 
-  .tienda-storefront.tsf-brawl2 .tsf-coinBand{ height: 29px; }
-  .tienda-storefront.tsf-brawl2 .tsf-buyBtn{ height: 39px; }
+  .tienda-storefront.tsf-brawl2 .tsf-coinBand {
+    height: 29px;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-buyBtn {
+    height: 39px;
+  }
 }
 
 @media (max-width: 360px) {
-  .tienda-storefront.tsf-brawl2 .tsf-coinsPanel{ padding: 12px 9px 10px; }
-
-  .tienda-storefront.tsf-brawl2 .tsf-coinsPanelTitle{
-    font-size: 0.98rem;
-    line-height: 1.14;
-    padding: 2px 7px 3px;
+  .tienda-storefront.tsf-brawl2 .tsf-coinsPanel {
+    --panel-pad-x: 9px;
+    --panel-pad-top: 58px;
+    --panel-pad-bot: 10px;
   }
 
-  .tienda-storefront.tsf-brawl2 .tsf-coinsPanelTitleIcon{
+  .tienda-storefront.tsf-brawl2 .tsf-coinsPanelTitle {
+    font-size: 0.98rem;
+    line-height: 1.14;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-coinsPanelTitleIcon {
     width: 22px;
     height: 22px;
   }
 
-  .tienda-storefront.tsf-brawl2 .tsf-coinsPanel .tsf-coinsGridWrap{ padding-top: 21px; }
-  .tienda-storefront.tsf-brawl2 .tsf-coinFrame{ aspect-ratio: 160 / 198; }
-  .tienda-storefront.tsf-brawl2 .tsf-coinQtyTop{ font-size: 0.92rem; }
-  .tienda-storefront.tsf-brawl2 .tsf-buyPrice{ font-size: 0.94rem; }
+  .tienda-storefront.tsf-brawl2 .tsf-coinsPanel .tsf-coinsGridWrap {
+    padding-top: 21px;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-coinFrame {
+    aspect-ratio: 160 / 198;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-coinQtyTop {
+    font-size: 0.92rem;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-buyPrice {
+    font-size: 0.94rem;
+  }
 }
 
-/* ======================================================================
-   09) DAILY FREE CLAIM (AUTO) — container queries + NO recorte
-   - Ajustado para que las monedas no se vean enormes
-   ====================================================================== */
-
-.tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily{
+.tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily {
   container-type: inline-size;
 }
 
@@ -574,21 +702,21 @@
 .tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily .tsf-dailyInFrame,
 .tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily .dailyClaimCard,
 .tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily .dailyClaimCard__sheet,
-.tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily .dailyClaimCard__art{
+.tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily .dailyClaimCard__art {
   overflow: visible !important;
 }
 
-.tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily .dailyClaimCard__sheet{
+.tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily .dailyClaimCard__sheet {
   inset: clamp(40px, 10cqw, 52px) 12px clamp(34px, 9cqw, 52px) 12px;
   padding: 16px 12px 10px;
 }
 
-.tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily .dailyClaimCard__art{
+.tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily .dailyClaimCard__art {
   --dc-scale: 0.94;
   --dc-lift: -4%;
 
   --dc-front-w: clamp(105px, 38cqw, 150px);
-  --dc-back-w:  clamp(98px,  35cqw, 140px);
+  --dc-back-w: clamp(98px, 35cqw, 140px);
 
   --dc-back-x: -18%;
   --dc-back-y: -10%;
@@ -599,41 +727,41 @@
   --dc-front-rot: 0deg;
 }
 
-@container (max-width: 360px){
-  .tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily .dailyClaimCard__sheet{
+@container (max-width: 360px) {
+  .tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily .dailyClaimCard__sheet {
     inset: 44px 10px 34px 10px;
     padding: 16px 10px 8px;
   }
 
-  .tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily .dailyClaimCard__art{
+  .tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily .dailyClaimCard__art {
     --dc-scale: 0.92;
     --dc-lift: -6%;
 
     --dc-front-w: clamp(98px, 44cqw, 135px);
-    --dc-back-w:  clamp(92px, 41cqw, 128px);
+    --dc-back-w: clamp(92px, 41cqw, 128px);
 
     --dc-back-x: -20%;
     --dc-back-y: -12%;
   }
 }
 
-@container (min-width: 361px) and (max-width: 520px){
-  .tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily .dailyClaimCard__art{
+@container (min-width: 361px) and (max-width: 520px) {
+  .tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily .dailyClaimCard__art {
     --dc-scale: 0.94;
     --dc-lift: -4%;
 
     --dc-front-w: clamp(108px, 36cqw, 148px);
-    --dc-back-w:  clamp(100px, 33cqw, 138px);
+    --dc-back-w: clamp(100px, 33cqw, 138px);
   }
 }
 
-@container (min-width: 521px){
-  .tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily .dailyClaimCard__art{
+@container (min-width: 521px) {
+  .tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily .dailyClaimCard__art {
     --dc-scale: 0.95;
     --dc-lift: -3%;
 
     --dc-front-w: clamp(125px, 24cqw, 155px);
-    --dc-back-w:  clamp(118px, 22cqw, 148px);
+    --dc-back-w: clamp(118px, 22cqw, 148px);
 
     --dc-back-x: -16%;
     --dc-back-y: -9%;

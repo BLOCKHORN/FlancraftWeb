@@ -1,4 +1,3 @@
-// src/pages/Dashboard/DashboardPage.jsx
 import { useEffect, useRef, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import RewardList from "./RewardList";
@@ -9,9 +8,9 @@ const API_BASE =
   import.meta.env.VITE_BACKEND_URL || "https://flancraft-backend.onrender.com";
 
 const SERVERS_COINS = [
-  { key: "gens", label: "GENS" },
-  { key: "oneblock", label: "ONEBLOCK" },
-  { key: "survival", label: "SURVIVAL" },
+  { key: "gens", label: "GENS", icon: "/assets/reinos/gens.webp" },
+  { key: "oneblock", label: "ONEBLOCK", icon: "/assets/reinos/oneblock.webp" },
+  { key: "survival", label: "SURVIVAL", icon: "/assets/reinos/survival-clasico.webp" },
 ];
 
 const toInt = (v) => {
@@ -27,21 +26,29 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Transfer UI
   const [serverSelected, setServerSelected] = useState("gens");
   const [transferAmount, setTransferAmount] = useState("");
   const [transferLoading, setTransferLoading] = useState(false);
   const [transferError, setTransferError] = useState(null);
-  const [transferOk, setTransferOk] = useState(null);
 
-  // contador principal (wallet)
+  const [walletInfoOpen, setWalletInfoOpen] = useState(false);
+  const walletInfoRef = useRef(null);
+
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pendingTransfer, setPendingTransfer] = useState(null);
+
   const walletRef = useRef(null);
-
   const navigate = useNavigate();
 
-  // =========================
-  // LOAD INICIAL
-  // =========================
+  useEffect(() => {
+    const onDocDown = (e) => {
+      if (!walletInfoRef.current) return;
+      if (!walletInfoRef.current.contains(e.target)) setWalletInfoOpen(false);
+    };
+    document.addEventListener("mousedown", onDocDown);
+    return () => document.removeEventListener("mousedown", onDocDown);
+  }, []);
+
   useEffect(() => {
     const stored = localStorage.getItem("flan_user");
     if (!stored) return navigate("/");
@@ -70,7 +77,8 @@ export default function DashboardPage() {
           reqs.push(Promise.resolve(null));
         }
 
-        const [usuarioRes, monedasRes, xpRes, usuariosRes, walletRes] = await Promise.all(reqs);
+        const [usuarioRes, monedasRes, xpRes, usuariosRes, walletRes] =
+          await Promise.all(reqs);
 
         if (!usuarioRes?.ok || !monedasRes?.ok || !xpRes?.ok || !usuariosRes?.ok) {
           throw new Error("Error al cargar datos");
@@ -116,9 +124,6 @@ export default function DashboardPage() {
     cargarDatos();
   }, [navigate]);
 
-  // =========================
-  // REFRESH BALANCES
-  // =========================
   const actualizarMonedas = async () => {
     if (!user) return;
     try {
@@ -166,7 +171,7 @@ export default function DashboardPage() {
   const nivelInfo = xpData?.niveles?.find((n) => n.nivel === user?.nivel);
   const xpDelNivelActual = nivelInfo?.xp_requerida || 1;
   const porcentajeNivel = user
-    ? Math.min(100, (user.xp_actual / xpDelNivelActual) * 100)
+    ? Math.min(100, (toInt(user.xp_actual) / toInt(xpDelNivelActual || 1)) * 100)
     : 0;
 
   const rangoKey = useMemo(() => {
@@ -191,9 +196,6 @@ export default function DashboardPage() {
     }
   }, [rangoKey]);
 
-  // =========================
-  // COINS POR SERVIDOR (monedas_actuales)
-  // =========================
   const coinsByServer = useMemo(() => {
     const m = user?.monedas;
     if (!m) return {};
@@ -214,53 +216,32 @@ export default function DashboardPage() {
       return out;
     }
 
-    if (m.coins != null) return { global: toInt(m.coins) };
-    if (m.ecos != null) return { global: toInt(m.ecos) };
-
     return {};
   }, [user?.monedas]);
 
-  // =========================
-  // WALLET (saldo principal)
-  // =========================
   const totalCoins = useMemo(() => {
     if (user?.wallet_coins != null) return toInt(user.wallet_coins);
     return toInt(walletBalance);
   }, [user?.wallet_coins, walletBalance]);
 
-  // =========================
-  // TRANSFER WALLET -> SERVER
-  // =========================
-  const handleMax = () => {
-    setTransferOk(null);
+  const openConfirm = () => {
     setTransferError(null);
-    setTransferAmount(String(totalCoins));
+    const amt = toInt(transferAmount);
+    if (amt <= 0) return setTransferError("Introduce una cantidad válida.");
+    if (amt > totalCoins) return setTransferError("No tienes suficiente saldo en la wallet.");
+
+    setPendingTransfer({ amt, server: serverSelected });
+    setConfirmOpen(true);
   };
 
-  const handleTransfer = async () => {
-    if (!user?.uuid) return;
+  const doTransfer = async () => {
+    if (!user?.uuid || !pendingTransfer) return;
 
-    setTransferOk(null);
     setTransferError(null);
-
-    const amt = toInt(transferAmount);
-    if (amt <= 0) {
-      setTransferError("Introduce una cantidad válida.");
-      return;
-    }
-
-    if (amt > totalCoins) {
-      setTransferError("No tienes suficiente saldo en la wallet.");
-      return;
-    }
-
     setTransferLoading(true);
 
     try {
       const token = localStorage.getItem("token");
-      // Si quieres forzar auth real, exige token aquí:
-      // if (!token) throw new Error("Sesión caducada. Vuelve a iniciar sesión.");
-
       const res = await fetch(`${API_BASE}/api/wallet/transfer`, {
         method: "POST",
         headers: {
@@ -269,8 +250,8 @@ export default function DashboardPage() {
         },
         body: JSON.stringify({
           uuid: user.uuid,
-          servidor: serverSelected,
-          amount: amt,
+          servidor: pendingTransfer.server,
+          amount: pendingTransfer.amt,
         }),
       });
 
@@ -278,28 +259,21 @@ export default function DashboardPage() {
       if (!res.ok) throw new Error(data?.error || "Error al transferir coins");
 
       const newWallet = toInt(data?.wallet_balance);
-      const newServerBalance = toInt(data?.server_balance);
 
-      // Actualización inmediata UI
       setWalletBalance(newWallet);
-      setUser((prev) => ({
-        ...prev,
-        wallet_coins: newWallet,
-        monedas: prev?.monedas, // lo refrescamos abajo igual
-      }));
+      setUser((prev) => ({ ...prev, wallet_coins: newWallet }));
 
-      // También animamos el contador grande si existe
       if (walletRef?.current) walletRef.current.textContent = String(newWallet);
 
-      // Refresco “oficial” (por si tu /monedas agrega forma distinta)
-      await actualizarMonedas();
-
-      setTransferOk(
-        `Enviado: ${amt} COINS a ${String(data?.servidor || serverSelected).toUpperCase()}`
-      );
       setTransferAmount("");
+      setConfirmOpen(false);
+      setPendingTransfer(null);
+
+      await actualizarMonedas();
     } catch (e) {
       setTransferError(e.message || "Error");
+      setConfirmOpen(false);
+      setPendingTransfer(null);
     } finally {
       setTransferLoading(false);
     }
@@ -308,25 +282,15 @@ export default function DashboardPage() {
   return (
     <section className="dashboard-epic">
       {!loading && !error && user && (
-        <div className="dashboard-wrap fade-slide-in">
-          <div className="dashboard-frame">
-            <header className="epic-header-dashboard">
-              <div className="epic-header-text">
-                <h1 className="epic-title">Tu Posada</h1>
-                <p className="epic-subtitle">
-                  Explora tu progreso, logros y riquezas acumuladas en el mundo de FlanCraft.
-                </p>
-              </div>
-            </header>
+        <div className="dashboard-shell">
+          <header className="dash-hero-title">
+            <h1 className="dash-title">LA POSADA</h1>
+          </header>
 
-            <div className="dashboard-player-card">
-              <div className="player-card-banner" aria-hidden="true">
-                <div className="player-card-banner-bg" />
-                <div className="player-card-banner-overlay" />
-              </div>
-
-              <div className="player-main-layout">
-                <div className="player-avatar-column">
+          <div className="dash-hero">
+            <div className="dash-card">
+              <div className="dash-grid">
+                <aside className="dash-avatar">
                   <div className={`avatar-frame avatar-frame--${rangoKey}`}>
                     <div className="avatar-inner">
                       <img
@@ -336,7 +300,6 @@ export default function DashboardPage() {
                         loading="eager"
                         decoding="async"
                       />
-
                       {avatarUrl && (
                         <img
                           src={avatarUrl}
@@ -358,11 +321,11 @@ export default function DashboardPage() {
                       />
                     )}
                   </div>
-                </div>
+                </aside>
 
-                <div className="player-info-column">
-                  <div className="player-identidad">
-                    <div className="player-nombre-row">
+                <main className="dash-main">
+                  <div className="dash-topline">
+                    <div className="dash-name">
                       <h2 className="player-nombre">{user.uid}</h2>
 
                       <div className="player-badges">
@@ -384,181 +347,265 @@ export default function DashboardPage() {
                       </div>
                     </div>
 
-                    <p className="player-tagline">
-                      Aventura en curso. Tu leyenda en FlanCraft sigue escribiéndose.
-                    </p>
+                    <a href="/tienda" className="tsf-btn tsf-btn--shop">
+                      <span className="tsf-btnFace">Ir a la tienda</span>
+                      <span className="tsf-btnDepth" />
+                    </a>
                   </div>
 
-                  <div className="player-stats-row">
-                    <div className="stat-block saldo-block">
-                      <p className="stat-label">Wallet de FlanCraft</p>
+                  <div className="dash-wallet">
+                    <div className="wallet-head">
+                      <div className="wallet-pill" ref={walletInfoRef}>
+                        <span className="wallet-pillLabel">Wallet Coins</span>
 
-                      <div className="stat-saldo">
-                        <div className="saldo-top">
-                          <div className="saldo-info">
-                            <span className="saldo-cantidad" ref={walletRef} id="contador-coins">
-                              {totalCoins}
-                            </span>
+                        <button
+                          type="button"
+                          className="wallet-pillInfo"
+                          onClick={() => setWalletInfoOpen((v) => !v)}
+                          aria-label="Información sobre Wallet COINS"
+                          aria-expanded={walletInfoOpen}
+                        >
+                          i
+                        </button>
 
-                            <img
-                              src="/tienda/assets/coin.png"
-                              alt="Coins"
-                              className="icono-eco pulse"
-                              loading="eager"
-                              decoding="async"
-                              draggable="false"
-                            />
-                          </div>
+                        <span className="wallet-pillDivider" />
 
-                          <a href="/tienda" className="btn-primario">
-                            Ir a la tienda
-                          </a>
-                        </div>
+                        <span className="wallet-pillAmount" ref={walletRef} id="contador-coins">
+                          {totalCoins}
+                        </span>
 
-                        <div className="saldo-servidores" aria-label="Saldos por servidor">
-                          {SERVERS_COINS.map((s) => (
-                            <div key={s.key} className={`saldo-server saldo-server--${s.key}`}>
-                              <span className="saldo-server-nombre">{s.label}</span>
-                              <span className="saldo-server-valor">{toInt(coinsByServer[s.key])}</span>
+                        <img
+                          src="/tienda/assets/coin.png"
+                          alt="Coins"
+                          className="wallet-pillCoin"
+                          loading="eager"
+                          decoding="async"
+                          draggable="false"
+                        />
+
+                        {walletInfoOpen && (
+                          <div className="wallet-tooltip" role="dialog" aria-label="Wallet COINS">
+                            <div className="wallet-tooltip-title">¿Qué son las Wallet COINS?</div>
+                            <div className="wallet-tooltip-text">
+                              Son COINS que consigues en la web: claim diario, voto y logros.
+                              Puedes enviarlas al servidor que quieras y la cantidad que decidas.
                             </div>
-                          ))}
-                        </div>
-
-                        {/* NUEVO: transfer */}
-                        <div className="wallet-transfer">
-                          <div className="wallet-transfer-head">
-                            <div className="wallet-transfer-title">Enviar COINS al servidor</div>
-                            <div className="wallet-transfer-sub">
-                              Mueves COINS de la wallet a tu saldo del servidor elegido.
+                            <div className="wallet-tooltip-note">
+                              Elige servidor, pon cantidad y confirma.
                             </div>
                           </div>
-
-                          <div className="wallet-transfer-grid">
-                            <div className="wallet-transfer-servers">
-                              {SERVERS_COINS.map((s) => (
-                                <button
-                                  key={s.key}
-                                  type="button"
-                                  className={[
-                                    "wallet-server-btn",
-                                    serverSelected === s.key ? "is-active" : "",
-                                  ].join(" ")}
-                                  onClick={() => {
-                                    setTransferOk(null);
-                                    setTransferError(null);
-                                    setServerSelected(s.key);
-                                  }}
-                                  disabled={transferLoading}
-                                >
-                                  {s.label}
-                                </button>
-                              ))}
-                            </div>
-
-                            <div className="wallet-transfer-amount">
-                              <input
-                                type="number"
-                                min="0"
-                                inputMode="numeric"
-                                placeholder="Cantidad"
-                                value={transferAmount}
-                                onChange={(e) => {
-                                  setTransferOk(null);
-                                  setTransferError(null);
-                                  setTransferAmount(e.target.value);
-                                }}
-                                disabled={transferLoading}
-                              />
-
-                              <button
-                                type="button"
-                                className="wallet-max-btn"
-                                onClick={handleMax}
-                                disabled={transferLoading}
-                              >
-                                Max
-                              </button>
-                            </div>
-
-                            <div className="wallet-transfer-actions">
-                              <button
-                                type="button"
-                                className="wallet-send-btn"
-                                onClick={handleTransfer}
-                                disabled={transferLoading}
-                              >
-                                {transferLoading ? "Enviando..." : "Enviar"}
-                              </button>
-                            </div>
-                          </div>
-
-                          {transferError && <div className="wallet-transfer-msg is-error">{transferError}</div>}
-                          {transferOk && <div className="wallet-transfer-msg is-ok">{transferOk}</div>}
-                        </div>
+                        )}
                       </div>
                     </div>
+
+                    <div className="wallet-transfer">
+                      <div className="transfer-head">
+                        <div className="transfer-title">Enviar al servidor</div>
+                        <div className="transfer-sub">Selecciona servidor, cantidad y confirma.</div>
+                      </div>
+
+                      <div className="transfer-servers" aria-label="Seleccionar servidor">
+                        {SERVERS_COINS.map((s) => (
+                          <button
+                            key={s.key}
+                            type="button"
+                            className={[
+                              "server-cardBtn",
+                              `server-cardBtn--${s.key}`,
+                              serverSelected === s.key ? "is-active" : "",
+                            ].join(" ")}
+                            onClick={() => {
+                              if (transferLoading) return;
+                              setTransferError(null);
+                              setServerSelected(s.key);
+                            }}
+                            disabled={transferLoading}
+                          >
+                            <span className="server-cardBtnFace">
+                              <span className="server-cardBtnLeft">
+                                <img
+                                  src={s.icon}
+                                  alt=""
+                                  className="server-icon"
+                                  loading="eager"
+                                  decoding="async"
+                                  draggable="false"
+                                />
+                                <span className="server-name">{s.label}</span>
+                              </span>
+
+                              <span className="server-balance">
+                                <img
+                                  src="/tienda/assets/coin.png"
+                                  alt=""
+                                  className="coin-mini"
+                                  draggable="false"
+                                />
+                                {toInt(coinsByServer[s.key])}
+                              </span>
+                            </span>
+
+                            <span className="server-cardBtnDepth" />
+                          </button>
+                        ))}
+                      </div>
+
+                      <div className="transfer-row">
+                        <div className="amount-wrap">
+                          <img
+                            src="/tienda/assets/coin.png"
+                            alt=""
+                            className="coin-in-input"
+                            draggable="false"
+                          />
+                          <input
+                            type="number"
+                            min="0"
+                            inputMode="numeric"
+                            placeholder="Cantidad"
+                            value={transferAmount}
+                            onChange={(e) => {
+                              setTransferError(null);
+                              setTransferAmount(e.target.value);
+                            }}
+                            disabled={transferLoading}
+                          />
+
+                          <button
+                            type="button"
+                            className="tsf-btn tsf-btn--ghost tsf-btn--small"
+                            onClick={() => {
+                              setTransferError(null);
+                              setTransferAmount(String(totalCoins));
+                            }}
+                            disabled={transferLoading}
+                          >
+                            <span className="tsf-btnFace">Max</span>
+                            <span className="tsf-btnDepth" />
+                          </button>
+                        </div>
+
+                        <button
+                          type="button"
+                          className="tsf-btn tsf-btn--send"
+                          onClick={openConfirm}
+                          disabled={transferLoading}
+                        >
+                          <span className="tsf-btnFace">
+                            {transferLoading ? "Enviando..." : "Enviar"}
+                          </span>
+                          <span className="tsf-btnDepth" />
+                        </button>
+                      </div>
+
+                      {transferError && <div className="transfer-msg is-error">{transferError}</div>}
+                    </div>
                   </div>
-                </div>
+                </main>
               </div>
 
-              <div className="nivel-global-wrapper">
-                <div className="nivel-global-header">
-                  <span className="nivel-global-label">Nivel</span>
-                  <span className="nivel-global-valor">{user.nivel}</span>
+              <div className="dash-level">
+                <div className="level-top">
+                  <span className="level-label">Nivel</span>
+                  <span className="level-badge">{user.nivel}</span>
                 </div>
 
-                <div className="nivel-global-bar">
-                  <div className="nivel-global-fill" style={{ width: `${porcentajeNivel}%` }} />
+                <div className="level-bar">
+                  <div className="level-fill" style={{ width: `${porcentajeNivel}%` }} />
+                  <div className="level-spark" />
                 </div>
 
-                <div className="nivel-global-text">
-                  <span className="nivel-global-actual">{user.xp_actual}</span>
-                  <span className="nivel-global-separador">/</span>
-                  <span className="nivel-global-total">{xpDelNivelActual} XP</span>
+                <div className="level-text">
+                  <span className="level-now">{toInt(user.xp_actual)}</span>
+                  <span className="level-sep">/</span>
+                  <span className="level-total">{toInt(xpDelNivelActual)} XP</span>
                 </div>
               </div>
 
               {user.rol_admin && (
-                <>
-                  <div className="player-card-separator" />
-                  <div className="player-admin-panel">
-                    <h3 className="panel-title">Panel del Control</h3>
-                    <p className="panel-desc">Accesos rápidos a las salas de gestión del reino.</p>
-
-                    <div className="player-admin-actions">
-                      <button className="admin-btn" onClick={() => navigate("/tribunal/admin")}>
-                        Tribunal
-                      </button>
-
-                      {user.rol_admin.toLowerCase() === "owner" && (
-                        <>
-                          <button className="admin-btn" onClick={() => navigate("/admin")}>
-                            Gestión de staff
-                          </button>
-                          <button className="admin-btn" onClick={() => navigate("/admin/noticias")}>
-                            Crear noticia
-                          </button>
-                        </>
-                      )}
-                    </div>
+                <div className="dash-admin">
+                  <div className="admin-head">
+                    <div className="admin-title">Panel del control</div>
+                    <div className="admin-sub">Accesos rápidos.</div>
                   </div>
-                </>
+
+                  <div className="admin-actions">
+                    <button className="tsf-btn tsf-btn--pink" onClick={() => navigate("/tribunal/admin")}>
+                      <span className="tsf-btnFace">Tribunal</span>
+                      <span className="tsf-btnDepth" />
+                    </button>
+
+                    {user.rol_admin.toLowerCase() === "owner" && (
+                      <>
+                        <button className="tsf-btn tsf-btn--green" onClick={() => navigate("/admin")}>
+                          <span className="tsf-btnFace">Gestión de staff</span>
+                          <span className="tsf-btnDepth" />
+                        </button>
+                        <button className="tsf-btn tsf-btn--blue" onClick={() => navigate("/admin/noticias")}>
+                          <span className="tsf-btnFace">Crear noticia</span>
+                          <span className="tsf-btnDepth" />
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
               )}
             </div>
+          </div>
 
-            <div className="dashboard-epic-body">
-              <div className="dashboard-secciones">
-                <RewardList
-                  user={user}
-                  xpData={xpData}
-                  ecosRef={walletRef}
-                  onActualizarMonedas={actualizarMonedas}
-                />
-
-                <LogroList user={user} />
-              </div>
+          <div className="dashboard-epic-body">
+            <div className="dashboard-secciones">
+              <RewardList
+                user={user}
+                xpData={xpData}
+                ecosRef={walletRef}
+                onActualizarMonedas={actualizarMonedas}
+              />
+              <LogroList user={user} />
             </div>
           </div>
+
+          {confirmOpen && pendingTransfer && (
+            <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label="Confirmar envío">
+              <div className="modal-card">
+                <div className="modal-title">Confirmar envío</div>
+
+                <div className="modal-line">
+                  Vas a enviar <b>{pendingTransfer.amt}</b> COINS a{" "}
+                  <b>{pendingTransfer.server.toUpperCase()}</b>.
+                </div>
+
+                <div className="modal-sub">
+                  Se descontarán de tu wallet y se sumarán al saldo del servidor.
+                </div>
+
+                <div className="modal-actions">
+                  <button
+                    className="tsf-btn tsf-btn--ghost tsf-btn--small"
+                    type="button"
+                    onClick={() => {
+                      setConfirmOpen(false);
+                      setPendingTransfer(null);
+                    }}
+                    disabled={transferLoading}
+                  >
+                    <span className="tsf-btnFace">Cancelar</span>
+                    <span className="tsf-btnDepth" />
+                  </button>
+
+                  <button
+                    className="tsf-btn tsf-btn--send"
+                    type="button"
+                    onClick={doTransfer}
+                    disabled={transferLoading}
+                  >
+                    <span className="tsf-btnFace">{transferLoading ? "Enviando..." : "Sí, enviar"}</span>
+                    <span className="tsf-btnDepth" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -579,15 +626,15 @@ export default function DashboardPage() {
           </div>
 
           <div className="loading-text-block">
-            <p className="loading-title">Invocando tu posada...</p>
-            <p className="loading-subtitle">Cargando perfil de aventurero</p>
+            <p className="loading-title">Cargando tu posada...</p>
+            <p className="loading-subtitle">Preparando el panel</p>
           </div>
         </div>
       )}
 
       {!loading && error && (
-        <div className="dashboard-epic-body">
-          <p className="error-msg">Error al cargar perfil: {error}</p>
+        <div className="dashboard-shell">
+          <div className="error-msg">Error al cargar perfil: {error}</div>
         </div>
       )}
     </section>

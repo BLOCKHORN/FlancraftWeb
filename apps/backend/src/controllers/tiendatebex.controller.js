@@ -21,7 +21,6 @@ const {
   hmacSha256Hex,
   timingSafeEqualHex,
   getServerKey,
-  normalizarPaquetes,
   isHiddenOrDisabled,
   tebexFetchPlugin,
   actualizarCacheDe,
@@ -32,24 +31,13 @@ const {
   normalizeTopDonatorFromModule,
   getBestSaleForServer,
   getBestSaleGlobal,
-  applySalesToPackages,
   headlessFetchJson,
   getHeadlessBasic,
 } = require("./tebex.helpers");
 
-/* =========================================================
-   FX (visualización de moneda)
-   - Base = TEBEX_CURRENCY
-   - Provider: frankfurter.app (sin API key)
-   - ✅ SIN hardcode: devuelve TODAS las divisas del provider
-   ========================================================= */
 const FX_TTL_SEC = 6 * 60 * 60;
 
-let fxCache = {
-  data: null,
-  cacheAt: 0,
-  inflight: null,
-};
+let fxCache = { data: null, cacheAt: 0, inflight: null };
 
 function normalizeIso(code, fallback = "EUR") {
   const c = String(code || "").trim().toUpperCase();
@@ -57,15 +45,10 @@ function normalizeIso(code, fallback = "EUR") {
 }
 
 function uniqSortedUpper(list) {
-  const set = new Set(
-    (list || [])
-      .map((x) => String(x || "").trim().toUpperCase())
-      .filter(Boolean)
-  );
+  const set = new Set((list || []).map((x) => String(x || "").trim().toUpperCase()).filter(Boolean));
   return Array.from(set).sort((a, b) => a.localeCompare(b));
 }
 
-// ✅ Frankfurter sin `to=` => devuelve rates para todas las divisas soportadas
 async function fetchFxFromFrankfurter(base) {
   const baseISO = normalizeIso(base, "EUR");
   const url = `https://api.frankfurter.app/latest?from=${encodeURIComponent(baseISO)}`;
@@ -90,47 +73,22 @@ async function fetchFxFromFrankfurter(base) {
   const outBase = normalizeIso(data.base || baseISO, baseISO);
   const currencies = uniqSortedUpper([outBase, ...Object.keys(data.rates || {})]);
 
-  return {
-    base: outBase,
-    date: data.date || null,
-    rates: data.rates || {},
-    currencies,
-    provider: "frankfurter",
-  };
+  return { base: outBase, date: data.date || null, rates: data.rates || {}, currencies, provider: "frankfurter" };
 }
 
 const obtenerFx = async (req, res) => {
   try {
     const base = normalizeIso(TEBEX_CURRENCY || "EUR", "EUR");
+    const refresh = String(req.query.refresh || "").trim().toLowerCase();
+    const force = refresh === "1" || refresh === "true";
 
-    const force =
-      String(req.query.refresh || "").trim() === "1" ||
-      String(req.query.refresh || "").toLowerCase() === "true";
-
-    // cache válido
-    if (
-      !force &&
-      fxCache.data &&
-      fxCache.cacheAt &&
-      nowSec() - fxCache.cacheAt < FX_TTL_SEC
-    ) {
-      return res.json({
-        ok: true,
-        ...fxCache.data,
-        cacheado: new Date(fxCache.cacheAt * 1000).toISOString(),
-        ttlSec: FX_TTL_SEC,
-      });
+    if (!force && fxCache.data && fxCache.cacheAt && nowSec() - fxCache.cacheAt < FX_TTL_SEC) {
+      return res.json({ ok: true, ...fxCache.data, cacheado: new Date(fxCache.cacheAt * 1000).toISOString(), ttlSec: FX_TTL_SEC });
     }
 
-    // si hay una fetch en curso, esperamos (salvo force)
     if (!force && fxCache.inflight) {
       const d = await fxCache.inflight;
-      return res.json({
-        ok: true,
-        ...d,
-        cacheado: new Date(fxCache.cacheAt * 1000).toISOString(),
-        ttlSec: FX_TTL_SEC,
-      });
+      return res.json({ ok: true, ...d, cacheado: new Date(fxCache.cacheAt * 1000).toISOString(), ttlSec: FX_TTL_SEC });
     }
 
     fxCache.inflight = (async () => {
@@ -142,25 +100,13 @@ const obtenerFx = async (req, res) => {
     })();
 
     const d = await fxCache.inflight;
-    return res.json({
-      ok: true,
-      ...d,
-      cacheado: new Date(fxCache.cacheAt * 1000).toISOString(),
-      ttlSec: FX_TTL_SEC,
-    });
+    return res.json({ ok: true, ...d, cacheado: new Date(fxCache.cacheAt * 1000).toISOString(), ttlSec: FX_TTL_SEC });
   } catch (e) {
     fxCache.inflight = null;
-    return res.status(500).json({
-      ok: false,
-      error: "No se pudo obtener FX",
-      detail: e?.data || e?.message || "unknown",
-    });
+    return res.status(500).json({ ok: false, error: "No se pudo obtener FX", detail: e?.data || e?.message || "unknown" });
   }
 };
 
-/* =========================================================
-   ✅ Helpers cache-bust imagen
-   ========================================================= */
 function withCacheBust(url, bust) {
   const u = String(url || "").trim();
   if (!u) return "";
@@ -177,15 +123,10 @@ function applyImageBustToPackages(paquetes = [], bustKey) {
   return (Array.isArray(paquetes) ? paquetes : []).map((p) => {
     const raw = pickPkgImageRaw(p);
     if (!raw) return p;
-    return {
-      ...p,
-      image_url_raw: raw,
-      image_url: withCacheBust(raw, bust),
-    };
+    return { ...p, image_url_raw: raw, image_url: withCacheBust(raw, bust) };
   });
 }
 
-/** ========= Health y estado general ========= **/
 const health = (_req, res) => {
   const estado = {};
   for (const k of Object.keys(SERVER_KEYS)) {
@@ -198,6 +139,7 @@ const health = (_req, res) => {
       expired: isExpired(c),
     };
   }
+
   res.json({
     ok: true,
     store: { hasStoreSecret: Boolean(STORE_SECRET) },
@@ -221,9 +163,7 @@ const obtenerSaleActiva = async (req, res) => {
         server,
         active: Boolean(best),
         sale: best ? { ...best, server } : null,
-        cacheado: salesCache[server]?.cacheAt
-          ? new Date(salesCache[server].cacheAt * 1000).toISOString()
-          : null,
+        cacheado: salesCache[server]?.cacheAt ? new Date(salesCache[server].cacheAt * 1000).toISOString() : null,
       });
     }
 
@@ -233,35 +173,24 @@ const obtenerSaleActiva = async (req, res) => {
       scope: "all",
       active: Boolean(bestGlobal),
       sale: bestGlobal || null,
-      cacheado: salesCache.all?.cacheAt
-        ? new Date(salesCache.all.cacheAt * 1000).toISOString()
-        : null,
+      cacheado: salesCache.all?.cacheAt ? new Date(salesCache.all.cacheAt * 1000).toISOString() : null,
     });
   } catch {
-    return res.status(500).json({
-      ok: false,
-      active: false,
-      sale: null,
-      error: "No se pudo obtener la sale activa",
-    });
+    return res.status(500).json({ ok: false, active: false, sale: null, error: "No se pudo obtener la sale activa" });
   }
 };
 
-/** ========= Tienda: paquetes + categorías ========= **/
 const obtenerDatosTienda = async (req, res) => {
   const server = getServerKey(req);
   const c = cache[server];
 
-  const force =
-    String(req.query.refresh || "").trim() === "1" ||
-    String(req.query.refresh || "").toLowerCase() === "true";
+  const refresh = String(req.query.refresh || "").trim().toLowerCase();
+  const force = refresh === "1" || refresh === "true";
 
   try {
     if (force) {
-      console.log(`Forzando cache refresh por query para [${server}]`);
       await actualizarCacheDe(server);
     } else if (!c.cacheAt || isExpired(c)) {
-      console.log(`Cache vacia/expirada para [${server}], actualizando.`);
       await actualizarCacheDe(server);
     }
 
@@ -279,16 +208,8 @@ const obtenerDatosTienda = async (req, res) => {
       bust: bustKey,
     });
   } catch (err) {
-    console.error(
-      "Error al obtener datos de tienda:",
-      `[server=${server}]`,
-      err?.status || "",
-      err?.message || err
-    );
-
     const upstream = Number(err?.status);
-    const status =
-      Number.isFinite(upstream) && upstream >= 400 && upstream < 600 ? 502 : 500;
+    const status = Number.isFinite(upstream) && upstream >= 400 && upstream < 600 ? 502 : 500;
 
     return res.status(status).json({
       ok: false,
@@ -303,15 +224,9 @@ const obtenerDatosTienda = async (req, res) => {
 const forzarActualizarCache = async (req, res) => {
   const server = getServerKey(req);
   try {
-    console.log(`Forzando actualizacion de cache [${server}].`);
     await actualizarCacheDe(server);
-    res.json({
-      ok: true,
-      server,
-      cacheado: new Date(cache[server].cacheAt * 1000).toISOString(),
-    });
+    res.json({ ok: true, server, cacheado: new Date(cache[server].cacheAt * 1000).toISOString() });
   } catch (err) {
-    console.error("Error al cachear productos:", err);
     res.status(500).json({ ok: false, server, error: String(err.message || err) });
   }
 };
@@ -322,12 +237,10 @@ const obtenerDescripcionProducto = async (req, res) => {
   const { id } = req.params;
 
   try {
-    if (!secret)
-      return res.status(500).json({ error: `Falta PLUGIN secret para ${server}` });
+    if (!secret) return res.status(500).json({ error: `Falta PLUGIN secret para ${server}` });
 
     const data = await tebexFetchPlugin(secret, `package/${id}`);
-    if (ONLY_VISIBLE && isHiddenOrDisabled(data))
-      return res.status(404).json({ error: "Paquete no disponible." });
+    if (ONLY_VISIBLE && isHiddenOrDisabled(data)) return res.status(404).json({ error: "Paquete no disponible." });
 
     const bustKey = cache?.[server]?.cacheAt || nowSec();
     const raw = pickPkgImageRaw(data);
@@ -342,13 +255,11 @@ const obtenerDescripcionProducto = async (req, res) => {
       bust: bustKey,
     });
   } catch (err) {
-    console.error("[Tebex /package] Error", `[server=${server}]`, err?.status || "", err?.message || err);
     const code = err?.status >= 500 && err?.status < 600 ? 502 : 500;
     res.status(code).json({ error: "No se pudo obtener la descripcion." });
   }
 };
 
-/** ========= Checkout (Headless) ========= **/
 const crearPedidoTebex = async (req, res) => {
   const rid = crypto.randomBytes(4).toString("hex");
 
@@ -361,30 +272,18 @@ const crearPedidoTebex = async (req, res) => {
 
   let basket = [];
   if (Array.isArray(body.items) && body.items.length) {
-    basket = body.items.map((it) => ({
-      id: Number(it.id),
-      quantity: Number(it.quantity || 1),
-    }));
+    basket = body.items.map((it) => ({ id: Number(it.id), quantity: Number(it.quantity || 1) }));
   } else if (body.productoId) {
     basket = [{ id: Number(body.productoId), quantity: 1 }];
   } else {
     return res.status(400).json({ ok: false, error: 'Faltan "items" o "productoId".' });
   }
 
-  basket = basket.filter(
-    (it) => Number.isFinite(it.id) && it.id > 0 && Number.isFinite(it.quantity) && it.quantity > 0
-  );
-  if (!basket.length) {
-    return res.status(400).json({ ok: false, error: "Carrito invalido (ids/cantidades)." });
-  }
+  basket = basket.filter((it) => Number.isFinite(it.id) && it.id > 0 && Number.isFinite(it.quantity) && it.quantity > 0);
+  if (!basket.length) return res.status(400).json({ ok: false, error: "Carrito invalido (ids/cantidades)." });
 
   const token = String(WEBSTORE_TOKEN || "").trim();
-  if (!token) {
-    return res.status(500).json({
-      ok: false,
-      error: "Falta TEBEX_WEBSTORE_TOKEN (webstore identifier).",
-    });
-  }
+  if (!token) return res.status(500).json({ ok: false, error: "Falta TEBEX_WEBSTORE_TOKEN (webstore identifier)." });
 
   const ipv4 = getClientIPv4(req);
   tlog(rid, "checkout req:", { jugador, coupon, items: basket, ipv4 });
@@ -440,11 +339,7 @@ const crearPedidoTebex = async (req, res) => {
       complete_auto_redirect: true,
       username: jugador,
       ...(ipv4 ? { ip_address: ipv4 } : {}),
-      custom: {
-        mc_username: jugador,
-        source: "flancraft-web",
-        ts: Date.now(),
-      },
+      custom: { mc_username: jugador, source: "flancraft-web", ts: Date.now() },
     };
 
     const created = await fetchJson(createBasketUrl, {
@@ -457,14 +352,8 @@ const crearPedidoTebex = async (req, res) => {
     const username_id = created?.data?.username_id;
 
     if (!ident) {
-      return res.status(502).json({
-        ok: false,
-        error: "No se pudo crear el basket (sin ident).",
-        detail: created || null,
-      });
+      return res.status(502).json({ ok: false, error: "No se pudo crear el basket (sin ident).", detail: created || null });
     }
-
-    tlog(rid, "basket created:", { ident, username_id });
 
     for (const it of basket) {
       const addUrl = `https://headless.tebex.io/api/baskets/${encodeURIComponent(ident)}/packages`;
@@ -481,9 +370,7 @@ const crearPedidoTebex = async (req, res) => {
     }
 
     if (coupon) {
-      const couponUrl = `https://headless.tebex.io/api/accounts/${encodeURIComponent(
-        token
-      )}/baskets/${encodeURIComponent(ident)}/coupons`;
+      const couponUrl = `https://headless.tebex.io/api/accounts/${encodeURIComponent(token)}/baskets/${encodeURIComponent(ident)}/coupons`;
 
       try {
         await fetchJson(couponUrl, {
@@ -504,13 +391,10 @@ const crearPedidoTebex = async (req, res) => {
       }
     }
 
-    const getBasketUrl = `https://headless.tebex.io/api/accounts/${encodeURIComponent(
-      token
-    )}/baskets/${encodeURIComponent(ident)}`;
-
+    const getBasketUrl = `https://headless.tebex.io/api/accounts/${encodeURIComponent(token)}/baskets/${encodeURIComponent(ident)}`;
     const finalBasket = await fetchJson(getBasketUrl, { method: "GET" });
-    const checkoutUrl = finalBasket?.data?.links?.checkout || created?.data?.links?.checkout;
 
+    const checkoutUrl = finalBasket?.data?.links?.checkout || created?.data?.links?.checkout;
     if (!checkoutUrl) {
       return res.status(502).json({
         ok: false,
@@ -519,7 +403,6 @@ const crearPedidoTebex = async (req, res) => {
       });
     }
 
-    tlog(rid, "checkout url:", checkoutUrl);
     return res.json({ ok: true, ident, url: checkoutUrl });
   } catch (err) {
     const data = err?.data || null;
@@ -534,13 +417,6 @@ const crearPedidoTebex = async (req, res) => {
       });
     }
 
-    console.error(
-      `[TEBEX][${rid}] Checkout error`,
-      err?.status || "",
-      err?.message || err,
-      err?.data || err?.raw || ""
-    );
-
     const upstreamStatus = err?.status;
     const status = upstreamStatus >= 400 && upstreamStatus < 600 ? upstreamStatus : 500;
 
@@ -553,18 +429,14 @@ const crearPedidoTebex = async (req, res) => {
   }
 };
 
-/** ========= Sidebar RAW (debug) ========= **/
 const obtenerSidebarRaw = async (req, res) => {
   try {
-    const force = String(req.query.refresh || "").toLowerCase() === "1";
+    const refresh = String(req.query.refresh || "").trim().toLowerCase();
+    const force = refresh === "1" || refresh === "true";
 
     const c = headlessCache.sidebarRaw;
     if (!force && c.cacheAt && !isExpired(c) && c.data) {
-      return res.json({
-        ok: true,
-        ...c.data,
-        cacheado: new Date(c.cacheAt * 1000).toISOString(),
-      });
+      return res.json({ ok: true, ...c.data, cacheado: new Date(c.cacheAt * 1000).toISOString() });
     }
 
     const sidebar = await getSidebarModulesCached(force);
@@ -572,43 +444,26 @@ const obtenerSidebarRaw = async (req, res) => {
 
     const modules = arr.map((m) => {
       const data = m?.data || {};
-      return {
-        id: m?.id ?? null,
-        type: m?.type ?? null,
-        dataKeys: Object.keys(data),
-        data,
-      };
+      return { id: m?.id ?? null, type: m?.type ?? null, dataKeys: Object.keys(data), data };
     });
 
     const payload = { modules };
     headlessCache.sidebarRaw = { data: payload, cacheAt: nowSec() };
 
-    return res.json({
-      ok: true,
-      ...payload,
-      cacheado: new Date(headlessCache.sidebarRaw.cacheAt * 1000).toISOString(),
-    });
+    return res.json({ ok: true, ...payload, cacheado: new Date(headlessCache.sidebarRaw.cacheAt * 1000).toISOString() });
   } catch (e) {
-    return res.status(500).json({
-      ok: false,
-      error: "No se pudo obtener sidebar raw",
-      detail: e?.message || "unknown",
-    });
+    return res.status(500).json({ ok: false, error: "No se pudo obtener sidebar raw", detail: e?.message || "unknown" });
   }
 };
 
-/** ========= Top Donator ========= **/
 const obtenerTopDonator = async (req, res) => {
   try {
-    const force = String(req.query.refresh || "").toLowerCase() === "1";
+    const refresh = String(req.query.refresh || "").trim().toLowerCase();
+    const force = refresh === "1" || refresh === "true";
 
     const c = headlessCache.topDonator;
     if (!force && c.cacheAt && !isExpired(c) && c.data) {
-      return res.json({
-        ok: true,
-        ...c.data,
-        cacheado: new Date(c.cacheAt * 1000).toISOString(),
-      });
+      return res.json({ ok: true, ...c.data, cacheado: new Date(c.cacheAt * 1000).toISOString() });
     }
 
     const sidebar = await getSidebarModulesCached(force);
@@ -626,59 +481,37 @@ const obtenerTopDonator = async (req, res) => {
       };
 
     headlessCache.topDonator = { data: payload, cacheAt: nowSec() };
-
-    return res.json({
-      ok: true,
-      ...payload,
-      cacheado: new Date(headlessCache.topDonator.cacheAt * 1000).toISOString(),
-    });
+    return res.json({ ok: true, ...payload, cacheado: new Date(headlessCache.topDonator.cacheAt * 1000).toISOString() });
   } catch (e) {
-    return res.status(500).json({
-      ok: false,
-      error: "No se pudo obtener el Top Donator (Headless).",
-      detail: e?.message || "unknown",
-    });
+    return res.status(500).json({ ok: false, error: "No se pudo obtener el Top Donator (Headless).", detail: e?.message || "unknown" });
   }
 };
 
-/** ========= Pagos recientes ========= **/
 const obtenerPagosRecientes = async (req, res) => {
   try {
-    const force = String(req.query.refresh || "").toLowerCase() === "1";
+    const refresh = String(req.query.refresh || "").trim().toLowerCase();
+    const force = refresh === "1" || refresh === "true";
 
     const c = headlessCache.recentPayments;
     if (!force && c.cacheAt && !isExpired(c) && c.data) {
-      return res.json({
-        ok: true,
-        payments: c.data,
-        cacheado: new Date(c.cacheAt * 1000).toISOString(),
-      });
+      return res.json({ ok: true, payments: c.data, cacheado: new Date(c.cacheAt * 1000).toISOString() });
     }
 
     const sidebar = await getSidebarModulesCached(force);
     const mod = pickPaymentsModule(sidebar);
 
     const payments = Array.isArray(mod?.data?.payments) ? mod.data.payments : [];
-
     headlessCache.recentPayments = { data: payments, cacheAt: nowSec() };
 
-    return res.json({
-      ok: true,
-      payments,
-      cacheado: new Date(headlessCache.recentPayments.cacheAt * 1000).toISOString(),
-    });
+    return res.json({ ok: true, payments, cacheado: new Date(headlessCache.recentPayments.cacheAt * 1000).toISOString() });
   } catch (e) {
-    return res.status(500).json({
-      ok: false,
-      error: "No se pudieron obtener pagos recientes (Headless).",
-      detail: e?.message || "unknown",
-    });
+    return res.status(500).json({ ok: false, error: "No se pudieron obtener pagos recientes (Headless).", detail: e?.message || "unknown" });
   }
 };
 
-/** ========= Basket: obtener ========= **/
 const obtenerBasketHeadless = async (req, res) => {
   const rid = crypto.randomBytes(4).toString("hex");
+
   try {
     const token = String(WEBSTORE_TOKEN || "").trim();
     if (!token) return res.status(500).json({ ok: false, error: "Falta TEBEX_WEBSTORE_TOKEN." });
@@ -686,22 +519,15 @@ const obtenerBasketHeadless = async (req, res) => {
     const ident = String(req.params.ident || "").trim();
     if (!ident) return res.status(400).json({ ok: false, error: "Falta basket ident." });
 
-    const url = `https://headless.tebex.io/api/accounts/${encodeURIComponent(
-      token
-    )}/baskets/${encodeURIComponent(ident)}`;
-
+    const url = `https://headless.tebex.io/api/accounts/${encodeURIComponent(token)}/baskets/${encodeURIComponent(ident)}`;
     const data = await headlessFetchJson({ rid, url });
+
     return res.json({ ok: true, basket: data?.data || data });
   } catch (e) {
-    return res.status(e?.status || 500).json({
-      ok: false,
-      error: "No se pudo obtener el basket.",
-      detail: e?.data || e?.raw || e?.message || "unknown",
-    });
+    return res.status(e?.status || 500).json({ ok: false, error: "No se pudo obtener el basket.", detail: e?.data || e?.raw || e?.message || "unknown" });
   }
 };
 
-/** ========= Checkout status ========= **/
 const obtenerCheckoutStatus = async (req, res) => {
   const rid = crypto.randomBytes(4).toString("hex");
 
@@ -712,10 +538,7 @@ const obtenerCheckoutStatus = async (req, res) => {
     const ident = String(req.params.ident || "").trim();
     if (!ident) return res.status(400).json({ ok: false, error: "Falta basket ident." });
 
-    const url = `https://headless.tebex.io/api/accounts/${encodeURIComponent(
-      token
-    )}/baskets/${encodeURIComponent(ident)}`;
-
+    const url = `https://headless.tebex.io/api/accounts/${encodeURIComponent(token)}/baskets/${encodeURIComponent(ident)}`;
     const data = await headlessFetchJson({ rid, url, method: "GET" });
 
     const b = data?.data || data || {};
@@ -724,15 +547,10 @@ const obtenerCheckoutStatus = async (req, res) => {
 
     return res.json({ ok: true, ident, paid, links });
   } catch (e) {
-    return res.status(e?.status || 500).json({
-      ok: false,
-      error: "No se pudo obtener el estado del checkout.",
-      detail: e?.data || e?.raw || e?.message || "unknown",
-    });
+    return res.status(e?.status || 500).json({ ok: false, error: "No se pudo obtener el estado del checkout.", detail: e?.data || e?.raw || e?.message || "unknown" });
   }
 };
 
-/** ========= Basket: aplicar códigos ========= **/
 const aplicarCodigoBasket = async (req, res) => {
   const rid = crypto.randomBytes(4).toString("hex");
 
@@ -747,17 +565,12 @@ const aplicarCodigoBasket = async (req, res) => {
     const codigo = String(req.body?.codigo || "").trim();
 
     if (!["creator", "coupon", "giftcard", "coupon_giftcard"].includes(tipo)) {
-      return res.status(400).json({
-        ok: false,
-        error: 'Tipo invalido. Usa "creator", "coupon", "giftcard" o "coupon_giftcard".',
-      });
+      return res.status(400).json({ ok: false, error: 'Tipo invalido. Usa "creator", "coupon", "giftcard" o "coupon_giftcard".' });
     }
     if (!codigo) return res.status(400).json({ ok: false, error: "Falta codigo." });
 
     const tryApply = async (path, body) => {
-      const url = `https://headless.tebex.io/api/accounts/${encodeURIComponent(
-        token
-      )}/baskets/${encodeURIComponent(ident)}/${path}`;
+      const url = `https://headless.tebex.io/api/accounts/${encodeURIComponent(token)}/baskets/${encodeURIComponent(ident)}/${path}`;
       return headlessFetchJson({ rid, url, method: "POST", body });
     };
 
@@ -791,11 +604,7 @@ const aplicarCodigoBasket = async (req, res) => {
       } catch (e2) {
         const s2 = e2?.status || 500;
         if (s2 === 400 || s2 === 422) {
-          return res.status(400).json({
-            ok: false,
-            error: "Codigo invalido o no aplicable.",
-            detail: e2?.data || e2?.raw || e2?.message || "unknown",
-          });
+          return res.status(400).json({ ok: false, error: "Codigo invalido o no aplicable.", detail: e2?.data || e2?.raw || e2?.message || "unknown" });
         }
         throw e2;
       }
@@ -803,21 +612,12 @@ const aplicarCodigoBasket = async (req, res) => {
   } catch (e) {
     const status = e?.status || 500;
     if (status === 422 || status === 400) {
-      return res.status(400).json({
-        ok: false,
-        error: "Codigo invalido o no aplicable.",
-        detail: e?.data || e?.raw || e?.message || "unknown",
-      });
+      return res.status(400).json({ ok: false, error: "Codigo invalido o no aplicable.", detail: e?.data || e?.raw || e?.message || "unknown" });
     }
-    return res.status(status).json({
-      ok: false,
-      error: "No se pudo aplicar el codigo.",
-      detail: e?.data || e?.raw || e?.message || "unknown",
-    });
+    return res.status(status).json({ ok: false, error: "No se pudo aplicar el codigo.", detail: e?.data || e?.raw || e?.message || "unknown" });
   }
 };
 
-/** ========= Basket: quitar códigos ========= **/
 const quitarCodigoBasket = async (req, res) => {
   const rid = crypto.randomBytes(4).toString("hex");
 
@@ -832,10 +632,7 @@ const quitarCodigoBasket = async (req, res) => {
     const codigo = String(req.body?.codigo || "").trim();
 
     if (!["creator", "coupon", "giftcard"].includes(tipo)) {
-      return res.status(400).json({
-        ok: false,
-        error: 'Tipo invalido. Usa "creator", "coupon" o "giftcard".',
-      });
+      return res.status(400).json({ ok: false, error: 'Tipo invalido. Usa "creator", "coupon" o "giftcard".' });
     }
 
     let path = "";
@@ -845,32 +642,21 @@ const quitarCodigoBasket = async (req, res) => {
       path = "creator-codes/remove";
     } else if (tipo === "coupon") {
       path = "coupons/remove";
-    } else if (tipo === "giftcard") {
+    } else {
       path = "giftcards/remove";
-      if (!codigo)
-        return res.status(400).json({
-          ok: false,
-          error: "Para quitar giftcard hace falta el card_number.",
-        });
+      if (!codigo) return res.status(400).json({ ok: false, error: "Para quitar giftcard hace falta el card_number." });
       body = { card_number: codigo };
     }
 
-    const url = `https://headless.tebex.io/api/accounts/${encodeURIComponent(
-      token
-    )}/baskets/${encodeURIComponent(ident)}/${path}`;
+    const url = `https://headless.tebex.io/api/accounts/${encodeURIComponent(token)}/baskets/${encodeURIComponent(ident)}/${path}`;
 
     await headlessFetchJson({ rid, url, method: "POST", body });
     return res.json({ ok: true });
   } catch (e) {
-    return res.status(e?.status || 500).json({
-      ok: false,
-      error: "No se pudo quitar el codigo.",
-      detail: e?.data || e?.raw || e?.message || "unknown",
-    });
+    return res.status(e?.status || 500).json({ ok: false, error: "No se pudo quitar el codigo.", detail: e?.data || e?.raw || e?.message || "unknown" });
   }
 };
 
-/** ========= Basket: añadir paquete ========= **/
 const agregarPaqueteBasket = async (req, res) => {
   const rid = crypto.randomBytes(4).toString("hex");
 
@@ -884,17 +670,10 @@ const agregarPaqueteBasket = async (req, res) => {
     const package_id = Number(req.body?.package_id);
     const quantity = Number(req.body?.quantity || 1);
 
-    if (!Number.isFinite(package_id) || package_id <= 0) {
-      return res.status(400).json({ ok: false, error: "package_id invalido." });
-    }
-    if (!Number.isFinite(quantity) || quantity <= 0) {
-      return res.status(400).json({ ok: false, error: "quantity invalida." });
-    }
+    if (!Number.isFinite(package_id) || package_id <= 0) return res.status(400).json({ ok: false, error: "package_id invalido." });
+    if (!Number.isFinite(quantity) || quantity <= 0) return res.status(400).json({ ok: false, error: "quantity invalida." });
 
-    const getUrl = `https://headless.tebex.io/api/accounts/${encodeURIComponent(
-      token
-    )}/baskets/${encodeURIComponent(ident)}`;
-
+    const getUrl = `https://headless.tebex.io/api/accounts/${encodeURIComponent(token)}/baskets/${encodeURIComponent(ident)}`;
     const basketRes = await headlessFetchJson({ rid, url: getUrl, method: "GET" });
     const b = basketRes?.data || basketRes;
     const username_id = b?.username_id || null;
@@ -905,25 +684,16 @@ const agregarPaqueteBasket = async (req, res) => {
       rid,
       url: addUrl,
       method: "POST",
-      body: {
-        package_id,
-        quantity,
-        ...(username_id ? { variable_data: { username_id } } : {}),
-      },
+      body: { package_id, quantity, ...(username_id ? { variable_data: { username_id } } : {}) },
     });
 
     return res.json({ ok: true, basket: data?.data || data });
   } catch (e) {
     const status = e?.status || 500;
-    return res.status(status).json({
-      ok: false,
-      error: "No se pudo añadir el paquete al basket.",
-      detail: e?.data || e?.raw || e?.message || "unknown",
-    });
+    return res.status(status).json({ ok: false, error: "No se pudo añadir el paquete al basket.", detail: e?.data || e?.raw || e?.message || "unknown" });
   }
 };
 
-/** ========= Recomendaciones (You might like) ========= **/
 const obtenerRecomendaciones = async (req, res) => {
   const server = getServerKey(req);
   const count = Math.max(1, Math.min(6, Number(req.query.count || 3)));
@@ -934,9 +704,7 @@ const obtenerRecomendaciones = async (req, res) => {
 
   try {
     const c = cache[server];
-    if (!c.cacheAt || isExpired(c)) {
-      await actualizarCacheDe(server);
-    }
+    if (!c.cacheAt || isExpired(c)) await actualizarCacheDe(server);
 
     const bustKey = cache?.[server]?.cacheAt || nowSec();
 
@@ -950,87 +718,61 @@ const obtenerRecomendaciones = async (req, res) => {
         const raw = pickPkgImageRaw(p);
         const image = raw ? withCacheBust(raw, bustKey) : "";
 
-        return {
-          id,
-          name,
-          price: Number.isFinite(price) ? price : null,
-          currency: String(p.currency || TEBEX_CURRENCY || "EUR").toUpperCase(),
-          image,
-          image_raw: raw,
-        };
+        return { id, name, price: Number.isFinite(price) ? price : null, currency: String(p.currency || TEBEX_CURRENCY || "EUR").toUpperCase(), image, image_raw: raw };
       })
       .filter((p) => p.id && p.name);
 
     list.sort((a, b) => (b.price ?? 0) - (a.price ?? 0));
     return res.json({ ok: true, server, items: list.slice(0, count), bust: bustKey });
   } catch (e) {
-    return res.status(500).json({
-      ok: false,
-      error: "No se pudieron obtener recomendaciones",
-      detail: e?.message || "unknown",
-    });
+    return res.status(500).json({ ok: false, error: "No se pudieron obtener recomendaciones", detail: e?.message || "unknown" });
   }
 };
 
-/** ========= Webhook Tebex ========= **/
 const webhookPing = (_req, res) => {
   res.status(200).send("ok");
 };
 
 const webhookHandler = async (req, res) => {
   try {
-    if (!WEBHOOK_SECRET) {
-      return res.status(500).json({ ok: false, error: "Falta TEBEX_WEBHOOK_SECRET" });
-    }
+    if (!WEBHOOK_SECRET) return res.status(500).json({ ok: false, error: "Falta TEBEX_WEBHOOK_SECRET" });
 
     const signature = req.get("X-Signature") || req.get("x-signature") || "";
     const raw = req.rawBody;
+
     if (!raw || !Buffer.isBuffer(raw)) return res.status(400).json({ ok: false, error: "Missing raw body" });
 
     const bodyHash = sha256Hex(raw);
     const expected = hmacSha256Hex(WEBHOOK_SECRET, bodyHash);
 
-    if (!timingSafeEqualHex(expected, signature)) {
-      return res.status(401).json({ ok: false, error: "Invalid signature" });
-    }
+    if (!timingSafeEqualHex(expected, signature)) return res.status(401).json({ ok: false, error: "Invalid signature" });
 
     const evt = JSON.parse(raw.toString("utf8") || "{}");
 
-    if (evt?.type === "validation.webhook") {
-      return res.status(200).json({ id: evt.id });
-    }
+    if (evt?.type === "validation.webhook") return res.status(200).json({ id: evt.id });
 
     return res.status(200).json({ ok: true });
   } catch (e) {
-    return res.status(500).json({
-      ok: false,
-      error: "Webhook error",
-      detail: e?.message || "unknown",
-    });
+    return res.status(500).json({ ok: false, error: "Webhook error", detail: e?.message || "unknown" });
   }
 };
 
-/** ========= Exports ========= **/
 module.exports = {
   obtenerFx,
-
   obtenerDatosTienda,
   forzarActualizarCache,
   obtenerDescripcionProducto,
   crearPedidoTebex,
   obtenerSaleActiva,
-
   obtenerSidebarRaw,
   obtenerTopDonator,
   obtenerPagosRecientes,
-
   obtenerBasketHeadless,
   obtenerCheckoutStatus,
   aplicarCodigoBasket,
   quitarCodigoBasket,
   agregarPaqueteBasket,
   obtenerRecomendaciones,
-
   webhookPing,
   webhookHandler,
   health,

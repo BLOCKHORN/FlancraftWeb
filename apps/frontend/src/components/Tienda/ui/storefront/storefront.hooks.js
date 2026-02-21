@@ -122,13 +122,16 @@ export function useStorefrontData() {
   const [dataByServer, setDataByServer] = useState({
     gens: { cats: [], packs: [], bust: null },
     oneblock: { cats: [], packs: [], bust: null },
+    survival: { cats: [], packs: [], bust: null },
   });
 
   useEffect(() => {
     let alive = true;
 
     const loadServer = async (sv) => {
-      const r = await fetchTebex(`/datos?sv=${encodeURIComponent(sv)}`, { method: "GET" });
+      const r = await fetchTebex(`/datos?sv=${encodeURIComponent(sv)}`, {
+        method: "GET",
+      });
       if (!r.ok) throw new Error(`No se pudo cargar la tienda para ${sv}`);
       const json = await r.json();
 
@@ -144,12 +147,27 @@ export function useStorefrontData() {
         setLoading(true);
         setErr("");
 
-        const [gens, oneblock] = await Promise.allSettled([loadServer("gens"), loadServer("oneblock")]);
+        const [gens, oneblock, survival] = await Promise.allSettled([
+          loadServer("gens"),
+          loadServer("oneblock"),
+          loadServer("survival"),
+        ]);
+
         if (!alive) return;
 
         setDataByServer({
-          gens: gens.status === "fulfilled" ? gens.value : { cats: [], packs: [], bust: null },
-          oneblock: oneblock.status === "fulfilled" ? oneblock.value : { cats: [], packs: [], bust: null },
+          gens:
+            gens.status === "fulfilled"
+              ? gens.value
+              : { cats: [], packs: [], bust: null },
+          oneblock:
+            oneblock.status === "fulfilled"
+              ? oneblock.value
+              : { cats: [], packs: [], bust: null },
+          survival:
+            survival.status === "fulfilled"
+              ? survival.value
+              : { cats: [], packs: [], bust: null },
         });
       } catch (e) {
         if (!alive) return;

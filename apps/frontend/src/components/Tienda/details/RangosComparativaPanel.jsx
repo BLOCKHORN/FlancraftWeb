@@ -91,9 +91,13 @@ const RANK_META = {
 const SERVER_META = {
   oneblock: { label: "Oneblock", icon: "/assets/reinos/oneblock.webp" },
   gens: { label: "Gens", icon: "/assets/reinos/gens.webp" },
+
+  // ✅ NUEVO
+  survival: { label: "Survival", icon: "/assets/reinos/survival-clasico.webp" },
 };
 
-const SERVER_ORDER = ["oneblock", "gens"];
+// ✅ Orden preferido
+const SERVER_ORDER = ["oneblock", "gens", "survival"];
 
 // Mascota arriba a la izquierda (solo ONEBLOCK)
 const RANKSKIN_IMG = "/tienda/assets/rankskin.png";
@@ -124,6 +128,9 @@ const PERK_ICONS = {
   "cmd:/nick": `${PERK_BASE}/nick.webp`,
   "cmd:/repair": `${PERK_BASE}/repair.webp`,
   "cmd:/workbench": `${PERK_BASE}/workbench.webp`,
+
+  // ✅ NUEVO (si tienes el asset, perfecto)
+  "cmd:/heal": `${PERK_BASE}/heal.webp`,
 };
 
 function getPerkIcon(rowKey) {
@@ -597,8 +604,7 @@ export default function RangosComparativaPanel({
       const anchor = tipAnchorRef.current;
       const target = e.target;
       if (!anchor || !(target instanceof Node)) return closeTip();
-      if (anchor.contains(target)) return; // click en el botón => lo gestionamos en onClick
-      // Si clicas en cualquier otro sitio -> cerrar
+      if (anchor.contains(target)) return;
       closeTip();
     };
     window.addEventListener("pointerdown", onPointerDown, true);
@@ -679,12 +685,11 @@ export default function RangosComparativaPanel({
     });
   }, []);
 
-  // ESC: si hay zoom -> cierra zoom; si no -> cierra modal
+  // ESC: si hay tooltip -> cierra tooltip; si hay zoom -> cierra zoom; si no -> cierra modal
   // + lock scroll del documento
   useEffect(() => {
     const onKey = (e) => {
       if (e.key === "Escape") {
-        // prioridad: tooltip -> zoom -> modal
         if (tip.open) closeTip();
         else if (zoomSrc) closeZoom();
         else onClose?.();
@@ -797,7 +802,6 @@ export default function RangosComparativaPanel({
                                             aria-label={`Qué significa: ${row.label}`}
                                             onMouseEnter={(e) => openTip(e.currentTarget, tipId, tipText)}
                                             onMouseLeave={() => {
-                                              // solo cerramos si NO lo han fijado con click
                                               if (tipKeepIdRef.current !== tipId) closeTip();
                                             }}
                                             onFocus={(e) => openTip(e.currentTarget, tipId, tipText)}
@@ -806,11 +810,10 @@ export default function RangosComparativaPanel({
                                             }}
                                             onClick={(e) => {
                                               e.stopPropagation();
-                                              // click/tap: toggle fijo
                                               if (tip.open && tip.id === tipId) {
                                                 closeTip();
                                               } else {
-                                                tipKeepIdRef.current = tipId; // fijar
+                                                tipKeepIdRef.current = tipId;
                                                 openTip(e.currentTarget, tipId, tipText);
                                               }
                                             }}

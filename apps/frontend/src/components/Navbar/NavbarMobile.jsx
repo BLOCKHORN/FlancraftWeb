@@ -1,26 +1,14 @@
+// src/components/Navbar/NavbarMobile.jsx
 import { NavLink, Link, useLocation } from "react-router-dom";
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import LogoutButton from "../Auth/LogoutButton";
 import LoginModal from "../Auth/LoginModal";
 
-const API_BASE =
-  import.meta.env.VITE_BACKEND_URL || "https://flancraft-backend.onrender.com";
+const API_BASE = (import.meta.env.VITE_BACKEND_URL || "https://flancraft-backend.onrender.com")
+  .trim()
+  .replace(/\/$/, "");
 
-const NavIcon = ({ src, alt, className = "" }) => {
-  return (
-    <img
-      className={`nav-icon-img ${className}`}
-      src={src}
-      alt={alt}
-      draggable="false"
-    />
-  );
-};
-
-const navClsMobile = (base) => (navData) => {
-  const isActive = !!(navData?.isActive ?? navData?.match);
-  return `mobile-nav-item ${base}${isActive ? " active" : ""}`;
-};
+const apiUrl = (path) => (API_BASE ? `${API_BASE}${path}` : path);
 
 const toInt = (v) => {
   const n = Number(v);
@@ -32,6 +20,36 @@ const formatInt = (n) => {
   return new Intl.NumberFormat("es-ES", { maximumFractionDigits: 0 }).format(v);
 };
 
+const navClsMobile = (base) => (navData) => {
+  const isActive = !!(navData?.isActive ?? navData?.match);
+  return `mobile-nav-item ${base}${isActive ? " active" : ""}`;
+};
+
+const NavIcon = ({ src, alt, fallbackSrc }) => {
+  const onError = useCallback(
+    (e) => {
+      if (!fallbackSrc) return;
+      const img = e.currentTarget;
+      if (img && img.src && img.src.includes(fallbackSrc)) return;
+      img.onerror = null;
+      img.src = fallbackSrc;
+    },
+    [fallbackSrc]
+  );
+
+  if (!src) return <span className="nav-icon-dot" aria-hidden="true" />;
+
+  return (
+    <img
+      className="nav-icon-img"
+      src={src}
+      alt={alt}
+      draggable="false"
+      onError={onError}
+    />
+  );
+};
+
 const NavbarMobile = ({
   menuOpen,
   setMenuOpen,
@@ -40,6 +58,7 @@ const NavbarMobile = ({
   isLoggedIn,
   isUserLoading,
   userData,
+  navItems,
 }) => {
   const dropdownRef = useRef(null);
   const profileButtonRef = useRef(null);
@@ -53,34 +72,27 @@ const NavbarMobile = ({
   const [hasClaimables, setHasClaimables] = useState(false);
   const [claimablesCount, setClaimablesCount] = useState(0);
 
-  // ✅ Cierra menú/perfil al navegar
   useEffect(() => {
     setMenuOpen(false);
     setProfileOpen(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.pathname]);
+  }, [location.pathname, setMenuOpen, setProfileOpen]);
 
-  // ✅ Bloquea scroll de fondo cuando el menú lateral está abierto
   useEffect(() => {
     if (!menuOpen) return;
-    const prev = document.body.style.overflow;
+    const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
-      document.body.style.overflow = prev;
+      document.body.style.overflow = prevOverflow;
     };
   }, [menuOpen]);
 
-  // ✅ Tap outside + ESC
   useEffect(() => {
     const onPointerDown = (e) => {
       if (!profileOpen) return;
-
       const dd = dropdownRef.current;
       const btn = profileButtonRef.current;
-
       const clickedInsideDropdown = dd && dd.contains(e.target);
       const clickedProfileBtn = btn && btn.contains(e.target);
-
       if (!clickedInsideDropdown && !clickedProfileBtn) setProfileOpen(false);
     };
 
@@ -106,13 +118,11 @@ const NavbarMobile = ({
 
       try {
         const [usuarioRes, xpRes] = await Promise.all([
-          fetch(`${API_BASE}/api/usuarios/${userData.uuid}`),
-          fetch(`${API_BASE}/api/usuarios/${userData.uuid}/xp`),
+          fetch(apiUrl(`/api/usuarios/${userData.uuid}`)),
+          fetch(apiUrl(`/api/usuarios/${userData.uuid}/xp`)),
         ]);
 
-        if (!usuarioRes.ok || !xpRes.ok) {
-          throw new Error("Error al obtener datos de usuario/XP (mobile)");
-        }
+        if (!usuarioRes.ok || !xpRes.ok) throw new Error("Bad response");
 
         const usuario = await usuarioRes.json();
         const xpData = await xpRes.json();
@@ -152,15 +162,12 @@ const NavbarMobile = ({
         const params = new URLSearchParams();
         params.append("tipo_mision", "permanente");
 
-        const res = await fetch(`${API_BASE}/api/logros/${userData.uuid}?${params.toString()}`);
+        const res = await fetch(apiUrl(`/api/logros/${userData.uuid}?${params.toString()}`));
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
         const data = await res.json();
         const lista = Array.isArray(data) ? data : [];
-
-        const pendientes = lista.filter(
-          (l) => l && l.completado === true && l.reclamado !== true
-        );
+        const pendientes = lista.filter((l) => l && l.completado === true && l.reclamado !== true);
 
         if (!cancelled) {
           setClaimablesCount(pendientes.length);
@@ -184,19 +191,21 @@ const NavbarMobile = ({
     };
   }, [isLoggedIn, userData?.uuid]);
 
-  const getRangoColorClass = () => {
-    if (!isLoggedIn || !userData?.uuid) return "";
+  const toneClass = useMemo(() => {
     const raw = rangoDatos?.rango;
-    if (!raw) return "rango-basico";
-    return `rango-${raw}`;
-  };
+    if (!raw) return "tone--basic";
+    if (raw === "nova") return "tone--nova";
+    if (raw === "alpha") return "tone--alpha";
+    if (raw === "inmortal") return "tone--inmortal";
+    return "tone--basic";
+  }, [rangoDatos?.rango]);
 
   const xpActualNavbar = xpNavbar.actual ?? 0;
   const xpRequeridaNavbar = xpNavbar.requerida || 1;
-  const xpPercent =
-    xpRequeridaNavbar > 0 ? Math.min(100, (xpActualNavbar / xpRequeridaNavbar) * 100) : 0;
-
+  const xpPercent = xpRequeridaNavbar > 0 ? Math.min(100, (xpActualNavbar / xpRequeridaNavbar) * 100) : 0;
   const nivelNavbar = xpNavbar.level != null ? xpNavbar.level : userData?.userLevel ?? 1;
+
+  const walletCoins = useMemo(() => formatInt(userData?.walletCoins ?? 0), [userData?.walletCoins]);
 
   const QuestIcon = () => (
     <span className="quest-qm" aria-hidden="true">
@@ -219,41 +228,43 @@ const NavbarMobile = ({
     </span>
   );
 
-  // ✅ WALLET a mostrar
-  const walletCoins = useMemo(() => formatInt(userData?.coins ?? 0), [userData?.coins]);
+  const walletTip =
+    "Las Wallet Coins se consiguen con el daily, el voto y los logros. Puedes enviarlas al servidor que quieras, en la cantidad que elijas.";
 
   return (
     <>
-      <div className="navbar-inner mobile-only">
+      <div className={`navbar-inner mobile-only ${menuOpen ? "menu-open" : ""}`}>
         <div className="left-wrapper">
           <button
             className={`burger ${menuOpen ? "open" : ""}`}
             onClick={() => setMenuOpen(!menuOpen)}
-            aria-label="Abrir menú"
+            aria-label={menuOpen ? "Cerrar menú" : "Abrir menú"}
             aria-expanded={menuOpen ? "true" : "false"}
             aria-controls="mobile-menu"
+            type="button"
           >
             <span />
             <span />
             <span />
           </button>
 
-          <Link to="/" className="logo-inline" onClick={() => setMenuOpen(false)}>
+          <Link to="/" className="logo-inline" onClick={() => setMenuOpen(false)} aria-label="Ir al inicio">
             <img
               src="/assets/logonav.webp"
               alt="Flancraft logo"
               className={`logo-img ${isHome ? "logo-activo" : ""}`}
+              draggable="false"
             />
           </Link>
         </div>
 
         {!isLoggedIn ? (
-          <button className="profile-button full" onClick={() => setLoginModalOpen(true)}>
+          <button className="profile-button full" onClick={() => setLoginModalOpen(true)} type="button">
             <span className="profile-greeting">Iniciar sesión</span>
           </button>
         ) : isUserLoading ? (
-          <div className="profile-button full loading">
-            <span className="profile-greeting">Cargando perfil...</span>
+          <div className="profile-button full loading" aria-live="polite">
+            <span className="profile-greeting">Cargando…</span>
           </div>
         ) : (
           <div className="profile-button-wrapper">
@@ -263,26 +274,25 @@ const NavbarMobile = ({
               onClick={() => setProfileOpen((prev) => !prev)}
               aria-expanded={profileOpen ? "true" : "false"}
               aria-controls="mobile-profile-dropdown"
-              title={
-                hasClaimables ? `Tienes ${claimablesCount} recompensa(s) por reclamar` : undefined
-              }
+              title={hasClaimables ? `Tienes ${claimablesCount} recompensa(s) por reclamar` : undefined}
+              type="button"
             >
-              <img
-                src={`https://mc-heads.net/avatar/${userData.username}/32`}
-                alt="avatar"
-                className="user-avatar"
-              />
+              <span className="user-avatar" aria-hidden="true">
+                <img
+                  src={`https://mc-heads.net/avatar/${userData.username}/28`}
+                  alt=""
+                  className="user-avatar-img"
+                  draggable="false"
+                />
+              </span>
 
               <span className="profile-greeting">
-                Hola,&nbsp;
-                <span className={`nombre-colored ${getRangoColorClass()}`}>
-                  {userData.username}
-                </span>
+                Hola,&nbsp;<span className={`profile-name ${toneClass}`}>{userData.username}</span>
               </span>
 
               {hasClaimables && <QuestIcon />}
 
-              <i className={`fas ${profileOpen ? "fa-chevron-up" : "fa-chevron-down"}`} />
+              <span className={`profile-chev ${profileOpen ? "is-open" : ""}`} aria-hidden="true" />
             </button>
           </div>
         )}
@@ -293,196 +303,148 @@ const NavbarMobile = ({
           ref={dropdownRef}
           id="mobile-profile-dropdown"
           className={`user-dropdown-wrapper mobile-only ${profileOpen ? "open" : ""}`}
+          role="menu"
         >
           <div className="user-dropdown" onClick={(e) => e.stopPropagation()}>
             <div className="user-header centered">
-              <img
-                src={`https://mc-heads.net/avatar/${userData.username}/64`}
-                alt="avatar"
-                className="user-avatar-large"
-              />
-
-              <div className="user-topline">
-                <p className="username-big">
-                  <span className={`nombre-colored ${getRangoColorClass()}`}>
-                    {userData.username}
-                  </span>
-                </p>
-
-                <div className="user-badges">
-                  {rangoDatos?.rango && (
-                    <img
-                      className={`badge badge-rango ${rangoDatos.rango}`}
-                      src={`/assets/rangos/${rangoDatos.rango}.webp`}
-                      alt={rangoDatos.rango}
-                    />
-                  )}
-                  {rangoDatos?.premium && (
-                    <img className="badge badge-premium" src="/assets/premium.webp" alt="Premium" />
-                  )}
-                </div>
-              </div>
-
-              <div className="user-level-row">
-                <span className="user-level-pill">NIVEL</span>
-                <span className="user-level-value">{nivelNavbar}</span>
-              </div>
-            </div>
-
-            <div className="xp-navbar-block">
-              <div className="xp-bar-profile">
-                <div className="xp-fill" style={{ width: `${xpPercent}%` }} />
-              </div>
-              <div className="xp-text-row">
-                <span className="xp-actual">{xpActualNavbar}</span>
-                <span className="xp-sep">/</span>
-                <span className="xp-total">{xpRequeridaNavbar} XP</span>
-              </div>
-            </div>
-
-            {/* ✅ WALLET (sin ECOS) */}
-            <div className="balance-wrapper">
-              <div className="balance-item">
+              <div className="ud-top">
                 <img
-                  src="/tienda/assets/coin.png"
-                  alt="COINS"
-                  className="eco-icon-navbar"
+                  src={`https://mc-heads.net/avatar/${userData.username}/64`}
+                  alt="avatar"
+                  className="user-avatar-large"
                   draggable="false"
                 />
-                <span className="balance-text">{walletCoins}</span>
+
+                <div className="ud-meta">
+                  <div className="user-topline">
+                    <p className={`username-big ${toneClass}`}>{userData.username}</p>
+
+                    <div className="user-badges" aria-hidden="true">
+                      {rangoDatos?.rango && (
+                        <img
+                          className="badge badge-rango"
+                          src={`/assets/rangos/${rangoDatos.rango}.webp`}
+                          alt=""
+                          draggable="false"
+                        />
+                      )}
+                      {rangoDatos?.premium && (
+                        <img className="badge badge-premium" src="/assets/premium.webp" alt="" draggable="false" />
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="user-level-row">
+                    <span className="user-level-pill">Nivel</span>
+                    <span className="user-level-value">{nivelNavbar}</span>
+                  </div>
+
+                  <div className="xp-navbar-block">
+                    <div className="xp-bar-profile" aria-hidden="true">
+                      <div className="xp-fill" style={{ width: `${xpPercent}%` }} />
+                    </div>
+                    <div className="xp-text-row">
+                      <span className="xp-actual">{xpActualNavbar}</span>
+                      <span className="xp-sep">/</span>
+                      <span className="xp-total">{xpRequeridaNavbar} XP</span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <NavLink
-              to="/dashboard"
-              className={`dropdown-link dropdown-link--rewards ${hasClaimables ? "has" : ""}`}
-              data-has={hasClaimables ? "1" : "0"}
-              onClick={() => setProfileOpen(false)}
-            >
-              <span className="left-pack">
-                <NavIcon src="/botones/recompensas.svg" alt="Recompensas" className="dropdown-icon" />
-                <span>Mis Recompensas</span>
-              </span>
+            <div className="balance-wrapper" aria-label="Wallet coins">
+              <div className="balance-item" tabIndex={0} aria-describedby="mobile-wallet-tip">
+                <img src="/tienda/assets/coin.png" alt="COINS" className="eco-icon-navbar" draggable="false" />
+                <span className="balance-text">{walletCoins}</span>
+                <span className="balance-tag">Wallet</span>
+                <span className="balance-hint" aria-hidden="true" />
+              </div>
 
-              {hasClaimables && (
-                <>
-                  <span className="rewards-count-pill">{claimablesCount}</span>
-                  <span className="dropdown-tooltip">
-                    Tienes {claimablesCount} recompensa(s) por reclamar
-                  </span>
-                </>
-              )}
-            </NavLink>
-
-            <NavLink
-              to={`/perfil/${userData.username}`}
-              className="dropdown-link dropdown-link--stats"
-              onClick={() => setProfileOpen(false)}
-            >
-              <span className="left-pack">
-                <NavIcon src="/botones/estadisticas.svg" alt="Estadísticas" className="dropdown-icon" />
-                <span>Mis estadísticas</span>
-              </span>
-            </NavLink>
-
-            <div className="dropdown-link logout-button">
-              <span className="left-pack">
-                <NavIcon
-                  src="/botones/cerrar-sesion.svg"
-                  alt="Cerrar sesión"
-                  className="dropdown-icon"
-                />
-                <span>Cerrar sesión</span>
-              </span>
-              <LogoutButton onClick={() => setProfileOpen(false)} />
+              <div id="mobile-wallet-tip" className="balance-tip" role="tooltip">
+                {walletTip}
+              </div>
             </div>
+
+            <div className="dropdown-links">
+              <NavLink
+                to="/dashboard"
+                className={`dropdown-link dropdown-link--rewards ${hasClaimables ? "is-pending" : ""}`}
+                onClick={() => setProfileOpen(false)}
+              >
+                <span>Mis Recompensas</span>
+                {hasClaimables && <span className="rewards-count-pill">{claimablesCount}</span>}
+              </NavLink>
+
+              <NavLink
+                to={`/perfil/${userData.username}`}
+                className="dropdown-link dropdown-link--stats"
+                onClick={() => setProfileOpen(false)}
+              >
+                <span>Mis estadísticas</span>
+              </NavLink>
+
+              <div className="dropdown-link dropdown-link--logout" role="menuitem">
+                <span>Cerrar sesión</span>
+                <LogoutButton onClick={() => setProfileOpen(false)} />
+              </div>
+            </div>
+
+            <div className="dropdown-shine" />
           </div>
         </div>
       )}
 
-      <div
-        className={`mobile-menu-overlay ${menuOpen ? "open" : ""}`}
-        onClick={() => setMenuOpen(false)}
-      />
+      <div className={`mobile-menu-overlay ${menuOpen ? "open" : ""}`} onClick={() => setMenuOpen(false)} />
 
       <div id="mobile-menu" className={`mobile-menu ${menuOpen ? "open" : ""}`}>
         <div className="mobile-logo-header">
-          <i className="fas fa-times close-menu-button" onClick={() => setMenuOpen(false)} />
+          <button className="close-menu-button" onClick={() => setMenuOpen(false)} type="button" aria-label="Cerrar menú">
+            <span />
+            <span />
+          </button>
 
-          <img src="/assets/blockhorn.webp" alt="Blockhorn" className="blockhorn-logo" />
+          <img src="/assets/blockhorn.webp" alt="Blockhorn" className="blockhorn-logo" draggable="false" />
           <div className="logo-divider" />
 
           <div className="logo-glow-wrapper">
-            <img src="/assets/flancraftlogo.webp" alt="Flancraft" className="flancraft-logo" />
+            <img src="/assets/flancraftlogo.webp" alt="Flancraft" className="flancraft-logo" draggable="false" />
           </div>
         </div>
 
         <div className="mobile-links">
-          <NavLink to="/" className={navClsMobile("nav-home")} onClick={() => setMenuOpen(false)}>
-            <NavIcon src="/botones/home.svg" alt="Inicio" />
-            Inicio
-          </NavLink>
-
-          <NavLink to="/news" className={navClsMobile("nav-news")} onClick={() => setMenuOpen(false)}>
-            <NavIcon src="/botones/noticias.svg" alt="Noticias" />
-            Noticias
-          </NavLink>
-
-          <NavLink
-            to="/leaderboards"
-            className={navClsMobile("nav-stats")}
-            onClick={() => setMenuOpen(false)}
-          >
-            <NavIcon src="/botones/estadisticas.svg" alt="Estadísticas" />
-            Estadísticas
-          </NavLink>
-
-          <NavLink
-            to="/tienda"
-            className={navClsMobile("nav-store")}
-            onClick={() => setMenuOpen(false)}
-          >
-            <NavIcon src="/botones/tienda.svg" alt="Tienda" />
-            Tienda
-          </NavLink>
-
-          <NavLink
-            to="/rangos"
-            className={navClsMobile("nav-ranks")}
-            onClick={() => setMenuOpen(false)}
-          >
-            <NavIcon src="/botones/rangos.svg" alt="Rangos" />
-            Rangos
-          </NavLink>
-
-          <NavLink
-            to="/tribunal"
-            className={navClsMobile("nav-tribunal")}
-            onClick={() => setMenuOpen(false)}
-          >
-            <NavIcon src="/botones/tribunal.svg" alt="Tribunal" />
-            Tribunal
-          </NavLink>
+          {navItems?.map((it) => (
+            <NavLink
+              key={it.key}
+              to={it.to}
+              className={navClsMobile(`nav-${it.key}`)}
+              onClick={() => setMenuOpen(false)}
+              data-nav={it.key}
+            >
+              <NavIcon src={it.icon} alt={it.label} fallbackSrc={it.fallbackIcon} />
+              <span className="nav-label">{it.label}</span>
+            </NavLink>
+          ))}
 
           <div className="logo-divider" />
 
-          <div className="mobile-social-links">
-            <a href="https://instagram.com" target="_blank" rel="noopener noreferrer">
+          <div className="mobile-social-links" aria-label="Redes sociales">
+            <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
               <i className="fab fa-instagram" />
             </a>
-            <a href="https://tiktok.com" target="_blank" rel="noopener noreferrer">
+            <a href="https://tiktok.com" target="_blank" rel="noopener noreferrer" aria-label="TikTok">
               <i className="fab fa-tiktok" />
             </a>
-            <a href="https://youtube.com" target="_blank" rel="noopener noreferrer">
+            <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" aria-label="YouTube">
               <i className="fab fa-youtube" />
             </a>
-            <a href="https://discord.com" target="_blank" rel="noopener noreferrer">
+            <a href="https://discord.com" target="_blank" rel="noopener noreferrer" aria-label="Discord">
               <i className="fab fa-discord" />
             </a>
-            <a href="https://telegram.org" target="_blank" rel="noopener noreferrer">
+            <a href="https://telegram.org" target="_blank" rel="noopener noreferrer" aria-label="Telegram">
               <i className="fab fa-telegram" />
             </a>
-            <a href="https://x.com" target="_blank" rel="noopener noreferrer">
+            <a href="https://x.com" target="_blank" rel="noopener noreferrer" aria-label="X">
               <i className="fab fa-x-twitter" />
             </a>
           </div>

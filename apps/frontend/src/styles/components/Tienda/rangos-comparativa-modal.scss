@@ -644,6 +644,14 @@
     rgba(0,0,0,0.14);
 }
 
+/* ✅ NUEVO: SURVIVAL (vibe más natural/oscura, sin romper estética) */
+.tsf-rcSection[data-server="survival"] .tsf-rcServerHead{
+  background:
+    radial-gradient(200% 240% at 30% 0%, rgba(125,255,106,0.16), rgba(0,0,0,0) 62%),
+    radial-gradient(200% 240% at 70% 0%, rgba(90,170,255,0.10), rgba(0,0,0,0) 62%),
+    rgba(0,0,0,0.14);
+}
+
 .tsf-rcServerHeadCenter{
   display: inline-flex;
   align-items: center;
@@ -1045,10 +1053,10 @@
     transition: none !important;
   }
 }
+
 /* =========================================================
    ZOOM IMAGEN (kits/prefix/etc)
    ========================================================= */
-
 .tsf-rcImgBtn{
   width: 100%;
   border: 0;
@@ -1059,9 +1067,7 @@
   place-items: center;
 }
 
-.tsf-rcImgBtn.is-zoomable{
-  cursor: zoom-in;
-}
+.tsf-rcImgBtn.is-zoomable{ cursor: zoom-in; }
 
 .tsf-rcImgBtn.is-zoomable .tsf-rcImgFrame{
   transition: transform 160ms ease, filter 160ms ease;
@@ -1077,7 +1083,7 @@
 .tsf-rcImgModal{
   position: fixed;
   inset: 0;
-  z-index: 999950; /* por encima de todo el modal */
+  z-index: 999950;
   display: grid;
   place-items: center;
   padding: clamp(12px, 2vw, 22px);
@@ -1163,10 +1169,10 @@
   .tsf-rcImgClose{ right: 10px; top: 10px; }
   .tsf-rcImgZoom{ max-height: calc(100svh - 140px); }
 }
+
 /* =========================================================
    TOOLTIP PERKS (Portal fixed) — NO se recorta por overflow
    ========================================================= */
-
 .tsf-rcPerk{
   display: inline-flex;
   align-items: center;
@@ -1201,9 +1207,7 @@
   transform: translateY(-1px);
 }
 
-.tsf-rcPerkHelp:active{
-  transform: translateY(1px) scale(0.98);
-}
+.tsf-rcPerkHelp:active{ transform: translateY(1px) scale(0.98); }
 
 .tsf-rcPerkHelp.is-open{
   background:
@@ -1224,7 +1228,7 @@
 /* Portal container */
 .tsf-rcTip{
   position: fixed;
-  z-index: 999999; /* por encima del modal */
+  z-index: 999999;
   transform: translate(-50%, -100%);
   pointer-events: none;
 }

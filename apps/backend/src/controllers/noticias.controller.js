@@ -33,7 +33,8 @@ const obtenerNoticias = async (_req, res) => {
     )
     .eq("publicada", true)
     .lte("fecha", new Date().toISOString())
-    .order("fecha", { ascending: false });
+    // ✅ última creada arriba
+    .order("id", { ascending: false });
 
   if (error) return res.status(500).json({ error: error.message });
 
@@ -201,28 +202,30 @@ const crearNoticia = async (req, res) => {
   if (!noEnviarDiscord) {
     try {
       const webhookURL = webhookURLs[servidor] || webhookURLs.global;
-      await fetch(webhookURL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          username: "FlanCraft Noticias",
-          avatar_url: "https://flancraftv3.vercel.app/assets/avioneta.webp",
-          content: `📢 Nueva noticia en *${servidor.toUpperCase()}*:\n**${titulo}**\nhttps://flancraft.com/noticias/${slugFinal}\n@here @everyone`,
-          embeds: portada
-            ? [
-                {
-                  title: titulo,
-                  url: `https://flancraft.com/noticias/${slugFinal}`,
-                  description:
-                    subtitulo || "¡Entra para conocer todos los detalles!",
-                  image: { url: portada },
-                  color: 0xead196,
-                },
-              ]
-            : [],
-          allowed_mentions: { parse: ["everyone"] },
-        }),
-      });
+      if (webhookURL) {
+        await fetch(webhookURL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            username: "FlanCraft Noticias",
+            avatar_url: "https://flancraftv3.vercel.app/assets/avioneta.webp",
+            content: `📢 Nueva noticia en *${String(servidor).toUpperCase()}*:\n**${titulo}**\nhttps://flancraft.com/noticias/${slugFinal}\n@here @everyone`,
+            embeds: portada
+              ? [
+                  {
+                    title: titulo,
+                    url: `https://flancraft.com/noticias/${slugFinal}`,
+                    description:
+                      subtitulo || "¡Entra para conocer todos los detalles!",
+                    image: { url: portada },
+                    color: 0xead196,
+                  },
+                ]
+              : [],
+            allowed_mentions: { parse: ["everyone"] },
+          }),
+        });
+      }
     } catch (err) {
       console.error("Error al enviar a Discord:", err);
     }
@@ -276,14 +279,12 @@ const actualizarNoticia = async (req, res) => {
     publicada,
     fecha,
   };
+
   if (slugFinal) updateObj.slug = slugFinal;
   if (servidor) updateObj.servidor = servidor;
   if (contenidoHtml) updateObj.contenido_html = contenidoHtml;
 
-  const { error } = await supabase
-    .from("noticias")
-    .update(updateObj)
-    .eq("id", id);
+  const { error } = await supabase.from("noticias").update(updateObj).eq("id", id);
   if (error) return res.status(500).json({ error: error.message });
 
   await supabase.from("noticias_categorias").delete().eq("noticia_id", id);
@@ -331,7 +332,8 @@ const obtenerTodasLasNoticias = async (_req, res) => {
       usuarios ( uid )
     `
     )
-    .order("fecha", { ascending: false });
+    // ✅ última creada arriba también en admin
+    .order("id", { ascending: false });
 
   if (error) return res.status(500).json({ error: error.message });
 

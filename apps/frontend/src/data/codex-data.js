@@ -1,8 +1,8 @@
 // src/data/codex-data.js
 const codexData = [
   {
-    title: "HECHO POR GENTE REAL",
-    subtitle: "un equipo pequeño, con una idea clara",
+    title: "NUESTRA HISTORIA",
+    subtitle: "un equipo pequeño, con una pasión muy grande",
     badgeColor: "#7fd9ff",
     bg: "/assets/comic/panel1.webp",
     thumb: "/assets/comic/panel1.webp",

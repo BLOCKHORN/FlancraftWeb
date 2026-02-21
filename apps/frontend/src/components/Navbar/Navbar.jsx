@@ -1,5 +1,12 @@
-// src/components/Navbar/Navbar.jsx
-import { useContext, useEffect, useState, useRef, useCallback, useMemo } from "react";
+import {
+  useContext,
+  useEffect,
+  useState,
+  useRef,
+  useCallback,
+  useMemo,
+  useLayoutEffect,
+} from "react";
 import { UserContext } from "../../context/UserContext";
 import { supabase } from "@lib/supabaseClient";
 import NavbarMobile from "./NavbarMobile";
@@ -7,13 +14,22 @@ import NavbarDesktop from "./NavbarDesktop";
 import useIsMobile from "../../hooks/useIsMobile";
 import "../../styles/components/Navbar/navbar.scss";
 
-const API_BASE =
-  import.meta.env.VITE_BACKEND_URL || "https://flancraft-backend.onrender.com";
+const API_BASE = (import.meta.env.VITE_BACKEND_URL || "").trim().replace(/\/$/, "");
+const apiUrl = (path) => (API_BASE ? `${API_BASE}${path}` : path);
 
 const SERVERS_COINS = [
   { key: "gens", label: "GENS" },
   { key: "oneblock", label: "ONEBLOCK" },
   { key: "survival", label: "SURVIVAL" },
+];
+
+const NAV_ITEMS = [
+  { key: "home", to: "/", label: "Inicio" },
+  { key: "news", to: "/news", label: "Noticias" },
+  { key: "leaderboards", to: "/leaderboards", label: "Rankings" },
+  { key: "store", to: "/tienda", label: "Tienda" },
+ // { key: "vote", to: "/voto", label: "Voto" },
+  { key: "tribunal", to: "/tribunal", label: "Tribunal" },
 ];
 
 const toInt = (v) => {
@@ -22,14 +38,12 @@ const toInt = (v) => {
 };
 
 const parseCoinsPayload = (m) => {
-  // ✅ nuevo backend: { byServer: { gens: 0, oneblock: 0, ... } }
   if (m?.byServer && typeof m.byServer === "object") {
     const out = {};
     for (const [k, v] of Object.entries(m.byServer)) out[String(k)] = toInt(v);
     return out;
   }
 
-  // ✅ nuevo backend alterno: { balances: [{ servidor, coins }] }
   if (Array.isArray(m?.balances)) {
     const out = {};
     for (const row of m.balances) {
@@ -40,7 +54,6 @@ const parseCoinsPayload = (m) => {
     return out;
   }
 
-  // ✅ viejo: { coins: number } o { ecos: number }
   if (m?.coins != null) return { global: toInt(m.coins) };
   if (m?.ecos != null) return { global: toInt(m.ecos) };
 
@@ -55,14 +68,15 @@ const sumTotalCoins = (coinsByServer) => {
 const Navbar = ({ onLoginClick }) => {
   const { user } = useContext(UserContext);
 
-  // Sesión básica según contexto (lo que venga de localStorage / login)
   const baseLoggedIn = Boolean(user && user.loggedIn);
-
   const isMobile = useIsMobile();
+
+  const navRef = useRef(null);
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [profileOpen, _setProfileOpen] = useState(false);
+
   const setProfileOpen = useCallback((value) => {
     if (typeof value === "function") _setProfileOpen((prev) => value(prev));
     else _setProfileOpen(value);
@@ -71,20 +85,45 @@ const Navbar = ({ onLoginClick }) => {
   const dropdownTimeout = useRef(null);
   const profileTimeout = useRef(null);
 
-  // Datos visibles en el navbar
   const [userData, setUserData] = useState(() => ({
     username: user?.username || "",
     uuid: user?.uuid || "",
     userXP: 0,
     userXPMax: 100,
     userLevel: 1,
-    coinsTotal: 0,
+    walletCoins: 0,
     coinsByServer: {},
+    coinsServersTotal: 0,
   }));
 
   const [userLoading, setUserLoading] = useState(false);
 
-  // Evitamos scroll cuando el menú móvil está abierto
+  // Altura real del nav para offsets (hero/anchors/etc.)
+  useLayoutEffect(() => {
+    const el = navRef.current;
+    if (!el) return;
+
+    const apply = () => {
+      const h = el.getBoundingClientRect().height;
+      document.documentElement.style.setProperty("--nav-h", `${Math.ceil(h)}px`);
+    };
+
+    apply();
+
+    let ro;
+    if ("ResizeObserver" in window) {
+      ro = new ResizeObserver(() => apply());
+      ro.observe(el);
+    }
+
+    window.addEventListener("resize", apply);
+    return () => {
+      window.removeEventListener("resize", apply);
+      if (ro) ro.disconnect();
+    };
+  }, []);
+
+  // Lock scroll cuando menu mobile abierto
   useEffect(() => {
     document.body.style.overflow = menuOpen ? "hidden" : "";
     document.body.style.position = menuOpen ? "fixed" : "";
@@ -97,7 +136,7 @@ const Navbar = ({ onLoginClick }) => {
     };
   }, [menuOpen]);
 
-  // Cargar datos frescos del usuario (nivel, xp, coins, etc.)
+  // Carga base de usuario (supabase + monedas + wallet)
   useEffect(() => {
     if (!user?.uuid) {
       setUserData({
@@ -106,8 +145,9 @@ const Navbar = ({ onLoginClick }) => {
         userXP: 0,
         userXPMax: 100,
         userLevel: 1,
-        coinsTotal: 0,
+        walletCoins: 0,
         coinsByServer: {},
+        coinsServersTotal: 0,
       });
       setUserLoading(false);
       return;
@@ -119,16 +159,34 @@ const Navbar = ({ onLoginClick }) => {
       setUserLoading(true);
 
       try {
-        const [userRes, monedasRes] = await Promise.all([
+        const token = localStorage.getItem("token");
+
+        const [userRes, monedasRes, walletRes] = await Promise.all([
           supabase.from("usuarios").select("*").eq("uuid", user.uuid).single(),
-          fetch(`${API_BASE}/api/monedas/${user.uuid}`),
+          fetch(apiUrl(`/api/monedas/${user.uuid}`)),
+          token
+            ? fetch(apiUrl(`/api/daily-claim/status`), {
+                headers: { Authorization: `Bearer ${token}` },
+              })
+            : Promise.resolve(null),
         ]);
 
         const userDataDB = userRes.data;
 
         const monedas = monedasRes.ok ? await monedasRes.json() : {};
         const coinsByServer = parseCoinsPayload(monedas);
-        const coinsTotal = sumTotalCoins(coinsByServer);
+        const coinsServersTotal = sumTotalCoins(coinsByServer);
+
+        let walletCoins = 0;
+        if (walletRes) {
+          if (walletRes.status === 401) {
+            localStorage.removeItem("token");
+            walletCoins = 0;
+          } else if (walletRes.ok) {
+            const w = await walletRes.json();
+            walletCoins = toInt(w?.walletBalance);
+          }
+        }
 
         if (!cancelled) {
           if (userDataDB) {
@@ -138,21 +196,23 @@ const Navbar = ({ onLoginClick }) => {
               userXP: userDataDB.xp_actual ?? 0,
               userXPMax: 100,
               userLevel: userDataDB.nivel ?? 1,
-              coinsTotal,
+              walletCoins,
               coinsByServer,
+              coinsServersTotal,
             });
           } else {
             setUserData((prev) => ({
               ...prev,
               username: user.username || prev.username,
               uuid: user.uuid || prev.uuid,
-              coinsTotal,
+              walletCoins,
               coinsByServer,
+              coinsServersTotal,
             }));
           }
         }
       } catch (error) {
-        console.error("Error al cargar usuario:", error);
+        console.error("Navbar: Error al cargar usuario:", error);
         if (!cancelled) {
           setUserData((prev) => ({
             ...prev,
@@ -172,30 +232,29 @@ const Navbar = ({ onLoginClick }) => {
     };
   }, [user?.uuid, user?.username]);
 
-  // Consideramos "logueado para el navbar" solo cuando:
-  //  - el contexto dice loggedIn
-  //  - y tenemos al menos un username para mostrar
   const isLoggedIn = baseLoggedIn && !!userData.username;
 
-  const handlers = {
-    handleDropdownHover: (key) => {
-      clearTimeout(dropdownTimeout.current);
-      setActiveDropdown(key);
-    },
-    handleDropdownLeave: () => {
-      dropdownTimeout.current = setTimeout(() => setActiveDropdown(null), 200);
-    },
-    handleProfileEnter: () => {
-      clearTimeout(profileTimeout.current);
-      setProfileOpen(true);
-    },
-    handleProfileLeave: () => {
-      profileTimeout.current = setTimeout(() => setProfileOpen(false), 250);
-    },
-    toggleDropdown: (key) => {
-      setActiveDropdown((prev) => (prev === key ? null : key));
-    },
-  };
+  const handleDropdownHover = useCallback((key) => {
+    clearTimeout(dropdownTimeout.current);
+    setActiveDropdown(key);
+  }, []);
+
+  const handleDropdownLeave = useCallback(() => {
+    dropdownTimeout.current = setTimeout(() => setActiveDropdown(null), 200);
+  }, []);
+
+  const handleProfileEnter = useCallback(() => {
+    clearTimeout(profileTimeout.current);
+    setProfileOpen(true);
+  }, [setProfileOpen]);
+
+  const handleProfileLeave = useCallback(() => {
+    profileTimeout.current = setTimeout(() => setProfileOpen(false), 180);
+  }, [setProfileOpen]);
+
+  const toggleDropdown = useCallback((key) => {
+    setActiveDropdown((prev) => (prev === key ? null : key));
+  }, []);
 
   const sharedProps = useMemo(
     () => ({
@@ -210,24 +269,40 @@ const Navbar = ({ onLoginClick }) => {
       userData,
       onLoginClick,
       serversCoins: SERVERS_COINS,
-      ...handlers,
+      navItems: NAV_ITEMS,
+      handleDropdownHover,
+      handleDropdownLeave,
+      handleProfileEnter,
+      handleProfileLeave,
+      toggleDropdown,
     }),
     [
       menuOpen,
       activeDropdown,
       profileOpen,
+      setProfileOpen,
       isLoggedIn,
       userLoading,
       baseLoggedIn,
       userData,
       onLoginClick,
+      handleDropdownHover,
+      handleDropdownLeave,
+      handleProfileEnter,
+      handleProfileLeave,
+      toggleDropdown,
     ]
   );
 
   if (isMobile === null) return null;
 
   return (
-    <nav className={`navbar-flancraft ${menuOpen ? "menu-open" : ""}`}>
+    <nav
+      ref={navRef}
+      className={`navbar-flancraft ${menuOpen ? "menu-open" : ""}`}
+      role="navigation"
+      aria-label="Barra principal"
+    >
       {isMobile ? <NavbarMobile {...sharedProps} /> : <NavbarDesktop {...sharedProps} />}
     </nav>
   );

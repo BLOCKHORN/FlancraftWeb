@@ -1,73 +1,156 @@
 @use "./mixins" as *;
 
-/* storefront/_tabs.scss */
-.tsf-coins { position: relative; z-index: 2; }
+.tsf-coins{
+  position: relative;
+  z-index: 2;
+}
 
-.tsf-coinsHeader {
+.tsf-coinsHeader{
   display: grid;
   place-items: center;
   padding: clamp(0.2rem, 0.6vw, 0.5rem) 0 clamp(0.7rem, 1vw, 0.9rem);
 }
 
-.tsf-tabsStack {
+.tsf-tabsStack{
   display: grid;
   gap: 0.55rem;
   justify-items: center;
+  width: 100%;
 }
 
 .tsf-tabsRow{
   display: flex;
   justify-content: center;
   align-items: center;
+  width: 100%;
 }
 
 .tsf-tabs{
   position: relative;
   z-index: 2;
 
-  margin: clamp(0.15rem, 0.6vw, 0.35rem) auto 0;
-  width: fit-content;
+  width: min(980px, 100%);
+  max-width: 100%;
 
   display: inline-flex;
   align-items: center;
   justify-content: center;
 
-  gap: clamp(0.55rem, 1.0vw, 0.95rem);
+  gap: clamp(8px, 1.0vw, 14px);
+  padding-inline: clamp(8px, 1.2vw, 14px);
+
+  margin: clamp(0.15rem, 0.6vw, 0.35rem) auto 0;
+  overflow: visible;
+
+  --mc-font: "Mojangles", "Minecraft Seven", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+}
+
+.tsf-tabs--triple{
+  width: min(980px, 100%);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+  align-items: center;
+  justify-content: center;
 }
 
 .tsf-tab{
+  position: relative;
+
   border: 0;
-  min-width: clamp(11.4rem, 21vw, 15.6rem);
+  width: 100%;
+  min-width: 0;
 
-  padding: 0.65rem 1rem;
-  border-radius: 0.15rem;
+  padding: 0.70rem 0.95rem;
+  border-radius: 16px;
 
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.6rem;
+  gap: 0.62rem;
+
+  --tab-top: rgba(70, 92, 145, 0.88);
+  --tab-bot: rgba(40, 56, 98, 0.92);
+  --tab-top-a: rgba(110, 140, 220, 0.92);
+  --tab-bot-a: rgba(55, 78, 140, 0.96);
+  --tab-glow: rgba(120, 200, 255, 0.35);
+  --orb-a: rgba(255,255,255,0.95);
+  --orb-b: rgba(120,200,255,0.70);
+  --orb-c: rgba(40,90,180,0.10);
 
   @include tsfBtnPhysics(
-    linear-gradient(180deg, rgba(70, 92, 145, 0.88), rgba(40, 56, 98, 0.92)),
+    linear-gradient(180deg, var(--tab-top), var(--tab-bot)),
     rgba(0,0,0,0.28),
     #ffffff,
     inset 0 2px 0 rgba(255,255,255,0.18),
     inset 0 -2px 0 rgba(0,0,0,0.35)
   );
+
+  box-shadow:
+    0 1.05rem 1.55rem rgba(0,0,0,0.44),
+    0 0 0 1px rgba(255,255,255,0.10),
+    inset 0 1px 0 rgba(255,255,255,0.12),
+    inset 0 -1px 0 rgba(0,0,0,0.28);
+
+  transform: translateY(0px);
 }
 
-.tsf-tabBadge {
+.tsf-tab::before{
+  content: "";
   position: absolute;
-  top: -0.55rem;
-  left: 0.55rem;
-  z-index: 3;
+  left: 10px;
+  right: 10px;
+  top: 7px;
+  height: 42%;
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.22), rgba(255,255,255,0.00));
+  pointer-events: none;
+  opacity: 0.9;
+}
+
+.tsf-tab--oneblock{
+  --tab-top: rgba(170, 90, 255, 0.95);
+  --tab-bot: rgba(105, 70, 205, 0.95);
+  --tab-top-a: rgba(200, 125, 255, 0.98);
+  --tab-bot-a: rgba(120, 82, 225, 0.98);
+  --tab-glow: rgba(190, 120, 255, 0.42);
+  --orb-b: rgba(190, 120, 255, 0.70);
+  --orb-c: rgba(120, 50, 200, 0.10);
+}
+
+.tsf-tab--survival{
+  --tab-top: rgba(55, 190, 255, 0.92);
+  --tab-bot: rgba(45, 115, 215, 0.96);
+  --tab-top-a: rgba(95, 215, 255, 0.98);
+  --tab-bot-a: rgba(55, 135, 235, 0.98);
+  --tab-glow: rgba(120, 210, 255, 0.42);
+  --orb-b: rgba(120, 210, 255, 0.72);
+  --orb-c: rgba(35, 120, 220, 0.10);
+}
+
+.tsf-tab--gens{
+  --tab-top: rgba(120, 235, 90, 0.92);
+  --tab-bot: rgba(55, 165, 85, 0.96);
+  --tab-top-a: rgba(150, 250, 115, 0.98);
+  --tab-bot-a: rgba(65, 185, 95, 0.98);
+  --tab-glow: rgba(140, 255, 170, 0.40);
+  --orb-b: rgba(140, 255, 170, 0.70);
+  --orb-c: rgba(35, 160, 85, 0.10);
+}
+
+.tsf-tabBadge{
+  position: absolute;
+  top: -0.58rem;
+  left: 0.65rem;
+  z-index: 4;
 
   padding: 0.34rem 0.55rem 0.32rem;
-  font-family: "Nunito", system-ui, sans-serif;
+
+  font-family: var(--mc-font);
   font-weight: 900;
-  font-size: 0.72rem;
-  letter-spacing: 0.06em;
+  font-size: 0.70rem;
+  letter-spacing: 0.08em;
   line-height: 1;
+  text-transform: uppercase;
 
   color: #1a0f12;
   background: linear-gradient(180deg, #ffb0be, #ff5c7a);
@@ -78,30 +161,43 @@
 
   clip-path: polygon(0 0,92% 0,100% 50%,92% 100%,0 100%,6% 50%);
   filter: drop-shadow(0 0.6rem 0.8rem rgba(0,0,0,0.22));
+  pointer-events: none;
 }
 
-.tsf-tabIcon {
-  width: clamp(1.4rem, 2.0vw, 1.9rem);
-  height: clamp(1.4rem, 2.0vw, 1.9rem);
+.tsf-tabIcon{
+  width: clamp(1.45rem, 2.0vw, 1.85rem);
+  height: clamp(1.45rem, 2.0vw, 1.85rem);
   object-fit: contain;
   image-rendering: auto;
   filter: drop-shadow(0 0.7rem 0.9rem rgba(0,0,0,0.45));
   flex: 0 0 auto;
 }
 
-.tsf-tabText {
+.tsf-tabText{
+  flex: 1 1 auto;
+  min-width: 0;
+
   display: block;
   text-align: center;
-  font-family: "Luckiest Guy", system-ui, sans-serif;
-  font-size: clamp(0.92rem, 1.2vw, 1.02rem);
-  letter-spacing: 0.03em;
-  @include stroke-white(2px);
-  padding-right: 1.1rem;
+
+  font-family: var(--mc-font);
+  font-weight: 900;
+
+  font-size: clamp(0.80rem, 1.05vw, 0.95rem);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  line-height: 1;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  @include stroke-white(1.6px, rgba(0,0,0,0.72));
 }
 
-.tsf-orb {
+.tsf-orb{
   position: absolute;
-  right: 0.85rem;
+  right: 0.80rem;
   top: 50%;
   width: 0.78rem;
   height: 0.78rem;
@@ -109,37 +205,35 @@
   transform: translateY(-50%);
   opacity: 0;
 
-  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.95), rgba(120,200,255,0.70), rgba(40,90,180,0.10));
+  background: radial-gradient(circle at 30% 30%, var(--orb-a), var(--orb-b), var(--orb-c));
   box-shadow:
-    0 0 10px rgba(120, 200, 255, 0.55),
-    0 0 18px rgba(120, 200, 255, 0.35);
+    0 0 10px var(--tab-glow),
+    0 0 18px rgba(0,0,0,0.10);
+
+  pointer-events: none;
 }
 
-.tsf-tab.is-active {
-  filter: brightness(1.12);
-  background: linear-gradient(180deg, rgba(110, 140, 220, 0.92), rgba(55, 78, 140, 0.96));
-  box-shadow:
-    0 1.4rem 2rem rgba(0,0,0,0.58),
-    inset 0 2px 0 rgba(255,255,255,0.22),
-    inset 0 -2px 0 rgba(0,0,0,0.35);
-}
-
-.tsf-tab.is-active .tsf-orb {
-  opacity: 1;
-  animation: tsfOrbPulse 1.25s ease-in-out infinite;
-}
-
-.tsf-openShopBtn{
-  flex: 0 0 auto;
-  margin-inline: clamp(0.15rem, 0.35vw, 0.35rem);
+.tsf-tabGlow{
+  position: absolute;
+  inset: -2px;
+  border-radius: 18px;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(circle at 50% 20%, rgba(255,255,255,0.30), rgba(255,255,255,0.00) 60%);
+  filter: drop-shadow(0 0.85rem 1.3rem var(--tab-glow));
 }
 
 .tsf-tab.is-active{
-  transform: translateY(2px) !important;
+  filter: brightness(1.08) saturate(1.08);
+  background: linear-gradient(180deg, var(--tab-top-a), var(--tab-bot-a));
   box-shadow:
-    0 0.95rem 1.35rem rgba(0,0,0,0.48),
-    inset 0 2px 0 rgba(255,255,255,0.20),
-    inset 0 -3px 0 rgba(0,0,0,0.48) !important;
+    0 1.35rem 2.1rem rgba(0,0,0,0.55),
+    0 0 0 1px rgba(255,255,255,0.14),
+    0 0 22px var(--tab-glow),
+    inset 0 2px 0 rgba(255,255,255,0.22),
+    inset 0 -2px 0 rgba(0,0,0,0.35);
+
+  transform: translateY(2px) !important;
 }
 
 .tsf-tab.is-active:hover,
@@ -147,12 +241,101 @@
   transform: translateY(2px) !important;
 }
 
+.tsf-tab.is-active .tsf-orb{
+  opacity: 1;
+  animation: tsfOrbPulse 1.25s ease-in-out infinite;
+}
+
+.tsf-tab.is-active .tsf-tabGlow{
+  opacity: 1;
+}
+
+.tsf-openShopBtn{
+  flex: 0 0 auto;
+  margin-inline: 0;
+}
+
+.tsf-openShopBtn--tab{
+  height: 100%;
+  width: clamp(46px, 4.8vw, 58px);
+  padding: 0;
+  border-radius: 16px;
+
+  display: grid;
+  place-items: center;
+
+  @include tsfBtnPhysics(
+    linear-gradient(180deg, rgba(90, 105, 140, 0.85), rgba(55, 70, 105, 0.92)),
+    rgba(0,0,0,0.28),
+    #ffffff,
+    inset 0 2px 0 rgba(255,255,255,0.18),
+    inset 0 -2px 0 rgba(0,0,0,0.35)
+  );
+
+  box-shadow:
+    0 1.05rem 1.55rem rgba(0,0,0,0.44),
+    0 0 0 1px rgba(255,255,255,0.10);
+}
+
+.tsf-openShopInner{
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+}
+
+.tsf-openShopInner img{
+  width: clamp(24px, 2.9vw, 34px);
+  height: clamp(24px, 2.9vw, 34px);
+  object-fit: contain;
+  filter: drop-shadow(0 0.7rem 0.9rem rgba(0,0,0,0.45));
+}
+
+.tsf-tabs--triple .tsf-openShopBtn--edge{
+  justify-self: end;
+}
+
+@media (max-width: 900px){
+  .tsf-tabs{
+    width: min(920px, 100%);
+  }
+
+  .tsf-tab{
+    padding: 0.64rem 0.82rem;
+  }
+
+  .tsf-orb{
+    right: 0.68rem;
+  }
+}
+
 @media (max-width: 740px){
   .tsf-tabs{
-    gap: 0.5rem;
+    gap: 10px;
+    padding-inline: 10px;
   }
-  .tsf-tab{
-    min-width: clamp(9.4rem, 38vw, 12.2rem);
-    padding: 0.6rem 0.8rem;
+
+  .tsf-tabText{
+    font-size: 0.86rem;
+    letter-spacing: 0.08em;
+  }
+}
+
+@media (max-width: 520px){
+  .tsf-tabs--triple{
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tsf-tabs--triple .tsf-openShopBtn--edge{
+    grid-column: 1 / -1;
+    justify-self: center;
+    width: min(220px, 100%);
+    height: 46px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce){
+  .tsf-tab.is-active .tsf-orb{
+    animation: none !important;
   }
 }

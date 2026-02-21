@@ -1,321 +1,624 @@
-// src/pages/Leaderboards/Leaderboards.jsx
-import { useCallback, useEffect, useMemo, useState } from "react";
+// apps/frontend/src/pages/Estadisticas/Leaderboards.jsx
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-
 import "./Leaderboards.scss";
 
-import {
-  SERVIDORES,
-  SERVIDOR_API_MAP,
-  STATS_BY_SERVER,
-  DEFAULTS_BY_SERVER,
-} from "../../components/Estadisticas/leaderboards.constants";
+import useUsuariosVinculados from "../../components/Estadisticas/hooks/useUsuariosVinculados";
+import { getLeaderboards } from "../../components/Estadisticas/api/getLeaderboards";
 
 import {
   isNombreValido,
   safeNum,
   getPlatform,
-  getIslandLevel,
   formatearTiempo,
-  formatearTiempoParkour,
   formatInt,
 } from "../../components/Estadisticas/leaderboards.utils";
 
 import { computeGensScore } from "../../components/Estadisticas/leaderboards.gens";
 
-import useLeaderboardsData from "../../components/Estadisticas/hooks/useLeaderboardsData";
-import useUsuariosVinculados from "../../components/Estadisticas/hooks/useUsuariosVinculados";
-import { useGlobalPodium } from "../../components/Estadisticas/hooks/useGlobalPodium";
+const LIMIT = 10;
+const FETCH_LIMIT = 700;
 
-import LeaderboardsHeader from "../../components/Estadisticas/parts/LeaderboardsHeader";
-import LeaderboardsPodium from "../../components/Estadisticas/parts/LeaderboardsPodium";
-import LeaderboardsServers from "../../components/Estadisticas/parts/LeaderboardsServers";
-import LeaderboardsToolbar from "../../components/Estadisticas/parts/LeaderboardsToolbar";
-import LeaderboardsTable from "../../components/Estadisticas/parts/LeaderboardsTable";
-import LeaderboardsCards from "../../components/Estadisticas/parts/LeaderboardsCards";
-import LeaderboardsPagination from "../../components/Estadisticas/parts/LeaderboardsPagination";
+const COIN_SRC = "/tienda/assets/coin.png";
+const ICON_POINTS = "/assets/points.png";
+const ICON_TIME = "/assets/statsperfil/playtime.webp";
+const ICON_WALLET = "/assets/wallet.png";
+
+const PLATFORM_ICON = {
+  java: "/assets/platform/java.png",
+  bedrock: "/assets/platform/bedrock.png",
+  other: "",
+};
+
+const RANGO_LOCAL = {
+  nova: "/assets/nova.png",
+  alpha: "/assets/alpha.png",
+  inmortal: "/assets/inmortal.png",
+};
+
+const RANGO_REMOTE = {
+  nova: "https://dunb17ur4ymx4.cloudfront.net/wysiwyg/1447273/2de18b63a83cb0b8df9197a4eab9ca575906152d.png",
+  alpha: "https://dunb17ur4ymx4.cloudfront.net/wysiwyg/1447273/9c1a0dd33eb6327f1ceb179080f232bc842e8225.png",
+  inmortal: "https://dunb17ur4ymx4.cloudfront.net/wysiwyg/1447273/1aaaa34593db3f2dea9d09a7bd4d985500d69de6.png",
+};
+
+const SOURCES = [
+  { key: "sv", label: "SV", servidor: "survival", tipo: "svpoints", pointsKey: "svpoints" },
+  { key: "ob", label: "OB", servidor: "oneblock", tipo: "obpoints", pointsKey: "obpoints" },
+  { key: "ge", label: "GENS", servidor: "gens", tipo: "dinero_ganado_total", pointsKey: "genpoints", gens: true },
+  { key: "an", label: "AN", servidor: "anarquico", tipo: "anpoints", pointsKey: "anpoints" },
+  { key: "pk", label: "PK", servidor: "parkour", tipo: "mejor_tiempo", pointsKey: "pkpoints", asc: true },
+];
+
+const pickWallet = (p) => {
+  const v = p?.wallet_coins ?? p?.walletCoins ?? p?.coins_wallet ?? p?.coins_web ?? p?.wallet;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+};
+
+const normalizePlatform = (p) => {
+  const s = String(p || "").toLowerCase();
+  if (s.includes("bedrock")) return "bedrock";
+  if (s.includes("java")) return "java";
+  return "other";
+};
+
+const normalizeRango = (r) => {
+  const s = String(r || "").toLowerCase().trim();
+  if (!s) return null;
+  if (s.includes("nova")) return "nova";
+  if (s.includes("alpha")) return "alpha";
+  if (s.includes("inmortal") || s.includes("immortal")) return "inmortal";
+  return null;
+};
+
+const hideImg = (e) => {
+  e.currentTarget.style.display = "none";
+};
+
+const fallbackRankImg = (key) => (e) => {
+  const el = e.currentTarget;
+  if (el?.dataset?.didFallback === "1") {
+    el.style.display = "none";
+    return;
+  }
+  el.dataset.didFallback = "1";
+  el.src = RANGO_REMOTE[key] || "";
+};
+
+const HeadLabel = ({ icon, children }) => (
+  <span className="lb-th">
+    {icon ? <img className="lb-thIcon" src={icon} alt="" loading="lazy" onError={hideImg} /> : null}
+    <span className="lb-thTxt">{children}</span>
+  </span>
+);
+
+const buildFxPayload = (p, meta) => {
+  const nombre = p?.nombre_minecraft || "";
+  const platKey = normalizePlatform(p?.platform || getPlatform(p));
+  const rangoRaw = meta?.rango || meta?.rango_usuario || meta?.rank || null;
+  const rangoKey = normalizeRango(rangoRaw);
+  const skin = `https://minotar.net/helm/${encodeURIComponent(nombre || "Steve")}/128`;
+  return {
+    nombre,
+    platKey,
+    rangoKey,
+    skin,
+  };
+};
 
 export default function Leaderboards() {
   const navigate = useNavigate();
+  const usuariosVinculados = useUsuariosVinculados();
 
-  const [servidor, setServidor] = useState(
-    SERVIDORES?.[2]?.id || SERVIDORES?.[0]?.id
-  );
+  const getMeta = useCallback((uuid) => usuariosVinculados?.[uuid] || null, [usuariosVinculados]);
 
-  const servidorApi = useMemo(
-    () => SERVIDOR_API_MAP[servidor] || servidor,
-    [servidor]
-  );
-
-  const defaults = useMemo(() => {
-    return DEFAULTS_BY_SERVER[servidor] || { orden: "tiempo_jugado", asc: false };
-  }, [servidor]);
-
-  const [orden, setOrden] = useState(defaults.orden);
-  const [ordenAsc, setOrdenAsc] = useState(defaults.asc);
-
-  const [offset, setOffset] = useState(0);
-  const limit = 10;
+  const [loading, setLoading] = useState(true);
+  const [errorTabla, setErrorTabla] = useState("");
+  const [dataset, setDataset] = useState([]);
 
   const [query, setQuery] = useState("");
-  const [filtersOpen, setFiltersOpen] = useState(false);
   const [soloVinculados, setSoloVinculados] = useState(false);
-  const [openCard, setOpenCard] = useState(null);
+  const [offset, setOffset] = useState(0);
+
+  const [isLeaving, setIsLeaving] = useState(false);
+  const [exitFx, setExitFx] = useState(null);
+
+  const leaveTimer = useRef(null);
 
   useEffect(() => {
-    setOrden(defaults.orden);
-    setOrdenAsc(defaults.asc);
-    setOffset(0);
-    setOpenCard(null);
-    setQuery("");
-    setSoloVinculados(false);
-    setFiltersOpen(false);
-  }, [servidor, defaults]);
+    return () => {
+      if (leaveTimer.current) clearTimeout(leaveTimer.current);
+    };
+  }, []);
 
-  const usuariosVinculados = useUsuariosVinculados();
-  const getMeta = useCallback(
-    (uuid) => usuariosVinculados?.[uuid] || null,
-    [usuariosVinculados]
-  );
+  useEffect(() => {
+    setOffset(0);
+  }, [query, soloVinculados]);
 
   const onOpenPerfil = useCallback(
     (player) => {
-      if (!player?.nombre_minecraft) return;
-      navigate(`/perfil/${player.nombre_minecraft}`);
+      if (!player?.nombre_minecraft || isLeaving) return;
+
+      const meta = getMeta(player?.uuid);
+      const fx = buildFxPayload(player, meta);
+
+      setExitFx(fx);
+      setIsLeaving(true);
+
+      leaveTimer.current = setTimeout(() => {
+        navigate(`/perfil/${player.nombre_minecraft}`, { state: { fx } });
+      }, 520);
     },
-    [navigate]
+    [navigate, isLeaving, getMeta]
   );
 
-  const STATS = useMemo(
-    () => STATS_BY_SERVER[servidor] || ["tiempo_jugado"],
-    [servidor]
-  );
+  useEffect(() => {
+    let alive = true;
 
-  const getStatNumber = useCallback((p, key) => {
-    if (!p) return 0;
-    if (key === "genpoints") return safeNum(p?.genpoints) || computeGensScore(p);
-    if (key === "svpoints") return safeNum(p?.svpoints);
-    if (key === "pkpoints") return safeNum(p?.pkpoints);
-    if (key === "obpoints") return safeNum(p?.obpoints);
-    if (key === "network_points") return safeNum(p?.network_points);
-    if (key === "island_level") return getIslandLevel(p);
+    (async () => {
+      try {
+        setLoading(true);
+        setErrorTabla("");
 
-    const raw = p?.[key];
-    if (raw === null || raw === undefined || raw === "") return 0;
-    const n = Number(raw);
-    if (!Number.isFinite(n)) return 0;
-    return n;
-  }, []);
+        const responses = await Promise.all(
+          SOURCES.map((s) =>
+            getLeaderboards({
+              tipo: s.tipo,
+              servidor: s.servidor,
+              limit: FETCH_LIMIT,
+              offset: 0,
+              asc: !!s.asc,
+            }).then((res) => ({
+              source: s,
+              items: Array.isArray(res?.resultados) ? res.resultados : [],
+            }))
+          )
+        );
 
-  const ordenApi = useMemo(() => {
-    if (servidorApi === "gens") return "tiempo_jugado";
-    return orden;
-  }, [servidorApi, orden]);
+        if (!alive) return;
 
-  const { datos, totalRows, loading, errorTabla } = useLeaderboardsData({
-    servidorApi,
-    orden: ordenApi,
-    ordenAsc,
-    limit,
-    offset,
-    getStatNumber,
-    query,
-    soloVinculados,
-    getMeta,
-  });
+        const map = new Map();
 
-  const { loading: loadingPodium, top3: top3Global } = useGlobalPodium();
+        for (const { source, items } of responses) {
+          for (const p of items) {
+            if (!isNombreValido(p?.nombre_minecraft)) continue;
 
-  const datosFiltradosBase = useMemo(() => {
-    const q = query.trim().toLowerCase();
+            const uuid = p?.uuid || null;
+            const name = p?.nombre_minecraft || "";
+            const id = (uuid || name.toLowerCase()).trim();
+            if (!id) continue;
 
-    return (datos || []).filter((p) => {
-      if (!isNombreValido(p?.nombre_minecraft)) return false;
+            if (!map.has(id)) {
+              map.set(id, {
+                uuid,
+                nombre_minecraft: name,
+                platform: getPlatform(p),
+                wallet: pickWallet(p),
+                tiempo_total: 0,
+                points: { sv: 0, ob: 0, ge: 0, an: 0, pk: 0 },
+              });
+            }
 
-      const nombre = (p?.nombre_minecraft || "").toLowerCase();
-      const matchNombre = !q || nombre.includes(q);
+            const row = map.get(id);
 
-      const meta = getMeta(p?.uuid);
-      const vinc = !!meta;
-      const okVinc = !soloVinculados || vinc;
+            const t = safeNum(p?.tiempo_jugado);
+            if (t > 0) row.tiempo_total += t;
 
-      return matchNombre && okVinc;
-    });
-  }, [datos, query, soloVinculados, getMeta]);
+            if (row.wallet == null) {
+              const w = pickWallet(p);
+              if (w != null) row.wallet = w;
+            }
 
-  const datosFiltrados = useMemo(() => {
-    if (servidorApi !== "gens") return datosFiltradosBase;
+            let pts = 0;
 
-    return [...datosFiltradosBase]
-      .map((p) => ({ ...p, genpoints: safeNum(p?.genpoints) || computeGensScore(p) }))
-      .sort((a, b) => (b.genpoints || 0) - (a.genpoints || 0));
-  }, [datosFiltradosBase, servidorApi]);
+            if (source.gens) pts = safeNum(p?.genpoints) || computeGensScore(p);
+            else if (source.key === "pk") {
+              const raw = p?.pkpoints ?? p?.parkour_points ?? p?.points_parkour ?? p?.parkourpoints ?? null;
+              pts = safeNum(raw);
+            } else {
+              pts = safeNum(p?.[source.pointsKey]);
+            }
 
-  const paginasTotales = useMemo(
-    () => Math.max(1, Math.ceil((totalRows || 0) / limit)),
-    [totalRows, limit]
-  );
-
-  const paginaActual = useMemo(
-    () => Math.floor(offset / limit) + 1,
-    [offset, limit]
-  );
-
-  const servidorSeleccionado = useMemo(
-    () => SERVIDORES.find((s) => s.id === servidor),
-    [servidor]
-  );
-
-  const cambiarOrden = useCallback(
-    (stat) => {
-      if (servidorApi === "gens") return;
-
-      setOrden((prev) => {
-        if (prev === stat) {
-          setOrdenAsc((v) => !v);
-          return prev;
+            row.points[source.key] = Math.max(row.points[source.key] || 0, pts);
+          }
         }
-        setOrdenAsc(stat === "mejor_tiempo");
-        return stat;
-      });
 
-      setOffset(0);
-    },
-    [servidorApi]
-  );
+        const merged = Array.from(map.values()).map((r) => {
+          const total =
+            safeNum(r.points.sv) +
+            safeNum(r.points.ob) +
+            safeNum(r.points.ge) +
+            safeNum(r.points.an) +
+            safeNum(r.points.pk);
 
-  const { wideCount, mediumCount } = useMemo(() => {
-    const WIDE = new Set(["oneblock_blocks_broken"]);
-    const MED = new Set(["killstreak_max", "mejor_tiempo"]);
-    let w = 0;
-    let m = 0;
-    for (const s of STATS) {
-      if (WIDE.has(s)) w += 1;
-      else if (MED.has(s)) m += 1;
-    }
-    return { wideCount: w, mediumCount: m };
-  }, [STATS]);
+          return { ...r, total_points: total };
+        });
 
-  const cambiarPagina = useCallback(
+        merged.sort((a, b) => {
+          const dp = (b.total_points || 0) - (a.total_points || 0);
+          if (dp !== 0) return dp;
+          return (b.tiempo_total || 0) - (a.tiempo_total || 0);
+        });
+
+        const ranked = merged.map((r, i) => ({ ...r, global_rank: i + 1 }));
+        setDataset(ranked);
+      } catch {
+        if (!alive) return;
+        setErrorTabla("No se pudo cargar el ranking.");
+        setDataset([]);
+      } finally {
+        if (alive) setLoading(false);
+      }
+    })();
+
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const filtrados = useMemo(() => {
+    const q = (query || "").trim().toLowerCase();
+
+    return (dataset || []).filter((p) => {
+      const name = (p?.nombre_minecraft || "").toLowerCase();
+      if (q && !name.includes(q)) return false;
+
+      if (soloVinculados) {
+        const meta = getMeta(p?.uuid);
+        if (!meta) return false;
+      }
+
+      return true;
+    });
+  }, [dataset, query, soloVinculados, getMeta]);
+
+  const totalRows = filtrados.length;
+
+  const paginasTotales = useMemo(() => Math.max(1, Math.ceil(totalRows / LIMIT)), [totalRows]);
+
+  const paginaActual = useMemo(() => Math.floor(offset / LIMIT) + 1, [offset]);
+
+  const pageRows = useMemo(() => filtrados.slice(offset, offset + LIMIT), [filtrados, offset]);
+
+  const goPage = useCallback(
     (page) => {
-      const p = Math.max(1, Number(page || 1));
-      setOffset((p - 1) * limit);
+      const p = Math.max(1, Math.min(paginasTotales, Number(page || 1)));
+      setOffset((p - 1) * LIMIT);
     },
-    [limit]
+    [paginasTotales]
   );
 
-  const onSearch = useCallback((q) => {
-    setQuery(q);
-    setOffset(0);
-    setOpenCard(null);
-  }, []);
-
-  const formatValueNonGens = useCallback((key, value) => {
-    if (value === null || value === undefined) return "—";
-    const n = Number(value);
-    if (!Number.isFinite(n)) return "—";
-    if (key === "svpoints" || key === "obpoints" || key === "pkpoints") {
-      return formatInt(Math.round(n));
-    }
-    return formatInt(n);
-  }, []);
+  const wrapClass = useMemo(() => {
+    return ["lb-page", isLeaving ? "lb-is-leaving" : ""].filter(Boolean).join(" ");
+  }, [isLeaving]);
 
   return (
-    <section className="lb-page">
+    <section className={wrapClass}>
+      {isLeaving && exitFx ? (
+        <div className="lb-exitOverlay" aria-hidden="true">
+          <div className="lb-exitFog" />
+          <div className="lb-exitCard">
+            <div className="lb-exitTop">
+              <img className="lb-exitSkin" src={exitFx.skin} alt="" draggable="false" onError={hideImg} />
+              <div className="lb-exitInfo">
+                <div className="lb-exitName">{exitFx.nombre}</div>
+                <div className="lb-exitBadges">
+                  {exitFx.platKey === "java" || exitFx.platKey === "bedrock" ? (
+                    <span className={`lb-platformPill lb-platformPill--${exitFx.platKey}`}>
+                      {exitFx.platKey === "bedrock" ? "BEDROCK" : "JAVA"}
+                    </span>
+                  ) : null}
+                  {exitFx.rangoKey ? (
+                    <span className={`lb-exitRango lb-exitRango--${exitFx.rangoKey}`}>
+                      <img
+                        className="lb-rangoIcon"
+                        src={RANGO_LOCAL[exitFx.rangoKey]}
+                        alt=""
+                        loading="eager"
+                        onError={fallbackRankImg(exitFx.rangoKey)}
+                      />
+                    </span>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+
+            <div className="lb-exitBar">
+              <div className="lb-exitBarFill" />
+              <div className="lb-exitBarSheen" />
+            </div>
+
+            <div className="lb-exitHint">Abriendo perfil…</div>
+          </div>
+        </div>
+      ) : null}
+
       <div className="lb-shell">
         <div className="lb-frame">
-          <LeaderboardsHeader
-            servidorSeleccionado={servidorSeleccionado}
-            servidorApi={servidorApi}
-            orden={orden}
-            ordenAsc={ordenAsc}
-            paginaActual={paginaActual}
-            paginasTotales={paginasTotales}
-          />
-
-          {!loadingPodium && (
-            <LeaderboardsPodium
-              top3={top3Global}
-              getMeta={getMeta}
-              onOpenPerfil={onOpenPerfil}
-            />
-          )}
-
-          <LeaderboardsServers servidor={servidor} setServidor={setServidor} />
-
-          <LeaderboardsToolbar
-            query={query}
-            setQuery={setQuery}
-            filtersOpen={filtersOpen}
-            setFiltersOpen={setFiltersOpen}
-            soloVinculados={soloVinculados}
-            setSoloVinculados={(v) => {
-              setSoloVinculados(v);
-              setOffset(0);
-              setOpenCard(null);
-            }}
-            servidorApi={servidorApi}
-            orden={orden}
-            setOrden={setOrden}
-            setOrdenAsc={setOrdenAsc}
-            setOffset={setOffset}
-            STATS={STATS}
-            datosFiltradosLen={datosFiltrados.length}
-            totalRows={totalRows}
-            limit={limit}
-            offset={offset}
-            onSearch={onSearch}
-          />
-
           <section className="lb-content">
-            <div className="lb-tableCard">
-              <LeaderboardsTable
-                errorTabla={errorTabla}
-                loading={loading}
-                limit={limit}
-                STATS={STATS}
-                wideCount={wideCount}
-                mediumCount={mediumCount}
-                datosFiltrados={datosFiltrados}
-                offset={offset}
-                totalRows={totalRows}
-                servidorApi={servidorApi}
-                orden={orden}
-                ordenAsc={ordenAsc}
-                cambiarOrden={cambiarOrden}
-                getMeta={getMeta}
-                getPlatform={getPlatform}
-                onOpenPerfil={onOpenPerfil}
-                formatearTiempo={formatearTiempo}
-                formatearTiempoParkour={formatearTiempoParkour}
-                getIslandLevelLocal={getIslandLevel}
-              />
+            <div className={`lb-tableCard ${isLeaving ? "is-leaving" : ""}`}>
+              <div className="lb-cardHero">
+                <div className="lb-cardHeroTitle">RANKINGS</div>
+                <div className="lb-cardHeroSub">Ranking global por puntos totales. Pulsa un jugador para ver su perfil.</div>
+              </div>
 
-              <LeaderboardsCards
-                loading={loading}
-                datosFiltrados={datosFiltrados}
-                offset={offset}
-                totalRows={totalRows}
-                servidorApi={servidorApi}
-                STATS={STATS}
-                orden={orden}
-                ordenAsc={ordenAsc}
-                openCard={openCard}
-                setOpenCard={setOpenCard}
-                getMeta={getMeta}
-                getPlatform={getPlatform}
-                onOpenPerfil={onOpenPerfil}
-                formatearTiempo={formatearTiempo}
-                formatearTiempoParkour={formatearTiempoParkour}
-                formatValueNonGens={formatValueNonGens}
-                getIslandLevelLocal={getIslandLevel}
-              />
+              <div className="lb-toolbar">
+                <div className="lb-search">
+                  <input
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder="Buscar jugador..."
+                    autoComplete="off"
+                    disabled={isLeaving}
+                  />
+                </div>
 
-              <LeaderboardsPagination
-                paginasTotales={paginasTotales}
-                paginaActual={paginaActual}
-                onGo={cambiarPagina}
-              />
+                <div className="lb-toolbarRight">
+                  <button
+                    type="button"
+                    className={`lb-toggle ${soloVinculados ? "is-on" : ""}`}
+                    onClick={() => setSoloVinculados((v) => !v)}
+                    disabled={isLeaving}
+                  >
+                    Solo vinculados
+                  </button>
+                </div>
+              </div>
+
+              {errorTabla ? <div className="lb-error">{errorTabla}</div> : null}
+
+              <div className="lb-tableWrap">
+                <table className="lb-table">
+                  <colgroup>
+                    <col style={{ width: 76 }} />
+                    <col />
+                    <col style={{ width: 170 }} />
+                    <col style={{ width: 170 }} />
+                    <col style={{ width: 150 }} />
+                  </colgroup>
+
+                  <thead>
+                    <tr>
+                      <th className="lb-colRank lb-center">#TOP</th>
+                      <th>Jugador</th>
+                      <th className="lb-center">
+                        <HeadLabel icon={ICON_POINTS}>Points</HeadLabel>
+                      </th>
+                      <th className="lb-center">
+                        <HeadLabel icon={ICON_TIME}>Horas</HeadLabel>
+                      </th>
+                      <th className="lb-center">
+                        <HeadLabel icon={ICON_WALLET}>Wallet</HeadLabel>
+                      </th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {loading ? (
+                      Array.from({ length: LIMIT }).map((_, i) => (
+                        <tr key={`sk-${i}`}>
+                          <td className="lb-rankCell lb-center">
+                            <span className="lb-rankBadge">—</span>
+                          </td>
+                          <td className="lb-playerCell">Cargando...</td>
+                          <td className="lb-center">—</td>
+                          <td className="lb-center">—</td>
+                          <td className="lb-center">—</td>
+                        </tr>
+                      ))
+                    ) : pageRows.length ? (
+                      pageRows.map((p) => {
+                        const rank = Number(p?.global_rank || 0) || 0;
+                        const topClass = rank === 1 ? "lb-rowTop1" : rank === 2 ? "lb-rowTop2" : rank === 3 ? "lb-rowTop3" : "";
+
+                        const meta = getMeta(p?.uuid);
+                        const rangoRaw = meta?.rango || meta?.rango_usuario || meta?.rank || null;
+                        const rangoKey = normalizeRango(rangoRaw);
+
+                        const platTxt = p?.platform || "";
+                        const platKey = normalizePlatform(platTxt);
+
+                        const wallet = p?.wallet ?? pickWallet(meta);
+                        const walletTxt = wallet == null ? "—" : formatInt(wallet);
+
+                        const tiempoTxt = formatearTiempo(safeNum(p?.tiempo_total));
+
+                        return (
+                          <tr
+                            key={p?.uuid || p?.nombre_minecraft}
+                            className={`is-clickable ${topClass}`}
+                            onClick={() => onOpenPerfil(p)}
+                            data-rango={rangoKey || ""}
+                          >
+                            <td className="lb-rankCell lb-center">
+                              <span className="lb-rankBadge">#{rank || "—"}</span>
+                            </td>
+
+                            <td className="lb-playerCell">
+                              <div className="lb-player">
+                                <div className="lb-skin">
+                                  <img
+                                    src={`https://minotar.net/helm/${encodeURIComponent(p?.nombre_minecraft || "Steve")}/64`}
+                                    alt=""
+                                    loading="lazy"
+                                  />
+                                </div>
+
+                                <div className="lb-nameWrap">
+                                  <div className={`lb-name ${rangoKey ? `is-${rangoKey}` : ""}`}>{p?.nombre_minecraft}</div>
+
+                                  <div className="lb-meta">
+                                    {platKey === "java" || platKey === "bedrock" ? (
+                                      <span className={`lb-platformPill lb-platformPill--${platKey}`}>
+                                        {platKey === "bedrock" ? "BEDROCK" : "JAVA"}
+                                      </span>
+                                    ) : null}
+
+                                    {rangoKey ? (
+                                      <span className={`lb-rango lb-rango--${rangoKey}`} title={String(rangoRaw || "")}>
+                                        <img
+                                          className="lb-rangoIcon"
+                                          src={RANGO_LOCAL[rangoKey]}
+                                          alt=""
+                                          loading="lazy"
+                                          onError={fallbackRankImg(rangoKey)}
+                                        />
+                                      </span>
+                                    ) : null}
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+
+                            <td className="lb-center lb-pointsCell">
+                              <span className="lb-pointsValue">{formatInt(p?.total_points || 0)}</span>
+                            </td>
+
+                            <td className="lb-center">
+                              <span className="lb-num">{tiempoTxt}</span>
+                            </td>
+
+                            <td className="lb-center">
+                              {walletTxt === "—" ? (
+                                <span className="lb-num">—</span>
+                              ) : (
+                                <span className="lb-walletValue">
+                                  <img className="lb-coin" src={COIN_SRC} alt="" loading="lazy" onError={hideImg} />
+                                  <span className="lb-num">{walletTxt}</span>
+                                </span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })
+                    ) : (
+                      <tr>
+                        <td colSpan={5} className="lb-empty">
+                          No hay resultados.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="lb-cards">
+                {loading ? (
+                  Array.from({ length: LIMIT }).map((_, i) => (
+                    <div key={`csk-${i}`} className="lb-card">
+                      <div className="lb-cardTop">
+                        <span className="lb-rankBadge">—</span>
+                        <div className="lb-skelTxt">Cargando...</div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  pageRows.map((p) => {
+                    const rank = Number(p?.global_rank || 0) || 0;
+                    const meta = getMeta(p?.uuid);
+                    const rangoRaw = meta?.rango || meta?.rango_usuario || meta?.rank || null;
+                    const rangoKey = normalizeRango(rangoRaw);
+
+                    const platTxt = p?.platform || "";
+                    const platKey = normalizePlatform(platTxt);
+                    const platformIcon = PLATFORM_ICON[platKey] || "";
+
+                    const wallet = p?.wallet ?? pickWallet(meta);
+                    const walletTxt = wallet == null ? "—" : formatInt(wallet);
+                    const tiempoTxt = formatearTiempo(safeNum(p?.tiempo_total));
+
+                    return (
+                      <div key={p?.uuid || p?.nombre_minecraft} className="lb-card" onClick={() => onOpenPerfil(p)} data-rango={rangoKey || ""}>
+                        <div className="lb-cardTop">
+                          <span className="lb-rankBadge">#{rank || "—"}</span>
+
+                          <div className="lb-player">
+                            <div className="lb-skin">
+                              <img
+                                src={`https://minotar.net/helm/${encodeURIComponent(p?.nombre_minecraft || "Steve")}/64`}
+                                alt=""
+                                loading="lazy"
+                              />
+                            </div>
+
+                            <div className="lb-nameWrap">
+                              <div className={`lb-name ${rangoKey ? `is-${rangoKey}` : ""}`}>{p?.nombre_minecraft}</div>
+
+                              <div className="lb-meta">
+                                {platTxt ? (
+                                  <span className={`lb-platform lb-platform--${platKey}`} title={platTxt} aria-label={platTxt}>
+                                    {platformIcon ? <img className="lb-platformIcon" src={platformIcon} alt="" loading="lazy" onError={hideImg} /> : null}
+                                    <span className="lb-platformDot" />
+                                  </span>
+                                ) : null}
+
+                                {rangoKey ? (
+                                  <span className={`lb-rango lb-rango--${rangoKey}`} title={String(rangoRaw || "")}>
+                                    <img className="lb-rangoIcon" src={RANGO_LOCAL[rangoKey]} alt="" loading="lazy" onError={fallbackRankImg(rangoKey)} />
+                                  </span>
+                                ) : null}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="lb-cardMain">
+                          <div className="lb-cardRow">
+                            <span className="lb-cardLabel">
+                              <img className="lb-rowIcon" src={ICON_POINTS} alt="" loading="lazy" onError={hideImg} />
+                              <span>Points</span>
+                            </span>
+                            <strong>{formatInt(p?.total_points || 0)}</strong>
+                          </div>
+
+                          <div className="lb-cardRow">
+                            <span className="lb-cardLabel">
+                              <img className="lb-rowIcon" src={ICON_TIME} alt="" loading="lazy" onError={hideImg} />
+                              <span>Horas</span>
+                            </span>
+                            <strong>{tiempoTxt}</strong>
+                          </div>
+
+                          <div className="lb-cardRow">
+                            <span className="lb-cardLabel">
+                              <img className="lb-rowIcon" src={ICON_WALLET} alt="" loading="lazy" onError={hideImg} />
+                              <span>Wallet</span>
+                            </span>
+
+                            {walletTxt === "—" ? (
+                              <strong>—</strong>
+                            ) : (
+                              <strong className="lb-walletInline">
+                                <img className="lb-coin" src={COIN_SRC} alt="" loading="lazy" onError={hideImg} />
+                                {walletTxt}
+                              </strong>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+
+              <div className="lb-pagination">
+                <div className="lb-pager">
+                  <button type="button" onClick={() => goPage(paginaActual - 1)} disabled={paginaActual <= 1 || isLeaving}>
+                    ‹
+                  </button>
+
+                  <div className="lb-pageInfo">
+                    {paginaActual} / {paginasTotales}
+                  </div>
+
+                  <button type="button" onClick={() => goPage(paginaActual + 1)} disabled={paginaActual >= paginasTotales || isLeaving}>
+                    ›
+                  </button>
+                </div>
+              </div>
+
+              <div className="lb-leaveBlocker" aria-hidden="true" />
             </div>
           </section>
         </div>

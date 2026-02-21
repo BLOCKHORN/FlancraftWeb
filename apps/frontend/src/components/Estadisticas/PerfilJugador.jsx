@@ -1,716 +1,846 @@
-// src/components/Estadisticas/PerfilJugador.jsx
-import React, { useEffect, useMemo, useState, useId } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { supabase } from "../../lib/supabaseClient";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
+import useIsMobile from "../../hooks/useIsMobile";
+import { getGensValorTierInfo } from "./leaderboards.gens";
 import "../../styles/components/Estadisticas/_perfiljugador.scss";
 
-const SERVER_INFO = {
-  global: { label: "Global", icon: "/assets/reinos/global.webp" },
+const API_BASE = (import.meta.env.VITE_BACKEND_URL || "http://localhost:10000").trim().replace(/\/$/, "");
+const apiUrl = (path) => (API_BASE ? `${API_BASE}${path}` : path);
 
-  "survival-clasico": { label: "Survival", icon: "/assets/reinos/survival-clasico.webp" },
-  survival_clasico: { label: "Survival", icon: "/assets/reinos/survival-clasico.webp" },
-  survival: { label: "Survival", icon: "/assets/reinos/survival-clasico.webp" },
+const EMPTY = "-";
+const nf = new Intl.NumberFormat("es-ES");
 
-  "survival-anarquico": { label: "Survival Anárquico", icon: "/assets/reinos/survival-anarquico.webp" },
-  survival_anarquico: { label: "Survival Anárquico", icon: "/assets/reinos/survival-anarquico.webp" },
-  anarquico: { label: "Survival Anárquico", icon: "/assets/reinos/survival-anarquico.webp" },
-
-  "survival-hardcore": { label: "Survival Hardcore", icon: "/assets/reinos/survival-hardcore.webp" },
-  survival_hardcore: { label: "Survival Hardcore", icon: "/assets/reinos/survival-hardcore.webp" },
-  hardcore: { label: "Survival Hardcore", icon: "/assets/reinos/survival-hardcore.webp" },
-
-  oneblock: { label: "OneBlock", icon: "/assets/reinos/oneblock.webp" },
-  chunklock: { label: "ChunkLock", icon: "/assets/reinos/chunklock.webp" },
-  parkour: { label: "Parkour", icon: "/assets/reinos/parkour.webp" },
+const RANK_ASSETS = {
+  nova: "https://dunb17ur4ymx4.cloudfront.net/wysiwyg/1447273/2de18b63a83cb0b8df9197a4eab9ca575906152d.png",
+  alpha: "https://dunb17ur4ymx4.cloudfront.net/wysiwyg/1447273/9c1a0dd33eb6327f1ceb179080f232bc842e8225.png",
+  inmortal: "https://dunb17ur4ymx4.cloudfront.net/wysiwyg/1447273/1aaaa34593db3f2dea9d09a7bd4d985500d69de6.png",
 };
 
-const SANCTIONS_PER_PAGE = 4;
+const RANK_STYLES = {
+  nova: { className: "is-rank-nova" },
+  alpha: { className: "is-rank-alpha" },
+  inmortal: { className: "is-rank-inmortal" },
+};
 
-/* =========================================================
-   NIVEL: HONOR BADGE (LoL vibe, ids únicos con useId)
-   ========================================================= */
-function LevelHonorBadge({ level = 1 }) {
-  const uid = useId().replace(/:/g, "");
-  const G = (s) => `${uid}-${s}`;
+const AVATAR_BACKS = {
+  unrank: "/assets/profileunrank.webp",
+  nova: "/assets/profilenova.webp",
+  alpha: "/assets/profilealpha.webp",
+  inmortal: "/assets/profileinmortal.webp",
+};
 
-  return (
-    <div className="levelHonor" title={`Nivel ${level}`} aria-label={`Nivel ${level}`}>
-      <svg className="levelHonor__svg" viewBox="0 0 260 90" role="img" aria-hidden="true">
-        <defs>
-          <linearGradient id={G("gold")} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor="#fae6b7" />
-            <stop offset="0.55" stopColor="#d8b066" />
-            <stop offset="1" stopColor="#9a6d2f" />
-          </linearGradient>
+const SERVER_META = [
+  { key: "survival", label: "Survival", img: "/assets/reinos/survival-clasico.webp" },
+  { key: "gens", label: "Gens", img: "/assets/reinos/gens.webp" },
+  { key: "oneblock", label: "OneBlock", img: "/assets/reinos/oneblock.webp" },
+  { key: "anarquico", label: "Survival Anárquico", img: "/assets/reinos/survival-anarquico.webp" },
+  { key: "parkour", label: "Parkour", img: "/assets/reinos/parkour.webp" },
+];
 
-          <linearGradient id={G("goldInner")} x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stopColor="rgba(255,255,255,0.22)" />
-            <stop offset="0.45" stopColor="rgba(255,255,255,0.10)" />
-            <stop offset="1" stopColor="rgba(0,0,0,0.10)" />
-          </linearGradient>
+const ICONS = {
+  tiempo: "/assets/statsperfil/playtime.webp",
+  coins: "/assets/statsperfil/coin.png",
+  dinero: "/assets/statsperfil/dinero.png",
+  muertes: "/assets/statsperfil/deaths.webp",
+  kills: "/assets/statsperfil/pvp.webp",
+  dmg: "/assets/statsperfil/dmg.png",
+  puntos: "/assets/statsperfil/puntos.png",
+  genpoints: "/assets/statsperfil/genpoints.png",
+  svpoints: "/assets/statsperfil/svpoints.png",
+  obpoints: "/assets/statsperfil/obpoints.png",
+  anpoints: "/assets/statsperfil/svpoints.png",
+  valor_isla: "/assets/statsperfil/valorisla.png",
+  nivel_web: "/assets/statsperfil/nivel.png",
+  nivel_isla: "/assets/statsperfil/nivel.png",
+  bloque_infinito: "/assets/statsperfil/bloqueinfinito.png",
+  bioma: "/assets/statsperfil/bioma.png",
+  bloques_minados: "/assets/statsperfil/mining.webp",
+  bloques_colocados: "/assets/statsperfil/build.webp",
+  mobs: "/assets/statsperfil/mobs.webp",
+  saltos: "/assets/statsperfil/saltos.png",
+  caminar: "/assets/statsperfil/caminar.png",
+  vuelo: "/assets/statsperfil/vuelo.png",
+  diamante: "/assets/statsperfil/diamante.png",
+  hierro: "/assets/statsperfil/hierro.png",
+  oro: "/assets/statsperfil/oro.png",
+  esmeralda: "/assets/statsperfil/esmeralda.png",
+  cosecha: "/assets/statsperfil/cosecha.png",
+  pesca: "/assets/statsperfil/pesca.png",
+  sanciones: "/assets/statsperfil/sanciones.webp",
+};
 
-          <linearGradient id={G("steel")} x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stopColor="#2c261f" />
-            <stop offset="1" stopColor="#12100d" />
-          </linearGradient>
+const fetchJSON = async (url, signal) => {
+  const r = await fetch(url, { signal, credentials: "include" });
+  const txt = await r.text();
+  let data = null;
+  try {
+    data = txt ? JSON.parse(txt) : null;
+  } catch {
+    data = null;
+  }
+  if (!r.ok) {
+    const msg = (data && (data.error || data.message)) || `HTTP ${r.status}`;
+    throw new Error(msg);
+  }
+  return data;
+};
 
-          <linearGradient id={G("plate")} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor="rgba(10,9,8,0.62)" />
-            <stop offset="1" stopColor="rgba(10,9,8,0.30)" />
-          </linearGradient>
+const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
+const safe = (v) => (v === null || v === undefined || v === "" ? null : v);
 
-          <linearGradient id={G("gem")} x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stopColor="#cfffff" />
-            <stop offset="0.55" stopColor="#55c7ff" />
-            <stop offset="1" stopColor="#1b5f96" />
-          </linearGradient>
+const toNumClean = (v) => {
+  if (v === null || v === undefined || v === "") return NaN;
+  if (typeof v === "number") return v;
+  const raw = String(v).trim();
+  if (!raw) return NaN;
+  const s = raw.replace(/[^\d.,-]/g, "");
+  if (!s) return NaN;
 
-          <filter id={G("shadow")} x="-30%" y="-60%" width="160%" height="240%">
-            <feDropShadow dx="0" dy="6" stdDeviation="4" floodColor="#000" floodOpacity="0.38" />
-          </filter>
+  const hasComma = s.includes(",");
+  const hasDot = s.includes(".");
 
-          <filter id={G("inner")} x="-20%" y="-20%" width="140%" height="140%">
-            <feOffset dx="0" dy="1" />
-            <feGaussianBlur stdDeviation="1.1" result="b" />
-            <feComposite in="SourceGraphic" in2="b" operator="arithmetic" k2="1" k3="-0.65" />
-          </filter>
+  if (hasComma && !hasDot) return Number(s.replace(",", "."));
+  if (hasDot && !hasComma) return Number(s);
 
-          <filter id={G("gemGlow")} x="-40%" y="-40%" width="180%" height="180%">
-            <feDropShadow dx="0" dy="0" stdDeviation="3" floodColor="#63d9ff" floodOpacity="0.35" />
-          </filter>
-        </defs>
+  if (hasDot && hasComma) {
+    const lastComma = s.lastIndexOf(",");
+    const lastDot = s.lastIndexOf(".");
+    if (lastComma > lastDot) return Number(s.replace(/\./g, "").replace(",", "."));
+    return Number(s.replace(/,/g, ""));
+  }
 
-        {/* ALAS */}
-        <g filter={`url(#${G("shadow")})`} opacity="0.98">
-          {/* Izquierda */}
-          <path
-            d="M16 48 L62 22 L106 32 L92 48 L106 64 L62 74 Z"
-            fill={`url(#${G("steel")})`}
-            stroke="rgba(0,0,0,0.55)"
-            strokeWidth="2"
-          />
-          <path d="M22 48 L63 28 L97 35 L85 48 L97 61 L63 70 Z" fill="rgba(255,255,255,0.06)" />
-          <path d="M34 48 L70 36 L84 40 L76 48 L84 56 L70 60 Z" fill="rgba(0,0,0,0.18)" />
+  return Number(s);
+};
 
-          {/* Derecha */}
-          <path
-            d="M244 48 L198 22 L154 32 L168 48 L154 64 L198 74 Z"
-            fill={`url(#${G("steel")})`}
-            stroke="rgba(0,0,0,0.55)"
-            strokeWidth="2"
-          />
-          <path d="M238 48 L197 28 L163 35 L175 48 L163 61 L197 70 Z" fill="rgba(255,255,255,0.06)" />
-          <path d="M226 48 L190 36 L176 40 L184 48 L176 56 L190 60 Z" fill="rgba(0,0,0,0.18)" />
-        </g>
+const fmtMoney = (v, suffix = " $") => {
+  const n = toNumClean(v);
+  if (!Number.isFinite(n)) return EMPTY;
+  return `${nf.format(n)}${suffix}`;
+};
 
-        {/* ESCUDO CENTRAL */}
-        <g filter={`url(#${G("shadow")})`}>
-          <path
-            d="M112 14 H148 L180 46 L148 78 H112 L80 46 Z"
-            fill={`url(#${G("gold")})`}
-            stroke="rgba(30,20,12,0.85)"
-            strokeWidth="2.2"
-          />
-          <path
-            d="M116 18 H144 L172 46 L144 74 H116 L88 46 Z"
-            fill={`url(#${G("goldInner")})`}
-            filter={`url(#${G("inner")})`}
-            opacity="0.95"
-          />
+const fmtNum = (v) => {
+  const n = toNumClean(v);
+  if (!Number.isFinite(n)) return EMPTY;
+  return nf.format(n);
+};
 
-          {/* Placa número */}
-          <path
-            d="M102 46
-               C102 41 106 37 111 37
-               H149
-               C154 37 158 41 158 46
-               C158 51 154 55 149 55
-               H111
-               C106 55 102 51 102 46 Z"
-            fill={`url(#${G("plate")})`}
-            stroke="rgba(0,0,0,0.35)"
-            strokeWidth="1.6"
-          />
-          <path
-            d="M108 40 H152"
-            stroke="rgba(255,255,255,0.18)"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-          />
+const fmtTimeHM = (seconds) => {
+  const s = toNumClean(seconds);
+  if (!Number.isFinite(s) || s < 0) return EMPTY;
+  const totalMin = Math.floor(s / 60);
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  return `${h}h ${m}m`;
+};
 
-          {/* Gema */}
-<g filter={`url(#${G("gemGlow")})`}>
-  <path
-    d="M130 14 L142 26 L130 38 L118 26 Z"
-    fill={`url(#${G("gem")})`}
-    stroke="rgba(0,0,0,0.42)"
-    strokeWidth="2"
-  />
-  <path d="M130 17 L138 26 L130 35 L122 26 Z" fill="rgba(255,255,255,0.12)" />
-</g>
+const fmtUpdated = (v) => {
+  if (!v) return "";
+  const d = new Date(v);
+  if (!Number.isFinite(d.getTime())) return String(v);
+  try {
+    return new Intl.DateTimeFormat("es-ES", { dateStyle: "medium", timeStyle: "short" }).format(d);
+  } catch {
+    return d.toLocaleString("es-ES");
+  }
+};
 
+const pickServer = (servidoresMap) => {
+  if (!servidoresMap) return "gens";
+  const keys = Object.keys(servidoresMap);
+  if (!keys.length) return "gens";
+  if (servidoresMap.gens) return "gens";
+  if (servidoresMap.oneblock) return "oneblock";
+  if (servidoresMap.survival) return "survival";
+  return keys[0];
+};
 
-          {/* Remaches */}
-          <circle cx="96" cy="46" r="2.2" fill="rgba(0,0,0,0.45)" />
-          <circle cx="164" cy="46" r="2.2" fill="rgba(0,0,0,0.45)" />
-          <circle cx="96" cy="46" r="1.1" fill="rgba(255,255,255,0.16)" />
-          <circle cx="164" cy="46" r="1.1" fill="rgba(255,255,255,0.16)" />
+const normalizeServerData = (raw) => {
+  if (!raw) return null;
+  if (raw.data) return raw.data;
+  return raw;
+};
 
-          {/* TEXTO dentro del plate (2 capas: stroke + fill) */}
-          <text
-            x="130"
-            y="46.2"
-            textAnchor="middle"
-            dominantBaseline="middle"
-            className="levelHonor__textStroke"
-          >
-            {level}
-          </text>
-          <text
-            x="130"
-            y="46.2"
-            textAnchor="middle"
-            dominantBaseline="middle"
-            className="levelHonor__textFill"
-          >
-            {level}
-          </text>
-        </g>
-      </svg>
-    </div>
-  );
-}
+const normalizeWebUser = (raw) => {
+  if (!raw) return null;
+  if (raw.usuario && typeof raw.usuario === "object") return raw.usuario;
+  if (raw.user && typeof raw.user === "object") return raw.user;
+  if (raw.data && typeof raw.data === "object") return raw.data;
+  return raw;
+};
 
+const normalizeXp = (raw) => {
+  if (!raw) return null;
+  if (raw.data) return raw.data;
+  return raw;
+};
+
+const metric = (id, label, value, iconKey, hint, onClick) => ({
+  id,
+  label,
+  value,
+  icon: ICONS[iconKey] || null,
+  hint,
+  onClick: typeof onClick === "function" ? onClick : null,
+});
+
+const pickServerPoints = (srvKey, payload) => {
+  const p = payload || {};
+  const resumen = p?.resumen || p?.summary || null;
+  const economia = p?.economia || null;
+
+  const direct = safe(resumen?.points ?? economia?.points);
+  if (direct !== null) return direct;
+
+  if (srvKey === "gens") return safe(resumen?.genspoints ?? economia?.genspoints);
+  if (srvKey === "survival") return safe(resumen?.svpoints ?? economia?.svpoints);
+  if (srvKey === "oneblock") return safe(resumen?.obpoints ?? economia?.obpoints);
+  if (srvKey === "anarquico") return safe(resumen?.anpoints ?? economia?.anpoints);
+  if (srvKey === "parkour") return safe(resumen?.pkpoints ?? economia?.pkpoints);
+
+  return null;
+};
+
+const pointsIconKey = (srvKey) => {
+  if (srvKey === "gens") return "genpoints";
+  if (srvKey === "survival") return "svpoints";
+  if (srvKey === "oneblock") return "obpoints";
+  if (srvKey === "anarquico") return "anpoints";
+  return "svpoints";
+};
+
+const sectionIconKey = (k) => {
+  if (k === "general") return "bloques_minados";
+  if (k === "combate") return "kills";
+  if (k === "recursos") return "diamante";
+  return "coins";
+};
 
 export default function PerfilJugador() {
   const { nombre } = useParams();
-  const navigate = useNavigate();
+  const nav = useNavigate();
+  const isMobile = useIsMobile();
+  const location = useLocation();
 
-  const [usuario, setUsuario] = useState(null);
-  const [estadisticas, setEstadisticas] = useState([]);
-  const [sanciones, setSanciones] = useState([]);
-  const [servidorActivo, setServidorActivo] = useState(null);
-  const [cargando, setCargando] = useState(true);
-  const [sinEstadisticas, setSinEstadisticas] = useState(false);
+  const [enterFx, setEnterFx] = useState(false);
+  const [enterPayload, setEnterPayload] = useState(null);
+
+  const [loading, setLoading] = useState(true);
+  const [loadingServer, setLoadingServer] = useState(false);
+  const [loadingWeb, setLoadingWeb] = useState(false);
+
+  const [error, setError] = useState("");
+  const [perfil, setPerfil] = useState(null);
+
+  const [servidor, setServidor] = useState("gens");
+  const [serverData, setServerData] = useState(null);
+
+  const [webUser, setWebUser] = useState(null);
   const [xpData, setXpData] = useState(null);
-  const [sanPage, setSanPage] = useState(1);
+
+  const [tab, setTab] = useState("all");
+  const [animKey, setAnimKey] = useState(0);
+
+  const abortRef = useRef(null);
+  const abortServerRef = useRef(null);
+  const abortWebRef = useRef(null);
 
   useEffect(() => {
-    const fetchData = async () => {
-      setCargando(true);
-      setSinEstadisticas(false);
+    const fx = location?.state?.fx || null;
+    if (!fx) {
+      setEnterFx(false);
+      setEnterPayload(null);
+      return;
+    }
 
+    setEnterPayload(fx);
+    setEnterFx(true);
+
+    const t = setTimeout(() => {
+      setEnterFx(false);
+    }, 760);
+
+    return () => clearTimeout(t);
+  }, [location?.state]);
+
+  const loadWeb = useCallback(async (uuid) => {
+    if (!uuid) return;
+    if (abortWebRef.current) abortWebRef.current.abort();
+    const ac = new AbortController();
+    abortWebRef.current = ac;
+
+    setLoadingWeb(true);
+    try {
+      const [uRaw, xpRaw] = await Promise.all([
+        fetchJSON(apiUrl(`/api/usuarios/${encodeURIComponent(uuid)}`), ac.signal),
+        fetchJSON(apiUrl(`/api/usuarios/${encodeURIComponent(uuid)}/xp`), ac.signal),
+      ]);
+
+      const u = normalizeWebUser(uRaw);
+      const xp = normalizeXp(xpRaw);
+
+      setWebUser(u || null);
+      setXpData(xp || null);
+    } catch {
+      setWebUser(null);
+      setXpData(null);
+    } finally {
+      setLoadingWeb(false);
+    }
+  }, []);
+
+  const loadServer = useCallback(async (srv, uuid, initial = false) => {
+    if (!uuid) return;
+    if (abortServerRef.current) abortServerRef.current.abort();
+    const ac = new AbortController();
+    abortServerRef.current = ac;
+
+    if (!initial) setLoadingServer(true);
+    setError("");
+
+    try {
+      const data = await fetchJSON(apiUrl(`/api/perfil/${encodeURIComponent(uuid)}/servidor/${encodeURIComponent(srv)}`), ac.signal);
+      setServerData(normalizeServerData(data));
+    } catch (e) {
+      if (e?.name === "AbortError") return;
+      setError(e?.message || "Error cargando servidor");
+      setServerData(null);
+    } finally {
+      setLoadingServer(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    setLoading(true);
+    setError("");
+    setPerfil(null);
+    setServerData(null);
+    setWebUser(null);
+    setXpData(null);
+    setTab("all");
+    setAnimKey((v) => v + 1);
+
+    if (abortRef.current) abortRef.current.abort();
+    const ac = new AbortController();
+    abortRef.current = ac;
+
+    const run = async () => {
       try {
-        const { data: userMeta, error: userError } = await supabase
-          .from("usuarios")
-          .select("uuid, uid, nivel, xp_actual, rango_usuario, es_premium")
-          .eq("uid", nombre)
-          .maybeSingle();
+        const data = await fetchJSON(apiUrl(`/api/perfil/${encodeURIComponent(nombre)}`), ac.signal);
 
-        let jugador = null;
-        let statsData = [];
-        let sancionesData = [];
+        const jugador = data?.jugador || data?.player || null;
+        const servidores = data?.servidores || data?.servers || null;
 
-        if (userError) console.error("Error al obtener usuario:", userError);
+        const nextPerfil = { ...data, jugador, servidores };
+        setPerfil(nextPerfil);
 
-        if (userMeta) {
-          jugador = {
-            uuid: userMeta.uuid,
-            nombre_minecraft: userMeta.uid || nombre,
-            nivel: userMeta.nivel,
-            xp_actual: userMeta.xp_actual,
-            rango_usuario: userMeta.rango_usuario,
-            es_premium: userMeta.es_premium,
-          };
+        const preferred = data?.servidor_activo || data?.active_server || pickServer(servidores);
+        setServidor(preferred);
 
-          const { data: statsByUuid, error: statsError } = await supabase
-            .from("estadisticas_agrupadas")
-            .select("*")
-            .eq("uuid", jugador.uuid);
+        const uuid = jugador?.uuid || data?.uuid || null;
+        if (uuid) loadWeb(uuid);
 
-          if (statsError) console.error("Error al obtener estadísticas:", statsError);
-          statsData = statsByUuid || [];
-
-          if (jugador.uuid) {
-            const { data: jailsData, error: jailsError } = await supabase
-              .from("jails")
-              .select("*")
-              .eq("uuid", jugador.uuid);
-
-            if (jailsError) console.error("Error al obtener sanciones:", jailsError);
-            sancionesData = jailsData || [];
-          }
-        } else {
-          const { data: statsByName, error: statsByNameError } = await supabase
-            .from("estadisticas_agrupadas")
-            .select("*")
-            .eq("nombre_minecraft", nombre);
-
-          if (statsByNameError) console.error("Error al obtener estadísticas por nombre:", statsByNameError);
-
-          if (!statsByName || statsByName.length === 0) {
-            setUsuario(null);
-            setEstadisticas([]);
-            setSanciones([]);
-            setServidorActivo(null);
-            setSinEstadisticas(false);
-            setCargando(false);
-            return;
-          }
-
-          statsData = statsByName;
-
-          jugador = {
-            nombre_minecraft: statsByName[0].nombre_minecraft || nombre,
-            uuid: statsByName[0].uuid,
-          };
-
-          if (jugador.uuid) {
-            const { data: metaFromUuid, error: metaUuidError } = await supabase
-              .from("usuarios")
-              .select("uid, nivel, xp_actual, rango_usuario, es_premium")
-              .eq("uuid", jugador.uuid)
-              .maybeSingle();
-
-            if (metaUuidError) console.error("Error al obtener meta por uuid:", metaUuidError);
-
-            if (metaFromUuid) {
-              jugador = {
-                ...jugador,
-                nivel: metaFromUuid.nivel,
-                xp_actual: metaFromUuid.xp_actual,
-                rango_usuario: metaFromUuid.rango_usuario,
-                es_premium: metaFromUuid.es_premium,
-                nombre_minecraft: metaFromUuid.uid || jugador.nombre_minecraft,
-              };
-            }
-
-            const { data: jailsData, error: jailsError } = await supabase
-              .from("jails")
-              .select("*")
-              .eq("uuid", jugador.uuid);
-
-            if (jailsError) console.error("Error al obtener sanciones:", jailsError);
-            sancionesData = jailsData || [];
-          }
+        const embedded = normalizeServerData(servidores?.[preferred]);
+        if (embedded) {
+          setServerData(embedded);
+          setLoading(false);
+          return;
         }
 
-        setUsuario(jugador);
-        setEstadisticas(statsData);
-        setSanciones(sancionesData);
-        setServidorActivo(statsData[0]?.servidor || null);
-        setSinEstadisticas(statsData.length === 0);
+        if (uuid) {
+          setLoading(false);
+          await loadServer(preferred, uuid, true);
+        } else {
+          setLoading(false);
+        }
       } catch (e) {
-        console.error("Error en fetchData PerfilJugador:", e);
-        setUsuario(null);
-        setEstadisticas([]);
-        setSanciones([]);
-        setServidorActivo(null);
-        setSinEstadisticas(false);
-      } finally {
-        setCargando(false);
+        if (e?.name === "AbortError") return;
+        setError(e?.message || "Error cargando perfil");
+        setLoading(false);
       }
     };
 
-    fetchData();
-  }, [nombre]);
+    run();
+    return () => ac.abort();
+  }, [nombre, loadServer, loadWeb]);
 
   useEffect(() => {
-    const fetchXpData = async () => {
-      if (!usuario?.uuid) return;
+    const uuid = perfil?.jugador?.uuid || perfil?.uuid || null;
+    const embedded = normalizeServerData(perfil?.servidores?.[servidor]);
+    if (embedded) {
+      setServerData(embedded);
+      return;
+    }
+    if (uuid) loadServer(servidor, uuid);
+  }, [servidor, perfil?.jugador?.uuid, perfil?.uuid, perfil?.servidores, loadServer]);
 
-      try {
-        const res = await fetch(`https://flancraft-backend.onrender.com/api/usuarios/${usuario.uuid}/xp`);
-        if (!res.ok) throw new Error("Error al obtener XP");
-        const data = await res.json();
-        setXpData(data);
-      } catch (err) {
-        console.error("Error al cargar xpData:", err);
-      }
+  const jugador = perfil?.jugador || null;
+
+  const mergedWeb = useMemo(() => {
+    const base = jugador || {};
+    const w = webUser || {};
+    const wallet = w?.wallet_coins ?? w?.walletCoins ?? w?.wallet ?? base?.wallet_coins ?? base?.walletCoins ?? base?.wallet ?? perfil?.totales?.wallet_coins ?? null;
+
+    return {
+      ...base,
+      ...w,
+      wallet_coins: wallet,
+      rango_usuario: w?.rango_usuario ?? base?.rango_usuario ?? null,
+      nivel: w?.nivel ?? base?.nivel ?? null,
+      xp_actual: w?.xp_actual ?? base?.xp_actual ?? null,
+      es_premium: w?.es_premium ?? base?.es_premium ?? null,
+      uid: w?.uid ?? base?.uid ?? base?.nombre_minecraft ?? null,
+      plataforma: w?.plataforma ?? base?.plataforma ?? null,
+      actualizado: base?.actualizado ?? null,
     };
+  }, [jugador, webUser, perfil?.totales?.wallet_coins]);
 
-    fetchXpData();
-  }, [usuario?.uuid]);
+  const hasWebAccount = useMemo(() => {
+    const u = webUser;
+    if (!u || typeof u !== "object") return false;
+    return Boolean(u?.uuid || u?.uid || u?.nivel !== undefined || u?.xp_actual !== undefined || u?.wallet_coins !== undefined);
+  }, [webUser]);
 
-  useEffect(() => {
-    setSanPage(1);
-  }, [nombre, sanciones.length]);
+  const rankRaw = useMemo(() => {
+    if (!hasWebAccount) return "";
+    return (mergedWeb?.rango_usuario || mergedWeb?.rank || "").toString().toLowerCase().trim();
+  }, [mergedWeb?.rango_usuario, mergedWeb?.rank, hasWebAccount]);
 
-  const formatearTiempo = (ticks) => {
-    const totalSegundos = Math.floor((ticks || 0) / 20);
-    const horas = Math.floor(totalSegundos / 3600);
-    const minutos = Math.floor((totalSegundos % 3600) / 60);
-    return `${horas}h ${minutos}m`;
-  };
+  const rankKey = useMemo(() => {
+    if (!rankRaw) return "";
+    if (rankRaw.includes("nova")) return "nova";
+    if (rankRaw.includes("alpha")) return "alpha";
+    if (rankRaw.includes("inmortal")) return "inmortal";
+    return "";
+  }, [rankRaw]);
 
-  const etiquetas = {
-    bloques_minados: "Bloques minados",
-    bloques_colocados: "Bloques colocados",
-    mobs_matados: "Mobs matados",
-    kills_pvp: "Kills PvP",
-    muertes: "Muertes",
-    tiempo_jugado: "Tiempo jugado",
-  };
+  const rankAsset = RANK_ASSETS[rankKey] || null;
+  const rankClass = RANK_STYLES[rankKey]?.className || "";
+  const heroBgUrl = AVATAR_BACKS[rankKey] || AVATAR_BACKS.unrank;
 
-  const statIcons = {
-    bloques_minados: "/assets/statsperfil/mining.webp",
-    bloques_colocados: "/assets/statsperfil/build.webp",
-    mobs_matados: "/assets/statsperfil/mobs.webp",
-    kills_pvp: "/assets/statsperfil/pvp.webp",
-    muertes: "/assets/statsperfil/deaths.webp",
-    tiempo_jugado: "/assets/statsperfil/playtime.webp",
-  };
+  const plataforma = (mergedWeb?.plataforma || mergedWeb?.platform || "").toString().toLowerCase();
+  const plataformaLabel = plataforma === "bedrock" ? "Bedrock" : plataforma === "java" ? "Java" : "";
 
-  const servidoresDisponibles = useMemo(() => [...new Set(estadisticas.map((e) => e.servidor))], [estadisticas]);
+  const webNivel = hasWebAccount ? safe(webUser?.nivel) : null;
+  const webXpActual = hasWebAccount ? safe(webUser?.xp_actual) : null;
+  const webWallet = hasWebAccount ? safe(mergedWeb?.wallet_coins) : null;
 
-  const statsActuales = useMemo(
-    () => estadisticas.find((e) => e.servidor === servidorActivo),
-    [estadisticas, servidorActivo]
-  );
+  const xpDelNivelActual = useMemo(() => {
+    if (!hasWebAccount) return null;
+    const lvl = toNumClean(webUser?.nivel);
+    if (!Number.isFinite(lvl)) return null;
+    const niveles = xpData?.niveles;
+    if (!Array.isArray(niveles)) return null;
+    const row = niveles.find((n) => toNumClean(n?.nivel) === lvl);
+    const req = toNumClean(row?.xp_requerida);
+    if (!Number.isFinite(req) || req <= 0) return null;
+    return req;
+  }, [xpData?.niveles, webUser?.nivel, hasWebAccount]);
 
-  const totalTiempoTicks = useMemo(() => estadisticas.reduce((acc, e) => acc + (e.tiempo_jugado || 0), 0), [estadisticas]);
-  const totalBloquesMinados = useMemo(() => estadisticas.reduce((acc, e) => acc + (e.bloques_minados || 0), 0), [estadisticas]);
-  const totalMobsMatados = useMemo(() => estadisticas.reduce((acc, e) => acc + (e.mobs_matados || 0), 0), [estadisticas]);
-  const totalKillsPvp = useMemo(() => estadisticas.reduce((acc, e) => acc + (e.kills_pvp || 0), 0), [estadisticas]);
+  const xpPct = useMemo(() => {
+    if (!hasWebAccount) return 0;
+    const a = toNumClean(webXpActual);
+    const t = toNumClean(xpDelNivelActual);
+    if (!Number.isFinite(a) || !Number.isFinite(t) || t <= 0) return 0;
+    return clamp((a / t) * 100, 0, 100);
+  }, [webXpActual, xpDelNivelActual, hasWebAccount]);
 
-  const antiguedadTexto = useMemo(() => {
-    const fechasPosibles = estadisticas
-      .map((e) => e.fecha_primera_vez || e.primera_vez || e.fecha || e.created_at)
-      .filter(Boolean);
+  const displayName = mergedWeb?.uid || mergedWeb?.nombre_minecraft || mergedWeb?.nombre || nombre;
 
-    if (fechasPosibles.length === 0) return "—";
+  const skinFace = useMemo(() => {
+    const n = encodeURIComponent(displayName || "Steve");
+    return `https://mc-heads.net/avatar/${n}/160`;
+  }, [displayName]);
 
-    const fechasDate = fechasPosibles.map((f) => new Date(f)).filter((d) => !isNaN(d));
-    if (fechasDate.length === 0) return "—";
+  const skinBody = useMemo(() => {
+    const n = encodeURIComponent(displayName || "Steve");
+    return `https://mc-heads.net/body/${n}/260`;
+  }, [displayName]);
 
-    const masAntigua = fechasDate.reduce((min, d) => (d < min ? d : min), fechasDate[0]);
-    return masAntigua.toLocaleDateString("es-ES");
-  }, [estadisticas]);
+  const resumen = serverData?.resumen || serverData?.summary || null;
+  const general = serverData?.general || null;
+  const combate = serverData?.combate || null;
+  const recursos = serverData?.recursos || null;
+  const economia = serverData?.economia || null;
+  const isla = serverData?.isla || serverData?.valor_isla_detalle || null;
 
-  const xpActual = usuario?.xp_actual || 0;
-  const nivelActual = usuario?.nivel || 1;
-  const nivelInfo = xpData?.niveles?.find((n) => n.nivel === nivelActual);
-  const xpDelNivelActual = nivelInfo?.xp_requerida || 1;
-  const xpPercent = Math.min(100, xpDelNivelActual > 0 ? (xpActual / xpDelNivelActual) * 100 : 0);
+  const totals = useMemo(() => {
+    const t = perfil?.totales || null;
+    return {
+      points: safe(t?.points_total),
+      time: safe(t?.tiempo_jugado_total),
+      kills: safe(t?.kills_pvp_total),
+      wallet: webWallet,
+    };
+  }, [perfil?.totales, webWallet]);
 
-  const featuredStats = useMemo(
-    () => [
-      { label: "Tiempo jugado total", value: formatearTiempo(totalTiempoTicks) },
-      { label: "Antigüedad", value: antiguedadTexto },
-      { label: "Bloques minados", value: totalBloquesMinados.toLocaleString("es-ES") },
-      { label: "Mobs matados", value: totalMobsMatados.toLocaleString("es-ES") },
-      { label: "Kills PvP", value: totalKillsPvp.toLocaleString("es-ES") },
-    ],
-    [totalTiempoTicks, antiguedadTexto, totalBloquesMinados, totalMobsMatados, totalKillsPvp]
-  );
-
-  const getServerInfo = (servidor) => {
-    if (!servidor) return null;
-    const key = servidor.toLowerCase();
-    return SERVER_INFO[key] || SERVER_INFO[key.replace("_", "-")] || { label: servidor, icon: null };
-  };
-
-  const normalizarRango = (r) => {
-    const s = (r || "").toLowerCase().trim();
-    if (s.includes("nova")) return "nova";
-    if (s.includes("alpha")) return "alpha";
-    if (s.includes("inmortal")) return "inmortal";
-    return "unrank";
-  };
-
-  const rangoKey = normalizarRango(usuario?.rango_usuario);
-
-  const nombreClaseRango =
-    rangoKey === "nova" ? "nombre-nova" : rangoKey === "alpha" ? "nombre-alpha" : rangoKey === "inmortal" ? "nombre-inmortal" : "";
-
-  const avatarBgByRango = {
-    unrank: "/assets/profileunrank.webp",
-    nova: "/assets/profilenova.webp",
-    alpha: "/assets/profilealpha.webp",
-    inmortal: "/assets/profileinmortal.webp",
-  };
-  const avatarBgUrl = avatarBgByRango[rangoKey] || avatarBgByRango.unrank;
-
-  const sancionesOrdenadas = useMemo(() => {
-    const copy = [...(sanciones || [])];
-    copy.sort((a, b) => {
-      const da = a?.fecha ? new Date(a.fecha).getTime() : 0;
-      const db = b?.fecha ? new Date(b.fecha).getTime() : 0;
-      return db - da;
-    });
-    return copy;
-  }, [sanciones]);
-
-  const sanTotalPages = useMemo(() => {
-    const pages = Math.ceil(sancionesOrdenadas.length / SANCTIONS_PER_PAGE);
-    return Math.max(1, pages);
-  }, [sancionesOrdenadas.length]);
-
-  const sanPageSafe = Math.min(Math.max(1, sanPage), sanTotalPages);
-
-  const sancionesPagina = useMemo(() => {
-    const start = (sanPageSafe - 1) * SANCTIONS_PER_PAGE;
-    return sancionesOrdenadas.slice(start, start + SANCTIONS_PER_PAGE);
-  }, [sancionesOrdenadas, sanPageSafe]);
-
-  if (cargando) {
-    return (
-      <div className="perfiljugador-loading">
-        <div className="loading-inner">
-          <span className="loading-gema" />
-          <p>Cargando perfil...</p>
-        </div>
-      </div>
+  const gensValorInfo = useMemo(() => {
+    if (servidor !== "gens") return null;
+    const valorRaw = safe(
+      resumen?.valor_isla ??
+        economia?.valor_isla ??
+        isla?.valor ??
+        isla?.valor_isla ??
+        economia?.gens_value_total ??
+        serverData?.valor_isla ??
+        serverData?.island_value ??
+        serverData?.islandValue
     );
-  }
+    if (valorRaw === null) return null;
+    const v = toNumClean(valorRaw);
+    if (!Number.isFinite(v)) return null;
+    try {
+      return getGensValorTierInfo(v);
+    } catch {
+      return null;
+    }
+  }, [servidor, resumen, economia, isla, serverData]);
 
-  if (!usuario) {
-    return (
-      <div className="perfiljugador-page perfiljugador-page--empty">
-        <div className="perfiljugador-shell">
-          <div className="perfiljugador-card perfiljugador-card--error">
-            <img src="/assets/interrogante.webp" alt="Jugador no encontrado" className="perfiljugador-skin" />
-            <h2>Jugador no encontrado</h2>
-            <p>No hay registros en FlanCraft para "{nombre}".</p>
-            <button className="btn-volver" onClick={() => navigate(-1)}>
-              Volver atrás
-            </button>
-          </div>
-        </div>
-      </div>
+  const quickMetrics = useMemo(() => {
+    const out = [];
+    out.push(metric("points_total", "Points totales", totals.points !== null ? fmtNum(totals.points) : EMPTY, "puntos"));
+    out.push(metric("wallet_coins", "Wallet Coins", totals.wallet !== null ? fmtNum(totals.wallet) : EMPTY, "coins"));
+    out.push(metric("tiempo_total", "Tiempo total", totals.time !== null ? fmtTimeHM(totals.time) : EMPTY, "tiempo"));
+    out.push(metric("kills_total", "Kills PvP", totals.kills !== null ? fmtNum(totals.kills) : EMPTY, "kills"));
+    return out;
+  }, [totals.points, totals.time, totals.kills, totals.wallet]);
+
+  const omitIds = useMemo(() => new Set(quickMetrics.map((m) => m.id)), [quickMetrics]);
+
+  const sections = useMemo(() => {
+    const s = [];
+
+    const generalTiles = [];
+    const bMin = safe(general?.bloques_minados ?? general?.mined);
+    const bCol = safe(general?.bloques_colocados ?? general?.placed);
+    const saltos = safe(general?.saltos ?? general?.jumps);
+    const caminarKm = safe(general?.walk_km ?? general?.caminar);
+    const volarKm = safe(general?.fly_km ?? general?.volar);
+
+    if (bMin !== null && !omitIds.has("bloques_minados")) generalTiles.push(metric("bloques_minados", "Bloques minados", fmtNum(bMin), "bloques_minados"));
+    if (bCol !== null && !omitIds.has("bloques_colocados")) generalTiles.push(metric("bloques_colocados", "Bloques colocados", fmtNum(bCol), "bloques_colocados"));
+    if (saltos !== null && !omitIds.has("saltos")) generalTiles.push(metric("saltos", "Saltos", fmtNum(saltos), "saltos"));
+    if (caminarKm !== null && !omitIds.has("caminar")) generalTiles.push(metric("caminar", "Caminar", `${fmtNum(caminarKm)} km`, "caminar"));
+    if (volarKm !== null && !omitIds.has("volar")) generalTiles.push(metric("volar", "Volar", `${fmtNum(volarKm)} km`, "vuelo"));
+
+    if (generalTiles.length) s.push({ key: "general", title: "General", tiles: generalTiles });
+
+    const combateTiles = [];
+    const mobs = safe(combate?.mobs_matados ?? combate?.mobs);
+    const kills = safe(combate?.kills_pvp ?? combate?.kills);
+    const muertes = safe(combate?.muertes ?? combate?.deaths);
+    const dano = safe(combate?.dano_infligido ?? combate?.damage);
+
+    if (mobs !== null && !omitIds.has("mobs")) combateTiles.push(metric("mobs", "Mobs matados", fmtNum(mobs), "mobs"));
+    if (kills !== null && !omitIds.has("kills")) combateTiles.push(metric("kills", "Kills PvP", fmtNum(kills), "kills"));
+    if (muertes !== null && !omitIds.has("muertes")) combateTiles.push(metric("muertes", "Muertes", fmtNum(muertes), "muertes"));
+    if (dano !== null && !omitIds.has("dano")) combateTiles.push(metric("dano", "Daño infligido", fmtNum(dano), "dmg"));
+
+    if (combateTiles.length) s.push({ key: "combate", title: "Combate", tiles: combateTiles });
+
+    const recursosTiles = [];
+    const diam = safe(recursos?.diamantes ?? recursos?.diamond);
+    const hierro = safe(recursos?.hierro ?? recursos?.iron);
+    const oro = safe(recursos?.oro ?? recursos?.gold);
+    const esmer = safe(recursos?.esmeraldas ?? recursos?.emerald);
+    const cult = safe(recursos?.cultivos ?? recursos?.crops);
+    const pesca = safe(recursos?.pesca ?? recursos?.fish);
+
+    if (diam !== null) recursosTiles.push(metric("diamantes", "Diamantes", fmtNum(diam), "diamante"));
+    if (hierro !== null) recursosTiles.push(metric("hierro", "Hierro", fmtNum(hierro), "hierro"));
+    if (oro !== null) recursosTiles.push(metric("oro", "Oro", fmtNum(oro), "oro"));
+    if (esmer !== null) recursosTiles.push(metric("esmeraldas", "Esmeraldas", fmtNum(esmer), "esmeralda"));
+    if (cult !== null) recursosTiles.push(metric("cultivos", "Cultivos", fmtNum(cult), "cosecha"));
+    if (pesca !== null) recursosTiles.push(metric("pesca", "Pesca", fmtNum(pesca), "pesca"));
+
+    if (recursosTiles.length) s.push({ key: "recursos", title: "Recursos", tiles: recursosTiles });
+
+    const economiaTiles = [];
+    const srvPoints = safe(pickServerPoints(servidor, serverData));
+    if (srvPoints !== null && !omitIds.has("points")) economiaTiles.push(metric("points", "Points", fmtNum(srvPoints), pointsIconKey(servidor)));
+
+    const dinero = safe(economia?.dinero ?? economia?.money ?? resumen?.dinero);
+    const dineroTotal = safe(economia?.dinero_ganado_total ?? economia?.total_ganado ?? economia?.total_ganado_dinero ?? resumen?.dinero_ganado_total);
+    const coins = safe(economia?.coins ?? resumen?.coins);
+    const coinsTotal = safe(economia?.coins_ganadas_total ?? resumen?.coins_ganadas_total);
+
+    if (dineroTotal !== null && !omitIds.has("dinero_total")) economiaTiles.push(metric("dinero_total", "Dinero total", fmtMoney(dineroTotal), "dinero"));
+    if (dinero !== null && !omitIds.has("dinero")) economiaTiles.push(metric("dinero", "Dinero actual", fmtMoney(dinero), "dinero"));
+    if (coinsTotal !== null && !omitIds.has("coins_total")) economiaTiles.push(metric("coins_total", "Coins total", fmtNum(coinsTotal), "coins"));
+    if (coins !== null && !omitIds.has("coins")) economiaTiles.push(metric("coins", "Coins", fmtNum(coins), "coins"));
+
+    const incomeH = safe(isla?.income_h ?? isla?.income_por_hora ?? economia?.gens_income_h);
+    if (incomeH !== null && servidor === "gens") economiaTiles.push(metric("income_h", "Income/h", fmtMoney(incomeH), "valor_isla"));
+
+    if (economiaTiles.length) s.push({ key: "economia", title: "Economía", tiles: economiaTiles });
+
+    return s;
+  }, [general, combate, recursos, economia, resumen, isla, servidor, omitIds, serverData]);
+
+  const shownSections = useMemo(() => {
+    if (tab === "all") return sections;
+    return sections.filter((s) => s.key === tab);
+  }, [tab, sections]);
+
+  const tabs = useMemo(() => {
+    const base = [{ key: "all", label: "Todo", icon: "tiempo", count: sections.reduce((a, s) => a + (s?.tiles?.length || 0), 0) }];
+    return base.concat(
+      sections.map((s) => ({
+        key: s.key,
+        label: s.title,
+        icon: sectionIconKey(s.key),
+        count: s?.tiles?.length || 0,
+      }))
     );
-  }
+  }, [sections]);
+
+  const onPickTab = (k) => {
+    setTab(k);
+    setAnimKey((v) => v + 1);
+  };
+
+  const serversAvailable = useMemo(() => {
+    const map = perfil?.servidores || null;
+    if (map && typeof map === "object") {
+      const keys = new Set(Object.keys(map));
+      return SERVER_META.filter((s) => keys.has(s.key));
+    }
+    return SERVER_META;
+  }, [perfil?.servidores]);
+
+  const updatedRaw = jugador?.actualizado || jugador?.updated_at || jugador?.ultimo_sync || null;
+  const updatedTxt = useMemo(() => fmtUpdated(updatedRaw), [updatedRaw]);
+
+  const rootClass = useMemo(() => {
+    return ["perfil-epic", enterFx ? "pf-enter" : ""].filter(Boolean).join(" ");
+  }, [enterFx]);
 
   return (
-    <div className="perfiljugador-page">
-      <div className="perfiljugador-bg-scene" />
-      <div className="perfiljugador-shell">
-        <div className="perfiljugador-maincard">
-          {/* AVATAR */}
-          <div className="perfiljugador-avatar-wrapper">
-            <div className="perfiljugador-avatar-frame">
-              <div className="perfiljugador-avatar-bg" style={{ backgroundImage: `url(${avatarBgUrl})` }} />
-
-              <img
-                src={`https://mc-heads.net/body/${usuario.nombre_minecraft}/180`}
-                alt={`Skin de ${usuario.nombre_minecraft}`}
-                className="perfiljugador-avatar-img"
-                onError={(e) => {
-                  e.currentTarget.src = "/assets/default-head.png";
-                }}
-              />
-
-              {/* NIVEL: HONOR SVG */}
-              <LevelHonorBadge level={nivelActual} />
+    <div className={rootClass}>
+      <div className="perfil-shell">
+        <div className="perfil-frame">
+          {enterFx && enterPayload ? (
+            <div className="pf-enterOverlay" aria-hidden="true">
+              <div className="pf-enterCard">
+                <img className="pf-enterSkin" src={enterPayload.skin} alt="" draggable="false" />
+                <div className="pf-enterText">
+                  <div className="pf-enterName">{enterPayload.nombre}</div>
+                  <div className="pf-enterSub">Construyendo perfil…</div>
+                </div>
+                <div className="pf-enterBar">
+                  <div className="pf-enterBarFill" />
+                  <div className="pf-enterBarSheen" />
+                </div>
+              </div>
             </div>
-          </div>
+          ) : null}
 
-          <div className="perfiljugador-maincard-inner">
-            <header className="perfiljugador-header">
-              <div className="perfiljugador-headergrid">
-                <div className="perfiljugador-headleft">
-                  {rangoKey !== "unrank" && (
-                    <span className="perfiljugador-rankicon-wrap" title={usuario.rango_usuario || "Rango"}>
-                      <img
-                        src={`/assets/rangos/${rangoKey}.webp`}
-                        alt={usuario.rango_usuario || "Rango"}
-                        className="perfiljugador-rankicon"
-                      />
-                    </span>
-                  )}
+          <div className="perfil-wrap">
+            <div className="perfil-topbar">
+              <div className="perfil-topbarLeft">
+                <div className="perfil-breadcrumb">Perfil público</div>
+              </div>
 
-                  <div className="perfiljugador-nameblock">
-                    <div className="perfiljugador-nameline">
-                      <h1 className={`perfiljugador-name ${nombreClaseRango}`.trim()}>{usuario.nombre_minecraft}</h1>
-                      <span className="perfiljugador-star" aria-hidden="true">
-                        ★
-                      </span>
+              <div className="perfil-topbarRight">
+                <button
+                  className="perfil-btn"
+                  onClick={async () => {
+                    try {
+                      await navigator.clipboard.writeText(window.location.href);
+                    } catch {}
+                  }}
+                  type="button"
+                >
+                  Copiar enlace
+                </button>
+                <button className="perfil-btn is-ghost" onClick={() => nav(-1)} type="button">
+                  Volver
+                </button>
+              </div>
+            </div>
+
+            <div className={`perfil-hero ${rankClass}`} style={{ "--hero-bg": `url(${heroBgUrl})` }}>
+              <div className="perfil-heroBg" />
+              <div className="perfil-heroInner">
+                <div className="perfil-skinSlot">
+                  <img
+                    className="perfil-skinBody"
+                    src={skinBody}
+                    alt=""
+                    draggable="false"
+                    referrerPolicy="no-referrer"
+                    onError={(e) => {
+                      if (e.currentTarget.dataset.fallback === "1") return;
+                      e.currentTarget.dataset.fallback = "1";
+                      e.currentTarget.src = `https://mc-heads.net/body/Steve/260`;
+                    }}
+                  />
+                </div>
+
+                <div className="perfil-heroMain">
+                  <div className="perfil-nameRow">
+                    <div className="perfil-nameLine">
+                      <div className="perfil-name">{displayName}</div>
+                      {rankAsset ? <img className="perfil-rankIconInline" src={rankAsset} alt="" draggable="false" /> : null}
                     </div>
+
+                    <div className="perfil-subRow">
+                      {plataformaLabel ? (
+                        <div className={`perfil-platform ${plataforma === "bedrock" ? "is-bedrock" : "is-java"}`}>{plataformaLabel}</div>
+                      ) : null}
+                      {updatedTxt ? (
+                        <div className="perfil-miniMeta">
+                          Actualizado: <span>{updatedTxt}</span>
+                        </div>
+                      ) : null}
+                      {loadingWeb ? <div className="perfil-miniMeta">Cargando cuenta…</div> : null}
+                      {!loadingWeb && !hasWebAccount ? <div className="perfil-miniMeta is-warn">No vinculado</div> : null}
+                    </div>
+                  </div>
+
+                  <div className={`perfil-xpBlock ${hasWebAccount ? "" : "is-disabled"}`}>
+                    <div className="perfil-xpTop">
+                      <div className="perfil-xpTitle">Experiencia</div>
+                      <div className="perfil-xpNums">
+                        <span>{hasWebAccount && webXpActual !== null ? fmtNum(webXpActual) : EMPTY}</span>
+                        <span className="perfil-xpSep">/</span>
+                        <span>{hasWebAccount && xpDelNivelActual !== null ? fmtNum(xpDelNivelActual) : EMPTY}</span>
+                        <span className="perfil-xpUnit">XP</span>
+                      </div>
+                    </div>
+                    <div className="perfil-xpBar" aria-hidden="true">
+                      <div className="perfil-xpFill" style={{ width: `${xpPct}%` }} />
+                    </div>
+                  </div>
+
+                  <div className="perfil-quickRow">
+                    {quickMetrics.map((m) => (
+                      <button key={m.id} type="button" className="perfil-quickCard" title={m.hint || ""}>
+                        {m.icon ? <img className="perfil-quickIcon" src={m.icon} alt="" draggable="false" /> : null}
+                        <div className="perfil-quickText">
+                          <div className="perfil-quickLabel">{m.label}</div>
+                          <div className="perfil-quickValue">{m.value}</div>
+                        </div>
+                      </button>
+                    ))}
                   </div>
                 </div>
 
-                <div className="perfiljugador-headright">
-                  <button className="perfiljugador-topbtn" onClick={() => navigate(-1)}>
-                    Inicio
+                <div className="perfil-heroSide">
+                  <div className="perfil-headCard">
+                    <img
+                      className="perfil-headImg"
+                      src={skinFace}
+                      alt=""
+                      draggable="false"
+                      referrerPolicy="no-referrer"
+                      onError={(e) => {
+                        if (e.currentTarget.dataset.fallback === "1") return;
+                        e.currentTarget.dataset.fallback = "1";
+                        e.currentTarget.src = `https://mc-heads.net/avatar/Steve/160`;
+                      }}
+                    />
+                  </div>
+
+                  <div className="perfil-webLevel">
+                    <div className="perfil-webLevelLabel">Nivel</div>
+                    <div className="perfil-webLevelValue">{hasWebAccount && webNivel !== null ? fmtNum(webNivel) : EMPTY}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="perfil-servers">
+              <div className="perfil-serversHead">
+                <div className="perfil-sectionTitle">Servidores</div>
+                <div className="perfil-sectionSub">Elige uno para ver sus estadísticas completas.</div>
+              </div>
+
+              <div className="perfil-serversGrid">
+                {serversAvailable.map((s) => {
+                  const active = s.key === servidor;
+                  return (
+                    <button
+                      key={s.key}
+                      type="button"
+                      className={`perfil-serverCard ${active ? "is-active" : ""}`}
+                      onClick={() => {
+                        setServidor(s.key);
+                        setAnimKey((v) => v + 1);
+                      }}
+                    >
+                      <div className="perfil-serverArt" style={{ backgroundImage: `url(${s.img})` }} />
+                      <div className="perfil-serverLabel">{s.label}</div>
+                      <div className="perfil-serverGlow" />
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="perfil-detail">
+              <div className="perfil-detailHead">
+                <div className="perfil-sectionTitle">Detalle · {SERVER_META.find((x) => x.key === servidor)?.label || servidor}</div>
+                <div className="perfil-detailMeta">{loading ? "Cargando perfil…" : loadingServer ? "Actualizando servidor…" : error ? error : ""}</div>
+              </div>
+
+              <div className="pf-tabs" role="tablist" aria-label="Categorías">
+                {tabs.map((t) => (
+                  <button
+                    key={t.key}
+                    type="button"
+                    className={`pf-tab ${tab === t.key ? "is-active" : ""}`}
+                    onClick={() => onPickTab(t.key)}
+                    role="tab"
+                    aria-selected={tab === t.key}
+                  >
+                    {t.icon ? <img className="pf-tabIcon" src={ICONS[t.icon]} alt="" draggable="false" /> : null}
+                    <span className="pf-tabTxt">{t.label}</span>
+                    <span className="pf-tabCount">{t.count}</span>
                   </button>
-                </div>
+                ))}
               </div>
 
-              <div className="perfiljugador-xprow">
-                <div className="perfiljugador-xpbar" aria-label="Barra de experiencia">
-                  <div className="perfiljugador-xpfill" style={{ width: `${xpPercent}%` }} />
-                  <div className="perfiljugador-xpshine" aria-hidden="true" />
+              {loading ? (
+                <div className="perfil-skeletonGrid">
+                  {Array.from({ length: 9 }).map((_, i) => (
+                    <div key={i} className="perfil-skeletonTile" />
+                  ))}
                 </div>
-                <span className="perfiljugador-xptext">
-                  {xpActual} / {xpDelNivelActual} XP
-                </span>
-              </div>
-            </header>
-
-            <section className="perfiljugador-featured">
-              <div className="perfiljugador-featured-wrapper">
-                <div className="featured-header">
-                  <span className="featured-kicker">Resumen</span>
-                  <span className="featured-title">Estadísticas destacadas</span>
+              ) : error ? (
+                <div className="perfil-errorBox">
+                  <div className="perfil-errorTitle">No se pudo cargar</div>
+                  <div className="perfil-errorMsg">{error}</div>
                 </div>
+              ) : (
+                <div className="perfil-sections" key={`sec-${servidor}-${tab}-${animKey}`}>
+                  {shownSections.map((sec) => (
+                    <div key={sec.key} className="perfil-section">
+                      <div className="perfil-sectionHeader">
+                        <div className="perfil-sectionTitle2">{sec.title}</div>
+                      </div>
 
-                <div className="featured-grid">
-                  {featuredStats.map((stat, idx) => (
-                    <div key={idx} className="featured-card">
-                      <span className="featured-value">{stat.value}</span>
-                      <span className="featured-label">{stat.label}</span>
+                      <div className="perfil-tiles">
+                        {sec.tiles.map((t, idx) => (
+                          <button key={t.id} type="button" className="perfil-tile pf-tileIn" style={{ "--i": idx }} title={t.hint || ""}>
+                            {t.icon ? <img className="perfil-tileIcon" src={t.icon} alt="" draggable="false" /> : null}
+                            <div className="perfil-tileBody">
+                              <div className="perfil-tileLabel">{t.label}</div>
+                              <div className="perfil-tileValue">{t.value}</div>
+                            </div>
+                            <div className="perfil-tileSheen" />
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   ))}
                 </div>
-              </div>
-            </section>
+              )}
+            </div>
 
-            <hr className="perfiljugador-divider" />
+            {gensValorInfo ? null : null}
 
-            <section className="perfiljugador-columns">
-              <div className="perfiljugador-col perfiljugador-col--activity">
-                <div className="panel-header">
-                  <h2>Estadísticas por servidor</h2>
-                </div>
-
-                {!sinEstadisticas && servidoresDisponibles.length > 0 && (
-                  <div className="server-selector">
-                    {servidoresDisponibles.map((s) => {
-                      const info = getServerInfo(s);
-                      if (!info) return null;
-                      const isActive = servidorActivo === s;
-
-                      return (
-                        <button
-                          key={s}
-                          type="button"
-                          className={`server-tab ${isActive ? "server-tab--active" : ""}`}
-                          onClick={() => setServidorActivo(s)}
-                        >
-                          {info.icon && (
-                            <span className="server-tab-icon">
-                              <img src={info.icon} alt={info.label} />
-                            </span>
-                          )}
-                          <span className="server-tab-label">{info.label}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {sinEstadisticas ? (
-                  <div className="panel-empty">
-                    <p>Este jugador está vinculado, pero todavía no tiene estadísticas registradas.</p>
-                  </div>
-                ) : statsActuales ? (
-                  <div className="stats-grid">
-                    {Object.entries(etiquetas).map(([clave, label]) => (
-                      <article key={clave} className={`stat-card stat-card--${clave}`}>
-                        {statIcons[clave] && (
-                          <div className="stat-icon-inline">
-                            <img src={statIcons[clave]} alt={label} />
-                          </div>
-                        )}
-
-                        <div className="stat-text">
-                          <span className="stat-label">{label}</span>
-                          <span className="stat-value">
-                            {clave === "tiempo_jugado"
-                              ? formatearTiempo(statsActuales[clave])
-                              : (statsActuales[clave] || 0).toLocaleString("es-ES")}
-                          </span>
-                        </div>
-                      </article>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="panel-empty">
-                    <p>Sin estadísticas registradas en este servidor.</p>
-                  </div>
-                )}
-              </div>
-
-              <div className="perfiljugador-col perfiljugador-col--sanctions">
-                <div className="panel-header panel-header--san">
-                  <h2>Sanciones</h2>
-                  <span className="panel-subcount">{sancionesOrdenadas.length} registro(s)</span>
-
-                  <div className="panel-header-icon panel-header-icon--sanciones">
-                    <img src="/assets/statsperfil/sanciones.webp" alt="Sanciones" />
-                  </div>
-                </div>
-
-                {sancionesOrdenadas.length === 0 ? (
-                  <p className="panel-empty panel-empty--text">Este jugador no tiene sanciones registradas.</p>
-                ) : (
-                  <>
-                    <ul className="sanciones-list">
-                      {sancionesPagina.map((s, i) => (
-                        <li key={`${s?.id || "san"}-${i}`} className="sancion-item">
-                          <div className="sancion-line">
-                            <span className="sancion-label">Razón</span>
-                            <span className="sancion-value">{s.razon || "No especificada"}</span>
-                          </div>
-                          <div className="sancion-line">
-                            <span className="sancion-label">Fecha</span>
-                            <span className="sancion-value">
-                              {s.fecha ? new Date(s.fecha).toLocaleDateString("es-ES") : "—"}
-                            </span>
-                          </div>
-                          <div className="sancion-line">
-                            <span className="sancion-label">Staff</span>
-                            <span className="sancion-value">{s.staff || "Desconocido"}</span>
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-
-                    {sanTotalPages > 1 && (
-                      <div className="san-pager">
-                        <button
-                          className="san-btn"
-                          onClick={() => setSanPage((p) => Math.max(1, p - 1))}
-                          disabled={sanPageSafe === 1}
-                        >
-                          Anterior
-                        </button>
-
-                        <div className="san-pages">
-                          {Array.from({ length: sanTotalPages }).slice(0, 7).map((_, idx) => {
-                            const p = idx + 1;
-                            const active = p === sanPageSafe;
-                            return (
-                              <button
-                                key={p}
-                                className={`san-page ${active ? "san-page--active" : ""}`}
-                                onClick={() => setSanPage(p)}
-                              >
-                                {p}
-                              </button>
-                            );
-                          })}
-                          {sanTotalPages > 7 && <span className="san-ellipsis">…</span>}
-                        </div>
-
-                        <button
-                          className="san-btn"
-                          onClick={() => setSanPage((p) => Math.min(sanTotalPages, p + 1))}
-                          disabled={sanPageSafe === sanTotalPages}
-                        >
-                          Siguiente
-                        </button>
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
-            </section>
-
-            <div className="perfiljugador-actions">
-              <button className="btn-volver" onClick={() => navigate(-1)}>
-                Volver
-              </button>
+            <div className="perfil-footNote">
+              <span>{isMobile ? "" : ""}</span>
             </div>
           </div>
         </div>

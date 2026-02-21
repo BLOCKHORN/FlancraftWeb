@@ -2,12 +2,9 @@
 
 const crypto = require("crypto");
 
-/** ========= Config de entorno ========= **/
 const CACHE_TTL = Number(process.env.TEBEX_CACHE_TTL || 300);
-const ONLY_VISIBLE =
-  String(process.env.TEBEX_ONLY_VISIBLE || "true").toLowerCase() !== "false";
-const APPLY_SALES =
-  String(process.env.TEBEX_APPLY_SALES || "false").toLowerCase() === "true";
+const ONLY_VISIBLE = String(process.env.TEBEX_ONLY_VISIBLE || "true").toLowerCase() !== "false";
+const APPLY_SALES = String(process.env.TEBEX_APPLY_SALES || "false").toLowerCase() === "true";
 
 const WEBSTORE_TOKEN =
   process.env.TEBEX_WEBSTORE_TOKEN ||
@@ -15,20 +12,15 @@ const WEBSTORE_TOKEN =
   process.env.TEBEX_WEBSTORE_IDENTIFIER ||
   "";
 
-const TEBEX_CURRENCY = (process.env.TEBEX_CURRENCY || "EUR")
-  .toUpperCase()
-  .trim();
-
+const TEBEX_CURRENCY = String(process.env.TEBEX_CURRENCY || "EUR").toUpperCase().trim();
 const WEBHOOK_SECRET = String(process.env.TEBEX_WEBHOOK_SECRET || "").trim();
 
 const DEBUG_TEBEX =
   String(process.env.DEBUG_TEBEX || "").toLowerCase() === "true" ||
   String(process.env.DEBUG_TEBEX || "") === "1";
 
-const STORE_SECRET =
-  process.env.TEBEX_STORE_SECRET || process.env.TEBEX_STORE_PRIVATE_KEY || "";
+const STORE_SECRET = process.env.TEBEX_STORE_SECRET || process.env.TEBEX_STORE_PRIVATE_KEY || "";
 
-/** ========= Helpers genéricos ========= **/
 const nowSec = () => Math.floor(Date.now() / 1000);
 const isExpired = (c) => !c || !c.cacheAt || nowSec() - c.cacheAt >= CACHE_TTL;
 
@@ -53,20 +45,17 @@ function cleanSecret(raw) {
 }
 
 function truthy(v) {
-  return (
-    v === true ||
-    v === 1 ||
-    v === "1" ||
-    String(v).toLowerCase() === "true"
-  );
+  return v === true || v === 1 || v === "1" || String(v).toLowerCase() === "true";
 }
 
 function sha256Hex(buf) {
   return crypto.createHash("sha256").update(buf).digest("hex");
 }
+
 function hmacSha256Hex(secret, data) {
   return crypto.createHmac("sha256", secret).update(data).digest("hex");
 }
+
 function timingSafeEqualHex(a, b) {
   try {
     const ba = Buffer.from(String(a || ""), "hex");
@@ -79,23 +68,14 @@ function timingSafeEqualHex(a, b) {
 }
 
 function getClientIPv4(req) {
-  const xf = String(req.headers["x-forwarded-for"] || "")
-    .split(",")[0]
-    .trim();
-
+  const xf = String(req.headers["x-forwarded-for"] || "").split(",")[0].trim();
   const raw = xf || req.socket?.remoteAddress || "";
   const m = raw.match(/(\d{1,3}\.){3}\d{1,3}/);
   return m ? m[0] : null;
 }
 
-/** ========= Servidores soportados ========= **/
 const SERVERS = ["oneblock", "gens"];
 
-/**
- * Aliases para no romper el frontend antiguo:
- * - antes tenías lobby/clasico → ahora ya no existen en Tebex
- * - lo más razonable es que todo lo “global/portada” viva en GENS (rangs, coins, etc.)
- */
 const SERVER_ALIASES = {
   lobby: "gens",
   clasico: "gens",
@@ -103,7 +83,6 @@ const SERVER_ALIASES = {
 
 const VALID_SERVERS = new Set([...SERVERS, ...Object.keys(SERVER_ALIASES)]);
 
-/** ========= Claves de servidor ========= **/
 function loadServerKeys() {
   const fromJson = safeParseJSON(process.env.TEBEX_SECRETS_JSON);
 
@@ -125,30 +104,16 @@ function loadServerKeys() {
 
 const SERVER_KEYS = loadServerKeys();
 
-/**
- * ✅ FIX CRÍTICO (y además con alias):
- * - prioriza query sv/server
- * - si te llega lobby/clasico, lo mapea a gens
- * - si llega algo raro, default oneblock (o cambia a gens si prefieres)
- */
 function getServerKey(req) {
-  const q = String(req.query?.sv || req.query?.server || "")
-    .toLowerCase()
-    .trim();
-
+  const q = String(req.query?.sv || req.query?.server || "").toLowerCase().trim();
   const p = String(req.params?.server || "").toLowerCase().trim();
-
   const raw = q || p;
 
-  if (VALID_SERVERS.has(raw)) {
-    return SERVER_ALIASES[raw] || raw;
-  }
+  if (VALID_SERVERS.has(raw)) return SERVER_ALIASES[raw] || raw;
 
-  // default seguro
-  return "oneblock";
+  return "gens";
 }
 
-/** ========= Cachés ========= **/
 const cache = {
   oneblock: { categorias: [], paquetes: [], cacheAt: 0 },
   gens: { categorias: [], paquetes: [], cacheAt: 0 },
@@ -167,12 +132,10 @@ const headlessCache = {
   sidebarRaw: { data: null, cacheAt: 0 },
 };
 
-/** ========= Normalización paquetes + visibilidad ========= **/
 function normalizarPaquetes(json) {
   if (Array.isArray(json)) return json;
   if (json && Array.isArray(json.packages)) return json.packages;
-  if (json && json.data && Array.isArray(json.data.packages))
-    return json.data.packages;
+  if (json && json.data && Array.isArray(json.data.packages)) return json.data.packages;
   if (json && typeof json === "object") {
     const vals = Object.values(json);
     if (vals.length && vals.every((v) => typeof v === "object")) return vals;
@@ -181,40 +144,21 @@ function normalizarPaquetes(json) {
 }
 
 function isHiddenOrDisabled(pkg) {
-  const pkgFlags = [
-    pkg?.hidden,
-    pkg?.disabled,
-    pkg?.archived,
-    pkg?.deleted,
-    pkg?.gui_disabled,
-  ];
+  const pkgFlags = [pkg?.hidden, pkg?.disabled, pkg?.archived, pkg?.deleted, pkg?.gui_disabled];
 
-  if (
-    pkg?.status &&
-    ["hidden", "disabled", "archived", "deleted"].includes(
-      String(pkg.status).toLowerCase()
-    )
-  )
-    return true;
+  if (pkg?.status && ["hidden", "disabled", "archived", "deleted"].includes(String(pkg.status).toLowerCase())) return true;
   if (pkgFlags.some(truthy)) return true;
 
   const cat = pkg?.category || pkg?.categories?.[0] || {};
   const catFlags = [cat?.hidden, cat?.disabled, cat?.archived, cat?.deleted];
 
-  if (
-    cat?.status &&
-    ["hidden", "disabled", "archived", "deleted"].includes(
-      String(cat.status).toLowerCase()
-    )
-  )
-    return true;
+  if (cat?.status && ["hidden", "disabled", "archived", "deleted"].includes(String(cat.status).toLowerCase())) return true;
   if (catFlags.some(truthy)) return true;
 
   if (pkg?.price === null || typeof pkg?.name !== "string") return true;
   return false;
 }
 
-/** ========= Tebex plugin API ========= **/
 async function tebexFetchPlugin(secret, path) {
   const url = `https://plugin.tebex.io/${path}`;
   const res = await fetch(url, {
@@ -230,10 +174,10 @@ async function tebexFetchPlugin(secret, path) {
     err.status = res.status;
     throw err;
   }
+
   return res.json();
 }
 
-/** ========= Headless (sidebar y utils) ========= **/
 async function tebexFetchHeadless(path, init = {}) {
   if (!WEBSTORE_TOKEN) throw new Error("Falta TEBEX_WEBSTORE_TOKEN (Headless API).");
   const url = `https://headless.tebex.io/api/accounts/${WEBSTORE_TOKEN}/${path}`;
@@ -253,6 +197,7 @@ async function tebexFetchHeadless(path, init = {}) {
     err.status = res.status;
     throw err;
   }
+
   return res.json();
 }
 
@@ -266,30 +211,20 @@ async function getSidebarModulesCached(force = false) {
 }
 
 function sidebarArray(sidebar) {
-  return Array.isArray(sidebar?.data)
-    ? sidebar.data
-    : Array.isArray(sidebar)
-    ? sidebar
-    : [];
+  return Array.isArray(sidebar?.data) ? sidebar.data : Array.isArray(sidebar) ? sidebar : [];
 }
 
-/** ========= Top Donator / Recent payments ========= **/
 function pickTopCustomerModule(sidebar) {
   const arr = sidebarArray(sidebar);
   if (!arr.length) return null;
-  return (
-    arr.find((m) => String(m?.type || "").toLowerCase() === "top_customer") ||
-    null
-  );
+  return arr.find((m) => String(m?.type || "").toLowerCase() === "top_customer") || null;
 }
 
 function pickPaymentsModule(sidebar) {
   const arr = sidebarArray(sidebar);
   if (!arr.length) return null;
 
-  const byType = arr.find(
-    (m) => String(m?.type || "").toLowerCase() === "recent_payments"
-  );
+  const byType = arr.find((m) => String(m?.type || "").toLowerCase() === "recent_payments");
   if (byType) return byType;
 
   return arr.find((m) => Array.isArray(m?.data?.payments)) || null;
@@ -306,11 +241,8 @@ function parseNumberFromString(str) {
   const lastDot = c.lastIndexOf(".");
 
   if (lastComma > -1 && lastDot > -1) {
-    if (lastComma > lastDot) {
-      c = c.replace(/\./g, "").replace(",", ".");
-    } else {
-      c = c.replace(/,/g, "");
-    }
+    if (lastComma > lastDot) c = c.replace(/\./g, "").replace(",", ".");
+    else c = c.replace(/,/g, "");
   } else if (lastComma > -1 && lastDot === -1) {
     c = c.replace(",", ".");
   }
@@ -367,7 +299,6 @@ function normalizeTopDonatorFromModule(module) {
   };
 }
 
-/** ========= Sales (sin cambios funcionales) ========= **/
 function normalizarSales(json) {
   const arr = Array.isArray(json?.data)
     ? json.data
@@ -442,27 +373,28 @@ async function getBestSaleGlobal() {
     const candidate = { ...s, server: sv };
     if (!best) best = candidate;
     else if (candidate.percentage > best.percentage) best = candidate;
-    else if (candidate.percentage === best.percentage && candidate.expire < best.expire)
-      best = candidate;
+    else if (candidate.percentage === best.percentage && candidate.expire < best.expire) best = candidate;
   }
 
   salesCache.all = { sale: best, cacheAt: nowSec() };
   return best;
 }
 
-/** ========= Sales → aplicar a paquetes ========= **/
 function toNum(v, fallback = NaN) {
   const n = typeof v === "string" ? Number.parseFloat(v) : Number(v);
   return Number.isFinite(n) ? n : fallback;
 }
+
 function round2(n) {
   return Math.round(n * 100) / 100;
 }
+
 function getPkgId(p) {
   const id = p?.id ?? p?.package_id ?? p?.packageId;
   const n = toNum(id, NaN);
   return Number.isFinite(n) ? n : null;
 }
+
 function getPkgCategoryId(p) {
   const cid =
     p?.category?.id ??
@@ -493,7 +425,6 @@ function normalizeSalesForApply(salesJson) {
       const expire = toNum(s?.expire ?? 0, 0);
 
       const effectiveType = String(s?.effective?.type || "").toLowerCase().trim();
-
       const packages = Array.isArray(s?.effective?.packages) ? s.effective.packages : [];
       const categories = Array.isArray(s?.effective?.categories) ? s.effective.categories : [];
 
@@ -553,10 +484,7 @@ function applySalesToPackages(paquetes = [], salesJson) {
     if (!Number.isFinite(currentPrice) || currentPrice <= 0) return p;
 
     const existingOriginal = toNum(p?.original_price ?? p?.precio_original, NaN);
-    const original =
-      Number.isFinite(existingOriginal) && existingOriginal > 0
-        ? existingOriginal
-        : currentPrice;
+    const original = Number.isFinite(existingOriginal) && existingOriginal > 0 ? existingOriginal : currentPrice;
 
     const discounted = round2(original * (1 - pct / 100));
 
@@ -571,7 +499,6 @@ function applySalesToPackages(paquetes = [], salesJson) {
   });
 }
 
-/** ========= Carga/actualización de cache ========= **/
 async function actualizarCacheDe(server) {
   const secret = SERVER_KEYS[server];
   if (!secret) throw new Error(`Falta PLUGIN secret para servidor '${server}'.`);
@@ -584,10 +511,7 @@ async function actualizarCacheDe(server) {
       const salesJson = await tebexFetchPlugin(secret, "sales");
       paquetes = applySalesToPackages(paquetes, salesJson);
     } catch (e) {
-      console.warn(
-        `[TEBEX sales] No se pudieron aplicar rebajas para [${server}]:`,
-        e?.message || e
-      );
+      console.warn(`[TEBEX sales] No se pudieron aplicar rebajas para [${server}]:`, e?.message || e);
     }
   }
 
@@ -600,9 +524,7 @@ async function actualizarCacheDe(server) {
     const cat = p?.category || p?.categories?.[0];
     const id = cat?.id ?? cat?.category_id ?? p?.category_id;
     const name = cat?.name ?? cat?.category_name ?? p?.category_name;
-    if (id && !categoriasMap.has(id)) {
-      categoriasMap.set(id, { id, name: name || `Categoría ${id}` });
-    }
+    if (id && !categoriasMap.has(id)) categoriasMap.set(id, { id, name: name || `Categoría ${id}` });
   }
 
   cache[server] = {
@@ -611,12 +533,9 @@ async function actualizarCacheDe(server) {
     cacheAt: nowSec(),
   };
 
-  console.log(
-    `[${server}] cache: ${paquetes.length} paquetes visibles, ${categoriasMap.size} categorias (TTL ${CACHE_TTL}s).`
-  );
+  console.log(`[${server}] cache: ${paquetes.length} paquetes visibles, ${categoriasMap.size} categorias (TTL ${CACHE_TTL}s).`);
 }
 
-/** ========= Headless Basic Auth ========= **/
 function getHeadlessBasic() {
   const HEADLESS_PUBLIC = String(process.env.TEBEX_HEADLESS_PUBLIC_TOKEN || "").trim();
   const HEADLESS_PRIVATE = String(process.env.TEBEX_HEADLESS_PRIVATE_KEY || "").trim();
@@ -627,9 +546,7 @@ function getHeadlessBasic() {
       : "";
 
   if (!BASIC) {
-    const err = new Error(
-      "Faltan credenciales Headless Basic Auth (TEBEX_HEADLESS_PUBLIC_TOKEN / TEBEX_HEADLESS_PRIVATE_KEY)."
-    );
+    const err = new Error("Faltan credenciales Headless Basic Auth (TEBEX_HEADLESS_PUBLIC_TOKEN / TEBEX_HEADLESS_PRIVATE_KEY).");
     err.status = 500;
     throw err;
   }
@@ -678,7 +595,6 @@ async function headlessFetchJson({ rid, url, method = "GET", body = null }) {
   }
 }
 
-/** ========= Precarga inicial best-effort ========= **/
 (async () => {
   for (const sv of SERVERS) {
     try {
@@ -689,7 +605,6 @@ async function headlessFetchJson({ rid, url, method = "GET", body = null }) {
   }
 })();
 
-/** ========= Exports ========= **/
 module.exports = {
   CACHE_TTL,
   ONLY_VISIBLE,
@@ -698,12 +613,10 @@ module.exports = {
   TEBEX_CURRENCY,
   WEBHOOK_SECRET,
   STORE_SECRET,
-
   SERVER_KEYS,
   cache,
   salesCache,
   headlessCache,
-
   nowSec,
   isExpired,
   tlog,
@@ -711,27 +624,19 @@ module.exports = {
   sha256Hex,
   hmacSha256Hex,
   timingSafeEqualHex,
-
   getServerKey,
-  normalizarPaquetes,
   isHiddenOrDisabled,
   tebexFetchPlugin,
   actualizarCacheDe,
-
-  // headless + sidebar
   tebexFetchHeadless,
   getSidebarModulesCached,
   sidebarArray,
   pickTopCustomerModule,
   pickPaymentsModule,
   normalizeTopDonatorFromModule,
-
-  // sales
   getBestSaleForServer,
   getBestSaleGlobal,
   applySalesToPackages,
-
-  // headless generic
   getHeadlessBasic,
   headlessFetchJson,
 };

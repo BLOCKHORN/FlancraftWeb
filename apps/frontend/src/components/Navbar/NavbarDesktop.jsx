@@ -1,75 +1,10 @@
-import { NavLink, Link, useLocation } from "react-router-dom";
-import LogoutButton from "../Auth/LogoutButton";
-import { useEffect, useRef, useState, useMemo } from "react";
+import { NavLink, Link, useLocation, useNavigate } from "react-router-dom";
+import { useEffect, useRef, useState, useMemo, useContext, useLayoutEffect, useCallback } from "react";
+import { UserContext } from "../../context/UserContext";
 import "../../styles/components/Navbar/navbarDesktop.scss";
 
-const NavIcon = ({ src, alt, size = 24, className = "" }) => {
-  return (
-    <img
-      className={`nav-icon-img ${className}`}
-      src={src}
-      alt={alt}
-      width={size}
-      height={size}
-      draggable="false"
-      loading="eager"
-    />
-  );
-};
-
-const API_BASE =
-  import.meta.env.VITE_BACKEND_URL || "https://flancraft-backend.onrender.com";
-
-const navCls = (base) => (navData) => {
-  const isActive = !!(navData?.isActive ?? navData?.match);
-  return `nav-item ${base}${isActive ? " active" : ""}`;
-};
-
-const WoWQuestQuestionMark = ({ className = "" }) => {
-  return (
-    <span className={`quest-qm ${className}`} aria-hidden="true">
-      <svg viewBox="0 0 24 24" role="img" aria-hidden="true">
-        <defs>
-          <linearGradient id="qmGoldA" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stopColor="#fff6c6" />
-            <stop offset="0.4" stopColor="#ffd166" />
-            <stop offset="0.75" stopColor="#f2a01a" />
-            <stop offset="1" stopColor="#a85f0c" />
-          </linearGradient>
-          <radialGradient id="qmGoldB" cx="30%" cy="20%" r="70%">
-            <stop offset="0" stopColor="rgba(255,255,255,0.75)" />
-            <stop offset="0.55" stopColor="rgba(255,255,255,0.0)" />
-            <stop offset="1" stopColor="rgba(0,0,0,0.0)" />
-          </radialGradient>
-        </defs>
-
-        <path
-          d="M12 2.2c-3.7 0-6.6 2.1-6.6 5.3 0 1.8.9 3.1 2.2 4 0 0 .9.6 2.2 1 1 .3 1.4.8 1.4 1.7v1.2h2.8v-1.4c0-2.1-1.2-3-2.6-3.5-.5-.2-1-.4-1.3-.6-.7-.4-1.1-.9-1.1-1.7 0-1.4 1.5-2.6 3.4-2.6 1.8 0 3.1.9 3.1 2.3 0 .6-.2 1.1-.7 1.6-.4.4-1 .7-1.7 1.1-.9.5-1.6.9-2 1.5-.4.6-.6 1.2-.6 2.4v.8h2.8v-.4c0-.9.1-1.2.3-1.4.3-.2.8-.5 1.4-.8.8-.4 1.6-.9 2.3-1.6 1-1 1.5-2.2 1.5-3.7 0-3-2.7-5.2-6.5-5.2z"
-          fill="url(#qmGoldA)"
-          stroke="#1a0d07"
-          strokeWidth="1.35"
-          strokeLinejoin="round"
-        />
-        <path
-          d="M12 2.2c-3.7 0-6.6 2.1-6.6 5.3 0 1.8.9 3.1 2.2 4"
-          fill="none"
-          stroke="url(#qmGoldB)"
-          strokeWidth="2"
-          strokeLinecap="round"
-          opacity="0.9"
-        />
-        <circle
-          cx="12"
-          cy="20"
-          r="1.7"
-          fill="url(#qmGoldA)"
-          stroke="#1a0d07"
-          strokeWidth="1.25"
-        />
-      </svg>
-    </span>
-  );
-};
+const API_BASE = (import.meta.env.VITE_BACKEND_URL || "").trim().replace(/\/$/, "");
+const apiUrl = (path) => (API_BASE ? `${API_BASE}${path}` : path);
 
 const toInt = (v) => {
   const n = Number(v);
@@ -81,34 +16,124 @@ const formatInt = (n) => {
   return new Intl.NumberFormat("es-ES", { maximumFractionDigits: 0 }).format(v);
 };
 
+const normalizePath = (p) => {
+  const raw = String(p || "");
+  if (raw === "/") return "/";
+  return raw.replace(/\/+$/, "");
+};
+
+const getActiveKeyFromPath = (pathname, navItems) => {
+  const p = normalizePath(pathname);
+  let best = null;
+  let bestLen = -1;
+
+  for (const it of navItems || []) {
+    const to = normalizePath(it?.to);
+    if (!to) continue;
+
+    const match = to === "/" ? p === "/" : p === to || p.startsWith(to + "/") || p.startsWith(to);
+
+    if (match && to.length > bestLen) {
+      best = it.key;
+      bestLen = to.length;
+    }
+  }
+
+  return best;
+};
+
 const NavbarDesktop = ({
   isLoggedIn,
   isUserLoading,
   userData,
-  activeDropdown,
-  handleDropdownHover,
-  handleDropdownLeave,
   profileOpen,
   setProfileOpen,
   onLoginClick,
   handleProfileEnter,
   handleProfileLeave,
+  navItems,
 }) => {
+  const { setUser } = useContext(UserContext);
+  const navigate = useNavigate();
+
   const [rangoDatos, setRangoDatos] = useState(null);
-  const [xpNavbar, setXpNavbar] = useState({
-    level: null,
-    actual: 0,
-    requerida: 1,
-  });
+  const [xpNavbar, setXpNavbar] = useState({ level: null, actual: 0, requerida: 1 });
 
   const [hasClaimables, setHasClaimables] = useState(false);
   const [claimablesCount, setClaimablesCount] = useState(0);
 
-  const triggerRef = useRef();
-  const dropdownRef = useRef();
+  const triggerRef = useRef(null);
+  const dropdownRef = useRef(null);
 
   const location = useLocation();
   const isHome = location.pathname === "/";
+
+  const rootRef = useRef(null);
+  const linksWrapRef = useRef(null);
+  const linkRefs = useRef(new Map());
+
+  const [ink, setInk] = useState({ x: 0, w: 0, o: 0 });
+
+  const activeKey = useMemo(
+    () => getActiveKeyFromPath(location.pathname, navItems),
+    [location.pathname, navItems]
+  );
+
+  const measureAndSetInk = useCallback((key, forceVisible = true) => {
+    const root = rootRef.current;
+    const el = linkRefs.current.get(key);
+
+    if (!root || !el) {
+      setInk((s) => ({ ...s, o: 0 }));
+      return;
+    }
+
+    const rootRect = root.getBoundingClientRect();
+    const elRect = el.getBoundingClientRect();
+
+    const x = Math.round(elRect.left - rootRect.left);
+    const w = Math.round(elRect.width);
+
+    setInk({ x, w, o: forceVisible ? 1 : 0 });
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!activeKey) {
+      setInk((s) => ({ ...s, o: 0 }));
+      return;
+    }
+    requestAnimationFrame(() => measureAndSetInk(activeKey, true));
+  }, [activeKey, measureAndSetInk]);
+
+  useEffect(() => {
+    const root = rootRef.current;
+    const wrap = linksWrapRef.current;
+    if (!root || !wrap) return;
+
+    let ro = null;
+
+    const onResize = () => {
+      if (!activeKey) return;
+      measureAndSetInk(activeKey, true);
+    };
+
+    if ("ResizeObserver" in window) {
+      ro = new ResizeObserver(() => onResize());
+      ro.observe(root);
+      ro.observe(wrap);
+    }
+
+    window.addEventListener("resize", onResize);
+    return () => {
+      window.removeEventListener("resize", onResize);
+      if (ro) ro.disconnect();
+    };
+  }, [activeKey, measureAndSetInk]);
+
+  const handleLinksLeave = useCallback(() => {
+    if (activeKey) measureAndSetInk(activeKey, true);
+    else setInk((s) => ({ ...s, o: 0 }));
+  }, [activeKey, measureAndSetInk]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -132,8 +157,8 @@ const NavbarDesktop = ({
 
       try {
         const [usuarioRes, xpRes] = await Promise.all([
-          fetch(`${API_BASE}/api/usuarios/${userData.uuid}`),
-          fetch(`${API_BASE}/api/usuarios/${userData.uuid}/xp`),
+          fetch(apiUrl(`/api/usuarios/${userData.uuid}`)),
+          fetch(apiUrl(`/api/usuarios/${userData.uuid}/xp`)),
         ]);
 
         if (!usuarioRes.ok || !xpRes.ok) throw new Error("Bad response");
@@ -176,17 +201,12 @@ const NavbarDesktop = ({
         const params = new URLSearchParams();
         params.append("tipo_mision", "permanente");
 
-        const res = await fetch(
-          `${API_BASE}/api/logros/${userData.uuid}?${params.toString()}`
-        );
+        const res = await fetch(apiUrl(`/api/logros/${userData.uuid}?${params}`));
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
         const data = await res.json();
         const lista = Array.isArray(data) ? data : [];
-
-        const pendientes = lista.filter(
-          (l) => l && l.completado === true && l.reclamado !== true
-        );
+        const pendientes = lista.filter((l) => l?.completado === true && l?.reclamado !== true);
 
         if (!cancelled) {
           setClaimablesCount(pendientes.length);
@@ -210,249 +230,200 @@ const NavbarDesktop = ({
     };
   }, [isLoggedIn, userData?.uuid]);
 
-  const getRangoColorClass = () => {
-    if (!isLoggedIn || !userData?.uuid) return "";
+  const toneClass = useMemo(() => {
     const raw = rangoDatos?.rango;
-    if (!raw) return "rango-basico";
-    return `rango-${raw}`;
-  };
+    if (!raw) return "tone--basic";
+    if (raw === "nova") return "tone--nova";
+    if (raw === "alpha") return "tone--alpha";
+    if (raw === "inmortal") return "tone--inmortal";
+    return "tone--basic";
+  }, [rangoDatos?.rango]);
 
-  const rangoBadgeSrc = rangoDatos?.rango
-    ? `/assets/rangos/${rangoDatos.rango}.webp`
-    : null;
-
+  const rangoBadgeSrc = rangoDatos?.rango ? `/assets/rangos/${rangoDatos.rango}.webp` : null;
   const premiumBadgeSrc = rangoDatos?.premium ? `/assets/premium.webp` : null;
 
   const xpActualNavbar = xpNavbar.actual ?? 0;
   const xpRequeridaNavbar = xpNavbar.requerida || 1;
-  const xpPercent =
-    xpRequeridaNavbar > 0
-      ? Math.min(100, (xpActualNavbar / xpRequeridaNavbar) * 100)
-      : 0;
+  const xpPercent = xpRequeridaNavbar > 0 ? Math.min(100, (xpActualNavbar / xpRequeridaNavbar) * 100) : 0;
 
-  const nivelNavbar =
-    xpNavbar.level != null ? xpNavbar.level : userData?.userLevel ?? 1;
+  const nivelNavbar = xpNavbar.level != null ? xpNavbar.level : userData?.userLevel ?? 1;
+  const walletCoins = useMemo(() => formatInt(userData?.walletCoins ?? 0), [userData?.walletCoins]);
 
-  // ✅ SALDO A MOSTRAR: WALLET (lo que viene por props)
-  const walletCoins = useMemo(() => formatInt(userData?.coins ?? 0), [userData?.coins]);
+  const handleLogout = () => {
+    localStorage.removeItem("flan_user");
+    localStorage.removeItem("rol_admin");
+    localStorage.removeItem("token");
+    setUser(null);
+    navigate("/");
+    window.location.reload();
+  };
+
+  const walletTip =
+    "Las Wallet Coins se consiguen con el daily, el voto y los logros. Puedes enviarlas al servidor que quieras, en la cantidad que elijas.";
 
   return (
-    <div className="navbar-content desktop-only">
-      <div className="nav-left">
-        <Link to="/" className="logo">
+    <div className="fcbar fcbar--desktop" ref={rootRef}>
+      <span
+        className={`fcnav__ink ${ink.o ? "is-on" : ""}`}
+        style={{
+          width: `${ink.w}px`,
+          transform: `translate3d(${ink.x}px,0,0)`,
+          opacity: ink.o,
+        }}
+        aria-hidden="true"
+      />
+
+      <div className="fcbar__left">
+        <Link to="/" className="fcbar__logo" aria-label="Ir al inicio">
           <img
             src="/assets/logonav.webp"
-            alt="Flancraft logo"
-            className={`logo-img ${isHome ? "logo-activo" : ""}`}
+            alt="Flancraft"
+            className={`fcbar__logoImg ${isHome ? "is-home" : ""}`}
             draggable="false"
           />
         </Link>
       </div>
 
-      <div className="nav-center">
-        <NavLink to="/" className={navCls("nav-home")}>
-          <NavIcon src="/botones/home.svg" alt="Inicio" />
-          <span className="nav-label">Inicio</span>
-        </NavLink>
-
-        <NavLink to="/news" className={navCls("nav-news")}>
-          <NavIcon src="/botones/noticias.svg" alt="Noticias" />
-          <span className="nav-label">Noticias</span>
-        </NavLink>
-
-        <NavLink to="/leaderboards" className={navCls("nav-stats")}>
-          <NavIcon src="/botones/estadisticas.svg" alt="Estadísticas" />
-          <span className="nav-label">Rankings</span>
-        </NavLink>
-
-        <NavLink to="/tienda" className={navCls("nav-store")}>
-          <NavIcon src="/botones/tienda.svg" alt="Tienda" />
-          <span className="nav-label">Tienda</span>
-        </NavLink>
-
-        <NavLink to="/rangos" className={navCls("nav-ranks")}>
-          <NavIcon src="/botones/rangos.svg" alt="Rangos" />
-          <span className="nav-label">Rangos</span>
-        </NavLink>
-
-        <NavLink to="/tribunal" className={navCls("nav-tribunal")}>
-          <NavIcon src="/botones/tribunal.svg" alt="Tribunal" />
-          <span className="nav-label">Tribunal</span>
-        </NavLink>
+      <div className="fcbar__middle" aria-label="Navegación principal">
+        <div className="fcbar__links" ref={linksWrapRef} onMouseLeave={handleLinksLeave}>
+          {navItems?.map((it) => (
+            <NavLink
+              key={it.key}
+              to={it.to}
+              ref={(el) => {
+                if (el) linkRefs.current.set(it.key, el);
+                else linkRefs.current.delete(it.key);
+              }}
+              onMouseEnter={() => measureAndSetInk(it.key, true)}
+              onFocus={() => measureAndSetInk(it.key, true)}
+              className={({ isActive }) =>
+                `fcbar__link fcbar__link--${it.key} ${isActive ? "is-active" : ""}`
+              }
+            >
+              {it.label}
+            </NavLink>
+          ))}
+        </div>
       </div>
 
-      <div className="nav-right">
+      <div className="fcbar__right">
         {!isLoggedIn ? (
-          <button className="login-button" onClick={onLoginClick}>
+          <button className="fcbar__cta" onClick={onLoginClick}>
             Iniciar sesión
           </button>
         ) : isUserLoading ? (
-          <div className="user-box user-loading">
-            <span className="username-saludo">Cargando perfil...</span>
+          <div className="fcacct fcacct--loading">
+            <span className="fcacct__loadingTxt">Cargando…</span>
           </div>
         ) : (
-          <div
-            className="user-box"
-            onMouseEnter={handleProfileEnter}
-            onMouseLeave={handleProfileLeave}
-          >
+          <div className="fcacct" onMouseEnter={handleProfileEnter} onMouseLeave={handleProfileLeave}>
             <button
               type="button"
-              className={`user-trigger ${hasClaimables ? "has-claimables" : ""}`}
+              className={`fcacct__btn ${hasClaimables ? "fcacct__btn--hot" : ""}`}
               ref={triggerRef}
               onClick={() => setProfileOpen((v) => !v)}
               aria-haspopup="menu"
               aria-expanded={profileOpen ? "true" : "false"}
               title={userData?.username || ""}
             >
-              <span className="user-avatar-wrap" aria-hidden="true">
+              <span className="fcacct__avatar" aria-hidden="true">
                 <img
                   src={`https://mc-heads.net/avatar/${userData.username}/28`}
                   alt=""
-                  className="user-avatar"
+                  className="fcacct__avatarImg"
                   draggable="false"
                 />
               </span>
 
-              <span className="username-saludo">
-                Hola,&nbsp;
-                <span className={`nombre-colored ${getRangoColorClass()}`}>
-                  {userData.username}
-                </span>
+              <span className="fcacct__hello">
+                Hola,&nbsp;<span className={`fcacct__name ${toneClass}`}>{userData.username}</span>
               </span>
 
-              {hasClaimables && <WoWQuestQuestionMark />}
+              <span className={`fcacct__chev ${profileOpen ? "is-open" : ""}`} aria-hidden="true" />
             </button>
 
             {profileOpen && (
-              <div
-                className="user-dropdown-wrapper enhanced open"
-                ref={dropdownRef}
-                role="menu"
-              >
-                <div className="user-dropdown">
-                  <div className="user-header">
-                    <img
-                      src={`https://mc-heads.net/avatar/${userData.username}/64`}
-                      alt="avatar"
-                      className="user-avatar-large"
-                      draggable="false"
-                    />
+              <div className="fcacct__panel" ref={dropdownRef} role="menu">
+                <div className="fcacct__top">
+                  <img
+                    src={`https://mc-heads.net/avatar/${userData.username}/64`}
+                    alt="avatar"
+                    className="fcacct__avatarBig"
+                    draggable="false"
+                  />
 
-                    <div className="user-core">
-                      <div className="user-topline">
-                        <p className="username-big">
-                          <span className={`nombre-colored ${getRangoColorClass()}`}>
-                            {userData.username}
-                          </span>
-                        </p>
+                  <div className="fcacct__meta">
+                    <div className="fcacct__row1">
+                      <div className={`fcacct__nick ${toneClass}`}>{userData.username}</div>
+
+                      <div className="fcacct__badges" aria-hidden="true">
+                        {rangoBadgeSrc && (
+                          <img className="fcacct__badge" src={rangoBadgeSrc} alt="" draggable="false" />
+                        )}
+                        {premiumBadgeSrc && (
+                          <img className="fcacct__badge" src={premiumBadgeSrc} alt="" draggable="false" />
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="fcacct__lvl">
+                      <span className="fcacct__lvlLabel">Nivel</span>
+                      <span className="fcacct__lvlVal">{nivelNavbar}</span>
+                    </div>
+
+                    <div className="fcacct__xp">
+                      <div className="fcacct__xpBar" aria-hidden="true">
+                        <div className="fcacct__xpFill" style={{ width: `${xpPercent}%` }} />
                       </div>
 
-                      <div className="user-level-row">
-                        <span className="user-level-pill">NIVEL</span>
-                        <span className="user-level-value">{nivelNavbar}</span>
-                        <div className="user-badges" aria-hidden="true">
-                          {rangoBadgeSrc && (
-                            <img
-                              className="badge badge-rango"
-                              src={rangoBadgeSrc}
-                              alt=""
-                              draggable="false"
-                            />
-                          )}
-                          {premiumBadgeSrc && (
-                            <img
-                              className="badge badge-premium"
-                              src={premiumBadgeSrc}
-                              alt=""
-                              draggable="false"
-                            />
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="xp-navbar-block">
-                        <div className="xp-bar-profile" aria-hidden="true">
-                          <div
-                            className="xp-fill"
-                            style={{ width: `${xpPercent}%` }}
-                          />
-                        </div>
-
-                        <div className="xp-text-row">
-                          <span className="xp-actual">{xpActualNavbar}</span>
-                          <span className="xp-sep">/</span>
-                          <span className="xp-total">{xpRequeridaNavbar} XP</span>
-                        </div>
+                      <div className="fcacct__xpText">
+                        <span className="fcacct__xpA">{xpActualNavbar}</span>
+                        <span className="fcacct__xpSep">/</span>
+                        <span className="fcacct__xpB">{xpRequeridaNavbar} XP</span>
                       </div>
                     </div>
                   </div>
+                </div>
 
-                  {/* ✅ WALLET */}
-                  <div className="balance-wrapper">
-                    <div className="balance-item">
-                      <img
-                        src="/tienda/assets/coin.png"
-                        alt="COINS"
-                        className="eco-icon-navbar"
-                        draggable="false"
-                      />
-                      <span className="balance-text">{walletCoins}</span>
-                    </div>
+                <div className="fcacct__wallet" aria-label="Wallet coins">
+                  <div className="fcacct__walletRow" tabIndex={0} aria-describedby="fc-wallet-tip">
+                    <img src="/tienda/assets/coin.png" alt="COINS" className="fcacct__coin" draggable="false" />
+                    <span className="fcacct__walletVal">{walletCoins}</span>
+                    <span className="fcacct__walletTag">Wallet</span>
+                    <span className="fcacct__walletHint" aria-hidden="true" />
                   </div>
 
+                  <div id="fc-wallet-tip" className="fcacct__walletTip" role="tooltip">
+                    {walletTip}
+                  </div>
+                </div>
+
+                <div className="fcacct__links" role="none">
                   <NavLink
                     to="/dashboard"
-                    className="dropdown-link dropdown-link--rewards"
-                    data-has={hasClaimables ? "1" : "0"}
+                    className={`fcacct__item ${hasClaimables ? "is-pending" : ""}`}
+                    onClick={() => setProfileOpen(false)}
                   >
-                    <span className="left-pack">
-                      <img
-                        src="/botones/recompensas.svg"
-                        alt=""
-                        className="dropdown-icon"
-                        draggable="false"
-                      />
-                      <span>Mis Recompensas</span>
-                    </span>
-
-                    {hasClaimables && (
-                      <>
-                        <span className="rewards-count-pill">{claimablesCount}</span>
-                        <span className="dropdown-tooltip" role="tooltip">
-                          Tienes {claimablesCount} recompensa(s) por reclamar
-                        </span>
-                      </>
-                    )}
+                    <span>Mis Recompensas</span>
+                    {hasClaimables && <span className="fcacct__count">{claimablesCount}</span>}
                   </NavLink>
 
                   <NavLink
                     to={`/perfil/${userData.username}`}
-                    className="dropdown-link"
+                    className="fcacct__item"
+                    onClick={() => setProfileOpen(false)}
                   >
-                    <span className="left-pack">
-                      <img
-                        src="/botones/estadisticas.svg"
-                        alt=""
-                        className="dropdown-icon"
-                        draggable="false"
-                      />
-                      <span>Mis estadísticas</span>
-                    </span>
+                    <span>Mis estadísticas</span>
                   </NavLink>
 
-                  <div className="dropdown-link logout-button" role="menuitem">
-                    <span className="left-pack">
-                      <img
-                        src="/botones/cerrar-sesion.svg"
-                        alt=""
-                        className="dropdown-icon"
-                        draggable="false"
-                      />
-                      <LogoutButton />
-                    </span>
+                  <div className="fcacct__item fcacct__item--logout" role="menuitem">
+                    <button type="button" className="fcacct__logoutBtn" onClick={handleLogout}>
+                      Cerrar sesión
+                    </button>
                   </div>
                 </div>
+
+                <div className="fcacct__shine" />
               </div>
             )}
           </div>

@@ -1,27 +1,32 @@
 @use "./mixins" as *;
 
-/* storefront/_ranks.scss */
-.tsf-ranks { position: relative; z-index: 3; }
+.tsf-ranks{
+  position: relative;
+  z-index: 3;
+}
 
-.tsf-ranksRow {
+.tsf-ranksRow{
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   align-items: start;
   justify-items: center;
 }
 
-.tienda-storefront.tsf-brawl2.is-ready .tsf-rank {
+.tienda-storefront.tsf-brawl2.is-ready .tsf-rank{
   opacity: 0;
   animation: tsfDeckIn 560ms cubic-bezier(.16,1,.3,1) both;
   animation-delay: calc(180ms + (var(--i, 0) * 90ms));
   will-change: transform, opacity, filter;
 }
 
-.tsf-rank {
+.tsf-rank{
   --rx: 0;
   --ry: 0;
   --mx: 50%;
   --my: 50%;
+
+  --mc-font: "Mojangles", "Minecraft Seven", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  --ui-font: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
 
   position: relative;
   width: 100%;
@@ -31,7 +36,6 @@
   justify-items: center;
   cursor: pointer;
 
-  /* ====== CTA vars (ajuste fino sin hardcode) ====== */
   --cta-inset-x: -7%;
   --cta-inset-y: -10%;
   --cta-bottom: 7.5%;
@@ -50,7 +54,7 @@
   --cta-coins-c: #f7bf44;
 }
 
-.tsf-rankLabel {
+.tsf-rankLabel{
   position: absolute;
   top: clamp(-0.5rem, -1.6vw, -1.65rem);
   left: 50%;
@@ -63,27 +67,27 @@
   line-height: 1;
 }
 
-.tsf-rankTop {
-  font-family: "Nunito", system-ui, sans-serif;
+.tsf-rankTop{
+  font-family: var(--mc-font);
   font-weight: 900;
   font-size: clamp(0.9rem, 1.05vw, 1rem);
-  letter-spacing: 0.06em;
+  letter-spacing: 0.10em;
   text-transform: uppercase;
-  @include stroke-white(2px, rgba(0,0,0,0.78));
+  @include stroke-white(1.8px, rgba(0,0,0,0.78));
 }
 
-.tsf-rankName {
+.tsf-rankName{
   font-family: "Luckiest Guy", system-ui, sans-serif;
   font-size: clamp(1.35rem, 2.1vw, 2.05rem);
   letter-spacing: 0.02em;
   @include stroke-white(2px, rgba(0,0,0,0.88));
 }
 
-.tsf-rank.nova .tsf-rankName { color: #7BFF7A; }
-.tsf-rank.alpha .tsf-rankName { color: #6EBBFF; }
-.tsf-rank.inmortal .tsf-rankName { color: #FF7A5A; }
+.tsf-rank.nova .tsf-rankName{ color: #7BFF7A; }
+.tsf-rank.alpha .tsf-rankName{ color: #6EBBFF; }
+.tsf-rank.inmortal .tsf-rankName{ color: #FF7A5A; }
 
-.tsf-square {
+.tsf-square{
   position: relative;
   width: 100%;
   aspect-ratio: 1 / 1;
@@ -103,7 +107,7 @@
   will-change: transform, filter;
 }
 
-.tsf-deg {
+.tsf-deg{
   position: absolute;
   inset: -14%;
   width: calc(100% + 28%);
@@ -120,9 +124,9 @@
   z-index: 1;
 }
 
-.tsf-rank.inmortal .tsf-deg { transform: rotate(-2.5deg); }
+.tsf-rank.inmortal .tsf-deg{ transform: rotate(-2.5deg); }
 
-.tsf-rankParticles {
+.tsf-rankParticles{
   position: absolute;
   inset: -16%;
   pointer-events: none;
@@ -132,7 +136,7 @@
 }
 
 .tsf-rankParticles::before,
-.tsf-rankParticles::after {
+.tsf-rankParticles::after{
   content: "";
   position: absolute;
   inset: 0;
@@ -140,7 +144,7 @@
   opacity: 0.95;
 }
 
-.tsf-rankParticles::before {
+.tsf-rankParticles::before{
   background-image:
     radial-gradient(circle, var(--p1) 0 2px, rgba(0,0,0,0) 3px),
     radial-gradient(circle, var(--p2) 0 1.6px, rgba(0,0,0,0) 3px),
@@ -154,7 +158,7 @@
   animation: tsfParticleBlink 1.8s ease-in-out infinite;
 }
 
-.tsf-rankParticles::after {
+.tsf-rankParticles::after{
   background-image:
     radial-gradient(circle, var(--p1) 0 2px, rgba(0,0,0,0) 4px),
     radial-gradient(circle, var(--p2) 0 1.8px, rgba(0,0,0,0) 4px),
@@ -168,7 +172,7 @@
   animation: tsfParticleFloat 1.95s ease-in-out infinite;
 }
 
-.tsf-rank.nova .tsf-rankParticles {
+.tsf-rank.nova .tsf-rankParticles{
   --p1: rgba(120,255,140,0.95);
   --p2: rgba(140,255,170,0.75);
   --p3: rgba(90,230,120,0.72);
@@ -176,7 +180,7 @@
   filter: drop-shadow(0 0 12px rgba(120,255,140,0.18));
 }
 
-.tsf-rank.alpha .tsf-rankParticles {
+.tsf-rank.alpha .tsf-rankParticles{
   --p1: rgba(120,200,255,0.95);
   --p2: rgba(160,220,255,0.78);
   --p3: rgba(90,170,255,0.72);
@@ -184,7 +188,7 @@
   filter: drop-shadow(0 0 12px rgba(120,200,255,0.18));
 }
 
-.tsf-rank.inmortal .tsf-rankParticles {
+.tsf-rank.inmortal .tsf-rankParticles{
   --p1: rgba(255,125,90,0.96);
   --p2: rgba(255,175,95,0.78);
   --p3: rgba(255,95,70,0.72);
@@ -192,16 +196,17 @@
   filter: drop-shadow(0 0 12px rgba(255,140,90,0.18));
 }
 
-.tsf-best {
+.tsf-best{
   position: absolute;
   top: -0.55rem;
   right: -0.55rem;
   z-index: 7;
 
-  font-family: "Luckiest Guy", system-ui, sans-serif;
+  font-family: var(--mc-font);
   font-weight: 900;
-  font-size: 0.78rem;
-  letter-spacing: 0.08em;
+  font-size: 0.74rem;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
 
   padding: 0.46rem 0.72rem 0.44rem;
   color: #1a1308;
@@ -215,7 +220,7 @@
   filter: drop-shadow(0 0.65rem 0.95rem rgba(0,0,0,0.25));
 }
 
-.tsf-best::after {
+.tsf-best::after{
   content: "";
   position: absolute;
   inset: 2px;
@@ -225,7 +230,7 @@
   pointer-events: none;
 }
 
-.tsf-perma {
+.tsf-perma{
   position: absolute;
   left: 50%;
   top: 25%;
@@ -244,12 +249,12 @@
 }
 
 .tsf-rank:hover .tsf-perma,
-.tsf-rank.is-active .tsf-perma {
+.tsf-rank.is-active .tsf-perma{
   opacity: 1;
   transform: translate(-50%, -50%) scale(1.02);
 }
 
-.tsf-icon {
+.tsf-icon{
   position: absolute;
   left: 50%;
   top: 54%;
@@ -270,14 +275,14 @@
 }
 
 .tsf-rank:hover .tsf-icon,
-.tsf-rank.is-active .tsf-icon {
+.tsf-rank.is-active .tsf-icon{
   animation: tsfRankFloat 1.9s ease-in-out infinite;
   filter:
     drop-shadow(0 1.4rem 1.6rem rgba(0,0,0,0.55))
     drop-shadow(0 0 14px rgba(255,255,255,0.18));
 }
 
-.tsf-iconFallback {
+.tsf-iconFallback{
   position: absolute;
   left: 50%;
   top: 54%;
@@ -288,9 +293,6 @@
   background: rgba(0,0,0,0.25);
 }
 
-/* =======================================================
-   CTA: ENCAJADA EN EL PIE del square (adaptable por vars)
-   ======================================================= */
 .tsf-squareCta{
   position: absolute;
   left: var(--cta-inset-x);
@@ -304,10 +306,6 @@
   pointer-events: auto;
 }
 
-/* =======================================================
-   BOTÓN DOBLE (USD / COINS) — adaptativo + divisor diagonal
-   + animación por mitad (solo verde o solo amarillo)
-   ======================================================= */
 .tsf-ctaSplit{
   position: relative;
   width: 100%;
@@ -344,7 +342,6 @@
   opacity: 0.92;
 }
 
-/* lados */
 .tsf-ctaSplitSide{
   position: absolute;
   top: 0;
@@ -361,7 +358,6 @@
   will-change: transform, filter;
 }
 
-/* profundidad por mitad */
 .tsf-ctaSplitSide::after{
   content:"";
   position:absolute;
@@ -377,7 +373,6 @@
   pointer-events: none;
 }
 
-/* USD */
 .tsf-ctaSplitSide--usd{
   left: 0;
 
@@ -390,7 +385,6 @@
     inset 0 -3px 0 rgba(0,0,0,0.22);
 }
 
-/* COINS */
 .tsf-ctaSplitSide--coins{
   right: 0;
 
@@ -403,22 +397,40 @@
     inset 0 -3px 0 rgba(0,0,0,0.22);
 }
 
-/* marco general */
 .tsf-ctaSplit::before{
   content:"";
   position:absolute;
   inset:0;
   z-index: 7;
   pointer-events:none;
-
-  box-shadow:
-    inset 0 0 0 2px var(--cta-border);
+  box-shadow: inset 0 0 0 2px var(--cta-border);
 }
 
-/* divisor diagonal real */
+.tsf-ctaSplit::after{
+  content:"";
+  position:absolute;
+  top: -20%;
+  bottom: -20%;
+  left: 50%;
+  width: 4px;
+  z-index: 6;
+  pointer-events: none;
 
+  background: linear-gradient(180deg,
+    rgba(0,0,0,0.70),
+    rgba(0,0,0,0.42));
 
-/* animación por mitad: hover solo la mitad bajo el puntero */
+  transform:
+    translateX(-50%)
+    skewX(calc(var(--cta-shear) * 1))
+    rotate(8deg);
+
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.10),
+    0 10px 18px rgba(0,0,0,0.18);
+  opacity: 0.9;
+}
+
 .tsf-ctaSplit:hover .tsf-ctaSplitSide{
   transform: translateY(0);
 }
@@ -443,25 +455,24 @@
   filter: none;
 }
 
-/* fallback si algún navegador no soporta :has */
-@supports not selector(:has(*)) {
+@supports not selector(:has(*)){
   .tsf-ctaSplitSide--usd:hover,
-  .tsf-ctaSplitSide--coins:hover { transform: translateY(-2px); }
+  .tsf-ctaSplitSide--coins:hover{ transform: translateY(-2px); }
 
   .tsf-ctaSplitSide--usd:active,
-  .tsf-ctaSplitSide--coins:active { transform: translateY(1px); }
+  .tsf-ctaSplitSide--coins:active{ transform: translateY(1px); }
 }
 
-/* texto */
 .tsf-ctaSplitValue{
-  font-family: "Luckiest Guy", system-ui, sans-serif;
-  letter-spacing: 0.04em;
-  font-size: 1.02rem;
+  font-family: var(--mc-font);
+  font-weight: 900;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  font-size: 0.96rem;
   line-height: 1;
-  @include stroke-white(2px, rgba(0,0,0,0.72));
+  @include stroke-white(1.8px, rgba(0,0,0,0.72));
 }
 
-/* coins: número + coin a la derecha */
 .tsf-ctaSplitCoins{
   width: 100%;
   display: flex;
@@ -478,7 +489,6 @@
   filter: drop-shadow(0 0.35rem 0.55rem rgba(0,0,0,0.30));
 }
 
-/* shine sutil */
 .tsf-ctaSplitShine{
   position: absolute;
   inset: -18px;

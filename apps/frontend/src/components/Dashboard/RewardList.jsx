@@ -267,10 +267,11 @@ export default function RewardList({
 
   return (
     <section className="reward-pass">
-      <h2 className="titulo-reward">Camino al Prestigio</h2>
-
-      <div className="recompensas-subtitulo">
-        Completa aventuras, sube de nivel y consigue COINS en tu camino al Prestigio.
+      <div className="reward-passHeader">
+        <h2 className="titulo-reward">Camino al Prestigio</h2>
+        <div className="recompensas-subtitulo">
+          Completa aventuras, sube de nivel y consigue COINS en tu camino al Prestigio.
+        </div>
       </div>
 
       <div className="rewards-scroll-container">
@@ -294,7 +295,10 @@ export default function RewardList({
           <div className="rewards-row">
             <div className="progreso-wrapper">
               <div className="linea-fondo" />
-              <div className="linea-relleno" style={{ width: anchoBarra, left: `${offsetNodo1}px` }} />
+              <div
+                className="linea-relleno"
+                style={{ width: anchoBarra, left: `${offsetNodo1}px` }}
+              />
             </div>
 
             {RECOMPENSAS.map((r, i) => {
@@ -316,8 +320,11 @@ export default function RewardList({
                     className={[
                       "reward-box",
                       estadoNodo !== "pendiente" ? "unlocked" : "locked",
+                      estadoNodo === "siguiente" ? "next" : "",
                       yaReclamada ? "claimed" : "",
-                    ].filter(Boolean).join(" ")}
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
                   >
                     <div className="reward-icon">
                       {estadoNodo !== "pendiente" ? icono : <Lock size={20} />}
@@ -330,10 +337,15 @@ export default function RewardList({
                       <button
                         type="button"
                         onClick={() => handleReclamar(r.nivel)}
-                        className="reclamar-btn"
+                        className="tsf-btn tsf-btn--gold reclamar-btn"
                         disabled={!!claimingNivel}
                       >
-                        {isClaimingThis ? "Reclamando..." : "Reclamar"}
+                        <span className="tsf-btnFace">
+                          <span className="tsf-btnLabel">
+                            {isClaimingThis ? "Reclamando..." : "Reclamar"}
+                          </span>
+                        </span>
+                        <span className="tsf-btnDepth" />
                       </button>
                     )}
 
@@ -349,7 +361,9 @@ export default function RewardList({
                       "nodo",
                       `nodo-${estadoNodo}`,
                       yaReclamada ? "nodo-claimed" : "",
-                    ].filter(Boolean).join(" ")}
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
                   >
                     <span>{r.nivel}</span>
                   </div>

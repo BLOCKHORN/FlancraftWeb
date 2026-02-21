@@ -20,11 +20,8 @@ const verificaOwner = require("../middlewares/verificaOwner");
  *  RUTAS PÚBLICAS
  * ========================= */
 
-// 1) listado público (principal)
+// listado público
 router.get("/", obtenerNoticias);
-
-// 2) obtener por slug público (detalle para la web pública)
-router.get("/:slug", obtenerNoticiaPorSlug);
 
 /* =========================
  *  RUTAS PROTEGIDAS (ADMIN)
@@ -36,6 +33,9 @@ router.get("/todas", verificarAuth, verificaOwner, obtenerTodasLasNoticias);
 // obtener por ID para el editor admin
 router.get("/id/:id", verificarAuth, verificaOwner, obtenerNoticiaPorId);
 
+// preview (POST)
+router.post("/preview", verificarAuth, generarVistaPrevia);
+
 // crear
 router.post("/", verificarAuth, verificaOwner, crearNoticia);
 
@@ -45,7 +45,9 @@ router.put("/:id", verificarAuth, verificaOwner, actualizarNoticia);
 // eliminar
 router.delete("/:id", verificarAuth, verificaOwner, eliminarNoticia);
 
-// preview
-router.post("/preview", verificarAuth, generarVistaPrevia);
+/* =========================
+ *  RUTA PÚBLICA POR SLUG (AL FINAL)
+ * ========================= */
+router.get("/:slug", obtenerNoticiaPorSlug);
 
 module.exports = router;
