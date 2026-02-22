@@ -67,6 +67,22 @@ const sumTotalCoins = (coinsByServer) => {
   return SERVERS_COINS.reduce((acc, s) => acc + toInt(coinsByServer[s.key]), 0);
 };
 
+const pickSalePercent = (sale) => {
+  const p =
+    typeof sale?.percentage === "number"
+      ? sale.percentage
+      : typeof sale?.discount === "number"
+      ? sale.discount
+      : 0;
+  return toInt(p);
+};
+
+const isSaleStillValid = (sale) => {
+  const expire = Number(sale?.expire || 0);
+  if (!expire) return false;
+  return expire * 1000 > Date.now();
+};
+
 const Navbar = ({ onLoginClick }) => {
   const { user } = useContext(UserContext);
 
@@ -99,6 +115,12 @@ const Navbar = ({ onLoginClick }) => {
   }));
 
   const [userLoading, setUserLoading] = useState(false);
+
+  const [saleNav, setSaleNav] = useState(() => ({
+    active: false,
+    percent: 0,
+    expire: 0,
+  }));
 
   useLayoutEffect(() => {
     const el = navRef.current;
@@ -135,6 +157,47 @@ const Navbar = ({ onLoginClick }) => {
       document.body.style.width = "";
     };
   }, [menuOpen]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadSale = async () => {
+      try {
+        const refresh = import.meta.env.DEV ? "?refresh=1" : "";
+        const res = await fetch(apiUrl(`/api/tebex/sale${refresh}`));
+        if (!res.ok) {
+          if (!cancelled) setSaleNav({ active: false, percent: 0, expire: 0 });
+          return;
+        }
+
+        const json = await res.json();
+        const s = json?.ok && json?.active ? json?.sale : null;
+
+        if (!s || !isSaleStillValid(s)) {
+          if (!cancelled) setSaleNav({ active: false, percent: 0, expire: 0 });
+          return;
+        }
+
+        if (!cancelled) {
+          setSaleNav({
+            active: true,
+            percent: pickSalePercent(s),
+            expire: Number(s.expire || 0),
+          });
+        }
+      } catch {
+        if (!cancelled) setSaleNav({ active: false, percent: 0, expire: 0 });
+      }
+    };
+
+    loadSale();
+    const id = setInterval(loadSale, 60_000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, []);
 
   useEffect(() => {
     if (!user?.uuid) {
@@ -274,6 +337,7 @@ const Navbar = ({ onLoginClick }) => {
       handleProfileEnter,
       handleProfileLeave,
       toggleDropdown,
+      saleNav,
     }),
     [
       menuOpen,
@@ -290,6 +354,7 @@ const Navbar = ({ onLoginClick }) => {
       handleProfileEnter,
       handleProfileLeave,
       toggleDropdown,
+      saleNav,
     ]
   );
 

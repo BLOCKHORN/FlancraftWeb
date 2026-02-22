@@ -45,6 +45,12 @@ const getActiveKeyFromPath = (pathname, navItems) => {
   return best;
 };
 
+const isSaleValid = (saleNav) => {
+  const expire = Number(saleNav?.expire || 0);
+  if (!saleNav?.active || !expire) return false;
+  return expire * 1000 > Date.now();
+};
+
 const NavbarDesktop = ({
   isLoggedIn,
   isUserLoading,
@@ -55,6 +61,7 @@ const NavbarDesktop = ({
   handleProfileEnter,
   handleProfileLeave,
   navItems,
+  saleNav,
 }) => {
   const { setUser } = useContext(UserContext);
   const navigate = useNavigate();
@@ -264,6 +271,12 @@ const NavbarDesktop = ({
   const walletTip =
     "Las Wallet Coins se consiguen con el daily, el voto y los logros. Puedes enviarlas al servidor que quieras, en la cantidad que elijas.";
 
+  const storeSaleActive = useMemo(() => isSaleValid(saleNav), [saleNav?.active, saleNav?.expire]);
+  const storeSalePercent = toInt(saleNav?.percent || 0);
+  const storeSaleText = storeSalePercent > 0 ? `-${storeSalePercent}%` : "OFERTA";
+  const storeSaleTitle = storeSalePercent > 0 ? `Oferta activa ${storeSaleText}` : "Oferta activa";
+  const storeSaleAria = storeSalePercent > 0 ? `Tienda, oferta activa ${storeSaleText}` : "Tienda, oferta activa";
+
   return (
     <div className="fcbar fcbar--desktop" ref={rootRef}>
       <span
@@ -289,23 +302,37 @@ const NavbarDesktop = ({
 
       <div className="fcbar__middle" aria-label="Navegación principal">
         <div className="fcbar__links" ref={linksWrapRef} onMouseLeave={handleLinksLeave}>
-          {navItems?.map((it) => (
-            <NavLink
-              key={it.key}
-              to={it.to}
-              ref={(el) => {
-                if (el) linkRefs.current.set(it.key, el);
-                else linkRefs.current.delete(it.key);
-              }}
-              onMouseEnter={() => measureAndSetInk(it.key, true)}
-              onFocus={() => measureAndSetInk(it.key, true)}
-              className={({ isActive }) =>
-                `fcbar__link fcbar__link--${it.key} ${isActive ? "is-active" : ""}`
-              }
-            >
-              {it.label}
-            </NavLink>
-          ))}
+          {navItems?.map((it) => {
+            const isStore = it.key === "store";
+            const ariaLabel = isStore && storeSaleActive ? storeSaleAria : it.label;
+
+            return (
+              <NavLink
+                key={it.key}
+                to={it.to}
+                aria-label={ariaLabel}
+                data-sale={isStore && storeSaleActive ? "true" : "false"}
+                ref={(el) => {
+                  if (el) linkRefs.current.set(it.key, el);
+                  else linkRefs.current.delete(it.key);
+                }}
+                onMouseEnter={() => measureAndSetInk(it.key, true)}
+                onFocus={() => measureAndSetInk(it.key, true)}
+                className={({ isActive }) =>
+                  `fcbar__link fcbar__link--${it.key} ${isActive ? "is-active" : ""}`
+                }
+              >
+                <span className="fcbar__linkTxt">{it.label}</span>
+
+                {isStore && storeSaleActive && (
+                  <span className="fcbar__sale" title={storeSaleTitle} aria-hidden="true">
+                    <span className="fcbar__saleDot" />
+                    <span className="fcbar__saleTxt">{storeSaleText}</span>
+                  </span>
+                )}
+              </NavLink>
+            );
+          })}
         </div>
       </div>
 

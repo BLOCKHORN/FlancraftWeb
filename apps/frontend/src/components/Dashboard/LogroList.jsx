@@ -54,11 +54,7 @@ const SERVIDORES = [
     valor: "anarquico",
     imagen: "/assets/reinos/survival-anarquico.webp",
   },
-  {
-    nombre: "Parkour",
-    valor: "parkour",
-    imagen: "/assets/reinos/parkour.webp",
-  },
+
 ];
 
 // Mapa rápido: servidor -> imagen (incluye GLOBAL)

@@ -42,6 +42,12 @@ const NavIcon = ({ src, alt, fallbackSrc }) => {
   return <img className="nav-icon-img" src={src} alt={alt} draggable="false" onError={onError} />;
 };
 
+const isSaleValid = (saleNav) => {
+  const expire = Number(saleNav?.expire || 0);
+  if (!saleNav?.active || !expire) return false;
+  return expire * 1000 > Date.now();
+};
+
 const NavbarMobile = ({
   menuOpen,
   setMenuOpen,
@@ -51,6 +57,7 @@ const NavbarMobile = ({
   isUserLoading,
   userData,
   navItems,
+  saleNav,
 }) => {
   const dropdownRef = useRef(null);
   const profileButtonRef = useRef(null);
@@ -222,6 +229,11 @@ const NavbarMobile = ({
 
   const walletTip =
     "Las Wallet Coins se consiguen con el daily, el voto y los logros. Puedes enviarlas al servidor que quieras, en la cantidad que elijas.";
+
+  const storeSaleActive = useMemo(() => isSaleValid(saleNav), [saleNav?.active, saleNav?.expire]);
+  const storeSalePercent = toInt(saleNav?.percent || 0);
+  const storeSaleText = storeSalePercent > 0 ? `-${storeSalePercent}%` : "OFERTA";
+  const storeSaleAria = storeSalePercent > 0 ? `Tienda, oferta activa ${storeSaleText}` : "Tienda, oferta activa";
 
   return (
     <>
@@ -405,18 +417,30 @@ const NavbarMobile = ({
         </div>
 
         <div className="mobile-links">
-          {navItems?.map((it) => (
-            <NavLink
-              key={it.key}
-              to={it.to}
-              className={navClsMobile(`nav-${it.key}`)}
-              onClick={() => setMenuOpen(false)}
-              data-nav={it.key}
-            >
-              <NavIcon src={it.icon} alt={it.label} fallbackSrc={it.fallbackIcon} />
-              <span className="nav-label">{it.label}</span>
-            </NavLink>
-          ))}
+          {navItems?.map((it) => {
+            const isStore = it.key === "store";
+            const ariaLabel = isStore && storeSaleActive ? storeSaleAria : it.label;
+
+            return (
+              <NavLink
+                key={it.key}
+                to={it.to}
+                aria-label={ariaLabel}
+                className={navClsMobile(`nav-${it.key}`)}
+                onClick={() => setMenuOpen(false)}
+                data-nav={it.key}
+                data-sale={isStore && storeSaleActive ? "true" : "false"}
+              >
+                <NavIcon src={it.icon} alt={it.label} fallbackSrc={it.fallbackIcon} />
+                <span className="nav-label">{it.label}</span>
+                {isStore && storeSaleActive && (
+                  <span className="nav-sale" aria-hidden="true">
+                    {storeSaleText}
+                  </span>
+                )}
+              </NavLink>
+            );
+          })}
 
           <div className="logo-divider" />
 
