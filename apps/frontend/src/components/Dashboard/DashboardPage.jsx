@@ -1,4 +1,3 @@
-// apps/frontend/src/pages/Dashboard/DashboardPage.jsx
 import { useEffect, useRef, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import RewardList from "./RewardList";
@@ -76,6 +75,12 @@ export default function DashboardPage() {
   const walletRef = useRef(null);
   const navigate = useNavigate();
 
+  const emitBalances = (detail) => {
+    try {
+      window.dispatchEvent(new CustomEvent("fc:balances", { detail: detail || {} }));
+    } catch {}
+  };
+
   useEffect(() => {
     const onDocDown = (e) => {
       if (!walletInfoRef.current) return;
@@ -152,6 +157,8 @@ export default function DashboardPage() {
         });
 
         setXpData(xp);
+
+        emitBalances({ walletCoins: wallet, coinsByServer: coinsByServerParsed });
       } catch (err) {
         setError(err.message || "Error");
       } finally {
@@ -202,6 +209,8 @@ export default function DashboardPage() {
         coinsByServer: coinsByServerParsed,
         wallet_coins: wallet,
       }));
+
+      emitBalances({ walletCoins: wallet, coinsByServer: coinsByServerParsed });
     } catch (err) {
       console.error("[BALANCES]", err.message);
     }
@@ -284,6 +293,8 @@ export default function DashboardPage() {
       setUser((prev) => ({ ...prev, wallet_coins: newWallet }));
 
       if (walletRef?.current) walletRef.current.textContent = String(newWallet);
+
+      emitBalances({ walletCoins: newWallet });
 
       setTransferAmount("");
       setConfirmOpen(false);

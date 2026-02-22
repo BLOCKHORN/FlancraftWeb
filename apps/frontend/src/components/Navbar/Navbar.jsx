@@ -1,13 +1,4 @@
-// apps/frontend/src/components/Navbar/Navbar.jsx
-import {
-  useContext,
-  useEffect,
-  useState,
-  useRef,
-  useCallback,
-  useMemo,
-  useLayoutEffect,
-} from "react";
+import { useContext, useEffect, useState, useRef, useCallback, useMemo, useLayoutEffect } from "react";
 import { UserContext } from "../../context/UserContext";
 import { supabase } from "@lib/supabaseClient";
 import NavbarMobile from "./NavbarMobile";
@@ -49,7 +40,17 @@ const parseCoinsPayload = (m) => {
   if (Array.isArray(m?.balances)) {
     const out = {};
     for (const row of m.balances) {
-      const key = String(row?.servidor || "").trim().toLowerCase();
+      const key = String(row?.servidor || row?.server || "").trim().toLowerCase();
+      if (!key) continue;
+      out[key] = toInt(row?.coins);
+    }
+    return out;
+  }
+
+  if (Array.isArray(m)) {
+    const out = {};
+    for (const row of m) {
+      const key = String(row?.servidor || row?.server || "").trim().toLowerCase();
       if (!key) continue;
       out[key] = toInt(row?.coins);
     }
@@ -199,26 +200,25 @@ const Navbar = ({ onLoginClick }) => {
     };
   }, []);
 
-  useEffect(() => {
-    if (!user?.uuid) {
-      setUserData({
-        username: "",
-        uuid: "",
-        userXP: 0,
-        userXPMax: 100,
-        userLevel: 1,
-        walletCoins: 0,
-        coinsByServer: {},
-        coinsServersTotal: 0,
-      });
-      setUserLoading(false);
-      return;
-    }
+  const refreshUserData = useCallback(
+    async (opts = {}) => {
+      if (!user?.uuid) {
+        setUserData({
+          username: "",
+          uuid: "",
+          userXP: 0,
+          userXPMax: 100,
+          userLevel: 1,
+          walletCoins: 0,
+          coinsByServer: {},
+          coinsServersTotal: 0,
+        });
+        setUserLoading(false);
+        return;
+      }
 
-    let cancelled = false;
-
-    const fetchUser = async () => {
-      setUserLoading(true);
+      const silent = opts?.silent === true;
+      if (!silent) setUserLoading(true);
 
       try {
         const token = localStorage.getItem("token");
@@ -250,49 +250,70 @@ const Navbar = ({ onLoginClick }) => {
           }
         }
 
-        if (!cancelled) {
-          if (userDataDB) {
-            setUserData({
-              username: userDataDB.uid || user.username || "",
-              uuid: userDataDB.uuid || user.uuid || "",
-              userXP: userDataDB.xp_actual ?? 0,
-              userXPMax: 100,
-              userLevel: userDataDB.nivel ?? 1,
-              walletCoins,
-              coinsByServer,
-              coinsServersTotal,
-            });
-          } else {
-            setUserData((prev) => ({
-              ...prev,
-              username: user.username || prev.username,
-              uuid: user.uuid || prev.uuid,
-              walletCoins,
-              coinsByServer,
-              coinsServersTotal,
-            }));
-          }
-        }
+        setUserData((prev) => {
+          const username = userDataDB?.uid || user.username || prev.username || "";
+          const uuid = userDataDB?.uuid || user.uuid || prev.uuid || "";
+          return {
+            username,
+            uuid,
+            userXP: userDataDB?.xp_actual ?? prev.userXP ?? 0,
+            userXPMax: prev.userXPMax ?? 100,
+            userLevel: userDataDB?.nivel ?? prev.userLevel ?? 1,
+            walletCoins,
+            coinsByServer,
+            coinsServersTotal,
+          };
+        });
       } catch (error) {
         console.error("Navbar: Error al cargar usuario:", error);
-        if (!cancelled) {
-          setUserData((prev) => ({
-            ...prev,
-            username: user.username || prev.username,
-            uuid: user.uuid || prev.uuid,
-          }));
-        }
+        setUserData((prev) => ({
+          ...prev,
+          username: user?.username || prev.username,
+          uuid: user?.uuid || prev.uuid,
+        }));
       } finally {
-        if (!cancelled) setUserLoading(false);
+        if (!silent) setUserLoading(false);
       }
+    },
+    [user?.uuid, user?.username]
+  );
+
+  useEffect(() => {
+    refreshUserData();
+  }, [refreshUserData]);
+
+  useEffect(() => {
+    if (!user?.uuid) return;
+
+    const onBalances = (e) => {
+      const d = e?.detail;
+      if (d && (d.walletCoins != null || d.coinsByServer)) {
+        setUserData((prev) => {
+          const next = { ...prev };
+          if (d.walletCoins != null) next.walletCoins = toInt(d.walletCoins);
+          if (d.coinsByServer && typeof d.coinsByServer === "object") {
+            next.coinsByServer = d.coinsByServer;
+            next.coinsServersTotal = sumTotalCoins(d.coinsByServer);
+          }
+          return next;
+        });
+      }
+      refreshUserData({ silent: true });
     };
 
-    fetchUser();
+    const onFocus = () => refreshUserData({ silent: true });
+
+    window.addEventListener("fc:balances", onBalances);
+    window.addEventListener("focus", onFocus);
+
+    const id = setInterval(() => refreshUserData({ silent: true }), 30_000);
 
     return () => {
-      cancelled = true;
+      window.removeEventListener("fc:balances", onBalances);
+      window.removeEventListener("focus", onFocus);
+      clearInterval(id);
     };
-  }, [user?.uuid, user?.username]);
+  }, [user?.uuid, refreshUserData]);
 
   const isLoggedIn = baseLoggedIn && !!userData.username;
 

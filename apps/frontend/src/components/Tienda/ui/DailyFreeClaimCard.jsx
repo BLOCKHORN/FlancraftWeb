@@ -1,4 +1,3 @@
-// src/components/Tienda/ui/DailyFreeClaimCard.jsx
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import LoginModal from "../../Auth/LoginModal";
@@ -86,6 +85,12 @@ export default function DailyFreeClaimCard() {
   const [token, setToken] = useState(() => localStorage.getItem("token"));
   const isLocked = !token;
 
+  const emitBalances = (detail) => {
+    try {
+      window.dispatchEvent(new CustomEvent("fc:balances", { detail: detail || {} }));
+    } catch {}
+  };
+
   const nextMs = useMemo(() => {
     if (!status?.nextClaimAt) return 0;
     return new Date(status.nextClaimAt).getTime() - Date.now();
@@ -99,7 +104,6 @@ export default function DailyFreeClaimCard() {
     return buildParticles(modal.phase === "done" ? 26 : 18);
   }, [modal?.particlesKey]);
 
-  // ---------- STATUS ----------
   useEffect(() => {
     let alive = true;
 
@@ -158,7 +162,6 @@ export default function DailyFreeClaimCard() {
     };
   }, [modal]);
 
-  // ---------- MODAL FLOWS ----------
   const openRewardModal = ({ amount, walletBalance, nextClaimAt }) => {
     setModal({
       phase: "intro",
@@ -180,14 +183,12 @@ export default function DailyFreeClaimCard() {
     setModal((m) => {
       if (!m || m.error) return m;
       if (m.phase === "auth") return m;
-
       if (m.phase === "intro") return { ...m, phase: "reveal", particlesKey: `${Date.now()}_${Math.random()}` };
       if (m.phase === "reveal") return { ...m, phase: "done", particlesKey: `${Date.now()}_${Math.random()}` };
       return m;
     });
   };
 
-  // ---------- CLAIM ----------
   const handleClaim = async () => {
     setClaiming(true);
     try {
@@ -212,6 +213,8 @@ export default function DailyFreeClaimCard() {
         lastAmount: data.amount,
         walletBalance: data.walletBalance,
       }));
+
+      emitBalances({ walletCoins: data.walletBalance });
     } catch (e) {
       setModal({ error: e.message });
     } finally {
@@ -278,7 +281,6 @@ export default function DailyFreeClaimCard() {
               </div>
 
               <div className="dailyClaimModal__center">
-                {/* AUTH */}
                 {modal.phase === "auth" && (
                   <>
                     <div className="dailyClaimModal__title">Inicia sesión para reclamar</div>
@@ -305,7 +307,6 @@ export default function DailyFreeClaimCard() {
                   </>
                 )}
 
-                {/* REWARD FLOW (WALLET) */}
                 {modal.phase !== "auth" && (
                   <>
                     <div className="dailyClaimModal__serverName">Wallet</div>

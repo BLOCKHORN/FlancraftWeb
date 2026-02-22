@@ -1,14 +1,27 @@
-// 📁 src/controllers/vincular.controller.js
-const jwt = require("jsonwebtoken"); 
+const jwt = require("jsonwebtoken");
 const db = require("../models/db");
 const bcrypt = require("bcrypt");
 
-// POST /api/vincular
+const HEX32_RE = /^[a-f0-9]{32}$/i;
+const READABLE_RE = /^[A-Za-z0-9_-]{12,64}$/;
+
+function isValidToken(t) {
+  if (!t) return false;
+  const s = String(t).trim();
+  return HEX32_RE.test(s) || READABLE_RE.test(s);
+}
+
 exports.vincular = async (req, res) => {
   const { uuid_jugador, username, token } = req.body;
 
   if (!uuid_jugador || !username || !token) {
     return res.status(400).json({ error: "Faltan campos obligatorios." });
+  }
+
+  const tok = String(token).trim();
+
+  if (!isValidToken(tok)) {
+    return res.status(400).json({ error: "Token inválido." });
   }
 
   try {
@@ -19,15 +32,14 @@ exports.vincular = async (req, res) => {
       .from("vinculaciones")
       .delete()
       .eq("uuid_jugador", uuid_jugador)
-      .eq("utilizado", false)
-      .gt("expiracion", now.toISOString());
+      .eq("utilizado", false);
 
     const { error: insertError } = await db.from("vinculaciones").insert({
       uuid_jugador,
       username,
-      token,
+      token: tok,
       expiracion: expiracion.toISOString(),
-      utilizado: false
+      utilizado: false,
     });
 
     if (insertError) throw insertError;
@@ -39,11 +51,11 @@ exports.vincular = async (req, res) => {
   }
 };
 
-// POST /api/vincular/validate
 exports.validarToken = async (req, res) => {
   const { token } = req.body;
 
-  if (!token || typeof token !== "string" || !/^[a-f0-9]{32}$/.test(token)) {
+  const tok = String(token || "").trim();
+  if (!isValidToken(tok)) {
     return res.status(400).json({ error: "Token inválido." });
   }
 
@@ -53,7 +65,7 @@ exports.validarToken = async (req, res) => {
     const { data, error } = await db
       .from("vinculaciones")
       .select("uuid_jugador, username")
-      .eq("token", token)
+      .eq("token", tok)
       .eq("utilizado", false)
       .gt("expiracion", now)
       .maybeSingle();
@@ -72,7 +84,7 @@ exports.validarToken = async (req, res) => {
 
     return res.status(200).json({
       uuid_jugador: data.uuid_jugador,
-      username: data.username
+      username: data.username,
     });
   } catch (err) {
     console.error("[VALIDAR TOKEN ERROR]", err);
@@ -80,11 +92,11 @@ exports.validarToken = async (req, res) => {
   }
 };
 
-// POST /api/vincular/marcar
 exports.marcarToken = async (req, res) => {
   const { token } = req.body;
 
-  if (!token || typeof token !== "string" || !/^[a-f0-9]{32}$/.test(token)) {
+  const tok = String(token || "").trim();
+  if (!isValidToken(tok)) {
     return res.status(400).json({ error: "Token inválido." });
   }
 
@@ -92,7 +104,7 @@ exports.marcarToken = async (req, res) => {
     const { error } = await db
       .from("vinculaciones")
       .update({ utilizado: true })
-      .eq("token", token)
+      .eq("token", tok)
       .eq("utilizado", false);
 
     if (error) throw error;
@@ -103,7 +115,6 @@ exports.marcarToken = async (req, res) => {
   }
 };
 
-// POST /api/vincular/registrar
 exports.registrarUsuario = async (req, res) => {
   const { uuid, uid, password } = req.body;
 
@@ -128,7 +139,7 @@ exports.registrarUsuario = async (req, res) => {
       uid,
       password: hashedPassword,
       xp_actual: 0,
-      nivel: 1
+      nivel: 1,
     });
 
     if (insertError) throw insertError;
@@ -140,7 +151,6 @@ exports.registrarUsuario = async (req, res) => {
   }
 };
 
-// POST /api/vincular/login
 exports.loginUsuario = async (req, res) => {
   const { uid, password } = req.body;
 
@@ -171,18 +181,16 @@ exports.loginUsuario = async (req, res) => {
 
     if (rolError) throw rolError;
 
-    // ✅ Generar JWT
     const token = jwt.sign(
       {
         uuid: user.uuid,
         username: user.uid,
         rol_admin: permiso?.rol || null,
       },
-      process.env.JWT_SECRET, // asegúrate de tener esta clave en tu `.env`
+      process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
 
-    // ✅ Devolver token al frontend
     return res.status(200).json({
       uuid: user.uuid,
       username: user.uid,
