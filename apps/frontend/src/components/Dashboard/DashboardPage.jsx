@@ -1,11 +1,11 @@
+// apps/frontend/src/pages/Dashboard/DashboardPage.jsx
 import { useEffect, useRef, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import RewardList from "./RewardList";
 import LogroList from "./LogroList";
 import "../../styles/components/Dashboard/_dashboardpage.scss";
 
-const API_BASE =
-  import.meta.env.VITE_BACKEND_URL || "https://flancraft-backend.onrender.com";
+const API_BASE = import.meta.env.VITE_BACKEND_URL || "https://flancraft-backend.onrender.com";
 
 const SERVERS_COINS = [
   { key: "gens", label: "GENS", icon: "/assets/reinos/gens.webp" },
@@ -77,8 +77,7 @@ export default function DashboardPage() {
           reqs.push(Promise.resolve(null));
         }
 
-        const [usuarioRes, monedasRes, xpRes, usuariosRes, walletRes] =
-          await Promise.all(reqs);
+        const [usuarioRes, monedasRes, xpRes, usuariosRes, walletRes] = await Promise.all(reqs);
 
         if (!usuarioRes?.ok || !monedasRes?.ok || !xpRes?.ok || !usuariosRes?.ok) {
           throw new Error("Error al cargar datos");
@@ -93,13 +92,14 @@ export default function DashboardPage() {
         const rango_usuario = actual?.rango_usuario || null;
         const es_premium = actual?.es_premium || false;
 
-        let wallet = 0;
+        let wallet = toInt(actual?.wallet_coins ?? usuario?.wallet_coins ?? 0);
+
         if (walletRes) {
           if (walletRes.status === 401) {
             localStorage.removeItem("token");
           } else if (walletRes.ok) {
             const w = await walletRes.json();
-            wallet = toInt(w?.walletBalance);
+            wallet = toInt(w?.walletBalance ?? w?.wallet_balance ?? wallet);
           }
         }
 
@@ -144,14 +144,15 @@ export default function DashboardPage() {
 
       const monedasActualizadas = await monedasRes.json();
 
-      let wallet = walletBalance;
+      let wallet = toInt(user?.wallet_coins ?? walletBalance ?? 0);
+
       if (walletRes) {
         if (walletRes.status === 401) {
           localStorage.removeItem("token");
           wallet = 0;
         } else if (walletRes.ok) {
           const w = await walletRes.json();
-          wallet = toInt(w?.walletBalance);
+          wallet = toInt(w?.walletBalance ?? w?.wallet_balance ?? wallet);
         }
       }
 
@@ -170,9 +171,7 @@ export default function DashboardPage() {
 
   const nivelInfo = xpData?.niveles?.find((n) => n.nivel === user?.nivel);
   const xpDelNivelActual = nivelInfo?.xp_requerida || 1;
-  const porcentajeNivel = user
-    ? Math.min(100, (toInt(user.xp_actual) / toInt(xpDelNivelActual || 1)) * 100)
-    : 0;
+  const porcentajeNivel = user ? Math.min(100, (toInt(user.xp_actual) / toInt(xpDelNivelActual || 1)) * 100) : 0;
 
   const rangoKey = useMemo(() => {
     const r = (user?.rango_usuario || "").toString().trim().toLowerCase();
@@ -229,7 +228,6 @@ export default function DashboardPage() {
     const amt = toInt(transferAmount);
     if (amt <= 0) return setTransferError("Introduce una cantidad válida.");
     if (amt > totalCoins) return setTransferError("No tienes suficiente saldo en la wallet.");
-
     setPendingTransfer({ amt, server: serverSelected });
     setConfirmOpen(true);
   };
@@ -293,21 +291,9 @@ export default function DashboardPage() {
                 <aside className="dash-avatar">
                   <div className={`avatar-frame avatar-frame--${rangoKey}`}>
                     <div className="avatar-inner">
-                      <img
-                        src={avatarBg}
-                        alt="Fondo del rango"
-                        className="avatar-bg"
-                        loading="eager"
-                        decoding="async"
-                      />
+                      <img src={avatarBg} alt="Fondo del rango" className="avatar-bg" loading="eager" decoding="async" />
                       {avatarUrl && (
-                        <img
-                          src={avatarUrl}
-                          alt={`Skin de ${user.uid}`}
-                          className="skin-jugador"
-                          loading="eager"
-                          decoding="async"
-                        />
+                        <img src={avatarUrl} alt={`Skin de ${user.uid}`} className="skin-jugador" loading="eager" decoding="async" />
                       )}
                     </div>
 
@@ -336,13 +322,7 @@ export default function DashboardPage() {
                         )}
 
                         {user.es_premium && (
-                          <img
-                            src="/assets/premium.webp"
-                            alt="Cuenta premium"
-                            className="badge-premium"
-                            loading="eager"
-                            decoding="async"
-                          />
+                          <img src="/assets/premium.webp" alt="Cuenta premium" className="badge-premium" loading="eager" decoding="async" />
                         )}
                       </div>
                     </div>
@@ -387,12 +367,10 @@ export default function DashboardPage() {
                           <div className="wallet-tooltip" role="dialog" aria-label="Wallet COINS">
                             <div className="wallet-tooltip-title">¿Qué son las Wallet COINS?</div>
                             <div className="wallet-tooltip-text">
-                              Son COINS que consigues en la web: claim diario, voto y logros.
-                              Puedes enviarlas al servidor que quieras y la cantidad que decidas.
+                              Son COINS que consigues en la web: claim diario, voto y logros. Puedes enviarlas al servidor que quieras y la
+                              cantidad que decidas.
                             </div>
-                            <div className="wallet-tooltip-note">
-                              Elige servidor, pon cantidad y confirma.
-                            </div>
+                            <div className="wallet-tooltip-note">Elige servidor, pon cantidad y confirma.</div>
                           </div>
                         )}
                       </div>
@@ -409,11 +387,7 @@ export default function DashboardPage() {
                           <button
                             key={s.key}
                             type="button"
-                            className={[
-                              "server-cardBtn",
-                              `server-cardBtn--${s.key}`,
-                              serverSelected === s.key ? "is-active" : "",
-                            ].join(" ")}
+                            className={["server-cardBtn", `server-cardBtn--${s.key}`, serverSelected === s.key ? "is-active" : ""].join(" ")}
                             onClick={() => {
                               if (transferLoading) return;
                               setTransferError(null);
@@ -423,24 +397,12 @@ export default function DashboardPage() {
                           >
                             <span className="server-cardBtnFace">
                               <span className="server-cardBtnLeft">
-                                <img
-                                  src={s.icon}
-                                  alt=""
-                                  className="server-icon"
-                                  loading="eager"
-                                  decoding="async"
-                                  draggable="false"
-                                />
+                                <img src={s.icon} alt="" className="server-icon" loading="eager" decoding="async" draggable="false" />
                                 <span className="server-name">{s.label}</span>
                               </span>
 
                               <span className="server-balance">
-                                <img
-                                  src="/tienda/assets/coin.png"
-                                  alt=""
-                                  className="coin-mini"
-                                  draggable="false"
-                                />
+                                <img src="/tienda/assets/coin.png" alt="" className="coin-mini" draggable="false" />
                                 {toInt(coinsByServer[s.key])}
                               </span>
                             </span>
@@ -452,12 +414,7 @@ export default function DashboardPage() {
 
                       <div className="transfer-row">
                         <div className="amount-wrap">
-                          <img
-                            src="/tienda/assets/coin.png"
-                            alt=""
-                            className="coin-in-input"
-                            draggable="false"
-                          />
+                          <img src="/tienda/assets/coin.png" alt="" className="coin-in-input" draggable="false" />
                           <input
                             type="number"
                             min="0"
@@ -485,15 +442,8 @@ export default function DashboardPage() {
                           </button>
                         </div>
 
-                        <button
-                          type="button"
-                          className="tsf-btn tsf-btn--send"
-                          onClick={openConfirm}
-                          disabled={transferLoading}
-                        >
-                          <span className="tsf-btnFace">
-                            {transferLoading ? "Enviando..." : "Enviar"}
-                          </span>
+                        <button type="button" className="tsf-btn tsf-btn--send" onClick={openConfirm} disabled={transferLoading}>
+                          <span className="tsf-btnFace">{transferLoading ? "Enviando..." : "Enviar"}</span>
                           <span className="tsf-btnDepth" />
                         </button>
                       </div>
@@ -555,12 +505,7 @@ export default function DashboardPage() {
 
           <div className="dashboard-epic-body">
             <div className="dashboard-secciones">
-              <RewardList
-                user={user}
-                xpData={xpData}
-                ecosRef={walletRef}
-                onActualizarMonedas={actualizarMonedas}
-              />
+              <RewardList user={user} xpData={xpData} ecosRef={walletRef} onActualizarMonedas={actualizarMonedas} />
               <LogroList user={user} />
             </div>
           </div>
@@ -571,13 +516,10 @@ export default function DashboardPage() {
                 <div className="modal-title">Confirmar envío</div>
 
                 <div className="modal-line">
-                  Vas a enviar <b>{pendingTransfer.amt}</b> COINS a{" "}
-                  <b>{pendingTransfer.server.toUpperCase()}</b>.
+                  Vas a enviar <b>{pendingTransfer.amt}</b> COINS a <b>{pendingTransfer.server.toUpperCase()}</b>.
                 </div>
 
-                <div className="modal-sub">
-                  Se descontarán de tu wallet y se sumarán al saldo del servidor.
-                </div>
+                <div className="modal-sub">Se descontarán de tu wallet y se sumarán al saldo del servidor.</div>
 
                 <div className="modal-actions">
                   <button
@@ -593,12 +535,7 @@ export default function DashboardPage() {
                     <span className="tsf-btnDepth" />
                   </button>
 
-                  <button
-                    className="tsf-btn tsf-btn--send"
-                    type="button"
-                    onClick={doTransfer}
-                    disabled={transferLoading}
-                  >
+                  <button className="tsf-btn tsf-btn--send" type="button" onClick={doTransfer} disabled={transferLoading}>
                     <span className="tsf-btnFace">{transferLoading ? "Enviando..." : "Sí, enviar"}</span>
                     <span className="tsf-btnDepth" />
                   </button>
@@ -614,12 +551,7 @@ export default function DashboardPage() {
           <div className="loading-orbital">
             <div className="loading-ring" />
             <div className="loading-gem-wrapper">
-              <img
-                src="/tienda/assets/coin.png"
-                alt="Cargando perfil"
-                className="loading-gem"
-                draggable="false"
-              />
+              <img src="/tienda/assets/coin.png" alt="Cargando perfil" className="loading-gem" draggable="false" />
             </div>
             <div className="loading-orbit loading-orbit-1" />
             <div className="loading-orbit loading-orbit-2" />

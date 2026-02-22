@@ -1,3 +1,4 @@
+// apps/frontend/src/components/Navbar/Navbar.jsx
 import {
   useContext,
   useEffect,
@@ -14,7 +15,9 @@ import NavbarDesktop from "./NavbarDesktop";
 import useIsMobile from "../../hooks/useIsMobile";
 import "../../styles/components/Navbar/navbar.scss";
 
-const API_BASE = (import.meta.env.VITE_BACKEND_URL || "").trim().replace(/\/$/, "");
+const API_BASE = (import.meta.env.VITE_BACKEND_URL || "https://flancraft-backend.onrender.com")
+  .trim()
+  .replace(/\/$/, "");
 const apiUrl = (path) => (API_BASE ? `${API_BASE}${path}` : path);
 
 const SERVERS_COINS = [
@@ -28,7 +31,6 @@ const NAV_ITEMS = [
   { key: "news", to: "/news", label: "Noticias" },
   { key: "leaderboards", to: "/leaderboards", label: "Rankings" },
   { key: "store", to: "/tienda", label: "Tienda" },
- // { key: "vote", to: "/voto", label: "Voto" },
   { key: "tribunal", to: "/tribunal", label: "Tribunal" },
 ];
 
@@ -98,7 +100,6 @@ const Navbar = ({ onLoginClick }) => {
 
   const [userLoading, setUserLoading] = useState(false);
 
-  // Altura real del nav para offsets (hero/anchors/etc.)
   useLayoutEffect(() => {
     const el = navRef.current;
     if (!el) return;
@@ -123,7 +124,6 @@ const Navbar = ({ onLoginClick }) => {
     };
   }, []);
 
-  // Lock scroll cuando menu mobile abierto
   useEffect(() => {
     document.body.style.overflow = menuOpen ? "hidden" : "";
     document.body.style.position = menuOpen ? "fixed" : "";
@@ -136,7 +136,6 @@ const Navbar = ({ onLoginClick }) => {
     };
   }, [menuOpen]);
 
-  // Carga base de usuario (supabase + monedas + wallet)
   useEffect(() => {
     if (!user?.uuid) {
       setUserData({
@@ -177,14 +176,14 @@ const Navbar = ({ onLoginClick }) => {
         const coinsByServer = parseCoinsPayload(monedas);
         const coinsServersTotal = sumTotalCoins(coinsByServer);
 
-        let walletCoins = 0;
+        let walletCoins = toInt(userDataDB?.wallet_coins ?? 0);
+
         if (walletRes) {
           if (walletRes.status === 401) {
             localStorage.removeItem("token");
-            walletCoins = 0;
           } else if (walletRes.ok) {
             const w = await walletRes.json();
-            walletCoins = toInt(w?.walletBalance);
+            walletCoins = toInt(w?.walletBalance ?? w?.wallet_balance ?? walletCoins);
           }
         }
 

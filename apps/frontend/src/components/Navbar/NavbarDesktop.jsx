@@ -1,9 +1,12 @@
+// apps/frontend/src/components/Navbar/NavbarDesktop.jsx
 import { NavLink, Link, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useRef, useState, useMemo, useContext, useLayoutEffect, useCallback } from "react";
 import { UserContext } from "../../context/UserContext";
 import "../../styles/components/Navbar/navbarDesktop.scss";
 
-const API_BASE = (import.meta.env.VITE_BACKEND_URL || "").trim().replace(/\/$/, "");
+const API_BASE = (import.meta.env.VITE_BACKEND_URL || "https://flancraft-backend.onrender.com")
+  .trim()
+  .replace(/\/$/, "");
 const apiUrl = (path) => (API_BASE ? `${API_BASE}${path}` : path);
 
 const toInt = (v) => {

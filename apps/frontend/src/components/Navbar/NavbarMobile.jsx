@@ -1,4 +1,4 @@
-// src/components/Navbar/NavbarMobile.jsx
+// apps/frontend/src/components/Navbar/NavbarMobile.jsx
 import { NavLink, Link, useLocation } from "react-router-dom";
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import LogoutButton from "../Auth/LogoutButton";
@@ -39,15 +39,7 @@ const NavIcon = ({ src, alt, fallbackSrc }) => {
 
   if (!src) return <span className="nav-icon-dot" aria-hidden="true" />;
 
-  return (
-    <img
-      className="nav-icon-img"
-      src={src}
-      alt={alt}
-      draggable="false"
-      onError={onError}
-    />
-  );
+  return <img className="nav-icon-img" src={src} alt={alt} draggable="false" onError={onError} />;
 };
 
 const NavbarMobile = ({
