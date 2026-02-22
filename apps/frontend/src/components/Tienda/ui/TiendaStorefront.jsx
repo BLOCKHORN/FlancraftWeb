@@ -1,10 +1,14 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+// apps/frontend/src/components/Tienda/storefront/TiendaStorefront.jsx
+import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import "../../../styles/components/Tienda/tienda-storefront.scss";
 import TiendaOfertaCountdown from "./TiendaOfertaCountdown";
 import CoinshopModal from "../coinshop/CoinshopModal";
 import DailyFreeClaimCard from "./DailyFreeClaimCard";
 import BonusArrowUp from "./icons/BonusArrowUp";
 import RangosComparativaPanel from "../details/RangosComparativaPanel";
+import RangoWalletModal from "../details/RangoWalletModal";
+import { UserContext } from "../../../context/UserContext";
+import { supabase } from "@lib/supabaseClient";
 
 import {
   getPackageId,
@@ -29,6 +33,27 @@ import {
 } from "./storefront/storefront.utils";
 
 import { useStorefrontData, useTabDeck, useUiScale } from "./storefront/storefront.hooks";
+
+const API_BASE = (import.meta.env.VITE_BACKEND_URL || "https://flancraft-backend.onrender.com").trim().replace(/\/$/, "");
+const apiUrl = (path) => (API_BASE ? `${API_BASE}${path}` : path);
+
+const safeJson = (s) => {
+  try {
+    return JSON.parse(s);
+  } catch {
+    return null;
+  }
+};
+
+const toInt = (v) => {
+  const n = Number(v);
+  return Number.isFinite(n) ? Math.max(0, Math.floor(n)) : 0;
+};
+
+const makeIdempotencyKey = () => {
+  if (typeof crypto !== "undefined" && crypto?.randomUUID) return crypto.randomUUID();
+  return `${Date.now()}-${Math.random().toString(16).slice(2)}-${Math.random().toString(16).slice(2)}`;
+};
 
 function pickFxRate(fxData, currencyUpper) {
   const base = String(fxData?.base || "EUR").toUpperCase();
@@ -87,6 +112,17 @@ function coinsFromMoney(baseMoney, coinsPerBaseUnit) {
   return roundNiceCoins(m * r);
 }
 
+const parseWalletFromDaily = (w) => {
+  const v = w?.walletBalance ?? w?.wallet_balance ?? w?.walletCoins ?? w?.wallet_coins;
+  const n = Number(v);
+  return Number.isFinite(n) ? Math.max(0, Math.floor(n)) : null;
+};
+
+const readToken = () => {
+  const t = localStorage.getItem("token");
+  return t && String(t).trim() ? String(t).trim() : null;
+};
+
 export default function TiendaStorefront({
   carrito,
   toggleProducto,
@@ -97,6 +133,7 @@ export default function TiendaStorefront({
   fx = null,
 }) {
   const wrapRef = useRef(null);
+  const { user } = useContext(UserContext);
 
   const { loading, err, dataByServer } = useStorefrontData();
   const {
@@ -120,6 +157,18 @@ export default function TiendaStorefront({
   const [coinshopOpen, setCoinshopOpen] = useState(false);
   const [coinshopFromRect, setCoinshopFromRect] = useState(null);
 
+  const [rankWalletPrices, setRankWalletPrices] = useState({ nova: null, alpha: null, inmortal: null });
+  const [pricesLoaded, setPricesLoaded] = useState(false);
+
+  const [walletCoins, setWalletCoins] = useState(null);
+  const [walletLoading, setWalletLoading] = useState(false);
+
+  const [walletModalOpen, setWalletModalOpen] = useState(false);
+  const [walletModalRankKey, setWalletModalRankKey] = useState(null);
+  const [walletModalLoading, setWalletModalLoading] = useState(false);
+  const [walletModalError, setWalletModalError] = useState(null);
+  const [walletModalSuccess, setWalletModalSuccess] = useState(false);
+
   useUiScale(wrapRef);
 
   useEffect(() => {
@@ -128,6 +177,94 @@ export default function TiendaStorefront({
       return () => clearTimeout(t);
     }
   }, [loading, err]);
+
+  useEffect(() => {
+    let alive = true;
+
+    const loadPrices = async () => {
+      try {
+        const r = await fetch(apiUrl("/api/rangos/lista"), { method: "GET" });
+        const j = await r.json().catch(() => []);
+        if (!alive) return;
+
+        if (!r.ok || !Array.isArray(j)) {
+          setPricesLoaded(true);
+          return;
+        }
+
+        const next = { nova: null, alpha: null, inmortal: null };
+
+        for (const row of j) {
+          const rk = String(row?.rango || "").trim().toLowerCase();
+          const tp = String(row?.tipo || "").trim().toLowerCase();
+          if (tp !== "perma") continue;
+          if (!["nova", "alpha", "inmortal"].includes(rk)) continue;
+          const p = Number(row?.precio_wallet);
+          if (Number.isFinite(p) && p > 0) next[rk] = Math.floor(p);
+        }
+
+        setRankWalletPrices(next);
+        setPricesLoaded(true);
+      } catch {
+        if (!alive) return;
+        setPricesLoaded(true);
+      }
+    };
+
+    loadPrices();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const fetchWalletBalance = useCallback(async () => {
+    if (!user?.uuid) {
+      setWalletCoins(null);
+      return;
+    }
+
+    setWalletLoading(true);
+
+    try {
+      const token = readToken();
+
+      const [userRes, walletRes] = await Promise.all([
+        supabase.from("usuarios").select("wallet_coins").eq("uuid", user.uuid).single(),
+        token
+          ? fetch(apiUrl("/api/daily-claim/status"), {
+              headers: { Authorization: `Bearer ${token}` },
+            })
+          : Promise.resolve(null),
+      ]);
+
+      let wallet = toInt(userRes?.data?.wallet_coins ?? 0);
+
+      if (walletRes) {
+        if (walletRes.status === 401) {
+          localStorage.removeItem("token");
+        } else if (walletRes.ok) {
+          const w = await walletRes.json().catch(() => ({}));
+          const parsed = parseWalletFromDaily(w);
+          if (parsed != null) wallet = parsed;
+        }
+      }
+
+      setWalletCoins(wallet);
+    } catch {
+      setWalletCoins(null);
+    } finally {
+      setWalletLoading(false);
+    }
+  }, [user?.uuid]);
+
+  useEffect(() => {
+    if (!user?.uuid) {
+      setWalletCoins(null);
+      setWalletLoading(false);
+      return;
+    }
+    fetchWalletBalance();
+  }, [user?.uuid, fetchWalletBalance]);
 
   const openCoinshopFromEl = (el) => {
     const r = el?.getBoundingClientRect?.();
@@ -148,6 +285,25 @@ export default function TiendaStorefront({
 
   const openCoinshopFromEvent = (ev) => openCoinshopFromEl(ev?.currentTarget);
   const closeCoinshop = () => setCoinshopOpen(false);
+
+  const openWalletModal = useCallback(
+    (rankKey) => {
+      setWalletModalError(null);
+      setWalletModalSuccess(false);
+      setWalletModalRankKey(rankKey);
+      setWalletModalOpen(true);
+      if (user?.uuid) fetchWalletBalance();
+    },
+    [user?.uuid, fetchWalletBalance]
+  );
+
+  const closeWalletModal = useCallback(() => {
+    setWalletModalOpen(false);
+    setWalletModalLoading(false);
+    setWalletModalError(null);
+    setWalletModalSuccess(false);
+    setWalletModalRankKey(null);
+  }, []);
 
   const serverTabs = useMemo(
     () => [
@@ -175,7 +331,14 @@ export default function TiendaStorefront({
 
   const activeTabMeta = useMemo(() => {
     const found = serverTabs.find((t) => t.key === serverTab);
-    return found || { key: serverTab, label: String(serverTab || "").toUpperCase(), icon: null };
+    return (
+      found || {
+        key: serverTab,
+        label: String(serverTab || "").toUpperCase(),
+        icon: null,
+        fallbackIcon: null,
+      }
+    );
   }, [serverTabs, serverTab]);
 
   const activeData = dataByServer?.[renderTab] || { cats: [], packs: [], bust: null };
@@ -247,6 +410,12 @@ export default function TiendaStorefront({
       { key: "inmortal", label: "INMORTAL", deg: "/tienda/assets/degrojo.svg", pkg: pickMain(by.inmortal), best: true },
     ];
   }, [rangosAll]);
+
+  const rankMetaByKey = useMemo(() => {
+    const m = new Map();
+    for (const r of rankCards) m.set(r.key, r);
+    return m;
+  }, [rankCards]);
 
   const coinsPackages = useMemo(() => {
     return pickCoinsPackages({
@@ -365,7 +534,7 @@ export default function TiendaStorefront({
 
   const rootFxClass = hoverFx ? `fx-${hoverFx}` : "";
 
-  const onRankBuySplitClick = (pkg, ev) => {
+  const onRankBuySplitClick = (rankKey, pkg, ev) => {
     ev.stopPropagation();
     if (!pkg) return;
 
@@ -380,14 +549,123 @@ export default function TiendaStorefront({
       return;
     }
 
-    return;
+    openWalletModal(rankKey);
   };
+
+  const onPanelIconError = useCallback(
+    (e) => {
+      const fallback = activeTabMeta?.fallbackIcon ? withCacheBust(activeTabMeta.fallbackIcon, activeData.bust) : null;
+      if (!fallback) return;
+      const img = e?.currentTarget;
+      if (!img) return;
+      if (img.dataset?.fallback === "1") return;
+      img.dataset.fallback = "1";
+      img.src = fallback;
+    },
+    [activeTabMeta?.fallbackIcon, activeData.bust]
+  );
+
+  const panelIconSrc = useMemo(() => {
+    if (!activeTabMeta?.icon) return null;
+    return withCacheBust(activeTabMeta.icon, activeData.bust);
+  }, [activeTabMeta?.icon, activeData.bust]);
+
+  const walletRankMeta = walletModalRankKey ? rankMetaByKey.get(walletModalRankKey) : null;
+  const walletRankPrice = walletModalRankKey ? rankWalletPrices?.[walletModalRankKey] ?? null : null;
+
+  const walletNeedsLogin = useMemo(() => {
+    const token = readToken();
+    return !user?.uuid || !token;
+  }, [user?.uuid, walletModalOpen]);
+
+  const canConfirmWallet = useMemo(() => {
+    if (!walletModalRankKey) return false;
+    const p = Number(walletRankPrice);
+    if (!Number.isFinite(p) || p <= 0) return false;
+    if (walletNeedsLogin) return false;
+
+    const w = Number(walletCoins);
+    if (!Number.isFinite(w)) return false;
+    return w >= p;
+  }, [walletModalRankKey, walletRankPrice, walletNeedsLogin, walletCoins]);
+
+  const confirmWalletBuy = useCallback(async () => {
+    if (!walletModalRankKey) return;
+
+    const token = readToken();
+    if (!token) {
+      setWalletModalError("Necesitas iniciar sesión para comprar con wallet coins.");
+      return;
+    }
+
+    const price = Number(rankWalletPrices?.[walletModalRankKey]);
+    if (!Number.isFinite(price) || price <= 0) {
+      setWalletModalError("Precio no disponible. Vuelve a abrir la tienda o recarga.");
+      return;
+    }
+
+    setWalletModalLoading(true);
+    setWalletModalError(null);
+    setWalletModalSuccess(false);
+
+    try {
+      const r = await fetch(apiUrl("/api/rangos/comprar-wallet"), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          rango: walletModalRankKey,
+          tipo: "perma",
+          idempotencyKey: makeIdempotencyKey(),
+        }),
+      });
+
+      const j = await r.json().catch(() => ({}));
+
+      if (!r.ok) {
+        setWalletModalError(j?.error || "No se pudo completar la compra.");
+        await fetchWalletBalance();
+        setWalletModalLoading(false);
+        return;
+      }
+
+      await fetchWalletBalance();
+      setWalletModalSuccess(true);
+      setWalletModalLoading(false);
+    } catch {
+      setWalletModalError("Error de red. Inténtalo de nuevo.");
+      setWalletModalLoading(false);
+    }
+  }, [walletModalRankKey, rankWalletPrices, fetchWalletBalance]);
 
   return (
     <div className={`tienda-storefront tsf-brawl2 ${ready ? "is-ready" : ""} ${rootFxClass}`} ref={wrapRef}>
       <div className="tsf-bgFX" aria-hidden="true" />
 
       <CoinshopModal open={coinshopOpen} fromRect={coinshopFromRect} onClose={closeCoinshop} />
+
+      <RangoWalletModal
+        open={walletModalOpen}
+        onClose={closeWalletModal}
+        rankKey={walletModalRankKey}
+        rankLabel={walletRankMeta?.label}
+        rankDeg={walletRankMeta?.deg}
+        rankIcon={walletRankMeta?.pkg ? withCacheBust(getPackageImage(walletRankMeta.pkg), dataByServer.gens?.bust) : null}
+        price={walletRankPrice}
+        walletCoins={walletCoins}
+        loading={walletModalLoading || walletLoading}
+        error={walletModalError}
+        success={walletModalSuccess}
+        needsLogin={walletNeedsLogin}
+        canConfirm={canConfirmWallet}
+        onConfirm={confirmWalletBuy}
+        onOpenCoinshop={() => {
+          closeWalletModal();
+          setTimeout(() => openCoinshopFromEl(wrapRef.current), 0);
+        }}
+      />
 
       {activeRank ? (
         <RangosComparativaPanel
@@ -399,6 +677,7 @@ export default function TiendaStorefront({
           onBuyEur={(pkg, ev) => handleBuyRank(pkg, ev)}
           onBuyCoins={(pkg, ev) => {
             ev?.stopPropagation?.();
+            openWalletModal(activeRank);
           }}
         />
       ) : null}
@@ -429,7 +708,16 @@ export default function TiendaStorefront({
                     const pkg = r.pkg;
 
                     const priceBase = pkg ? getPackagePrice(pkg) : null;
-                    const coinsPrice = priceBase != null ? coinsFromMoney(priceBase, coinsPerBaseUnit) : null;
+
+                    const walletPrice = rankWalletPrices?.[r.key];
+                    const coinsPrice =
+                      Number.isFinite(Number(walletPrice)) && Number(walletPrice) > 0
+                        ? Number(walletPrice)
+                        : pricesLoaded
+                        ? null
+                        : priceBase != null
+                        ? coinsFromMoney(priceBase, coinsPerBaseUnit)
+                        : null;
 
                     const tebexImg = pkg ? withCacheBust(getPackageImage(pkg), dataByServer.gens?.bust) : "";
 
@@ -473,11 +761,7 @@ export default function TiendaStorefront({
                             PERMANENTE
                           </div>
 
-                          {tebexImg ? (
-                            <img className="tsf-icon" src={tebexImg} alt="" draggable="false" />
-                          ) : (
-                            <div className="tsf-iconFallback" />
-                          )}
+                          {tebexImg ? <img className="tsf-icon" src={tebexImg} alt="" draggable="false" /> : <div className="tsf-iconFallback" />}
 
                           <div className="tsf-squareCta">
                             <button
@@ -485,17 +769,17 @@ export default function TiendaStorefront({
                               className={`tsf-ctaSplit ${cart ? "is-in" : ""}`}
                               onClick={(e) => {
                                 if (!pkg) return;
-                                onRankBuySplitClick(pkg, e);
+                                onRankBuySplitClick(r.key, pkg, e);
                               }}
                               disabled={!pkg}
                               aria-label={`Comprar ${r.label} (dinero o coins)`}
-                              title="Izquierda: dinero · Derecha: coins"
+                              title="Izquierda: dinero · Derecha: wallet coins"
                             >
                               <span className="tsf-ctaSplitSide tsf-ctaSplitSide--usd" aria-label="Comprar con dinero">
                                 <span className="tsf-ctaSplitValue">{priceBase != null ? fmtMoney(priceBase) : "—"}</span>
                               </span>
 
-                              <span className="tsf-ctaSplitSide tsf-ctaSplitSide--coins" aria-label="Comprar con coins">
+                              <span className="tsf-ctaSplitSide tsf-ctaSplitSide--coins" aria-label="Comprar con wallet coins">
                                 <span className="tsf-ctaSplitCoins">
                                   <span className="tsf-ctaSplitValue">{coinsPrice != null ? fmtInt(coinsPrice) : "—"}</span>
                                   <img className="tsf-ctaCoinIcon" src="/tienda/assets/coin.png" alt="" draggable="false" />
@@ -561,12 +845,22 @@ export default function TiendaStorefront({
                     <div className="tsf-coinsPanelHeaderInner">
                       <h2 className="tsf-coinsPanelTitle">
                         <span className="tsf-coinsPanelTitleInner">
-                          {activeTabMeta?.icon ? (
-                            <img className="tsf-coinsPanelTitleIcon" src={activeTabMeta.icon} alt="" draggable="false" />
+                          {panelIconSrc ? (
+                            <img
+                              className="tsf-coinsPanelTitleIcon"
+                              src={panelIconSrc}
+                              alt=""
+                              draggable="false"
+                              onError={(e) => {
+                                const fallback = activeTabMeta?.fallbackIcon ? withCacheBust(activeTabMeta.fallbackIcon, activeData.bust) : null;
+                                if (!fallback) return;
+                                if (e?.currentTarget?.dataset?.fallback === "1") return;
+                                e.currentTarget.dataset.fallback = "1";
+                                e.currentTarget.src = fallback;
+                              }}
+                            />
                           ) : null}
-                          <span className="tsf-coinsPanelTitleText">
-                            LOTES DE COINS {String(activeTabMeta?.label || "").toUpperCase()}
-                          </span>
+                          <span className="tsf-coinsPanelTitleText">LOTES DE COINS {String(activeTabMeta?.label || "").toUpperCase()}</span>
                         </span>
                       </h2>
 
@@ -704,11 +998,7 @@ export default function TiendaStorefront({
                                     -{discountPct}%
                                   </span>
                                 )}
-                                {meta?.isBest && (
-                                  <span className="tsf-bestBadge" aria-hidden="true">
-                                    TOP
-                                  </span>
-                                )}
+                                {meta?.isBest && <span className="tsf-bestBadge" aria-hidden="true">TOP</span>}
                               </div>
                             </article>
                           );

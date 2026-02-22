@@ -107,27 +107,19 @@
   opacity: 0.9;
 }
 
+/* ONEBLOCK -> AZUL */
 .tsf-tab--oneblock{
-  --tab-top: rgba(170, 90, 255, 0.95);
-  --tab-bot: rgba(105, 70, 205, 0.95);
-  --tab-top-a: rgba(200, 125, 255, 0.98);
-  --tab-bot-a: rgba(120, 82, 225, 0.98);
-  --tab-glow: rgba(190, 120, 255, 0.42);
-  --orb-b: rgba(190, 120, 255, 0.70);
-  --orb-c: rgba(120, 50, 200, 0.10);
-}
-
-.tsf-tab--survival{
-  --tab-top: rgba(55, 190, 255, 0.92);
-  --tab-bot: rgba(45, 115, 215, 0.96);
-  --tab-top-a: rgba(95, 215, 255, 0.98);
-  --tab-bot-a: rgba(55, 135, 235, 0.98);
-  --tab-glow: rgba(120, 210, 255, 0.42);
+  --tab-top: rgba(65, 170, 255, 0.94);
+  --tab-bot: rgba(45, 105, 220, 0.97);
+  --tab-top-a: rgba(105, 205, 255, 0.98);
+  --tab-bot-a: rgba(55, 130, 235, 0.98);
+  --tab-glow: rgba(120, 210, 255, 0.44);
   --orb-b: rgba(120, 210, 255, 0.72);
   --orb-c: rgba(35, 120, 220, 0.10);
 }
 
-.tsf-tab--gens{
+/* SURVIVAL -> VERDE */
+.tsf-tab--survival{
   --tab-top: rgba(120, 235, 90, 0.92);
   --tab-bot: rgba(55, 165, 85, 0.96);
   --tab-top-a: rgba(150, 250, 115, 0.98);
@@ -135,6 +127,17 @@
   --tab-glow: rgba(140, 255, 170, 0.40);
   --orb-b: rgba(140, 255, 170, 0.70);
   --orb-c: rgba(35, 160, 85, 0.10);
+}
+
+/* GENS -> AZUL TURQUESA */
+.tsf-tab--gens{
+  --tab-top: rgba(70, 235, 210, 0.92);
+  --tab-bot: rgba(35, 165, 155, 0.96);
+  --tab-top-a: rgba(105, 250, 235, 0.98);
+  --tab-bot-a: rgba(50, 190, 180, 0.98);
+  --tab-glow: rgba(120, 255, 245, 0.40);
+  --orb-b: rgba(120, 255, 245, 0.70);
+  --orb-c: rgba(25, 150, 145, 0.10);
 }
 
 .tsf-tabBadge{

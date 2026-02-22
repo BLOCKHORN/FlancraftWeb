@@ -5,7 +5,10 @@ import RewardList from "./RewardList";
 import LogroList from "./LogroList";
 import "../../styles/components/Dashboard/_dashboardpage.scss";
 
-const API_BASE = import.meta.env.VITE_BACKEND_URL || "https://flancraft-backend.onrender.com";
+const API_BASE = (import.meta.env.VITE_BACKEND_URL || "https://flancraft-backend.onrender.com")
+  .trim()
+  .replace(/\/$/, "");
+const apiUrl = (path) => (API_BASE ? `${API_BASE}${path}` : path);
 
 const SERVERS_COINS = [
   { key: "gens", label: "GENS", icon: "/assets/reinos/gens.webp" },
@@ -16,6 +19,39 @@ const SERVERS_COINS = [
 const toInt = (v) => {
   const n = Number(v);
   return Number.isFinite(n) ? Math.max(0, Math.floor(n)) : 0;
+};
+
+const parseCoinsPayload = (m) => {
+  if (m?.byServer && typeof m.byServer === "object") {
+    const out = {};
+    for (const [k, v] of Object.entries(m.byServer)) out[String(k)] = toInt(v);
+    return out;
+  }
+
+  if (Array.isArray(m?.balances)) {
+    const out = {};
+    for (const row of m.balances) {
+      const key = String(row?.servidor || row?.server || "").trim().toLowerCase();
+      if (!key) continue;
+      out[key] = toInt(row?.coins);
+    }
+    return out;
+  }
+
+  if (Array.isArray(m)) {
+    const out = {};
+    for (const row of m) {
+      const key = String(row?.servidor || row?.server || "").trim().toLowerCase();
+      if (!key) continue;
+      out[key] = toInt(row?.coins);
+    }
+    return out;
+  }
+
+  if (m?.coins != null) return { global: toInt(m.coins) };
+  if (m?.ecos != null) return { global: toInt(m.ecos) };
+
+  return {};
 };
 
 export default function DashboardPage() {
@@ -57,19 +93,19 @@ export default function DashboardPage() {
     if (!parsed.uuid || !parsed.loggedIn) return navigate("/");
 
     const token = localStorage.getItem("token");
+    const rolAdminLS = (localStorage.getItem("rol_admin") || "").trim();
 
     const cargarDatos = async () => {
       try {
         const reqs = [
-          fetch(`${API_BASE}/api/usuarios/${parsed.uuid}`),
-          fetch(`${API_BASE}/api/monedas/${parsed.uuid}`),
-          fetch(`${API_BASE}/api/usuarios/${parsed.uuid}/xp`),
-          fetch(`${API_BASE}/api/usuarios`),
+          fetch(apiUrl(`/api/usuarios/${parsed.uuid}`)),
+          fetch(apiUrl(`/api/monedas/${parsed.uuid}`)),
+          fetch(apiUrl(`/api/usuarios/${parsed.uuid}/xp`)),
         ];
 
         if (token) {
           reqs.push(
-            fetch(`${API_BASE}/api/daily-claim/status`, {
+            fetch(apiUrl(`/api/daily-claim/status`), {
               headers: { Authorization: `Bearer ${token}` },
             })
           );
@@ -77,22 +113,22 @@ export default function DashboardPage() {
           reqs.push(Promise.resolve(null));
         }
 
-        const [usuarioRes, monedasRes, xpRes, usuariosRes, walletRes] = await Promise.all(reqs);
+        const [usuarioRes, monedasRes, xpRes, walletRes] = await Promise.all(reqs);
 
-        if (!usuarioRes?.ok || !monedasRes?.ok || !xpRes?.ok || !usuariosRes?.ok) {
+        if (!usuarioRes?.ok || !monedasRes?.ok || !xpRes?.ok) {
           throw new Error("Error al cargar datos");
         }
 
         const usuario = await usuarioRes.json();
-        const monedas = await monedasRes.json();
+        const monedasRaw = await monedasRes.json();
         const xp = await xpRes.json();
-        const usuarios = await usuariosRes.json();
 
-        const actual = usuarios.find((u) => u.uuid === parsed.uuid);
-        const rango_usuario = actual?.rango_usuario || null;
-        const es_premium = actual?.es_premium || false;
+        const coinsByServerParsed = parseCoinsPayload(monedasRaw);
 
-        let wallet = toInt(actual?.wallet_coins ?? usuario?.wallet_coins ?? 0);
+        const rango_usuario = usuario?.rango_usuario || null;
+        const es_premium = usuario?.es_premium === true;
+
+        let wallet = toInt(usuario?.wallet_coins ?? 0);
 
         if (walletRes) {
           if (walletRes.status === 401) {
@@ -107,7 +143,9 @@ export default function DashboardPage() {
 
         setUser({
           ...usuario,
-          monedas,
+          rol_admin: usuario?.rol_admin || (rolAdminLS || null),
+          monedas: monedasRaw,
+          coinsByServer: coinsByServerParsed,
           rango_usuario,
           es_premium,
           wallet_coins: wallet,
@@ -130,9 +168,9 @@ export default function DashboardPage() {
       const token = localStorage.getItem("token");
 
       const reqs = [
-        fetch(`${API_BASE}/api/monedas/${user.uuid}`),
+        fetch(apiUrl(`/api/monedas/${user.uuid}`)),
         token
-          ? fetch(`${API_BASE}/api/daily-claim/status`, {
+          ? fetch(apiUrl(`/api/daily-claim/status`), {
               headers: { Authorization: `Bearer ${token}` },
             })
           : Promise.resolve(null),
@@ -143,6 +181,7 @@ export default function DashboardPage() {
       if (!monedasRes.ok) throw new Error("Error al actualizar monedas");
 
       const monedasActualizadas = await monedasRes.json();
+      const coinsByServerParsed = parseCoinsPayload(monedasActualizadas);
 
       let wallet = toInt(user?.wallet_coins ?? walletBalance ?? 0);
 
@@ -160,6 +199,7 @@ export default function DashboardPage() {
       setUser((prev) => ({
         ...prev,
         monedas: monedasActualizadas,
+        coinsByServer: coinsByServerParsed,
         wallet_coins: wallet,
       }));
     } catch (err) {
@@ -196,27 +236,9 @@ export default function DashboardPage() {
   }, [rangoKey]);
 
   const coinsByServer = useMemo(() => {
-    const m = user?.monedas;
-    if (!m) return {};
-
-    if (m.byServer && typeof m.byServer === "object") {
-      const out = {};
-      for (const [k, v] of Object.entries(m.byServer)) out[String(k)] = toInt(v);
-      return out;
-    }
-
-    if (Array.isArray(m.balances)) {
-      const out = {};
-      for (const row of m.balances) {
-        const key = String(row?.servidor || "").trim().toLowerCase();
-        if (!key) continue;
-        out[key] = toInt(row?.coins);
-      }
-      return out;
-    }
-
-    return {};
-  }, [user?.monedas]);
+    if (user?.coinsByServer && typeof user.coinsByServer === "object") return user.coinsByServer;
+    return parseCoinsPayload(user?.monedas);
+  }, [user?.coinsByServer, user?.monedas]);
 
   const totalCoins = useMemo(() => {
     if (user?.wallet_coins != null) return toInt(user.wallet_coins);
@@ -240,7 +262,7 @@ export default function DashboardPage() {
 
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`${API_BASE}/api/wallet/transfer`, {
+      const res = await fetch(apiUrl(`/api/wallet/transfer`), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -275,6 +297,13 @@ export default function DashboardPage() {
     } finally {
       setTransferLoading(false);
     }
+  };
+
+  const getServerCoins = (key) => {
+    const k = String(key || "").toLowerCase();
+    if (k && k in coinsByServer) return toInt(coinsByServer[k]);
+    if ("global" in coinsByServer) return toInt(coinsByServer.global);
+    return 0;
   };
 
   return (
@@ -403,7 +432,7 @@ export default function DashboardPage() {
 
                               <span className="server-balance">
                                 <img src="/tienda/assets/coin.png" alt="" className="coin-mini" draggable="false" />
-                                {toInt(coinsByServer[s.key])}
+                                {getServerCoins(s.key)}
                               </span>
                             </span>
 
@@ -485,7 +514,7 @@ export default function DashboardPage() {
                       <span className="tsf-btnDepth" />
                     </button>
 
-                    {user.rol_admin.toLowerCase() === "owner" && (
+                    {String(user.rol_admin || "").toLowerCase() === "owner" && (
                       <>
                         <button className="tsf-btn tsf-btn--green" onClick={() => navigate("/admin")}>
                           <span className="tsf-btnFace">Gestión de staff</span>
