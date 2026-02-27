@@ -2,9 +2,9 @@ import React, { useState } from "react";
 import { Routes, Route } from "react-router-dom";
 import Navbar from "./components/Navbar/Navbar";
 import LoginModal from "./components/Auth/LoginModal";
+import VincularPage from "./components/Auth/VincularPage";
 import { Toaster } from "react-hot-toast";
 
-// Páginas públicas
 import Home from "./components/Landpage/Home";
 import AllNews from "./components/Noticias/AllNews";
 import NewsDetail from "./components/Noticias/NewsDetail";
@@ -12,19 +12,13 @@ import DashboardPage from "./components/Dashboard/DashboardPage";
 import PerfilJugador from "./components/Estadisticas/PerfilJugador";
 import Leaderboards from "./components/Estadisticas/Leaderboards";
 
-// NUEVO: VOTO
-// import VotoPage from "./components/Voto/VotoPage";
-
-// Tribunal System
 import TribunalMain from "./components/Tribunal/TribunalMain";
 import TribunalAdmin from "./components/Tribunal/TribunalAdmin";
 
-// Admin
 import GestionStaff from "./components/Admin/GestionStaff";
 import NoticiasAdmin from "./components/Admin/NoticiasAdmin";
 import EditarNoticia from "./components/Noticias/EditarNoticia";
 
-// Tienda
 import TiendaLayout from "@/components/Tienda/ui/TiendaLayout";
 import "@fortawesome/fontawesome-free/css/all.min.css";
 
@@ -38,26 +32,23 @@ const App = () => {
       {showLogin && <LoginModal onClose={() => setShowLogin(false)} />}
 
       <Routes>
-        {/* Público */}
         <Route path="/" element={<Home onLoginClick={() => setShowLogin(true)} />} />
+
+        <Route path="/vincular" element={<VincularPage />} />
+
         <Route path="/news" element={<AllNews />} />
         <Route path="/news/:slug" element={<NewsDetail />} />
 
         <Route path="/tienda/*" element={<TiendaLayout />} />
 
-        {/* CAMBIO: /rangos fuera → /voto 
-        <Route path="/voto" element={<VotoPage />} />*/}
-
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/leaderboards" element={<Leaderboards />} />
         <Route path="/perfil/:nombre" element={<PerfilJugador />} />
 
-        {/* Admin Paneles */}
         <Route path="/admin" element={<GestionStaff />} />
         <Route path="/admin/noticias" element={<NoticiasAdmin />} />
         <Route path="/admin/noticias/editar/:id" element={<EditarNoticia />} />
 
-        {/* Tribunal System */}
         <Route path="/tribunal" element={<TribunalMain />} />
         <Route path="/tribunal/admin" element={<TribunalAdmin />} />
       </Routes>

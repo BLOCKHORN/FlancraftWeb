@@ -1,12 +1,5 @@
 // src/components/Tienda/ui/TiendaLayout.jsx
-import React, {
-  useContext,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 
@@ -54,9 +47,7 @@ function formatCurrency(amount, currency) {
   const cur = String(currency || "EUR").toUpperCase();
   if (!Number.isFinite(n)) return "—";
 
-  // Evita "US$" en es-ES si te molesta: usa locale específico por moneda.
-  const locale =
-    cur === "USD" ? "en-US" : cur === "GBP" ? "en-GB" : "es-ES";
+  const locale = cur === "USD" ? "en-US" : cur === "GBP" ? "en-GB" : "es-ES";
 
   try {
     return new Intl.NumberFormat(locale, {
@@ -134,16 +125,10 @@ const TiendaLayout = () => {
   const { user, setUser } = useContext(UserContext);
 
   const [mostrarLogin, setMostrarLogin] = useState(false);
-  const [nombreConfirmado, setNombreConfirmado] = useState(
-    () => localStorage.getItem("nombreJugador") || ""
-  );
-  const [uuidConfirmado, setUuidConfirmado] = useState(
-    () => localStorage.getItem("uuidJugador") || ""
-  );
+  const [nombreConfirmado, setNombreConfirmado] = useState(() => localStorage.getItem("nombreJugador") || "");
+  const [uuidConfirmado, setUuidConfirmado] = useState(() => localStorage.getItem("uuidJugador") || "");
 
-  const [moneda, setMoneda] = useState(
-    () => localStorage.getItem("monedaSeleccionada") || "EUR"
-  );
+  const [moneda, setMoneda] = useState(() => localStorage.getItem("monedaSeleccionada") || "EUR");
 
   const { carrito, toggleProducto, agregar, eliminar, vaciar, total, cambiarCantidad, setCantidad } =
     useTiendaCarrito(nombreConfirmado);
@@ -154,9 +139,7 @@ const TiendaLayout = () => {
   const isShort = useIsShortHeight(700);
   const isCompact = Boolean(isNarrow || isShort);
 
-  const esPortada = useMemo(() => {
-    return location.pathname === "/tienda" || location.pathname === "/tienda/";
-  }, [location.pathname]);
+  const esPortada = useMemo(() => location.pathname === "/tienda" || location.pathname === "/tienda/", [location.pathname]);
 
   const serverFromPath = useMemo(() => {
     const parts = String(location.pathname || "").split("/").filter(Boolean);
@@ -176,9 +159,7 @@ const TiendaLayout = () => {
     return () => window.removeEventListener("storage", onStorage);
   }, []);
 
-  const isWebLoggedIn = useMemo(() => {
-    return Boolean(user?.loggedIn || webUser?.loggedIn);
-  }, [user?.loggedIn, webUser?.loggedIn]);
+  const isWebLoggedIn = useMemo(() => Boolean(user?.loggedIn || webUser?.loggedIn), [user?.loggedIn, webUser?.loggedIn]);
 
   const prevEsPortadaRef = useRef(esPortada);
   const [expandiendo, setExpandiendo] = useState(false);
@@ -198,11 +179,7 @@ const TiendaLayout = () => {
     if (!host) return;
 
     const pick = () => {
-      const candidates = [
-        document.querySelector(".navbar-content"),
-        document.querySelector(".mobile-only"),
-      ].filter(Boolean);
-
+      const candidates = [document.querySelector(".navbar-content"), document.querySelector(".mobile-only")].filter(Boolean);
       return candidates.find((el) => {
         const cs = window.getComputedStyle(el);
         return cs.display !== "none" && cs.visibility !== "hidden" && el.offsetHeight > 0;
@@ -345,6 +322,7 @@ const TiendaLayout = () => {
       if (!img || !rect) return;
 
       const basket =
+        document.querySelector('[data-basket-anchor="compact"]') ||
         document.querySelector('[data-basket-anchor="true"]') ||
         document.getElementById("tienda-basket");
 
@@ -354,8 +332,8 @@ const TiendaLayout = () => {
       const fromX = (Number(rect.x) || 0) - 26;
       const fromY = (Number(rect.y) || 0) - 26;
 
-      const toX = br.left + br.width * 0.85;
-      const toY = br.top + br.height * 0.25;
+      const toX = br.left + br.width * 0.86;
+      const toY = br.top + br.height * 0.3;
 
       const id = uid();
       const dx = toX - fromX;
@@ -386,7 +364,6 @@ const TiendaLayout = () => {
     return (carrito || []).reduce((acc, it) => acc + (Number(it.quantity) || 1), 0);
   }, [carrito]);
 
-  // FX desde backend
   const [fx, setFx] = useState(null);
 
   useEffect(() => {
@@ -415,11 +392,7 @@ const TiendaLayout = () => {
   }, []);
 
   const baseCurrency = useMemo(() => String(fx?.base || "EUR").toUpperCase(), [fx]);
-  const currencyUpper = useMemo(
-    () => String(moneda || baseCurrency).toUpperCase(),
-    [moneda, baseCurrency]
-  );
-
+  const currencyUpper = useMemo(() => String(moneda || baseCurrency).toUpperCase(), [moneda, baseCurrency]);
   const fxRate = useMemo(() => pickFxRate(fx, currencyUpper), [fx, currencyUpper]);
 
   const totalDisplay = useMemo(() => {
@@ -428,9 +401,7 @@ const TiendaLayout = () => {
     return Number.isFinite(out) ? out : base;
   }, [total, fxRate]);
 
-  const totalFormatted = useMemo(() => {
-    return formatCurrency(totalDisplay, currencyUpper);
-  }, [totalDisplay, currencyUpper]);
+  const totalFormatted = useMemo(() => formatCurrency(totalDisplay, currencyUpper), [totalDisplay, currencyUpper]);
 
   const [badgePop, setBadgePop] = useState(false);
   const prevQtyRef = useRef(totalQty);
@@ -446,6 +417,8 @@ const TiendaLayout = () => {
     prevQtyRef.current = totalQty;
   }, [totalQty]);
 
+  const openDrawer = () => setCartOpenMobile(true);
+
   return (
     <div
       ref={rootRef}
@@ -457,12 +430,7 @@ const TiendaLayout = () => {
         isCompact ? "is-mobile" : "is-desktop",
       ].join(" ")}
     >
-      {mostrarLogin && (
-        <TiendaModalJugador
-          onConfirmar={confirmarNombre}
-          onCerrar={() => setMostrarLogin(false)}
-        />
-      )}
+      {mostrarLogin && <TiendaModalJugador onConfirmar={confirmarNombre} onCerrar={() => setMostrarLogin(false)} />}
 
       <div className="tienda-fly-layer" aria-hidden="true">
         {flyers.map((f) => (
@@ -471,12 +439,7 @@ const TiendaLayout = () => {
             className="tienda-flyer"
             src={f.img}
             alt=""
-            style={{
-              left: `${f.fromX}px`,
-              top: `${f.fromY}px`,
-              "--dx": `${f.dx}px`,
-              "--dy": `${f.dy}px`,
-            }}
+            style={{ left: `${f.fromX}px`, top: `${f.fromY}px`, "--dx": `${f.dx}px`, "--dy": `${f.dy}px` }}
             onAnimationEnd={() => removeFlyer(f.id)}
             draggable={false}
           />
@@ -486,12 +449,7 @@ const TiendaLayout = () => {
       <main className="tienda-layout-main">
         <section className="tienda-layout-left">
           <div className="tienda-shelf-frame">
-            <div
-              className={
-                "tienda-shelf-inner " +
-                (esPortada ? "tienda-shelf-portada" : "tienda-shelf-contenido")
-              }
-            >
+            <div className={"tienda-shelf-inner " + (esPortada ? "tienda-shelf-portada" : "tienda-shelf-contenido")}>
               <Routes>
                 <Route
                   path="/"
@@ -556,41 +514,36 @@ const TiendaLayout = () => {
           <button
             type="button"
             className={[
-              "tienda-mobileBar",
+              "tienda-mobileCta",
               basketPulse ? "is-pulse" : "",
               distinctCount === 0 ? "is-empty" : "has-items",
               badgePop ? "is-pop" : "",
             ].join(" ")}
-            onClick={() => setCartOpenMobile((v) => !v)}
-            data-basket-anchor="true"
-            aria-label="Abrir carrito"
+            onClick={openDrawer}
+            disabled={totalQty === 0}
+            data-basket-anchor="compact"
+            aria-label={totalQty === 0 ? "Carrito vacío" : `Abrir compra. ${totalQty} artículos, total ${totalFormatted}`}
             aria-expanded={cartOpenMobile ? "true" : "false"}
           >
-            <div className="tmb-left" aria-label={`Carrito: ${totalQty} artículos`}>
-              <div className="tmb-pill">
-                <span className="tmb-pill-icon" aria-hidden="true">
-                  <IconCart size={18} />
-                </span>
-                <span className="tmb-pill-label">CARRITO</span>
-                <span className="tmb-pill-val">{totalQty}</span>
-              </div>
-            </div>
+            <span className="tmc-left" aria-hidden="true">
+              <span className="tmc-icon">
+                <IconCart size={18} />
+              </span>
+              <span className="tmc-qty">{totalQty}</span>
+            </span>
 
-            <div className="tmb-cta" aria-label={`Comprar por ${totalFormatted}`}>
-              <span className="tmb-ctaText">COMPRAR</span>
-              <span className="tmb-ctaPrice">{totalFormatted}</span>
-            </div>
+            <span className="tmc-divider" aria-hidden="true" />
+
+            <span className="tmc-right" aria-hidden="true">
+              <span className="tmc-price">{totalFormatted}</span>
+              <span className="tmc-buy">COMPRAR</span>
+            </span>
           </button>
 
           {cartOpenMobile &&
             createPortal(
               <div className="tienda-cartDrawer" role="dialog" aria-modal="true" aria-label="Carrito">
-                <button
-                  type="button"
-                  className="tcd-backdrop"
-                  aria-label="Cerrar carrito"
-                  onClick={() => setCartOpenMobile(false)}
-                />
+                <button type="button" className="tcd-backdrop" aria-label="Cerrar carrito" onClick={() => setCartOpenMobile(false)} />
 
                 <div className="tcd-sheet" role="document">
                   <div className="tcd-grab" aria-hidden="true" />

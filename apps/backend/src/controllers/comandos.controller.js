@@ -1,15 +1,17 @@
 const db = require("../models/db");
 
-// GET /api/comandos-pendientes (JSON por defecto para el plugin)
 exports.obtenerComandosPendientes = async (req, res) => {
   try {
     const { servidor } = req.query;
 
+    const server = String(servidor || "").trim().toLowerCase();
+    if (!server) return res.status(400).json({ error: "Servidor requerido." });
+
     const { data, error } = await db
       .from("comandos_pendientes")
-      .select("id, uuid_jugador, nombre_jugador, comando, servidor")
+      .select("id, uuid_jugador, nombre_jugador, comando, servidor, tipo, feedback_title, feedback_subtitle, feedback_chat")
       .eq("ejecutado", false)
-      .eq("servidor", servidor);
+      .eq("servidor", server);
 
     if (error) throw error;
 
@@ -17,11 +19,10 @@ exports.obtenerComandosPendientes = async (req, res) => {
     return res.status(200).json(data || []);
   } catch (err) {
     console.error("[COMANDOS_JSON_ERROR]", err);
-    res.status(500).json({ error: "Error al obtener comandos pendientes." });
+    return res.status(500).json({ error: "Error al obtener comandos pendientes." });
   }
 };
 
-// GET /api/comandos-pendientes-legacy (Texto plano para otros sistemas)
 exports.obtenerComandosPendientesTextoPlano = async (req, res) => {
   try {
     const { data, error } = await db
@@ -33,15 +34,14 @@ exports.obtenerComandosPendientesTextoPlano = async (req, res) => {
 
     if (error) throw error;
 
-    const comandos = data.map(row => `${row.comando} || ${row.id} || ${row.servidor}`).join("\n");
+    const comandos = (data || []).map((row) => `${row.comando} || ${row.id} || ${row.servidor}`).join("\n");
     res.type("text/plain").send(comandos);
   } catch (err) {
     console.error("[COMANDOS_LEGACY_ERROR]", err);
-    res.status(500).json({ error: "Error al obtener comandos pendientes." });
+    return res.status(500).json({ error: "Error al obtener comandos pendientes." });
   }
 };
 
-// POST /api/comandos-pendientes/:id/marcar
 exports.marcarComoEjecutado = async (req, res) => {
   const rawId = req.params.id;
   const id = rawId?.trim();
@@ -60,11 +60,7 @@ exports.marcarComoEjecutado = async (req, res) => {
     if (errBuscar) throw errBuscar;
     if (!existe) return res.status(404).json({ error: "Comando no encontrado." });
 
-    const { error } = await db
-      .from("comandos_pendientes")
-      .update({ ejecutado: true })
-      .eq("id", id);
-
+    const { error } = await db.from("comandos_pendientes").update({ ejecutado: true }).eq("id", id);
     if (error) throw error;
 
     return res.status(200).json({ message: "Comando marcado como ejecutado." });
