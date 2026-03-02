@@ -8,9 +8,9 @@
   --mc-font: "Mojangles", "Minecraft Seven", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
   --ui-font: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
 
-  --panel-pad-x: clamp(12px, 1.2vw, 18px);
-  --panel-pad-top: clamp(60px, 7vw, 72px);
-  --panel-pad-bot: clamp(16px, 1.6vw, 22px);
+  --panel-pad-x: clamp(14px, 1.6vw, 26px);
+  --panel-pad-top: clamp(66px, 7.6vw, 88px);
+  --panel-pad-bot: clamp(18px, 2.0vw, 28px);
 
   overflow: visible;
   border-radius: 18px;
@@ -78,7 +78,7 @@
 }
 
 .tsf-coinsPanelHeaderInner{
-  --pshop: 46px;
+  --pshop: 50px;
 
   position: relative;
   z-index: 2;
@@ -87,7 +87,7 @@
   grid-template-columns: var(--pshop) 1fr var(--pshop);
   align-items: center;
 
-  padding: 10px 12px;
+  padding: 12px 14px;
 }
 
 .tsf-coinsPanelTitle{
@@ -101,7 +101,7 @@
   font-weight: 900;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  font-size: clamp(1.02rem, 1.25vw, 1.22rem);
+  font-size: clamp(1.05rem, 1.35vw, 1.28rem);
   line-height: 1.05;
 
   @include stroke-white(1.8px, rgba(0, 0, 0, 0.72));
@@ -115,7 +115,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: clamp(8px, 1.1vw, 12px);
+  gap: clamp(10px, 1.2vw, 14px);
 
   max-width: 100%;
   min-width: 0;
@@ -124,8 +124,8 @@
 
 .tsf-coinsPanelTitleIcon{
   flex: 0 0 auto;
-  width: clamp(22px, 2.2vw, 30px);
-  height: clamp(22px, 2.2vw, 30px);
+  width: clamp(24px, 2.4vw, 34px);
+  height: clamp(24px, 2.4vw, 34px);
   object-fit: contain;
 
   border-radius: 10px;
@@ -143,21 +143,21 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  padding-inline: clamp(2px, 0.4vw, 6px);
+  padding-inline: clamp(4px, 0.6vw, 10px);
 }
 
 .tsf-coinsPanelHeaderInner .tsf-openShopBtn--panel{
   grid-column: 3;
   justify-self: end;
   align-self: center;
-  margin-right: -8px;
+  margin-right: -6px;
   margin-top: -2px;
   z-index: 3;
 }
 
 .tsf-coinsPanel .tsf-coinsGridWrap{
-  padding-top: clamp(18px, 1.9vw, 26px);
-  padding-bottom: clamp(6px, 1vw, 12px);
+  padding-top: clamp(24px, 2.6vw, 40px);
+  padding-bottom: clamp(10px, 1.4vw, 18px);
   position: relative;
   z-index: 1;
 }
@@ -225,25 +225,25 @@
 }
 
 .tsf-coinWrap:hover .tsf-coinFrame{
-  transform: translateY(-5px) rotate(-0.45deg);
+  transform: translateY(-6px) rotate(-0.45deg);
   filter:
-    drop-shadow(0 1.55rem 2.15rem rgba(0, 0, 0, 0.62))
+    drop-shadow(0 1.65rem 2.35rem rgba(0, 0, 0, 0.62))
     drop-shadow(0 0 18px rgba(170, 220, 255, 0.18));
 }
 
 .tsf-coinWrap.is-inCart .tsf-coinFrame{
   filter:
-    drop-shadow(0 1.55rem 2.15rem rgba(0, 0, 0, 0.62))
+    drop-shadow(0 1.65rem 2.35rem rgba(0, 0, 0, 0.62))
     drop-shadow(0 0 18px rgba(255, 232, 169, 0.18));
 }
 
 .tsf-coinQtyTop{
   position: absolute;
-  right: 10px;
-  top: 10px;
+  right: 12px;
+  top: 12px;
   z-index: 8;
 
-  padding: 0.20rem 0.52rem 0.18rem;
+  padding: 0.24rem 0.60rem 0.22rem;
 
   background:
     radial-gradient(110% 140% at 50% 0%, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0) 55%),
@@ -261,7 +261,7 @@
   font-weight: 900;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  font-size: clamp(0.92rem, 1.15vw, 1.08rem);
+  font-size: clamp(0.96rem, 1.2vw, 1.10rem);
   line-height: 1;
 
   @include stroke-white(1.8px, rgba(0, 0, 0, 0.70));
@@ -269,10 +269,10 @@
 
 .tsf-coinArtBtn{
   position: absolute;
-  left: 10px;
-  right: 10px;
-  top: clamp(42px, 4vw, 50px);
-  bottom: clamp(74px, 6.2vw, 86px);
+  left: 12px;
+  right: 12px;
+  top: clamp(46px, 4.4vw, 56px);
+  bottom: clamp(80px, 6.8vw, 96px);
   z-index: 6;
 
   border: 0;
@@ -292,12 +292,12 @@
 }
 
 .tsf-coinImg{
-  width: min(84%, 170px);
+  width: min(84%, 182px);
   height: auto;
   object-fit: contain;
   image-rendering: pixelated;
 
-  filter: drop-shadow(0 1.10rem 1.15rem rgba(0, 0, 0, 0.50));
+  filter: drop-shadow(0 1.18rem 1.25rem rgba(0, 0, 0, 0.50));
   animation: tsfPulseGlow 2.4s ease-in-out infinite;
   transform: translateZ(0);
 }
@@ -311,10 +311,10 @@
   position: absolute;
   left: 0;
   right: 0;
-  bottom: 42px;
+  bottom: 46px;
   z-index: 7;
 
-  height: 30px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -338,7 +338,7 @@
 
   max-width: 100%;
   min-width: 0;
-  gap: 6px;
+  gap: 8px;
 }
 
 .tsf-coinBandText{
@@ -351,7 +351,7 @@
   font-family: var(--mc-font);
   font-weight: 900;
   text-transform: uppercase;
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   line-height: 1;
 
   color: rgba(26, 19, 8, 0.96);
@@ -361,8 +361,8 @@
 }
 
 .tsf-coinBandIcon{
-  width: 1.05rem;
-  height: 1.05rem;
+  width: 1.08rem;
+  height: 1.08rem;
   flex: 0 0 auto;
   filter: drop-shadow(0 0.5rem 0.7rem rgba(0, 0, 0, 0.20));
 }
@@ -372,7 +372,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  height: 46px;
+  height: 50px;
   z-index: 8;
 
   border: 0;
@@ -382,14 +382,14 @@
   -webkit-tap-highlight-color: transparent;
 
   background: transparent;
-  filter: drop-shadow(0 1.05rem 1.55rem rgba(0, 0, 0, 0.40));
+  filter: drop-shadow(0 1.15rem 1.65rem rgba(0, 0, 0, 0.40));
   transition: transform 160ms cubic-bezier(.16, 1, .3, 1), filter 160ms ease;
 }
 
 .tsf-buyBtn:hover{
   transform: translateY(-3px);
   filter:
-    drop-shadow(0 1.15rem 1.65rem rgba(0, 0, 0, 0.46))
+    drop-shadow(0 1.25rem 1.75rem rgba(0, 0, 0, 0.46))
     drop-shadow(0 0 16px rgba(255, 255, 255, 0.06));
 }
 
@@ -417,8 +417,8 @@
   position: absolute;
   left: 0;
   right: 0;
-  bottom: -0.42rem;
-  height: 0.52rem;
+  bottom: -0.46rem;
+  height: 0.56rem;
 
   background: linear-gradient(180deg, rgba(0, 0, 0, 0.30), rgba(0, 0, 0, 0.56));
   filter: blur(0.2px);
@@ -431,7 +431,7 @@
   font-weight: 900;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  font-size: 0.98rem;
+  font-size: 1.02rem;
   line-height: 1;
 
   @include stroke-white(1.8px, rgba(0, 0, 0, 0.62));
@@ -440,7 +440,7 @@
 .tsf-buyOld{
   font-family: var(--ui-font);
   font-weight: 800;
-  font-size: 0.78rem;
+  font-size: 0.80rem;
   line-height: 1;
 
   color: rgba(255, 255, 255, 0.86);
@@ -452,10 +452,10 @@
 
 .tsf-buyQtyPill{
   position: absolute;
-  right: -0.35rem;
-  top: -0.35rem;
+  right: -0.38rem;
+  top: -0.38rem;
 
-  padding: 0.28rem 0.55rem 0.26rem;
+  padding: 0.32rem 0.62rem 0.30rem;
   border-radius: 999px;
 
   background:
@@ -471,7 +471,7 @@
 
   font-family: var(--ui-font);
   font-weight: 900;
-  font-size: 0.78rem;
+  font-size: 0.80rem;
   letter-spacing: 0.03em;
 
   @include stroke-white(1.8px, rgba(0, 0, 0, 0.55));
@@ -486,11 +486,11 @@
   position: absolute;
   z-index: 20;
 
-  padding: 0.34rem 0.56rem 0.32rem;
+  padding: 0.36rem 0.62rem 0.34rem;
 
   font-family: var(--mc-font);
   font-weight: 900;
-  font-size: 0.72rem;
+  font-size: 0.74rem;
   letter-spacing: 0.10em;
   text-transform: uppercase;
   line-height: 1;

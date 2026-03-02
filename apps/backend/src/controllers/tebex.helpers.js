@@ -74,55 +74,26 @@ function getClientIPv4(req) {
   return m ? m[0] : null;
 }
 
-const SERVERS = ["oneblock", "gens"];
-
-const SERVER_ALIASES = {
-  lobby: "gens",
-  clasico: "gens",
-};
-
-const VALID_SERVERS = new Set([...SERVERS, ...Object.keys(SERVER_ALIASES)]);
-
-function loadServerKeys() {
+function loadStoreSecret() {
   const fromJson = safeParseJSON(process.env.TEBEX_SECRETS_JSON);
-
-  const fallback = {
-    oneblock: process.env.TEBEX_PLUGIN_SECRET_ONEBLOCK || "",
-    gens: process.env.TEBEX_PLUGIN_SECRET_GENS || "",
-  };
-
-  const merged = {
-    oneblock: (fromJson && (fromJson.oneblock || fromJson.ONEBLOCK)) || fallback.oneblock,
-    gens: (fromJson && (fromJson.gens || fromJson.GENS)) || fallback.gens,
-  };
-
-  return {
-    oneblock: cleanSecret(merged.oneblock),
-    gens: cleanSecret(merged.gens),
-  };
+  const fallback = process.env.TEBEX_PLUGIN_SECRET || process.env.TEBEX_STORE_PLUGIN_SECRET || "";
+  const merged = (fromJson && (fromJson.store || fromJson.STORE || fromJson.secret || fromJson.SECRET)) || fallback;
+  return cleanSecret(merged);
 }
 
-const SERVER_KEYS = loadServerKeys();
+const STORE_PLUGIN_SECRET = loadStoreSecret();
 
-function getServerKey(req) {
-  const q = String(req.query?.sv || req.query?.server || "").toLowerCase().trim();
-  const p = String(req.params?.server || "").toLowerCase().trim();
-  const raw = q || p;
-
-  if (VALID_SERVERS.has(raw)) return SERVER_ALIASES[raw] || raw;
-
-  return "gens";
+function getStoreKey() {
+  return "store";
 }
 
 const cache = {
-  oneblock: { categorias: [], paquetes: [], cacheAt: 0 },
-  gens: { categorias: [], paquetes: [], cacheAt: 0 },
+  store: { categorias: [], paquetes: [], cacheAt: 0 },
 };
 
 const salesCache = {
   all: { sale: null, cacheAt: 0 },
-  oneblock: { sale: null, cacheAt: 0 },
-  gens: { sale: null, cacheAt: 0 },
+  store: { sale: null, cacheAt: 0 },
 };
 
 const headlessCache = {
@@ -339,11 +310,11 @@ function pickBestSale(list = []) {
   return active[0] || null;
 }
 
-async function getBestSaleForServer(server) {
-  const secret = SERVER_KEYS[server];
+async function getBestSaleForServer(_server) {
+  const secret = STORE_PLUGIN_SECRET;
   if (!secret) return null;
 
-  const c = salesCache[server] || { sale: null, cacheAt: 0 };
+  const c = salesCache.store || { sale: null, cacheAt: 0 };
   if (c.cacheAt && !isExpired(c)) return c.sale;
 
   try {
@@ -351,10 +322,10 @@ async function getBestSaleForServer(server) {
     const list = normalizarSales(salesJson);
     const best = pickBestSale(list);
 
-    salesCache[server] = { sale: best, cacheAt: nowSec() };
+    salesCache.store = { sale: best, cacheAt: nowSec() };
     return best;
   } catch {
-    salesCache[server] = { sale: null, cacheAt: nowSec() };
+    salesCache.store = { sale: null, cacheAt: nowSec() };
     return null;
   }
 }
@@ -363,21 +334,11 @@ async function getBestSaleGlobal() {
   const c = salesCache.all;
   if (c.cacheAt && !isExpired(c)) return c.sale;
 
-  const servers = Object.keys(SERVER_KEYS).filter((sv) => Boolean(SERVER_KEYS[sv]));
-  let best = null;
+  const best = await getBestSaleForServer("store");
+  const candidate = best ? { ...best, server: "store" } : null;
 
-  for (const sv of servers) {
-    const s = await getBestSaleForServer(sv);
-    if (!s) continue;
-
-    const candidate = { ...s, server: sv };
-    if (!best) best = candidate;
-    else if (candidate.percentage > best.percentage) best = candidate;
-    else if (candidate.percentage === best.percentage && candidate.expire < best.expire) best = candidate;
-  }
-
-  salesCache.all = { sale: best, cacheAt: nowSec() };
-  return best;
+  salesCache.all = { sale: candidate, cacheAt: nowSec() };
+  return candidate;
 }
 
 function toNum(v, fallback = NaN) {
@@ -499,9 +460,14 @@ function applySalesToPackages(paquetes = [], salesJson) {
   });
 }
 
-async function actualizarCacheDe(server) {
-  const secret = SERVER_KEYS[server];
-  if (!secret) throw new Error(`Falta PLUGIN secret para servidor '${server}'.`);
+function normalizeCurrencyIso(v, fallback = "EUR") {
+  const s = String(v || "").trim().toUpperCase();
+  return /^[A-Z]{3}$/.test(s) ? s : fallback;
+}
+
+async function actualizarCacheDe(_server) {
+  const secret = STORE_PLUGIN_SECRET;
+  if (!secret) throw new Error("Falta TEBEX_PLUGIN_SECRET (plugin secret único).");
 
   const json = await tebexFetchPlugin(secret, "packages");
   let paquetes = normalizarPaquetes(json);
@@ -511,13 +477,19 @@ async function actualizarCacheDe(server) {
       const salesJson = await tebexFetchPlugin(secret, "sales");
       paquetes = applySalesToPackages(paquetes, salesJson);
     } catch (e) {
-      console.warn(`[TEBEX sales] No se pudieron aplicar rebajas para [${server}]:`, e?.message || e);
+      console.warn(`[TEBEX sales] No se pudieron aplicar rebajas:`, e?.message || e);
     }
   }
 
   if (ONLY_VISIBLE) {
     paquetes = paquetes.filter((p) => !isHiddenOrDisabled(p));
   }
+
+  const iso = normalizeCurrencyIso(TEBEX_CURRENCY, "EUR");
+  paquetes = paquetes.map((p) => ({
+    ...p,
+    currency: normalizeCurrencyIso(p?.currency, iso),
+  }));
 
   const categoriasMap = new Map();
   for (const p of paquetes) {
@@ -527,13 +499,13 @@ async function actualizarCacheDe(server) {
     if (id && !categoriasMap.has(id)) categoriasMap.set(id, { id, name: name || `Categoría ${id}` });
   }
 
-  cache[server] = {
+  cache.store = {
     categorias: Array.from(categoriasMap.values()),
     paquetes,
     cacheAt: nowSec(),
   };
 
-  console.log(`[${server}] cache: ${paquetes.length} paquetes visibles, ${categoriasMap.size} categorias (TTL ${CACHE_TTL}s).`);
+  console.log(`[store] cache: ${paquetes.length} paquetes visibles, ${categoriasMap.size} categorias (TTL ${CACHE_TTL}s).`);
 }
 
 function getHeadlessBasic() {
@@ -596,12 +568,10 @@ async function headlessFetchJson({ rid, url, method = "GET", body = null }) {
 }
 
 (async () => {
-  for (const sv of SERVERS) {
-    try {
-      await actualizarCacheDe(sv);
-    } catch (e) {
-      console.warn(`No se pudo precargar [${sv}]:`, e.message);
-    }
+  try {
+    await actualizarCacheDe("store");
+  } catch (e) {
+    console.warn(`No se pudo precargar [store]:`, e.message);
   }
 })();
 
@@ -613,7 +583,7 @@ module.exports = {
   TEBEX_CURRENCY,
   WEBHOOK_SECRET,
   STORE_SECRET,
-  SERVER_KEYS,
+  STORE_PLUGIN_SECRET,
   cache,
   salesCache,
   headlessCache,
@@ -624,7 +594,7 @@ module.exports = {
   sha256Hex,
   hmacSha256Hex,
   timingSafeEqualHex,
-  getServerKey,
+  getServerKey: getStoreKey,
   isHiddenOrDisabled,
   tebexFetchPlugin,
   actualizarCacheDe,

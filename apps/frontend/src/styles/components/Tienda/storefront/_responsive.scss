@@ -34,11 +34,30 @@
   }
 }
 
+/* =========================
+   Fix crítico: pantallas bajas
+   (laptop con barra, zoom, 1366x768, etc.)
+   ========================= */
+@media (max-height: 760px) {
+  .tienda-storefront.tsf-brawl2 {
+    --ui-scale-h: clamp(0.74, calc(100vh / 760), 0.98);
+    --ui-scale: clamp(0.76, min(var(--ui-scale-w), var(--ui-scale-h)), 0.98);
+
+    --tsf-topPad: clamp(0.65rem, 1.6vw, 1.35rem);
+    --gap-base: clamp(0.70rem, 0.95vw, 1.10rem);
+    --content-pad: clamp(8px, 1.2vw, 16px);
+  }
+}
+
 @media (max-width: 1024px) {
   .tienda-storefront.tsf-brawl2 {
     --tsf-sign-w: clamp(170px, 26vw, 255px);
     --tsf-sign-drop: clamp(-42px, -4.2vw, -26px);
     --tsf-ranks-top: clamp(40px, 6.2vh, 72px);
+
+    /* En tablet suele quedar demasiado pequeño si usas scale por vh */
+    --ui-scale-w: clamp(0.78, calc(100vw / 1100), 0.98);
+    --ui-scale: clamp(0.78, min(var(--ui-scale-w), var(--ui-scale-h)), 0.98);
   }
 
   .tienda-storefront.tsf-brawl2 .tsf-header--fixed {
@@ -70,6 +89,9 @@
     --tsf-sign-w: clamp(160px, 24vw, 235px);
     --tsf-sign-drop: clamp(-54px, -5.4vw, -34px);
     --tsf-ranks-top: clamp(52px, 7.4vh, 92px);
+
+    --ui-scale-h: clamp(0.74, calc(100vh / 650), 0.92);
+    --ui-scale: clamp(0.76, min(var(--ui-scale-w), var(--ui-scale-h)), 0.94);
   }
 
   .tienda-storefront.tsf-brawl2 .tsf-coinsHeader {
@@ -82,6 +104,13 @@
     --tsf-sign-w: clamp(160px, 44vw, 230px);
     --tsf-sign-drop: clamp(-48px, -5.2vw, -30px);
     --tsf-ranks-top: clamp(92px, 10vh, 128px);
+
+    /* móvil: no queremos que sea microscópico */
+    --ui-scale-w: clamp(0.90, calc(100vw / 520), 1.00);
+    --ui-scale-h: clamp(0.86, calc(100vh / 820), 1.00);
+    --ui-scale: clamp(0.90, min(var(--ui-scale-w), var(--ui-scale-h)), 1.00);
+
+    --content-pad: clamp(10px, 3.2vw, 18px);
   }
 
   .tienda-storefront.tsf-brawl2 .tsf-ranks {
@@ -93,6 +122,12 @@
   .tienda-storefront.tsf-brawl2 {
     --tsf-sign-w: clamp(145px, 54vw, 205px);
     --tsf-sign-drop: clamp(-46px, -5.6vw, -30px);
+
+    --ui-scale-w: 1;
+    --ui-scale-h: 1;
+    --ui-scale: 1;
+
+    --gap-base: clamp(0.85rem, 3.2vw, 1.15rem);
   }
 
   .tienda-storefront.tsf-brawl2 .tsf-signImg {
@@ -694,6 +729,7 @@
   }
 }
 
+/* Daily card container rules (igual que tu base) */
 .tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily {
   container-type: inline-size;
 }

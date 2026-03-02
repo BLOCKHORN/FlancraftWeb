@@ -1,3 +1,4 @@
+// src/components/Landpage/MapRPG.jsx
 import React, {
   useContext,
   useEffect,
@@ -7,7 +8,6 @@ import React, {
   useCallback,
   memo,
 } from "react";
-import { motion as Motion, AnimatePresence } from "framer-motion";
 import { Howl } from "howler";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -74,20 +74,13 @@ const baseZones = [
   },
 ];
 
-// SFX globales
-const clickSound = new Howl({
-  src: [clickSoundFile],
-  volume: 0.4,
-});
-const teleportSound = new Howl({
-  src: [teleportSoundFile],
-  volume: 0.1,
-});
+const clickSound = new Howl({ src: [clickSoundFile], volume: 0.4, preload: false });
+const teleportSound = new Howl({ src: [teleportSoundFile], volume: 0.1, preload: false });
 
-// ✅ util: precarga + decode
-const preloadImage = (src, signal) =>
+const decodeImage = (src, signal) =>
   new Promise((resolve) => {
     if (!src) return resolve(true);
+
     const img = new Image();
     const done = () => resolve(true);
 
@@ -103,6 +96,7 @@ const preloadImage = (src, signal) =>
       cleanup();
       done();
     };
+
     img.onerror = () => {
       cleanup();
       done();
@@ -125,12 +119,6 @@ const preloadImage = (src, signal) =>
     img.src = src;
   });
 
-const portalVariants = {
-  initial: { opacity: 0 },
-  animate: { opacity: 1, transition: { duration: 0.35, ease: "easeOut" } },
-  exit: { opacity: 0, transition: { duration: 0.2, ease: "easeIn" } },
-};
-
 const MapRPG = () => {
   const navigate = useNavigate();
   const { user } = useContext(UserContext);
@@ -138,19 +126,27 @@ const MapRPG = () => {
   const isLoggedIn = Boolean(user && user.loggedIn);
   const [playerSlug, setPlayerSlug] = useState(null);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [direction, setDirection] = useState(0);
 
-  // luciérnagas
   const [firefliesScared, setFirefliesScared] = useState(false);
   const scareTimeoutRef = useRef(null);
   const scareActiveRef = useRef(false);
 
-  // ✅ Backdrop estable (evita flicker)
-  const [backdropSrc, setBackdropSrc] = useState(baseZones[0]?.image || "");
-  const pendingBackdropRef = useRef(null);
+  const [backA, setBackA] = useState(baseZones[0]?.image || "");
+  const [backB, setBackB] = useState("");
+  const [useB, setUseB] = useState(false);
+  const pendingRef = useRef(null);
 
-  // Preload (una vez)
   const preloadedRef = useRef(false);
+  const soundsReadyRef = useRef(false);
+
+  const ensureSounds = useCallback(() => {
+    if (soundsReadyRef.current) return;
+    soundsReadyRef.current = true;
+    try {
+      clickSound.load();
+      teleportSound.load();
+    } catch (_) {}
+  }, []);
 
   useEffect(() => {
     let alive = true;
@@ -171,15 +167,13 @@ const MapRPG = () => {
         if (!alive) return;
 
         if (error) {
-          console.error("Error al obtener usuario para MapRPG:", error);
           setPlayerSlug(null);
           return;
         }
 
         setPlayerSlug(data?.uid || null);
-      } catch (err) {
+      } catch (_) {
         if (!alive) return;
-        console.error("Error inesperado al cargar usuario en MapRPG:", err);
         setPlayerSlug(null);
       }
     };
@@ -195,11 +189,6 @@ const MapRPG = () => {
     if (preloadedRef.current) return;
     preloadedRef.current = true;
 
-    try {
-      clickSound.load();
-      teleportSound.load();
-    } catch (_) {}
-
     const assets = [
       ...baseZones.flatMap((z) => [z.image, z.runeImage]),
       "/assets/maprpg/nether-portal-frame.webp",
@@ -210,7 +199,7 @@ const MapRPG = () => {
       assets.forEach((src) => {
         const img = new Image();
         img.decoding = "async";
-        img.loading = "eager";
+        img.loading = "lazy";
         img.src = src;
       });
     };
@@ -241,7 +230,7 @@ const MapRPG = () => {
     scareTimeoutRef.current = setTimeout(() => {
       setFirefliesScared(false);
       scareActiveRef.current = false;
-    }, 350);
+    }, 300);
   }, []);
 
   const zones = useMemo(
@@ -260,52 +249,52 @@ const MapRPG = () => {
   const prevIndex = (currentIndex - 1 + len) % len;
   const nextIndex = (currentIndex + 1) % len;
 
-  // ✅ cuando cambia selectedZone, precarga su imagen y SOLO entonces cambia el backdrop
   useEffect(() => {
     const controller = new AbortController();
     const next = selectedZone?.image;
-
     if (!next) return;
 
-    // si ya está puesta, nada
-    if (next === backdropSrc) return;
-
-    pendingBackdropRef.current = next;
+    pendingRef.current = next;
 
     const run = async () => {
-      await preloadImage(next, controller.signal);
-
-      // si durante la precarga cambió el destino, no apliques un “stale”
+      await decodeImage(next, controller.signal);
       if (controller.signal.aborted) return;
-      if (pendingBackdropRef.current !== next) return;
+      if (pendingRef.current !== next) return;
 
-      setBackdropSrc(next);
+      if (!useB) {
+        setBackB(next);
+        requestAnimationFrame(() => setUseB(true));
+      } else {
+        setBackA(next);
+        requestAnimationFrame(() => setUseB(false));
+      }
     };
 
     run();
 
     return () => controller.abort();
-  }, [selectedZone?.id, selectedZone?.image, backdropSrc]);
+  }, [selectedZone?.id, selectedZone?.image, useB]);
 
   const moveCarousel = useCallback(
     (side) => {
-      const dirNum = side === "left" ? -1 : 1;
-      setDirection(dirNum);
-
-      setCurrentIndex((prev) =>
-        side === "left" ? (prev - 1 + len) % len : (prev + 1) % len
-      );
-
-      clickSound.play();
+      ensureSounds();
+      const dir = side === "left" ? -1 : 1;
+      setCurrentIndex((prev) => (prev + dir + len) % len);
+      try {
+        clickSound.play();
+      } catch (_) {}
     },
-    [len]
+    [len, ensureSounds]
   );
 
   const handlePortalClick = useCallback(() => {
+    ensureSounds();
     if (!selectedZone?.route) return;
-    teleportSound.play();
+    try {
+      teleportSound.play();
+    } catch (_) {}
     navigate(selectedZone.route);
-  }, [navigate, selectedZone?.route]);
+  }, [navigate, selectedZone?.route, ensureSounds]);
 
   const handlePortalKeyDown = useCallback(
     (e) => {
@@ -320,16 +309,13 @@ const MapRPG = () => {
   const handleRuneClick = useCallback(
     (index) => {
       if (index === currentIndex) return;
-
-      let dirNum = 1;
-      if (index === prevIndex) dirNum = -1;
-      if (index === nextIndex) dirNum = 1;
-
-      setDirection(dirNum);
-      clickSound.play();
+      ensureSounds();
       setCurrentIndex(index);
+      try {
+        clickSound.play();
+      } catch (_) {}
     },
-    [currentIndex, prevIndex, nextIndex]
+    [currentIndex, ensureSounds]
   );
 
   const handleRuneKeyDown = useCallback(
@@ -345,11 +331,13 @@ const MapRPG = () => {
   const handleDotClick = useCallback(
     (index) => {
       if (index === currentIndex) return;
-      setDirection(0);
-      clickSound.play();
+      ensureSounds();
       setCurrentIndex(index);
+      try {
+        clickSound.play();
+      } catch (_) {}
     },
-    [currentIndex]
+    [currentIndex, ensureSounds]
   );
 
   const handleDotKeyDown = useCallback(
@@ -383,24 +371,32 @@ const MapRPG = () => {
                 firefliesScared ? "maprpg-portal-frame--scared" : ""
               }`}
               onPointerEnter={triggerFirefliesScare}
-              onPointerDown={triggerFirefliesScare}
-              onTouchStart={triggerFirefliesScare}
+              onPointerDown={() => {
+                ensureSounds();
+                triggerFirefliesScare();
+              }}
+              onTouchStart={() => {
+                ensureSounds();
+                triggerFirefliesScare();
+              }}
             >
               <div className="maprpg-portal-frame-image" />
 
               <div className="maprpg-portal-inner">
-                {/* ✅ Animamos “backdropSrc” ya garantizado cargado */}
-                <AnimatePresence mode="sync">
-                  <Motion.div
-                    key={backdropSrc}
-                    className="maprpg-portal-backdrop"
-                    variants={portalVariants}
-                    initial="initial"
-                    animate="animate"
-                    exit="exit"
-                    style={{ backgroundImage: `url(${backdropSrc})` }}
+                <div className="maprpg-portal-backdrop-stack">
+                  <div
+                    className={`maprpg-portal-backdrop ${
+                      useB ? "maprpg-portal-backdrop--hidden" : ""
+                    }`}
+                    style={{ backgroundImage: `url(${backA})` }}
                   />
-                </AnimatePresence>
+                  <div
+                    className={`maprpg-portal-backdrop maprpg-portal-backdrop--front ${
+                      useB ? "" : "maprpg-portal-backdrop--hidden"
+                    }`}
+                    style={{ backgroundImage: `url(${backB || backA})` }}
+                  />
+                </div>
 
                 <button
                   type="button"
@@ -430,47 +426,23 @@ const MapRPG = () => {
               </button>
 
               <div className="maprpg-carousel-center">
-                <Motion.div
-                  className="maprpg-carousel-runes"
-                  layout
-                  transition={{ layout: { duration: 0.6, ease: "easeInOut" } }}
-                >
-                  {carouselZones.map(({ zone, index, position }) => {
-                    const isNew =
-                      direction !== 0 &&
-                      ((direction === 1 && position === "right") ||
-                        (direction === -1 && position === "left"));
-
-                    return (
-                      <Motion.button
-                        key={zone.id}
-                        type="button"
-                        className={`maprpg-rune maprpg-rune--${position}`}
-                        onClick={() => handleRuneClick(index)}
-                        onKeyDown={(e) => handleRuneKeyDown(e, index)}
-                        aria-label={zone.title}
-                        layout
-                        initial={
-                          isNew
-                            ? { x: direction === 1 ? 40 : -40, opacity: 0 }
-                            : { opacity: 1 }
-                        }
-                        animate={{ x: 0, opacity: 1 }}
-                        transition={{
-                          layout: { duration: 0.6, ease: "easeInOut" },
-                          duration: 0.6,
-                          ease: "easeInOut",
-                        }}
-                        whileTap={{ scale: 0.94 }}
-                      >
-                        <span
-                          className="maprpg-rune-image"
-                          style={{ backgroundImage: `url(${zone.runeImage})` }}
-                        />
-                      </Motion.button>
-                    );
-                  })}
-                </Motion.div>
+                <div className="maprpg-carousel-runes">
+                  {carouselZones.map(({ zone, index, position }) => (
+                    <button
+                      key={zone.id}
+                      type="button"
+                      className={`maprpg-rune maprpg-rune--${position}`}
+                      onClick={() => handleRuneClick(index)}
+                      onKeyDown={(e) => handleRuneKeyDown(e, index)}
+                      aria-label={zone.title}
+                    >
+                      <span
+                        className="maprpg-rune-image"
+                        style={{ backgroundImage: `url(${zone.runeImage})` }}
+                      />
+                    </button>
+                  ))}
+                </div>
 
                 <p className="maprpg-carousel-hint">
                   Haz clic en el portal para viajar al destino seleccionado.

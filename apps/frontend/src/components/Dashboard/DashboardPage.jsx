@@ -9,11 +9,9 @@ const API_BASE = (import.meta.env.VITE_BACKEND_URL || "https://flancraft-backend
   .replace(/\/$/, "");
 const apiUrl = (path) => (API_BASE ? `${API_BASE}${path}` : path);
 
-const SERVERS_COINS = [
-  { key: "gens", label: "GENS", icon: "/assets/reinos/gens.webp" },
-  { key: "oneblock", label: "ONEBLOCK", icon: "/assets/reinos/oneblock.webp" },
-  { key: "survival", label: "SURVIVAL", icon: "/assets/reinos/survival-clasico.webp" },
-];
+const SERVER_KEY = "survival";
+const SERVER_LABEL = "SURVIVAL";
+const SERVER_ICON = "/assets/reinos/survival-clasico.webp";
 
 const toInt = (v) => {
   const n = Number(v);
@@ -61,7 +59,6 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const [serverSelected, setServerSelected] = useState("gens");
   const [transferAmount, setTransferAmount] = useState("");
   const [transferLoading, setTransferLoading] = useState(false);
   const [transferError, setTransferError] = useState(null);
@@ -254,12 +251,19 @@ export default function DashboardPage() {
     return toInt(walletBalance);
   }, [user?.wallet_coins, walletBalance]);
 
+  const serverCoins = useMemo(() => {
+    const by = coinsByServer || {};
+    if (SERVER_KEY in by) return toInt(by[SERVER_KEY]);
+    if ("global" in by) return toInt(by.global);
+    return 0;
+  }, [coinsByServer]);
+
   const openConfirm = () => {
     setTransferError(null);
     const amt = toInt(transferAmount);
     if (amt <= 0) return setTransferError("Introduce una cantidad válida.");
     if (amt > totalCoins) return setTransferError("No tienes suficiente saldo en la wallet.");
-    setPendingTransfer({ amt, server: serverSelected });
+    setPendingTransfer({ amt, server: SERVER_KEY });
     setConfirmOpen(true);
   };
 
@@ -279,7 +283,7 @@ export default function DashboardPage() {
         },
         body: JSON.stringify({
           uuid: user.uuid,
-          servidor: pendingTransfer.server,
+          servidor: SERVER_KEY,
           amount: pendingTransfer.amt,
         }),
       });
@@ -308,13 +312,6 @@ export default function DashboardPage() {
     } finally {
       setTransferLoading(false);
     }
-  };
-
-  const getServerCoins = (key) => {
-    const k = String(key || "").toLowerCase();
-    if (k && k in coinsByServer) return toInt(coinsByServer[k]);
-    if ("global" in coinsByServer) return toInt(coinsByServer.global);
-    return 0;
   };
 
   return (
@@ -355,11 +352,7 @@ export default function DashboardPage() {
                       <h2 className="player-nombre">{user.uid}</h2>
 
                       <div className="player-badges">
-                        {user.rol_admin && (
-                          <span className={`badge-staff badge-${user.rol_admin.toLowerCase()}`}>
-                            {user.rol_admin.toUpperCase()}
-                          </span>
-                        )}
+                        {user.rol_admin && <span className={`badge-staff badge-${user.rol_admin.toLowerCase()}`}>{user.rol_admin.toUpperCase()}</span>}
 
                         {user.es_premium && (
                           <img src="/assets/premium.webp" alt="Cuenta premium" className="badge-premium" loading="eager" decoding="async" />
@@ -394,23 +387,15 @@ export default function DashboardPage() {
                           {totalCoins}
                         </span>
 
-                        <img
-                          src="/tienda/assets/coin.png"
-                          alt="Coins"
-                          className="wallet-pillCoin"
-                          loading="eager"
-                          decoding="async"
-                          draggable="false"
-                        />
+                        <img src="/tienda/assets/coin.png" alt="Coins" className="wallet-pillCoin" loading="eager" decoding="async" draggable="false" />
 
                         {walletInfoOpen && (
                           <div className="wallet-tooltip" role="dialog" aria-label="Wallet COINS">
                             <div className="wallet-tooltip-title">¿Qué son las Wallet COINS?</div>
                             <div className="wallet-tooltip-text">
-                              Son COINS que consigues en la web: claim diario, voto y logros. Puedes enviarlas al servidor que quieras y la
-                              cantidad que decidas.
+                              Son COINS que consigues en la web: claim diario, voto y logros. Puedes enviarlas al servidor y la cantidad que decidas.
                             </div>
-                            <div className="wallet-tooltip-note">Elige servidor, pon cantidad y confirma.</div>
+                            <div className="wallet-tooltip-note">Pon cantidad y confirma.</div>
                           </div>
                         )}
                       </div>
@@ -418,38 +403,25 @@ export default function DashboardPage() {
 
                     <div className="wallet-transfer">
                       <div className="transfer-head">
-                        <div className="transfer-title">Enviar al servidor</div>
-                        <div className="transfer-sub">Selecciona servidor, cantidad y confirma.</div>
+                        <div className="transfer-title">Enviar a Survival</div>
+                        <div className="transfer-sub">Introduce la cantidad y confirma.</div>
                       </div>
 
-                      <div className="transfer-servers" aria-label="Seleccionar servidor">
-                        {SERVERS_COINS.map((s) => (
-                          <button
-                            key={s.key}
-                            type="button"
-                            className={["server-cardBtn", `server-cardBtn--${s.key}`, serverSelected === s.key ? "is-active" : ""].join(" ")}
-                            onClick={() => {
-                              if (transferLoading) return;
-                              setTransferError(null);
-                              setServerSelected(s.key);
-                            }}
-                            disabled={transferLoading}
-                          >
-                            <span className="server-cardBtnFace">
-                              <span className="server-cardBtnLeft">
-                                <img src={s.icon} alt="" className="server-icon" loading="eager" decoding="async" draggable="false" />
-                                <span className="server-name">{s.label}</span>
-                              </span>
+                      <div className="transfer-singleServer" aria-label="Servidor destino">
+                        <div className="server-cardBtn server-cardBtn--survival is-active">
+                          <div className="server-cardBtnFace">
+                            <div className="server-cardBtnLeft">
+                              <img src={SERVER_ICON} alt="" className="server-icon" loading="eager" decoding="async" draggable="false" />
+                              <span className="server-name">{SERVER_LABEL}</span>
+                            </div>
 
-                              <span className="server-balance">
-                                <img src="/tienda/assets/coin.png" alt="" className="coin-mini" draggable="false" />
-                                {getServerCoins(s.key)}
-                              </span>
+                            <span className="server-balance" title="Saldo actual en el servidor">
+                              <img src="/tienda/assets/coin.png" alt="" className="coin-mini" draggable="false" />
+                              {serverCoins}
                             </span>
-
-                            <span className="server-cardBtnDepth" />
-                          </button>
-                        ))}
+                          </div>
+                          <div className="server-cardBtnDepth" />
+                        </div>
                       </div>
 
                       <div className="transfer-row">
@@ -556,7 +528,7 @@ export default function DashboardPage() {
                 <div className="modal-title">Confirmar envío</div>
 
                 <div className="modal-line">
-                  Vas a enviar <b>{pendingTransfer.amt}</b> COINS a <b>{pendingTransfer.server.toUpperCase()}</b>.
+                  Vas a enviar <b>{pendingTransfer.amt}</b> COINS a <b>{SERVER_LABEL}</b>.
                 </div>
 
                 <div className="modal-sub">Se descontarán de tu wallet y se sumarán al saldo del servidor.</div>

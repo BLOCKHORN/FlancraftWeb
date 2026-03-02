@@ -230,9 +230,17 @@
   background: rgba(0, 0, 0, 0.10);
   border-top: 2px solid rgba(0, 0, 0, 0.18);
   overflow: visible;
+  align-items: stretch;
 }
 
 .cuenta-btn{
+  width: 100%;
+  justify-self: stretch;
+  align-self: stretch;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
   padding: 0.55rem 0.6rem;
 
   font-family: var(--mc-font);
@@ -250,7 +258,9 @@
 }
 
 .cuenta-btn-account{
-  text-align: center;
+  width: 100%;
+  justify-self: stretch;
+  grid-column: 1 / -1;
 }
 
 .currencyDrop{

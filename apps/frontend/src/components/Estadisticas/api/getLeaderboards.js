@@ -1,4 +1,3 @@
-// src/components/Estadisticas/api/getLeaderboards.js
 const API_BASE = import.meta.env.VITE_BACKEND_URL || "http://localhost:10000";
 
 export async function getLeaderboards({ tipo, servidor, limit = 10, offset = 0, asc }) {
@@ -10,12 +9,12 @@ export async function getLeaderboards({ tipo, servidor, limit = 10, offset = 0, 
   if (typeof asc !== "undefined") params.set("asc", String(asc));
 
   const url = `${API_BASE}/api/stats/leaderboards?${params.toString()}`;
-
   const res = await fetch(url);
+
   if (!res.ok) {
     const text = await res.text().catch(() => "");
     throw new Error(`Error leaderboard HTTP ${res.status} :: ${text}`);
   }
 
-  return res.json(); // { total, resultados: [...] }
+  return res.json();
 }

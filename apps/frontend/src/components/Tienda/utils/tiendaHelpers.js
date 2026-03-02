@@ -1,8 +1,4 @@
-// src/components/Tienda/utils/tiendaHelpers.js
-
-export const API_URL =
-  import.meta.env.VITE_BACKEND_URL || "https://flancraft-backend.onrender.com";
-
+export const API_URL = import.meta.env.VITE_BACKEND_URL || "https://flancraft-backend.onrender.com";
 export const API_BASE = String(API_URL || "").replace(/\/$/, "");
 
 export const TEBEX_PATH = import.meta.env.VITE_TEBEX_PATH || "/api/tebex";
@@ -100,9 +96,40 @@ export function slugify(str = "") {
     .replace(/^\-|\-$/g, "");
 }
 
-function toNumber(v, fallback = 0) {
-  const n = typeof v === "string" ? Number.parseFloat(v) : Number(v);
-  return Number.isFinite(n) ? n : fallback;
+function parseMoneyStrict(v) {
+  if (v === null || v === undefined) return NaN;
+  if (typeof v === "number") return Number.isFinite(v) ? v : NaN;
+
+  const s0 = String(v).trim();
+  if (!s0) return NaN;
+  if (s0.includes("%")) return NaN;
+
+  let s = s0.replace(/[^\d.,-]/g, "");
+  if (!s) return NaN;
+
+  const lastComma = s.lastIndexOf(",");
+  const lastDot = s.lastIndexOf(".");
+
+  if (lastComma > -1 && lastDot > -1) {
+    if (lastComma > lastDot) s = s.replace(/\./g, "").replace(",", ".");
+    else s = s.replace(/,/g, "");
+  } else if (lastComma > -1 && lastDot === -1) {
+    s = s.replace(",", ".");
+  }
+
+  const n = Number(s);
+  return Number.isFinite(n) ? n : NaN;
+}
+
+function toMoneyOrNull(v) {
+  const n = parseMoneyStrict(v);
+  if (!Number.isFinite(n)) return null;
+  return Math.round(n * 100) / 100;
+}
+
+function toIntOr(v, fallback = 0) {
+  const n = Number(v);
+  return Number.isFinite(n) ? Math.floor(n) : fallback;
 }
 
 export function getPackageId(pkg) {
@@ -110,34 +137,19 @@ export function getPackageId(pkg) {
 }
 
 export function getPackageName(pkg) {
-  return (
-    pkg?.name ??
-    pkg?.nombre ??
-    pkg?.package_name ??
-    pkg?.title ??
-    "Producto"
-  );
+  return pkg?.name ?? pkg?.nombre ?? pkg?.package_name ?? pkg?.title ?? "Producto";
 }
 
 export function getPackagePrice(pkg) {
-  return toNumber(pkg?.price ?? pkg?.precio ?? 0, 0);
+  return toMoneyOrNull(pkg?.price ?? pkg?.precio ?? pkg?.amount ?? pkg?.cost ?? null);
 }
 
 export function getPackageOriginalPrice(pkg) {
-  const v = pkg?.original_price ?? pkg?.precio_original ?? null;
-  if (v === null || v === undefined) return null;
-  const n = toNumber(v, NaN);
-  return Number.isFinite(n) ? n : null;
+  return toMoneyOrNull(pkg?.original_price ?? pkg?.precio_original ?? pkg?.original ?? null);
 }
 
 export function getPackageImage(pkg) {
-  return (
-    pkg?.image_url ||
-    pkg?.image ||
-    pkg?.imageUrl ||
-    pkg?.img ||
-    "/assets/tienda/producto-placeholder.png"
-  );
+  return pkg?.image_url || pkg?.image || pkg?.imageUrl || pkg?.img || "/assets/tienda/producto-placeholder.png";
 }
 
 export function normalizeProductForCart(pkg, cantidad = 1) {
@@ -149,23 +161,20 @@ export function normalizeProductForCart(pkg, cantidad = 1) {
     price: getPackagePrice(pkg),
     original_price: getPackageOriginalPrice(pkg),
     image_url: getPackageImage(pkg),
-    cantidad: toNumber(pkg?.cantidad ?? cantidad ?? 1, 1),
+    cantidad: toIntOr(pkg?.cantidad ?? cantidad ?? 1, 1),
   };
 }
 
 export function calcularTotal(carrito = []) {
   const total = (carrito || []).reduce((acc, it) => {
-    const price = toNumber(it?.price ?? it?.precio ?? 0, 0);
-    const qty = toNumber(it?.cantidad ?? it?.quantity ?? 1, 1);
+    const price = toMoneyOrNull(it?.price ?? it?.precio ?? null);
+    const qty = toIntOr(it?.cantidad ?? it?.quantity ?? 1, 1);
+    if (price == null) return acc;
     return acc + price * qty;
   }, 0);
 
-  return total.toFixed(2);
+  return (Math.round(total * 100) / 100).toFixed(2);
 }
-
-/* =========================================================
-   TILES PORTADA (CANÓNICOS)
-   ========================================================= */
 
 export const PORTADA_TILES = [
   {
@@ -176,25 +185,11 @@ export const PORTADA_TILES = [
     image: "https://i.ibb.co/k6yZSyN4/rangos.webp",
   },
   {
-    key: "oneblock",
-    name: "ONEBLOCK",
-    to: "/tienda/oneblock",
-    isGlobal: false,
-    image: "/assets/reinos/oneblock.webp",
-  },
-  {
     key: "survival",
     name: "SURVIVAL",
     to: "/tienda/survival",
     isGlobal: false,
     image: "/assets/reinos/survival.webp",
-  },
-  {
-    key: "gens",
-    name: "GENS",
-    to: "/tienda/gens",
-    isGlobal: false,
-    image: "/assets/reinos/gens.webp",
   },
 ];
 
@@ -206,34 +201,9 @@ export const AVISO_PADRES_TILE = {
   image: "https://i.imgur.com/6HSMUZu.png",
 };
 
-/* =========================================================
-   SUBCATS / FILTROS (si lo usas en otras vistas)
-   ========================================================= */
-
 export const SUBCATS_PER_TILE = {
-  // Rangos (aunque sea /tienda/rangos, en Tebex están en "gens")
-  "gens|rangos": ["RANGOS"],
-
-  // GENS coins
-  "gens|coins": ["GENS", "Coins", "COINS", "Coins Gens", "COINS GENS"],
-
-  // ONEBLOCK coins
-  "oneblock|coins": [
-    "ONEBLOCK",
-    "Coins OB",
-    "COINS OB",
-    "Coins Oneblock",
-    "COINS ONEBLOCK",
-  ],
-
-  // SURVIVAL coins
-  "survival|coins": [
-    "SURVIVAL",
-    "Coins Surv",
-    "COINS SURV",
-    "Coins Survival",
-    "COINS SURVIVAL",
-  ],
+  "survival|rangos": ["RANGOS"],
+  "survival|coins": ["SURVIVAL", "Coins Surv", "COINS SURV", "Coins Survival", "COINS SURVIVAL", "Coins", "COINS"],
 };
 
 export function pickSubcatsFromApi(apiCategories = [], namesAllowed = []) {
@@ -246,10 +216,7 @@ export function pickSubcatsFromApi(apiCategories = [], namesAllowed = []) {
     const id = c?.id ?? c?.category_id ?? null;
     if (!id || !name) continue;
 
-    if (
-      allowedLower.size === 0 ||
-      allowedLower.has(String(name).toLowerCase())
-    ) {
+    if (allowedLower.size === 0 || allowedLower.has(String(name).toLowerCase())) {
       out.push({ id, name, slug: slugify(name) });
     }
   }
@@ -268,13 +235,7 @@ export function filterPackagesByCategoryId(paquetes = [], categoryId) {
   const wanted = String(categoryId);
 
   return (paquetes || []).filter((p) => {
-    const cid =
-      p?.category?.id ??
-      p?.category_id ??
-      p?.categories?.[0]?.id ??
-      p?.categories?.[0]?.category_id ??
-      null;
-
+    const cid = p?.category?.id ?? p?.category_id ?? p?.categories?.[0]?.id ?? p?.categories?.[0]?.category_id ?? null;
     return cid !== null && String(cid) === wanted;
   });
 }
@@ -283,85 +244,39 @@ export function filterPackagesBySubcats(paquetes = [], subcats = []) {
   const subcatIds = new Set((subcats || []).map((s) => String(s.id)));
 
   return (paquetes || []).filter((p) => {
-    const cid =
-      p?.category?.id ??
-      p?.category_id ??
-      p?.categories?.[0]?.id ??
-      p?.categories?.[0]?.category_id ??
-      null;
-
+    const cid = p?.category?.id ?? p?.category_id ?? p?.categories?.[0]?.id ?? p?.categories?.[0]?.category_id ?? null;
     return cid && subcatIds.has(String(cid));
   });
 }
-
-/* =========================================================
-   STOREFRONT (Brawl-like) config + helpers
-   ========================================================= */
 
 export const STOREFRONT_CONFIG = {
   rangos: {
     categoryNames: ["RANGOS", "Rangos", "Ranks", "RANKS"],
   },
-
-  // Orden deseado en el front: ONEBLOCK - SURVIVAL - GENS
   servers: [
-    {
-      key: "oneblock",
-      label: "Oneblock",
-      categoryNames: [
-        "ONEBLOCK",
-        "Oneblock",
-        "Coins OB",
-        "COINS OB",
-        "Coins Oneblock",
-        "COINS ONEBLOCK",
-      ],
-    },
     {
       key: "survival",
       label: "Survival",
-      categoryNames: [
-        "SURVIVAL",
-        "Survival",
-        "Coins Surv",
-        "COINS SURV",
-        "Coins Survival",
-        "COINS SURVIVAL",
-      ],
-    },
-    {
-      key: "gens",
-      label: "Gens",
-      categoryNames: ["GENS", "Gens", "Coins Gens", "COINS GENS", "Coins", "COINS"],
+      categoryNames: ["SURVIVAL", "Survival", "Coins Surv", "COINS SURV", "Coins Survival", "COINS SURVIVAL", "Coins", "COINS"],
     },
   ],
 };
 
-// Devuelve IDs de categorías cuyo nombre coincide con alguno de los names (case-insensitive)
 export function findCategoriesByNames(apiCategories = [], names = []) {
-  const wanted = new Set(
-    (names || [])
-      .map((n) => String(n).trim().toLowerCase())
-      .filter(Boolean)
-  );
+  const wanted = new Set((names || []).map((n) => String(n).trim().toLowerCase()).filter(Boolean));
   if (wanted.size === 0) return [];
 
   const out = [];
   for (const c of apiCategories || []) {
-    const name = String(c?.name || c?.category_name || "")
-      .trim()
-      .toLowerCase();
+    const name = String(c?.name || c?.category_name || "").trim().toLowerCase();
     const id = c?.id ?? c?.category_id ?? null;
     if (!id || !name) continue;
     if (wanted.has(name)) out.push(String(id));
   }
 
-  // fallback “contains” por si tu categoría es “GENS Coins” etc
   if (out.length === 0) {
     for (const c of apiCategories || []) {
-      const raw = String(c?.name || c?.category_name || "")
-        .trim()
-        .toLowerCase();
+      const raw = String(c?.name || c?.category_name || "").trim().toLowerCase();
       const id = c?.id ?? c?.category_id ?? null;
       if (!id || !raw) continue;
 
@@ -377,39 +292,22 @@ export function findCategoriesByNames(apiCategories = [], names = []) {
   return [...new Set(out)];
 }
 
-// Filtra paquetes por una lista de category IDs (acepta ids como string/number)
 export function filterPackagesByCategoryIds(paquetes = [], categoryIds = []) {
   const set = new Set((categoryIds || []).map((x) => String(x)));
   if (set.size === 0) return [];
 
   return (paquetes || []).filter((p) => {
-    const cid =
-      p?.category?.id ??
-      p?.category_id ??
-      p?.categories?.[0]?.id ??
-      p?.categories?.[0]?.category_id ??
-      null;
-
+    const cid = p?.category?.id ?? p?.category_id ?? p?.categories?.[0]?.id ?? p?.categories?.[0]?.category_id ?? null;
     return cid !== null && set.has(String(cid));
   });
 }
 
-/* =========================================================
-   FX (cambio de divisa REAL) — Frankfurter (ECB)
-   - Convierte importes NUMÉRICOS (no solo símbolo)
-   - Cache: memoria + localStorage (TTL 6h)
-   ========================================================= */
-
-export const STORE_BASE_CURRENCY = String(
-  import.meta.env.VITE_TEBEX_CURRENCY || "EUR"
-)
-  .toUpperCase()
-  .trim();
+export const STORE_BASE_CURRENCY = String(import.meta.env.VITE_TEBEX_CURRENCY || "EUR").toUpperCase().trim();
 
 const FX_TTL_MS = Number(import.meta.env.VITE_FX_TTL_MS || 6 * 60 * 60 * 1000);
 
 const fxMem = {
-  byBase: new Map(), // base -> { data, ts }
+  byBase: new Map(),
 };
 
 function fxKey(base) {
@@ -421,24 +319,9 @@ function safeUpper(v, fallback = "EUR") {
   return s || fallback;
 }
 
-/**
- * Devuelve:
- * {
- *   base: "EUR",
- *   date: "YYYY-MM-DD",
- *   rates: { USD: 1.08, GBP: 0.86, ... },
- *   ts: 1234567890
- * }
- */
-export async function fetchFxRates({
-  base = STORE_BASE_CURRENCY,
-  to = ["USD", "GBP"],
-  force = false,
-} = {}) {
+export async function fetchFxRates({ base = STORE_BASE_CURRENCY, to = ["USD", "GBP"], force = false } = {}) {
   const BASE = safeUpper(base, "EUR");
-  const targets = Array.from(
-    new Set((Array.isArray(to) ? to : [to]).map((x) => safeUpper(x)))
-  ).filter((c) => c && c !== BASE);
+  const targets = Array.from(new Set((Array.isArray(to) ? to : [to]).map((x) => safeUpper(x)))).filter((c) => c && c !== BASE);
 
   if (!targets.length) {
     return { base: BASE, date: null, rates: {}, ts: Date.now() };
@@ -446,13 +329,11 @@ export async function fetchFxRates({
 
   const now = Date.now();
 
-  // 1) cache memoria
   const mem = fxMem.byBase.get(BASE);
   if (!force && mem?.data && now - (mem.ts || 0) < FX_TTL_MS) {
     return mem.data;
   }
 
-  // 2) cache localStorage
   if (!force) {
     try {
       const raw = localStorage.getItem(fxKey(BASE));
@@ -467,10 +348,7 @@ export async function fetchFxRates({
     } catch {}
   }
 
-  // 3) fetch Frankfurter (ECB)
-  const url =
-    `https://api.frankfurter.app/latest?from=${encodeURIComponent(BASE)}` +
-    `&to=${encodeURIComponent(targets.join(","))}`;
+  const url = `https://api.frankfurter.app/latest?from=${encodeURIComponent(BASE)}&to=${encodeURIComponent(targets.join(","))}`;
 
   const r = await fetchWithTimeout(
     url,
@@ -505,11 +383,6 @@ export async function fetchFxRates({
   return payload;
 }
 
-/**
- * Rate para ir de fx.base -> toCurrency
- * - si toCurrency === base => 1
- * - si no existe => 1
- */
 export function pickFxRate(fx, toCurrency) {
   const to = safeUpper(toCurrency, STORE_BASE_CURRENCY);
   const base = safeUpper(fx?.base || STORE_BASE_CURRENCY, STORE_BASE_CURRENCY);
@@ -520,9 +393,6 @@ export function pickFxRate(fx, toCurrency) {
   return Number.isFinite(r) && r > 0 ? r : 1;
 }
 
-/**
- * Convierte amount numérico desde fx.base -> toCurrency
- */
 export function convertFx(amount, fx, toCurrency) {
   const n = Number(amount);
   if (!Number.isFinite(n)) return NaN;

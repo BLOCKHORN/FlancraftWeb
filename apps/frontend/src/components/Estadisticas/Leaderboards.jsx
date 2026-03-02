@@ -1,4 +1,3 @@
-// apps/frontend/src/pages/Estadisticas/Leaderboards.jsx
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Leaderboards.scss";
@@ -13,8 +12,6 @@ import {
   formatearTiempo,
   formatInt,
 } from "../../components/Estadisticas/leaderboards.utils";
-
-import { computeGensScore } from "../../components/Estadisticas/leaderboards.gens";
 
 const LIMIT = 10;
 const FETCH_LIMIT = 700;
@@ -42,16 +39,13 @@ const RANGO_REMOTE = {
   inmortal: "https://dunb17ur4ymx4.cloudfront.net/wysiwyg/1447273/1aaaa34593db3f2dea9d09a7bd4d985500d69de6.png",
 };
 
-const SOURCES = [
-  { key: "sv", label: "SV", servidor: "survival", tipo: "svpoints", pointsKey: "svpoints" },
-  { key: "ob", label: "OB", servidor: "oneblock", tipo: "obpoints", pointsKey: "obpoints" },
-  { key: "ge", label: "GENS", servidor: "gens", tipo: "dinero_ganado_total", pointsKey: "genpoints", gens: true },
-  { key: "an", label: "AN", servidor: "anarquico", tipo: "anpoints", pointsKey: "anpoints" },
-  { key: "pk", label: "PK", servidor: "parkour", tipo: "mejor_tiempo", pointsKey: "pkpoints", asc: true },
-];
-
 const pickWallet = (p) => {
-  const v = p?.wallet_coins ?? p?.walletCoins ?? p?.coins_wallet ?? p?.coins_web ?? p?.wallet;
+  const v =
+    p?.wallet_coins ??
+    p?.walletCoins ??
+    p?.coins_wallet ??
+    p?.coins_web ??
+    p?.wallet;
   const n = Number(v);
   return Number.isFinite(n) ? n : null;
 };
@@ -88,7 +82,15 @@ const fallbackRankImg = (key) => (e) => {
 
 const HeadLabel = ({ icon, children }) => (
   <span className="lb-th">
-    {icon ? <img className="lb-thIcon" src={icon} alt="" loading="lazy" onError={hideImg} /> : null}
+    {icon ? (
+      <img
+        className="lb-thIcon"
+        src={icon}
+        alt=""
+        loading="lazy"
+        onError={hideImg}
+      />
+    ) : null}
     <span className="lb-thTxt">{children}</span>
   </span>
 );
@@ -98,20 +100,20 @@ const buildFxPayload = (p, meta) => {
   const platKey = normalizePlatform(p?.platform || getPlatform(p));
   const rangoRaw = meta?.rango || meta?.rango_usuario || meta?.rank || null;
   const rangoKey = normalizeRango(rangoRaw);
-  const skin = `https://minotar.net/helm/${encodeURIComponent(nombre || "Steve")}/128`;
-  return {
-    nombre,
-    platKey,
-    rangoKey,
-    skin,
-  };
+  const skin = `https://minotar.net/helm/${encodeURIComponent(
+    nombre || "Steve"
+  )}/128`;
+  return { nombre, platKey, rangoKey, skin };
 };
 
 export default function Leaderboards() {
   const navigate = useNavigate();
   const usuariosVinculados = useUsuariosVinculados();
 
-  const getMeta = useCallback((uuid) => usuariosVinculados?.[uuid] || null, [usuariosVinculados]);
+  const getMeta = useCallback(
+    (uuid) => usuariosVinculados?.[uuid] || null,
+    [usuariosVinculados]
+  );
 
   const [loading, setLoading] = useState(true);
   const [errorTabla, setErrorTabla] = useState("");
@@ -161,79 +163,50 @@ export default function Leaderboards() {
         setLoading(true);
         setErrorTabla("");
 
-        const responses = await Promise.all(
-          SOURCES.map((s) =>
-            getLeaderboards({
-              tipo: s.tipo,
-              servidor: s.servidor,
-              limit: FETCH_LIMIT,
-              offset: 0,
-              asc: !!s.asc,
-            }).then((res) => ({
-              source: s,
-              items: Array.isArray(res?.resultados) ? res.resultados : [],
-            }))
-          )
-        );
+        const res = await getLeaderboards({
+          tipo: "svpoints",
+          servidor: "survival",
+          limit: FETCH_LIMIT,
+          offset: 0,
+          asc: false,
+        });
 
         if (!alive) return;
 
+        const items = Array.isArray(res?.resultados) ? res.resultados : [];
+
         const map = new Map();
 
-        for (const { source, items } of responses) {
-          for (const p of items) {
-            if (!isNombreValido(p?.nombre_minecraft)) continue;
+        for (const p of items) {
+          if (!isNombreValido(p?.nombre_minecraft)) continue;
 
-            const uuid = p?.uuid || null;
-            const name = p?.nombre_minecraft || "";
-            const id = (uuid || name.toLowerCase()).trim();
-            if (!id) continue;
+          const uuid = p?.uuid || null;
+          const name = p?.nombre_minecraft || "";
+          const id = (uuid || name.toLowerCase()).trim();
+          if (!id) continue;
 
-            if (!map.has(id)) {
-              map.set(id, {
-                uuid,
-                nombre_minecraft: name,
-                platform: getPlatform(p),
-                wallet: pickWallet(p),
-                tiempo_total: 0,
-                points: { sv: 0, ob: 0, ge: 0, an: 0, pk: 0 },
-              });
-            }
+          const pts = safeNum(
+            p?.svpoints ??
+              p?.points ??
+              p?.puntos ??
+              p?.puntos_sv ??
+              p?.survival_points ??
+              0
+          );
 
-            const row = map.get(id);
+          const t = safeNum(p?.tiempo_jugado);
 
-            const t = safeNum(p?.tiempo_jugado);
-            if (t > 0) row.tiempo_total += t;
-
-            if (row.wallet == null) {
-              const w = pickWallet(p);
-              if (w != null) row.wallet = w;
-            }
-
-            let pts = 0;
-
-            if (source.gens) pts = safeNum(p?.genpoints) || computeGensScore(p);
-            else if (source.key === "pk") {
-              const raw = p?.pkpoints ?? p?.parkour_points ?? p?.points_parkour ?? p?.parkourpoints ?? null;
-              pts = safeNum(raw);
-            } else {
-              pts = safeNum(p?.[source.pointsKey]);
-            }
-
-            row.points[source.key] = Math.max(row.points[source.key] || 0, pts);
-          }
+          map.set(id, {
+            uuid,
+            nombre_minecraft: name,
+            platform: getPlatform(p),
+            wallet: pickWallet(p),
+            tiempo_total: t > 0 ? t : 0,
+            total_points: pts,
+          });
         }
 
-        const merged = Array.from(map.values()).map((r) => {
-          const total =
-            safeNum(r.points.sv) +
-            safeNum(r.points.ob) +
-            safeNum(r.points.ge) +
-            safeNum(r.points.an) +
-            safeNum(r.points.pk);
-
-          return { ...r, total_points: total };
-        });
+        const merged = Array.from(map.values());
 
         merged.sort((a, b) => {
           const dp = (b.total_points || 0) - (a.total_points || 0);
@@ -275,11 +248,17 @@ export default function Leaderboards() {
 
   const totalRows = filtrados.length;
 
-  const paginasTotales = useMemo(() => Math.max(1, Math.ceil(totalRows / LIMIT)), [totalRows]);
+  const paginasTotales = useMemo(
+    () => Math.max(1, Math.ceil(totalRows / LIMIT)),
+    [totalRows]
+  );
 
   const paginaActual = useMemo(() => Math.floor(offset / LIMIT) + 1, [offset]);
 
-  const pageRows = useMemo(() => filtrados.slice(offset, offset + LIMIT), [filtrados, offset]);
+  const pageRows = useMemo(
+    () => filtrados.slice(offset, offset + LIMIT),
+    [filtrados, offset]
+  );
 
   const goPage = useCallback(
     (page) => {
@@ -290,7 +269,9 @@ export default function Leaderboards() {
   );
 
   const wrapClass = useMemo(() => {
-    return ["lb-page", isLeaving ? "lb-is-leaving" : ""].filter(Boolean).join(" ");
+    return ["lb-page", isLeaving ? "lb-is-leaving" : ""]
+      .filter(Boolean)
+      .join(" ");
   }, [isLeaving]);
 
   return (
@@ -300,17 +281,27 @@ export default function Leaderboards() {
           <div className="lb-exitFog" />
           <div className="lb-exitCard">
             <div className="lb-exitTop">
-              <img className="lb-exitSkin" src={exitFx.skin} alt="" draggable="false" onError={hideImg} />
+              <img
+                className="lb-exitSkin"
+                src={exitFx.skin}
+                alt=""
+                draggable="false"
+                onError={hideImg}
+              />
               <div className="lb-exitInfo">
                 <div className="lb-exitName">{exitFx.nombre}</div>
                 <div className="lb-exitBadges">
                   {exitFx.platKey === "java" || exitFx.platKey === "bedrock" ? (
-                    <span className={`lb-platformPill lb-platformPill--${exitFx.platKey}`}>
+                    <span
+                      className={`lb-platformPill lb-platformPill--${exitFx.platKey}`}
+                    >
                       {exitFx.platKey === "bedrock" ? "BEDROCK" : "JAVA"}
                     </span>
                   ) : null}
                   {exitFx.rangoKey ? (
-                    <span className={`lb-exitRango lb-exitRango--${exitFx.rangoKey}`}>
+                    <span
+                      className={`lb-exitRango lb-exitRango--${exitFx.rangoKey}`}
+                    >
                       <img
                         className="lb-rangoIcon"
                         src={RANGO_LOCAL[exitFx.rangoKey]}
@@ -340,7 +331,10 @@ export default function Leaderboards() {
             <div className={`lb-tableCard ${isLeaving ? "is-leaving" : ""}`}>
               <div className="lb-cardHero">
                 <div className="lb-cardHeroTitle">RANKINGS</div>
-                <div className="lb-cardHeroSub">Ranking global por puntos totales. Pulsa un jugador para ver su perfil.</div>
+                <div className="lb-cardHeroSub">
+                  Ranking global de Survival por puntos. Pulsa un jugador para ver
+                  su perfil.
+                </div>
               </div>
 
               <div className="lb-toolbar">
@@ -410,19 +404,30 @@ export default function Leaderboards() {
                     ) : pageRows.length ? (
                       pageRows.map((p) => {
                         const rank = Number(p?.global_rank || 0) || 0;
-                        const topClass = rank === 1 ? "lb-rowTop1" : rank === 2 ? "lb-rowTop2" : rank === 3 ? "lb-rowTop3" : "";
+                        const topClass =
+                          rank === 1
+                            ? "lb-rowTop1"
+                            : rank === 2
+                            ? "lb-rowTop2"
+                            : rank === 3
+                            ? "lb-rowTop3"
+                            : "";
 
                         const meta = getMeta(p?.uuid);
-                        const rangoRaw = meta?.rango || meta?.rango_usuario || meta?.rank || null;
+                        const rangoRaw =
+                          meta?.rango || meta?.rango_usuario || meta?.rank || null;
                         const rangoKey = normalizeRango(rangoRaw);
 
                         const platTxt = p?.platform || "";
                         const platKey = normalizePlatform(platTxt);
 
                         const wallet = p?.wallet ?? pickWallet(meta);
-                        const walletTxt = wallet == null ? "—" : formatInt(wallet);
+                        const walletTxt =
+                          wallet == null ? "—" : formatInt(wallet);
 
-                        const tiempoTxt = formatearTiempo(safeNum(p?.tiempo_total));
+                        const tiempoTxt = formatearTiempo(
+                          safeNum(p?.tiempo_total)
+                        );
 
                         return (
                           <tr
@@ -432,31 +437,49 @@ export default function Leaderboards() {
                             data-rango={rangoKey || ""}
                           >
                             <td className="lb-rankCell lb-center">
-                              <span className="lb-rankBadge">#{rank || "—"}</span>
+                              <span className="lb-rankBadge">
+                                #{rank || "—"}
+                              </span>
                             </td>
 
                             <td className="lb-playerCell">
                               <div className="lb-player">
                                 <div className="lb-skin">
                                   <img
-                                    src={`https://minotar.net/helm/${encodeURIComponent(p?.nombre_minecraft || "Steve")}/64`}
+                                    src={`https://minotar.net/helm/${encodeURIComponent(
+                                      p?.nombre_minecraft || "Steve"
+                                    )}/64`}
                                     alt=""
                                     loading="lazy"
                                   />
                                 </div>
 
                                 <div className="lb-nameWrap">
-                                  <div className={`lb-name ${rangoKey ? `is-${rangoKey}` : ""}`}>{p?.nombre_minecraft}</div>
+                                  <div
+                                    className={`lb-name ${
+                                      rangoKey ? `is-${rangoKey}` : ""
+                                    }`}
+                                  >
+                                    {p?.nombre_minecraft}
+                                  </div>
 
                                   <div className="lb-meta">
-                                    {platKey === "java" || platKey === "bedrock" ? (
-                                      <span className={`lb-platformPill lb-platformPill--${platKey}`}>
-                                        {platKey === "bedrock" ? "BEDROCK" : "JAVA"}
+                                    {platKey === "java" ||
+                                    platKey === "bedrock" ? (
+                                      <span
+                                        className={`lb-platformPill lb-platformPill--${platKey}`}
+                                      >
+                                        {platKey === "bedrock"
+                                          ? "BEDROCK"
+                                          : "JAVA"}
                                       </span>
                                     ) : null}
 
                                     {rangoKey ? (
-                                      <span className={`lb-rango lb-rango--${rangoKey}`} title={String(rangoRaw || "")}>
+                                      <span
+                                        className={`lb-rango lb-rango--${rangoKey}`}
+                                        title={String(rangoRaw || "")}
+                                      >
                                         <img
                                           className="lb-rangoIcon"
                                           src={RANGO_LOCAL[rangoKey]}
@@ -472,7 +495,9 @@ export default function Leaderboards() {
                             </td>
 
                             <td className="lb-center lb-pointsCell">
-                              <span className="lb-pointsValue">{formatInt(p?.total_points || 0)}</span>
+                              <span className="lb-pointsValue">
+                                {formatInt(p?.total_points || 0)}
+                              </span>
                             </td>
 
                             <td className="lb-center">
@@ -484,7 +509,13 @@ export default function Leaderboards() {
                                 <span className="lb-num">—</span>
                               ) : (
                                 <span className="lb-walletValue">
-                                  <img className="lb-coin" src={COIN_SRC} alt="" loading="lazy" onError={hideImg} />
+                                  <img
+                                    className="lb-coin"
+                                    src={COIN_SRC}
+                                    alt=""
+                                    loading="lazy"
+                                    onError={hideImg}
+                                  />
                                   <span className="lb-num">{walletTxt}</span>
                                 </span>
                               )}
@@ -517,7 +548,8 @@ export default function Leaderboards() {
                   pageRows.map((p) => {
                     const rank = Number(p?.global_rank || 0) || 0;
                     const meta = getMeta(p?.uuid);
-                    const rangoRaw = meta?.rango || meta?.rango_usuario || meta?.rank || null;
+                    const rangoRaw =
+                      meta?.rango || meta?.rango_usuario || meta?.rank || null;
                     const rangoKey = normalizeRango(rangoRaw);
 
                     const platTxt = p?.platform || "";
@@ -525,37 +557,76 @@ export default function Leaderboards() {
                     const platformIcon = PLATFORM_ICON[platKey] || "";
 
                     const wallet = p?.wallet ?? pickWallet(meta);
-                    const walletTxt = wallet == null ? "—" : formatInt(wallet);
-                    const tiempoTxt = formatearTiempo(safeNum(p?.tiempo_total));
+                    const walletTxt =
+                      wallet == null ? "—" : formatInt(wallet);
+                    const tiempoTxt = formatearTiempo(
+                      safeNum(p?.tiempo_total)
+                    );
 
                     return (
-                      <div key={p?.uuid || p?.nombre_minecraft} className="lb-card" onClick={() => onOpenPerfil(p)} data-rango={rangoKey || ""}>
+                      <div
+                        key={p?.uuid || p?.nombre_minecraft}
+                        className="lb-card"
+                        onClick={() => onOpenPerfil(p)}
+                        data-rango={rangoKey || ""}
+                      >
                         <div className="lb-cardTop">
-                          <span className="lb-rankBadge">#{rank || "—"}</span>
+                          <span className="lb-rankBadge">
+                            #{rank || "—"}
+                          </span>
 
                           <div className="lb-player">
                             <div className="lb-skin">
                               <img
-                                src={`https://minotar.net/helm/${encodeURIComponent(p?.nombre_minecraft || "Steve")}/64`}
+                                src={`https://minotar.net/helm/${encodeURIComponent(
+                                  p?.nombre_minecraft || "Steve"
+                                )}/64`}
                                 alt=""
                                 loading="lazy"
                               />
                             </div>
 
                             <div className="lb-nameWrap">
-                              <div className={`lb-name ${rangoKey ? `is-${rangoKey}` : ""}`}>{p?.nombre_minecraft}</div>
+                              <div
+                                className={`lb-name ${
+                                  rangoKey ? `is-${rangoKey}` : ""
+                                }`}
+                              >
+                                {p?.nombre_minecraft}
+                              </div>
 
                               <div className="lb-meta">
                                 {platTxt ? (
-                                  <span className={`lb-platform lb-platform--${platKey}`} title={platTxt} aria-label={platTxt}>
-                                    {platformIcon ? <img className="lb-platformIcon" src={platformIcon} alt="" loading="lazy" onError={hideImg} /> : null}
+                                  <span
+                                    className={`lb-platform lb-platform--${platKey}`}
+                                    title={platTxt}
+                                    aria-label={platTxt}
+                                  >
+                                    {platformIcon ? (
+                                      <img
+                                        className="lb-platformIcon"
+                                        src={platformIcon}
+                                        alt=""
+                                        loading="lazy"
+                                        onError={hideImg}
+                                      />
+                                    ) : null}
                                     <span className="lb-platformDot" />
                                   </span>
                                 ) : null}
 
                                 {rangoKey ? (
-                                  <span className={`lb-rango lb-rango--${rangoKey}`} title={String(rangoRaw || "")}>
-                                    <img className="lb-rangoIcon" src={RANGO_LOCAL[rangoKey]} alt="" loading="lazy" onError={fallbackRankImg(rangoKey)} />
+                                  <span
+                                    className={`lb-rango lb-rango--${rangoKey}`}
+                                    title={String(rangoRaw || "")}
+                                  >
+                                    <img
+                                      className="lb-rangoIcon"
+                                      src={RANGO_LOCAL[rangoKey]}
+                                      alt=""
+                                      loading="lazy"
+                                      onError={fallbackRankImg(rangoKey)}
+                                    />
                                   </span>
                                 ) : null}
                               </div>
@@ -566,7 +637,13 @@ export default function Leaderboards() {
                         <div className="lb-cardMain">
                           <div className="lb-cardRow">
                             <span className="lb-cardLabel">
-                              <img className="lb-rowIcon" src={ICON_POINTS} alt="" loading="lazy" onError={hideImg} />
+                              <img
+                                className="lb-rowIcon"
+                                src={ICON_POINTS}
+                                alt=""
+                                loading="lazy"
+                                onError={hideImg}
+                              />
                               <span>Points</span>
                             </span>
                             <strong>{formatInt(p?.total_points || 0)}</strong>
@@ -574,7 +651,13 @@ export default function Leaderboards() {
 
                           <div className="lb-cardRow">
                             <span className="lb-cardLabel">
-                              <img className="lb-rowIcon" src={ICON_TIME} alt="" loading="lazy" onError={hideImg} />
+                              <img
+                                className="lb-rowIcon"
+                                src={ICON_TIME}
+                                alt=""
+                                loading="lazy"
+                                onError={hideImg}
+                              />
                               <span>Horas</span>
                             </span>
                             <strong>{tiempoTxt}</strong>
@@ -582,7 +665,13 @@ export default function Leaderboards() {
 
                           <div className="lb-cardRow">
                             <span className="lb-cardLabel">
-                              <img className="lb-rowIcon" src={ICON_WALLET} alt="" loading="lazy" onError={hideImg} />
+                              <img
+                                className="lb-rowIcon"
+                                src={ICON_WALLET}
+                                alt=""
+                                loading="lazy"
+                                onError={hideImg}
+                              />
                               <span>Wallet</span>
                             </span>
 
@@ -590,7 +679,13 @@ export default function Leaderboards() {
                               <strong>—</strong>
                             ) : (
                               <strong className="lb-walletInline">
-                                <img className="lb-coin" src={COIN_SRC} alt="" loading="lazy" onError={hideImg} />
+                                <img
+                                  className="lb-coin"
+                                  src={COIN_SRC}
+                                  alt=""
+                                  loading="lazy"
+                                  onError={hideImg}
+                                />
                                 {walletTxt}
                               </strong>
                             )}
@@ -604,7 +699,11 @@ export default function Leaderboards() {
 
               <div className="lb-pagination">
                 <div className="lb-pager">
-                  <button type="button" onClick={() => goPage(paginaActual - 1)} disabled={paginaActual <= 1 || isLeaving}>
+                  <button
+                    type="button"
+                    onClick={() => goPage(paginaActual - 1)}
+                    disabled={paginaActual <= 1 || isLeaving}
+                  >
                     ‹
                   </button>
 
@@ -612,7 +711,11 @@ export default function Leaderboards() {
                     {paginaActual} / {paginasTotales}
                   </div>
 
-                  <button type="button" onClick={() => goPage(paginaActual + 1)} disabled={paginaActual >= paginasTotales || isLeaving}>
+                  <button
+                    type="button"
+                    onClick={() => goPage(paginaActual + 1)}
+                    disabled={paginaActual >= paginasTotales || isLeaving}
+                  >
                     ›
                   </button>
                 </div>

@@ -9,19 +9,12 @@
   width: 100%;
   min-height: 120vh;
   padding: 3rem 1.5rem 0;
-
-  /* No cortamos en Y para que el suelo pueda subir */
   overflow-x: hidden;
   overflow-y: visible;
   color: #163048;
 
-  /* Altura LÓGICA donde se apoya el portal (para el layout) */
   --ground-h: clamp(380px, 24vh, 420px);
-
-  /* Altura REAL de la textura de suelo (es más alta) */
   --ground-texture-h: 640px;
-
-  /* Desplazamiento vertical de la textura rock (negativo = subirla) */
   --ground-rock-shift: 0px;
 
   background: transparent;
@@ -29,34 +22,22 @@
   flex-direction: column;
   align-items: stretch;
 
-  /* Tablet / portátiles pequeños */
   @media (max-width: 992px) {
     padding: 2.4rem 1.25rem 0;
-    /* Menos altura total que desktop, pero sigue respirando */
     min-height: 105vh;
-
-    /* Suelo algo más cerca del portal que en desktop */
     --ground-h: clamp(260px, 24vh, 300px);
-
-    /* Textura algo más baja y subida un pelín */
     --ground-texture-h: 420px;
     --ground-rock-shift: -40px;
   }
 
-  /* Tablet vertical / phablets grandes */
   @media (max-width: 768px) {
     padding: 1.8rem 0.75rem 0;
-    /* Más compacta que en 992px, pero sin aplastar demasiado el portal */
     min-height: 90vh;
-
-    /* Aproximamos proporción al 480px pero con un pelín más de margen */
     --ground-h: clamp(240px, 22vh, 260px);
-
     --ground-texture-h: 320px;
     --ground-rock-shift: -20px;
   }
 
-  /* Móviles (la que has dejado fina) */
   @media (max-width: 480px) {
     min-height: 80vh;
     --ground-h: clamp(240px, 20vh, 240px);
@@ -65,7 +46,6 @@
   }
 }
 
-/* Suelo sin deformar + relleno suave debajo */
 .maprpg-wrapper::after {
   content: "";
   position: absolute;
@@ -75,23 +55,16 @@
 
   background-image:
     url("/assets/maprpg/ground-rock.webp"),
-    linear-gradient(
-      to bottom,
-      rgba(0, 0, 0, 0) 0%,  // arriba totalmente transparente
-      #00973A 100%
-    );
+    linear-gradient(to bottom, rgba(0, 0, 0, 0) 0%, #00973a 100%);
   background-repeat: no-repeat, no-repeat;
   background-size: 100% auto, 100% 100%;
-  background-position:
-    center var(--ground-rock-shift),
-    center bottom;
+  background-position: center var(--ground-rock-shift), center bottom;
 
   background-color: transparent;
   pointer-events: none;
   z-index: 0;
 }
 
-/* Contenedor interior */
 .maprpg-inner {
   position: relative;
   z-index: 1;
@@ -157,8 +130,6 @@
   width: 100%;
   display: flex;
   justify-content: center;
-
-  /* El portal se apoya justo en la parte superior del suelo lógico */
   align-items: flex-end;
   padding-bottom: var(--ground-h);
 
@@ -208,7 +179,6 @@
   }
 }
 
-/* Luciérnagas alrededor del portal */
 .maprpg-portal-frame::before,
 .maprpg-portal-frame::after {
   content: "";
@@ -229,9 +199,7 @@
     radial-gradient(circle, rgba(246, 232, 255, 0.9) 0, rgba(246, 232, 255, 0.9) 22%, transparent 55%),
     radial-gradient(circle, rgba(212, 176, 255, 0.9) 0, rgba(212, 176, 255, 0.9) 22%, transparent 55%);
   background-size: 28px 28px, 24px 24px, 22px 22px, 18px 18px, 20px 20px;
-  background-position:
-    10% 15%, 88% 30%, 50% 0%,
-    18% 40%, 82% 48%;
+  background-position: 10% 15%, 88% 30%, 50% 0%, 18% 40%, 82% 48%;
   filter: blur(0.3px);
   animation: maprpg-fireflies-orbit-outer-1 16s linear infinite;
 }
@@ -244,9 +212,7 @@
     radial-gradient(circle, rgba(220, 196, 255, 0.9) 0, rgba(220, 196, 255, 0.9) 24%, transparent 56%),
     radial-gradient(circle, rgba(246, 232, 255, 0.9) 0, rgba(246, 232, 255, 0.9) 24%, transparent 56%);
   background-size: 20px 20px, 22px 22px, 18px 18px, 16px 16px, 18px 18px;
-  background-position:
-    8% 75%, 92% 70%, 50% 100%,
-    20% 88%, 80% 90%;
+  background-position: 8% 75%, 92% 70%, 50% 100%, 20% 88%, 80% 90%;
   filter: blur(0.2px);
   animation: maprpg-fireflies-orbit-outer-2 21s ease-in-out infinite alternate;
 }
@@ -254,7 +220,7 @@
 .maprpg-portal-frame-image {
   position: absolute;
   inset: -40%;
-  background-image: url("/assets/maprpg/nether-portal-frame.webp"); /* PNG con personajes */
+  background-image: url("/assets/maprpg/nether-portal-frame.webp");
   background-size: contain;
   background-position: center;
   background-repeat: no-repeat;
@@ -263,25 +229,21 @@
   z-index: 1;
 }
 
-/* ===========================================
-   HUECO REAL DEL PORTAL (BACKDROP + AURA + TEXTO)
-   =========================================== */
 .maprpg-portal-inner {
   position: absolute;
-
-  /* mismos % en todos los breakpoints para que no se descuadre */
   top: 20%;
   bottom: -5%;
   left: 12%;
   right: 0%;
-
   border-radius: 14px;
   overflow: hidden;
   box-shadow:
     0 0 30px rgba(0, 0, 0, 0.7),
-    0 0 26px rgba(156, 96, 255, 0.7); /* glow morado */
+    0 0 26px rgba(156, 96, 255, 0.7);
   background: #06130e;
   z-index: 0;
+  contain: paint;
+  transform: translateZ(0);
 }
 
 .maprpg-portal-layer {
@@ -290,7 +252,14 @@
   height: 100%;
 }
 
-/* Fondo interior del portal: zoom “respirando” + zoom extra al hover */
+.maprpg-portal-backdrop-stack {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  border-radius: 14px;
+}
+
 .maprpg-portal-backdrop {
   position: absolute;
   inset: 0;
@@ -298,30 +267,30 @@
   background-position: center;
   filter: brightness(0.96) contrast(1.06) saturate(1.05);
   z-index: 0;
-
-  /* Variables que animamos en los keyframes (no el transform directo) */
   --zb-scale: 1;
   --zb-translateY: 0%;
-
   transform: scale(var(--zb-scale)) translateY(var(--zb-translateY));
   transform-origin: center center;
-
-  /* respiración lenta por defecto */
   animation: maprpg-backdrop-zoom-soft 18s ease-in-out infinite;
-
-  /* transición para ir y volver de los estados de hover */
-  transition: transform 2s ease-out;
+  transition: opacity 0.28s ease-out, transform 2s ease-out;
+  will-change: opacity, transform;
+  backface-visibility: hidden;
 }
 
-/* Al poner ratón encima: zoom extra relativo a la posición actual */
+.maprpg-portal-backdrop--front {
+  z-index: 1;
+}
+
+.maprpg-portal-backdrop--hidden {
+  opacity: 0;
+}
+
 .maprpg-portal-inner:hover .maprpg-portal-backdrop,
 .maprpg-portal-inner:focus-within .maprpg-portal-backdrop {
-  transform: scale(calc(var(--zb-scale) * 2))
-    translateY(calc(var(--zb-translateY) - 0%));
+  transform: scale(calc(var(--zb-scale) * 2)) translateY(calc(var(--zb-translateY) - 0%));
   transition: transform 5s cubic-bezier(0.22, 0, 0.25, 1);
 }
 
-/* Aura morada Nether (suavizada) */
 .maprpg-portal-aura {
   position: absolute;
   inset: 0;
@@ -349,6 +318,8 @@
     0 0 22px rgba(190, 90, 245, 0.28),
     0 0 36px rgba(110, 60, 210, 0.26);
   animation: maprpg-aura-pulse 7.5s ease-in-out infinite;
+  border: 0;
+  padding: 0;
 }
 
 .maprpg-portal-aura::before,
@@ -360,7 +331,6 @@
   pointer-events: none;
 }
 
-/* ondas internas moradas */
 .maprpg-portal-aura::before {
   background:
     radial-gradient(circle at 20% 0, rgba(255, 190, 255, 0.6), transparent 55%),
@@ -383,7 +353,6 @@
     maprpg-portal-flow 9s ease-in-out infinite alternate;
 }
 
-/* partículas internas lilas */
 .maprpg-portal-aura::after {
   background-image:
     radial-gradient(circle, rgba(252, 242, 255, 0.9) 0, rgba(252, 242, 255, 0.9) 18%, transparent 40%),
@@ -400,7 +369,6 @@
   filter: brightness(1.06) saturate(1.08);
 }
 
-/* Texto dentro del portal */
 .maprpg-portal-content {
   position: absolute;
   inset: 0;
@@ -450,7 +418,6 @@
    ANIMACIONES PORTAL
    =============================== */
 
-/* zoom suave de “respiración” usando variables */
 @keyframes maprpg-backdrop-zoom-soft {
   0% {
     --zb-scale: 1.02;
@@ -467,13 +434,21 @@
 }
 
 @keyframes maprpg-portal-flow {
-  0% { transform: translateY(0) scale(1); }
-  100% { transform: translateY(-6%) scale(1.03); }
+  0% {
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    transform: translateY(-6%) scale(1.03);
+  }
 }
 
 @keyframes maprpg-portal-spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes maprpg-fireflies {
@@ -491,7 +466,6 @@
   }
 }
 
-/* pulso morado del aura */
 @keyframes maprpg-aura-pulse {
   0% {
     opacity: 0.9;
@@ -516,54 +490,38 @@
 @keyframes maprpg-fireflies-orbit-outer-1 {
   0% {
     transform: translate3d(0, 0, 0);
-    background-position:
-      10% 15%, 88% 30%, 50% 0%,
-      18% 40%, 82% 48%;
+    background-position: 10% 15%, 88% 30%, 50% 0%, 18% 40%, 82% 48%;
   }
   25% {
     transform: translate3d(2%, -3%, 0);
-    background-position:
-      6% 10%, 92% 36%, 55% 6%,
-      14% 34%, 86% 52%;
+    background-position: 6% 10%, 92% 36%, 55% 6%, 14% 34%, 86% 52%;
   }
   55% {
     transform: translate3d(-1%, 2%, 0);
-    background-position:
-      4% 22%, 84% 22%, 45% -4%,
-      20% 46%, 80% 40%;
+    background-position: 4% 22%, 84% 22%, 45% -4%, 20% 46%, 80% 40%;
   }
   100% {
     transform: translate3d(0, 0, 0);
-    background-position:
-      10% 15%, 88% 30%, 50% 0%,
-      18% 40%, 82% 48%;
+    background-position: 10% 15%, 88% 30%, 50% 0%, 18% 40%, 82% 48%;
   }
 }
 
 @keyframes maprpg-fireflies-orbit-outer-2 {
   0% {
     transform: translate3d(0, 0, 0) scale(1);
-    background-position:
-      8% 75%, 92% 70%, 50% 100%,
-      20% 88%, 80% 90%;
+    background-position: 8% 75%, 92% 70%, 50% 100%, 20% 88%, 80% 90%;
   }
   25% {
     transform: translate3d(1%, -2%, 0) scale(1.03);
-    background-position:
-      4% 68%, 96% 64%, 54% 106%,
-      18% 94%, 82% 84%;
+    background-position: 4% 68%, 96% 64%, 54% 106%, 18% 94%, 82% 84%;
   }
   55% {
     transform: translate3d(-2%, 1%, 0) scale(0.97);
-    background-position:
-      6% 82%, 90% 78%, 46% 94%,
-      24% 92%, 76% 98%;
+    background-position: 6% 82%, 90% 78%, 46% 94%, 24% 92%, 76% 98%;
   }
   100% {
     transform: translate3d(0, 0, 0) scale(1);
-    background-position:
-      8% 75%, 92% 70%, 50% 100%,
-      20% 88%, 80% 90%;
+    background-position: 8% 75%, 92% 70%, 50% 100%, 20% 88%, 80% 90%;
   }
 }
 
@@ -575,8 +533,6 @@
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
-
-  /* Lo colocamos un poco POR ENCIMA del inicio del ground lógico */
   bottom: calc(var(--ground-h) - 250px);
 
   z-index: 5;
@@ -654,8 +610,6 @@
     gap: 0.9rem;
   }
 }
-
-/* Puntos, texto, flechas */
 
 .maprpg-carousel-dots {
   display: flex;
@@ -769,9 +723,7 @@
   svg {
     width: 24px;
     height: 24px;
-    transition:
-      transform 0.2s ease-out,
-      filter 0.2s ease-out;
+    transition: transform 0.2s ease-out, filter 0.2s ease-out;
     filter: drop-shadow(0 0 6px rgba(0, 0, 0, 0.8));
   }
 
@@ -842,8 +794,7 @@
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
-  filter: brightness(0.96) saturate(0.98)
-    drop-shadow(0 0 8px rgba(0, 0, 0, 0.85));
+  filter: brightness(0.96) saturate(0.98) drop-shadow(0 0 8px rgba(0, 0, 0, 0.85));
   transition:
     filter 0.22s ease-out,
     transform 0.22s ease-out,
@@ -865,8 +816,7 @@
 .maprpg-rune--right .maprpg-rune-image {
   opacity: 0.8;
   transform: translateY(6px) scale(0.82);
-  filter: brightness(0.85) saturate(0.9)
-    drop-shadow(0 0 4px rgba(0, 0, 0, 0.75));
+  filter: brightness(0.85) saturate(0.9) drop-shadow(0 0 4px rgba(0, 0, 0, 0.75));
 }
 
 .maprpg-rune--center .maprpg-rune-image {
@@ -889,8 +839,7 @@
 
 .maprpg-rune:hover .maprpg-rune-image,
 .maprpg-rune:focus-visible .maprpg-rune-image {
-  filter: brightness(1.2) saturate(1.08)
-    drop-shadow(0 0 14px rgba(255, 210, 140, 0.95));
+  filter: brightness(1.2) saturate(1.08) drop-shadow(0 0 14px rgba(255, 210, 140, 0.95));
 }
 
 .maprpg-rune--center:hover .maprpg-rune-image,
@@ -899,9 +848,15 @@
 }
 
 @keyframes maprpg-rune-bob {
-  0%   { transform: translateY(-2px); }
-  50%  { transform: translateY(-10px); }
-  100% { transform: translateY(-2px); }
+  0% {
+    transform: translateY(-2px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+  100% {
+    transform: translateY(-2px);
+  }
 }
 
 @keyframes maprpg-arrow-pulse {
@@ -919,5 +874,46 @@
     text-shadow:
       0 0 6px rgba(0, 0, 0, 0.9),
       0 0 10px rgba(255, 198, 120, 0.7);
+  }
+}
+
+/* ===============================
+   INTERACCIONES / ESTADOS
+   =============================== */
+
+.maprpg-portal-frame--scared::before {
+  animation-duration: 7s;
+  opacity: 0.25;
+}
+
+.maprpg-portal-frame--scared::after {
+  animation-duration: 9s;
+  opacity: 0.25;
+}
+
+/* ===============================
+   ACCESIBILIDAD / REDUCED MOTION
+   =============================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .maprpg-portal-backdrop,
+  .maprpg-portal-aura,
+  .maprpg-portal-aura::before,
+  .maprpg-portal-aura::after,
+  .maprpg-portal-frame::before,
+  .maprpg-portal-frame::after,
+  .maprpg-rune--center .maprpg-rune-image {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .maprpg-portal-inner:hover .maprpg-portal-backdrop,
+  .maprpg-portal-inner:focus-within .maprpg-portal-backdrop {
+    transform: scale(1.04) translateY(-1%);
+  }
+
+  .maprpg-portal-desc {
+    opacity: 1;
+    transform: none;
   }
 }

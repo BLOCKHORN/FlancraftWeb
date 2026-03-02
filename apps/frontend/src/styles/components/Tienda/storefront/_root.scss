@@ -16,10 +16,20 @@
   --easeLift: cubic-bezier(0.16, 1, 0.3, 1);
   --easePress: cubic-bezier(0.2, 0.9, 0.2, 1);
 
-  --ui-scale: 0.68;
+  /* =========================
+     UI SCALE (dinámico)
+     - Evita apelotonado en pantallas bajas
+     - Evita que en pantallas grandes quede enano
+     ========================= */
+  --ui-scale-w: clamp(0.70, calc(100vw / 1400), 1.00);
+  --ui-scale-h: clamp(0.70, calc(100vh / 820), 1.00);
+  --ui-scale: clamp(0.72, min(var(--ui-scale-w), var(--ui-scale-h)), 1.00);
 
-  --content-w: calc(60rem * var(--ui-scale));
-  --gap: calc(clamp(0.85rem, 1.15vw, 1.35rem) * var(--ui-scale));
+  /* =========================
+     Layout tokens
+     ========================= */
+  --gap-base: clamp(0.85rem, 1.15vw, 1.35rem);
+  --gap: calc(var(--gap-base) * var(--ui-scale));
 
   --rank-size: calc(clamp(11.4rem, 16.5vw, 14.2rem) * var(--ui-scale));
 
@@ -38,6 +48,10 @@
   --tsf-sign-clear: calc(var(--sign-clear) * var(--tsf-sign-enabled));
   --tsf-sign-top: calc(var(--sign-top) * var(--tsf-sign-enabled));
 
+  /* Content width (no encojer raro) */
+  --content-max: calc(62rem * var(--ui-scale));
+  --content-pad: clamp(10px, 1.6vw, 22px);
+
   position: relative;
   width: 100%;
   height: 100%;
@@ -48,6 +62,9 @@
   gap: var(--gap);
 
   padding-top: calc(var(--tsf-topPad) + var(--tsf-sign-clear));
+  padding-left: var(--content-pad);
+  padding-right: var(--content-pad);
+  padding-bottom: var(--content-pad);
 
   box-sizing: border-box;
   border-radius: 6px;
@@ -69,8 +86,13 @@
 }
 
 .tsf-content{
-  width: min(var(--content-w), 96%);
+  width: 100%;
+  max-width: var(--content-max);
   margin: 0 auto;
+
   position: relative;
   z-index: 1;
+
+  /* Esto ayuda muchísimo a que no se “apelmote” por overflow de grids */
+  min-width: 0;
 }

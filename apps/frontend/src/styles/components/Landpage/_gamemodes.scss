@@ -3,13 +3,10 @@
 .gamemodes-wrapper {
   position: relative;
   padding: 3.5rem 2rem 4rem;
-
-  /* Fondo nuevo para GameModes */
   background-image: url("/assets/backgamemode.jpeg");
   background-repeat: repeat;
   background-position: center;
   background-size: auto;
-
   font-family: $font-epic;
   color: #fff;
   overflow: hidden;
@@ -30,9 +27,6 @@
   }
 }
 
-/* =========================
-   BLOQUE SELECTOR MUNDOS
-   ========================= */
 .gm-selector-block {
   position: relative;
   margin: 0 auto 2.4rem;
@@ -40,7 +34,7 @@
   text-align: center;
 
   .gm-subheader {
-    margin-bottom: 1.8rem;
+    margin-bottom: 1.6rem;
 
     .gm-subtitle {
       font-size: 1.05rem;
@@ -88,264 +82,127 @@
       }
     }
   }
+}
 
-  /* ✅ Selector centrado y simétrico (da igual si hay 6, 7, 8...) */
-  .gm-selector {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center; /* clave: centra la última fila */
-    align-items: flex-start;
-    gap: 1.8rem 2.8rem;
-  }
-
-  .gm-mode-btn {
-    background: transparent;
-    border: none;
-    padding: 0;
-    margin: 0;
-    cursor: pointer;
-
-    /* ✅ ancho fijo para que todo quede perfectamente simétrico */
-    width: 150px;
-
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 0.65rem;
-
-    height: 160px;
-    min-width: 0;
-    outline: none;
-    -webkit-tap-highlight-color: transparent;
-  }
-
-  .gm-mode-icon-wrap {
-    width: 90px;
-    height: 90px; /* altura fija para alinear todas las chapas */
-    display: flex;
-    align-items: flex-end; /* todos apoyan abajo */
-    justify-content: center;
-
-    position: relative; /* para el badge NEW */
-    transform-origin: center bottom;
-    transition: transform 0.22s ease;
-  }
-
-  .gm-mode-icon-wrap img {
-    width: 100%;
-    height: auto;
-    display: block;
-    border-radius: 0;
-    filter: drop-shadow(0 0 0 rgba(0, 0, 0, 0));
-    transition: filter 0.22s ease;
-  }
-
-  /* ====== NUEVO ESTILO TABS / BADGES ====== */
-  .gm-mode-badge {
+.gm-selector-block--single {
+  .gm-single {
+    margin: 0 auto;
+    max-width: 900px;
+    background: rgba(255, 248, 220, 0.06);
+    border-radius: 14px;
+    padding: 1.35rem 1.65rem;
+    box-shadow:
+      0 10px 28px rgba(0, 0, 0, 0.35),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.06);
     position: relative;
-    padding: 0.1rem 0;
-    min-width: 0;
-    max-width: 160px; /* evita que se coman al de al lado */
-    height: auto;
 
-    background: transparent;
-    border: none;
-    box-shadow: none;
-
-    font-size: 0.95rem;
-    line-height: 1.25;
-    color: #e8d9bd;
-    text-align: center;
-    text-transform: uppercase;
-    letter-spacing: 0.14em;
-    white-space: normal; /* permite salto de línea */
-    word-break: keep-all;
-    text-shadow:
-      0 1px 1px rgba(0, 0, 0, 0.7),
-      0 0 3px rgba(0, 0, 0, 0.7);
-
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-
+    &::before,
     &::after {
       content: "";
       position: absolute;
-      left: 50%;
-      bottom: -0.2rem;
-      transform: translateX(-50%) scaleX(0);
-      transform-origin: center;
-      width: 120%;
       height: 3px;
-      border-radius: 999px;
+      width: 120%;
+      left: 50%;
+      transform: translateX(-50%);
       background: linear-gradient(
         to right,
-        rgba(255, 215, 112, 0),
-        #ffd770,
-        #f0b94c,
-        #ffd770,
-        rgba(255, 215, 112, 0)
+        transparent,
+        #68492a 35%,
+        #f4c15c 50%,
+        #68492a 65%,
+        transparent
       );
-      opacity: 0;
-      transition:
-        transform 0.28s ease-out,
-        opacity 0.28s ease-out;
+      opacity: 0.45;
+    }
+
+    &::before {
+      top: -10px;
+    }
+
+    &::after {
+      bottom: -10px;
     }
   }
 
-  .gm-mode-badge--small {
-    font-size: 0.9rem;
-    letter-spacing: 0.12em;
+  .gm-single-emblem {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1.2rem;
   }
 
-  /* Hover: alza icono */
-  .gm-mode-btn:hover .gm-mode-icon-wrap {
-    transform: translateY(-5px) scale(1.03);
+  .gm-single-icon {
+    width: 84px;
+    height: 84px;
+    display: grid;
+    place-items: center;
+    transform-origin: center;
+    animation: gmFloatSeal 2.6s ease-in-out infinite;
+
+    img {
+      width: 100%;
+      height: auto;
+      display: block;
+      filter:
+        drop-shadow(0 0 2px rgba(132, 217, 107, 1))
+        drop-shadow(0 0 7px rgba(132, 217, 107, 0.85))
+        brightness(1.05);
+    }
   }
 
-  /* Subrayado animado al pasar el ratón y activo */
-  .gm-mode-btn:hover .gm-mode-badge::after,
-  .gm-mode-btn.active .gm-mode-badge::after {
-    transform: translateX(-50%) scaleX(1);
-    opacity: 1;
+  .gm-single-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+    min-width: 0;
   }
 
-  /* Estado activo: destaca texto */
-  .gm-mode-btn.active .gm-mode-badge {
+  .gm-single-label {
+    font-size: 0.82rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #e7d3b0;
+    opacity: 0.9;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+  }
+
+  .gm-single-title {
+    font-size: 2.05rem;
+    letter-spacing: 0.08em;
     color: #fff9dc;
     text-shadow:
       0 0 8px rgba(0, 0, 0, 0.8),
       0 0 14px rgba(0, 0, 0, 0.9);
+    line-height: 1.05;
   }
 
-  /* Active: flotando suave */
-  .gm-mode-btn.active .gm-mode-icon-wrap {
-    animation: gmFloatIcon 2.2s ease-in-out infinite;
-  }
-
-  /* =========================
-     GENS: BADGE "NEW" 8-bit
-     ========================= */
-  .gm-mode-btn.gens .gm-mode-icon-wrap::after {
-    content: "NEW";
-    position: absolute;
-    top: -10px;
-    right: -18px;
-    z-index: 5;
-
-    padding: 5px 7px;
-    font-size: 0.62rem;
-    line-height: 1;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    font-family: $font-epic;
-
-    color: #1b1208;
-    background:
-      repeating-linear-gradient(
-        90deg,
-        rgba(255, 255, 255, 0.18) 0 2px,
-        rgba(0, 0, 0, 0) 2px 4px
-      ),
-      linear-gradient(180deg, #ffd770, #f0b94c);
-
-    border: 2px solid #1b1208;
-    border-radius: 0; /* más “pixel” */
-    box-shadow:
-      0 0 0 2px rgba(0, 0, 0, 0.35),
-      4px 4px 0 rgba(0, 0, 0, 0.75);
-
-    transform: rotate(6deg);
-    transform-origin: center;
-    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.25);
-
-    pointer-events: none;
-
-    /* borde “mordido” tipo 8-bit */
-    clip-path: polygon(
-      0% 0%,
-      88% 0%,
-      100% 18%,
-      100% 100%,
-      12% 100%,
-      0% 82%
+  .gm-single-divider {
+    margin: 1.05rem auto 0.9rem;
+    width: min(520px, 92%);
+    height: 3px;
+    border-radius: 999px;
+    background: linear-gradient(
+      to right,
+      rgba(255, 215, 112, 0),
+      #ffd770,
+      #f0b94c,
+      #ffd770,
+      rgba(255, 215, 112, 0)
     );
-
-    animation: gmNewPulse 1.8s steps(2, end) infinite;
+    opacity: 0.85;
   }
 
-  /* Si está activo, que destaque un pelín más */
-  .gm-mode-btn.gens.active .gm-mode-icon-wrap::after {
-    filter: brightness(1.06);
-    box-shadow:
-      0 0 0 2px rgba(0, 0, 0, 0.35),
-      4px 4px 0 rgba(0, 0, 0, 0.8),
-      0 0 12px rgba(255, 215, 112, 0.35);
-  }
-
-  /* Colores por modo (brillos en el icono) */
-  .gm-mode-btn.survival:hover img,
-  .gm-mode-btn.survival.active img {
-    filter:
-      drop-shadow(0 0 2px rgba(132, 217, 107, 1))
-      drop-shadow(0 0 6px rgba(132, 217, 107, 0.85))
-      brightness(1.05);
-  }
-
-  .gm-mode-btn.anarquico:hover img,
-  .gm-mode-btn.anarquico.active img {
-    filter:
-      drop-shadow(0 0 2px rgba(241, 132, 62, 1))
-      drop-shadow(0 0 6px rgba(241, 132, 62, 0.85))
-      brightness(1.05);
-  }
-
-  .gm-mode-btn.hardcore:hover img,
-  .gm-mode-btn.hardcore.active img {
-    filter:
-      drop-shadow(0 0 2px rgba(243, 90, 90, 1))
-      drop-shadow(0 0 6px rgba(243, 90, 90, 0.85))
-      brightness(1.05);
-  }
-
-  .gm-mode-btn.oneblock:hover img,
-  .gm-mode-btn.oneblock.active img {
-    filter:
-      drop-shadow(0 0 2px rgba(120, 204, 240, 1))
-      drop-shadow(0 0 6px rgba(120, 204, 240, 0.9))
-      brightness(1.05);
-  }
-
-  /* ✅ GENS (electric/tech) */
-  .gm-mode-btn.gens:hover img,
-  .gm-mode-btn.gens.active img {
-    filter:
-      drop-shadow(0 0 2px rgba(86, 240, 255, 1))
-      drop-shadow(0 0 7px rgba(86, 240, 255, 0.9))
-      brightness(1.06);
-  }
-
-  .gm-mode-btn.chunklock:hover img,
-  .gm-mode-btn.chunklock.active img {
-    filter:
-      drop-shadow(0 0 2px rgba(79, 227, 196, 1))
-      drop-shadow(0 0 6px rgba(79, 227, 196, 0.9))
-      brightness(1.05);
-  }
-
-  .gm-mode-btn.parkour:hover img,
-  .gm-mode-btn.parkour.active img {
-    filter:
-      drop-shadow(0 0 2px rgba(248, 232, 109, 1))
-      drop-shadow(0 0 6px rgba(248, 232, 109, 0.9))
-      brightness(1.05);
+  .gm-single-note {
+    margin: 0 auto;
+    max-width: 760px;
+    font-size: 1.12rem;
+    color: #f1dfc0;
+    line-height: 1.75;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
   }
 }
 
-/* =========================
-   BLOQUE IMAGEN + DESCRIPCIÓN
-   ========================= */
 .gm-content {
   margin-top: 1.5rem;
   display: flex;
@@ -468,31 +325,6 @@
         color: #84d96b;
         text-shadow: 1px 1px 0 #1c3315, 0 0 4px #4f9440;
       }
-      &.anarquico {
-        color: #f1843e;
-        text-shadow: 1px 1px 0 #3a1d08, 0 0 4px #bd581b;
-      }
-      &.hardcore {
-        color: #f35a5a;
-        text-shadow: 1px 1px 0 #3c0b0b, 0 0 4px #bb2525;
-      }
-      &.oneblock {
-        color: #78ccf0;
-        text-shadow: 1px 1px 0 #153344, 0 0 4px #3888b9;
-      }
-      /* ✅ GENS */
-      &.gens {
-        color: #56f0ff;
-        text-shadow: 1px 1px 0 #0f2b32, 0 0 6px rgba(86, 240, 255, 0.55);
-      }
-      &.chunklock {
-        color: #4fe3c4;
-        text-shadow: 1px 1px 0 #104137, 0 0 4px #2a9e84;
-      }
-      &.parkour {
-        color: #f8e86d;
-        text-shadow: 1px 1px 0 #33300d, 0 0 4px #d1b800;
-      }
     }
 
     p {
@@ -506,30 +338,15 @@
   }
 }
 
-/* =========================
-   ANIMACIONES
-   ========================= */
-@keyframes gmFloatIcon {
+@keyframes gmFloatSeal {
   0% {
-    transform: translateY(-4px) scale(1.03);
+    transform: translateY(0) scale(1);
   }
   50% {
-    transform: translateY(-9px) scale(1.03);
+    transform: translateY(-6px) scale(1.02);
   }
   100% {
-    transform: translateY(-4px) scale(1.03);
-  }
-}
-
-@keyframes gmNewPulse {
-  0% {
-    transform: rotate(6deg) translateY(0);
-  }
-  50% {
-    transform: rotate(6deg) translateY(-1px);
-  }
-  100% {
-    transform: rotate(6deg) translateY(0);
+    transform: translateY(0) scale(1);
   }
 }
 
@@ -576,21 +393,6 @@
   animation: gmImageIn 0.35s ease-out;
 }
 
-/* =========================
-   RESPONSIVE
-   ========================= */
-@media (max-width: 1200px) {
-  .gm-selector-block {
-    .gm-selector {
-      gap: 1.8rem 2.4rem;
-    }
-
-    .gm-mode-btn {
-      width: 160px;
-    }
-  }
-}
-
 @media (max-width: 930px) {
   .gamemodes-wrapper {
     padding: 3rem 1.5rem 3.5rem;
@@ -614,6 +416,21 @@
       width: 120%;
     }
   }
+
+  .gm-selector-block--single {
+    .gm-single {
+      padding: 1.25rem 1.25rem;
+    }
+
+    .gm-single-title {
+      font-size: 1.85rem;
+    }
+
+    .gm-single-note {
+      font-size: 1.06rem;
+      line-height: 1.7;
+    }
+  }
 }
 
 @media (max-width: 768px) {
@@ -627,32 +444,24 @@
       font-size: 2.6rem;
       padding-inline: 1.8rem;
     }
+  }
 
-    .gm-selector {
-      gap: 1.6rem 1.8rem;
+  .gm-selector-block--single {
+    .gm-single-emblem {
+      gap: 1rem;
     }
 
-    .gm-mode-btn {
-      width: 160px;
-      height: 150px;
+    .gm-single-icon {
+      width: 76px;
+      height: 76px;
     }
 
-    .gm-mode-icon-wrap {
-      width: 80px;
-      height: 80px;
+    .gm-single-title {
+      font-size: 1.7rem;
     }
 
-    .gm-mode-badge {
-      font-size: 0.85rem;
-      letter-spacing: 0.12em;
-      max-width: 140px;
-    }
-
-    .gm-mode-btn.gens .gm-mode-icon-wrap::after {
-      top: -10px;
-      right: -18px;
-      padding: 5px 7px;
-      font-size: 0.6rem;
+    .gm-single-divider {
+      margin-top: 0.95rem;
     }
   }
 
@@ -672,28 +481,27 @@
 }
 
 @media (max-width: 520px) {
-  .gm-selector-block {
-    .gm-selector {
-      gap: 1.5rem 1.4rem;
+  .gm-selector-block--single {
+    .gm-single {
+      padding: 1.1rem 1rem;
     }
 
-    .gm-mode-btn {
-      width: 150px;
+    .gm-single-emblem {
+      flex-direction: column;
+      text-align: center;
     }
 
-    .gm-mode-icon-wrap {
-      width: 72px;
-      height: 72px;
+    .gm-single-meta {
+      align-items: center;
+      text-align: center;
     }
 
-    .gm-mundos {
-      font-size: 2.3rem;
+    .gm-single-title {
+      font-size: 1.65rem;
     }
 
-    .gm-mode-btn.gens .gm-mode-icon-wrap::after {
-      right: -16px;
-      padding: 5px 7px;
-      font-size: 0.58rem;
+    .gm-single-note {
+      font-size: 1.02rem;
     }
   }
 }

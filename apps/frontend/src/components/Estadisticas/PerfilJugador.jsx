@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import useIsMobile from "../../hooks/useIsMobile";
-import { getGensValorTierInfo } from "./leaderboards.gens";
 import "../../styles/components/Estadisticas/_perfiljugador.scss";
 
 const API_BASE = (import.meta.env.VITE_BACKEND_URL || "http://localhost:10000").trim().replace(/\/$/, "");
@@ -29,14 +28,6 @@ const AVATAR_BACKS = {
   inmortal: "/assets/profileinmortal.webp",
 };
 
-const SERVER_META = [
-  { key: "survival", label: "Survival", img: "/assets/reinos/survival-clasico.webp" },
-  { key: "gens", label: "Gens", img: "/assets/reinos/gens.webp" },
-  { key: "oneblock", label: "OneBlock", img: "/assets/reinos/oneblock.webp" },
-  { key: "anarquico", label: "Survival Anárquico", img: "/assets/reinos/survival-anarquico.webp" },
-  { key: "parkour", label: "Parkour", img: "/assets/reinos/parkour.webp" },
-];
-
 const ICONS = {
   tiempo: "/assets/statsperfil/playtime.webp",
   coins: "/assets/statsperfil/coin.png",
@@ -45,15 +36,7 @@ const ICONS = {
   kills: "/assets/statsperfil/pvp.webp",
   dmg: "/assets/statsperfil/dmg.png",
   puntos: "/assets/statsperfil/puntos.png",
-  genpoints: "/assets/statsperfil/genpoints.png",
   svpoints: "/assets/statsperfil/svpoints.png",
-  obpoints: "/assets/statsperfil/obpoints.png",
-  anpoints: "/assets/statsperfil/svpoints.png",
-  valor_isla: "/assets/statsperfil/valorisla.png",
-  nivel_web: "/assets/statsperfil/nivel.png",
-  nivel_isla: "/assets/statsperfil/nivel.png",
-  bloque_infinito: "/assets/statsperfil/bloqueinfinito.png",
-  bioma: "/assets/statsperfil/bioma.png",
   bloques_minados: "/assets/statsperfil/mining.webp",
   bloques_colocados: "/assets/statsperfil/build.webp",
   mobs: "/assets/statsperfil/mobs.webp",
@@ -144,16 +127,6 @@ const fmtUpdated = (v) => {
   }
 };
 
-const pickServer = (servidoresMap) => {
-  if (!servidoresMap) return "gens";
-  const keys = Object.keys(servidoresMap);
-  if (!keys.length) return "gens";
-  if (servidoresMap.gens) return "gens";
-  if (servidoresMap.oneblock) return "oneblock";
-  if (servidoresMap.survival) return "survival";
-  return keys[0];
-};
-
 const normalizeServerData = (raw) => {
   if (!raw) return null;
   if (raw.data) return raw.data;
@@ -174,45 +147,47 @@ const normalizeXp = (raw) => {
   return raw;
 };
 
-const metric = (id, label, value, iconKey, hint, onClick) => ({
+const makeMetric = ({ id, label, iconKey, value, lines, hint, onClick }) => ({
   id,
   label,
-  value,
+  value: value ?? EMPTY,
+  lines: Array.isArray(lines) ? lines.filter(Boolean) : null,
   icon: ICONS[iconKey] || null,
   hint,
   onClick: typeof onClick === "function" ? onClick : null,
 });
 
-const pickServerPoints = (srvKey, payload) => {
+const pickServerPoints = (payload) => {
   const p = payload || {};
   const resumen = p?.resumen || p?.summary || null;
   const economia = p?.economia || null;
-
   const direct = safe(resumen?.points ?? economia?.points);
   if (direct !== null) return direct;
-
-  if (srvKey === "gens") return safe(resumen?.genspoints ?? economia?.genspoints);
-  if (srvKey === "survival") return safe(resumen?.svpoints ?? economia?.svpoints);
-  if (srvKey === "oneblock") return safe(resumen?.obpoints ?? economia?.obpoints);
-  if (srvKey === "anarquico") return safe(resumen?.anpoints ?? economia?.anpoints);
-  if (srvKey === "parkour") return safe(resumen?.pkpoints ?? economia?.pkpoints);
-
-  return null;
-};
-
-const pointsIconKey = (srvKey) => {
-  if (srvKey === "gens") return "genpoints";
-  if (srvKey === "survival") return "svpoints";
-  if (srvKey === "oneblock") return "obpoints";
-  if (srvKey === "anarquico") return "anpoints";
-  return "svpoints";
+  return safe(resumen?.svpoints ?? economia?.svpoints);
 };
 
 const sectionIconKey = (k) => {
   if (k === "general") return "bloques_minados";
   if (k === "combate") return "kills";
   if (k === "recursos") return "diamante";
+  if (k === "economia") return "dinero";
   return "coins";
+};
+
+const renderMetricValue = (m) => {
+  if (Array.isArray(m.lines) && m.lines.length) {
+    return (
+      <div className="pf-multiValue">
+        {m.lines.map((row, i) => (
+          <div key={i} className="pf-multiRow">
+            <div className="pf-multiLabel">{row.label}</div>
+            <div className="pf-multiNum">{row.value}</div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+  return m.value;
 };
 
 export default function PerfilJugador() {
@@ -231,7 +206,7 @@ export default function PerfilJugador() {
   const [error, setError] = useState("");
   const [perfil, setPerfil] = useState(null);
 
-  const [servidor, setServidor] = useState("gens");
+  const [servidor, setServidor] = useState("survival");
   const [serverData, setServerData] = useState(null);
 
   const [webUser, setWebUser] = useState(null);
@@ -318,6 +293,7 @@ export default function PerfilJugador() {
     setXpData(null);
     setTab("all");
     setAnimKey((v) => v + 1);
+    setServidor("survival");
 
     if (abortRef.current) abortRef.current.abort();
     const ac = new AbortController();
@@ -330,16 +306,12 @@ export default function PerfilJugador() {
         const jugador = data?.jugador || data?.player || null;
         const servidores = data?.servidores || data?.servers || null;
 
-        const nextPerfil = { ...data, jugador, servidores };
-        setPerfil(nextPerfil);
-
-        const preferred = data?.servidor_activo || data?.active_server || pickServer(servidores);
-        setServidor(preferred);
+        setPerfil({ ...data, jugador, servidores });
 
         const uuid = jugador?.uuid || data?.uuid || null;
         if (uuid) loadWeb(uuid);
 
-        const embedded = normalizeServerData(servidores?.[preferred]);
+        const embedded = normalizeServerData(servidores?.survival);
         if (embedded) {
           setServerData(embedded);
           setLoading(false);
@@ -348,7 +320,7 @@ export default function PerfilJugador() {
 
         if (uuid) {
           setLoading(false);
-          await loadServer(preferred, uuid, true);
+          await loadServer("survival", uuid, true);
         } else {
           setLoading(false);
         }
@@ -365,20 +337,28 @@ export default function PerfilJugador() {
 
   useEffect(() => {
     const uuid = perfil?.jugador?.uuid || perfil?.uuid || null;
-    const embedded = normalizeServerData(perfil?.servidores?.[servidor]);
+    const embedded = normalizeServerData(perfil?.servidores?.survival);
     if (embedded) {
       setServerData(embedded);
       return;
     }
-    if (uuid) loadServer(servidor, uuid);
-  }, [servidor, perfil?.jugador?.uuid, perfil?.uuid, perfil?.servidores, loadServer]);
+    if (uuid) loadServer("survival", uuid);
+  }, [perfil?.jugador?.uuid, perfil?.uuid, perfil?.servidores, loadServer]);
 
   const jugador = perfil?.jugador || null;
 
   const mergedWeb = useMemo(() => {
     const base = jugador || {};
     const w = webUser || {};
-    const wallet = w?.wallet_coins ?? w?.walletCoins ?? w?.wallet ?? base?.wallet_coins ?? base?.walletCoins ?? base?.wallet ?? perfil?.totales?.wallet_coins ?? null;
+    const wallet =
+      w?.wallet_coins ??
+      w?.walletCoins ??
+      w?.wallet ??
+      base?.wallet_coins ??
+      base?.walletCoins ??
+      base?.wallet ??
+      perfil?.totales?.wallet_coins ??
+      null;
 
     return {
       ...base,
@@ -461,48 +441,72 @@ export default function PerfilJugador() {
   const combate = serverData?.combate || null;
   const recursos = serverData?.recursos || null;
   const economia = serverData?.economia || null;
-  const isla = serverData?.isla || serverData?.valor_isla_detalle || null;
 
   const totals = useMemo(() => {
     const t = perfil?.totales || null;
     return {
-      points: safe(t?.points_total),
       time: safe(t?.tiempo_jugado_total),
       kills: safe(t?.kills_pvp_total),
-      wallet: webWallet,
+      pointsTotal: safe(t?.points_total),
     };
-  }, [perfil?.totales, webWallet]);
+  }, [perfil?.totales]);
 
-  const gensValorInfo = useMemo(() => {
-    if (servidor !== "gens") return null;
-    const valorRaw = safe(
-      resumen?.valor_isla ??
-        economia?.valor_isla ??
-        isla?.valor ??
-        isla?.valor_isla ??
-        economia?.gens_value_total ??
-        serverData?.valor_isla ??
-        serverData?.island_value ??
-        serverData?.islandValue
-    );
-    if (valorRaw === null) return null;
-    const v = toNumClean(valorRaw);
-    if (!Number.isFinite(v)) return null;
-    try {
-      return getGensValorTierInfo(v);
-    } catch {
-      return null;
-    }
-  }, [servidor, resumen, economia, isla, serverData]);
+  const survivalPoints = useMemo(() => {
+    const p = safe(pickServerPoints(serverData));
+    if (p !== null) return p;
+    return safe(totals.pointsTotal);
+  }, [serverData, totals.pointsTotal]);
+
+  const dineroActual = useMemo(() => safe(economia?.dinero ?? economia?.money ?? resumen?.dinero), [economia, resumen]);
+  const dineroTotal = useMemo(
+    () => safe(economia?.dinero_ganado_total ?? economia?.total_ganado ?? economia?.total_ganado_dinero ?? resumen?.dinero_ganado_total),
+    [economia, resumen]
+  );
+
+  const coinsActual = useMemo(() => safe(economia?.coins ?? resumen?.coins), [economia, resumen]);
+  const coinsTotal = useMemo(() => safe(economia?.coins_ganadas_total ?? resumen?.coins_ganadas_total), [economia, resumen]);
 
   const quickMetrics = useMemo(() => {
     const out = [];
-    out.push(metric("points_total", "Points totales", totals.points !== null ? fmtNum(totals.points) : EMPTY, "puntos"));
-    out.push(metric("wallet_coins", "Wallet Coins", totals.wallet !== null ? fmtNum(totals.wallet) : EMPTY, "coins"));
-    out.push(metric("tiempo_total", "Tiempo total", totals.time !== null ? fmtTimeHM(totals.time) : EMPTY, "tiempo"));
-    out.push(metric("kills_total", "Kills PvP", totals.kills !== null ? fmtNum(totals.kills) : EMPTY, "kills"));
+
+    out.push(
+      makeMetric({
+        id: "survival_points",
+        label: "Puntos Survival",
+        iconKey: "puntos",
+        value: survivalPoints !== null ? fmtNum(survivalPoints) : EMPTY,
+      })
+    );
+
+    out.push(
+      makeMetric({
+        id: "wallet_coins",
+        label: "Wallet Coins",
+        iconKey: "coins",
+        value: webWallet !== null ? fmtNum(webWallet) : EMPTY,
+      })
+    );
+
+    out.push(
+      makeMetric({
+        id: "tiempo_total",
+        label: "Tiempo jugado",
+        iconKey: "tiempo",
+        value: totals.time !== null ? fmtTimeHM(totals.time) : EMPTY,
+      })
+    );
+
+    out.push(
+      makeMetric({
+        id: "kills_total",
+        label: "Kills PvP",
+        iconKey: "kills",
+        value: totals.kills !== null ? fmtNum(totals.kills) : EMPTY,
+      })
+    );
+
     return out;
-  }, [totals.points, totals.time, totals.kills, totals.wallet]);
+  }, [survivalPoints, webWallet, totals.time, totals.kills]);
 
   const omitIds = useMemo(() => new Set(quickMetrics.map((m) => m.id)), [quickMetrics]);
 
@@ -516,11 +520,16 @@ export default function PerfilJugador() {
     const caminarKm = safe(general?.walk_km ?? general?.caminar);
     const volarKm = safe(general?.fly_km ?? general?.volar);
 
-    if (bMin !== null && !omitIds.has("bloques_minados")) generalTiles.push(metric("bloques_minados", "Bloques minados", fmtNum(bMin), "bloques_minados"));
-    if (bCol !== null && !omitIds.has("bloques_colocados")) generalTiles.push(metric("bloques_colocados", "Bloques colocados", fmtNum(bCol), "bloques_colocados"));
-    if (saltos !== null && !omitIds.has("saltos")) generalTiles.push(metric("saltos", "Saltos", fmtNum(saltos), "saltos"));
-    if (caminarKm !== null && !omitIds.has("caminar")) generalTiles.push(metric("caminar", "Caminar", `${fmtNum(caminarKm)} km`, "caminar"));
-    if (volarKm !== null && !omitIds.has("volar")) generalTiles.push(metric("volar", "Volar", `${fmtNum(volarKm)} km`, "vuelo"));
+    if (bMin !== null && !omitIds.has("bloques_minados"))
+      generalTiles.push(makeMetric({ id: "bloques_minados", label: "Bloques minados", iconKey: "bloques_minados", value: fmtNum(bMin) }));
+    if (bCol !== null && !omitIds.has("bloques_colocados"))
+      generalTiles.push(makeMetric({ id: "bloques_colocados", label: "Bloques colocados", iconKey: "bloques_colocados", value: fmtNum(bCol) }));
+    if (saltos !== null && !omitIds.has("saltos"))
+      generalTiles.push(makeMetric({ id: "saltos", label: "Saltos", iconKey: "saltos", value: fmtNum(saltos) }));
+    if (caminarKm !== null && !omitIds.has("caminar"))
+      generalTiles.push(makeMetric({ id: "caminar", label: "Distancia caminada", iconKey: "caminar", value: `${fmtNum(caminarKm)} km` }));
+    if (volarKm !== null && !omitIds.has("volar"))
+      generalTiles.push(makeMetric({ id: "volar", label: "Distancia volada", iconKey: "vuelo", value: `${fmtNum(volarKm)} km` }));
 
     if (generalTiles.length) s.push({ key: "general", title: "General", tiles: generalTiles });
 
@@ -530,10 +539,12 @@ export default function PerfilJugador() {
     const muertes = safe(combate?.muertes ?? combate?.deaths);
     const dano = safe(combate?.dano_infligido ?? combate?.damage);
 
-    if (mobs !== null && !omitIds.has("mobs")) combateTiles.push(metric("mobs", "Mobs matados", fmtNum(mobs), "mobs"));
-    if (kills !== null && !omitIds.has("kills")) combateTiles.push(metric("kills", "Kills PvP", fmtNum(kills), "kills"));
-    if (muertes !== null && !omitIds.has("muertes")) combateTiles.push(metric("muertes", "Muertes", fmtNum(muertes), "muertes"));
-    if (dano !== null && !omitIds.has("dano")) combateTiles.push(metric("dano", "Daño infligido", fmtNum(dano), "dmg"));
+    if (mobs !== null && !omitIds.has("mobs")) combateTiles.push(makeMetric({ id: "mobs", label: "Mobs matados", iconKey: "mobs", value: fmtNum(mobs) }));
+    if (kills !== null && !omitIds.has("kills")) combateTiles.push(makeMetric({ id: "kills", label: "Kills PvP", iconKey: "kills", value: fmtNum(kills) }));
+    if (muertes !== null && !omitIds.has("muertes"))
+      combateTiles.push(makeMetric({ id: "muertes", label: "Muertes", iconKey: "muertes", value: fmtNum(muertes) }));
+    if (dano !== null && !omitIds.has("dano"))
+      combateTiles.push(makeMetric({ id: "dano", label: "Daño infligido", iconKey: "dmg", value: fmtNum(dano) }));
 
     if (combateTiles.length) s.push({ key: "combate", title: "Combate", tiles: combateTiles });
 
@@ -545,36 +556,48 @@ export default function PerfilJugador() {
     const cult = safe(recursos?.cultivos ?? recursos?.crops);
     const pesca = safe(recursos?.pesca ?? recursos?.fish);
 
-    if (diam !== null) recursosTiles.push(metric("diamantes", "Diamantes", fmtNum(diam), "diamante"));
-    if (hierro !== null) recursosTiles.push(metric("hierro", "Hierro", fmtNum(hierro), "hierro"));
-    if (oro !== null) recursosTiles.push(metric("oro", "Oro", fmtNum(oro), "oro"));
-    if (esmer !== null) recursosTiles.push(metric("esmeraldas", "Esmeraldas", fmtNum(esmer), "esmeralda"));
-    if (cult !== null) recursosTiles.push(metric("cultivos", "Cultivos", fmtNum(cult), "cosecha"));
-    if (pesca !== null) recursosTiles.push(metric("pesca", "Pesca", fmtNum(pesca), "pesca"));
+    if (diam !== null) recursosTiles.push(makeMetric({ id: "diamantes", label: "Diamantes", iconKey: "diamante", value: fmtNum(diam) }));
+    if (hierro !== null) recursosTiles.push(makeMetric({ id: "hierro", label: "Hierro", iconKey: "hierro", value: fmtNum(hierro) }));
+    if (oro !== null) recursosTiles.push(makeMetric({ id: "oro", label: "Oro", iconKey: "oro", value: fmtNum(oro) }));
+    if (esmer !== null) recursosTiles.push(makeMetric({ id: "esmeraldas", label: "Esmeraldas", iconKey: "esmeralda", value: fmtNum(esmer) }));
+    if (cult !== null) recursosTiles.push(makeMetric({ id: "cultivos", label: "Cultivos", iconKey: "cosecha", value: fmtNum(cult) }));
+    if (pesca !== null) recursosTiles.push(makeMetric({ id: "pesca", label: "Pesca", iconKey: "pesca", value: fmtNum(pesca) }));
 
     if (recursosTiles.length) s.push({ key: "recursos", title: "Recursos", tiles: recursosTiles });
 
     const economiaTiles = [];
-    const srvPoints = safe(pickServerPoints(servidor, serverData));
-    if (srvPoints !== null && !omitIds.has("points")) economiaTiles.push(metric("points", "Points", fmtNum(srvPoints), pointsIconKey(servidor)));
+    if (dineroTotal !== null || dineroActual !== null) {
+      economiaTiles.push(
+        makeMetric({
+          id: "dinero_block",
+          label: "Dinero",
+          iconKey: "dinero",
+          lines: [
+            { label: "Dinero total", value: dineroTotal !== null ? fmtMoney(dineroTotal) : EMPTY },
+            { label: "Dinero actual", value: dineroActual !== null ? fmtMoney(dineroActual) : EMPTY },
+          ],
+        })
+      );
+    }
 
-    const dinero = safe(economia?.dinero ?? economia?.money ?? resumen?.dinero);
-    const dineroTotal = safe(economia?.dinero_ganado_total ?? economia?.total_ganado ?? economia?.total_ganado_dinero ?? resumen?.dinero_ganado_total);
-    const coins = safe(economia?.coins ?? resumen?.coins);
-    const coinsTotal = safe(economia?.coins_ganadas_total ?? resumen?.coins_ganadas_total);
-
-    if (dineroTotal !== null && !omitIds.has("dinero_total")) economiaTiles.push(metric("dinero_total", "Dinero total", fmtMoney(dineroTotal), "dinero"));
-    if (dinero !== null && !omitIds.has("dinero")) economiaTiles.push(metric("dinero", "Dinero actual", fmtMoney(dinero), "dinero"));
-    if (coinsTotal !== null && !omitIds.has("coins_total")) economiaTiles.push(metric("coins_total", "Coins total", fmtNum(coinsTotal), "coins"));
-    if (coins !== null && !omitIds.has("coins")) economiaTiles.push(metric("coins", "Coins", fmtNum(coins), "coins"));
-
-    const incomeH = safe(isla?.income_h ?? isla?.income_por_hora ?? economia?.gens_income_h);
-    if (incomeH !== null && servidor === "gens") economiaTiles.push(metric("income_h", "Income/h", fmtMoney(incomeH), "valor_isla"));
+    if (coinsTotal !== null || coinsActual !== null) {
+      economiaTiles.push(
+        makeMetric({
+          id: "coins_block",
+          label: "Coins",
+          iconKey: "coins",
+          lines: [
+            { label: "Coins total", value: coinsTotal !== null ? fmtNum(coinsTotal) : EMPTY },
+            { label: "Coins actual", value: coinsActual !== null ? fmtNum(coinsActual) : EMPTY },
+          ],
+        })
+      );
+    }
 
     if (economiaTiles.length) s.push({ key: "economia", title: "Economía", tiles: economiaTiles });
 
     return s;
-  }, [general, combate, recursos, economia, resumen, isla, servidor, omitIds, serverData]);
+  }, [general, combate, recursos, omitIds, dineroTotal, dineroActual, coinsTotal, coinsActual]);
 
   const shownSections = useMemo(() => {
     if (tab === "all") return sections;
@@ -598,21 +621,10 @@ export default function PerfilJugador() {
     setAnimKey((v) => v + 1);
   };
 
-  const serversAvailable = useMemo(() => {
-    const map = perfil?.servidores || null;
-    if (map && typeof map === "object") {
-      const keys = new Set(Object.keys(map));
-      return SERVER_META.filter((s) => keys.has(s.key));
-    }
-    return SERVER_META;
-  }, [perfil?.servidores]);
-
   const updatedRaw = jugador?.actualizado || jugador?.updated_at || jugador?.ultimo_sync || null;
   const updatedTxt = useMemo(() => fmtUpdated(updatedRaw), [updatedRaw]);
 
-  const rootClass = useMemo(() => {
-    return ["perfil-epic", enterFx ? "pf-enter" : ""].filter(Boolean).join(" ");
-  }, [enterFx]);
+  const rootClass = useMemo(() => ["perfil-epic", enterFx ? "pf-enter" : ""].filter(Boolean).join(" "), [enterFx]);
 
   return (
     <div className={rootClass}>
@@ -718,7 +730,7 @@ export default function PerfilJugador() {
                         {m.icon ? <img className="perfil-quickIcon" src={m.icon} alt="" draggable="false" /> : null}
                         <div className="perfil-quickText">
                           <div className="perfil-quickLabel">{m.label}</div>
-                          <div className="perfil-quickValue">{m.value}</div>
+                          <div className="perfil-quickValue">{renderMetricValue(m)}</div>
                         </div>
                       </button>
                     ))}
@@ -749,37 +761,9 @@ export default function PerfilJugador() {
               </div>
             </div>
 
-            <div className="perfil-servers">
-              <div className="perfil-serversHead">
-                <div className="perfil-sectionTitle">Servidores</div>
-                <div className="perfil-sectionSub">Elige uno para ver sus estadísticas completas.</div>
-              </div>
-
-              <div className="perfil-serversGrid">
-                {serversAvailable.map((s) => {
-                  const active = s.key === servidor;
-                  return (
-                    <button
-                      key={s.key}
-                      type="button"
-                      className={`perfil-serverCard ${active ? "is-active" : ""}`}
-                      onClick={() => {
-                        setServidor(s.key);
-                        setAnimKey((v) => v + 1);
-                      }}
-                    >
-                      <div className="perfil-serverArt" style={{ backgroundImage: `url(${s.img})` }} />
-                      <div className="perfil-serverLabel">{s.label}</div>
-                      <div className="perfil-serverGlow" />
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
             <div className="perfil-detail">
               <div className="perfil-detailHead">
-                <div className="perfil-sectionTitle">Detalle · {SERVER_META.find((x) => x.key === servidor)?.label || servidor}</div>
+                <div className="perfil-sectionTitle">Detalle · Survival</div>
                 <div className="perfil-detailMeta">{loading ? "Cargando perfil…" : loadingServer ? "Actualizando servidor…" : error ? error : ""}</div>
               </div>
 
@@ -825,7 +809,7 @@ export default function PerfilJugador() {
                             {t.icon ? <img className="perfil-tileIcon" src={t.icon} alt="" draggable="false" /> : null}
                             <div className="perfil-tileBody">
                               <div className="perfil-tileLabel">{t.label}</div>
-                              <div className="perfil-tileValue">{t.value}</div>
+                              <div className="perfil-tileValue">{renderMetricValue(t)}</div>
                             </div>
                             <div className="perfil-tileSheen" />
                           </button>
@@ -836,8 +820,6 @@ export default function PerfilJugador() {
                 </div>
               )}
             </div>
-
-            {gensValorInfo ? null : null}
 
             <div className="perfil-footNote">
               <span>{isMobile ? "" : ""}</span>

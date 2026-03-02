@@ -1,48 +1,49 @@
 // src/components/Landpage/Home.jsx
-import React, { useState, useContext, useRef, useEffect, useCallback } from "react";
+import React, {
+  useState,
+  useContext,
+  useRef,
+  useEffect,
+  useCallback,
+  lazy,
+  Suspense,
+} from "react";
 import "../../styles/components/Landpage/_home.scss";
 
 import MapRPG from "./MapRPG";
 import ServerStatus from "./ServerStatus";
-import GameModes from "./GameModes";
-import TeamCarousel from "./TeamCarousel";
-import SectionDivider from "./SectionDivider";
-import SectionDivider2 from "./SectionDivider2";
-import SectionDividerGameModes from "./SectionDividerGameModes";
-import SectionDividerNews from "./SectionDividerNews";
-import SectionDividerNav from "./SectionDividerNav";
-import NewsHighlight from "./NewsHighlight";
-import RitualEko from "./RitualEko";
-import Footer from "./Footer";
-import LoginModal from "../Auth/LoginModal";
 import VoteWidget from "./VoteWidget";
+import LoginModal from "../Auth/LoginModal";
 
 import { UserContext } from "../../context/UserContext";
 import { useNavigate, useLocation } from "react-router-dom";
 
-// SONIDOS DRAGÓN
 import llamadaSoundFile from "/assets/sounds/llamada.mp3";
 import alasSoundFile from "/assets/sounds/alas.mp3";
 import roarSoundFile from "/assets/sounds/roar1.mp3";
 import roar2SoundFile from "/assets/sounds/roar2.mp3";
 
-// Debe cuadrar con la animación CSS (dragonFlight 14s)
+const NewsHighlight = lazy(() => import("./NewsHighlight"));
+const RitualEko = lazy(() => import("./RitualEko"));
+const GameModes = lazy(() => import("./GameModes"));
+const TeamCarousel = lazy(() => import("./TeamCarousel"));
+const Footer = lazy(() => import("./Footer"));
+
+const SectionDivider = lazy(() => import("./SectionDivider"));
+const SectionDivider2 = lazy(() => import("./SectionDivider2"));
+const SectionDividerGameModes = lazy(() => import("./SectionDividerGameModes"));
+const SectionDividerNews = lazy(() => import("./SectionDividerNews"));
+
 const DRAGON_FLIGHT_DURATION_MS = 14000;
 
 const mensajesCarga = [
   "Cargando el mundo de Flancraft...",
-  "Cargando aldeanos...",
   "Encendiendo antorchas...",
+  "Generando chunks...",
   "Reuniendo aventureros...",
   "Forjando espadas legendarias...",
-  "Preparando cofres de recompensas...",
-  "Abriendo portales interdimensionales...",
-  "Generando chunks...",
-  "Asignando misiones secundarias...",
-  "Revisando magia antigua...",
 ];
 
-// Precarga segura (img + decode si existe)
 const preloadImage = (src, signal) =>
   new Promise((resolve) => {
     if (!src) return resolve(true);
@@ -56,7 +57,6 @@ const preloadImage = (src, signal) =>
 
     img.onload = async () => {
       try {
-        // decode reduce flashes (si el navegador lo soporta)
         if (img.decode) await img.decode();
       } catch (_) {}
       cleanup();
@@ -89,18 +89,15 @@ const Home = () => {
   const { user, setUser } = useContext(UserContext);
   const [showLogin, setShowLogin] = useState(false);
 
-  // ✅ loader más estable: depende de precarga crítica en vez de window.load
   const [isLoaded, setIsLoaded] = useState(false);
   const [mensajeCarga, setMensajeCarga] = useState(mensajesCarga[0]);
 
   const [playerName, setPlayerName] = useState(null);
   const [showLoginTeaser, setShowLoginTeaser] = useState(false);
 
-  // limitar popup a HERO + MAPRPG
   const heroMapSectionRef = useRef(null);
   const [isInHeroMapZone, setIsInHeroMapZone] = useState(true);
 
-  // Dragón: "hidden" | "flight"
   const [dragonPhase, setDragonPhase] = useState("hidden");
   const [islandShaking, setIslandShaking] = useState(false);
   const [isDragonRoaring, setIsDragonRoaring] = useState(false);
@@ -108,14 +105,15 @@ const Home = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // audio refs + cooldowns
   const llamadaAudioRef = useRef(null);
   const alasAudioRef = useRef(null);
   const roarAudioRef = useRef(null);
   const roar2AudioRef = useRef(null);
+  const audioReadyRef = useRef(false);
+
   const dragonCooldownRef = useRef(false);
   const roarCooldownRef = useRef(false);
-  const lastRoarIndexRef = useRef(0); // 0 => roar1, 1 => roar2
+  const lastRoarIndexRef = useRef(0);
   const timeoutsRef = useRef([]);
   const mensajeIndexRef = useRef(0);
 
@@ -125,18 +123,27 @@ const Home = () => {
     timeoutsRef.current.push(id);
   };
 
-  // Inicializar sonidos y limpiar al desmontar
-  useEffect(() => {
-    llamadaAudioRef.current = new Audio(llamadaSoundFile);
-    alasAudioRef.current = new Audio(alasSoundFile);
-    roarAudioRef.current = new Audio(roarSoundFile);
-    roar2AudioRef.current = new Audio(roar2SoundFile);
+  const ensureDragonAudio = useCallback(() => {
+    if (audioReadyRef.current) return;
 
-    if (alasAudioRef.current) {
-      alasAudioRef.current.loop = true;
-      alasAudioRef.current.volume = 0.9;
+    try {
+      llamadaAudioRef.current = new Audio(llamadaSoundFile);
+      alasAudioRef.current = new Audio(alasSoundFile);
+      roarAudioRef.current = new Audio(roarSoundFile);
+      roar2AudioRef.current = new Audio(roar2SoundFile);
+
+      if (alasAudioRef.current) {
+        alasAudioRef.current.loop = true;
+        alasAudioRef.current.volume = 0.9;
+      }
+
+      audioReadyRef.current = true;
+    } catch (_) {
+      audioReadyRef.current = false;
     }
+  }, []);
 
+  useEffect(() => {
     return () => {
       timeoutsRef.current.forEach((id) => clearTimeout(id));
       if (alasAudioRef.current) {
@@ -145,7 +152,6 @@ const Home = () => {
     };
   }, []);
 
-  // Rotar mensajes SOLO mientras está la pantalla de carga
   useEffect(() => {
     if (isLoaded) return;
 
@@ -156,25 +162,19 @@ const Home = () => {
       mensajeIndexRef.current =
         (mensajeIndexRef.current + 1) % mensajesCarga.length;
       setMensajeCarga(mensajesCarga[mensajeIndexRef.current]);
-    }, 2000);
+    }, 1200);
 
     return () => clearInterval(interval);
   }, [isLoaded]);
 
-  // ✅ Carga “real”: precarga assets críticos y luego muestra home
   useEffect(() => {
     const controller = new AbortController();
 
     const run = async () => {
-      // Añade aquí lo que sea “crítico” para tu primer paint
-      const critical = [
-        "/assets/h1.webp",
-        "/assets/ui/cta-retos-panel.webp",
-      ];
+      const critical = ["/assets/h1.png", "/assets/islalogo1.webp"];
 
-      // no bloquees infinito: máximo 1.4s
       const hardCap = new Promise((resolve) => {
-        const id = window.setTimeout(() => resolve(true), 1400);
+        const id = window.setTimeout(() => resolve(true), 900);
         pushTimeout(id);
       });
 
@@ -184,8 +184,7 @@ const Home = () => {
       ]);
 
       if (!controller.signal.aborted) {
-        // mini delay para que el CSS termine de aplicar antes del fade-in
-        const id = window.setTimeout(() => setIsLoaded(true), 80);
+        const id = window.setTimeout(() => setIsLoaded(true), 60);
         pushTimeout(id);
       }
     };
@@ -195,7 +194,6 @@ const Home = () => {
     return () => controller.abort();
   }, []);
 
-  // Detectar si estamos dentro de la zona HERO + MAPRPG
   useEffect(() => {
     const el = heroMapSectionRef.current;
     if (!el) return;
@@ -213,7 +211,6 @@ const Home = () => {
       return () => obs.disconnect();
     }
 
-    // Fallback
     let ticking = false;
     const handleScrollZone = () => {
       if (ticking) return;
@@ -237,7 +234,6 @@ const Home = () => {
     return () => window.removeEventListener("scroll", handleScrollZone);
   }, []);
 
-  // Popup flotante de login para invitados
   useEffect(() => {
     if (!isLoaded) return;
 
@@ -248,13 +244,12 @@ const Home = () => {
 
     const timer = window.setTimeout(() => {
       setShowLoginTeaser(true);
-    }, 1200);
+    }, 1100);
     pushTimeout(timer);
 
     return () => clearTimeout(timer);
   }, [isLoaded, user]);
 
-  // Cargar nombre real del jugador desde backend
   useEffect(() => {
     const controller = new AbortController();
 
@@ -277,26 +272,31 @@ const Home = () => {
         );
       } catch (err) {
         if (err?.name === "AbortError") return;
-        console.error("Error al obtener nombre de jugador en Home:", err);
         setPlayerName("aventurero");
       }
     };
 
-    fetchPlayerName();
+    const schedule = () => {
+      if ("requestIdleCallback" in window) {
+        window.requestIdleCallback(fetchPlayerName, { timeout: 1200 });
+        return;
+      }
+      const id = window.setTimeout(fetchPlayerName, 350);
+      pushTimeout(id);
+    };
 
+    schedule();
     return () => controller.abort();
   }, [user?.loggedIn, user?.uuid]);
 
-  // ✅ Scroll suave a game-modes si viene desde la navbar (y limpia state para que no se repita)
   useEffect(() => {
     if (location.state?.scrollTo === "game-modes-section") {
       const target = document.getElementById("game-modes-section");
       if (target) {
         const id = window.setTimeout(() => {
           target.scrollIntoView({ behavior: "smooth" });
-          // limpia el state para evitar re-triggers al volver atrás o re-render
           navigate(location.pathname, { replace: true, state: {} });
-        }, 250);
+        }, 220);
         pushTimeout(id);
         return () => clearTimeout(id);
       }
@@ -313,12 +313,10 @@ const Home = () => {
       (playerName || user?.username || user?.uid || user?.name)) ||
     "aventurero";
 
-  // ========================
-  //   LÓGICA DRAGÓN / LOGO
-  // ========================
-
   const handleLogoClick = () => {
     if (dragonPhase !== "hidden" || dragonCooldownRef.current) return;
+
+    ensureDragonAudio();
 
     dragonCooldownRef.current = true;
 
@@ -341,9 +339,7 @@ const Home = () => {
         try {
           llamadaAudioRef.current.currentTime = 0;
           llamadaAudioRef.current.play();
-        } catch (e) {
-          console.error("Error reproduciendo llamada del dragón:", e);
-        }
+        } catch (_) {}
       }
     }, 1000);
     pushTimeout(llamadaId);
@@ -355,9 +351,7 @@ const Home = () => {
         try {
           alasAudioRef.current.currentTime = 0;
           alasAudioRef.current.play();
-        } catch (e) {
-          console.error("Error reproduciendo sonido de alas:", e);
-        }
+        } catch (_) {}
       }
     }, 2000);
     pushTimeout(startFlightId);
@@ -375,6 +369,8 @@ const Home = () => {
   const handleDragonClick = () => {
     if (dragonPhase === "hidden") return;
     if (roarCooldownRef.current) return;
+
+    ensureDragonAudio();
 
     roarCooldownRef.current = true;
 
@@ -402,9 +398,7 @@ const Home = () => {
       try {
         audioToPlay.currentTime = 0;
         audioToPlay.play();
-      } catch (e) {
-        console.error("Error reproduciendo rugido del dragón:", e);
-      }
+      } catch (_) {}
     }
   };
 
@@ -418,7 +412,6 @@ const Home = () => {
       )}
 
       <div className={`home ${isLoaded ? "visible" : "invisible"}`}>
-        {/* ZONA HERO + MAPRPG */}
         <div ref={heroMapSectionRef} className="hero-map-section">
           <VoteWidget visible={isLoaded && isInHeroMapZone} />
 
@@ -468,9 +461,8 @@ const Home = () => {
                 }
                 aria-hidden="true"
               >
-                {/* ✅ decoding + fetchpriority para el primer paint */}
                 <img
-                  src="/assets/h1.webp"
+                  src="/assets/h1.png"
                   alt="FlanCraft Minecraft Network"
                   decoding="async"
                   fetchpriority="high"
@@ -512,8 +504,7 @@ const Home = () => {
                       src="/assets/ui/cta-retos-panel.webp"
                       alt="Entrar al panel de retos"
                       decoding="async"
-                      loading="eager"
-                      fetchpriority="high"
+                      loading="lazy"
                     />
                   </div>
 
@@ -571,31 +562,31 @@ const Home = () => {
                 try {
                   const parsed = JSON.parse(stored);
                   if (parsed?.loggedIn) setUser(parsed);
-                } catch (e) {
-                  console.error("Error al parsear flan_user:", e);
-                }
+                } catch (_) {}
               }
             }}
           />
         )}
 
-        <SectionDividerNews />
-        <NewsHighlight />
+        <Suspense fallback={null}>
+          <SectionDividerNews />
+          <NewsHighlight />
 
-        <SectionDivider />
-        <RitualEko />
+          <SectionDivider />
+          <RitualEko />
 
-        <div id="game-modes-section" className="section-gamemodes-wrapper">
-          <SectionDividerGameModes />
-          <GameModes />
-        </div>
+          <div id="game-modes-section" className="section-gamemodes-wrapper">
+            <SectionDividerGameModes />
+            <GameModes />
+          </div>
 
-        <div className="team-slot">
-          <TeamCarousel />
-        </div>
+          <div className="team-slot">
+            <TeamCarousel />
+          </div>
 
-        <SectionDivider2 />
-        <Footer />
+          <SectionDivider2 />
+          <Footer />
+        </Suspense>
       </div>
     </>
   );
