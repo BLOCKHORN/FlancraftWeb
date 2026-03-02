@@ -17,8 +17,6 @@ import {
   getPackageOriginalPrice,
   normalizeProductForCart,
   withCacheBust,
-  STORE_BASE_CURRENCY,
-  pickFxRate,
 } from "../utils/tiendaHelpers";
 
 import {
@@ -48,23 +46,19 @@ const makeIdempotencyKey = () => {
   return `${Date.now()}-${Math.random().toString(16).slice(2)}-${Math.random().toString(16).slice(2)}`;
 };
 
-function formatCurrency(amount, currency) {
+function formatUSD(amount) {
   const n = Number(amount);
-  const cur = String(currency || "USD").toUpperCase();
   if (!Number.isFinite(n)) return "—";
-
-  const locale = cur === "USD" ? "en-US" : cur === "GBP" ? "en-GB" : "es-ES";
-
   try {
-    return new Intl.NumberFormat(locale, {
+    return new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: cur,
+      currency: "USD",
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
       currencyDisplay: "symbol",
     }).format(n);
   } catch {
-    return `${n.toFixed(2)} ${cur}`;
+    return `$${n.toFixed(2)}`;
   }
 }
 
@@ -79,21 +73,12 @@ const readToken = () => {
   return t && String(t).trim() ? String(t).trim() : null;
 };
 
-const safeCurrencyCode = (v, fallback = STORE_BASE_CURRENCY) => {
-  const s = String(v || "").toUpperCase().trim();
-  if (!s) return fallback;
-  const m = s.match(/[A-Z]{3}/);
-  return (m ? m[0] : fallback) || fallback;
-};
-
 export default function TiendaStorefront({
   carrito,
   toggleProducto,
   onCambiarCantidad,
   onSetCantidad,
   onAgregar,
-  monedaSeleccionada = "USD",
-  fx = null,
 }) {
   const wrapRef = useRef(null);
   const { user } = useContext(UserContext);
@@ -262,68 +247,7 @@ export default function TiendaStorefront({
   const serverKey = "survival";
   const activeData = dataByServer?.[serverKey] || { cats: [], packs: [], bust: null, currency: null };
 
-  const baseCurrency = useMemo(() => safeCurrencyCode(activeData?.currency, "USD"), [activeData?.currency]);
-
-  const viewCurrency = useMemo(() => safeCurrencyCode(monedaSeleccionada, baseCurrency), [monedaSeleccionada, baseCurrency]);
-
-  const rateFor = useCallback(
-    (code) => {
-      const c = safeCurrencyCode(code, baseCurrency);
-      const fxBase = safeCurrencyCode(fx?.base, "");
-      if (!fx || !fxBase) return c === baseCurrency ? 1 : null;
-      if (c === fxBase) return 1;
-
-      const r = pickFxRate(fx, c);
-      const n = Number(r);
-      return Number.isFinite(n) && n > 0 ? n : null;
-    },
-    [fx, baseCurrency]
-  );
-
-  const crossRate = useCallback(
-    (from, to) => {
-      const f = safeCurrencyCode(from, baseCurrency);
-      const t = safeCurrencyCode(to, baseCurrency);
-      if (f === t) return 1;
-
-      const fxBase = safeCurrencyCode(fx?.base, "");
-      if (!fx || !fxBase) return null;
-
-      const rTo = rateFor(t);
-      const rFrom = rateFor(f);
-
-      if (rTo == null || rFrom == null) return null;
-
-      return rTo / rFrom;
-    },
-    [fx, baseCurrency, rateFor]
-  );
-
-  const money = useCallback(
-    (baseAmount) => {
-      if (baseAmount === null || baseAmount === undefined) return null;
-      const n = Number(baseAmount);
-      if (!Number.isFinite(n)) return null;
-
-      if (viewCurrency === baseCurrency) return n;
-
-      const k = crossRate(baseCurrency, viewCurrency);
-      if (k == null) return n;
-
-      const out = n * k;
-      return Number.isFinite(out) ? out : n;
-    },
-    [baseCurrency, viewCurrency, crossRate]
-  );
-
-  const fmtMoney = useCallback(
-    (baseAmount) => {
-      const v = money(baseAmount);
-      if (v == null) return "—";
-      return formatCurrency(v, viewCurrency);
-    },
-    [money, viewCurrency]
-  );
+  const fmtMoney = useCallback((amountFromTebex) => formatUSD(amountFromTebex), []);
 
   const rangosAll = useMemo(() => {
     return pickRangosPackages({
