@@ -1,7 +1,6 @@
 const db = require("../models/db");
 
-const UUID_REGEX =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 async function sincronizarMonedasBatch(req, res) {
   const { jugadores } = req.body;
@@ -18,7 +17,6 @@ async function sincronizarMonedasBatch(req, res) {
     for (const j of jugadores) {
       const uuid = j?.uuid ? String(j.uuid).trim() : "";
       const servidor = j?.servidor ? String(j.servidor).trim().toLowerCase() : servidorBody;
-
       const rawCoins = j?.coins ?? j?.ecos ?? 0;
       const coins = Number(rawCoins);
 
@@ -60,41 +58,20 @@ async function resolveUuid(identificador) {
   if (!id) return { ok: false, reason: "empty" };
   if (UUID_REGEX.test(id)) return { ok: true, uuid: id };
 
-  // Si NO es UUID, intentamos resolver por nombre
-  // Probables columnas: nombre_minecraft o uid (según tu proyecto)
-  const name = id;
+  const { data, error } = await db
+    .from("usuarios")
+    .select("uuid")
+    .ilike("uid", id)
+    .maybeSingle();
 
-  // Intento 1: nombre_minecraft
-  {
-    const { data, error } = await db
-      .from("usuarios")
-      .select("uuid")
-      .ilike("nombre_minecraft", name)
-      .maybeSingle();
-
-    if (error) throw error;
-    if (data?.uuid) return { ok: true, uuid: data.uuid, resolvedFrom: "nombre_minecraft" };
-  }
-
-  // Intento 2: uid
-  {
-    const { data, error } = await db
-      .from("usuarios")
-      .select("uuid")
-      .ilike("uid", name)
-      .maybeSingle();
-
-    if (error) throw error;
-    if (data?.uuid) return { ok: true, uuid: data.uuid, resolvedFrom: "uid" };
-  }
+  if (error) throw error;
+  if (data?.uuid) return { ok: true, uuid: data.uuid, resolvedFrom: "uid" };
 
   return { ok: false, reason: "not_found" };
 }
 
-// GET /api/monedas/:id   (id = uuid o nombre)
-// Opcional: ?servidor=gens
 async function obtenerMonedasJugador(req, res) {
-  const { uuid: rawId } = req.params;
+  const rawId = String(req.params?.uuid || req.params?.id || "").trim();
   const servidor = req.query?.servidor ? String(req.query.servidor).trim().toLowerCase() : "";
 
   if (!rawId) {
@@ -103,6 +80,7 @@ async function obtenerMonedasJugador(req, res) {
 
   try {
     const resolved = await resolveUuid(rawId);
+
     if (!resolved.ok) {
       return res.status(404).json({ error: "Jugador no encontrado (uuid/nombre)." });
     }
@@ -120,8 +98,12 @@ async function obtenerMonedasJugador(req, res) {
       if (error) throw error;
 
       if (!data) {
-        // En vez de 404, devolvemos 0 para que el dashboard no “rompa” si aún no existe fila
-        return res.status(200).json({ uuid, servidor, coins: 0, ultima_sync: null });
+        return res.status(200).json({
+          uuid,
+          servidor,
+          coins: 0,
+          ultima_sync: null,
+        });
       }
 
       return res.status(200).json({
@@ -142,6 +124,7 @@ async function obtenerMonedasJugador(req, res) {
 
     const balances = Array.isArray(data) ? data : [];
     const byServer = {};
+
     for (const row of balances) {
       byServer[row.servidor] = Number(row.coins) || 0;
     }

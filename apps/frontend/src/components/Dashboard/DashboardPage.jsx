@@ -18,6 +18,15 @@ const toInt = (v) => {
   return Number.isFinite(n) ? Math.max(0, Math.floor(n)) : 0;
 };
 
+const safeJson = async (res, fallback = null) => {
+  if (!res) return fallback;
+  try {
+    return await res.json();
+  } catch {
+    return fallback;
+  }
+};
+
 const parseCoinsPayload = (m) => {
   if (m?.byServer && typeof m.byServer === "object") {
     const out = {};
@@ -91,14 +100,23 @@ export default function DashboardPage() {
     const stored = localStorage.getItem("flan_user");
     if (!stored) return navigate("/");
 
-    const parsed = JSON.parse(stored);
-    if (!parsed.uuid || !parsed.loggedIn) return navigate("/");
+    let parsed = null;
+
+    try {
+      parsed = JSON.parse(stored);
+    } catch {
+      return navigate("/");
+    }
+
+    if (!parsed?.uuid || !parsed?.loggedIn) return navigate("/");
 
     const token = localStorage.getItem("token");
     const rolAdminLS = (localStorage.getItem("rol_admin") || "").trim();
 
     const cargarDatos = async () => {
       try {
+        setError(null);
+
         const reqs = [
           fetch(apiUrl(`/api/usuarios/${parsed.uuid}`)),
           fetch(apiUrl(`/api/monedas/${parsed.uuid}`)),
@@ -117,13 +135,32 @@ export default function DashboardPage() {
 
         const [usuarioRes, monedasRes, xpRes, walletRes] = await Promise.all(reqs);
 
-        if (!usuarioRes?.ok || !monedasRes?.ok || !xpRes?.ok) {
-          throw new Error("Error al cargar datos");
+        if (!usuarioRes?.ok) {
+          const body = await safeJson(usuarioRes, null);
+          throw new Error(body?.error || "Error al cargar datos del usuario");
         }
 
-        const usuario = await usuarioRes.json();
-        const monedasRaw = await monedasRes.json();
-        const xp = await xpRes.json();
+        const usuario = await safeJson(usuarioRes, {});
+
+        let monedasRaw = { balances: [], byServer: {} };
+        if (monedasRes?.ok) {
+          monedasRaw = (await safeJson(monedasRes, { balances: [], byServer: {} })) || { balances: [], byServer: {} };
+        }
+
+        let xp = null;
+        if (xpRes?.ok) {
+          xp = await safeJson(xpRes, null);
+        }
+
+        if (!xp || !Array.isArray(xp?.niveles)) {
+          xp = {
+            nivel: toInt(usuario?.nivel || 1),
+            xp_actual: toInt(usuario?.xp_actual || 0),
+            xp_total_actual: toInt(usuario?.xp_actual || 0),
+            xp_total_maxima: 0,
+            niveles: [],
+          };
+        }
 
         const coinsByServerParsed = parseCoinsPayload(monedasRaw);
 
@@ -136,7 +173,7 @@ export default function DashboardPage() {
           if (walletRes.status === 401) {
             localStorage.removeItem("token");
           } else if (walletRes.ok) {
-            const w = await walletRes.json();
+            const w = await safeJson(walletRes, null);
             wallet = toInt(w?.walletBalance ?? w?.wallet_balance ?? wallet);
           }
         }
@@ -168,6 +205,7 @@ export default function DashboardPage() {
 
   const actualizarMonedas = async () => {
     if (!user) return;
+
     try {
       const token = localStorage.getItem("token");
 
@@ -182,9 +220,13 @@ export default function DashboardPage() {
 
       const [monedasRes, walletRes] = await Promise.all(reqs);
 
-      if (!monedasRes.ok) throw new Error("Error al actualizar monedas");
+      let monedasActualizadas = { balances: [], byServer: {} };
 
-      const monedasActualizadas = await monedasRes.json();
+      if (monedasRes?.ok) {
+        monedasActualizadas =
+          (await safeJson(monedasRes, { balances: [], byServer: {} })) || { balances: [], byServer: {} };
+      }
+
       const coinsByServerParsed = parseCoinsPayload(monedasActualizadas);
 
       let wallet = toInt(user?.wallet_coins ?? walletBalance ?? 0);
@@ -194,7 +236,7 @@ export default function DashboardPage() {
           localStorage.removeItem("token");
           wallet = 0;
         } else if (walletRes.ok) {
-          const w = await walletRes.json();
+          const w = await safeJson(walletRes, null);
           wallet = toInt(w?.walletBalance ?? w?.wallet_balance ?? wallet);
         }
       }
@@ -213,11 +255,16 @@ export default function DashboardPage() {
     }
   };
 
-  const avatarUrl = user ? `https://minotar.net/armor/body/${user.uid}/160.png` : null;
+  const avatarName = useMemo(() => {
+    const raw = String(user?.uid || "").trim();
+    return raw.replace(/^\.+/, "");
+  }, [user?.uid]);
 
-  const nivelInfo = xpData?.niveles?.find((n) => n.nivel === user?.nivel);
-  const xpDelNivelActual = nivelInfo?.xp_requerida || 1;
-  const porcentajeNivel = user ? Math.min(100, (toInt(user.xp_actual) / toInt(xpDelNivelActual || 1)) * 100) : 0;
+  const avatarUrl = avatarName ? `https://minotar.net/armor/body/${encodeURIComponent(avatarName)}/160.png` : null;
+
+  const nivelInfo = xpData?.niveles?.find((n) => Number(n?.nivel) === Number(user?.nivel));
+  const xpDelNivelActual = Math.max(1, toInt(nivelInfo?.xp_requerida || 1));
+  const porcentajeNivel = user ? Math.min(100, (toInt(user.xp_actual) / xpDelNivelActual) * 100) : 0;
 
   const rangoKey = useMemo(() => {
     const r = (user?.rango_usuario || "").toString().trim().toLowerCase();
@@ -288,8 +335,11 @@ export default function DashboardPage() {
         }),
       });
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || "Error al transferir coins");
+      const data = await safeJson(res, null);
+
+      if (!res.ok) {
+        throw new Error(data?.error || "Error al transferir coins");
+      }
 
       const newWallet = toInt(data?.wallet_balance);
 
@@ -330,7 +380,13 @@ export default function DashboardPage() {
                     <div className="avatar-inner">
                       <img src={avatarBg} alt="Fondo del rango" className="avatar-bg" loading="eager" decoding="async" />
                       {avatarUrl && (
-                        <img src={avatarUrl} alt={`Skin de ${user.uid}`} className="skin-jugador" loading="eager" decoding="async" />
+                        <img
+                          src={avatarUrl}
+                          alt={`Skin de ${user.uid}`}
+                          className="skin-jugador"
+                          loading="eager"
+                          decoding="async"
+                        />
                       )}
                     </div>
 
