@@ -12,52 +12,56 @@
 
 /* =========================================================
    FOOTER OVERLAY (peek + desplegable)
-   Desktop: overlay dentro del layout
-   Mobile: FIXED abajo del viewport
+   Siempre FIXED (desktop y mobile) para no depender del layout
    ========================================================= */
 
-.tienda-footer {
+.tienda-footer{
   --footer-strip-h: 70px;
-  --footer-peek-h: 20px;
-  --footer-open-offset: 0px; // 💡 por defecto, abierto = 0 (desktop)
+  --footer-peek-h: var(--tienda-footer-peek, 20px);
+  --footer-open-offset: 0px;
 
-  position: absolute;
+  position: fixed;
   left: 0;
   right: 0;
   bottom: 0;
 
-  z-index: 50;
+  z-index: 999;
   pointer-events: none;
+
+  contain: layout paint;
 }
 
-.tienda-footer-inner {
+.tienda-footer-inner{
   pointer-events: auto;
   width: 100%;
   position: relative;
 
-  /* Cerrado: dejamos asomar solo el "peek" */
-  transform: translateY(calc(100% - var(--footer-peek-h)));
+  transform: translate3d(0, calc(100% - var(--footer-peek-h)), 0);
   transition: transform 260ms cubic-bezier(0.22, 0.61, 0.36, 1);
   will-change: transform;
 }
 
-/* Abierto: sube completo (offset configurable por variable) */
-.tienda-footer.is-open .tienda-footer-inner {
-  transform: translateY(var(--footer-open-offset));
+.tienda-footer.is-open .tienda-footer-inner{
+  transform: translate3d(0, var(--footer-open-offset), 0);
 }
 
-/* Handle roca */
-.tienda-footer-strip {
+/* cuando está cerrado, el panel no intercepta clicks */
+.tienda-footer.is-closed .tienda-footer-panel{
+  pointer-events: none;
+}
+
+.tienda-footer-strip{
   position: relative;
   height: var(--footer-strip-h);
   background: url("/tienda/assets/footerborde.webp") center bottom repeat-x;
   background-size: auto 100%;
   cursor: pointer;
   outline: none;
+  touch-action: manipulation;
 }
 
 /* Botón flecha */
-.tienda-footer-toggle {
+.tienda-footer-toggle{
   position: absolute;
   left: 50%;
   top: -26px;
@@ -77,13 +81,13 @@
   z-index: 4;
 }
 
-.tienda-footer-toggle:focus { outline: none; }
-.tienda-footer-toggle:focus-visible {
+.tienda-footer-toggle:focus{ outline: none; }
+.tienda-footer-toggle:focus-visible{
   outline: 2px solid rgba(210, 176, 113, 0.65);
   outline-offset: 2px;
 }
 
-.tienda-footer-toggle-arrow {
+.tienda-footer-toggle-arrow{
   width: 0;
   height: 0;
   border-left: 11px solid transparent;
@@ -95,21 +99,21 @@
   filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.7));
 }
 
-.tienda-footer.is-open .tienda-footer-toggle-arrow {
+.tienda-footer.is-open .tienda-footer-toggle-arrow{
   transform: rotate(180deg);
   filter: drop-shadow(0 0 6px rgba(0, 0, 0, 0.9));
 }
 
-.tienda-footer.is-closed .tienda-footer-toggle {
+.tienda-footer.is-closed .tienda-footer-toggle{
   animation: footerToggleFloatClosed 2.3s ease-in-out infinite;
 }
 
-.tienda-footer.is-open .tienda-footer-toggle {
+.tienda-footer.is-open .tienda-footer-toggle{
   animation: footerToggleFloatOpen 1.8s ease-in-out infinite;
 }
 
 /* Panel */
-.tienda-footer-panel {
+.tienda-footer-panel{
   padding: 0.75rem 1.75rem 0.45rem;
   display: flex;
   justify-content: center;
@@ -122,7 +126,7 @@
   );
 }
 
-.tienda-footer-bar {
+.tienda-footer-bar{
   width: 100%;
   max-width: 960px;
   margin: 0 auto;
@@ -132,7 +136,7 @@
   color: #f9e8c7;
 }
 
-.tienda-footer-main {
+.tienda-footer-main{
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -140,31 +144,33 @@
   margin-bottom: 0.4rem;
 }
 
-.tienda-footer-col { flex: 1; }
-.tienda-footer-about { flex: 1.5; }
+.tienda-footer-col{ flex: 1; }
+.tienda-footer-about{ flex: 1.5; }
 
-.tienda-footer-links ul {
+.tienda-footer-links ul{
   list-style: none;
   padding: 0;
   margin: 0.15rem 0 0;
+
   display: flex;
   flex-direction: column;
   gap: 0.12rem;
 }
 
-.tienda-footer-links a {
+.tienda-footer-links a{
   text-decoration: none;
   color: #fbe2b5;
   transition: color 160ms ease, text-shadow 160ms ease;
 }
-.tienda-footer-links a:hover {
+
+.tienda-footer-links a:hover{
   color: #ffffff;
   text-shadow: 0 0 4px rgba(255, 227, 173, 0.9);
 }
 
-.tienda-footer-contact p { margin-bottom: 0.3rem; }
+.tienda-footer-contact p{ margin-bottom: 0.3rem; }
 
-.tienda-footer-title {
+.tienda-footer-title{
   font-weight: 700;
   font-size: 0.8rem;
   text-transform: uppercase;
@@ -173,9 +179,9 @@
   color: #ffe3b0;
 }
 
-.tienda-footer-highlight { color: #ffeabf; }
+.tienda-footer-highlight{ color: #ffeabf; }
 
-.tienda-footer-discord-btn {
+.tienda-footer-discord-btn{
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -197,13 +203,14 @@
 
   transition: transform 120ms ease, box-shadow 120ms ease, filter 120ms ease;
 }
-.tienda-footer-discord-btn:hover {
+
+.tienda-footer-discord-btn:hover{
   transform: translateY(-1px);
   box-shadow: 0 7px 16px rgba(0, 0, 0, 0.95);
   filter: brightness(1.05);
 }
 
-.tienda-footer-bottom {
+.tienda-footer-bottom{
   margin-top: 0.25rem;
   padding-top: 0.3rem;
 
@@ -219,66 +226,46 @@
   opacity: 0.96;
 }
 
-.tienda-footer-designed {
+.tienda-footer-designed{
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
 }
 
-.tienda-footer-logo {
+.tienda-footer-logo{
   height: 18px;
   width: auto;
   display: block;
 }
 
 /* =========================================================
-   MOBILE: footer fixed + peek más alto
+   MOBILE: peek más alto + offset de apertura
    ========================================================= */
-@media (max-width: 960px) {
-  .tienda-footer {
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 999;
-    pointer-events: none;
-
+@media (max-width: 960px){
+  .tienda-footer{
     padding-bottom: env(safe-area-inset-bottom);
-  }
-
-  /* En mobile:
-     - sobreescribimos el peek SOLO en el inner (gana al inline del <footer>)
-     - definimos el offset de apertura en función del peek
-  */
-  .tienda-footer .tienda-footer-inner {
-    pointer-events: auto;
-    background: none;
-
-    /* lo que se ve cuando está cerrado */
-    --footer-peek-h: 40px;
-
-    /* cuánto sube al abrir (≈ la mitad del peek) */
+    --footer-peek-h: var(--tienda-footer-peek, 40px);
     --footer-open-offset: calc(-0.5 * var(--footer-peek-h));
   }
 
-  .tienda-footer-panel {
+  .tienda-footer-panel{
     padding: 0.65rem 0.95rem 0.65rem;
     max-height: min(90vh, 720px);
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
   }
 
-  .tienda-footer-bar {
+  .tienda-footer-bar{
     max-width: 560px;
     font-size: 0.74rem;
   }
 
-  .tienda-footer-main {
+  .tienda-footer-main{
     flex-direction: column;
     gap: 0.75rem;
   }
 
-  .tienda-footer-bottom {
+  .tienda-footer-bottom{
     justify-content: flex-start;
     gap: 0.35rem 0.75rem;
   }

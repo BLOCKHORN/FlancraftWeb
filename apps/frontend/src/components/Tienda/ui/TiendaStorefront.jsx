@@ -9,6 +9,8 @@ import RangoWalletModal from "../details/RangoWalletModal";
 import { UserContext } from "../../../context/UserContext";
 import { supabase } from "@lib/supabaseClient";
 
+import { ANTES_DE_COMPRAR } from "../details/data/antesDeComprarData";
+
 import {
   getPackageId,
   getPackageImage,
@@ -73,13 +75,7 @@ const readToken = () => {
   return t && String(t).trim() ? String(t).trim() : null;
 };
 
-export default function TiendaStorefront({
-  carrito,
-  toggleProducto,
-  onCambiarCantidad,
-  onSetCantidad,
-  onAgregar,
-}) {
+export default function TiendaStorefront({ carrito, toggleProducto, onCambiarCantidad, onSetCantidad, onAgregar }) {
   const wrapRef = useRef(null);
   const { user } = useContext(UserContext);
 
@@ -107,6 +103,22 @@ export default function TiendaStorefront({
   const [walletModalLoading, setWalletModalLoading] = useState(false);
   const [walletModalError, setWalletModalError] = useState(null);
   const [walletModalSuccess, setWalletModalSuccess] = useState(false);
+
+  const [antesOpen, setAntesOpen] = useState(false);
+  const openAntes = useCallback((ev) => {
+    ev?.preventDefault?.();
+    setAntesOpen(true);
+  }, []);
+  const closeAntes = useCallback(() => setAntesOpen(false), []);
+
+  useEffect(() => {
+    if (!antesOpen) return;
+    const onKey = (e) => {
+      if (e.key === "Escape") closeAntes();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [antesOpen, closeAntes]);
 
   useUiScale(wrapRef);
 
@@ -452,7 +464,7 @@ export default function TiendaStorefront({
     }
   }, [walletModalRankKey, rankWalletPrices, fetchWalletBalance]);
 
-  const panelIconSrc = useMemo(() => withCacheBust("/tienda/assets/tabs/survival.png", activeData.bust), [activeData.bust]);
+  const panelIconSrc = useMemo(() => withCacheBust("/assets/reinos/survival-clasico.webp", activeData.bust), [activeData.bust]);
 
   return (
     <div className={`tienda-storefront tsf-brawl2 ${ready ? "is-ready" : ""} ${rootFxClass}`} ref={wrapRef}>
@@ -746,7 +758,11 @@ export default function TiendaStorefront({
                                     -{discountPct}%
                                   </span>
                                 )}
-                                {meta?.isBest && <span className="tsf-bestBadge" aria-hidden="true">TOP</span>}
+                                {meta?.isBest && (
+                                  <span className="tsf-bestBadge" aria-hidden="true">
+                                    TOP
+                                  </span>
+                                )}
                               </div>
                             </article>
                           );
@@ -756,12 +772,91 @@ export default function TiendaStorefront({
                       <div className="tsf-empty">No hay productos de coins para Survival (o no se ha encontrado la categoría).</div>
                     )}
                   </div>
+
+                  <div className="tsf-antesLine" role="note" aria-label="Aviso antes de comprar">
+                    <span className="tsf-antesLineText">Aviso para padres:</span>
+                    <button type="button" className="tsf-antesLineBtn" onClick={openAntes} aria-haspopup="dialog">
+                      Leer “Antes de comprar”
+                    </button>
+                  </div>
                 </div>
               </div>
             </section>
           </>
         )}
       </div>
+
+      {antesOpen && (
+        <div
+          className="tsf-antesModalOverlay"
+          role="dialog"
+          aria-modal="true"
+          aria-label={ANTES_DE_COMPRAR.titulo}
+          onMouseDown={closeAntes}
+        >
+          <div className="tsf-antesModal" onMouseDown={(e) => e.stopPropagation()}>
+            <div className="tsf-antesModalHead">
+              <div className="tsf-antesModalTitle">{ANTES_DE_COMPRAR.titulo}</div>
+              <button type="button" className="tsf-antesModalClose" onClick={closeAntes} aria-label="Cerrar">
+                Cerrar
+              </button>
+            </div>
+
+            <div className="tsf-antesModalBody">
+              <div className="tsf-antesBlock">
+                {Array.isArray(ANTES_DE_COMPRAR.intro) &&
+                  ANTES_DE_COMPRAR.intro.map((t, i) => (
+                    <p className="tsf-antesP" key={`intro-${i}`}>
+                      {t}
+                    </p>
+                  ))}
+              </div>
+
+              {Array.isArray(ANTES_DE_COMPRAR.avisos) && ANTES_DE_COMPRAR.avisos.length > 0 && (
+                <div className="tsf-antesBlock">
+                  <div className="tsf-antesH">Avisos</div>
+                  <ul className="tsf-antesList">
+                    {ANTES_DE_COMPRAR.avisos.map((t, i) => (
+                      <li className="tsf-antesLi" key={`aviso-${i}`}>
+                        {t}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {ANTES_DE_COMPRAR.soporte && (
+                <div className="tsf-antesBlock">
+                  <div className="tsf-antesH">{ANTES_DE_COMPRAR.soporte.titulo}</div>
+                  <p className="tsf-antesP">{ANTES_DE_COMPRAR.soporte.texto}</p>
+
+                  {Array.isArray(ANTES_DE_COMPRAR.soporte.links) && ANTES_DE_COMPRAR.soporte.links.length > 0 && (
+                    <div className="tsf-antesLinks">
+                      {ANTES_DE_COMPRAR.soporte.links.map((l) => (
+                        <a key={String(l?.href || l?.label || Math.random())} className="tsf-antesLink" href={l.href} target="_blank" rel="noreferrer">
+                          {l.label}
+                        </a>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {ANTES_DE_COMPRAR.reembolso && (
+                <div className="tsf-antesBlock">
+                  <div className="tsf-antesH">{ANTES_DE_COMPRAR.reembolso.titulo}</div>
+                  {Array.isArray(ANTES_DE_COMPRAR.reembolso.bloques) &&
+                    ANTES_DE_COMPRAR.reembolso.bloques.map((t, i) => (
+                      <p className="tsf-antesP" key={`reembolso-${i}`}>
+                        {t}
+                      </p>
+                    ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

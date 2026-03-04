@@ -1,9 +1,10 @@
 @use "./mixins" as *;
 
-.tsf-coinsPanel {
+.tsf-coinsPanel{
   position: relative;
   width: 100%;
-  max-width: 100%;
+  max-width: calc(58rem * var(--ui-scale));
+  margin: 0 auto;
 
   --mc-font: "Mojangles", "Minecraft Seven", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
   --ui-font: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
@@ -28,7 +29,7 @@
   isolation: isolate;
 }
 
-.tsf-coinsPanel::after {
+.tsf-coinsPanel::after{
   content: "";
   position: absolute;
   inset: 0;
@@ -43,7 +44,7 @@
   mix-blend-mode: overlay;
 }
 
-.tsf-coinsPanelHeader {
+.tsf-coinsPanelHeader{
   position: absolute;
   left: var(--panel-pad-x);
   right: var(--panel-pad-x);
@@ -127,12 +128,6 @@
   width: clamp(24px, 2.4vw, 34px);
   height: clamp(24px, 2.4vw, 34px);
   object-fit: contain;
-
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow:
-    0 12px 18px rgba(0, 0, 0, 0.26),
-    inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 
 .tsf-coinsPanelTitleText{
@@ -156,8 +151,8 @@
 }
 
 .tsf-coinsPanel .tsf-coinsGridWrap{
-  padding-top: clamp(24px, 2.6vw, 40px);
-  padding-bottom: clamp(10px, 1.4vw, 18px);
+  padding-top: clamp(22px, 2.4vw, 34px);
+  padding-bottom: clamp(8px, 1.2vw, 16px);
   position: relative;
   z-index: 1;
 }

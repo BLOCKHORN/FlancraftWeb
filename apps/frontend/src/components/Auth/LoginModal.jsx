@@ -9,6 +9,8 @@ const API = (import.meta.env.VITE_BACKEND_URL || "https://flancraft-backend.onre
 
 const apiUrl = (path) => `${API}${path}`;
 
+const CODE_RE = /^[0-9]{6}$/;
+
 const AuthInput = React.forwardRef(
   ({ type = "text", placeholder, value, onChange, disabled, className = "" }, ref) => (
     <input
@@ -49,10 +51,10 @@ const getErrorMessage = (context, status, backendError) => {
       return "No se ha podido iniciar sesión ahora mismo. Inténtalo de nuevo en unos segundos.";
 
     case "vincular-validate":
-      if (status === 404) return "Ese token de vinculación no existe o ya se ha usado.";
-      if (status === 410) return "Ese token de vinculación ha caducado. Genera uno nuevo con /vincular en el servidor.";
+      if (status === 404) return "Ese token/código no existe o ya se ha usado.";
+      if (status === 410) return "Ese token/código ha caducado. Genera uno nuevo con /vincular en el servidor.";
       if (status === 409) return "Este usuario ya está registrado. Inicia sesión.";
-      return "El token de vinculación no es válido. Prueba a generarlo otra vez con /vincular.";
+      return "El token/código no es válido. Prueba a generarlo otra vez con /vincular.";
 
     case "register":
       if (status === 409) return "Ya existe una cuenta web asociada a este jugador.";
@@ -71,12 +73,7 @@ const getErrorMessage = (context, status, backendError) => {
   }
 };
 
-export default function LoginModal({
-  onClose,
-  initialStep,
-  initialToken,
-  autoValidateToken,
-}) {
+export default function LoginModal({ onClose, initialStep, initialToken, autoValidateToken }) {
   const [step, setStep] = useState(initialStep || "login");
   const [form, setForm] = useState({
     username: "",
@@ -84,17 +81,15 @@ export default function LoginModal({
     confirm: "",
     token: initialToken || "",
     uuid: null,
+    codigo: "",
   });
 
   const [loading, setLoading] = useState(false);
-
   const [error, setError] = useState(null);
   const [showError, setShowError] = useState(false);
-
   const [success, setSuccess] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [closing, setClosing] = useState(false);
-
   const [showToast, setShowToast] = useState(false);
 
   const { setUser } = useContext(UserContext);
@@ -188,7 +183,6 @@ export default function LoginModal({
     }, 250);
 
     return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoValidateToken, initialToken, step]);
 
   const handleLogin = async () => {
@@ -228,8 +222,9 @@ export default function LoginModal({
     }
   };
 
-  const handleTokenValidate = async (tokenOverride) => {
-    const tok = String(tokenOverride || form.token || "").trim();
+  const handleTokenValidate = async (valueOverride) => {
+    const raw = String(valueOverride ?? form.token ?? "").trim();
+    const isCode = CODE_RE.test(raw);
 
     setError(null);
     setLoading(true);
@@ -237,7 +232,7 @@ export default function LoginModal({
       const res = await fetch(apiUrl("/api/vincular/validate"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token: tok }),
+        body: JSON.stringify(isCode ? { codigo: raw } : { token: raw }),
       });
 
       const data = await res.json();
@@ -247,7 +242,9 @@ export default function LoginModal({
         throw new Error(message);
       }
 
-      updateForm("token", tok);
+      if (isCode) updateForm("codigo", raw);
+      else updateForm("token", raw);
+
       updateForm("uuid", data.uuid_jugador);
       updateForm("username", data.username);
 
@@ -265,14 +262,19 @@ export default function LoginModal({
 
     setLoading(true);
     try {
+      const payload = {
+        uuid: form.uuid,
+        uid: form.username,
+        password: form.password,
+      };
+
+      if (String(form.token || "").trim()) payload.token = String(form.token).trim();
+      if (String(form.codigo || "").trim()) payload.codigo = String(form.codigo).trim();
+
       const registerRes = await fetch(apiUrl("/api/vincular/registrar"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          uuid: form.uuid,
-          uid: form.username,
-          password: form.password,
-        }),
+        body: JSON.stringify(payload),
       });
 
       const registerData = await registerRes.json();
@@ -282,17 +284,6 @@ export default function LoginModal({
         throw new Error(message);
       }
 
-      const markRes = await fetch(apiUrl("/api/vincular/marcar"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token: form.token }),
-      });
-
-      if (!markRes.ok) {
-        const d = await markRes.json().catch(() => ({}));
-        throw new Error(d?.error || "Error al marcar el token como usado.");
-      }
-
       localStorage.removeItem("prefill_vincular_token");
 
       const loginRes = await fetch(apiUrl("/api/vincular/login"), {
@@ -300,6 +291,7 @@ export default function LoginModal({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ uid: form.username, password: form.password }),
       });
+
       const loginData = await loginRes.json();
       if (!loginRes.ok) throw new Error(loginData?.error || "No se pudo iniciar sesión tras registrarte.");
 
@@ -422,10 +414,11 @@ export default function LoginModal({
         ← Volver
       </button>
       <p>
-        Entra al servidor y escribe <code>/vincular</code>. Luego pega el token de vinculación aquí:
+        Entra al servidor y escribe <code>/vincular</code>. En Java puedes abrir el enlace. Si no, introduce aquí el
+        token o el código de 6 dígitos:
       </p>
       <AuthInput
-        placeholder="Token de vinculación"
+        placeholder="Token o código"
         value={form.token}
         onChange={(val) => updateForm("token", val)}
         disabled={loading}
@@ -433,7 +426,7 @@ export default function LoginModal({
         ref={tokenRef}
       />
       <AuthButton onClick={() => handleTokenValidate()} disabled={loading}>
-        Validar token de vinculación
+        Validar
       </AuthButton>
     </>
   );
@@ -445,9 +438,6 @@ export default function LoginModal({
       </button>
       <p>
         <strong>Nombre detectado:</strong> {form.username}
-      </p>
-      <p>
-        <strong>UUID:</strong> {form.uuid}
       </p>
       <AuthInput
         type="password"

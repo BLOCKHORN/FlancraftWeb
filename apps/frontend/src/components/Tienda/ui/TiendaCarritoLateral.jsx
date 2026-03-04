@@ -1,3 +1,4 @@
+// src/components/Tienda/ui/TiendaCarritoLateral.jsx
 import React, { useMemo, useState, useCallback } from "react";
 import useMinecraftProfile from "../hooks/useMinecraftProfile";
 import TiendaCheckoutModal from "../modals/TiendaCheckoutModal";
@@ -27,6 +28,15 @@ function clampInt(n, min, max) {
   return Math.max(min, Math.min(max, x));
 }
 
+function pickQty(it) {
+  const q = Number(it?.quantity ?? it?.cantidad ?? 0);
+  return Math.max(1, Math.min(999, Number.isFinite(q) ? q : 1));
+}
+
+function pickImg(it) {
+  return it?.image || it?.image_url || it?.imageUrl || it?.img || it?.icon || null;
+}
+
 const FallbackIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
     <path d="M21 7l-4-4-6 6 4 4 6-6Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
@@ -47,7 +57,7 @@ export default function TiendaCarritoLateral({
   onAbrirLogin,
   onCambiarCuenta,
   isWebLoggedIn = false,
-  server = "oneblock",
+  server = "survival",
   basketPulse = false,
   mode = "desktop",
   onRequestClose,
@@ -65,7 +75,7 @@ export default function TiendaCarritoLateral({
 
   const totalBase = useMemo(() => {
     if (typeof totalFromHook === "number") return totalFromHook;
-    return carrito.reduce((acc, it) => acc + (Number(it.price) || 0) * clampInt(it.quantity || 1, 1, 999), 0);
+    return carrito.reduce((acc, it) => acc + (Number(it.price) || 0) * pickQty(it), 0);
   }, [carrito, totalFromHook]);
 
   const canCheckout = Boolean(nombreConfirmado) && distinctCount > 0 && !loadingCheckout;
@@ -89,7 +99,7 @@ export default function TiendaCarritoLateral({
 
   const handleQty = useCallback(
     (item, delta) => {
-      const current = clampInt(item.quantity || 1, 1, 999);
+      const current = pickQty(item);
       const nextRaw = current + Number(delta || 0);
 
       if (typeof onCambiarCantidad === "function") {
@@ -119,7 +129,7 @@ export default function TiendaCarritoLateral({
     try {
       const items = carrito.map((it) => ({
         id: Number(it.id),
-        quantity: clampInt(it.quantity || 1, 1, 999),
+        quantity: pickQty(it),
       }));
 
       const r = await fetch(`${API_BASE}/api/tebex/checkout`, {
@@ -206,20 +216,21 @@ export default function TiendaCarritoLateral({
                   </div>
                 ) : (
                   carrito.map((it) => {
-                    const qty = clampInt(it.quantity || 1, 1, 999);
+                    const qty = pickQty(it);
                     const canDec = qty >= 1;
                     const canInc = qty < 999;
 
                     const priceBase = Number(it.price) || 0;
+                    const img = pickImg(it);
 
                     return (
                       <div className="basket-item" key={it.id} role="listitem">
                         <div className="basket-item-left">
                           <div className="basket-item-icon-frame" aria-hidden="true">
-                            {it.image ? (
+                            {img ? (
                               <img
                                 className="basket-item-icon"
-                                src={it.image}
+                                src={img}
                                 alt=""
                                 draggable={false}
                                 onError={(e) => {

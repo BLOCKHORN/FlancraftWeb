@@ -1,15 +1,10 @@
-// src/components/Tienda/details/RangosComparativaPanel.jsx
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import RANGOS_BENEFICIOS from "./data/productDetails/rangosComparativa";
 import RANGOS_PERKS_TOOLTIPS from "./data/productDetails/rangosPerksTooltips";
 import "../../../styles/components/Tienda/rangos-comparativa-modal.scss";
-
 import { getPackagePrice, getPackageImage, withCacheBust } from "../utils/tiendaHelpers";
 
-// =========================================================
-// Iconos (pro)
-// =========================================================
 const IconClose = ({ size = 18 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
     <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" />
@@ -53,9 +48,6 @@ const IconMinus = ({ size = 16 }) => (
   </svg>
 );
 
-// =========================================================
-// Tooltip (Portal + fixed) -> nunca se recorta por overflow
-// =========================================================
 function TooltipPortal({ tip }) {
   if (!tip?.open) return null;
 
@@ -77,9 +69,6 @@ function TooltipPortal({ tip }) {
   );
 }
 
-// =========================================================
-// Meta
-// =========================================================
 const RANKS = ["nova", "alpha", "inmortal"];
 
 const RANK_META = {
@@ -91,23 +80,13 @@ const RANK_META = {
 const SERVER_META = {
   oneblock: { label: "Oneblock", icon: "/assets/reinos/oneblock.webp" },
   gens: { label: "Gens", icon: "/assets/reinos/gens.webp" },
-
-  // ✅ NUEVO
   survival: { label: "Survival", icon: "/assets/reinos/survival-clasico.webp" },
 };
 
-// ✅ Orden preferido
 const SERVER_ORDER = ["oneblock", "gens", "survival"];
-
-// Mascota arriba a la izquierda (solo ONEBLOCK)
 const RANKSKIN_IMG = "/tienda/assets/rankskin.png";
-
-// Icono coins en la tabla
 const COINS_ICON = "/tienda/assets/coin.png";
 
-// =========================================================
-// Perk icons
-// =========================================================
 const PERK_BASE = "/tienda/assets/perks";
 const PERK_ICONS = {
   prefix: `${PERK_BASE}/prefijo.webp`,
@@ -128,8 +107,6 @@ const PERK_ICONS = {
   "cmd:/nick": `${PERK_BASE}/nick.webp`,
   "cmd:/repair": `${PERK_BASE}/repair.webp`,
   "cmd:/workbench": `${PERK_BASE}/workbench.webp`,
-
-  // ✅ NUEVO (si tienes el asset, perfecto)
   "cmd:/heal": `${PERK_BASE}/heal.webp`,
 };
 
@@ -137,9 +114,6 @@ function getPerkIcon(rowKey) {
   return PERK_ICONS[rowKey] || null;
 }
 
-// =========================================================
-// Helpers parse/normaliza
-// =========================================================
 function normalizeStr(s) {
   return String(s || "")
     .toLowerCase()
@@ -156,7 +130,6 @@ function parseIntLoose(s) {
 function canonicalizePerk(raw) {
   if (!raw) return null;
 
-  // prefijo con imagen
   if (typeof raw === "object" && raw.type === "prefix") {
     return {
       key: "prefix",
@@ -166,7 +139,6 @@ function canonicalizePerk(raw) {
     };
   }
 
-  // imagen/kit
   if (typeof raw === "object" && (raw.type === "image" || raw.src || raw.image)) {
     return {
       key: "kit",
@@ -332,9 +304,6 @@ function fmtInt(n) {
   return new Intl.NumberFormat("es-ES", { maximumFractionDigits: 0 }).format(Math.round(v));
 }
 
-// =========================================================
-// Coins (mismo cálculo que storefront)
-// =========================================================
 const COINS_PER_USD = 1000 / 6;
 
 function roundNiceCoins(n) {
@@ -351,9 +320,6 @@ function coinsFromUsdDouble(usd) {
   return roundNiceCoins(coins);
 }
 
-// =========================================================
-// Celdas tabla (con zoom en imágenes)
-// =========================================================
 function Cell({ kind, value, rankKey, rowKey, onZoom }) {
   const meta = RANK_META[rankKey];
   const cls = `tsf-rcCell ${meta?.cls || ""}`;
@@ -396,7 +362,6 @@ function Cell({ kind, value, rankKey, rowKey, onZoom }) {
     const hasNumber = Number.isFinite(n);
     const txt = formatNumber(value) || "✓";
 
-    // Coins incluidos => número + icono
     if (rowKey === "coins" && hasNumber) {
       return (
         <div className={cls} data-rank={rankLabel}>
@@ -408,7 +373,6 @@ function Cell({ kind, value, rankKey, rowKey, onZoom }) {
       );
     }
 
-    // Dinero incluido => número + $
     if (rowKey === "money" && hasNumber) {
       return (
         <div className={cls} data-rank={rankLabel}>
@@ -446,9 +410,6 @@ function Cell({ kind, value, rankKey, rowKey, onZoom }) {
   );
 }
 
-// =========================================================
-// Rank Card superior
-// =========================================================
 function RankCardTop({ rk, pkg, bust, isActive, onPickRank, onBuyEur, onBuyCoins }) {
   const rm = RANK_META[rk] || { label: String(rk || "").toUpperCase(), cls: "" };
 
@@ -474,24 +435,13 @@ function RankCardTop({ rk, pkg, bust, isActive, onPickRank, onBuyEur, onBuyCoins
 
   return (
     <article className={`tsf-rcRankCardTop ${rm.cls} ${isActive ? "is-active" : ""}`} data-rank={rk}>
-      <button
-        type="button"
-        className="tsf-rcRankTopSquare"
-        onClick={() => onPickRank?.(rk)}
-        aria-label={`Ver ${rm.label}`}
-      >
+      <button type="button" className="tsf-rcRankTopSquare" onClick={() => onPickRank?.(rk)} aria-label={`Ver ${rm.label}`}>
         <img className="tsf-rcRankTopDeg" src={rm.deg} alt="" draggable="false" />
-
         <div className="tsf-rcRankTopTitle">
           <span className="tsf-rcRankTopSmall">Rango</span>
           <span className="tsf-rcRankTopBig">{rm.label}</span>
         </div>
-
-        {img ? (
-          <img className="tsf-rcRankTopIcon" src={img} alt="" draggable="false" />
-        ) : (
-          <span className="tsf-rcRankTopIconFallback" />
-        )}
+        {img ? <img className="tsf-rcRankTopIcon" src={img} alt="" draggable="false" /> : <span className="tsf-rcRankTopIconFallback" />}
       </button>
 
       <button
@@ -521,9 +471,6 @@ function RankCardTop({ rk, pkg, bust, isActive, onPickRank, onBuyEur, onBuyCoins
   );
 }
 
-// =========================================================
-// Panel (modal)
-// =========================================================
 export default function RangosComparativaPanel({
   onClose,
   rankKey = null,
@@ -536,19 +483,11 @@ export default function RangosComparativaPanel({
   const { servers, matrix } = useMemo(() => buildMatrixFromRangos(RANGOS_BENEFICIOS), []);
   const [openSections, setOpenSections] = useState(() => new Set(servers || []));
 
-  // Compact estable (sin jitter) basado en el scroll del contenedor interno
   const scrollRef = useRef(null);
   const [isCompact, setIsCompact] = useState(false);
 
-  // Zoom de imágenes (kits, prefix, etc)
   const [zoomSrc, setZoomSrc] = useState(null);
-  const openZoom = useCallback((src) => {
-    if (!src) return;
-    setZoomSrc(src);
-  }, []);
-  const closeZoom = useCallback(() => setZoomSrc(null), []);
 
-  // Tooltip state
   const [tip, setTip] = useState({ open: false, id: null, text: "", left: 0, top: 0 });
   const tipAnchorRef = useRef(null);
   const tipKeepIdRef = useRef(null);
@@ -558,7 +497,7 @@ export default function RangosComparativaPanel({
     if (!el) return null;
     const r = el.getBoundingClientRect();
     const left = r.left + r.width / 2;
-    const top = r.top - 10; // un pelín por encima del botón
+    const top = r.top - 10;
     return { left, top };
   }, []);
 
@@ -582,7 +521,17 @@ export default function RangosComparativaPanel({
     [computeTipPos]
   );
 
-  // Reposicionar tooltip en scroll/resize mientras esté abierto
+  const openZoom = useCallback(
+    (src) => {
+      if (!src) return;
+      closeTip();
+      setZoomSrc(src);
+    },
+    [closeTip]
+  );
+
+  const closeZoom = useCallback(() => setZoomSrc(null), []);
+
   useEffect(() => {
     if (!tip.open) return;
 
@@ -599,7 +548,6 @@ export default function RangosComparativaPanel({
     const onInnerScroll = () => update();
     sc?.addEventListener("scroll", onInnerScroll, { passive: true });
 
-    // Cerrar si click fuera (tooltip o botón)
     const onPointerDown = (e) => {
       const anchor = tipAnchorRef.current;
       const target = e.target;
@@ -609,7 +557,6 @@ export default function RangosComparativaPanel({
     };
     window.addEventListener("pointerdown", onPointerDown, true);
 
-    // ESC para cerrar tooltip
     const onKey = (e) => {
       if (e.key === "Escape") closeTip();
     };
@@ -685,14 +632,18 @@ export default function RangosComparativaPanel({
     });
   }, []);
 
-  // ESC: si hay tooltip -> cierra tooltip; si hay zoom -> cierra zoom; si no -> cierra modal
-  // + lock scroll del documento
+  const handleClose = useCallback(() => {
+    closeTip();
+    setZoomSrc(null);
+    onClose?.();
+  }, [closeTip, onClose]);
+
   useEffect(() => {
     const onKey = (e) => {
       if (e.key === "Escape") {
         if (tip.open) closeTip();
         else if (zoomSrc) closeZoom();
-        else onClose?.();
+        else handleClose();
       }
     };
     window.addEventListener("keydown", onKey);
@@ -704,22 +655,20 @@ export default function RangosComparativaPanel({
       window.removeEventListener("keydown", onKey);
       document.documentElement.style.overflow = prevOverflow || "";
     };
-  }, [onClose, zoomSrc, closeZoom, tip.open, closeTip]);
+  }, [handleClose, zoomSrc, closeZoom, tip.open, closeTip]);
 
   const modal = (
     <div className="tsf-rcModal" role="dialog" aria-modal="true" aria-label="Comparativa de rangos">
-      <button type="button" className="tsf-rcBackdrop" onClick={onClose} aria-label="Cerrar comparativa" />
+      <button type="button" className="tsf-rcBackdrop" onClick={handleClose} aria-label="Cerrar comparativa" />
 
       <div className="tsf-rcSheet" role="document" onClick={(e) => e.stopPropagation()}>
-        <button type="button" className="tsf-rcClose" onClick={onClose} aria-label="Cerrar" title="Cerrar">
-          <IconClose />
-        </button>
-
-        {/* HERO fijo (NO scrollea) */}
         <header className={`tsf-rcHero ${isCompact ? "is-compact" : ""}`} aria-label="Rangos">
+          <button type="button" className="tsf-rcHeroClose" onClick={handleClose} aria-label="Cerrar" title="Cerrar">
+            <IconClose />
+          </button>
+
           <div className="tsf-rcHeroGrid" aria-label="Rangos disponibles">
             <div className="tsf-rcHeroSpacer" aria-hidden="true" />
-
             {RANKS.map((rk) => (
               <RankCardTop
                 key={rk}
@@ -735,7 +684,6 @@ export default function RangosComparativaPanel({
           </div>
         </header>
 
-        {/* SOLO esto scrollea */}
         <div className="tsf-rcScroll" ref={scrollRef}>
           <div className="tsf-rcPanel">
             <div className="tsf-rcSections" role="group" aria-label="Comparativa por servidor">
@@ -746,7 +694,6 @@ export default function RangosComparativaPanel({
 
                 return (
                   <section className={`tsf-rcSection ${isOpen ? "is-open" : "is-collapsed"}`} key={sv} data-server={sv}>
-                    {/* Mascota ONEBLOCK */}
                     {sv === "oneblock" ? (
                       <span className="tsf-rcMascot" aria-hidden="true">
                         <img src={RANKSKIN_IMG} alt="" draggable="false" />
@@ -810,9 +757,8 @@ export default function RangosComparativaPanel({
                                             }}
                                             onClick={(e) => {
                                               e.stopPropagation();
-                                              if (tip.open && tip.id === tipId) {
-                                                closeTip();
-                                              } else {
+                                              if (tip.open && tip.id === tipId) closeTip();
+                                              else {
                                                 tipKeepIdRef.current = tipId;
                                                 openTip(e.currentTarget, tipId, tipText);
                                               }
@@ -853,18 +799,11 @@ export default function RangosComparativaPanel({
           </div>
         </div>
 
-        {/* TOOLTIP (Portal, no se recorta) */}
         <TooltipPortal tip={tip} />
 
-        {/* ZOOM IMAGEN */}
         {zoomSrc ? (
           <div className="tsf-rcImgModal" role="dialog" aria-modal="true" aria-label="Vista ampliada">
-            <button
-              type="button"
-              className="tsf-rcImgBackdrop"
-              onClick={closeZoom}
-              aria-label="Cerrar vista ampliada"
-            />
+            <button type="button" className="tsf-rcImgBackdrop" onClick={closeZoom} aria-label="Cerrar vista ampliada" />
             <div className="tsf-rcImgSheet" role="document" onClick={(e) => e.stopPropagation()}>
               <button type="button" className="tsf-rcImgClose" onClick={closeZoom} aria-label="Cerrar" title="Cerrar">
                 <IconClose />

@@ -1,6 +1,5 @@
 @use "./mixins" as *;
 
-/* storefront/_root.scss */
 .tienda-storefront.tsf-brawl2{
   --btnLift: -7px;
   --btnPress: 4px;
@@ -16,22 +15,14 @@
   --easeLift: cubic-bezier(0.16, 1, 0.3, 1);
   --easePress: cubic-bezier(0.2, 0.9, 0.2, 1);
 
-  /* =========================
-     UI SCALE (dinámico)
-     - Evita apelotonado en pantallas bajas
-     - Evita que en pantallas grandes quede enano
-     ========================= */
   --ui-scale-w: clamp(0.70, calc(100vw / 1400), 1.00);
   --ui-scale-h: clamp(0.70, calc(100vh / 820), 1.00);
   --ui-scale: clamp(0.72, min(var(--ui-scale-w), var(--ui-scale-h)), 1.00);
 
-  /* =========================
-     Layout tokens
-     ========================= */
   --gap-base: clamp(0.85rem, 1.15vw, 1.35rem);
   --gap: calc(var(--gap-base) * var(--ui-scale));
 
-  --rank-size: calc(clamp(11.4rem, 16.5vw, 14.2rem) * var(--ui-scale));
+  --rank-size: calc(clamp(12.2rem, 18.5vw, 15.6rem) * var(--ui-scale));
 
   --coin-w: calc(clamp(8.4rem, 9.7vw, 9.4rem) * var(--ui-scale));
   --coin-gap: calc(clamp(0.68rem, 1.1vw, 1.25rem) * var(--ui-scale));
@@ -48,8 +39,8 @@
   --tsf-sign-clear: calc(var(--sign-clear) * var(--tsf-sign-enabled));
   --tsf-sign-top: calc(var(--sign-top) * var(--tsf-sign-enabled));
 
-  /* Content width (no encojer raro) */
   --content-max: calc(62rem * var(--ui-scale));
+  --content-max-ranks: min(calc(86rem * var(--ui-scale)), calc(100vw - (var(--content-pad) * 2)));
   --content-pad: clamp(10px, 1.6vw, 22px);
 
   position: relative;
@@ -93,6 +84,5 @@
   position: relative;
   z-index: 1;
 
-  /* Esto ayuda muchísimo a que no se “apelmote” por overflow de grids */
   min-width: 0;
 }

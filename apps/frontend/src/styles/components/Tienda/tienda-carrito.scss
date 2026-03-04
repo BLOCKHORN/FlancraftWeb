@@ -18,8 +18,12 @@
   position: relative;
   isolation: isolate;
 
-  --framePadX: clamp(18px, 3vw, 25px);
-  --framePadY: clamp(18px, 3vw, 32px);
+  display: flex;
+  align-items: stretch;
+  justify-content: stretch;
+
+  --framePadX: clamp(10px, 1.4vw, 14px);
+  --framePadY: clamp(10px, 1.6vw, 16px);
 
   padding: var(--framePadY) var(--framePadX);
   box-sizing: border-box;
@@ -47,6 +51,8 @@
   --tMed: 220ms;
   --easeLift: cubic-bezier(0.16, 1, 0.3, 1);
   --easePress: cubic-bezier(0.2, 0.9, 0.2, 1);
+
+  overflow: hidden;
 }
 
 .carrito-panel::before{
@@ -76,7 +82,7 @@
   flex-direction: column;
   gap: 0.6rem;
 
-  padding: 0.55rem;
+  padding: clamp(8px, 0.9vw, 10px);
 
   border-radius: 10px;
   border: 2px solid #d2b071;
@@ -84,6 +90,8 @@
 
   box-shadow: 0 0 0 1px rgba(90, 59, 23, 0.35), 0 14px 30px rgba(0, 0, 0, 0.65);
   box-sizing: border-box;
+
+  overflow: hidden;
 }
 
 @mixin btnPhysics($bg: #7a6a5b, $border: rgba(0, 0, 0, 0.38), $color: #f6efe6){
@@ -405,19 +413,10 @@
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.35) rgba(0, 0, 0, 0.15);
 
-  &::-webkit-scrollbar{
-    width: 8px;
-  }
-  &::-webkit-scrollbar-track{
-    background: rgba(0, 0, 0, 0.18);
-  }
-  &::-webkit-scrollbar-thumb{
-    background: rgba(255, 255, 255, 0.28);
-    border-radius: 999px;
-  }
-  &::-webkit-scrollbar-thumb:hover{
-    background: rgba(255, 255, 255, 0.40);
-  }
+  &::-webkit-scrollbar{ width: 8px; }
+  &::-webkit-scrollbar-track{ background: rgba(0, 0, 0, 0.18); }
+  &::-webkit-scrollbar-thumb{ background: rgba(255, 255, 255, 0.28); border-radius: 999px; }
+  &::-webkit-scrollbar-thumb:hover{ background: rgba(255, 255, 255, 0.40); }
 }
 
 .currencyDrop.is-open .currencyDrop-menu{
@@ -467,13 +466,8 @@
   opacity: 0;
   transform: translateY(-8px);
 
-  &:hover{
-    background: rgba(0, 0, 0, 0.12);
-  }
-
-  &:active{
-    filter: brightness(0.98);
-  }
+  &:hover{ background: rgba(0, 0, 0, 0.12); }
+  &:active{ filter: brightness(0.98); }
 }
 
 .currencyDrop-option.is-active{
@@ -590,9 +584,7 @@
 
   transition: filter 160ms ease, transform 160ms ease;
 
-  &:hover{
-    filter: brightness(1.03);
-  }
+  &:hover{ filter: brightness(1.03); }
 }
 
 .basket-item-left{
@@ -668,6 +660,7 @@
   place-items: center;
   border-radius: 8px;
   padding: 0;
+
   @include btnPhysics(#4b2b2b, rgba(0, 0, 0, 0.42), #fef7e5);
   --btnLift: -4px;
   --btnPress: 3px;

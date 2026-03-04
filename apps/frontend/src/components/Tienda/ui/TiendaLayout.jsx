@@ -1,4 +1,3 @@
-// src/components/Tienda/ui/TiendaLayout.jsx
 import React, { useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
@@ -122,6 +121,8 @@ const IconCart = ({ size = 18 }) => (
 
 const TiendaLayout = () => {
   const rootRef = useRef(null);
+  const shelfInnerRef = useRef(null);
+
   const { user, setUser } = useContext(UserContext);
 
   const [mostrarLogin, setMostrarLogin] = useState(false);
@@ -174,11 +175,28 @@ const TiendaLayout = () => {
     prevEsPortadaRef.current = esPortada;
   }, [esPortada]);
 
+  useEffect(() => {
+    const html = document.documentElement;
+    const body = document.body;
+    html.classList.add("tienda");
+    body.classList.add("tienda");
+    return () => {
+      html.classList.remove("tienda");
+      body.classList.remove("tienda");
+    };
+  }, []);
+
   useLayoutEffect(() => {
     const host = rootRef.current;
     if (!host) return;
 
-    const pick = () => {
+    const setVvh = () => {
+      const vv = window.visualViewport;
+      const h = vv?.height || window.innerHeight || 0;
+      if (h > 0) host.style.setProperty("--vvh", `${h}px`);
+    };
+
+    const pickNav = () => {
       const candidates = [document.querySelector(".navbar-content"), document.querySelector(".mobile-only")].filter(Boolean);
       return candidates.find((el) => {
         const cs = window.getComputedStyle(el);
@@ -186,35 +204,48 @@ const TiendaLayout = () => {
       });
     };
 
-    let el = pick();
-    if (!el) return;
+    let navEl = pickNav();
 
-    const apply = () => {
-      host.style.setProperty("--navH", `${el?.offsetHeight || 0}px`);
+    const applyNav = () => {
+      const h = navEl?.offsetHeight || 0;
+      host.style.setProperty("--navH", `${h}px`);
     };
 
-    apply();
+    setVvh();
+    applyNav();
 
-    const ro = new ResizeObserver(() => apply());
-    ro.observe(el);
+    const ro = new ResizeObserver(() => applyNav());
+    if (navEl) ro.observe(navEl);
 
     const onResize = () => {
-      const next = pick();
-      if (next && next !== el) {
-        ro.unobserve(el);
-        el = next;
-        ro.observe(el);
+      setVvh();
+      const next = pickNav();
+      if (next && next !== navEl) {
+        if (navEl) ro.unobserve(navEl);
+        navEl = next;
+        ro.observe(navEl);
       }
-      apply();
+      applyNav();
     };
 
     window.addEventListener("resize", onResize);
+    window.visualViewport?.addEventListener?.("resize", onResize);
+    window.visualViewport?.addEventListener?.("scroll", onResize);
 
-    const t1 = window.setTimeout(apply, 120);
-    const t2 = window.setTimeout(apply, 400);
+    const t1 = window.setTimeout(() => {
+      setVvh();
+      applyNav();
+    }, 120);
+
+    const t2 = window.setTimeout(() => {
+      setVvh();
+      applyNav();
+    }, 420);
 
     return () => {
       window.removeEventListener("resize", onResize);
+      window.visualViewport?.removeEventListener?.("resize", onResize);
+      window.visualViewport?.removeEventListener?.("scroll", onResize);
       window.clearTimeout(t1);
       window.clearTimeout(t2);
       ro.disconnect();
@@ -419,6 +450,134 @@ const TiendaLayout = () => {
 
   const openDrawer = () => setCartOpenMobile(true);
 
+  const [fitScale, setFitScale] = useState(1);
+
+  useLayoutEffect(() => {
+    if (isCompact || !esPortada) {
+      setFitScale(1);
+      return;
+    }
+
+    const host = rootRef.current;
+    const inner = shelfInnerRef.current;
+    if (!host || !inner) return;
+
+    let targetEl = null;
+    let ro = null;
+    let mo = null;
+    let rafId = 0;
+    let timers = [];
+    let imgUnsubs = [];
+    let disposed = false;
+
+    const measureContentH = () => {
+      const t = targetEl || inner.querySelector(".tienda-storefront") || inner.firstElementChild;
+      if (!t) return 0;
+
+      const h = t.scrollHeight || 0;
+      if (h > 0) return h;
+
+      const r = t.getBoundingClientRect?.();
+      return r?.height || 0;
+    };
+
+    const calc = () => {
+      if (disposed) return;
+
+      const availableH = host.getBoundingClientRect().height;
+      const contentH = measureContentH();
+
+      if (!availableH || !contentH) {
+        setFitScale(1);
+        return;
+      }
+
+      const margin = 14;
+      const raw = (availableH - margin) / contentH;
+      const s = Math.max(0.82, Math.min(1, raw));
+      setFitScale(Number.isFinite(s) ? s : 1);
+    };
+
+    const bindImages = (root) => {
+      imgUnsubs.forEach((fn) => fn());
+      imgUnsubs = [];
+
+      const imgs = Array.from(root.querySelectorAll("img"));
+      imgs.forEach((img) => {
+        if (img.complete) return;
+        const onDone = () => calc();
+        img.addEventListener("load", onDone, { passive: true });
+        img.addEventListener("error", onDone, { passive: true });
+        imgUnsubs.push(() => {
+          img.removeEventListener("load", onDone);
+          img.removeEventListener("error", onDone);
+        });
+      });
+    };
+
+    const attachTarget = () => {
+      const next = inner.querySelector(".tienda-storefront") || inner.firstElementChild;
+      if (!next) return;
+
+      if (next === targetEl) return;
+      targetEl = next;
+
+      ro?.disconnect?.();
+      ro = new ResizeObserver(() => calc());
+
+      ro.observe(host);
+      ro.observe(inner);
+      ro.observe(targetEl);
+
+      bindImages(targetEl);
+      calc();
+
+      timers.push(window.setTimeout(calc, 60));
+      timers.push(window.setTimeout(calc, 180));
+      timers.push(window.setTimeout(calc, 420));
+      timers.push(window.setTimeout(calc, 900));
+    };
+
+    mo = new MutationObserver(() => attachTarget());
+    mo.observe(inner, { subtree: true, childList: true });
+
+    attachTarget();
+
+    const onResize = () => calc();
+    window.addEventListener("resize", onResize);
+    window.visualViewport?.addEventListener?.("resize", onResize);
+    window.visualViewport?.addEventListener?.("scroll", onResize);
+
+    if (document?.fonts?.ready) {
+      document.fonts.ready.then(() => calc()).catch(() => {});
+    }
+
+    const tick = () => {
+      calc();
+      rafId = window.requestAnimationFrame(tick);
+    };
+    rafId = window.requestAnimationFrame(tick);
+
+    const stopRaf = window.setTimeout(() => {
+      window.cancelAnimationFrame(rafId);
+      rafId = 0;
+      calc();
+    }, 1200);
+    timers.push(stopRaf);
+
+    return () => {
+      disposed = true;
+      timers.forEach((t) => window.clearTimeout(t));
+      if (rafId) window.cancelAnimationFrame(rafId);
+      imgUnsubs.forEach((fn) => fn());
+      mo?.disconnect?.();
+      ro?.disconnect?.();
+      window.removeEventListener("resize", onResize);
+      window.visualViewport?.removeEventListener?.("resize", onResize);
+      window.visualViewport?.removeEventListener?.("scroll", onResize);
+    };
+  }, [isCompact, esPortada, location.pathname]);
+
   return (
     <div
       ref={rootRef}
@@ -429,6 +588,7 @@ const TiendaLayout = () => {
         isCompact ? "is-compact" : "",
         isCompact ? "is-mobile" : "is-desktop",
       ].join(" ")}
+      style={{ "--fitScale": fitScale }}
     >
       {mostrarLogin && <TiendaModalJugador onConfirmar={confirmarNombre} onCerrar={() => setMostrarLogin(false)} />}
 
@@ -449,30 +609,37 @@ const TiendaLayout = () => {
       <main className="tienda-layout-main">
         <section className="tienda-layout-left">
           <div className="tienda-shelf-frame">
-            <div className={"tienda-shelf-inner " + (esPortada ? "tienda-shelf-portada" : "tienda-shelf-contenido")}>
-              <Routes>
-                <Route
-                  path="/"
-                  element={
-                    <TiendaStorefront
-                      carrito={carrito}
-                      toggleProducto={toggleProducto}
-                      onAgregar={agregar}
-                      onCambiarCantidad={cambiarCantidad}
-                      onSetCantidad={setCantidad}
-                      monedaSeleccionada={currencyUpper}
-                      fx={fx}
+            <div
+              ref={shelfInnerRef}
+              className={"tienda-shelf-inner " + (esPortada ? "tienda-shelf-portada" : "tienda-shelf-contenido")}
+            >
+              <div className="tienda-shelf-fit">
+                <div className="tienda-shelf-fitInner">
+                  <Routes>
+                    <Route
+                      path="/"
+                      element={
+                        <TiendaStorefront
+                          carrito={carrito}
+                          toggleProducto={toggleProducto}
+                          onAgregar={agregar}
+                          onCambiarCantidad={cambiarCantidad}
+                          onSetCantidad={setCantidad}
+                          monedaSeleccionada={currencyUpper}
+                          fx={fx}
+                        />
+                      }
                     />
-                  }
-                />
 
-                <Route path="/rangos" element={<Navigate to="/tienda" replace />} />
-                <Route path="/gens" element={<Navigate to="/tienda" replace />} />
-                <Route path="/oneblock" element={<Navigate to="/tienda" replace />} />
-                <Route path="/survival" element={<Navigate to="/tienda" replace />} />
-                <Route path="/antes-de-comprar" element={<Navigate to="/tienda" replace />} />
-                <Route path="/:server/:categoria/*" element={<Navigate to="/tienda" replace />} />
-              </Routes>
+                    <Route path="/rangos" element={<Navigate to="/tienda" replace />} />
+                    <Route path="/gens" element={<Navigate to="/tienda" replace />} />
+                    <Route path="/oneblock" element={<Navigate to="/tienda" replace />} />
+                    <Route path="/survival" element={<Navigate to="/tienda" replace />} />
+                    <Route path="/antes-de-comprar" element={<Navigate to="/tienda" replace />} />
+                    <Route path="/:server/:categoria/*" element={<Navigate to="/tienda" replace />} />
+                  </Routes>
+                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -519,7 +686,7 @@ const TiendaLayout = () => {
               distinctCount === 0 ? "is-empty" : "has-items",
               badgePop ? "is-pop" : "",
             ].join(" ")}
-            onClick={openDrawer}
+            onClick={() => setCartOpenMobile(true)}
             disabled={totalQty === 0}
             data-basket-anchor="compact"
             aria-label={totalQty === 0 ? "Carrito vacío" : `Abrir compra. ${totalQty} artículos, total ${totalFormatted}`}
@@ -543,7 +710,12 @@ const TiendaLayout = () => {
           {cartOpenMobile &&
             createPortal(
               <div className="tienda-cartDrawer" role="dialog" aria-modal="true" aria-label="Carrito">
-                <button type="button" className="tcd-backdrop" aria-label="Cerrar carrito" onClick={() => setCartOpenMobile(false)} />
+                <button
+                  type="button"
+                  className="tcd-backdrop"
+                  aria-label="Cerrar carrito"
+                  onClick={() => setCartOpenMobile(false)}
+                />
 
                 <div className="tcd-sheet" role="document">
                   <div className="tcd-grab" aria-hidden="true" />

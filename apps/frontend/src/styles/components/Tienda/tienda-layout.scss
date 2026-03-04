@@ -1,8 +1,17 @@
-/* ======================================================================
-   src/styles/components/Tienda/tienda-layout.scss
-   (SIN sticky: barra inferior + drawer viven en tienda-layout-sticky.scss)
-   ====================================================================== */
 @use "../../base/_variables" as *;
+
+.tienda-layout,
+.tienda-root,
+.tienda-page {
+  overflow-x: hidden;
+}
+
+html.tienda,
+body.tienda {
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
 
 @keyframes shelfExpandIn {
   0% { transform: translateY(18px) scale(0.9); opacity: 0; filter: blur(1px) saturate(0.92); }
@@ -12,10 +21,19 @@
 
 .tienda-layout {
   --r: 3px;
-  --sidebar-w: clamp(300px, 26vw, 360px);
 
-  --top-offset: var(--navH, var(--app-header-h, 0px));
-  --footer-visible-h: 0px;
+  --sidebar-w: clamp(320px, 24vw, 420px);
+
+  --pad-x: clamp(14px, 2.2vw, 22px);
+  --pad-y: clamp(12px, 2.0vw, 20px);
+  --gap-x: clamp(14px, 2vw, 22px);
+
+  --top-offset: var(--navH, var(--app-header-h, 65px));
+--footer-peek: var(--tienda-footer-peek, 20px);
+--footer-safe: max(var(--footer-peek), env(safe-area-inset-bottom));
+--footer-visible-h: var(--tienda-footer-visible, var(--footer-safe));  
+--vh: var(--vvh, 100vh);
+  --available-h: calc(var(--vh) - var(--top-offset));
 
   position: relative;
   display: flex;
@@ -24,14 +42,13 @@
   background-color: #050302;
   color: #fbe8c5;
 
-  height: calc(100dvh - var(--top-offset));
-  min-height: calc(100dvh - var(--top-offset));
-
+  height: var(--available-h);
+  min-height: var(--available-h);
   overflow: hidden;
-  overflow-x: clip;
+
+  isolation: isolate;
 }
 
-/* Fondo taberna */
 .tienda-layout::before {
   content: "";
   position: absolute;
@@ -42,9 +59,6 @@
   z-index: 0;
 }
 
-/* =========================================================
-   MAIN (DESKTOP BASE)
-   ========================================================= */
 .tienda-layout-main {
   position: relative;
   z-index: 1;
@@ -57,39 +71,43 @@
   grid-template-columns: minmax(0, 1fr) var(--sidebar-w);
   column-gap: var(--gap-x);
 
-  padding: var(--pad-y) var(--pad-x);
-  padding-bottom: calc(var(--pad-y) + var(--footer-visible-h));
+  padding: 0;
   box-sizing: border-box;
 
   overflow: hidden;
 }
 
-/* LEFT */
 .tienda-layout-left {
   min-width: 0;
   min-height: 0;
   display: flex;
   overflow: hidden;
+
+  padding: var(--pad-y) 0 calc(var(--pad-y) + var(--footer-visible-h)) var(--pad-x);
+  box-sizing: border-box;
 }
 
 .tienda-shelf-frame {
   flex: 1;
   min-width: 0;
   min-height: 0;
-
   display: flex;
   padding: 0;
   background: transparent;
   box-sizing: border-box;
-
   justify-content: stretch;
   align-items: stretch;
+  overflow: hidden;
 }
 
 .tienda-shelf-inner {
   width: 100%;
   min-width: 0;
   min-height: 0;
+  display: flex;
+  justify-content: stretch;
+  align-items: stretch;
+  overflow: hidden;
   transition: max-width 260ms ease, transform 260ms ease, filter 260ms ease, opacity 260ms ease;
 }
 
@@ -97,18 +115,8 @@
   max-width: 100%;
   height: 100%;
   min-height: 0;
-
   overflow: hidden;
   padding: 0;
-
-  display: flex;
-  justify-content: stretch;
-  align-items: stretch;
-}
-
-.tienda-layout.is-portada .tienda-shelf-inner > * {
-  flex: 1;
-  min-height: 0;
 }
 
 .tienda-layout.is-contenido .tienda-shelf-inner {
@@ -121,13 +129,40 @@
   animation: shelfExpandIn 520ms cubic-bezier(0.2, 0.9, 0.2, 1) both;
 }
 
-/* SIDEBAR (desktop) */
+.tienda-shelf-fit {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+  display: grid;
+  place-items: start center;
+}
+
+.tienda-shelf-fitInner {
+  width: 100%;
+  min-width: 0;
+  transform-origin: top center;
+}
+
+.tienda-layout.is-desktop.is-portada .tienda-shelf-fitInner {
+  transform: scale(var(--fitScale, 1));
+}
+
+.tienda-layout.is-desktop.is-portada .tienda-shelf-fitInner {
+  width: calc(100% / var(--fitScale, 1));
+}
+
 .tienda-layout-sidebar {
   min-width: 0;
   min-height: 0;
   display: flex;
   justify-content: flex-end;
   align-items: stretch;
+  overflow: hidden;
+
+  padding: 0 0 calc(var(--footer-visible-h) + 60px) 0;
+  box-sizing: border-box;
 }
 
 .tienda-sidebar-card {
@@ -141,47 +176,41 @@
 
   box-sizing: border-box;
   border-radius: var(--r);
-  padding: 0.5rem 0rem 1.5rem;
+  padding: 0;
 
   box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.7), 0 18px 40px rgba(0, 0, 0, 0.95);
-  overflow: visible;
 
   display: flex;
   flex-direction: column;
+
+  overflow: hidden;
 }
 
 .tienda-cart-wrap {
   position: relative;
   flex: 1;
   min-height: 0;
-
+  height: 100%;
   display: flex;
   flex-direction: column;
-  height: 100%;
+  overflow: hidden;
 }
 
 .tienda-cart-wrap .carrito-lateral {
   flex: 1;
   min-height: 0;
-  display: block;
+  height: 100%;
+  display: flex;
+  overflow: hidden;
 }
 
-/* =========================================================
-   COMPACT MODE (a prueba de 1024x600 y tablets raras)
-   - 1 columna
-   - scroll natural (sin overflow hidden)
-   - sin sidebar
-   - deja hueco para la barra inferior
-   ========================================================= */
 .tienda-layout.is-compact {
   --sidebar-w: 0px;
 
-  /* en compact queremos scroll natural */
   height: auto;
-  min-height: calc(100dvh - var(--top-offset));
+  min-height: calc(var(--vh) - var(--top-offset));
   overflow: visible;
 
-  /* padding general más “universal” (tablets + landscape bajas) */
   --pad-x: clamp(10px, 2vw, 18px);
   --pad-y: clamp(10px, 1.6vw, 16px);
   --gap-x: clamp(12px, 2vw, 18px);
@@ -201,7 +230,6 @@
   flex-direction: column;
   gap: clamp(8px, 2.0vw, 14px);
 
-  /* hueco para la barra inferior (sticky) */
   padding: var(--pad-y) var(--pad-x) calc(var(--pad-y) + 84px);
 }
 
@@ -210,27 +238,31 @@
 }
 
 .tienda-layout.is-compact .tienda-layout-left {
+padding: var(--pad-y) 0 calc(var(--pad-y) + var(--footer-visible-h) + 12px) var(--pad-x);  overflow: visible;
+}
+
+.tienda-layout.is-compact .tienda-shelf-frame,
+.tienda-layout.is-compact .tienda-shelf-inner,
+.tienda-layout.is-compact .tienda-shelf-fit {
   overflow: visible;
 }
 
-.tienda-layout.is-compact .tienda-shelf-frame {
-  justify-content: stretch;
+.tienda-layout.is-compact .tienda-shelf-fitInner {
+  transform: none;
+  width: 100%;
 }
 
 .tienda-layout.is-compact .tienda-shelf-inner {
   width: 100%;
   max-width: 100%;
   height: auto;
-  overflow: visible;
   padding: 0;
 }
 
 .tienda-layout.is-compact.is-contenido .tienda-shelf-inner {
   height: auto;
-  overflow: visible;
 }
 
-/* Tebex embed a ancho completo en compact */
 .tienda-layout.is-compact .tienda-shelf-inner .tienda-tebex {
   width: 100%;
   max-width: 100%;
@@ -248,9 +280,6 @@
   box-sizing: border-box;
 }
 
-/* =========================================================
-   TABLET (<= 1024) - si NO está en compact (por si lo usas en otro sitio)
-   ========================================================= */
 @media (max-width: 1024px) {
   .tienda-layout {
     --gap-x: clamp(12px, 2vw, 18px);
@@ -261,27 +290,15 @@
   .tienda-layout-main {
     grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
   }
-
-  .tienda-layout-sidebar {
-    align-items: flex-start;
-  }
-
-  .tienda-sidebar-card {
-    height: calc(100dvh - var(--top-offset) - (var(--pad-y) * 2));
-    max-height: calc(100dvh - var(--top-offset) - (var(--pad-y) * 2));
-    align-self: flex-start;
-    position: sticky;
-    top: calc(var(--top-offset) + var(--pad-y));
-  }
 }
 
-/* =========================================================
-   MOBILE (<= 768)
-   - Solo detalles finos encima de compact
-   ========================================================= */
 @media (max-width: 767.98px) {
+  html.tienda,
+  body.tienda {
+    overflow: auto;
+  }
+
   .tienda-layout.is-compact {
-    --m-gutter: 0px;
     --pad-x: 0px;
     --pad-y: clamp(6px, 2vw, 10px);
     --gap-x: 0px;
@@ -292,16 +309,12 @@
   }
 }
 
-/* micro-ajuste móvil pequeño */
 @media (max-width: 479.98px) {
   .tienda-layout.is-compact .tienda-layout-main {
     padding-bottom: calc(var(--pad-y) + 84px);
   }
 }
 
-/* =========================================================
-   FLY-TO-BASKET: no debe afectar layout
-   ========================================================= */
 .tienda-fly-layer {
   position: fixed;
   inset: 0;
@@ -325,4 +338,47 @@
   0% { transform: translate3d(0, 0, 0) scale(1); opacity: 0.95; }
   55% { transform: translate3d(calc(var(--dx) * 0.65), calc(var(--dy) * 0.65), 0) scale(0.9); opacity: 1; }
   100% { transform: translate3d(var(--dx), var(--dy), 0) scale(0.2); opacity: 0; }
+}
+@media (max-width: 767.98px) {
+  html.tienda,
+  body.tienda {
+    height: auto !important;
+    min-height: 100% !important;
+    overflow: auto !important;
+    overscroll-behavior: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .tienda-layout,
+  .tienda-layout-main,
+  .tienda-layout-left,
+  .tienda-shelf-frame,
+  .tienda-shelf-inner,
+  .tienda-shelf-fit {
+    overflow: visible !important;
+    height: auto !important;
+    min-height: 0 !important;
+  }
+
+  .tienda-layout.is-compact {
+    height: auto !important;
+    min-height: 100dvh !important;
+  }
+
+  .tienda-layout.is-compact .tienda-layout-main {
+    overflow: visible !important;
+  }
+
+  .tienda-layout.is-compact .tienda-layout-left {
+    padding: var(--pad-y) 0 calc(var(--pad-y) + 84px + env(safe-area-inset-bottom)) var(--pad-x) !important;
+  }
+
+  .tienda-shelf-fit {
+    display: block !important;
+    place-items: initial !important;
+  }
+
+  .tienda-shelf-fitInner {
+    width: 100% !important;
+  }
 }

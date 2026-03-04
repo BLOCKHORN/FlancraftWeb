@@ -1,805 +1,383 @@
 @use "./mixins" as *;
 
-@media (hover: none) and (pointer: coarse) {
-  .tienda-storefront.tsf-brawl2,
-  .tienda-storefront.tsf-brawl2 * {
-    -webkit-tap-highlight-color: transparent;
-    -webkit-touch-callout: none;
-  }
+.tienda-storefront.tsf-brawl2 {
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-t: env(safe-area-inset-top, 0px);
+  --safe-l: env(safe-area-inset-left, 0px);
+  --safe-r: env(safe-area-inset-right, 0px);
 
+  --scroll-pad-b: calc(12px + var(--safe-b));
+}
+
+.tienda-storefront.tsf-brawl2,
+.tienda-storefront.tsf-brawl2 .tsf-scroll,
+.tienda-storefront.tsf-brawl2 .tsf-content {
+  min-height: 0;
+  min-width: 0;
+}
+
+.tienda-storefront.tsf-brawl2 .tsf-scroll {
+  flex: 1 1 auto;
+  height: auto;
+  max-height: none;
+  overflow-y: auto;
+  overflow-x: clip;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  touch-action: pan-y;
+  position: relative;
+  z-index: 1;
+}
+
+@media (min-width: 1400px) {
   .tienda-storefront.tsf-brawl2 {
-    user-select: none;
-    -webkit-user-select: none;
+    --ui-scale-w: clamp(.78, calc(100vw / 1520), 1);
+    --ui-scale-h: clamp(.78, calc(100vh / 900), 1);
+    --ui-scale: clamp(.80, min(var(--ui-scale-w), var(--ui-scale-h)), 1);
+
+    --content-pad: clamp(16px, 1.6vw, 44px);
+    --content-max: min(calc(98rem * var(--ui-scale)), calc(100vw - (var(--content-pad) * 2)));
+    --content-max-ranks: min(calc(106rem * var(--ui-scale)), calc(100vw - (var(--content-pad) * 2)));
+
+    --rank-size: calc(clamp(14.6rem, 18vw, 18.4rem) * var(--ui-scale));
+    --coin-w: calc(clamp(9.8rem, 9.6vw, 11.0rem) * var(--ui-scale));
+    --coin-gap: calc(clamp(.95rem, 1.15vw, 1.55rem) * var(--ui-scale));
   }
 
-  .tienda-storefront.tsf-brawl2 input,
-  .tienda-storefront.tsf-brawl2 textarea {
-    user-select: text;
-    -webkit-user-select: text;
-    -webkit-touch-callout: default;
-  }
-
-  .tienda-storefront.tsf-brawl2 button,
-  .tienda-storefront.tsf-brawl2 [role="button"],
-  .tienda-storefront.tsf-brawl2 a {
-    user-select: none;
-    -webkit-user-select: none;
-    outline: none;
-  }
-
-  .tienda-storefront.tsf-brawl2 button:focus:not(:focus-visible),
-  .tienda-storefront.tsf-brawl2 [role="button"]:focus:not(:focus-visible),
-  .tienda-storefront.tsf-brawl2 a:focus:not(:focus-visible) {
-    outline: none !important;
+  .tienda-storefront.tsf-brawl2 .tsf-coinsGrid.tsf-coinsGrid--linear4 {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 }
 
-/* =========================
-   Fix crítico: pantallas bajas
-   (laptop con barra, zoom, 1366x768, etc.)
-   ========================= */
-@media (max-height: 760px) {
+@media (max-width: 1280px) {
   .tienda-storefront.tsf-brawl2 {
-    --ui-scale-h: clamp(0.74, calc(100vh / 760), 0.98);
-    --ui-scale: clamp(0.76, min(var(--ui-scale-w), var(--ui-scale-h)), 0.98);
+    --content-pad: clamp(12px, 2.0vw, 30px);
 
-    --tsf-topPad: clamp(0.65rem, 1.6vw, 1.35rem);
-    --gap-base: clamp(0.70rem, 0.95vw, 1.10rem);
-    --content-pad: clamp(8px, 1.2vw, 16px);
+    --ui-scale-w: clamp(.76, calc(100vw / 1280), 1);
+    --ui-scale-h: clamp(.76, calc(100vh / 820), 1);
+    --ui-scale: clamp(.78, min(var(--ui-scale-w), var(--ui-scale-h)), 1);
+
+    --rank-size: calc(clamp(13.0rem, 22vw, 16.8rem) * var(--ui-scale));
+    --coin-w: calc(clamp(9.2rem, 11.0vw, 10.5rem) * var(--ui-scale));
+    --coin-gap: calc(clamp(.82rem, 1.25vw, 1.40rem) * var(--ui-scale));
+
+    --panel-pad-x: clamp(16px, 2.0vw, 30px);
+    --panel-pad-top: clamp(70px, 6.8vw, 92px);
+    --panel-pad-bot: clamp(18px, 2.0vw, 30px);
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-coinsGrid.tsf-coinsGrid--linear4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 980px) {
   .tienda-storefront.tsf-brawl2 {
-    --tsf-sign-w: clamp(170px, 26vw, 255px);
-    --tsf-sign-drop: clamp(-42px, -4.2vw, -26px);
-    --tsf-ranks-top: clamp(40px, 6.2vh, 72px);
-
-    /* En tablet suele quedar demasiado pequeño si usas scale por vh */
-    --ui-scale-w: clamp(0.78, calc(100vw / 1100), 0.98);
-    --ui-scale: clamp(0.78, min(var(--ui-scale-w), var(--ui-scale-h)), 0.98);
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-header--fixed {
-    top: env(safe-area-inset-top);
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-signImg {
-    width: var(--tsf-sign-w);
-    margin: 0 auto;
-    transform: translateY(var(--tsf-sign-drop));
-    transform-origin: top center;
-    filter: drop-shadow(0 10px 18px rgba(0,0,0,0.42));
-    pointer-events: none;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-signImg > img {
-    width: 100%;
-    height: auto;
-    display: block;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-ranks {
-    margin-top: var(--tsf-ranks-top);
-  }
-}
-
-@media (max-width: 1024px) and (max-height: 650px) {
-  .tienda-storefront.tsf-brawl2 {
-    --tsf-sign-w: clamp(160px, 24vw, 235px);
-    --tsf-sign-drop: clamp(-54px, -5.4vw, -34px);
-    --tsf-ranks-top: clamp(52px, 7.4vh, 92px);
-
-    --ui-scale-h: clamp(0.74, calc(100vh / 650), 0.92);
-    --ui-scale: clamp(0.76, min(var(--ui-scale-w), var(--ui-scale-h)), 0.94);
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-coinsHeader {
-    padding: 0.25rem 0 0.55rem;
-  }
-}
-
-@media (max-width: 768px) {
-  .tienda-storefront.tsf-brawl2 {
-    --tsf-sign-w: clamp(160px, 44vw, 230px);
-    --tsf-sign-drop: clamp(-48px, -5.2vw, -30px);
-    --tsf-ranks-top: clamp(92px, 10vh, 128px);
-
-    /* móvil: no queremos que sea microscópico */
-    --ui-scale-w: clamp(0.90, calc(100vw / 520), 1.00);
-    --ui-scale-h: clamp(0.86, calc(100vh / 820), 1.00);
-    --ui-scale: clamp(0.90, min(var(--ui-scale-w), var(--ui-scale-h)), 1.00);
-
-    --content-pad: clamp(10px, 3.2vw, 18px);
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-ranks {
-    margin-top: var(--tsf-ranks-top);
-  }
-}
-
-@media (max-width: 480px) {
-  .tienda-storefront.tsf-brawl2 {
-    --tsf-sign-w: clamp(145px, 54vw, 205px);
-    --tsf-sign-drop: clamp(-46px, -5.6vw, -30px);
-
-    --ui-scale-w: 1;
-    --ui-scale-h: 1;
-    --ui-scale: 1;
-
-    --gap-base: clamp(0.85rem, 3.2vw, 1.15rem);
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-signImg {
-    filter: drop-shadow(0 9px 16px rgba(0,0,0,0.44));
-  }
-}
-
-@media (max-width: 360px) {
-  .tienda-storefront.tsf-brawl2 {
-    --tsf-sign-w: clamp(135px, 60vw, 190px);
-    --tsf-sign-drop: clamp(-44px, -6.0vw, -30px);
-  }
-}
-
-@media (max-width: 1024px) {
-  .tienda-storefront.tsf-brawl2 {
-    --rank-size: clamp(170px, 22vw, 240px);
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-ranksRow {
-    gap: 14px;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-rankLabel {
-    top: clamp(-0.45rem, -1.2vw, -1.05rem);
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-ctaSplitValue {
-    font-size: 0.98rem;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-ctaCoinIcon {
-    width: 16px;
-    height: 16px;
-  }
-}
-
-@media (max-width: 768px) {
-  .tienda-storefront.tsf-brawl2 .tsf-ranksRow {
-    grid-template-columns: 1fr;
-    justify-items: center;
-    gap: 28px;
-  }
-
-  .tienda-storefront.tsf-brawl2 {
-    --rank-size: min(86vw, 320px);
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-rank {
-    max-width: var(--rank-size);
-
-    --cta-height: 38px;
-    --cta-bottom: 6.5%;
-    --cta-tilt: -2.5deg;
-    --cta-inset-x: -6%;
-    --cta-inset-y: -8%;
-
-    --m-label-top: -0.95rem;
-    --m-perma-offset: 2.20rem;
-
-    --m-square-lift: 10px;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-rankLabel {
-    top: var(--m-label-top);
-    display: grid;
-    justify-items: center;
-    line-height: 1;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-rankTop {
-    font-size: 0.90rem;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-rankName {
-    font-size: 1.78rem;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-perma {
-    left: 50%;
-    top: calc(var(--m-label-top) + var(--m-perma-offset));
-    transform: translateX(-50%);
-    z-index: 7;
-    opacity: 1;
-    pointer-events: none;
-    font-size: 1.02rem;
-    line-height: 1;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-square {
-    margin-top: calc(16px - var(--m-square-lift));
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-squareCta {
-    bottom: calc(var(--cta-bottom) - 0.3%);
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-ctaSplitValue {
-    font-size: 1.02rem;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-ctaCoinIcon {
-    width: 18px;
-    height: 18px;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-best {
-    top: -0.45rem;
-    right: -0.45rem;
-    font-size: 0.72rem;
-    padding: 0.42rem 0.64rem 0.40rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .tienda-storefront.tsf-brawl2 {
-    --rank-size: min(90vw, 300px);
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-rank {
-    --cta-height: 36px;
-    --cta-bottom: 6%;
-    --cta-tilt: -2.25deg;
-
-    --m-label-top: -0.90rem;
-    --m-perma-offset: 2.10rem;
-    --m-square-lift: 8px;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-rankName {
-    font-size: 1.65rem;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-perma {
-    font-size: 0.98rem;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-ctaSplitValue {
-    font-size: 0.98rem;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-square {
-    margin-top: calc(16px - var(--m-square-lift));
-  }
-}
-
-@media (max-width: 360px) {
-  .tienda-storefront.tsf-brawl2 {
-    --rank-size: 94vw;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-rank {
-    --cta-height: 34px;
-    --cta-bottom: 5.5%;
-
-    --m-label-top: -0.88rem;
-    --m-perma-offset: 2.05rem;
-    --m-square-lift: 7px;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-rankName {
-    font-size: 1.55rem;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-perma {
-    font-size: 0.94rem;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-ctaSplitCoins {
-    gap: 5px;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-ctaCoinIcon {
-    width: 16px;
-    height: 16px;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-square {
-    margin-top: calc(16px - var(--m-square-lift));
-  }
-}
-
-@media (max-width: 1024px) {
-  .tienda-storefront.tsf-brawl2 .tsf-coinsHeader {
-    padding: 0.35rem 0 0.75rem;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-tabs {
-    gap: 0.6rem;
-    margin-top: 0.25rem;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-tab {
-    padding: 0.6rem 0.9rem;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-tabIcon {
-    width: 1.65rem;
-    height: 1.65rem;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-tabText {
-    font-size: 0.98rem;
-    padding-right: 1.0rem;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-orb {
-    right: 0.78rem;
-    width: 0.72rem;
-    height: 0.72rem;
-  }
-}
-
-@media (max-width: 768px) {
-  .tienda-storefront.tsf-brawl2 .tsf-coinsHeader {
-    padding: 0.25rem 0 0.65rem;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-tabsStack {
-    gap: 0.45rem;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-tabs {
-    width: min(96vw, 520px);
-    justify-content: center;
-    gap: 0.5rem;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-tab {
-    min-width: 0;
-    flex: 1 1 0;
-    padding: 0.56rem 0.72rem;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-tabIcon {
-    width: 1.45rem;
-    height: 1.45rem;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-tabText {
-    font-size: 0.92rem;
-    padding-right: 0.85rem;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-tabBadge {
-    top: -0.5rem;
-    left: 0.45rem;
-    font-size: 0.68rem;
-    padding: 0.30rem 0.48rem 0.28rem;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-orb {
-    right: 0.62rem;
-    width: 0.66rem;
-    height: 0.66rem;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-openShopBtn {
-    margin-inline: 0.25rem;
-    flex: 0 0 auto;
-  }
-}
-
-@media (max-width: 480px) {
-  .tienda-storefront.tsf-brawl2 .tsf-tabs {
-    width: 94vw;
-    gap: 0.45rem;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-tab {
-    padding: 0.52rem 0.62rem;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-tabText {
-    font-size: 0.88rem;
-    padding-right: 0.78rem;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-tabIcon {
-    width: 1.35rem;
-    height: 1.35rem;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-orb {
-    right: 0.56rem;
-  }
-}
-
-@media (max-width: 360px) {
-  .tienda-storefront.tsf-brawl2 .tsf-tabs {
-    width: 96vw;
-    gap: 0.4rem;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-tab {
-    padding: 0.5rem 0.55rem;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-tabText {
-    font-size: 0.84rem;
-    padding-right: 0.72rem;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-tabIcon {
-    width: 1.28rem;
-    height: 1.28rem;
-  }
-}
-
-@media (max-width: 1024px) {
-  .tienda-storefront.tsf-brawl2 {
-    --coin-gap: 14px;
+    --content-pad: clamp(12px, 2.4vw, 24px);
+
+    --ui-scale-w: clamp(.86, calc(100vw / 980), 1);
+    --ui-scale-h: clamp(.82, calc(100vh / 760), 1);
+    --ui-scale: clamp(.86, min(var(--ui-scale-w), var(--ui-scale-h)), 1);
+
+    --rank-size: calc(clamp(12.6rem, 30vw, 15.2rem) * var(--ui-scale));
+    --coin-w: calc(clamp(9.0rem, 16vw, 9.8rem) * var(--ui-scale));
+    --coin-gap: calc(clamp(.78rem, 1.9vw, 1.22rem) * var(--ui-scale));
+
+    --panel-pad-x: clamp(14px, 2.4vw, 22px);
+    --panel-pad-top: clamp(64px, 8.8vw, 84px);
+    --panel-pad-bot: clamp(16px, 2.8vw, 24px);
   }
 
   .tienda-storefront.tsf-brawl2 .tsf-coinsGrid.tsf-coinsGrid--linear4 {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    align-items: start;
   }
 
-  .tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily {
-    grid-column: 1 / -1;
-    justify-self: center;
-    width: min(100%, 920px);
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily .tsf-coinFrame {
-    aspect-ratio: 720 / 260;
+  .tienda-storefront.tsf-brawl2 .tsf-coinsPanelTitle {
+    font-size: clamp(1.0rem, 2.0vw, 1.18rem);
   }
 }
 
+
+@media (max-width: 420px) {
+  .tienda-storefront.tsf-brawl2 {
+    padding-left: calc(max(10px, var(--safe-l)));
+    padding-right: calc(max(10px, var(--safe-r)));
+    padding-top: calc(10px + var(--safe-t));
+    padding-bottom: 0;
+
+    --rank-size: clamp(290px, 92vw, 410px);
+    --coin-w: min(320px, 92vw);
+    --coin-gap: clamp(.62rem, 3.6vw, .95rem);
+
+    --panel-pad-x: clamp(10px, 4.2vw, 14px);
+    --panel-pad-top: clamp(58px, 14.0vw, 72px);
+    --panel-pad-bot: clamp(14px, 4.2vw, 18px);
+
+    --cta-height: 42px;
+
+    --scroll-pad-b: calc(10px + var(--safe-b));
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-ranksRow {
+    gap: 12px;
+    max-width: 100%;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-rankName {
+    font-size: clamp(2.00rem, 9.2vw, 2.50rem);
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-coinsGrid.tsf-coinsGrid--linear4 {
+    grid-template-columns: 1fr;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily {
+    grid-column: auto;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-coinFrame {
+    aspect-ratio: 168 / 238;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily .tsf-coinFrame {
+    aspect-ratio: 168 / 196;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-coinArtBtn {
+    top: 54px;
+    bottom: 96px;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily .tsf-coinArtBtn {
+    top: 46px;
+    bottom: 80px;
+  }
+}
+
+@media (max-width: 360px) {
+  .tienda-storefront.tsf-brawl2 {
+    --rank-size: clamp(280px, 94vw, 400px);
+    --cta-height: 44px;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-ctaSplitValue {
+    font-size: .98rem;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-ctaCoinIcon {
+    width: 16px;
+    height: 16px;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-coinsPanelHeaderInner {
+    --pshop: 40px;
+    padding: 9px 8px;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 520px) and (max-width: 980px) {
+  .tienda-storefront.tsf-brawl2 {
+    height: 100dvh;
+    min-height: 100dvh;
+    padding-top: calc(8px + var(--safe-t));
+    padding-bottom: 0;
+
+    --scroll-pad-b: calc(10px + var(--safe-b));
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-ranks {
+    margin-top: 6px;
+    margin-bottom: 12px;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-coinsPanel {
+    --panel-pad-top: 56px;
+  }
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .tienda-storefront.tsf-brawl2,
+  .tienda-storefront.tsf-brawl2 * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-coinWrap,
+  .tienda-storefront.tsf-brawl2 .tsf-rank {
+    transform: none;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-coinWrap:hover,
+  .tienda-storefront.tsf-brawl2 .tsf-rank:hover,
+  .tienda-storefront.tsf-brawl2 .tsf-buyBtn:hover,
+  .tienda-storefront.tsf-brawl2 .tsf-openShopBtn:hover {
+    transform: none;
+    filter: none;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-buyBtn:active {
+    transform: translateY(2px);
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-openShopBtn:active {
+    transform: translateY(-1px) scale(1.02);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tienda-storefront.tsf-brawl2 .tsf-scroll {
+    scroll-behavior: auto;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-coinWrap,
+  .tienda-storefront.tsf-brawl2 .tsf-rank,
+  .tienda-storefront.tsf-brawl2 .tsf-coinImg,
+  .tienda-storefront.tsf-brawl2 .tsf-openShopInner,
+  .tienda-storefront.tsf-brawl2 .tsf-openShopInner::after {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .tienda-storefront.tsf-brawl2.is-ready .tsf-rank,
+  .tienda-storefront.tsf-brawl2.is-ready .tsf-coinsGrid.is-in .tsf-coinWrap {
+    animation: none !important;
+    opacity: 1 !important;
+    filter: none !important;
+    transform: none !important;
+  }
+}
 @media (max-width: 768px) {
   .tienda-storefront.tsf-brawl2 {
-    --coin-gap: 12px;
+    --safe-b: env(safe-area-inset-bottom, 0px);
+    --safe-t: env(safe-area-inset-top, 0px);
+    --safe-l: env(safe-area-inset-left, 0px);
+    --safe-r: env(safe-area-inset-right, 0px);
+
+    /* altura real de la barra sticky inferior (ajústala si tu barra es más alta) */
+    --sticky-h: 78px;
+
+    /* padding top del wrapper */
+    --pad-top: 12px;
+
+    /* padding horizontal */
+    --pad-x: 12px;
+
+    /* aire extra para que el último card respire */
+    --tail: 18px;
+
+    /* mata el escalado del hook en móvil */
+    --ui-scale: 1 !important;
+    --ui-scale-w: 1 !important;
+    --ui-scale-h: 1 !important;
+
+    height: 100dvh;
+    min-height: 100dvh;
+    overflow: hidden;
+    border-radius: 0;
+
+    padding-top: calc(var(--pad-top) + var(--safe-t));
+    padding-left: calc(max(var(--pad-x), var(--safe-l)));
+    padding-right: calc(max(var(--pad-x), var(--safe-r)));
+    padding-bottom: 0;
+
+    --rank-size: clamp(300px, 88vw, 420px);
+    --coin-gap: clamp(.72rem, 3.0vw, 1.05rem);
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-scroll {
+    height: calc(
+      100dvh
+      - (var(--pad-top) + var(--safe-t))
+      - (var(--sticky-h) + var(--safe-b))
+    );
+    max-height: calc(
+      100dvh
+      - (var(--pad-top) + var(--safe-t))
+      - (var(--sticky-h) + var(--safe-b))
+    );
+
+    overflow-y: auto;
+    overflow-x: clip;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+
+    /* importante: margen para que el final no quede tapado por la barra */
+    padding-bottom: calc(var(--sticky-h) + var(--safe-b) + var(--tail));
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-content {
+    max-width: 100%;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-ranks {
+    margin-top: 10px;
+    margin-bottom: 18px;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-ranksRow {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    gap: 14px;
+    max-width: min(520px, 100%);
+    margin: 0 auto;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-rank {
+    width: 100%;
+    max-width: min(var(--rank-size), calc(100vw - (var(--pad-x) * 2) - var(--safe-l) - var(--safe-r)));
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-square {
+    transform: none;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-squareCta {
+    left: 0;
+    right: 0;
+    bottom: 5.6%;
+    width: min(92%, 520px);
+    margin: 0 auto;
+  }
+
+  .tienda-storefront.tsf-brawl2 .tsf-ctaSplit {
+    width: 100%;
+    height: 40px;
   }
 
   .tienda-storefront.tsf-brawl2 .tsf-coinsGrid.tsf-coinsGrid--linear4 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     align-items: start;
+    column-gap: var(--coin-gap);
+    row-gap: calc(var(--coin-gap) * 1.05);
   }
 
   .tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily {
     grid-column: 1 / -1;
-    justify-self: center;
-    width: min(100%, 560px);
   }
 
+  /* reduce gratis ~20% sin romperlo */
   .tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily .tsf-coinFrame {
-    aspect-ratio: 520 / 240;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-coinsGridWrap {
-    overflow: hidden;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-coinWrap {
-    transform:
-      perspective(900px)
-      rotateX(calc(var(--rx) * 0.55deg))
-      rotateY(calc(var(--ry) * 0.55deg))
-      translateZ(0);
-  }
-}
-
-@media (max-width: 768px) and (hover: none) and (pointer: coarse) {
-  .tienda-storefront.tsf-brawl2 .tsf-coinWrap:hover {
-    transform:
-      perspective(900px)
-      rotateX(calc(var(--rx) * 0.55deg))
-      rotateY(calc(var(--ry) * 0.55deg))
-      translateZ(0);
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-coinWrap:hover .tsf-coinFrame {
-    transform: translateZ(0);
-    filter: none;
-  }
-}
-
-@media (max-width: 480px) {
-  .tienda-storefront.tsf-brawl2 {
-    --coin-gap: 10px;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily {
-    width: 100%;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily .tsf-coinFrame {
-    aspect-ratio: 520 / 228;
+    aspect-ratio: 168 / 190;
   }
 }
 
 @media (max-width: 420px) {
+  .tienda-storefront.tsf-brawl2 {
+    --sticky-h: 82px;
+    --pad-top: 10px;
+    --pad-x: 10px;
+
+    --rank-size: clamp(290px, 92vw, 410px);
+  }
+
   .tienda-storefront.tsf-brawl2 .tsf-coinsGrid.tsf-coinsGrid--linear4 {
     grid-template-columns: 1fr;
   }
 
+  .tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily {
+    grid-column: auto;
+  }
+
   .tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily .tsf-coinFrame {
-    aspect-ratio: 520 / 220;
-  }
-}
-
-@media (max-width: 1024px) {
-  .tienda-storefront.tsf-brawl2 .tsf-coinsPanel {
-    --panel-pad-x: 14px;
-    --panel-pad-top: clamp(58px, 7vw, 70px);
-    --panel-pad-bot: 14px;
-    border-radius: 14px;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-coinsPanelHeader {
-    border-radius: 11px;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-coinsPanelTitle {
-    font-size: 1.10rem;
-    line-height: 1.12;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-coinsPanel .tsf-coinsGridWrap {
-    padding-top: 20px;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-coinQtyTop {
-    right: 9px;
-    top: 9px;
-    border-radius: 9px;
-    font-size: 1.05rem;
-  }
-}
-
-@media (max-width: 768px) {
-  .tienda-storefront.tsf-brawl2 .tsf-coinsPanel {
-    --panel-pad-x: 12px;
-    --panel-pad-top: 62px;
-    --panel-pad-bot: 12px;
-    border-radius: 12px;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-coinsPanelHeader {
-    border-radius: 10px;
-    padding: 9px 10px;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-coinsPanelTitle {
-    font-size: 1.06rem;
-    letter-spacing: 0.055em;
-    line-height: 1.14;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-coinsPanelTitleInner {
-    gap: 9px;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-coinsPanelTitleIcon {
-    width: 24px;
-    height: 24px;
-    border-radius: 7px;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-coinsPanel .tsf-coinsGridWrap {
-    padding-top: 22px;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-coinFrame {
-    aspect-ratio: 160 / 210;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-coinQtyTop {
-    right: 8px;
-    top: 8px;
-    padding: 0.18rem 0.46rem 0.16rem;
-    border-radius: 9px;
-    border-width: 3px;
-    font-size: 0.98rem;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-coinArtBtn {
-    top: 34px;
-    bottom: 60px;
-    border-radius: 12px;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-coinImg {
-    width: min(86%, 136px);
-    animation-duration: 2.6s;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-coinBand {
-    bottom: 33px;
-    height: 30px;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-coinBandText {
-    font-size: 0.76rem;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-coinBandIcon {
-    width: 0.98rem;
-    height: 0.98rem;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-buyBtn {
-    height: 40px;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-buyPrice {
-    font-size: 0.98rem;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-buyOld {
-    font-size: 0.74rem;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-buyQtyPill {
-    right: -0.28rem;
-    top: -0.28rem;
-    padding: 0.24rem 0.48rem 0.22rem;
-    font-size: 0.74rem;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-saleBadge {
-    right: -8px;
-    top: -12px;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-bestBadge {
-    left: -4px;
-    top: -16px;
-  }
-}
-
-@media (max-width: 480px) {
-  .tienda-storefront.tsf-brawl2 .tsf-coinsPanel {
-    --panel-pad-x: 10px;
-    --panel-pad-top: 60px;
-    --panel-pad-bot: 11px;
-    border-radius: 12px;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-coinsPanelTitle {
-    font-size: 1.02rem;
-    line-height: 1.14;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-coinsPanelTitleIcon {
-    width: 23px;
-    height: 23px;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-coinFrame {
-    aspect-ratio: 160 / 205;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-coinImg {
-    width: min(86%, 128px);
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-coinBand {
-    height: 29px;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-buyBtn {
-    height: 39px;
-  }
-}
-
-@media (max-width: 360px) {
-  .tienda-storefront.tsf-brawl2 .tsf-coinsPanel {
-    --panel-pad-x: 9px;
-    --panel-pad-top: 58px;
-    --panel-pad-bot: 10px;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-coinsPanelTitle {
-    font-size: 0.98rem;
-    line-height: 1.14;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-coinsPanelTitleIcon {
-    width: 22px;
-    height: 22px;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-coinsPanel .tsf-coinsGridWrap {
-    padding-top: 21px;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-coinFrame {
-    aspect-ratio: 160 / 198;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-coinQtyTop {
-    font-size: 0.92rem;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-buyPrice {
-    font-size: 0.94rem;
-  }
-}
-
-/* Daily card container rules (igual que tu base) */
-.tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily {
-  container-type: inline-size;
-}
-
-.tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily .tsf-coinFrame,
-.tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily .tsf-dailyInFrame,
-.tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily .dailyClaimCard,
-.tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily .dailyClaimCard__sheet,
-.tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily .dailyClaimCard__art {
-  overflow: visible !important;
-}
-
-.tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily .dailyClaimCard__sheet {
-  inset: clamp(40px, 10cqw, 52px) 12px clamp(34px, 9cqw, 52px) 12px;
-  padding: 16px 12px 10px;
-}
-
-.tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily .dailyClaimCard__art {
-  --dc-scale: 0.94;
-  --dc-lift: -4%;
-
-  --dc-front-w: clamp(105px, 38cqw, 150px);
-  --dc-back-w: clamp(98px, 35cqw, 140px);
-
-  --dc-back-x: -18%;
-  --dc-back-y: -10%;
-  --dc-front-x: 0%;
-  --dc-front-y: 0%;
-
-  --dc-back-rot: -12deg;
-  --dc-front-rot: 0deg;
-}
-
-@container (max-width: 360px) {
-  .tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily .dailyClaimCard__sheet {
-    inset: 44px 10px 34px 10px;
-    padding: 16px 10px 8px;
-  }
-
-  .tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily .dailyClaimCard__art {
-    --dc-scale: 0.92;
-    --dc-lift: -6%;
-
-    --dc-front-w: clamp(98px, 44cqw, 135px);
-    --dc-back-w: clamp(92px, 41cqw, 128px);
-
-    --dc-back-x: -20%;
-    --dc-back-y: -12%;
-  }
-}
-
-@container (min-width: 361px) and (max-width: 520px) {
-  .tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily .dailyClaimCard__art {
-    --dc-scale: 0.94;
-    --dc-lift: -4%;
-
-    --dc-front-w: clamp(108px, 36cqw, 148px);
-    --dc-back-w: clamp(100px, 33cqw, 138px);
-  }
-}
-
-@container (min-width: 521px) {
-  .tienda-storefront.tsf-brawl2 .tsf-coinWrap--daily .dailyClaimCard__art {
-    --dc-scale: 0.95;
-    --dc-lift: -3%;
-
-    --dc-front-w: clamp(125px, 24cqw, 155px);
-    --dc-back-w: clamp(118px, 22cqw, 148px);
-
-    --dc-back-x: -16%;
-    --dc-back-y: -9%;
+    aspect-ratio: 168 / 196;
   }
 }
