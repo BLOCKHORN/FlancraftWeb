@@ -494,18 +494,20 @@ export default function TiendaStorefront({ carrito, toggleProducto, onCambiarCan
       />
 
       {activeRank ? (
-        <RangosComparativaPanel
-          rankKey={activeRank}
-          onClose={closeRankDetails}
-          onPickRank={(rk) => setActiveRank(rk)}
-          rankCards={rankCards}
-          bust={activeData.bust}
-          onBuyEur={(pkg, ev) => handleBuyRank(pkg, ev)}
-          onBuyCoins={(pkg, ev) => {
-            ev?.stopPropagation?.();
-            openWalletModal(activeRank);
-          }}
-        />
+<RangosComparativaPanel
+  rankKey={activeRank}
+  onClose={closeRankDetails}
+  onPickRank={(rk) => setActiveRank(rk)}
+  rankCards={rankCards}
+  bust={activeData.bust}
+  rankWalletPrices={rankWalletPrices}
+  pricesLoaded={pricesLoaded}
+  onBuyEur={(pkg, ev) => handleBuyRank(pkg, ev)}
+  onBuyCoins={(pkg, ev, rk) => {
+    ev?.stopPropagation?.();
+    openWalletModal(rk);
+  }}
+/>
       ) : null}
 
       <div className="tsf-scroll">

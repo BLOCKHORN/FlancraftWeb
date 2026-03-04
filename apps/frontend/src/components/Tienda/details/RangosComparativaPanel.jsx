@@ -52,14 +52,7 @@ function TooltipPortal({ tip }) {
   if (!tip?.open) return null;
 
   return createPortal(
-    <div
-      className="tsf-rcTip"
-      role="tooltip"
-      style={{
-        left: `${tip.left}px`,
-        top: `${tip.top}px`,
-      }}
-    >
+    <div className="tsf-rcTip" role="tooltip" style={{ left: `${tip.left}px`, top: `${tip.top}px` }}>
       <div className="tsf-rcTip__bubble">
         <div className="tsf-rcTip__text">{tip.text}</div>
         <span className="tsf-rcTip__arrow" aria-hidden="true" />
@@ -78,12 +71,10 @@ const RANK_META = {
 };
 
 const SERVER_META = {
-  oneblock: { label: "Oneblock", icon: "/assets/reinos/oneblock.webp" },
-  gens: { label: "Gens", icon: "/assets/reinos/gens.webp" },
   survival: { label: "Survival", icon: "/assets/reinos/survival-clasico.webp" },
 };
 
-const SERVER_ORDER = ["oneblock", "gens", "survival"];
+const SERVER_ORDER = ["survival"];
 const RANKSKIN_IMG = "/tienda/assets/rankskin.png";
 const COINS_ICON = "/tienda/assets/coin.png";
 
@@ -97,7 +88,6 @@ const PERK_ICONS = {
   generators: `${PERK_BASE}/gens.webp`,
   homes: `${PERK_BASE}/homes.webp`,
   kit: `${PERK_BASE}/kitexclusivo.webp`,
-
   "cmd:/back": `${PERK_BASE}/back.webp`,
   "cmd:/disposal": `${PERK_BASE}/disposal.webp`,
   "cmd:/enderchest": `${PERK_BASE}/enderchest.webp`,
@@ -201,18 +191,13 @@ function canonicalizePerk(raw) {
     return { key: "kit", label: "Kit exclusivo", kind: "bool", value: true };
   }
 
-  return {
-    key: `txt:${t.replace(/\s+/g, " ").trim()}`,
-    label: txt,
-    kind: "bool",
-    value: true,
-  };
+  return { key: `txt:${t.replace(/\s+/g, " ").trim()}`, label: txt, kind: "bool", value: true };
 }
 
 function buildMatrixFromRangos(data) {
   const ranksObj = data || {};
-
   const serversSet = new Set();
+
   for (const rk of RANKS) {
     const r = ranksObj?.[rk];
     const sv = r?.servidores || r?.servers || {};
@@ -302,22 +287,6 @@ function fmtInt(n) {
   const v = Number(n);
   if (!Number.isFinite(v)) return "—";
   return new Intl.NumberFormat("es-ES", { maximumFractionDigits: 0 }).format(Math.round(v));
-}
-
-const COINS_PER_USD = 1000 / 6;
-
-function roundNiceCoins(n) {
-  const v = Number(n) || 0;
-  const step = 100;
-  return Math.max(0, Math.round(v / step) * step);
-}
-
-function coinsFromUsdDouble(usd) {
-  if (usd == null) return null;
-  const u = Number(usd);
-  if (!Number.isFinite(u) || u <= 0) return null;
-  const coins = u * 2 * COINS_PER_USD;
-  return roundNiceCoins(coins);
 }
 
 function Cell({ kind, value, rankKey, rowKey, onZoom }) {
@@ -410,11 +379,11 @@ function Cell({ kind, value, rankKey, rowKey, onZoom }) {
   );
 }
 
-function RankCardTop({ rk, pkg, bust, isActive, onPickRank, onBuyEur, onBuyCoins }) {
+function RankCardTop({ rk, pkg, bust, isActive, onPickRank, onBuyEur, onBuyCoins, walletCoinsPrice, pricesLoaded }) {
   const rm = RANK_META[rk] || { label: String(rk || "").toUpperCase(), cls: "" };
 
   const price = pkg ? getPackagePrice(pkg) : null;
-  const coinsPrice = price != null ? coinsFromUsdDouble(price) : null;
+  const coinsPrice = Number.isFinite(Number(walletCoinsPrice)) && Number(walletCoinsPrice) > 0 ? Number(walletCoinsPrice) : null;
 
   const imgRaw = pkg ? getPackageImage(pkg) : null;
   const img = imgRaw ? withCacheBust(imgRaw, bust) : null;
@@ -429,8 +398,8 @@ function RankCardTop({ rk, pkg, bust, isActive, onPickRank, onBuyEur, onBuyCoins
     const w = rect?.width ?? 0;
     const isLeft = w > 0 ? x <= w / 2 : true;
 
-    if (isLeft) return onBuyEur?.(pkg, ev);
-    return onBuyCoins?.(pkg, ev);
+    if (isLeft) return onBuyEur?.(pkg, ev, rk);
+    return onBuyCoins?.(pkg, ev, rk);
   };
 
   return (
@@ -450,7 +419,7 @@ function RankCardTop({ rk, pkg, bust, isActive, onPickRank, onBuyEur, onBuyCoins
         onClick={onSplitClick}
         disabled={!pkg}
         aria-label={`Comprar ${rm.label} (EUR o Coins)`}
-        title="Izquierda: EUR · Derecha: Coins"
+        title="Izquierda: EUR · Derecha: Wallet Coins"
         data-rk={rm.label}
       >
         <span className="tsf-rcRankTopCtaSide tsf-rcRankTopCtaSide--eur">
@@ -459,7 +428,7 @@ function RankCardTop({ rk, pkg, bust, isActive, onPickRank, onBuyEur, onBuyCoins
 
         <span className="tsf-rcRankTopCtaSide tsf-rcRankTopCtaSide--coins">
           <span className="tsf-rcRankTopCtaCoins">
-            <span className="tsf-rcRankTopCtaVal">{coinsPrice != null ? fmtInt(coinsPrice) : "—"}</span>
+            <span className="tsf-rcRankTopCtaVal">{coinsPrice != null ? fmtInt(coinsPrice) : pricesLoaded ? "—" : "…"}</span>
             <img className="tsf-rcRankTopCoinIcon" src="/tienda/assets/coin.png" alt="" draggable="false" />
           </span>
         </span>
@@ -479,6 +448,8 @@ export default function RangosComparativaPanel({
   bust = null,
   onBuyEur,
   onBuyCoins,
+  rankWalletPrices = null,
+  pricesLoaded = true,
 }) {
   const { servers, matrix } = useMemo(() => buildMatrixFromRangos(RANGOS_BENEFICIOS), []);
   const [openSections, setOpenSections] = useState(() => new Set(servers || []));
@@ -679,6 +650,8 @@ export default function RangosComparativaPanel({
                 onPickRank={onPickRank}
                 onBuyEur={onBuyEur}
                 onBuyCoins={onBuyCoins}
+                walletCoinsPrice={rankWalletPrices?.[rk] ?? null}
+                pricesLoaded={pricesLoaded}
               />
             ))}
           </div>
@@ -808,7 +781,6 @@ export default function RangosComparativaPanel({
               <button type="button" className="tsf-rcImgClose" onClick={closeZoom} aria-label="Cerrar" title="Cerrar">
                 <IconClose />
               </button>
-
               <div className="tsf-rcImgWrap">
                 <img className="tsf-rcImgZoom" src={zoomSrc} alt="" draggable="false" />
               </div>

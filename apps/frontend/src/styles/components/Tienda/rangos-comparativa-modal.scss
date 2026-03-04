@@ -929,8 +929,8 @@
   }
 
   .tsf-rcHeroClose{
-    right: 12px;
-    top: 12px;
+
+    top: -50px;
     padding: 12px 14px;
   }
 
@@ -1050,7 +1050,7 @@
 }
 
 @media (max-width: 520px){
-  .tsf-rcImgClose{ right: 10px; top: 10px; }
+  .tsf-rcImgClose{ top: -50px; }
   .tsf-rcImgZoom{ max-height: calc(100svh - 140px); }
 }
 
