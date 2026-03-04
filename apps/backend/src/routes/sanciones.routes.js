@@ -1,14 +1,12 @@
 const express = require("express");
-const router = express.Router();
-const controller = require("../controllers/sanciones.controller");
+const r = express.Router();
+const c = require("../controllers/sanciones.controller");
 
-// ✅ Obtener lista completa de sanciones
-router.get("/", controller.obtenerSanciones);
+r.post("/jails", c.registrarSancion);
 
-// ✅ Obtener sanciones de un jugador específico
-router.get("/jugador/:nombre", controller.obtenerSancionesPorJugador);
+r.get("/", c.obtenerSanciones);
+r.get("/jugador/:nombre", c.obtenerSancionesPorJugador);
+r.patch("/:id", c.actualizarSancion);
+r.delete("/:id", c.eliminarSancion);
 
-// ✅ Eliminar una sanción por ID
-router.delete("/:id", controller.eliminarSancion);
-
-module.exports = router;
+module.exports = r;

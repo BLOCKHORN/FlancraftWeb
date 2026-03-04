@@ -65,7 +65,6 @@ const comandosRoutes = require("./routes/comandos.routes");
 const logrosRoutes = require("./routes/logros.routes");
 const logrosEstadisticasRoutes = require("./routes/logros_estadisticas.routes");
 const dailysRoutes = require("./routes/dailys.routes");
-const jailsRoutes = require("./routes/jails.routes");
 const vincularRoutes = require("./routes/vincular.routes");
 const sancionesRoutes = require("./routes/sanciones.routes");
 const permisosAdminRoutes = require("./routes/permisos.admin.routes");
@@ -94,7 +93,6 @@ app.use("/api/logros", logrosEstadisticasRoutes);
 app.use("/api/misiones", dailysRoutes);
 
 app.use("/api/monedas", monedasRoutes);
-app.use("/api/jails", jailsRoutes);
 app.use("/api/sanciones", sancionesRoutes);
 app.use("/api/permisos-admin", permisosAdminRoutes);
 app.use("/api/stats", statsRoutes);

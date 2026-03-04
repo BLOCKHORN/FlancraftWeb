@@ -83,7 +83,7 @@
     height: 360px;
     width: calc(100% + 44px);
     margin: 0 -22px;
-    background: url("/assets/tribunalsanciones.webp") no-repeat center ;
+    background: url("/assets/tribunalsanciones.webp") no-repeat center;
     background-size: cover;
     display: flex;
     flex-direction: column;
@@ -194,13 +194,13 @@
 
   .selector-panel .filtros-left {
     display: flex;
-    flex-wrap: wrap;
     align-items: center;
     gap: 10px;
+    flex: 1;
+    min-width: 0;
   }
 
-  .campo-busqueda,
-  .campo-select {
+  .campo-busqueda {
     display: inline-flex;
     align-items: center;
     gap: 8px;
@@ -210,18 +210,18 @@
     background: rgba(255, 255, 255, 0.07);
     border: 1px solid rgba(255, 255, 255, 0.14);
     box-shadow: var(--shadow-sm);
+    flex: 1;
+    min-width: 0;
   }
 
-  .campo-busqueda svg,
-  .campo-select svg {
+  .campo-busqueda svg {
     color: rgba(238, 242, 255, 0.90);
     flex: 0 0 auto;
     filter: drop-shadow(0 2px 0 rgba(0, 0, 0, 0.45));
   }
 
   .campo-busqueda .filtro-input {
-    width: 260px;
-    max-width: 48vw;
+    width: 100%;
     height: 100%;
     border: 0;
     background: transparent;
@@ -229,28 +229,12 @@
     color: rgba(248, 250, 255, 0.96);
     font-weight: 850;
     font-size: 0.95rem;
+    min-width: 0;
 
     &::placeholder {
       color: rgba(238, 242, 255, 0.58);
       font-weight: 750;
     }
-  }
-
-  .campo-select select {
-    appearance: none;
-    border: 0;
-    outline: none;
-    background: transparent;
-    height: 100%;
-    padding-right: 18px;
-    font-family: var(--mc-font);
-    font-weight: 950;
-    letter-spacing: 0.03em;
-    text-transform: uppercase;
-    font-size: 0.86rem;
-    color: rgba(238, 242, 255, 0.92);
-    cursor: pointer;
-    min-width: 220px;
   }
 
   .reset-filtros {
@@ -294,6 +278,7 @@
     cursor: pointer;
     box-shadow: var(--shadow-md);
     transition: transform 0.15s ease, filter 0.15s ease;
+    flex: 0 0 auto;
 
     svg {
       color: rgba(248, 250, 255, 0.95);
@@ -406,10 +391,21 @@
     .row {
       height: 52px;
       border-radius: 12px;
-      background: linear-gradient(90deg, rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0.14), rgba(0, 0, 0, 0.08));
+      background: linear-gradient(
+        90deg,
+        rgba(0, 0, 0, 0.08),
+        rgba(0, 0, 0, 0.14),
+        rgba(0, 0, 0, 0.08)
+      );
       background-size: 200% 100%;
       animation: shimmer 1.1s infinite linear;
       border: 1px solid rgba(0, 0, 0, 0.10);
+    }
+  }
+
+  @keyframes shimmer {
+    to {
+      background-position: -200% 0;
     }
   }
 
@@ -421,12 +417,6 @@
     border: 1px solid rgba(0, 0, 0, 0.16);
     box-shadow: var(--shadow-md);
     color: rgba(30, 10, 16, 0.92);
-  }
-
-  @keyframes shimmer {
-    to {
-      background-position: -200% 0;
-    }
   }
 
   .empty-state {
@@ -486,265 +476,266 @@
     }
   }
 
-.tabla-scroll-wrapper {
-  overflow-x: auto;
-  padding: 14px 0 0;
+  .tabla-scroll-wrapper {
+    overflow-x: auto;
+    padding: 14px 0 0;
 
-  &::-webkit-scrollbar {
-    height: 10px;
-  }
-
-  &::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.10);
-    border-radius: 999px;
-  }
-
-  &::-webkit-scrollbar-thumb {
-    background: rgba(0, 0, 0, 0.22);
-    border-radius: 999px;
-    border: 2px solid rgba(0, 0, 0, 0.10);
-  }
-
-  .sanciones-table.tabla-epica {
-    width: 100%;
-    border-collapse: separate;
-    border-spacing: 0 12px;
-    background: transparent;
-
-    thead th {
-      position: sticky;
-      top: 0;
-      z-index: 2;
-      padding: 12px 10px;
-      text-align: center;
-      font-family: var(--mc-font);
-      font-weight: 950;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      font-size: 0.80rem;
-      color: rgba(248, 250, 255, 0.96);
-      background: rgba(18, 22, 32, 0.92);
-      border-top: 1px solid rgba(255, 255, 255, 0.14);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.14);
-      box-shadow: 0 10px 22px rgba(0, 0, 0, 0.18);
-      text-shadow: 0 1px 0 rgba(0, 0, 0, 0.55);
+    &::-webkit-scrollbar {
+      height: 10px;
     }
 
-    tbody tr {
-  --tint: rgba(80, 100, 132, 0.08);
-  --ring: rgba(0, 0, 0, 0.14);
+    &::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.10);
+      border-radius: 999px;
+    }
 
-  &.perma {
-    --tint: rgba(185, 70, 95, 0.09);
-  }
+    &::-webkit-scrollbar-thumb {
+      background: rgba(0, 0, 0, 0.22);
+      border-radius: 999px;
+      border: 2px solid rgba(0, 0, 0, 0.10);
+    }
 
-  &.activa {
-    --tint: rgba(200, 135, 60, 0.09);
-  }
+    .sanciones-table.tabla-epica {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0 12px;
+      background: transparent;
 
-  &.finalizada {
-    --tint: rgba(70, 140, 85, 0.09);
-  }
-
-  transition: transform 0.16s ease, filter 0.16s ease;
-
-  &:hover {
-    transform: translateY(-1px);
-    filter: brightness(1.02);
-  }
-
-  td {
-    padding: 12px 10px;
-    text-align: center;
-    vertical-align: middle;
-    font-size: 0.92rem;
-    color: var(--ink);
-    background: rgba(255, 255, 255, 0.62);
-    box-shadow: inset 0 0 0 999px var(--tint);
-    border-top: 1px solid var(--ring);
-    border-bottom: 1px solid var(--ring);
-  }
-
-  td:first-child {
-    text-align: left;
-    padding-left: 14px;
-    border-left: 1px solid var(--ring);
-    border-top-left-radius: 12px;
-    border-bottom-left-radius: 12px;
-    box-shadow:
-      0 12px 24px rgba(0, 0, 0, 0.10),
-      inset 0 0 0 999px var(--tint);
-  }
-
-  td:last-child {
-    border-right: 1px solid var(--ring);
-    border-top-right-radius: 12px;
-    border-bottom-right-radius: 12px;
-    box-shadow:
-      0 12px 24px rgba(0, 0, 0, 0.10),
-      inset 0 0 0 999px var(--tint);
-  }
-
-
-      td:not(:first-child):not(:last-child) {
-        box-shadow: inset 0 0 0 999px var(--tint);
-      }
-
-      .truncate {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        max-width: 260px;
-        display: inline-block;
-        vertical-align: bottom;
-      }
-
-      .jugador-info {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        min-width: 0;
-
-        .avatar-head {
-          width: 32px;
-          height: 32px;
-          border-radius: 10px;
-          object-fit: cover;
-          box-shadow: 0 8px 14px rgba(0, 0, 0, 0.16);
-          flex: 0 0 auto;
-        }
-
-        .jugador-link {
-          cursor: pointer;
-          font-family: var(--mc-font);
-          font-weight: 950;
-          letter-spacing: 0.04em;
-          text-transform: uppercase;
-          font-size: 0.92rem;
-          color: var(--ink);
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-
-          &:hover {
-            text-decoration: underline;
-          }
-        }
-      }
-
-      .tipo {
-        display: block;
-        font-weight: 850;
-        color: var(--ink);
-        margin-bottom: 6px;
-      }
-
-      .tipo-sancion-pill {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        padding: 6px 10px;
-        border-radius: 999px;
-        border: 1px solid rgba(0, 0, 0, 0.16);
-        background: rgba(0, 0, 0, 0.04);
-        color: rgba(28, 34, 48, 0.92);
+      thead th {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        padding: 12px 10px;
+        text-align: left;
         font-family: var(--mc-font);
         font-weight: 950;
-        letter-spacing: 0.05em;
+        letter-spacing: 0.06em;
         text-transform: uppercase;
-        font-size: 0.74rem;
+        font-size: 0.80rem;
+        color: rgba(248, 250, 255, 0.96);
+        background: rgba(18, 22, 32, 0.92);
+        border-top: 1px solid rgba(255, 255, 255, 0.14);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+        box-shadow: 0 10px 22px rgba(0, 0, 0, 0.18);
+        text-shadow: 0 1px 0 rgba(0, 0, 0, 0.55);
       }
 
-      .strikes {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        margin-top: 8px;
-        font-family: var(--mc-font);
-        font-weight: 950;
-        letter-spacing: 0.04em;
-        text-transform: uppercase;
-        font-size: 0.74rem;
-        color: var(--ink-soft);
-
-        &.permaban {
-          color: rgba(148, 42, 62, 0.92);
-        }
+      thead th:nth-child(4),
+      thead th:nth-child(5),
+      thead th:nth-child(6) {
+        text-align: center;
       }
 
-      .duracion-extra {
-        margin-top: 6px;
-        font-size: 0.82rem;
-        color: var(--ink-soft);
-      }
-
-      .server-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 10px;
-        padding: 6px 10px;
-        border-radius: 999px;
-        background: rgba(0, 0, 0, 0.04);
-        border: 1px solid rgba(0, 0, 0, 0.16);
-
-        .server-badge-img {
-          width: 26px;
-          height: 26px;
-          border-radius: 999px;
-          object-fit: cover;
-          box-shadow: 0 8px 14px rgba(0, 0, 0, 0.14);
-          flex: 0 0 auto;
-        }
-
-        span {
-          font-family: var(--mc-font);
-          font-weight: 950;
-          letter-spacing: 0.04em;
-          text-transform: uppercase;
-          font-size: 0.82rem;
-          color: var(--ink);
-          max-width: 160px;
-        }
-      }
-
-      .situacion {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        padding: 6px 10px;
-        border-radius: 999px;
-        border: 1px solid rgba(0, 0, 0, 0.16);
-        background: rgba(0, 0, 0, 0.04);
-        color: var(--ink);
-        font-family: var(--mc-font);
-        font-weight: 950;
-        letter-spacing: 0.05em;
-        text-transform: uppercase;
-        font-size: 0.74rem;
+      tbody tr {
+        --tint: rgba(80, 100, 132, 0.08);
+        --ring: rgba(0, 0, 0, 0.14);
 
         &.perma {
-          border-color: rgba(148, 42, 62, 0.28);
-          color: rgba(148, 42, 62, 0.92);
-          background: rgba(148, 42, 62, 0.07);
+          --tint: rgba(185, 70, 95, 0.09);
         }
 
         &.activa {
-          border-color: rgba(146, 92, 18, 0.28);
-          color: rgba(146, 92, 18, 0.92);
-          background: rgba(146, 92, 18, 0.07);
+          --tint: rgba(200, 135, 60, 0.09);
         }
 
         &.finalizada {
-          border-color: rgba(46, 108, 58, 0.28);
-          color: rgba(46, 108, 58, 0.92);
-          background: rgba(46, 108, 58, 0.07);
+          --tint: rgba(70, 140, 85, 0.09);
+        }
+
+        transition: transform 0.16s ease, filter 0.16s ease;
+
+        &:hover {
+          transform: translateY(-1px);
+          filter: brightness(1.02);
+        }
+
+        td {
+          padding: 12px 10px;
+          vertical-align: middle;
+          font-size: 0.92rem;
+          color: var(--ink);
+          background: rgba(255, 255, 255, 0.64);
+          border-top: 1px solid var(--ring);
+          border-bottom: 1px solid var(--ring);
+          box-shadow: inset 0 0 0 999px var(--tint);
+        }
+
+        td:first-child {
+          padding-left: 14px;
+          border-left: 1px solid var(--ring);
+          border-top-left-radius: 12px;
+          border-bottom-left-radius: 12px;
+          box-shadow:
+            0 12px 24px rgba(0, 0, 0, 0.10),
+            inset 0 0 0 999px var(--tint);
+        }
+
+        td:last-child {
+          border-right: 1px solid var(--ring);
+          border-top-right-radius: 12px;
+          border-bottom-right-radius: 12px;
+          box-shadow:
+            0 12px 24px rgba(0, 0, 0, 0.10),
+            inset 0 0 0 999px var(--tint);
+        }
+
+        td:nth-child(4),
+        td:nth-child(5),
+        td:nth-child(6) {
+          text-align: center;
+        }
+
+        .truncate {
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          max-width: 280px;
+          display: inline-block;
+          vertical-align: bottom;
+        }
+
+        .jugador-info {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          min-width: 0;
+
+          .avatar-head {
+            width: 32px;
+            height: 32px;
+            border-radius: 10px;
+            object-fit: cover;
+            box-shadow: 0 8px 14px rgba(0, 0, 0, 0.16);
+            flex: 0 0 auto;
+          }
+
+          .jugador-link {
+            cursor: pointer;
+            font-family: var(--mc-font);
+            font-weight: 950;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            font-size: 0.92rem;
+            color: var(--ink);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+
+            &:hover {
+              text-decoration: underline;
+            }
+          }
+        }
+
+        td[data-label="Motivo"] {
+          .tipo {
+            display: block;
+            margin: 0;
+            font-family: var(--mc-font);
+            font-weight: 950;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            font-size: 0.86rem;
+            color: rgba(18, 22, 32, 0.92);
+          }
+
+          .tipo-sancion-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 6px;
+            padding: 0;
+            border: 0;
+            border-radius: 0;
+            background: transparent;
+            color: rgba(28, 34, 48, 0.62);
+            font-family: var(--ui-font);
+            font-weight: 800;
+            letter-spacing: 0.02em;
+            text-transform: none;
+            font-size: 0.82rem;
+          }
+
+          .tipo-sancion-pill::before {
+            content: "";
+            width: 6px;
+            height: 6px;
+            border-radius: 999px;
+            background: rgba(28, 34, 48, 0.30);
+            display: inline-block;
+          }
+
+          .strikes {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 6px;
+            padding: 0;
+            font-family: var(--ui-font);
+            font-weight: 850;
+            letter-spacing: 0.02em;
+            text-transform: none;
+            font-size: 0.82rem;
+            color: rgba(28, 34, 48, 0.68);
+
+            &.permaban {
+              color: rgba(148, 42, 62, 0.92);
+            }
+
+            svg {
+              opacity: 0.85;
+            }
+          }
+        }
+
+        .duracion-extra {
+          margin-top: 6px;
+          font-size: 0.82rem;
+          color: var(--ink-soft);
+        }
+
+        .situacion {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          padding: 6px 10px;
+          border-radius: 999px;
+          border: 1px solid rgba(0, 0, 0, 0.16);
+          background: rgba(0, 0, 0, 0.035);
+          color: var(--ink);
+          font-family: var(--mc-font);
+          font-weight: 950;
+          letter-spacing: 0.05em;
+          text-transform: uppercase;
+          font-size: 0.74rem;
+          line-height: 1;
+
+          svg {
+            flex: 0 0 auto;
+          }
+
+          &.perma {
+            border-color: rgba(148, 42, 62, 0.28);
+            color: rgba(148, 42, 62, 0.92);
+            background: rgba(148, 42, 62, 0.06);
+          }
+
+          &.activa {
+            border-color: rgba(146, 92, 18, 0.28);
+            color: rgba(146, 92, 18, 0.92);
+            background: rgba(146, 92, 18, 0.06);
+          }
+
+          &.finalizada {
+            border-color: rgba(46, 108, 58, 0.28);
+            color: rgba(46, 108, 58, 0.92);
+            background: rgba(46, 108, 58, 0.06);
+          }
         }
       }
     }
   }
-}
-
 
   .sanciones-cards {
     display: flex;
@@ -883,39 +874,16 @@
           color: var(--ink-soft);
         }
 
-        .server {
-          display: inline-flex;
-          align-items: center;
-          gap: 10px;
-          padding: 7px 10px;
-          border-radius: 999px;
-          background: rgba(0, 0, 0, 0.04);
-          border: 1px solid rgba(0, 0, 0, 0.16);
-          font-family: var(--mc-font);
-          font-weight: 950;
-          letter-spacing: 0.04em;
-          text-transform: uppercase;
-          font-size: 0.82rem;
-
-          .server-icon-img {
-            width: 26px;
-            height: 26px;
-            border-radius: 999px;
-            object-fit: cover;
-            box-shadow: 0 8px 14px rgba(0, 0, 0, 0.14);
-          }
-        }
-
         .strikes {
           display: inline-flex;
           align-items: center;
           gap: 8px;
-          font-family: var(--mc-font);
-          font-weight: 950;
-          letter-spacing: 0.04em;
-          text-transform: uppercase;
-          font-size: 0.74rem;
-          color: var(--ink-soft);
+          font-family: var(--ui-font);
+          font-weight: 850;
+          letter-spacing: 0.02em;
+          text-transform: none;
+          font-size: 0.82rem;
+          color: rgba(28, 34, 48, 0.68);
 
           &.permaban {
             color: rgba(148, 42, 62, 0.92);
@@ -1113,16 +1081,7 @@
       padding: 12px 16px;
       flex-direction: column;
       align-items: stretch;
-    }
-
-    .campo-busqueda .filtro-input {
-      width: 100%;
-      max-width: 100%;
-    }
-
-    .campo-select select {
-      min-width: 0;
-      width: 100%;
+      gap: 10px;
     }
 
     .resumen-panel {
