@@ -152,46 +152,18 @@ exports.obtenerSkinUsuario = async (req, res) => {
     const bedrockByUuid = isFloodgateUuid(usuario.uuid);
     const isBedrock = bedrockByName || bedrockByUuid;
 
-    if (!isBedrock) {
-      return res.status(200).json({
-        skin_url: gamertag ? `https://minotar.net/armor/body/${encodeURIComponent(gamertag)}/160.png` : null,
-        source: "java",
-      });
-    }
+    const identifier = isBedrock ? usuario.uuid : gamertag;
 
-    let xuid = bedrockByUuid ? xuidFromFloodgateUuid(usuario.uuid) : null;
-
-    if (!xuid && gamertag) {
-      const xuidLookup = await getJson(`https://api.geysermc.org/v2/xbox/xuid/${encodeURIComponent(gamertag)}`);
-      if (xuidLookup.ok && xuidLookup.data?.xuid) {
-        xuid = String(xuidLookup.data.xuid);
-      }
-    }
-
-    if (!xuid) {
+    if (!identifier) {
       return res.status(200).json({
         skin_url: null,
-        source: "bedrock_no_xuid",
-      });
-    }
-
-    const skinLookup = await getJson(`https://api.geysermc.org/v2/skin/${encodeURIComponent(xuid)}`);
-    const textureId =
-      skinLookup.data?.texture_id ||
-      skinLookup.data?.textureId ||
-      skinLookup.data?.texture?.id ||
-      null;
-
-    if (skinLookup.ok && textureId) {
-      return res.status(200).json({
-        skin_url: `https://api.geysermc.org/render/front/${encodeURIComponent(textureId)}`,
-        source: "bedrock",
+        source: "empty",
       });
     }
 
     return res.status(200).json({
-      skin_url: null,
-      source: "bedrock_no_skin",
+      skin_url: `https://mc-heads.net/player/${encodeURIComponent(identifier)}/160.png`,
+      source: isBedrock ? "bedrock" : "java",
     });
   } catch (err) {
     console.error("[OBTENER SKIN USUARIO]", err);
