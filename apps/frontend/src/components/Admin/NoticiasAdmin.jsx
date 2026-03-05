@@ -1,5 +1,4 @@
-// src/components/Admin/NoticiasAdmin.jsx
-import React, { useEffect, useMemo, useRef, useState, useContext } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState, useContext } from "react";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
@@ -18,15 +17,17 @@ const API_BASE = (import.meta.env.VITE_BACKEND_URL || "https://flancraft-backend
 
 const DEFAULT_EDITOR_COLOR = "rgba(245, 248, 255, 0.92)";
 
-const SERVIDORES = [
+const CATEGORIAS = [
   { id: "global", label: "Global" },
-  { id: "anarquico", label: "Anárquico" },
-  { id: "gens", label: "Gens" },
-  { id: "lobby", label: "Lobby" },
-  { id: "oneblock", label: "OneBlock" },
-  { id: "parkour", label: "Parkour" },
-  { id: "survival", label: "Survival" },
+  { id: "tienda", label: "Tienda Online" },
+  { id: "web", label: "Web" },
+  { id: "sorteos", label: "Sorteos" },
 ];
+
+const CATEGORIA_LABELS = CATEGORIAS.reduce((acc, item) => {
+  acc[item.id] = item.label;
+  return acc;
+}, {});
 
 const safeJsonParse = (v) => {
   try {
@@ -70,6 +71,28 @@ const isProbablyHtml = (s) => {
   const v = String(s || "");
   return v.includes("<") && v.includes(">");
 };
+
+const normalizeCategoria = (value) => {
+  const v = String(value || "")
+    .trim()
+    .toLowerCase();
+
+  if (CATEGORIA_LABELS[v]) return v;
+  if (
+    v === "survival" ||
+    v === "lobby" ||
+    v === "oneblock" ||
+    v === "gens" ||
+    v === "anarquico" ||
+    v === "parkour"
+  ) {
+    return "global";
+  }
+
+  return "global";
+};
+
+const getCategoriaLabel = (value) => CATEGORIA_LABELS[normalizeCategoria(value)] || "Global";
 
 const buildEmbedUrl = (url) => {
   const raw = String(url || "").trim();
@@ -205,8 +228,7 @@ const MenuBar = ({ editor }) => {
 
   const setTextColor = (color) => editor.chain().focus().setColor(color).run();
 
-  const clearFormatting = () =>
-    editor.chain().focus().unsetAllMarks().clearNodes().run();
+  const clearFormatting = () => editor.chain().focus().unsetAllMarks().clearNodes().run();
 
   return (
     <div className="na-toolbar" role="toolbar" aria-label="Editor">
@@ -380,14 +402,13 @@ const MenuBar = ({ editor }) => {
 
       <div className="na-toolbar__group na-toolbar__group--color">
         <span className="na-toolbar__label">Color</span>
-       <input
-  type="color"
-  className="na-toolbar__color"
-  defaultValue="#F5F8FF"
-  onChange={(e) => setTextColor(e.target.value)}
-  aria-label="Color de texto"
-/>
-
+        <input
+          type="color"
+          className="na-toolbar__color"
+          defaultValue="#F5F8FF"
+          onChange={(e) => setTextColor(e.target.value)}
+          aria-label="Color de texto"
+        />
       </div>
 
       <div className="na-toolbar__group">
@@ -445,11 +466,9 @@ const NoticiasAdmin = () => {
   const [noticias, setNoticias] = useState([]);
   const [htmlInput, setHtmlInput] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-
   const [contenidoPendiente, setContenidoPendiente] = useState(null);
   const [filtroServidor, setFiltroServidor] = useState("todos");
   const [verGuardadas, setVerGuardadas] = useState(true);
-
   const [slugTouched, setSlugTouched] = useState(false);
   const [dirty, setDirty] = useState(false);
 
@@ -497,26 +516,7 @@ const NoticiasAdmin = () => {
     return { "--na-hero": `url("${src}")` };
   }, [form.portada]);
 
-  useEffect(() => {
-    if (!dirty) return;
-
-    const onBeforeUnload = (e) => {
-      e.preventDefault();
-      e.returnValue = "";
-      return "";
-    };
-
-    window.addEventListener("beforeunload", onBeforeUnload);
-    return () => window.removeEventListener("beforeunload", onBeforeUnload);
-  }, [dirty]);
-
-  useEffect(() => {
-    if (!form.titulo) return;
-    if (slugTouched) return;
-    setForm((p) => ({ ...p, slug: slugify(form.titulo) }));
-  }, [form.titulo, slugTouched]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const request = async (path, options = {}) => {
+  const request = useCallback(async (path, options = {}) => {
     const token = getToken();
     const headers = {
       ...(options.headers || {}),
@@ -525,9 +525,9 @@ const NoticiasAdmin = () => {
 
     const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
     return res;
-  };
+  }, []);
 
-  const fetchNoticias = async () => {
+  const fetchNoticias = useCallback(async () => {
     try {
       const res = await request("/api/noticias/todas");
       if (res.status === 401 || res.status === 403) throw new Error("NO_AUTH");
@@ -545,13 +545,30 @@ const NoticiasAdmin = () => {
       if (err?.message === "NO_AUTH") toast.error("No autorizado para ver noticias");
       else toast.error("No se pudieron cargar las noticias");
     }
-  };
+  }, [request]);
+
+  useEffect(() => {
+    if (!dirty) return;
+
+    const onBeforeUnload = (e) => {
+      e.preventDefault();
+      e.returnValue = "";
+      return "";
+    };
+
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [dirty]);
+
+  useEffect(() => {
+    if (!form.titulo || slugTouched) return;
+    setForm((p) => ({ ...p, slug: slugify(form.titulo) }));
+  }, [form.titulo, slugTouched]);
 
   useEffect(() => {
     if (!isOwner) return;
     fetchNoticias();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOwner]);
+  }, [isOwner, fetchNoticias]);
 
   useEffect(() => {
     if (!editor || !contenidoPendiente) return;
@@ -578,7 +595,7 @@ const NoticiasAdmin = () => {
     }
   }, [editor, contenidoPendiente]);
 
-  const resetFormulario = () => {
+  const resetFormulario = useCallback(() => {
     setForm({
       titulo: "",
       slug: "",
@@ -596,7 +613,7 @@ const NoticiasAdmin = () => {
     }
     setDirty(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
-  };
+  }, [editor]);
 
   const handleChangeTitulo = (titulo) => {
     setForm((prev) => ({
@@ -612,7 +629,7 @@ const NoticiasAdmin = () => {
       titulo: noticia.titulo || "",
       slug: noticia.slug || "",
       portada: noticia.portada || "",
-      servidor: (noticia.servidor || "global").toLowerCase(),
+      servidor: normalizeCategoria(noticia.servidor || "global"),
       fecha: normalizeDatetimeLocal(noticia.fecha) || new Date().toISOString().slice(0, 16),
       usarFechaManual: true,
       id: noticia.id,
@@ -631,11 +648,11 @@ const NoticiasAdmin = () => {
     const titulo = String(form.titulo || "").trim();
     const slug = slugify(form.slug || titulo);
     const portada = String(form.portada || "").trim();
-    const servidor = String(form.servidor || "global").trim().toLowerCase();
+    const servidor = normalizeCategoria(form.servidor || "global");
 
     if (!titulo) return toast.error("El título es obligatorio");
     if (!slug) return toast.error("El slug es obligatorio");
-    if (!servidor) return toast.error("El servidor es obligatorio");
+    if (!servidor) return toast.error("La categoría es obligatoria");
 
     const contenido = editor.getJSON();
     const contenidoHtml = editor.getHTML();
@@ -652,7 +669,7 @@ const NoticiasAdmin = () => {
       contenido_html: contenidoHtml,
       publicada: true,
       fecha: form.usarFechaManual
-        ? (form.fecha || new Date().toISOString())
+        ? form.fecha || new Date().toISOString()
         : new Date().toISOString(),
     };
 
@@ -716,6 +733,7 @@ const NoticiasAdmin = () => {
       if (titulo) {
         handleChangeTitulo(titulo);
       }
+
       if (primeraImagen) {
         setForm((prev) => ({ ...prev, portada: primeraImagen }));
         setDirty(true);
@@ -740,7 +758,9 @@ const NoticiasAdmin = () => {
   const noticiasFiltradas =
     filtroServidor === "todos"
       ? noticias
-      : noticias.filter((n) => String(n?.servidor || "global").toLowerCase() === filtroServidor);
+      : noticias.filter(
+          (n) => normalizeCategoria(n?.servidor || "global") === filtroServidor
+        );
 
   const onCancelEdit = () => {
     if (dirty) {
@@ -780,7 +800,7 @@ const NoticiasAdmin = () => {
                     Estás editando: <strong>{form.titulo || "Sin título"}</strong>
                   </>
                 ) : (
-                  <>Publica noticias con portada tipo banner y editor limpio.</>
+                  <>Publica noticias con portada tipo banner y organízalas por categoría.</>
                 )}
               </div>
             </div>
@@ -809,7 +829,11 @@ const NoticiasAdmin = () => {
                 disabled={isSubmitting}
               >
                 <span className="na-btn__icon" aria-hidden="true">
-                  <i className={`fa-solid ${isSubmitting ? "fa-spinner fa-spin" : "fa-floppy-disk"}`} />
+                  <i
+                    className={`fa-solid ${
+                      isSubmitting ? "fa-spinner fa-spin" : "fa-floppy-disk"
+                    }`}
+                  />
                 </span>
                 <span>{isSubmitting ? "Guardando..." : form.id ? "Guardar" : "Publicar"}</span>
               </button>
@@ -888,9 +912,7 @@ const NoticiasAdmin = () => {
                       setDirty(true);
                     }}
                   />
-                  <div className="na-hint">
-                    Recomendado: imagen panorámica (banner apaisado).
-                  </div>
+                  <div className="na-hint">Recomendado: imagen panorámica (banner apaisado).</div>
                 </div>
 
                 <div className="na-sectionTitle">
@@ -899,23 +921,26 @@ const NoticiasAdmin = () => {
                 </div>
 
                 <div className="na-field">
-                  <label className="na-label">Servidor</label>
+                  <label className="na-label">Categoría</label>
                   <select
                     className="na-select"
                     value={form.servidor}
                     onChange={(e) => {
-                      setForm((prev) => ({ ...prev, servidor: e.target.value }));
+                      setForm((prev) => ({
+                        ...prev,
+                        servidor: normalizeCategoria(e.target.value),
+                      }));
                       setDirty(true);
                     }}
                   >
-                    {SERVIDORES.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.label}
+                    {CATEGORIAS.map((categoria) => (
+                      <option key={categoria.id} value={categoria.id}>
+                        {categoria.label}
                       </option>
                     ))}
                   </select>
                   <div className="na-hint">
-                    Global engloba todo. El resto segmenta la noticia por servidor.
+                    Global para anuncios generales. El resto separa tienda, web y sorteos.
                   </div>
                 </div>
 
@@ -974,7 +999,11 @@ const NoticiasAdmin = () => {
                 <div className="na-editorBox">
                   <MenuBar editor={editor} />
                   <div className="na-editorContent">
-                    {editor ? <EditorContent editor={editor} /> : <p className="na-loading">Cargando editor...</p>}
+                    {editor ? (
+                      <EditorContent editor={editor} />
+                    ) : (
+                      <p className="na-loading">Cargando editor...</p>
+                    )}
                   </div>
                 </div>
 
@@ -1043,14 +1072,16 @@ const NoticiasAdmin = () => {
                   Todos
                 </button>
 
-                {SERVIDORES.map((s) => (
+                {CATEGORIAS.map((categoria) => (
                   <button
-                    key={s.id}
+                    key={categoria.id}
                     type="button"
-                    className={filtroServidor === s.id ? "na-tab is-active" : "na-tab"}
-                    onClick={() => setFiltroServidor(s.id)}
+                    className={
+                      filtroServidor === categoria.id ? "na-tab is-active" : "na-tab"
+                    }
+                    onClick={() => setFiltroServidor(categoria.id)}
                   >
-                    {s.label}
+                    {categoria.label}
                   </button>
                 ))}
               </div>
@@ -1064,7 +1095,8 @@ const NoticiasAdmin = () => {
               ) : (
                 <div className="na-list">
                   {noticiasFiltradas.map((n) => {
-                    const servidor = String(n?.servidor || "global").toLowerCase();
+                    const categoria = normalizeCategoria(n?.servidor || "global");
+                    const categoriaLabel = getCategoriaLabel(categoria);
                     const isActive = n?.id === form.id;
 
                     return (
@@ -1101,7 +1133,9 @@ const NoticiasAdmin = () => {
                               })}
                             </span>
 
-                            <span className={`na-badge na-badge--${servidor}`}>{servidor}</span>
+                            <span className={`na-badge na-badge--${categoria}`}>
+                              {categoriaLabel}
+                            </span>
                           </div>
                         </div>
 
