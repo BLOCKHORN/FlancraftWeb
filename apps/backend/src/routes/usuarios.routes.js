@@ -26,7 +26,7 @@ router.get("/vinculados", async (req, res) => {
 router.patch("/rango", controller.asignarRangoUsuario);
 
 router.post("/rango/comprado", controller.registrarCompraRango);
-
+router.get("/:uuid/skin", controller.obtenerSkinUsuario);
 router.get("/:uuid/xp", controller.obtenerXPUsuario);
 
 router.get("/:uuid", controller.obtenerUsuario);

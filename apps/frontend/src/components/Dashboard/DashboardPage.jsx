@@ -64,6 +64,7 @@ export default function DashboardPage() {
   const [user, setUser] = useState(null);
   const [xpData, setXpData] = useState(null);
   const [walletBalance, setWalletBalance] = useState(0);
+  const [skinUrl, setSkinUrl] = useState(null);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -77,6 +78,8 @@ export default function DashboardPage() {
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pendingTransfer, setPendingTransfer] = useState(null);
+
+  const [avatarErrorIndex, setAvatarErrorIndex] = useState(0);
 
   const walletRef = useRef(null);
   const navigate = useNavigate();
@@ -121,6 +124,7 @@ export default function DashboardPage() {
           fetch(apiUrl(`/api/usuarios/${parsed.uuid}`)),
           fetch(apiUrl(`/api/monedas/${parsed.uuid}`)),
           fetch(apiUrl(`/api/usuarios/${parsed.uuid}/xp`)),
+          fetch(apiUrl(`/api/usuarios/${parsed.uuid}/skin`)),
         ];
 
         if (token) {
@@ -133,7 +137,7 @@ export default function DashboardPage() {
           reqs.push(Promise.resolve(null));
         }
 
-        const [usuarioRes, monedasRes, xpRes, walletRes] = await Promise.all(reqs);
+        const [usuarioRes, monedasRes, xpRes, skinRes, walletRes] = await Promise.all(reqs);
 
         if (!usuarioRes?.ok) {
           const body = await safeJson(usuarioRes, null);
@@ -144,7 +148,11 @@ export default function DashboardPage() {
 
         let monedasRaw = { balances: [], byServer: {} };
         if (monedasRes?.ok) {
-          monedasRaw = (await safeJson(monedasRes, { balances: [], byServer: {} })) || { balances: [], byServer: {} };
+          monedasRaw =
+            (await safeJson(monedasRes, { balances: [], byServer: {} })) || {
+              balances: [],
+              byServer: {},
+            };
         }
 
         let xp = null;
@@ -160,6 +168,11 @@ export default function DashboardPage() {
             xp_total_maxima: 0,
             niveles: [],
           };
+        }
+
+        let skin = null;
+        if (skinRes?.ok) {
+          skin = await safeJson(skinRes, null);
         }
 
         const coinsByServerParsed = parseCoinsPayload(monedasRaw);
@@ -178,6 +191,7 @@ export default function DashboardPage() {
           }
         }
 
+        setSkinUrl(skin?.skin_url || null);
         setWalletBalance(wallet);
 
         setUser({
@@ -224,7 +238,10 @@ export default function DashboardPage() {
 
       if (monedasRes?.ok) {
         monedasActualizadas =
-          (await safeJson(monedasRes, { balances: [], byServer: {} })) || { balances: [], byServer: {} };
+          (await safeJson(monedasRes, { balances: [], byServer: {} })) || {
+            balances: [],
+            byServer: {},
+          };
       }
 
       const coinsByServerParsed = parseCoinsPayload(monedasActualizadas);
@@ -255,12 +272,35 @@ export default function DashboardPage() {
     }
   };
 
-  const avatarName = useMemo(() => {
-    const raw = String(user?.uid || "").trim();
-    return raw.replace(/^\.+/, "");
-  }, [user?.uid]);
+  const rawUid = useMemo(() => String(user?.uid || "").trim(), [user?.uid]);
 
-  const avatarUrl = avatarName ? `https://minotar.net/armor/body/${encodeURIComponent(avatarName)}/160.png` : null;
+  const avatarName = useMemo(() => rawUid.replace(/^\.+/, ""), [rawUid]);
+
+  const isLikelyBedrock = useMemo(() => rawUid.startsWith("."), [rawUid]);
+
+  const avatarSources = useMemo(() => {
+    const out = [];
+
+    if (skinUrl) out.push(String(skinUrl).trim());
+
+    if (!isLikelyBedrock && avatarName) {
+      out.push(`https://minotar.net/armor/body/${encodeURIComponent(avatarName)}/160.png`);
+    }
+
+    if (isLikelyBedrock) {
+      out.push("/assets/skins/bedrock-default.webp");
+    }
+
+    out.push("/assets/skins/default-steve.webp");
+
+    return out.filter(Boolean);
+  }, [skinUrl, isLikelyBedrock, avatarName]);
+
+  useEffect(() => {
+    setAvatarErrorIndex(0);
+  }, [skinUrl, rawUid]);
+
+  const avatarUrl = avatarSources[avatarErrorIndex] || "/assets/skins/default-steve.webp";
 
   const nivelInfo = xpData?.niveles?.find((n) => Number(n?.nivel) === Number(user?.nivel));
   const xpDelNivelActual = Math.max(1, toInt(nivelInfo?.xp_requerida || 1));
@@ -386,6 +426,12 @@ export default function DashboardPage() {
                           className="skin-jugador"
                           loading="eager"
                           decoding="async"
+                          onError={() => {
+                            setAvatarErrorIndex((prev) => {
+                              const next = prev + 1;
+                              return next < avatarSources.length ? next : prev;
+                            });
+                          }}
                         />
                       )}
                     </div>
@@ -408,10 +454,20 @@ export default function DashboardPage() {
                       <h2 className="player-nombre">{user.uid}</h2>
 
                       <div className="player-badges">
-                        {user.rol_admin && <span className={`badge-staff badge-${user.rol_admin.toLowerCase()}`}>{user.rol_admin.toUpperCase()}</span>}
+                        {user.rol_admin && (
+                          <span className={`badge-staff badge-${user.rol_admin.toLowerCase()}`}>
+                            {user.rol_admin.toUpperCase()}
+                          </span>
+                        )}
 
                         {user.es_premium && (
-                          <img src="/assets/premium.webp" alt="Cuenta premium" className="badge-premium" loading="eager" decoding="async" />
+                          <img
+                            src="/assets/premium.webp"
+                            alt="Cuenta premium"
+                            className="badge-premium"
+                            loading="eager"
+                            decoding="async"
+                          />
                         )}
                       </div>
                     </div>
@@ -443,7 +499,14 @@ export default function DashboardPage() {
                           {totalCoins}
                         </span>
 
-                        <img src="/tienda/assets/coin.png" alt="Coins" className="wallet-pillCoin" loading="eager" decoding="async" draggable="false" />
+                        <img
+                          src="/tienda/assets/coin.png"
+                          alt="Coins"
+                          className="wallet-pillCoin"
+                          loading="eager"
+                          decoding="async"
+                          draggable="false"
+                        />
 
                         {walletInfoOpen && (
                           <div className="wallet-tooltip" role="dialog" aria-label="Wallet COINS">
@@ -467,7 +530,14 @@ export default function DashboardPage() {
                         <div className="server-cardBtn server-cardBtn--survival is-active">
                           <div className="server-cardBtnFace">
                             <div className="server-cardBtnLeft">
-                              <img src={SERVER_ICON} alt="" className="server-icon" loading="eager" decoding="async" draggable="false" />
+                              <img
+                                src={SERVER_ICON}
+                                alt=""
+                                className="server-icon"
+                                loading="eager"
+                                decoding="async"
+                                draggable="false"
+                              />
                               <span className="server-name">{SERVER_LABEL}</span>
                             </div>
 
