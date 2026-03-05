@@ -535,7 +535,13 @@ export default function TiendaStorefront({ carrito, toggleProducto, onCambiarCan
                   {rankCards.map((r, idx) => {
                     const pkg = r.pkg;
 
-                    const priceBase = pkg ? getPackagePrice(pkg) : null;
+const disc = pkg
+  ? getDiscountMeta(pkg, getPackagePrice, getPackageOriginalPrice)
+  : { price: null, original: null, onSale: false, discountPct: null };
+
+const priceBase = disc.price;
+const originalBase = disc.original;
+const onSale = disc.onSale;
 
                     const walletPrice = rankWalletPrices?.[r.key];
                     const coinsPrice = Number.isFinite(Number(walletPrice)) && Number(walletPrice) > 0 ? Number(walletPrice) : null;
@@ -596,9 +602,14 @@ export default function TiendaStorefront({ carrito, toggleProducto, onCambiarCan
                               aria-label={`Comprar ${r.label} (dinero o coins)`}
                               title="Izquierda: dinero · Derecha: wallet coins"
                             >
-                              <span className="tsf-ctaSplitSide tsf-ctaSplitSide--usd" aria-label="Comprar con dinero">
-                                <span className="tsf-ctaSplitValue">{priceBase != null ? fmtMoney(priceBase) : "—"}</span>
-                              </span>
+<span className="tsf-ctaSplitSide tsf-ctaSplitSide--usd" aria-label="Comprar con dinero">
+  <span className={`tsf-ctaSplitPriceStack ${onSale && originalBase != null ? "is-sale" : ""}`}>
+    <span className="tsf-ctaSplitPriceCurrent">{priceBase != null ? fmtMoney(priceBase) : "—"}</span>
+    {onSale && originalBase != null && (
+      <span className="tsf-ctaSplitPriceOld">{fmtMoney(originalBase)}</span>
+    )}
+  </span>
+</span>
 
                               <span className="tsf-ctaSplitSide tsf-ctaSplitSide--coins" aria-label="Comprar con wallet coins">
                                 <span className="tsf-ctaSplitCoins">

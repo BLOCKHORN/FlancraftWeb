@@ -41,7 +41,6 @@
   50%      { opacity: 0.9; }
 }
 
-/* ✅ Levitación solo hacia ARRIBA (anclado abajo) */
 @keyframes ctaFloatUp {
   0%, 100% { transform: translate3d(0, 0px, 0); }
   50%      { transform: translate3d(0, -10px, 0); }
@@ -80,9 +79,8 @@
   border-radius: 0.95rem;
   position: relative;
 
-  /* ✅ IMPORTANTE: deja sobresalir el CTA */
   overflow: visible;
-
+  margin-top: -3%;
   display: grid;
   gap: 0.25rem;
   align-content: center;
