@@ -488,8 +488,7 @@ const Home = () => {
               <ServerStatus />
 
               <p className="hero-tagline">
-                Tu aventura empieza aquí. Sube de nivel y deja tu legado en la
-                mejor network de Minecraft.
+                Tu aventura empieza aquí. Sube de nivel y deja tu legado en el mejor servidor Español de Minecraft.
               </p>
 
               {user?.loggedIn && (

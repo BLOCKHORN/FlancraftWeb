@@ -24,12 +24,15 @@
   /* Títulos y UI “minecraft” */
   --mc-font: "Mojangles", "Minecraft Seven", "Minecraftia", system-ui, sans-serif;
 
-  .allNews__hero {
-    position: relative;
-    overflow: hidden;
-    padding: 54px 18px 44px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  }
+.allNews__hero {
+  position: relative;
+  overflow: hidden;
+  padding: 64px 24px 56px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  min-height: 720px;
+  display: flex;
+  align-items: center;
+}
 
   .allNews__heroBg {
     position: absolute;
@@ -52,21 +55,28 @@
     );
   }
 
-  .allNews__heroInner {
-    position: relative;
-    max-width: 1080px;
-    margin: 0 auto;
-    z-index: 2;
-    text-align: center;
-  }
+.allNews__heroInner {
+  position: relative;
+  width: 100%;
+  max-width: 1240px;
+  margin: 0 auto;
+  z-index: 2;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
 
-  .allNews__topRow {
-    display: flex;
-    justify-content: flex-start;
-    align-items: center;
-    min-height: 40px;
-    margin-bottom: 8px;
-  }
+.allNews__topRow {
+  width: 100%;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  min-height: 0;
+  margin-bottom: 0;
+}
 
   /* Botón “añejo” + minecraft verde */
   .allNews__adminBtn {
@@ -105,63 +115,62 @@
     }
   }
 
-  .allNews__title {
-    font-family: var(--mc-font);
-    font-weight: 900;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    font-size: 3rem;
-    margin: 12px 0 8px;
-    text-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
-  }
+.allNews__title {
+  font-family: var(--mc-font);
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-size: 3rem;
+  line-height: 1;
+  margin: 0;
+  text-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
+}
 
-  .allNews__subtitle {
-    max-width: 760px;
-    margin: 0 auto 18px;
-    color: rgba(238, 242, 255, 0.88);
-    font-size: 1rem;
-    line-height: 1.55;
-  }
 
-  /* ✅ SOLO 1 featured arriba */
-  .allNews__featuredSolo {
-    display: grid;
-    place-items: center;
-    margin: 16px auto 14px;
-  }
+.allNews__featuredSolo {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 10px auto 4px;
+}
 
   .allNews__featuredCardSolo {
-    display: block;
-    width: min(920px, 100%);
-    text-decoration: none;
-    color: inherit;
-    position: relative;
+  display: block;
+  width: min(1080px, calc(100vw - 96px));
+  max-width: 100%;
+  margin: 0 auto;
+  text-decoration: none;
+  color: inherit;
+  position: relative;
+  background: rgba(10, 13, 20, 0.62);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow: 0 26px 70px rgba(0, 0, 0, 0.36);
+  clip-path: polygon(16px 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%, 0 16px);
+  overflow: hidden;
+  transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
 
-    background: rgba(10, 13, 20, 0.62);
-    border: 1px solid rgba(255, 255, 255, 0.10);
-    box-shadow: 0 26px 70px rgba(0, 0, 0, 0.36);
-    clip-path: polygon(16px 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%, 0 16px);
-    overflow: hidden;
-    transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
 
     &:hover {
-      transform: translateY(-2px);
-      border-color: rgba(140, 210, 150, 0.28);
-      background: rgba(10, 13, 20, 0.72);
+    transform: translateY(-2px);
+    border-color: rgba(140, 210, 150, 0.28);
+    background: rgba(10, 13, 20, 0.72);
     }
 
     .heroMedia {
-      position: relative;
-      width: 100%;
-      height: 360px; /* no enorme */
-      overflow: hidden;
-      background: radial-gradient(900px 240px at 50% 0%, rgba(120,186,86,0.10), transparent 60%),
-                  linear-gradient(180deg, rgba(0,0,0,0.25), rgba(10,13,20,0.92));
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    height: auto;
+    overflow: hidden;
+    background: radial-gradient(900px 240px at 50% 0%, rgba(120, 186, 86, 0.10), transparent 60%),
+      linear-gradient(180deg, rgba(0, 0, 0, 0.18), rgba(10, 13, 20, 0.88));
 
-      img {
-        width: 100%;
-        height: 100%;
-        display: block;
+    img {
+      width: 100%;
+      height: 100%;
+      display: block;
+    
       }
 
       .heroOverlay {
@@ -171,22 +180,21 @@
       }
     }
 
-    /* ✅ imagen completa (sin crop) */
     .heroMedia--contain {
-      img {
-        object-fit: contain;
-        padding: 12px;
-        filter: saturate(1.02) contrast(1.02);
+    img {
+      object-fit: cover;
+      padding: 10px;
+      filter: saturate(1.02) contrast(1.02);
       }
     }
 
     .heroInfo {
-      position: absolute;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      padding: 14px 16px 16px;
-      text-align: left;
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 14px 18px 16px;
+    text-align: left;
     }
 
     .meta {
@@ -219,16 +227,16 @@
     }
 
     .heroTitle {
-      margin: 0 0 8px;
-      color: rgba(248, 250, 255, 0.98);
-      font-weight: 950;
-      letter-spacing: 0.03em;
-      text-transform: uppercase;
-      font-size: 1.25rem;
-      line-height: 1.18;
-      max-width: 62ch;
-      text-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
-      font-family: var(--mc-font);
+    margin: 0;
+    color: rgba(248, 250, 255, 0.98);
+    font-weight: 950;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    font-size: clamp(1.12rem, 1.5vw, 1.42rem);
+    line-height: 1.18;
+    max-width: none;
+    text-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
+    font-family: var(--mc-font);
     }
 
     .heroDesc {
@@ -240,10 +248,11 @@
     }
   }
 
-  .allNews__ctaRow {
-    display: flex;
-    justify-content: center;
-    margin-top: 12px;
+.allNews__ctaRow {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin-top: 14px;
   }
 
   .allNews__ctaBtn {

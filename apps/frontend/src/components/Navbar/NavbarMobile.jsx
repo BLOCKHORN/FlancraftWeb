@@ -467,22 +467,22 @@ const NavbarMobile = ({
           <div className="logo-divider" />
 
           <div className="mobile-social-links" aria-label="Redes sociales">
-            <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+            <a href="https://instagram.com/flancraftserver" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
               <i className="fab fa-instagram" />
             </a>
-            <a href="https://tiktok.com" target="_blank" rel="noopener noreferrer" aria-label="TikTok">
+            <a href="https://tiktok.com/@flancraftserver" target="_blank" rel="noopener noreferrer" aria-label="TikTok">
               <i className="fab fa-tiktok" />
             </a>
-            <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" aria-label="YouTube">
+            <a href="https://youtube.com/@flancraft" target="_blank" rel="noopener noreferrer" aria-label="YouTube">
               <i className="fab fa-youtube" />
             </a>
-            <a href="https://discord.com" target="_blank" rel="noopener noreferrer" aria-label="Discord">
+            <a href="https://discord.gg/uTJCqn4GsC" target="_blank" rel="noopener noreferrer" aria-label="Discord">
               <i className="fab fa-discord" />
             </a>
-            <a href="https://telegram.org" target="_blank" rel="noopener noreferrer" aria-label="Telegram">
-              <i className="fab fa-telegram" />
+            <a href="https://whatsapp.com/channel/0029Vb6zjCrIXnljntqxva3v" target="_blank" rel="noopener noreferrer" aria-label="Whatsapp">
+              <i className="fab fa-whatsapp" />
             </a>
-            <a href="https://x.com" target="_blank" rel="noopener noreferrer" aria-label="X">
+            <a href="https://x.com/flancraftserver" target="_blank" rel="noopener noreferrer" aria-label="X">
               <i className="fab fa-x-twitter" />
             </a>
           </div>

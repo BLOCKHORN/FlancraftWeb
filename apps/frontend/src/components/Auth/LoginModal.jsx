@@ -411,7 +411,7 @@ export default function LoginModal({ onClose, initialStep, initialToken, autoVal
   const renderTokenStep = () => (
     <>
       <button className="back-button" onClick={() => setStep("login")} disabled={loading}>
-        ← Volver
+          Volver
       </button>
       <p>
         Entra al servidor y escribe <code>/vincular</code>. En Java puedes abrir el enlace. Si no, introduce aquí el
@@ -434,7 +434,7 @@ export default function LoginModal({ onClose, initialStep, initialToken, autoVal
   const renderSetPasswordStep = () => (
     <>
       <button className="back-button" onClick={() => setStep("login")} disabled={loading}>
-        ← Volver
+        Volver
       </button>
       <p>
         <strong>Nombre detectado:</strong> {form.username}
@@ -464,7 +464,7 @@ export default function LoginModal({ onClose, initialStep, initialToken, autoVal
   const renderResetPasswordStep = () => (
     <>
       <button className="back-button" onClick={() => setStep("login")} disabled={loading}>
-        ← Volver
+         Volver
       </button>
       <p>
         Pega aquí el token generado con <code>/resetweb</code> en el servidor para recuperar tu acceso:

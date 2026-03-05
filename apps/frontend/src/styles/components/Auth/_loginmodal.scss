@@ -57,7 +57,7 @@
         background: #cab888;
         border-radius: 14px;
         z-index: 0;
-        padding: 1.5rem 1.5rem;
+        padding: 0rem 1.5rem 0rem;
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -118,7 +118,7 @@
 
           button {
             width: 100%;
-            padding: 0.55rem;
+            padding: 0.2rem;
             font-size: 0.95rem;
             border-radius: 12px;
             border: 2px solid #7c5a3a;
@@ -507,15 +507,12 @@ button.close-btn {
 /* ====== Badge para distinguir Registro vs Reset ====== */
 
 .step-tag {
-  margin: 0.35rem auto 0.9rem auto;
+  margin: 0rem auto 0rem auto;
   padding: 0.3rem 0.95rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.35rem;
-  border-radius: 999px;
   font-size: 0.78rem;
-  letter-spacing: 0.06em;
   text-transform: uppercase;
   font-weight: 600;
   white-space: nowrap;

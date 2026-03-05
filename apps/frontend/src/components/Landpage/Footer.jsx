@@ -1,7 +1,7 @@
 import React from "react";
 import "../../styles/components/Landpage/_footer.scss";
 import { FaXTwitter, FaYoutube, FaInstagram, FaDiscord, FaTiktok } from "react-icons/fa6";
-import { FaTelegramPlane } from "react-icons/fa";
+import { FaWhatsapp } from "react-icons/fa";
 
 export default function Footer() {
   return (
@@ -9,22 +9,22 @@ export default function Footer() {
       <div className="follow-section">
         <h2>SIGUENOS EN NUESTRAS REDES</h2>
         <div className="social-icons">
-          <a href="https://discord.gg/flancraft" target="_blank" rel="noopener noreferrer" aria-label="Discord">
+          <a href="https://discord.gg/uTJCqn4GsC" target="_blank" rel="noopener noreferrer" aria-label="Discord">
             <FaDiscord />
           </a>
-          <a href="https://t.me/flancraft" target="_blank" rel="noopener noreferrer" aria-label="Telegram">
-            <FaTelegramPlane />
+          <a href="https://whatsapp.com/channel/0029Vb6zjCrIXnljntqxva3v" target="_blank" rel="noopener noreferrer" aria-label="Whatsapp">
+            <FaWhatsapp />
           </a>
           <a href="https://youtube.com/@flancraft" target="_blank" rel="noopener noreferrer" aria-label="YouTube">
             <FaYoutube />
           </a>
-          <a href="https://www.tiktok.com/@flancraft" target="_blank" rel="noopener noreferrer" aria-label="TikTok">
+          <a href="https://www.tiktok.com/@flancraftserver" target="_blank" rel="noopener noreferrer" aria-label="TikTok">
             <FaTiktok />
           </a>
-          <a href="https://instagram.com/flancraft" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+          <a href="https://instagram.com/flancraftserver" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
             <FaInstagram />
           </a>
-          <a href="https://x.com/flancraft" target="_blank" rel="noopener noreferrer" aria-label="X (Twitter)">
+          <a href="https://x.com/flancraftserver" target="_blank" rel="noopener noreferrer" aria-label="X (Twitter)">
             <FaXTwitter />
           </a>
         </div>

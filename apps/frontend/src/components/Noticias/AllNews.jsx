@@ -310,14 +310,7 @@ const AllNews = () => {
             Noticias
           </Motion.h1>
 
-          <Motion.p
-            className="allNews__subtitle"
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35, delay: 0.05 }}
-          >
-            Actualizaciones, eventos y anuncios del servidor.
-          </Motion.p>
+
 
           <div className="allNews__featuredSolo">
             {!imagesLoaded || loading ? (
@@ -359,13 +352,7 @@ const AllNews = () => {
 
                       <h3 className="heroTitle">{mainFeatured.titulo}</h3>
 
-                      {(mainExcerpt.subtitulo || mainExcerpt.descripcion) && (
-                        <p className="heroDesc">
-                          {mainExcerpt.subtitulo
-                            ? truncate(mainExcerpt.subtitulo, 150)
-                            : truncate(mainExcerpt.descripcion, 170)}
-                        </p>
-                      )}
+
                     </div>
                   </Link>
                 </Motion.div>
@@ -456,7 +443,6 @@ const AllNews = () => {
 
                         <h4 className="title">{item.titulo}</h4>
                         {subtitulo ? <div className="sub">{subtitulo}</div> : null}
-                        <p className="desc">{descripcion}</p>
                       </div>
                     </Link>
                   </Motion.div>
