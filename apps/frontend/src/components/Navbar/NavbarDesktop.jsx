@@ -1,4 +1,3 @@
-// apps/frontend/src/components/Navbar/NavbarDesktop.jsx
 import { NavLink, Link, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useRef, useState, useMemo, useContext, useLayoutEffect, useCallback } from "react";
 import { UserContext } from "../../context/UserContext";
@@ -55,6 +54,8 @@ const NavbarDesktop = ({
   isLoggedIn,
   isUserLoading,
   userData,
+  avatarHeadUrlSm,
+  avatarHeadUrlLg,
   profileOpen,
   setProfileOpen,
   onLoginClick,
@@ -68,7 +69,6 @@ const NavbarDesktop = ({
 
   const [rangoDatos, setRangoDatos] = useState(null);
   const [xpNavbar, setXpNavbar] = useState({ level: null, actual: 0, requerida: 1 });
-
   const [hasClaimables, setHasClaimables] = useState(false);
   const [claimablesCount, setClaimablesCount] = useState(0);
 
@@ -269,13 +269,18 @@ const NavbarDesktop = ({
   };
 
   const walletTip =
-    "Las Wallet Coins se consiguen con el daily, el voto y los logros. Puedes enviarlas al servidor que quieras, en la cantidad que elijas.";
+    "Las Wallet Coins se consiguen con el daily, el voto y los logros. Puedes enviarlas al servidor en la cantidad que elijas.";
 
   const storeSaleActive = useMemo(() => isSaleValid(saleNav), [saleNav?.active, saleNav?.expire]);
   const storeSalePercent = toInt(saleNav?.percent || 0);
   const storeSaleText = storeSalePercent > 0 ? `-${storeSalePercent}%` : "OFERTA";
   const storeSaleTitle = storeSalePercent > 0 ? `Oferta activa ${storeSaleText}` : "Oferta activa";
   const storeSaleAria = storeSalePercent > 0 ? `Tienda, oferta activa ${storeSaleText}` : "Tienda, oferta activa";
+
+  const handleAvatarError = (e) => {
+    e.currentTarget.onerror = null;
+    e.currentTarget.src = "/assets/skins/default-steve.webp";
+  };
 
   return (
     <div className="fcbar fcbar--desktop" ref={rootRef}>
@@ -358,10 +363,13 @@ const NavbarDesktop = ({
             >
               <span className="fcacct__avatar" aria-hidden="true">
                 <img
-                  src={`https://mc-heads.net/avatar/${userData.username}/28`}
+                  src={avatarHeadUrlSm}
                   alt=""
                   className="fcacct__avatarImg"
                   draggable="false"
+                  loading="eager"
+                  decoding="async"
+                  onError={handleAvatarError}
                 />
               </span>
 
@@ -376,10 +384,13 @@ const NavbarDesktop = ({
               <div className="fcacct__panel" ref={dropdownRef} role="menu">
                 <div className="fcacct__top">
                   <img
-                    src={`https://mc-heads.net/avatar/${userData.username}/64`}
-                    alt="avatar"
+                    src={avatarHeadUrlLg}
+                    alt=""
                     className="fcacct__avatarBig"
                     draggable="false"
+                    loading="eager"
+                    decoding="async"
+                    onError={handleAvatarError}
                   />
 
                   <div className="fcacct__meta">

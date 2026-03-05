@@ -11,11 +11,7 @@ const API_BASE = (import.meta.env.VITE_BACKEND_URL || "https://flancraft-backend
   .replace(/\/$/, "");
 const apiUrl = (path) => (API_BASE ? `${API_BASE}${path}` : path);
 
-const SERVERS_COINS = [
-  { key: "gens", label: "GENS" },
-  { key: "oneblock", label: "ONEBLOCK" },
-  { key: "survival", label: "SURVIVAL" },
-];
+const SERVERS_COINS = [{ key: "survival", label: "SURVIVAL" }];
 
 const NAV_ITEMS = [
   { key: "home", to: "/", label: "Inicio" },
@@ -65,7 +61,7 @@ const parseCoinsPayload = (m) => {
 
 const sumTotalCoins = (coinsByServer) => {
   if ("global" in coinsByServer) return toInt(coinsByServer.global);
-  return SERVERS_COINS.reduce((acc, s) => acc + toInt(coinsByServer[s.key]), 0);
+  return toInt(coinsByServer.survival);
 };
 
 const pickSalePercent = (sale) => {
@@ -82,6 +78,16 @@ const isSaleStillValid = (sale) => {
   const expire = Number(sale?.expire || 0);
   if (!expire) return false;
   return expire * 1000 > Date.now();
+};
+
+const buildAvatarHeadUrl = (uuid, username, size) => {
+  const cleanUuid = String(uuid || "").trim();
+  const cleanUsername = String(username || "").trim().replace(/^\.+/, "");
+  const identifier = cleanUuid || cleanUsername;
+
+  if (!identifier) return "/assets/skins/default-steve.webp";
+
+  return `https://mc-heads.net/avatar/${encodeURIComponent(identifier)}/${size}`;
 };
 
 const Navbar = ({ onLoginClick }) => {
@@ -339,6 +345,16 @@ const Navbar = ({ onLoginClick }) => {
     setActiveDropdown((prev) => (prev === key ? null : key));
   }, []);
 
+  const avatarHeadUrlSm = useMemo(
+    () => buildAvatarHeadUrl(userData?.uuid, userData?.username, 28),
+    [userData?.uuid, userData?.username]
+  );
+
+  const avatarHeadUrlLg = useMemo(
+    () => buildAvatarHeadUrl(userData?.uuid, userData?.username, 64),
+    [userData?.uuid, userData?.username]
+  );
+
   const sharedProps = useMemo(
     () => ({
       menuOpen,
@@ -350,6 +366,8 @@ const Navbar = ({ onLoginClick }) => {
       isLoggedIn,
       isUserLoading: userLoading && baseLoggedIn,
       userData,
+      avatarHeadUrlSm,
+      avatarHeadUrlLg,
       onLoginClick,
       serversCoins: SERVERS_COINS,
       navItems: NAV_ITEMS,
@@ -369,6 +387,8 @@ const Navbar = ({ onLoginClick }) => {
       userLoading,
       baseLoggedIn,
       userData,
+      avatarHeadUrlSm,
+      avatarHeadUrlLg,
       onLoginClick,
       handleDropdownHover,
       handleDropdownLeave,

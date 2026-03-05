@@ -1,5 +1,4 @@
-// apps/frontend/src/components/Navbar/NavbarMobile.jsx
-import { NavLink, Link, useLocation } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import LogoutButton from "../Auth/LogoutButton";
 import LoginModal from "../Auth/LoginModal";
@@ -56,6 +55,8 @@ const NavbarMobile = ({
   isLoggedIn,
   isUserLoading,
   userData,
+  avatarHeadUrlSm,
+  avatarHeadUrlLg,
   navItems,
   saleNav,
 }) => {
@@ -70,6 +71,21 @@ const NavbarMobile = ({
 
   const [hasClaimables, setHasClaimables] = useState(false);
   const [claimablesCount, setClaimablesCount] = useState(0);
+
+  const resolvedAvatarSm = useMemo(
+    () => avatarHeadUrlSm || "/assets/skins/default-steve.webp",
+    [avatarHeadUrlSm]
+  );
+
+  const resolvedAvatarLg = useMemo(
+    () => avatarHeadUrlLg || "/assets/skins/default-steve.webp",
+    [avatarHeadUrlLg]
+  );
+
+  const handleAvatarError = useCallback((e) => {
+    e.currentTarget.onerror = null;
+    e.currentTarget.src = "/assets/skins/default-steve.webp";
+  }, []);
 
   useEffect(() => {
     setMenuOpen(false);
@@ -228,7 +244,7 @@ const NavbarMobile = ({
   );
 
   const walletTip =
-    "Las Wallet Coins se consiguen con el daily, el voto y los logros. Puedes enviarlas al servidor que quieras, en la cantidad que elijas.";
+    "Las Wallet Coins se consiguen con el daily, el voto y los logros. Puedes enviarlas al servidor en la cantidad que elijas.";
 
   const storeSaleActive = useMemo(() => isSaleValid(saleNav), [saleNav?.active, saleNav?.expire]);
   const storeSalePercent = toInt(saleNav?.percent || 0);
@@ -252,14 +268,14 @@ const NavbarMobile = ({
             <span />
           </button>
 
-          <Link to="/" className="logo-inline" onClick={() => setMenuOpen(false)} aria-label="Ir al inicio">
+          <NavLink to="/" className="logo-inline" onClick={() => setMenuOpen(false)} aria-label="Ir al inicio">
             <img
               src="/assets/logonav.webp"
               alt="Flancraft logo"
               className={`logo-img ${isHome ? "logo-activo" : ""}`}
               draggable="false"
             />
-          </Link>
+          </NavLink>
         </div>
 
         {!isLoggedIn ? (
@@ -283,10 +299,13 @@ const NavbarMobile = ({
             >
               <span className="user-avatar" aria-hidden="true">
                 <img
-                  src={`https://mc-heads.net/avatar/${userData.username}/28`}
+                  src={resolvedAvatarSm}
                   alt=""
                   className="user-avatar-img"
                   draggable="false"
+                  loading="eager"
+                  decoding="async"
+                  onError={handleAvatarError}
                 />
               </span>
 
@@ -313,10 +332,13 @@ const NavbarMobile = ({
             <div className="user-header centered">
               <div className="ud-top">
                 <img
-                  src={`https://mc-heads.net/avatar/${userData.username}/64`}
-                  alt="avatar"
+                  src={resolvedAvatarLg}
+                  alt=""
                   className="user-avatar-large"
                   draggable="false"
+                  loading="eager"
+                  decoding="async"
+                  onError={handleAvatarError}
                 />
 
                 <div className="ud-meta">
