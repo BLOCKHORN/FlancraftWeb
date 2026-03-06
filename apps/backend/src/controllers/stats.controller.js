@@ -1,14 +1,15 @@
-// apps/backend/src/controllers/stats.controller.js
 const db = require("../models/db");
 
-const TIPOS_VALIDOS = new Set([
-  "genpoints",
-  "obpoints",
-  "svpoints",
-  "pkpoints",
-  "anpoints",
-  "network_points",
+const SURVIVAL_SERVER = "survival";
+const DEFAULT_LIMIT = 10;
+const MAX_LIMIT = 1000;
 
+const SURVIVAL_STATS_SELECT = [
+  "uuid",
+  "nombre_minecraft",
+  "servidor",
+  "plataforma",
+  "ultima_actualizacion",
   "bloques_minados",
   "bloques_colocados",
   "mobs_matados",
@@ -27,57 +28,129 @@ const TIPOS_VALIDOS = new Set([
   "peces_pescados",
   "dano_infligido",
   "dano_recibido",
-
   "killstreak_max",
-
   "dinero",
-  "power_mcmmo",
-
-  "island_level",
-  "oneblock_blocks_broken",
-  "phase_actual",
-  "challenges_completados",
-
+  "dinero_ganado_total",
   "coins_balance",
   "coins_ganadas_total",
-  "dinero_ganado_total",
-  "upgrades_comprados",
-  "gens_owned",
-  "prestigios",
+].join(",");
 
-  "gens_value_total",
-  "gens_income_h",
-  "gens_highest_tier",
-
-  "nivel",
-
-  "mejor_tiempo",
-  "completadas_total",
-  "perfect_runs",
-  "falls",
-  "medallas_ganadas",
-  "racha_dias",
+const TIPOS_VALIDOS = new Set([
+  "svpoints",
+  "network_points",
+  "bloques_minados",
+  "bloques_colocados",
+  "mobs_matados",
+  "kills_pvp",
+  "muertes",
+  "muertes_pvp",
+  "tiempo_jugado",
+  "saltos",
+  "distancia_caminada",
+  "distancia_volada",
+  "diamantes_minados",
+  "hierro_minado",
+  "oro_minado",
+  "esmeraldas_minadas",
+  "cultivos_cosechados",
+  "peces_pescados",
+  "dano_infligido",
+  "dano_recibido",
+  "killstreak_max",
+  "dinero",
 ]);
 
 const VIEWS_BY_TIPO = {
-  genpoints: { view: "vista_leaderboard_genspoints_wallet", order: "genpoints", onlyServer: "gens" },
-  obpoints: { view: "vista_leaderboard_obpoints_wallet", order: "obpoints", onlyServer: "oneblock" },
-  svpoints: { view: "vista_leaderboard_svpoints_wallet", order: "svpoints", onlyServer: "survival" },
-  pkpoints: { view: "vista_leaderboard_pkpoints_wallet", order: "pkpoints", onlyServer: "parkour" },
-  anpoints: { view: "vista_leaderboard_anpoints_wallet", order: "anpoints", onlyServer: "anarquico" },
-  network_points: { view: "vista_leaderboard_network_points_wallet", order: "network_points" },
+  svpoints: {
+    view: "vista_leaderboard_svpoints_wallet",
+    order: "svpoints",
+  },
+  network_points: {
+    view: "vista_leaderboard_svpoints_wallet",
+    order: "svpoints",
+  },
 };
 
-const parseAsc = (v) => {
-  if (typeof v === "undefined") return false;
-  return String(v).toLowerCase() === "true";
+const parseAsc = (value) => String(value).toLowerCase() === "true";
+
+const parseLimit = (value, fallback = DEFAULT_LIMIT) => {
+  const num = Number.parseInt(String(value ?? ""), 10);
+  if (!Number.isFinite(num)) return fallback;
+  return Math.max(1, Math.min(MAX_LIMIT, num));
+};
+
+const parseOffset = (value) => {
+  const num = Number.parseInt(String(value ?? ""), 10);
+  if (!Number.isFinite(num)) return 0;
+  return Math.max(0, num);
+};
+
+const num = (value, fallback = 0) => {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : fallback;
+};
+
+const numOrUndef = (value) => {
+  if (value === undefined || value === null || value === "") return undefined;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : undefined;
+};
+
+const textOrUndef = (value) => {
+  if (value === undefined || value === null) return undefined;
+  const str = String(value).trim();
+  return str || undefined;
+};
+
+const setIfDefined = (obj, key, value) => {
+  if (value !== undefined) {
+    obj[key] = value;
+  }
+};
+
+const normalizeServer = (value) => String(value ?? "").trim().toLowerCase();
+
+const max0 = (value) => Math.max(0, Number(value) || 0);
+
+const resolveServerOrReject = (value) => {
+  const server = normalizeServer(value);
+  if (!server) return SURVIVAL_SERVER;
+  if (server !== SURVIVAL_SERVER) return null;
+  return SURVIVAL_SERVER;
+};
+
+const buildLifetimePayload = (prevRow, incoming, currentKey, totalKey) => {
+  const out = { ...incoming };
+
+  if (out[currentKey] === undefined) {
+    return out;
+  }
+
+  const prevCurrent = Number(prevRow?.[currentKey] ?? 0) || 0;
+  const prevTotalRaw = Number(prevRow?.[totalKey] ?? prevCurrent) || 0;
+  const prevTotal = Math.max(prevTotalRaw, prevCurrent);
+
+  const newCurrent = Number(out[currentKey]) || 0;
+  const delta = max0(newCurrent - prevCurrent);
+
+  out[currentKey] = newCurrent;
+  out[totalKey] = prevTotal + delta;
+
+  return out;
+};
+
+const buildEconomyTotalsPayload = (prevRow, incoming) => {
+  let out = buildLifetimePayload(prevRow, incoming, "dinero", "dinero_ganado_total");
+  out = buildLifetimePayload(prevRow, out, "coins_balance", "coins_ganadas_total");
+  return out;
 };
 
 exports.importarStat = async (req, res) => {
   const { uuid, nombre_minecraft, servidor, tipo, categoria, valor } = req.body;
+  const server = resolveServerOrReject(servidor);
 
-  if (!uuid || !servidor || !tipo || !categoria || valor == null) {
-    return res.status(400).json({ error: "Faltan campos obligatorios." });
+  if (!uuid || !server || !tipo || !categoria || valor == null) {
+    return res.status(400).json({ error: "Faltan campos obligatorios o servidor inválido." });
   }
 
   const { error } = await db.from("estadisticas_importadas").upsert(
@@ -85,7 +158,7 @@ exports.importarStat = async (req, res) => {
       {
         uuid,
         nombre_minecraft,
-        servidor,
+        servidor: server,
         tipo,
         categoria,
         valor,
@@ -104,50 +177,13 @@ exports.importarStat = async (req, res) => {
 };
 
 exports.importarStatsAgrupadas = async (req, res) => {
-  const num = (v, def = 0) => {
-    const n = Number(v);
-    return Number.isFinite(n) ? n : def;
-  };
-
-  const numOrUndef = (v) => {
-    if (v === undefined || v === null || v === "") return undefined;
-    const n = Number(v);
-    return Number.isFinite(n) ? n : undefined;
-  };
-
-  const textOrUndef = (v) => {
-    if (v === undefined || v === null) return undefined;
-    const s = String(v).trim();
-    return s ? s : undefined;
-  };
-
-  const jsonOrUndef = (v) => {
-    if (v === undefined || v === null) return undefined;
-    if (typeof v === "object") return v;
-
-    if (typeof v === "string") {
-      const s = v.trim();
-      if (!s) return undefined;
-      try {
-        const parsed = JSON.parse(s);
-        if (parsed && typeof parsed === "object") return parsed;
-        return undefined;
-      } catch {
-        return undefined;
-      }
-    }
-
-    return undefined;
-  };
-
-  const setIfDefined = (obj, key, value) => {
-    if (value !== undefined) obj[key] = value;
-  };
-
   const { uuid, servidor } = req.body;
+  const server = resolveServerOrReject(servidor);
 
-  if (!uuid || !servidor) {
-    return res.status(400).json({ error: "Faltan campos obligatorios (uuid/servidor)." });
+  if (!uuid || !server) {
+    return res.status(400).json({
+      error: "Faltan campos obligatorios (uuid/servidor) o el servidor no es válido.",
+    });
   }
 
   const syncContext = String(req.body.sync_context || "online").toLowerCase();
@@ -160,21 +196,17 @@ exports.importarStatsAgrupadas = async (req, res) => {
     kills_pvp: num(req.body.kills_pvp),
     muertes: num(req.body.muertes),
     tiempo_jugado: num(req.body.tiempo_jugado),
-
     saltos: num(req.body.saltos),
     distancia_caminada: num(req.body.distancia_caminada),
     distancia_volada: num(req.body.distancia_volada),
-
     diamantes_minados: num(req.body.diamantes_minados),
     hierro_minado: num(req.body.hierro_minado),
     oro_minado: num(req.body.oro_minado),
     esmeraldas_minadas: num(req.body.esmeraldas_minadas),
     cultivos_cosechados: num(req.body.cultivos_cosechados),
-
     peces_pescados: num(req.body.peces_pescados),
     dano_infligido: num(req.body.dano_infligido),
     dano_recibido: num(req.body.dano_recibido),
-
     ultima_actualizacion: new Date().toISOString(),
   };
 
@@ -182,47 +214,23 @@ exports.importarStatsAgrupadas = async (req, res) => {
   setIfDefined(baseUpdate, "plataforma", textOrUndef(req.body.plataforma));
 
   const extrasUpdate = {};
+
   if (allowExtras) {
     setIfDefined(extrasUpdate, "dinero", numOrUndef(req.body.dinero));
-    setIfDefined(extrasUpdate, "power_mcmmo", numOrUndef(req.body.power_mcmmo));
-
-    setIfDefined(extrasUpdate, "island_level", numOrUndef(req.body.island_level));
-    setIfDefined(extrasUpdate, "oneblock_blocks_broken", numOrUndef(req.body.oneblock_blocks_broken));
-    setIfDefined(extrasUpdate, "phase_actual", numOrUndef(req.body.phase_actual));
-    setIfDefined(extrasUpdate, "phase_nombre", textOrUndef(req.body.phase_nombre));
-    setIfDefined(extrasUpdate, "challenges_completados", numOrUndef(req.body.challenges_completados));
-
-    setIfDefined(extrasUpdate, "coins_balance", numOrUndef(req.body.coins_balance));
-    setIfDefined(extrasUpdate, "upgrades_comprados", numOrUndef(req.body.upgrades_comprados));
-    setIfDefined(extrasUpdate, "gens_owned", numOrUndef(req.body.gens_owned));
-    setIfDefined(extrasUpdate, "prestigios", numOrUndef(req.body.prestigios));
-    setIfDefined(extrasUpdate, "nivel", textOrUndef(req.body.nivel));
-
-    setIfDefined(extrasUpdate, "gens_value_total", numOrUndef(req.body.gens_value_total));
-    setIfDefined(extrasUpdate, "gens_income_h", numOrUndef(req.body.gens_income_h));
-    setIfDefined(extrasUpdate, "gens_highest_tier", numOrUndef(req.body.gens_highest_tier));
-    setIfDefined(extrasUpdate, "gens_tiers", jsonOrUndef(req.body.gens_tiers));
-    setIfDefined(extrasUpdate, "gens_tiers_json", textOrUndef(req.body.gens_tiers_json));
-
-    setIfDefined(extrasUpdate, "coins_snapshot", numOrUndef(req.body.coins_snapshot));
-    setIfDefined(extrasUpdate, "dinero_snapshot", numOrUndef(req.body.dinero_snapshot));
-
-    setIfDefined(extrasUpdate, "mejor_tiempo", numOrUndef(req.body.mejor_tiempo));
-    setIfDefined(extrasUpdate, "completadas_total", numOrUndef(req.body.completadas_total));
-    setIfDefined(extrasUpdate, "perfect_runs", numOrUndef(req.body.perfect_runs));
-    setIfDefined(extrasUpdate, "falls", numOrUndef(req.body.falls));
-    setIfDefined(extrasUpdate, "medallas_ganadas", numOrUndef(req.body.medallas_ganadas));
-    setIfDefined(extrasUpdate, "racha_dias", numOrUndef(req.body.racha_dias));
-
+    setIfDefined(
+      extrasUpdate,
+      "coins_balance",
+      numOrUndef(req.body.coins_balance ?? req.body.coins)
+    );
     setIfDefined(extrasUpdate, "killstreak_max", numOrUndef(req.body.killstreak_max));
     setIfDefined(extrasUpdate, "muertes_pvp", numOrUndef(req.body.muertes_pvp));
   }
 
   const { data: existing, error: findErr } = await db
     .from("estadisticas_agrupadas")
-    .select("uuid, servidor, coins_balance, coins_ganadas_total, dinero, dinero_ganado_total")
+    .select("uuid, servidor, dinero, dinero_ganado_total, coins_balance, coins_ganadas_total")
     .eq("uuid", uuid)
-    .eq("servidor", servidor)
+    .eq("servidor", server)
     .maybeSingle();
 
   if (findErr) {
@@ -230,98 +238,90 @@ exports.importarStatsAgrupadas = async (req, res) => {
     return res.status(500).json({ error: "Error al comprobar estadísticas existentes." });
   }
 
-  const serverKey = String(servidor).toLowerCase();
-  const trackMoneyTotals = serverKey === "gens" || serverKey === "oneblock";
-  const trackCoinsTotals = serverKey === "gens";
-
-  const max0 = (x) => Math.max(0, Number(x) || 0);
-
-  const buildTotalsPayload = (prevRow, incoming) => {
-    const out = { ...incoming };
-
-    if (trackCoinsTotals && incoming.coins_balance !== undefined) {
-      const prevBal = Number(prevRow?.coins_balance ?? 0) || 0;
-      const prevTotalRaw = Number(prevRow?.coins_ganadas_total ?? prevRow?.coins_balance ?? 0) || 0;
-      const prevTotal = Math.max(prevTotalRaw, prevBal);
-
-      const newBal = Number(incoming.coins_balance) || 0;
-      const delta = max0(newBal - prevBal);
-
-      out.coins_balance = newBal;
-      out.coins_ganadas_total = prevTotal + delta;
-    }
-
-    if (trackMoneyTotals && incoming.dinero !== undefined) {
-      const prevBal = Number(prevRow?.dinero ?? 0) || 0;
-      const prevTotalRaw = Number(prevRow?.dinero_ganado_total ?? prevRow?.dinero ?? 0) || 0;
-      const prevTotal = Math.max(prevTotalRaw, prevBal);
-
-      const newBal = Number(incoming.dinero) || 0;
-      const delta = max0(newBal - prevBal);
-
-      out.dinero = newBal;
-      out.dinero_ganado_total = prevTotal + delta;
-    }
-
-    return out;
-  };
-
   if (existing) {
-    let updatePayload = allowExtras ? { ...baseUpdate, ...extrasUpdate } : { ...baseUpdate };
-    if (allowExtras) updatePayload = buildTotalsPayload(existing, updatePayload);
+    let updatePayload = allowExtras
+      ? { ...baseUpdate, ...extrasUpdate }
+      : { ...baseUpdate };
+
+    if (allowExtras) {
+      updatePayload = buildEconomyTotalsPayload(existing, updatePayload);
+    }
 
     const { error: updErr } = await db
       .from("estadisticas_agrupadas")
       .update(updatePayload)
       .eq("uuid", uuid)
-      .eq("servidor", servidor);
+      .eq("servidor", server);
 
     if (updErr) {
       console.error("[FlanSync] Error al actualizar stats:", updErr.message);
       return res.status(500).json({ error: "Error al actualizar estadísticas." });
     }
 
-    return res.status(200).json({ success: true, mode: "update", sync_context: syncContext });
+    return res.status(200).json({
+      success: true,
+      mode: "update",
+      sync_context: syncContext,
+    });
   }
 
   let insertPayload = {
     uuid,
-    servidor,
+    servidor: server,
     ...baseUpdate,
     ...(allowExtras ? extrasUpdate : {}),
   };
 
   if (allowExtras) {
-    const initialRow = { coins_balance: 0, coins_ganadas_total: 0, dinero: 0, dinero_ganado_total: 0 };
-    insertPayload = buildTotalsPayload(initialRow, insertPayload);
-
-    if (trackCoinsTotals && insertPayload.coins_ganadas_total === undefined && insertPayload.coins_balance !== undefined) {
-      insertPayload.coins_ganadas_total = insertPayload.coins_balance;
-    }
-    if (trackMoneyTotals && insertPayload.dinero_ganado_total === undefined && insertPayload.dinero !== undefined) {
-      insertPayload.dinero_ganado_total = insertPayload.dinero;
-    }
+    insertPayload = buildEconomyTotalsPayload(
+      {
+        dinero: 0,
+        dinero_ganado_total: 0,
+        coins_balance: 0,
+        coins_ganadas_total: 0,
+      },
+      insertPayload
+    );
   }
 
-  const { error: insErr } = await db.from("estadisticas_agrupadas").insert([insertPayload]);
+  const { error: insErr } = await db
+    .from("estadisticas_agrupadas")
+    .insert([insertPayload]);
 
   if (insErr) {
     console.error("[FlanSync] Error al insertar stats:", insErr.message);
     return res.status(500).json({ error: "Error al insertar estadísticas." });
   }
 
-  return res.status(200).json({ success: true, mode: "insert", sync_context: syncContext });
+  return res.status(200).json({
+    success: true,
+    mode: "insert",
+    sync_context: syncContext,
+  });
 };
 
 exports.obtenerRankingEstadisticas = async (req, res) => {
-  const { tipo, servidor, limit = 10, offset = 0 } = req.query;
+  const tipo = textOrUndef(req.query.tipo);
+  const servidor = resolveServerOrReject(req.query.servidor);
+  const limit = parseLimit(req.query.limit);
+  const offset = parseOffset(req.query.offset);
 
-  let query = db.from("vista_ranking_estadisticas").select("*", { count: "exact" });
+  if (req.query.servidor && !servidor) {
+    return res.json({ total: 0, resultados: [] });
+  }
 
-  if (tipo) query = query.eq("tipo", tipo);
-  if (servidor) query = query.eq("servidor", servidor);
+  let query = db
+    .from("vista_ranking_estadisticas")
+    .select("*", { count: "exact" })
+    .eq("servidor", SURVIVAL_SERVER);
 
-  query = query.order("valor", { ascending: false }).range(+offset, +offset + +limit - 1);
+  if (tipo) {
+    query = query.eq("tipo", tipo);
+  }
+
+  query = query
+    .order("valor", { ascending: false })
+    .range(offset, offset + limit - 1);
 
   const { data, count, error } = await query;
 
@@ -330,68 +330,76 @@ exports.obtenerRankingEstadisticas = async (req, res) => {
     return res.status(500).json({ error: "Error al obtener ranking." });
   }
 
-  return res.json({ total: count, resultados: data });
+  return res.json({ total: count, resultados: data || [] });
 };
 
 exports.obtenerLeaderboards = async (req, res) => {
-  const { tipo = "tiempo_jugado", servidor, limit = 10, offset = 0, asc } = req.query;
+  const tipo = textOrUndef(req.query.tipo) || "tiempo_jugado";
+  const servidor = resolveServerOrReject(req.query.servidor);
+  const limit = parseLimit(req.query.limit);
+  const offset = parseOffset(req.query.offset);
+  const ascending = parseAsc(req.query.asc);
 
   if (!TIPOS_VALIDOS.has(tipo)) {
-    return res.status(400).json({ error: "Tipo de estadística inválido.", tiposValidos: Array.from(TIPOS_VALIDOS) });
+    return res.status(400).json({
+      error: "Tipo de estadística inválido.",
+      tiposValidos: Array.from(TIPOS_VALIDOS),
+    });
   }
 
-  const ascending = parseAsc(asc);
+  if (req.query.servidor && !servidor) {
+    return res.json({ total: 0, resultados: [] });
+  }
 
   const spec = VIEWS_BY_TIPO[tipo];
-  if (spec) {
-    if (spec.onlyServer && servidor && String(servidor).toLowerCase() !== spec.onlyServer) {
-      return res.json({ total: 0, resultados: [] });
-    }
 
-    let q = db
+  if (spec) {
+    const { data, count, error } = await db
       .from(spec.view)
       .select("*", { count: "exact" })
       .order(spec.order, { ascending })
-      .range(+offset, +offset + +limit - 1);
-
-    const { data, count, error } = await q;
+      .range(offset, offset + limit - 1);
 
     if (error) {
       console.error("[FlanSync] Error al obtener leaderboard:", error.message);
       return res.status(500).json({ error: "Error al obtener datos." });
     }
 
-    return res.json({ total: count, resultados: data });
+    return res.json({ total: count, resultados: data || [] });
   }
 
-  let query = db
+  const { data, count, error } = await db
     .from("vista_estadisticas_agrupadas_wallet")
     .select("*", { count: "exact" })
+    .eq("servidor", SURVIVAL_SERVER)
     .order(tipo, { ascending })
-    .range(+offset, +offset + +limit - 1);
-
-  if (servidor) query = query.eq("servidor", servidor);
-
-  const { data, count, error } = await query;
+    .range(offset, offset + limit - 1);
 
   if (error) {
     console.error("[FlanSync] Error al obtener leaderboard agrupado:", error.message);
     return res.status(500).json({ error: "Error al obtener datos." });
   }
 
-  return res.json({ total: count, resultados: data });
+  return res.json({ total: count, resultados: data || [] });
 };
 
 exports.obtenerPerfilJugador = async (req, res) => {
   const { uuid } = req.params;
-  const { servidor } = req.query;
+  const servidor = resolveServerOrReject(req.query.servidor);
 
-  if (!uuid) return res.status(400).json({ error: "Falta uuid en la ruta." });
+  if (!uuid) {
+    return res.status(400).json({ error: "Falta uuid en la ruta." });
+  }
 
-  let query = db.from("estadisticas_agrupadas").select("*").eq("uuid", uuid);
-  if (servidor) query = query.eq("servidor", servidor);
+  if (req.query.servidor && !servidor) {
+    return res.json({ resultados: [] });
+  }
 
-  const { data, error } = await query;
+  const { data, error } = await db
+    .from("estadisticas_agrupadas")
+    .select(SURVIVAL_STATS_SELECT)
+    .eq("uuid", uuid)
+    .eq("servidor", SURVIVAL_SERVER);
 
   if (error) {
     console.error("[FlanSync] Error al obtener perfil de jugador:", error.message);

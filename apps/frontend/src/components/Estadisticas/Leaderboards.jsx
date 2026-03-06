@@ -13,8 +13,16 @@ import {
   formatInt,
 } from "../../components/Estadisticas/leaderboards.utils";
 
+const API_BASE = (import.meta.env.VITE_BACKEND_URL || "https://flancraft-backend.onrender.com")
+  .trim()
+  .replace(/\/$/, "");
+const apiUrl = (path) => (API_BASE ? `${API_BASE}${path}` : path);
+
+const SERVER_ID = "survival";
 const LIMIT = 10;
 const FETCH_LIMIT = 700;
+const EXIT_DELAY_MS = 520;
+const SKELETON_ITEMS = Array.from({ length: LIMIT });
 
 const COIN_SRC = "/tienda/assets/coin.png";
 const ICON_POINTS = "/assets/points.png";
@@ -36,35 +44,45 @@ const RANGO_LOCAL = {
 const RANGO_REMOTE = {
   nova: "https://dunb17ur4ymx4.cloudfront.net/wysiwyg/1447273/2de18b63a83cb0b8df9197a4eab9ca575906152d.png",
   alpha: "https://dunb17ur4ymx4.cloudfront.net/wysiwyg/1447273/9c1a0dd33eb6327f1ceb179080f232bc842e8225.png",
-  inmortal: "https://dunb17ur4ymx4.cloudfront.net/wysiwyg/1447273/1aaaa34593db3f2dea9d09a7bd4d985500d69de6.png",
+  inmortal:
+    "https://dunb17ur4ymx4.cloudfront.net/wysiwyg/1447273/1aaaa34593db3f2dea9d09a7bd4d985500d69de6.png",
 };
 
-const pickWallet = (p) => {
-  const v =
-    p?.wallet_coins ??
-    p?.walletCoins ??
-    p?.coins_wallet ??
-    p?.coins_web ??
-    p?.wallet;
-  const n = Number(v);
-  return Number.isFinite(n) ? n : null;
-};
+const POINTS_GUIDE = [
+  {
+    step: "01",
+    title: "Pica, mata y progresa",
+    text: "Minar, farmear mobs y avanzar de verdad te da la base más fuerte de puntos.",
+  },
+  {
+    step: "02",
+    title: "El PvP sí cuenta",
+    text: "Ganar peleas suma bastante. Si eres bueno peleando, lo vas a notar rápido.",
+  },
+  {
+    step: "03",
+    title: "Morir te frena",
+    text: "Las muertes restan. Subir al top no es solo grindear: también importa sobrevivir.",
+  },
+  {
+    step: "04",
+    title: "El tiempo ayuda",
+    text: "Jugar más suma, pero no vale con estar AFK toda la vida. El progreso real pesa más.",
+  },
+  {
+    step: "05",
+    title: "La economía empuja",
+    text: "Tener una economía fuerte también suma, pero no regala el top por sí sola.",
+  },
+  {
+    step: "06",
+    title: "Para ser top hay que ser completo",
+    text: "El ranking premia al jugador que hace de todo bien: progreso, constancia, PvP y cabeza.",
+  },
+];
 
-const normalizePlatform = (p) => {
-  const s = String(p || "").toLowerCase();
-  if (s.includes("bedrock")) return "bedrock";
-  if (s.includes("java")) return "java";
-  return "other";
-};
-
-const normalizeRango = (r) => {
-  const s = String(r || "").toLowerCase().trim();
-  if (!s) return null;
-  if (s.includes("nova")) return "nova";
-  if (s.includes("alpha")) return "alpha";
-  if (s.includes("inmortal") || s.includes("immortal")) return "inmortal";
-  return null;
-};
+const skinUrlCache = new Map();
+const skinPromiseCache = new Map();
 
 const hideImg = (e) => {
   e.currentTarget.style.display = "none";
@@ -78,6 +96,172 @@ const fallbackRankImg = (key) => (e) => {
   }
   el.dataset.didFallback = "1";
   el.src = RANGO_REMOTE[key] || "";
+};
+
+const cleanPlayerName = (value) => String(value || "").trim().replace(/^\.+/, "");
+
+const looksLikeBedrockName = (value) => String(value || "").trim().startsWith(".");
+
+const pickWallet = (source) => {
+  const value =
+    source?.wallet_coins ??
+    source?.walletCoins ??
+    source?.coins_wallet ??
+    source?.coins_web ??
+    source?.wallet;
+
+  const num = Number(value);
+  return Number.isFinite(num) ? num : null;
+};
+
+const normalizePlatform = (platform) => {
+  const value = String(platform || "").toLowerCase();
+  if (value.includes("bedrock")) return "bedrock";
+  if (value.includes("java")) return "java";
+  return "other";
+};
+
+const normalizeRango = (rango) => {
+  const value = String(rango || "").toLowerCase().trim();
+  if (!value) return null;
+  if (value.includes("nova")) return "nova";
+  if (value.includes("alpha")) return "alpha";
+  if (value.includes("inmortal") || value.includes("immortal")) return "inmortal";
+  return null;
+};
+
+const getMetaRango = (meta) =>
+  meta?.rango || meta?.rango_usuario || meta?.rank || null;
+
+const fetchPlayerSkinUrl = async (uuid, signal) => {
+  if (!uuid) return null;
+
+  if (skinUrlCache.has(uuid)) {
+    return skinUrlCache.get(uuid) || null;
+  }
+
+  if (skinPromiseCache.has(uuid)) {
+    return skinPromiseCache.get(uuid);
+  }
+
+  const promise = fetch(apiUrl(`/api/usuarios/${uuid}/skin`), { signal })
+    .then(async (res) => {
+      if (!res.ok) return null;
+      const data = await res.json().catch(() => null);
+      const skinUrl = String(data?.skin_url || "").trim() || null;
+      skinUrlCache.set(uuid, skinUrl);
+      return skinUrl;
+    })
+    .catch(() => null)
+    .finally(() => {
+      skinPromiseCache.delete(uuid);
+    });
+
+  skinPromiseCache.set(uuid, promise);
+  return promise;
+};
+
+const buildHeadSources = ({ uuid, nombre, platKey, remoteSkinUrl }) => {
+  const cleanName = cleanPlayerName(nombre);
+  const isBedrock = platKey === "bedrock" || looksLikeBedrockName(nombre);
+  const list = [];
+
+  if (remoteSkinUrl) {
+    list.push(remoteSkinUrl);
+  }
+
+  if (!isBedrock && cleanName) {
+    list.push(`https://minotar.net/helm/${encodeURIComponent(cleanName)}/64`);
+  }
+
+  if (isBedrock) {
+    list.push("/assets/skins/bedrock-default.webp");
+  }
+
+  list.push("/assets/skins/default-steve.webp");
+
+  return Array.from(new Set(list.filter(Boolean)));
+};
+
+const pickExitSkin = (nombre, platKey, uuid) => {
+  const cleanName = cleanPlayerName(nombre);
+  const isBedrock = platKey === "bedrock" || looksLikeBedrockName(nombre);
+  const cached = uuid ? skinUrlCache.get(uuid) : null;
+
+  if (cached) return cached;
+  if (!isBedrock && cleanName) {
+    return `https://minotar.net/helm/${encodeURIComponent(cleanName)}/128`;
+  }
+  if (isBedrock) {
+    return "/assets/skins/bedrock-default.webp";
+  }
+  return "/assets/skins/default-steve.webp";
+};
+
+const buildFxPayload = (player, meta) => {
+  const nombre = player?.nombre_minecraft || "";
+  const platKey = normalizePlatform(player?.platform || getPlatform(player));
+  const rangoKey = normalizeRango(getMetaRango(meta));
+
+  return {
+    nombre,
+    platKey,
+    rangoKey,
+    skin: pickExitSkin(nombre, platKey, player?.uuid),
+  };
+};
+
+const normalizeLeaderboardItem = (player) => {
+  if (!isNombreValido(player?.nombre_minecraft)) return null;
+
+  const uuid = player?.uuid || null;
+  const nombre = player?.nombre_minecraft || "";
+  const id = String(uuid || nombre.toLowerCase()).trim();
+
+  if (!id) return null;
+
+  const totalPoints = safeNum(
+    player?.svpoints ??
+      player?.points ??
+      player?.puntos ??
+      player?.puntos_sv ??
+      player?.survival_points ??
+      0
+  );
+
+  const tiempoTotal = Math.max(0, safeNum(player?.tiempo_jugado));
+  const wallet = pickWallet(player);
+
+  return {
+    id,
+    uuid,
+    nombre_minecraft: nombre,
+    platform: getPlatform(player),
+    wallet,
+    tiempo_total: tiempoTotal,
+    total_points: totalPoints,
+  };
+};
+
+const decoratePlayer = (player, meta) => {
+  const rangoRaw = getMetaRango(meta);
+  const rangoKey = normalizeRango(rangoRaw);
+  const platKey = normalizePlatform(player?.platform);
+  const wallet = player?.wallet ?? pickWallet(meta);
+  const walletTxt = wallet == null ? "—" : formatInt(wallet);
+  const tiempoTxt = formatearTiempo(safeNum(player?.tiempo_total));
+
+  return {
+    ...player,
+    meta,
+    rangoRaw,
+    rangoKey,
+    platKey,
+    wallet,
+    walletTxt,
+    tiempoTxt,
+    platformIcon: PLATFORM_ICON[platKey] || "",
+  };
 };
 
 const HeadLabel = ({ icon, children }) => (
@@ -95,25 +279,135 @@ const HeadLabel = ({ icon, children }) => (
   </span>
 );
 
-const buildFxPayload = (p, meta) => {
-  const nombre = p?.nombre_minecraft || "";
-  const platKey = normalizePlatform(p?.platform || getPlatform(p));
-  const rangoRaw = meta?.rango || meta?.rango_usuario || meta?.rank || null;
-  const rangoKey = normalizeRango(rangoRaw);
-  const skin = `https://minotar.net/helm/${encodeURIComponent(
-    nombre || "Steve"
-  )}/128`;
-  return { nombre, platKey, rangoKey, skin };
+function LeaderboardSkin({ uuid, nombre, platKey }) {
+  const [remoteSkinUrl, setRemoteSkinUrl] = useState(() => {
+    if (!uuid) return "";
+    return skinUrlCache.get(uuid) || "";
+  });
+  const [errorIndex, setErrorIndex] = useState(0);
+
+  const isBedrock = platKey === "bedrock" || looksLikeBedrockName(nombre);
+  const sources = useMemo(
+    () =>
+      buildHeadSources({
+        uuid,
+        nombre,
+        platKey,
+        remoteSkinUrl,
+      }),
+    [uuid, nombre, platKey, remoteSkinUrl]
+  );
+
+  useEffect(() => {
+    setErrorIndex(0);
+  }, [uuid, nombre, platKey, remoteSkinUrl]);
+
+  useEffect(() => {
+    if (!uuid || !isBedrock) return;
+
+    let active = true;
+    const controller = new AbortController();
+
+    fetchPlayerSkinUrl(uuid, controller.signal).then((url) => {
+      if (!active || !url) return;
+      setRemoteSkinUrl(url);
+    });
+
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [uuid, isBedrock]);
+
+  const currentSrc = sources[Math.min(errorIndex, Math.max(sources.length - 1, 0))] || "/assets/skins/default-steve.webp";
+
+  return (
+    <img
+      src={currentSrc}
+      alt=""
+      loading="lazy"
+      onError={() => {
+        setErrorIndex((prev) => (prev < sources.length - 1 ? prev + 1 : prev));
+      }}
+      style={{
+        width: "100%",
+        height: "100%",
+        objectFit: "cover",
+        objectPosition: "center top",
+        imageRendering: "pixelated",
+        display: "block",
+      }}
+    />
+  );
+}
+
+const PlayerIdentity = ({ player, mobile = false }) => {
+  const { nombre_minecraft, rangoKey, rangoRaw, platKey, platformIcon } = player;
+
+  return (
+    <div className="lb-player">
+      <div className="lb-skin">
+        <LeaderboardSkin
+          uuid={player?.uuid}
+          nombre={nombre_minecraft}
+          platKey={platKey}
+        />
+      </div>
+
+      <div className="lb-nameWrap">
+        <div className={`lb-name ${rangoKey ? `is-${rangoKey}` : ""}`}>
+          {nombre_minecraft}
+        </div>
+
+        <div className="lb-meta">
+          {mobile ? (
+            platKey === "java" || platKey === "bedrock" ? (
+              <span
+                className={`lb-platform lb-platform--${platKey}`}
+                title={platKey}
+                aria-label={platKey}
+              >
+                {platformIcon ? (
+                  <img
+                    className="lb-platformIcon"
+                    src={platformIcon}
+                    alt=""
+                    loading="lazy"
+                    onError={hideImg}
+                  />
+                ) : null}
+                <span className="lb-platformDot" />
+              </span>
+            ) : null
+          ) : platKey === "java" || platKey === "bedrock" ? (
+            <span className={`lb-platformPill lb-platformPill--${platKey}`}>
+              {platKey === "bedrock" ? "BEDROCK" : "JAVA"}
+            </span>
+          ) : null}
+
+          {rangoKey ? (
+            <span
+              className={`lb-rango lb-rango--${rangoKey}`}
+              title={String(rangoRaw || "")}
+            >
+              <img
+                className="lb-rangoIcon"
+                src={RANGO_LOCAL[rangoKey]}
+                alt=""
+                loading="lazy"
+                onError={fallbackRankImg(rangoKey)}
+              />
+            </span>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default function Leaderboards() {
   const navigate = useNavigate();
-  const usuariosVinculados = useUsuariosVinculados();
-
-  const getMeta = useCallback(
-    (uuid) => usuariosVinculados?.[uuid] || null,
-    [usuariosVinculados]
-  );
+  const usuariosVinculados = useUsuariosVinculados() || {};
 
   const [loading, setLoading] = useState(true);
   const [errorTabla, setErrorTabla] = useState("");
@@ -121,158 +415,156 @@ export default function Leaderboards() {
 
   const [query, setQuery] = useState("");
   const [soloVinculados, setSoloVinculados] = useState(false);
-  const [offset, setOffset] = useState(0);
+  const [showGuide, setShowGuide] = useState(false);
+  const [page, setPage] = useState(1);
 
   const [isLeaving, setIsLeaving] = useState(false);
   const [exitFx, setExitFx] = useState(null);
 
-  const leaveTimer = useRef(null);
+  const leaveTimerRef = useRef(null);
 
   useEffect(() => {
     return () => {
-      if (leaveTimer.current) clearTimeout(leaveTimer.current);
+      if (leaveTimerRef.current) {
+        clearTimeout(leaveTimerRef.current);
+      }
     };
   }, []);
 
   useEffect(() => {
-    setOffset(0);
+    setPage(1);
   }, [query, soloVinculados]);
 
   const onOpenPerfil = useCallback(
     (player) => {
       if (!player?.nombre_minecraft || isLeaving) return;
 
-      const meta = getMeta(player?.uuid);
+      const meta = player?.meta || (player?.uuid ? usuariosVinculados[player.uuid] : null);
       const fx = buildFxPayload(player, meta);
+
+      if (leaveTimerRef.current) {
+        clearTimeout(leaveTimerRef.current);
+      }
 
       setExitFx(fx);
       setIsLeaving(true);
 
-      leaveTimer.current = setTimeout(() => {
+      leaveTimerRef.current = setTimeout(() => {
         navigate(`/perfil/${player.nombre_minecraft}`, { state: { fx } });
-      }, 520);
+      }, EXIT_DELAY_MS);
     },
-    [navigate, isLeaving, getMeta]
+    [isLeaving, navigate, usuariosVinculados]
   );
 
   useEffect(() => {
+    const controller = new AbortController();
     let alive = true;
 
-    (async () => {
+    const load = async () => {
       try {
         setLoading(true);
         setErrorTabla("");
 
         const res = await getLeaderboards({
           tipo: "svpoints",
-          servidor: "survival",
+          servidor: SERVER_ID,
           limit: FETCH_LIMIT,
           offset: 0,
           asc: false,
+          signal: controller.signal,
         });
 
         if (!alive) return;
 
         const items = Array.isArray(res?.resultados) ? res.resultados : [];
+        const uniqueMap = new Map();
 
-        const map = new Map();
-
-        for (const p of items) {
-          if (!isNombreValido(p?.nombre_minecraft)) continue;
-
-          const uuid = p?.uuid || null;
-          const name = p?.nombre_minecraft || "";
-          const id = (uuid || name.toLowerCase()).trim();
-          if (!id) continue;
-
-          const pts = safeNum(
-            p?.svpoints ??
-              p?.points ??
-              p?.puntos ??
-              p?.puntos_sv ??
-              p?.survival_points ??
-              0
-          );
-
-          const t = safeNum(p?.tiempo_jugado);
-
-          map.set(id, {
-            uuid,
-            nombre_minecraft: name,
-            platform: getPlatform(p),
-            wallet: pickWallet(p),
-            tiempo_total: t > 0 ? t : 0,
-            total_points: pts,
-          });
+        for (const item of items) {
+          const normalized = normalizeLeaderboardItem(item);
+          if (!normalized) continue;
+          uniqueMap.set(normalized.id, normalized);
         }
 
-        const merged = Array.from(map.values());
+        const ranked = Array.from(uniqueMap.values())
+          .sort((a, b) => {
+            const pointsDiff = (b.total_points || 0) - (a.total_points || 0);
+            if (pointsDiff !== 0) return pointsDiff;
+            return (b.tiempo_total || 0) - (a.tiempo_total || 0);
+          })
+          .map((item, index) => ({
+            ...item,
+            global_rank: index + 1,
+          }));
 
-        merged.sort((a, b) => {
-          const dp = (b.total_points || 0) - (a.total_points || 0);
-          if (dp !== 0) return dp;
-          return (b.tiempo_total || 0) - (a.tiempo_total || 0);
-        });
-
-        const ranked = merged.map((r, i) => ({ ...r, global_rank: i + 1 }));
         setDataset(ranked);
-      } catch {
-        if (!alive) return;
+      } catch (error) {
+        if (!alive || error?.name === "AbortError") return;
         setErrorTabla("No se pudo cargar el ranking.");
         setDataset([]);
       } finally {
-        if (alive) setLoading(false);
+        if (alive) {
+          setLoading(false);
+        }
       }
-    })();
+    };
+
+    load();
 
     return () => {
       alive = false;
+      controller.abort();
     };
   }, []);
 
+  const normalizedQuery = useMemo(() => query.trim().toLowerCase(), [query]);
+
   const filtrados = useMemo(() => {
-    const q = (query || "").trim().toLowerCase();
+    return dataset.filter((player) => {
+      const name = String(player?.nombre_minecraft || "").toLowerCase();
 
-    return (dataset || []).filter((p) => {
-      const name = (p?.nombre_minecraft || "").toLowerCase();
-      if (q && !name.includes(q)) return false;
+      if (normalizedQuery && !name.includes(normalizedQuery)) {
+        return false;
+      }
 
-      if (soloVinculados) {
-        const meta = getMeta(p?.uuid);
-        if (!meta) return false;
+      if (soloVinculados && !usuariosVinculados[player?.uuid]) {
+        return false;
       }
 
       return true;
     });
-  }, [dataset, query, soloVinculados, getMeta]);
+  }, [dataset, normalizedQuery, soloVinculados, usuariosVinculados]);
 
-  const totalRows = filtrados.length;
+  const paginasTotales = Math.max(1, Math.ceil(filtrados.length / LIMIT));
+  const currentPage = Math.min(page, paginasTotales);
+  const start = (currentPage - 1) * LIMIT;
 
-  const paginasTotales = useMemo(
-    () => Math.max(1, Math.ceil(totalRows / LIMIT)),
-    [totalRows]
-  );
+  const pageRows = useMemo(() => {
+    return filtrados.slice(start, start + LIMIT).map((player) => {
+      const meta = player?.uuid ? usuariosVinculados[player.uuid] || null : null;
+      return decoratePlayer(player, meta);
+    });
+  }, [filtrados, start, usuariosVinculados]);
 
-  const paginaActual = useMemo(() => Math.floor(offset / LIMIT) + 1, [offset]);
-
-  const pageRows = useMemo(
-    () => filtrados.slice(offset, offset + LIMIT),
-    [filtrados, offset]
-  );
+  useEffect(() => {
+    if (page !== currentPage) {
+      setPage(currentPage);
+    }
+  }, [page, currentPage]);
 
   const goPage = useCallback(
-    (page) => {
-      const p = Math.max(1, Math.min(paginasTotales, Number(page || 1)));
-      setOffset((p - 1) * LIMIT);
+    (nextPage) => {
+      if (isLeaving) return;
+      const safePage = Math.max(1, Math.min(paginasTotales, Number(nextPage || 1)));
+      setPage(safePage);
     },
-    [paginasTotales]
+    [isLeaving, paginasTotales]
   );
 
-  const wrapClass = useMemo(() => {
-    return ["lb-page", isLeaving ? "lb-is-leaving" : ""]
-      .filter(Boolean)
-      .join(" ");
-  }, [isLeaving]);
+  const toggleGuide = useCallback(() => {
+    setShowGuide((prev) => !prev);
+  }, []);
+
+  const wrapClass = `lb-page${isLeaving ? " lb-is-leaving" : ""}`;
 
   return (
     <section className={wrapClass}>
@@ -287,6 +579,7 @@ export default function Leaderboards() {
                 alt=""
                 draggable="false"
                 onError={hideImg}
+                style={{ objectFit: "cover", objectPosition: "center top" }}
               />
               <div className="lb-exitInfo">
                 <div className="lb-exitName">{exitFx.nombre}</div>
@@ -298,10 +591,9 @@ export default function Leaderboards() {
                       {exitFx.platKey === "bedrock" ? "BEDROCK" : "JAVA"}
                     </span>
                   ) : null}
+
                   {exitFx.rangoKey ? (
-                    <span
-                      className={`lb-exitRango lb-exitRango--${exitFx.rangoKey}`}
-                    >
+                    <span className={`lb-exitRango lb-exitRango--${exitFx.rangoKey}`}>
                       <img
                         className="lb-rangoIcon"
                         src={RANGO_LOCAL[exitFx.rangoKey]}
@@ -332,8 +624,7 @@ export default function Leaderboards() {
               <div className="lb-cardHero">
                 <div className="lb-cardHeroTitle">RANKINGS</div>
                 <div className="lb-cardHeroSub">
-                  Ranking global de Survival por puntos. Pulsa un jugador para ver
-                  su perfil.
+                  Ranking global de Survival por puntos. Pulsa un jugador para ver su perfil.
                 </div>
               </div>
 
@@ -351,12 +642,49 @@ export default function Leaderboards() {
                 <div className="lb-toolbarRight">
                   <button
                     type="button"
+                    className={`lb-helpToggle ${showGuide ? "is-open" : ""}`}
+                    onClick={toggleGuide}
+                    aria-expanded={showGuide}
+                    disabled={isLeaving}
+                  >
+                    {showGuide ? "Ocultar cómo subir puntos" : "¿Cómo se suben los puntos?"}
+                  </button>
+
+                  <button
+                    type="button"
                     className={`lb-toggle ${soloVinculados ? "is-on" : ""}`}
-                    onClick={() => setSoloVinculados((v) => !v)}
+                    onClick={() => setSoloVinculados((prev) => !prev)}
                     disabled={isLeaving}
                   >
                     Solo vinculados
                   </button>
+                </div>
+              </div>
+
+              <div className={`lb-guide ${showGuide ? "is-open" : ""}`}>
+                <div className="lb-guideInner">
+                  <div className="lb-guideBox">
+                    <div className="lb-guideHeader">
+                      <div className="lb-guideTitle">Cómo subir en el ranking</div>
+                      <div className="lb-guideSub">
+                        Haz más de una cosa bien. El top no es para el que farmea una sola estadística.
+                      </div>
+                    </div>
+
+                    <div className="lb-guideGrid">
+                      {POINTS_GUIDE.map((item) => (
+                        <div key={item.step} className="lb-guideItem">
+                          <span className="lb-guideStep">{item.step}</span>
+                          <div className="lb-guideItemTitle">{item.title}</div>
+                          <div className="lb-guideItemText">{item.text}</div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="lb-guideFooter">
+                      Cuanto más completo seas como jugador, más fácil será acercarte al top.
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -390,7 +718,7 @@ export default function Leaderboards() {
 
                   <tbody>
                     {loading ? (
-                      Array.from({ length: LIMIT }).map((_, i) => (
+                      SKELETON_ITEMS.map((_, i) => (
                         <tr key={`sk-${i}`}>
                           <td className="lb-rankCell lb-center">
                             <span className="lb-rankBadge">—</span>
@@ -402,8 +730,8 @@ export default function Leaderboards() {
                         </tr>
                       ))
                     ) : pageRows.length ? (
-                      pageRows.map((p) => {
-                        const rank = Number(p?.global_rank || 0) || 0;
+                      pageRows.map((player) => {
+                        const rank = Number(player?.global_rank || 0) || 0;
                         const topClass =
                           rank === 1
                             ? "lb-rowTop1"
@@ -413,99 +741,33 @@ export default function Leaderboards() {
                             ? "lb-rowTop3"
                             : "";
 
-                        const meta = getMeta(p?.uuid);
-                        const rangoRaw =
-                          meta?.rango || meta?.rango_usuario || meta?.rank || null;
-                        const rangoKey = normalizeRango(rangoRaw);
-
-                        const platTxt = p?.platform || "";
-                        const platKey = normalizePlatform(platTxt);
-
-                        const wallet = p?.wallet ?? pickWallet(meta);
-                        const walletTxt =
-                          wallet == null ? "—" : formatInt(wallet);
-
-                        const tiempoTxt = formatearTiempo(
-                          safeNum(p?.tiempo_total)
-                        );
-
                         return (
                           <tr
-                            key={p?.uuid || p?.nombre_minecraft}
+                            key={player?.uuid || player?.nombre_minecraft}
                             className={`is-clickable ${topClass}`}
-                            onClick={() => onOpenPerfil(p)}
-                            data-rango={rangoKey || ""}
+                            onClick={() => onOpenPerfil(player)}
+                            data-rango={player?.rangoKey || ""}
                           >
                             <td className="lb-rankCell lb-center">
-                              <span className="lb-rankBadge">
-                                #{rank || "—"}
-                              </span>
+                              <span className="lb-rankBadge">#{rank || "—"}</span>
                             </td>
 
                             <td className="lb-playerCell">
-                              <div className="lb-player">
-                                <div className="lb-skin">
-                                  <img
-                                    src={`https://minotar.net/helm/${encodeURIComponent(
-                                      p?.nombre_minecraft || "Steve"
-                                    )}/64`}
-                                    alt=""
-                                    loading="lazy"
-                                  />
-                                </div>
-
-                                <div className="lb-nameWrap">
-                                  <div
-                                    className={`lb-name ${
-                                      rangoKey ? `is-${rangoKey}` : ""
-                                    }`}
-                                  >
-                                    {p?.nombre_minecraft}
-                                  </div>
-
-                                  <div className="lb-meta">
-                                    {platKey === "java" ||
-                                    platKey === "bedrock" ? (
-                                      <span
-                                        className={`lb-platformPill lb-platformPill--${platKey}`}
-                                      >
-                                        {platKey === "bedrock"
-                                          ? "BEDROCK"
-                                          : "JAVA"}
-                                      </span>
-                                    ) : null}
-
-                                    {rangoKey ? (
-                                      <span
-                                        className={`lb-rango lb-rango--${rangoKey}`}
-                                        title={String(rangoRaw || "")}
-                                      >
-                                        <img
-                                          className="lb-rangoIcon"
-                                          src={RANGO_LOCAL[rangoKey]}
-                                          alt=""
-                                          loading="lazy"
-                                          onError={fallbackRankImg(rangoKey)}
-                                        />
-                                      </span>
-                                    ) : null}
-                                  </div>
-                                </div>
-                              </div>
+                              <PlayerIdentity player={player} />
                             </td>
 
                             <td className="lb-center lb-pointsCell">
                               <span className="lb-pointsValue">
-                                {formatInt(p?.total_points || 0)}
+                                {formatInt(player?.total_points || 0)}
                               </span>
                             </td>
 
                             <td className="lb-center">
-                              <span className="lb-num">{tiempoTxt}</span>
+                              <span className="lb-num">{player?.tiempoTxt}</span>
                             </td>
 
                             <td className="lb-center">
-                              {walletTxt === "—" ? (
+                              {player?.walletTxt === "—" ? (
                                 <span className="lb-num">—</span>
                               ) : (
                                 <span className="lb-walletValue">
@@ -516,7 +778,7 @@ export default function Leaderboards() {
                                     loading="lazy"
                                     onError={hideImg}
                                   />
-                                  <span className="lb-num">{walletTxt}</span>
+                                  <span className="lb-num">{player?.walletTxt}</span>
                                 </span>
                               )}
                             </td>
@@ -536,7 +798,7 @@ export default function Leaderboards() {
 
               <div className="lb-cards">
                 {loading ? (
-                  Array.from({ length: LIMIT }).map((_, i) => (
+                  SKELETON_ITEMS.map((_, i) => (
                     <div key={`csk-${i}`} className="lb-card">
                       <div className="lb-cardTop">
                         <span className="lb-rankBadge">—</span>
@@ -545,93 +807,19 @@ export default function Leaderboards() {
                     </div>
                   ))
                 ) : (
-                  pageRows.map((p) => {
-                    const rank = Number(p?.global_rank || 0) || 0;
-                    const meta = getMeta(p?.uuid);
-                    const rangoRaw =
-                      meta?.rango || meta?.rango_usuario || meta?.rank || null;
-                    const rangoKey = normalizeRango(rangoRaw);
-
-                    const platTxt = p?.platform || "";
-                    const platKey = normalizePlatform(platTxt);
-                    const platformIcon = PLATFORM_ICON[platKey] || "";
-
-                    const wallet = p?.wallet ?? pickWallet(meta);
-                    const walletTxt =
-                      wallet == null ? "—" : formatInt(wallet);
-                    const tiempoTxt = formatearTiempo(
-                      safeNum(p?.tiempo_total)
-                    );
+                  pageRows.map((player) => {
+                    const rank = Number(player?.global_rank || 0) || 0;
 
                     return (
                       <div
-                        key={p?.uuid || p?.nombre_minecraft}
+                        key={player?.uuid || player?.nombre_minecraft}
                         className="lb-card"
-                        onClick={() => onOpenPerfil(p)}
-                        data-rango={rangoKey || ""}
+                        onClick={() => onOpenPerfil(player)}
+                        data-rango={player?.rangoKey || ""}
                       >
                         <div className="lb-cardTop">
-                          <span className="lb-rankBadge">
-                            #{rank || "—"}
-                          </span>
-
-                          <div className="lb-player">
-                            <div className="lb-skin">
-                              <img
-                                src={`https://minotar.net/helm/${encodeURIComponent(
-                                  p?.nombre_minecraft || "Steve"
-                                )}/64`}
-                                alt=""
-                                loading="lazy"
-                              />
-                            </div>
-
-                            <div className="lb-nameWrap">
-                              <div
-                                className={`lb-name ${
-                                  rangoKey ? `is-${rangoKey}` : ""
-                                }`}
-                              >
-                                {p?.nombre_minecraft}
-                              </div>
-
-                              <div className="lb-meta">
-                                {platTxt ? (
-                                  <span
-                                    className={`lb-platform lb-platform--${platKey}`}
-                                    title={platTxt}
-                                    aria-label={platTxt}
-                                  >
-                                    {platformIcon ? (
-                                      <img
-                                        className="lb-platformIcon"
-                                        src={platformIcon}
-                                        alt=""
-                                        loading="lazy"
-                                        onError={hideImg}
-                                      />
-                                    ) : null}
-                                    <span className="lb-platformDot" />
-                                  </span>
-                                ) : null}
-
-                                {rangoKey ? (
-                                  <span
-                                    className={`lb-rango lb-rango--${rangoKey}`}
-                                    title={String(rangoRaw || "")}
-                                  >
-                                    <img
-                                      className="lb-rangoIcon"
-                                      src={RANGO_LOCAL[rangoKey]}
-                                      alt=""
-                                      loading="lazy"
-                                      onError={fallbackRankImg(rangoKey)}
-                                    />
-                                  </span>
-                                ) : null}
-                              </div>
-                            </div>
-                          </div>
+                          <span className="lb-rankBadge">#{rank || "—"}</span>
+                          <PlayerIdentity player={player} mobile />
                         </div>
 
                         <div className="lb-cardMain">
@@ -646,7 +834,7 @@ export default function Leaderboards() {
                               />
                               <span>Points</span>
                             </span>
-                            <strong>{formatInt(p?.total_points || 0)}</strong>
+                            <strong>{formatInt(player?.total_points || 0)}</strong>
                           </div>
 
                           <div className="lb-cardRow">
@@ -660,7 +848,7 @@ export default function Leaderboards() {
                               />
                               <span>Horas</span>
                             </span>
-                            <strong>{tiempoTxt}</strong>
+                            <strong>{player?.tiempoTxt}</strong>
                           </div>
 
                           <div className="lb-cardRow">
@@ -675,7 +863,7 @@ export default function Leaderboards() {
                               <span>Wallet</span>
                             </span>
 
-                            {walletTxt === "—" ? (
+                            {player?.walletTxt === "—" ? (
                               <strong>—</strong>
                             ) : (
                               <strong className="lb-walletInline">
@@ -686,7 +874,7 @@ export default function Leaderboards() {
                                   loading="lazy"
                                   onError={hideImg}
                                 />
-                                {walletTxt}
+                                {player?.walletTxt}
                               </strong>
                             )}
                           </div>
@@ -701,20 +889,20 @@ export default function Leaderboards() {
                 <div className="lb-pager">
                   <button
                     type="button"
-                    onClick={() => goPage(paginaActual - 1)}
-                    disabled={paginaActual <= 1 || isLeaving}
+                    onClick={() => goPage(currentPage - 1)}
+                    disabled={currentPage <= 1 || isLeaving}
                   >
                     ‹
                   </button>
 
                   <div className="lb-pageInfo">
-                    {paginaActual} / {paginasTotales}
+                    {currentPage} / {paginasTotales}
                   </div>
 
                   <button
                     type="button"
-                    onClick={() => goPage(paginaActual + 1)}
-                    disabled={paginaActual >= paginasTotales || isLeaving}
+                    onClick={() => goPage(currentPage + 1)}
+                    disabled={currentPage >= paginasTotales || isLeaving}
                   >
                     ›
                   </button>

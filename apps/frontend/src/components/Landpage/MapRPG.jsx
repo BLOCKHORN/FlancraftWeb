@@ -1,5 +1,4 @@
-// src/components/Landpage/MapRPG.jsx
-import React, {
+import {
   useContext,
   useEffect,
   useMemo,
@@ -74,44 +73,65 @@ const baseZones = [
   },
 ];
 
-const clickSound = new Howl({ src: [clickSoundFile], volume: 0.4, preload: false });
-const teleportSound = new Howl({ src: [teleportSoundFile], volume: 0.1, preload: false });
+const clickSound = new Howl({
+  src: [clickSoundFile],
+  volume: 0.4,
+  preload: false,
+});
+
+const teleportSound = new Howl({
+  src: [teleportSoundFile],
+  volume: 0.1,
+  preload: false,
+});
+
+const INITIAL_BACKDROP = baseZones[0]?.image || "";
 
 const decodeImage = (src, signal) =>
   new Promise((resolve) => {
-    if (!src) return resolve(true);
+    if (!src) {
+      resolve(true);
+      return;
+    }
 
     const img = new Image();
-    const done = () => resolve(true);
 
     const cleanup = () => {
       img.onload = null;
       img.onerror = null;
+      if (signal && abortHandler) {
+        signal.removeEventListener("abort", abortHandler);
+      }
+    };
+
+    const done = () => {
+      cleanup();
+      resolve(true);
+    };
+
+    const abortHandler = () => {
+      done();
     };
 
     img.onload = async () => {
       try {
-        if (img.decode) await img.decode();
+        if (img.decode) {
+          await img.decode();
+        }
       } catch (_) {}
-      cleanup();
       done();
     };
 
     img.onerror = () => {
-      cleanup();
       done();
     };
 
     if (signal) {
-      if (signal.aborted) return done();
-      signal.addEventListener(
-        "abort",
-        () => {
-          cleanup();
-          done();
-        },
-        { once: true }
-      );
+      if (signal.aborted) {
+        done();
+        return;
+      }
+      signal.addEventListener("abort", abortHandler, { once: true });
     }
 
     img.decoding = "async";
@@ -119,44 +139,91 @@ const decodeImage = (src, signal) =>
     img.src = src;
   });
 
+const pickPlayerSlug = (user) =>
+  user?.uid ||
+  user?.username ||
+  user?.nombre_minecraft ||
+  user?.nick ||
+  null;
+
 const MapRPG = () => {
   const navigate = useNavigate();
   const { user } = useContext(UserContext);
 
-  const isLoggedIn = Boolean(user && user.loggedIn);
-  const [playerSlug, setPlayerSlug] = useState(null);
+  const isLoggedIn = Boolean(user?.loggedIn);
+  const immediatePlayerSlug = pickPlayerSlug(user);
+
+  const [playerSlug, setPlayerSlug] = useState(immediatePlayerSlug);
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const [firefliesScared, setFirefliesScared] = useState(false);
   const scareTimeoutRef = useRef(null);
   const scareActiveRef = useRef(false);
 
-  const [backA, setBackA] = useState(baseZones[0]?.image || "");
-  const [backB, setBackB] = useState("");
+  const [backA, setBackA] = useState(INITIAL_BACKDROP);
+  const [backB, setBackB] = useState(INITIAL_BACKDROP);
   const [useB, setUseB] = useState(false);
-  const pendingRef = useRef(null);
 
+  const visibleLayerRef = useRef("a");
+  const visibleImageRef = useRef(INITIAL_BACKDROP);
+  const pendingImageRef = useRef(null);
+  const preloadTaskRef = useRef(null);
+  const transitionRafRef = useRef(null);
   const preloadedRef = useRef(false);
   const soundsReadyRef = useRef(false);
+  const slugCacheRef = useRef(new Map());
 
   const ensureSounds = useCallback(() => {
     if (soundsReadyRef.current) return;
     soundsReadyRef.current = true;
+
     try {
       clickSound.load();
       teleportSound.load();
     } catch (_) {}
   }, []);
 
+  const playClickSound = useCallback(() => {
+    ensureSounds();
+
+    try {
+      clickSound.play();
+    } catch (_) {}
+  }, [ensureSounds]);
+
   useEffect(() => {
-    let alive = true;
+    if (!isLoggedIn) {
+      setPlayerSlug(null);
+      return;
+    }
+
+    if (immediatePlayerSlug) {
+      setPlayerSlug(immediatePlayerSlug);
+      if (user?.uuid) {
+        slugCacheRef.current.set(user.uuid, immediatePlayerSlug);
+      }
+    }
+  }, [isLoggedIn, immediatePlayerSlug, user?.uuid]);
+
+  useEffect(() => {
+    if (!isLoggedIn || !user?.uuid) {
+      setPlayerSlug(null);
+      return;
+    }
+
+    if (immediatePlayerSlug) {
+      return;
+    }
+
+    const cachedSlug = slugCacheRef.current.get(user.uuid);
+    if (cachedSlug) {
+      setPlayerSlug(cachedSlug);
+      return;
+    }
+
+    let cancelled = false;
 
     const fetchPlayerSlug = async () => {
-      if (!user?.uuid) {
-        if (alive) setPlayerSlug(null);
-        return;
-      }
-
       try {
         const { data, error } = await supabase
           .from("usuarios")
@@ -164,16 +231,22 @@ const MapRPG = () => {
           .eq("uuid", user.uuid)
           .single();
 
-        if (!alive) return;
+        if (cancelled) return;
 
         if (error) {
           setPlayerSlug(null);
           return;
         }
 
-        setPlayerSlug(data?.uid || null);
+        const nextSlug = data?.uid || null;
+
+        if (nextSlug) {
+          slugCacheRef.current.set(user.uuid, nextSlug);
+        }
+
+        setPlayerSlug(nextSlug);
       } catch (_) {
-        if (!alive) return;
+        if (cancelled) return;
         setPlayerSlug(null);
       }
     };
@@ -181,16 +254,16 @@ const MapRPG = () => {
     fetchPlayerSlug();
 
     return () => {
-      alive = false;
+      cancelled = true;
     };
-  }, [user?.uuid]);
+  }, [isLoggedIn, user?.uuid, immediatePlayerSlug]);
 
   useEffect(() => {
     if (preloadedRef.current) return;
     preloadedRef.current = true;
 
     const assets = [
-      ...baseZones.flatMap((z) => [z.image, z.runeImage]),
+      ...baseZones.flatMap((zone) => [zone.image, zone.runeImage]),
       "/assets/maprpg/nether-portal-frame.webp",
       "/assets/maprpg/ground-rock.webp",
     ].filter(Boolean);
@@ -205,150 +278,163 @@ const MapRPG = () => {
     };
 
     if ("requestIdleCallback" in window) {
-      window.requestIdleCallback(preload, { timeout: 1200 });
+      preloadTaskRef.current = {
+        type: "idle",
+        id: window.requestIdleCallback(preload, { timeout: 1200 }),
+      };
     } else {
-      const id = window.setTimeout(preload, 0);
-      return () => window.clearTimeout(id);
+      preloadTaskRef.current = {
+        type: "timeout",
+        id: window.setTimeout(preload, 0),
+      };
     }
+
+    return () => {
+      if (!preloadTaskRef.current) return;
+
+      if (
+        preloadTaskRef.current.type === "idle" &&
+        "cancelIdleCallback" in window
+      ) {
+        window.cancelIdleCallback(preloadTaskRef.current.id);
+      }
+
+      if (preloadTaskRef.current.type === "timeout") {
+        window.clearTimeout(preloadTaskRef.current.id);
+      }
+
+      preloadTaskRef.current = null;
+    };
   }, []);
 
   useEffect(() => {
     return () => {
-      if (scareTimeoutRef.current) clearTimeout(scareTimeoutRef.current);
+      if (scareTimeoutRef.current) {
+        window.clearTimeout(scareTimeoutRef.current);
+      }
+
+      if (transitionRafRef.current != null) {
+        window.cancelAnimationFrame(transitionRafRef.current);
+      }
+
       scareActiveRef.current = false;
     };
   }, []);
 
   const triggerFirefliesScare = useCallback(() => {
     if (scareActiveRef.current) return;
+
     scareActiveRef.current = true;
 
-    if (scareTimeoutRef.current) clearTimeout(scareTimeoutRef.current);
+    if (scareTimeoutRef.current) {
+      window.clearTimeout(scareTimeoutRef.current);
+    }
 
     setFirefliesScared(true);
 
-    scareTimeoutRef.current = setTimeout(() => {
+    scareTimeoutRef.current = window.setTimeout(() => {
       setFirefliesScared(false);
       scareActiveRef.current = false;
     }, 300);
   }, []);
 
-  const zones = useMemo(
-    () =>
-      baseZones.map((zone) =>
-        zone.id === "player" && isLoggedIn && playerSlug
-          ? { ...zone, route: `/perfil/${playerSlug}` }
-          : zone
-      ),
-    [isLoggedIn, playerSlug]
-  );
+  const zones = useMemo(() => {
+    return baseZones.map((zone) =>
+      zone.id === "player" && isLoggedIn && playerSlug
+        ? { ...zone, route: `/perfil/${playerSlug}` }
+        : zone
+    );
+  }, [isLoggedIn, playerSlug]);
 
   const len = zones.length;
+
+  useEffect(() => {
+    if (currentIndex < len) return;
+    setCurrentIndex(0);
+  }, [currentIndex, len]);
+
   const selectedZone = zones[currentIndex] ?? zones[0];
+  const selectedImage = selectedZone?.image || INITIAL_BACKDROP;
 
   const prevIndex = (currentIndex - 1 + len) % len;
   const nextIndex = (currentIndex + 1) % len;
 
   useEffect(() => {
-    const controller = new AbortController();
-    const next = selectedZone?.image;
-    if (!next) return;
+    if (!selectedImage || visibleImageRef.current === selectedImage) return;
 
-    pendingRef.current = next;
+    const controller = new AbortController();
+    pendingImageRef.current = selectedImage;
 
     const run = async () => {
-      await decodeImage(next, controller.signal);
-      if (controller.signal.aborted) return;
-      if (pendingRef.current !== next) return;
+      await decodeImage(selectedImage, controller.signal);
 
-      if (!useB) {
-        setBackB(next);
-        requestAnimationFrame(() => setUseB(true));
-      } else {
-        setBackA(next);
-        requestAnimationFrame(() => setUseB(false));
+      if (controller.signal.aborted) return;
+      if (pendingImageRef.current !== selectedImage) return;
+
+      if (transitionRafRef.current != null) {
+        window.cancelAnimationFrame(transitionRafRef.current);
       }
+
+      if (visibleLayerRef.current === "a") {
+        setBackB(selectedImage);
+
+        transitionRafRef.current = window.requestAnimationFrame(() => {
+          transitionRafRef.current = null;
+          visibleLayerRef.current = "b";
+          visibleImageRef.current = selectedImage;
+          setUseB(true);
+        });
+
+        return;
+      }
+
+      setBackA(selectedImage);
+
+      transitionRafRef.current = window.requestAnimationFrame(() => {
+        transitionRafRef.current = null;
+        visibleLayerRef.current = "a";
+        visibleImageRef.current = selectedImage;
+        setUseB(false);
+      });
     };
 
     run();
 
-    return () => controller.abort();
-  }, [selectedZone?.id, selectedZone?.image, useB]);
+    return () => {
+      controller.abort();
+    };
+  }, [selectedImage]);
+
+  const selectIndex = useCallback(
+    (index) => {
+      if (index === currentIndex) return;
+      setCurrentIndex(index);
+      playClickSound();
+    },
+    [currentIndex, playClickSound]
+  );
 
   const moveCarousel = useCallback(
     (side) => {
-      ensureSounds();
-      const dir = side === "left" ? -1 : 1;
-      setCurrentIndex((prev) => (prev + dir + len) % len);
-      try {
-        clickSound.play();
-      } catch (_) {}
+      setCurrentIndex((prev) =>
+        side === "left" ? (prev - 1 + len) % len : (prev + 1) % len
+      );
+      playClickSound();
     },
-    [len, ensureSounds]
+    [len, playClickSound]
   );
 
   const handlePortalClick = useCallback(() => {
-    ensureSounds();
     if (!selectedZone?.route) return;
+
+    ensureSounds();
+
     try {
       teleportSound.play();
     } catch (_) {}
+
     navigate(selectedZone.route);
-  }, [navigate, selectedZone?.route, ensureSounds]);
-
-  const handlePortalKeyDown = useCallback(
-    (e) => {
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        handlePortalClick();
-      }
-    },
-    [handlePortalClick]
-  );
-
-  const handleRuneClick = useCallback(
-    (index) => {
-      if (index === currentIndex) return;
-      ensureSounds();
-      setCurrentIndex(index);
-      try {
-        clickSound.play();
-      } catch (_) {}
-    },
-    [currentIndex, ensureSounds]
-  );
-
-  const handleRuneKeyDown = useCallback(
-    (e, index) => {
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        handleRuneClick(index);
-      }
-    },
-    [handleRuneClick]
-  );
-
-  const handleDotClick = useCallback(
-    (index) => {
-      if (index === currentIndex) return;
-      ensureSounds();
-      setCurrentIndex(index);
-      try {
-        clickSound.play();
-      } catch (_) {}
-    },
-    [currentIndex, ensureSounds]
-  );
-
-  const handleDotKeyDown = useCallback(
-    (e, index) => {
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        handleDotClick(index);
-      }
-    },
-    [handleDotClick]
-  );
+  }, [ensureSounds, navigate, selectedZone?.route]);
 
   const carouselZones = useMemo(
     () => [
@@ -375,10 +461,6 @@ const MapRPG = () => {
                 ensureSounds();
                 triggerFirefliesScare();
               }}
-              onTouchStart={() => {
-                ensureSounds();
-                triggerFirefliesScare();
-              }}
             >
               <div className="maprpg-portal-frame-image" />
 
@@ -394,7 +476,7 @@ const MapRPG = () => {
                     className={`maprpg-portal-backdrop maprpg-portal-backdrop--front ${
                       useB ? "" : "maprpg-portal-backdrop--hidden"
                     }`}
-                    style={{ backgroundImage: `url(${backB || backA})` }}
+                    style={{ backgroundImage: `url(${backB})` }}
                   />
                 </div>
 
@@ -402,7 +484,6 @@ const MapRPG = () => {
                   type="button"
                   className="maprpg-portal-aura"
                   onClick={handlePortalClick}
-                  onKeyDown={handlePortalKeyDown}
                   aria-label={`Entrar en ${selectedZone.title}`}
                 >
                   <div className="maprpg-portal-content">
@@ -432,8 +513,7 @@ const MapRPG = () => {
                       key={zone.id}
                       type="button"
                       className={`maprpg-rune maprpg-rune--${position}`}
-                      onClick={() => handleRuneClick(index)}
-                      onKeyDown={(e) => handleRuneKeyDown(e, index)}
+                      onClick={() => selectIndex(index)}
                       aria-label={zone.title}
                     >
                       <span
@@ -456,9 +536,9 @@ const MapRPG = () => {
                       className={`maprpg-dot ${
                         index === currentIndex ? "maprpg-dot--active" : ""
                       }`}
-                      onClick={() => handleDotClick(index)}
-                      onKeyDown={(e) => handleDotKeyDown(e, index)}
+                      onClick={() => selectIndex(index)}
                       aria-label={zone.title}
+                      aria-current={index === currentIndex ? "true" : undefined}
                     />
                   ))}
                 </div>

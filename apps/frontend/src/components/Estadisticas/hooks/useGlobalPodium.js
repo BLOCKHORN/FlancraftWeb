@@ -1,4 +1,3 @@
-// src/components/Estadisticas/hooks/useGlobalPodium.js
 import { useEffect, useState } from "react";
 import { getLeaderboards } from "../api/getLeaderboards";
 
@@ -8,34 +7,41 @@ export function useGlobalPodium() {
   const [top3, setTop3] = useState([]);
 
   useEffect(() => {
-    let mounted = true;
+    const controller = new AbortController();
+    let active = true;
 
-    (async () => {
+    const load = async () => {
       try {
         setLoading(true);
         setError("");
 
         const res = await getLeaderboards({
-          tipo: "network_points",
-          servidor: "",
+          tipo: "svpoints",
+          servidor: "survival",
           limit: 3,
           offset: 0,
           asc: false,
+          signal: controller.signal,
         });
 
-        if (!mounted) return;
+        if (!active) return;
         setTop3(Array.isArray(res?.resultados) ? res.resultados : []);
-      } catch (e) {
-        if (!mounted) return;
-        setError(e?.message || "Error cargando el podium global.");
+      } catch (error) {
+        if (!active || error?.name === "AbortError") return;
+        setError(error?.message || "Error cargando el podium.");
         setTop3([]);
       } finally {
-        if (mounted) setLoading(false);
+        if (active) {
+          setLoading(false);
+        }
       }
-    })();
+    };
+
+    load();
 
     return () => {
-      mounted = false;
+      active = false;
+      controller.abort();
     };
   }, []);
 

@@ -1,10 +1,10 @@
-// src/components/Landpage/Home.jsx
-import React, {
+import {
   useState,
   useContext,
   useRef,
   useEffect,
   useCallback,
+  useMemo,
   lazy,
   Suspense,
 } from "react";
@@ -34,7 +34,15 @@ const SectionDivider2 = lazy(() => import("./SectionDivider2"));
 const SectionDividerGameModes = lazy(() => import("./SectionDividerGameModes"));
 const SectionDividerNews = lazy(() => import("./SectionDividerNews"));
 
+const API_BASE = (
+  import.meta.env.VITE_BACKEND_URL || "https://flancraft-backend.onrender.com"
+)
+  .trim()
+  .replace(/\/$/, "");
+
 const DRAGON_FLIGHT_DURATION_MS = 14000;
+const LOGIN_TEASER_DELAY_MS = 1100;
+const CRITICAL_ASSETS = ["/assets/h1.png", "/assets/islalogo1.webp"];
 
 const mensajesCarga = [
   "Cargando el mundo de Flancraft...",
@@ -46,44 +54,103 @@ const mensajesCarga = [
 
 const preloadImage = (src, signal) =>
   new Promise((resolve) => {
-    if (!src) return resolve(true);
+    if (!src) {
+      resolve(true);
+      return;
+    }
+
     const img = new Image();
-    const done = () => resolve(true);
 
     const cleanup = () => {
       img.onload = null;
       img.onerror = null;
+      if (signal && abortHandler) {
+        signal.removeEventListener("abort", abortHandler);
+      }
+    };
+
+    const done = () => {
+      cleanup();
+      resolve(true);
+    };
+
+    const abortHandler = () => {
+      done();
     };
 
     img.onload = async () => {
       try {
-        if (img.decode) await img.decode();
+        if (img.decode) {
+          await img.decode();
+        }
       } catch (_) {}
-      cleanup();
       done();
     };
 
     img.onerror = () => {
-      cleanup();
       done();
     };
 
     if (signal) {
-      if (signal.aborted) return done();
-      signal.addEventListener(
-        "abort",
-        () => {
-          cleanup();
-          done();
-        },
-        { once: true }
-      );
+      if (signal.aborted) {
+        done();
+        return;
+      }
+      signal.addEventListener("abort", abortHandler, { once: true });
     }
 
     img.decoding = "async";
     img.loading = "eager";
     img.src = src;
   });
+
+const createAudio = (src, options = {}) => {
+  const audio = new Audio(src);
+  audio.preload = "auto";
+
+  if (typeof options.loop === "boolean") {
+    audio.loop = options.loop;
+  }
+
+  if (typeof options.volume === "number") {
+    audio.volume = options.volume;
+  }
+
+  return audio;
+};
+
+const stopAudio = (audio) => {
+  if (!audio) return;
+  try {
+    audio.pause();
+    audio.currentTime = 0;
+  } catch (_) {}
+};
+
+const playAudio = (audio) => {
+  if (!audio) return;
+  try {
+    audio.currentTime = 0;
+    audio.play();
+  } catch (_) {}
+};
+
+const pickDisplayName = (source) =>
+  source?.uid ||
+  source?.username ||
+  source?.nombre_minecraft ||
+  source?.nick ||
+  source?.name ||
+  null;
+
+const readStoredUser = () => {
+  try {
+    const raw = localStorage.getItem("flan_user");
+    return raw ? JSON.parse(raw) : null;
+  } catch (_) {
+    return null;
+  }
+};
 
 const Home = () => {
   const { user, setUser } = useContext(UserContext);
@@ -114,29 +181,50 @@ const Home = () => {
   const dragonCooldownRef = useRef(false);
   const roarCooldownRef = useRef(false);
   const lastRoarIndexRef = useRef(0);
-  const timeoutsRef = useRef([]);
   const mensajeIndexRef = useRef(0);
+  const playerNameCacheRef = useRef(new Map());
+  const timeoutsRef = useRef(new Set());
 
+  const isLoggedIn = Boolean(user?.loggedIn);
   const isDragonPresent = dragonPhase !== "hidden";
+  const scrollTarget = location.state?.scrollTo;
 
-  const pushTimeout = (id) => {
-    timeoutsRef.current.push(id);
-  };
+  const scheduleTimeout = useCallback((callback, delay) => {
+    let id = 0;
+
+    id = window.setTimeout(() => {
+      timeoutsRef.current.delete(id);
+      callback();
+    }, delay);
+
+    timeoutsRef.current.add(id);
+    return id;
+  }, []);
+
+  const clearScheduledTimeout = useCallback((id) => {
+    if (id == null) return;
+    window.clearTimeout(id);
+    timeoutsRef.current.delete(id);
+  }, []);
+
+  const clearAllScheduledTimeouts = useCallback(() => {
+    timeoutsRef.current.forEach((id) => {
+      window.clearTimeout(id);
+    });
+    timeoutsRef.current.clear();
+  }, []);
 
   const ensureDragonAudio = useCallback(() => {
     if (audioReadyRef.current) return;
 
     try {
-      llamadaAudioRef.current = new Audio(llamadaSoundFile);
-      alasAudioRef.current = new Audio(alasSoundFile);
-      roarAudioRef.current = new Audio(roarSoundFile);
-      roar2AudioRef.current = new Audio(roar2SoundFile);
-
-      if (alasAudioRef.current) {
-        alasAudioRef.current.loop = true;
-        alasAudioRef.current.volume = 0.9;
-      }
-
+      llamadaAudioRef.current = createAudio(llamadaSoundFile);
+      alasAudioRef.current = createAudio(alasSoundFile, {
+        loop: true,
+        volume: 0.9,
+      });
+      roarAudioRef.current = createAudio(roarSoundFile);
+      roar2AudioRef.current = createAudio(roar2SoundFile);
       audioReadyRef.current = true;
     } catch (_) {
       audioReadyRef.current = false;
@@ -145,12 +233,14 @@ const Home = () => {
 
   useEffect(() => {
     return () => {
-      timeoutsRef.current.forEach((id) => clearTimeout(id));
-      if (alasAudioRef.current) {
-        alasAudioRef.current.pause();
-      }
+      clearAllScheduledTimeouts();
+      stopAudio(llamadaAudioRef.current);
+      stopAudio(alasAudioRef.current);
+      stopAudio(roarAudioRef.current);
+      stopAudio(roar2AudioRef.current);
+      audioReadyRef.current = false;
     };
-  }, []);
+  }, [clearAllScheduledTimeouts]);
 
   useEffect(() => {
     if (isLoaded) return;
@@ -158,249 +248,344 @@ const Home = () => {
     mensajeIndexRef.current = 0;
     setMensajeCarga(mensajesCarga[0]);
 
-    const interval = setInterval(() => {
+    const interval = window.setInterval(() => {
       mensajeIndexRef.current =
         (mensajeIndexRef.current + 1) % mensajesCarga.length;
       setMensajeCarga(mensajesCarga[mensajeIndexRef.current]);
     }, 1200);
 
-    return () => clearInterval(interval);
+    return () => window.clearInterval(interval);
   }, [isLoaded]);
 
   useEffect(() => {
     const controller = new AbortController();
+    let hardCapId = null;
+    let revealId = null;
 
     const run = async () => {
-      const critical = ["/assets/h1.png", "/assets/islalogo1.webp"];
-
       const hardCap = new Promise((resolve) => {
-        const id = window.setTimeout(() => resolve(true), 900);
-        pushTimeout(id);
+        hardCapId = scheduleTimeout(() => resolve(true), 900);
       });
 
       await Promise.race([
-        Promise.all(critical.map((src) => preloadImage(src, controller.signal))),
+        Promise.all(
+          CRITICAL_ASSETS.map((src) => preloadImage(src, controller.signal))
+        ),
         hardCap,
       ]);
 
+      clearScheduledTimeout(hardCapId);
+
       if (!controller.signal.aborted) {
-        const id = window.setTimeout(() => setIsLoaded(true), 60);
-        pushTimeout(id);
+        revealId = scheduleTimeout(() => setIsLoaded(true), 60);
       }
     };
 
     run();
 
-    return () => controller.abort();
-  }, []);
+    return () => {
+      controller.abort();
+      clearScheduledTimeout(hardCapId);
+      clearScheduledTimeout(revealId);
+    };
+  }, [clearScheduledTimeout, scheduleTimeout]);
 
   useEffect(() => {
     const el = heroMapSectionRef.current;
     if (!el) return;
 
     if ("IntersectionObserver" in window) {
-      const obs = new IntersectionObserver(
-        (entries) => {
-          const entry = entries[0];
-          setIsInHeroMapZone(Boolean(entry?.isIntersecting));
+      const observer = new IntersectionObserver(
+        ([entry]) => {
+          const nextValue = Boolean(entry?.isIntersecting);
+          setIsInHeroMapZone((prev) =>
+            prev === nextValue ? prev : nextValue
+          );
         },
         { root: null, threshold: 0 }
       );
 
-      obs.observe(el);
-      return () => obs.disconnect();
+      observer.observe(el);
+      return () => observer.disconnect();
     }
 
     let ticking = false;
+    let rafId = null;
+
+    const updateZone = () => {
+      ticking = false;
+
+      if (!heroMapSectionRef.current) return;
+
+      const rect = heroMapSectionRef.current.getBoundingClientRect();
+      const viewportHeight =
+        window.innerHeight || document.documentElement.clientHeight;
+
+      const inside = rect.bottom > 0 && rect.top < viewportHeight;
+
+      setIsInHeroMapZone((prev) => (prev === inside ? prev : inside));
+    };
+
     const handleScrollZone = () => {
       if (ticking) return;
       ticking = true;
 
-      window.requestAnimationFrame(() => {
-        ticking = false;
-        if (!heroMapSectionRef.current) return;
-
-        const rect = heroMapSectionRef.current.getBoundingClientRect();
-        const viewportHeight =
-          window.innerHeight || document.documentElement.clientHeight;
-
-        const inside = rect.bottom > 0 && rect.top < viewportHeight;
-        setIsInHeroMapZone(inside);
-      });
+      rafId = window.requestAnimationFrame(updateZone);
     };
 
     handleScrollZone();
     window.addEventListener("scroll", handleScrollZone, { passive: true });
-    return () => window.removeEventListener("scroll", handleScrollZone);
+
+    return () => {
+      window.removeEventListener("scroll", handleScrollZone);
+      if (rafId != null) {
+        window.cancelAnimationFrame(rafId);
+      }
+    };
   }, []);
 
   useEffect(() => {
-    if (!isLoaded) return;
-
-    if (user?.loggedIn) {
+    if (!isLoaded || isLoggedIn) {
       setShowLoginTeaser(false);
       return;
     }
 
-    const timer = window.setTimeout(() => {
+    const id = scheduleTimeout(() => {
       setShowLoginTeaser(true);
-    }, 1100);
-    pushTimeout(timer);
+    }, LOGIN_TEASER_DELAY_MS);
 
-    return () => clearTimeout(timer);
-  }, [isLoaded, user]);
+    return () => clearScheduledTimeout(id);
+  }, [isLoaded, isLoggedIn, scheduleTimeout, clearScheduledTimeout]);
 
   useEffect(() => {
+    if (!isLoggedIn || !user?.uuid) {
+      setPlayerName(null);
+      return;
+    }
+
+    const immediateName = pickDisplayName(user);
+
+    if (immediateName) {
+      playerNameCacheRef.current.set(user.uuid, immediateName);
+      setPlayerName(immediateName);
+      return;
+    }
+
+    const cachedName = playerNameCacheRef.current.get(user.uuid);
+    if (cachedName) {
+      setPlayerName(cachedName);
+      return;
+    }
+
     const controller = new AbortController();
+    let idleId = null;
+    let fallbackTimeoutId = null;
 
     const fetchPlayerName = async () => {
-      if (!user?.loggedIn || !user?.uuid) return;
-
       try {
-        const res = await fetch(
-          `https://flancraft-backend.onrender.com/api/usuarios/${user.uuid}`,
-          { signal: controller.signal }
-        );
-        if (!res.ok) throw new Error("Respuesta no OK");
+        const res = await fetch(`${API_BASE}/api/usuarios/${user.uuid}`, {
+          signal: controller.signal,
+        });
+
+        if (!res.ok) {
+          throw new Error("Respuesta no OK");
+        }
+
         const data = await res.json();
-        setPlayerName(
-          data.uid ||
-            data.username ||
-            data.nombre_minecraft ||
-            data.nick ||
-            "aventurero"
-        );
+        const nextName = pickDisplayName(data) || "aventurero";
+
+        playerNameCacheRef.current.set(user.uuid, nextName);
+        setPlayerName(nextName);
       } catch (err) {
         if (err?.name === "AbortError") return;
         setPlayerName("aventurero");
       }
     };
 
-    const schedule = () => {
-      if ("requestIdleCallback" in window) {
-        window.requestIdleCallback(fetchPlayerName, { timeout: 1200 });
-        return;
-      }
-      const id = window.setTimeout(fetchPlayerName, 350);
-      pushTimeout(id);
-    };
+    if ("requestIdleCallback" in window) {
+      idleId = window.requestIdleCallback(fetchPlayerName, { timeout: 1200 });
+    } else {
+      fallbackTimeoutId = scheduleTimeout(fetchPlayerName, 350);
+    }
 
-    schedule();
-    return () => controller.abort();
-  }, [user?.loggedIn, user?.uuid]);
+    return () => {
+      controller.abort();
+
+      if (idleId != null && "cancelIdleCallback" in window) {
+        window.cancelIdleCallback(idleId);
+      }
+
+      clearScheduledTimeout(fallbackTimeoutId);
+    };
+  }, [
+    isLoggedIn,
+    user?.uuid,
+    user?.uid,
+    user?.username,
+    user?.nombre_minecraft,
+    user?.nick,
+    user?.name,
+    scheduleTimeout,
+    clearScheduledTimeout,
+    user,
+  ]);
 
   useEffect(() => {
-    if (location.state?.scrollTo === "game-modes-section") {
-      const target = document.getElementById("game-modes-section");
-      if (target) {
-        const id = window.setTimeout(() => {
-          target.scrollIntoView({ behavior: "smooth" });
-          navigate(location.pathname, { replace: true, state: {} });
-        }, 220);
-        pushTimeout(id);
-        return () => clearTimeout(id);
-      }
-    }
-  }, [location.state, location.pathname, navigate]);
+    if (scrollTarget !== "game-modes-section") return;
+
+    const target = document.getElementById("game-modes-section");
+    if (!target) return;
+
+    const id = scheduleTimeout(() => {
+      target.scrollIntoView({ behavior: "smooth" });
+      navigate(location.pathname, { replace: true, state: {} });
+    }, 220);
+
+    return () => clearScheduledTimeout(id);
+  }, [
+    scrollTarget,
+    location.pathname,
+    navigate,
+    scheduleTimeout,
+    clearScheduledTimeout,
+  ]);
 
   const handleMainButtonClick = useCallback(() => {
-    if (!user?.loggedIn) setShowLogin(true);
-    else navigate("/dashboard");
-  }, [user?.loggedIn, navigate]);
+    if (!isLoggedIn) {
+      setShowLogin(true);
+      return;
+    }
 
-  const displayName =
-    (user?.loggedIn &&
-      (playerName || user?.username || user?.uid || user?.name)) ||
-    "aventurero";
+    navigate("/dashboard");
+  }, [isLoggedIn, navigate]);
 
-  const handleLogoClick = () => {
+  const handleCloseLogin = useCallback(() => {
+    setShowLogin(false);
+
+    const stored = readStoredUser();
+    if (stored?.loggedIn) {
+      setUser(stored);
+    }
+  }, [setUser]);
+
+  const handleCloseTeaser = useCallback(() => {
+    setShowLoginTeaser(false);
+  }, []);
+
+  const handleHeroFlanKeyDown = useCallback(
+    (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        if (dragonPhase !== "hidden" || dragonCooldownRef.current) return;
+        ensureDragonAudio();
+
+        dragonCooldownRef.current = true;
+
+        scheduleTimeout(() => {
+          dragonCooldownRef.current = false;
+        }, 2000 + DRAGON_FLIGHT_DURATION_MS + 2000);
+
+        lastRoarIndexRef.current = 0;
+
+        setIslandShaking(true);
+        scheduleTimeout(() => {
+          setIslandShaking(false);
+        }, 550);
+
+        scheduleTimeout(() => {
+          playAudio(llamadaAudioRef.current);
+        }, 1000);
+
+        scheduleTimeout(() => {
+          setDragonPhase("flight");
+          playAudio(alasAudioRef.current);
+        }, 2000);
+
+        scheduleTimeout(() => {
+          setDragonPhase("hidden");
+          stopAudio(alasAudioRef.current);
+        }, 2000 + DRAGON_FLIGHT_DURATION_MS);
+      }
+    },
+    [dragonPhase, ensureDragonAudio, scheduleTimeout]
+  );
+
+  const handleLogoClick = useCallback(() => {
     if (dragonPhase !== "hidden" || dragonCooldownRef.current) return;
 
     ensureDragonAudio();
 
     dragonCooldownRef.current = true;
 
-    const cooldownMs = 2000 + DRAGON_FLIGHT_DURATION_MS + 2000;
-    const cooldownId = window.setTimeout(() => {
+    scheduleTimeout(() => {
       dragonCooldownRef.current = false;
-    }, cooldownMs);
-    pushTimeout(cooldownId);
+    }, 2000 + DRAGON_FLIGHT_DURATION_MS + 2000);
 
     lastRoarIndexRef.current = 0;
 
     setIslandShaking(true);
-    const shakeId = window.setTimeout(() => {
+    scheduleTimeout(() => {
       setIslandShaking(false);
     }, 550);
-    pushTimeout(shakeId);
 
-    const llamadaId = window.setTimeout(() => {
-      if (llamadaAudioRef.current) {
-        try {
-          llamadaAudioRef.current.currentTime = 0;
-          llamadaAudioRef.current.play();
-        } catch (_) {}
-      }
+    scheduleTimeout(() => {
+      playAudio(llamadaAudioRef.current);
     }, 1000);
-    pushTimeout(llamadaId);
 
-    const startFlightId = window.setTimeout(() => {
+    scheduleTimeout(() => {
       setDragonPhase("flight");
-
-      if (alasAudioRef.current) {
-        try {
-          alasAudioRef.current.currentTime = 0;
-          alasAudioRef.current.play();
-        } catch (_) {}
-      }
+      playAudio(alasAudioRef.current);
     }, 2000);
-    pushTimeout(startFlightId);
 
-    const endFlightId = window.setTimeout(() => {
+    scheduleTimeout(() => {
       setDragonPhase("hidden");
-      if (alasAudioRef.current) {
-        alasAudioRef.current.pause();
-        alasAudioRef.current.currentTime = 0;
-      }
+      stopAudio(alasAudioRef.current);
     }, 2000 + DRAGON_FLIGHT_DURATION_MS);
-    pushTimeout(endFlightId);
-  };
+  }, [dragonPhase, ensureDragonAudio, scheduleTimeout]);
 
-  const handleDragonClick = () => {
-    if (dragonPhase === "hidden") return;
-    if (roarCooldownRef.current) return;
+  const handleDragonClick = useCallback(() => {
+    if (dragonPhase === "hidden" || roarCooldownRef.current) return;
 
     ensureDragonAudio();
 
     roarCooldownRef.current = true;
 
-    const roarCdId = window.setTimeout(() => {
+    scheduleTimeout(() => {
       roarCooldownRef.current = false;
     }, 2500);
-    pushTimeout(roarCdId);
 
     setIsDragonRoaring(true);
-    const stopRoarAnimId = window.setTimeout(() => {
+    scheduleTimeout(() => {
       setIsDragonRoaring(false);
     }, 1400);
-    pushTimeout(stopRoarAnimId);
 
-    let audioToPlay = null;
-    if (lastRoarIndexRef.current === 0) {
-      audioToPlay = roarAudioRef.current;
-      lastRoarIndexRef.current = 1;
-    } else {
-      audioToPlay = roar2AudioRef.current;
-      lastRoarIndexRef.current = 0;
-    }
+    const audioToPlay =
+      lastRoarIndexRef.current === 0
+        ? roarAudioRef.current
+        : roar2AudioRef.current;
 
-    if (audioToPlay) {
-      try {
-        audioToPlay.currentTime = 0;
-        audioToPlay.play();
-      } catch (_) {}
-    }
-  };
+    lastRoarIndexRef.current = lastRoarIndexRef.current === 0 ? 1 : 0;
+    playAudio(audioToPlay);
+  }, [dragonPhase, ensureDragonAudio, scheduleTimeout]);
+
+  const displayName = useMemo(() => {
+    if (!isLoggedIn) return "aventurero";
+    return (
+      playerName ||
+      user?.username ||
+      user?.uid ||
+      user?.name ||
+      user?.nombre_minecraft ||
+      "aventurero"
+    );
+  }, [
+    isLoggedIn,
+    playerName,
+    user?.username,
+    user?.uid,
+    user?.name,
+    user?.nombre_minecraft,
+  ]);
 
   return (
     <>
@@ -465,7 +650,7 @@ const Home = () => {
                   src="/assets/h1.png"
                   alt="FlanCraft Minecraft Network"
                   decoding="async"
-                  fetchpriority="high"
+                  fetchPriority="high"
                 />
               </div>
 
@@ -477,21 +662,17 @@ const Home = () => {
                 tabIndex={0}
                 aria-label="Invocar al dragón guardián del tesoro"
                 onClick={handleLogoClick}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    handleLogoClick();
-                  }
-                }}
+                onKeyDown={handleHeroFlanKeyDown}
               />
 
               <ServerStatus />
 
               <p className="hero-tagline">
-                Tu aventura empieza aquí. Sube de nivel y deja tu legado en el mejor servidor Español de Minecraft.
+                Tu aventura empieza aquí. Sube de nivel y deja tu legado en el
+                mejor servidor Español de Minecraft.
               </p>
 
-              {user?.loggedIn && (
+              {isLoggedIn && (
                 <div
                   className="hero-quests-cta"
                   onClick={handleMainButtonClick}
@@ -520,12 +701,12 @@ const Home = () => {
             </div>
           </header>
 
-          {!user?.loggedIn && showLoginTeaser && isInHeroMapZone && (
+          {!isLoggedIn && showLoginTeaser && isInHeroMapZone && (
             <div className="login-teaser-pop">
               <button
                 type="button"
                 className="login-teaser-pop__close"
-                onClick={() => setShowLoginTeaser(false)}
+                onClick={handleCloseTeaser}
                 aria-label="Cerrar aviso de inicio de sesión"
               >
                 ×
@@ -552,20 +733,7 @@ const Home = () => {
           <MapRPG />
         </div>
 
-        {showLogin && (
-          <LoginModal
-            onClose={() => {
-              setShowLogin(false);
-              const stored = localStorage.getItem("flan_user");
-              if (stored) {
-                try {
-                  const parsed = JSON.parse(stored);
-                  if (parsed?.loggedIn) setUser(parsed);
-                } catch (_) {}
-              }
-            }}
-          />
-        )}
+        {showLogin && <LoginModal onClose={handleCloseLogin} />}
 
         <Suspense fallback={null}>
           <SectionDividerNews />
