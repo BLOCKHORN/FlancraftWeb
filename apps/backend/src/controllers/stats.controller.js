@@ -4,7 +4,7 @@ const SURVIVAL_SERVER = "survival";
 const DEFAULT_LIMIT = 10;
 const MAX_LIMIT = 1000;
 
-const SURVIVAL_STATS_SELECT = [
+const SURVIVAL_STATS_VIEW_SELECT = [
   "uuid",
   "nombre_minecraft",
   "servidor",
@@ -30,9 +30,13 @@ const SURVIVAL_STATS_SELECT = [
   "dano_recibido",
   "killstreak_max",
   "dinero",
-  "dinero_ganado_total",
   "coins_balance",
   "coins_ganadas_total",
+  "coins_gastadas_total",
+  "dinero_ganado_total",
+  "dinero_gastado_total",
+  "wallet_coins",
+  "nivel",
 ].join(",");
 
 const TIPOS_VALIDOS = new Set([
@@ -110,39 +114,11 @@ const setIfDefined = (obj, key, value) => {
 
 const normalizeServer = (value) => String(value ?? "").trim().toLowerCase();
 
-const max0 = (value) => Math.max(0, Number(value) || 0);
-
 const resolveServerOrReject = (value) => {
   const server = normalizeServer(value);
   if (!server) return SURVIVAL_SERVER;
   if (server !== SURVIVAL_SERVER) return null;
   return SURVIVAL_SERVER;
-};
-
-const buildLifetimePayload = (prevRow, incoming, currentKey, totalKey) => {
-  const out = { ...incoming };
-
-  if (out[currentKey] === undefined) {
-    return out;
-  }
-
-  const prevCurrent = Number(prevRow?.[currentKey] ?? 0) || 0;
-  const prevTotalRaw = Number(prevRow?.[totalKey] ?? prevCurrent) || 0;
-  const prevTotal = Math.max(prevTotalRaw, prevCurrent);
-
-  const newCurrent = Number(out[currentKey]) || 0;
-  const delta = max0(newCurrent - prevCurrent);
-
-  out[currentKey] = newCurrent;
-  out[totalKey] = prevTotal + delta;
-
-  return out;
-};
-
-const buildEconomyTotalsPayload = (prevRow, incoming) => {
-  let out = buildLifetimePayload(prevRow, incoming, "dinero", "dinero_ganado_total");
-  out = buildLifetimePayload(prevRow, out, "coins_balance", "coins_ganadas_total");
-  return out;
 };
 
 exports.importarStat = async (req, res) => {
@@ -228,7 +204,7 @@ exports.importarStatsAgrupadas = async (req, res) => {
 
   const { data: existing, error: findErr } = await db
     .from("estadisticas_agrupadas")
-    .select("uuid, servidor, dinero, dinero_ganado_total, coins_balance, coins_ganadas_total")
+    .select("uuid, servidor")
     .eq("uuid", uuid)
     .eq("servidor", server)
     .maybeSingle();
@@ -239,13 +215,9 @@ exports.importarStatsAgrupadas = async (req, res) => {
   }
 
   if (existing) {
-    let updatePayload = allowExtras
+    const updatePayload = allowExtras
       ? { ...baseUpdate, ...extrasUpdate }
       : { ...baseUpdate };
-
-    if (allowExtras) {
-      updatePayload = buildEconomyTotalsPayload(existing, updatePayload);
-    }
 
     const { error: updErr } = await db
       .from("estadisticas_agrupadas")
@@ -265,24 +237,12 @@ exports.importarStatsAgrupadas = async (req, res) => {
     });
   }
 
-  let insertPayload = {
+  const insertPayload = {
     uuid,
     servidor: server,
     ...baseUpdate,
     ...(allowExtras ? extrasUpdate : {}),
   };
-
-  if (allowExtras) {
-    insertPayload = buildEconomyTotalsPayload(
-      {
-        dinero: 0,
-        dinero_ganado_total: 0,
-        coins_balance: 0,
-        coins_ganadas_total: 0,
-      },
-      insertPayload
-    );
-  }
 
   const { error: insErr } = await db
     .from("estadisticas_agrupadas")
@@ -396,8 +356,8 @@ exports.obtenerPerfilJugador = async (req, res) => {
   }
 
   const { data, error } = await db
-    .from("estadisticas_agrupadas")
-    .select(SURVIVAL_STATS_SELECT)
+    .from("vista_estadisticas_agrupadas_wallet")
+    .select(SURVIVAL_STATS_VIEW_SELECT)
     .eq("uuid", uuid)
     .eq("servidor", SURVIVAL_SERVER);
 

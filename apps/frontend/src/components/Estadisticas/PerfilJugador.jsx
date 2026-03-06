@@ -575,7 +575,7 @@ export default function PerfilJugador() {
   );
 
   const dineroTotal = useMemo(
-    () => safe(economia?.dinero_total ?? economia?.dinero_ganado_total),
+    () => safe(economia?.dinero_ganado_total ?? economia?.dinero_total),
     [economia]
   );
 
@@ -585,7 +585,7 @@ export default function PerfilJugador() {
   );
 
   const coinsTotal = useMemo(
-    () => safe(economia?.coins_total ?? economia?.coins_ganadas_total),
+    () => safe(economia?.coins_ganadas_total ?? economia?.coins_total),
     [economia]
   );
 
@@ -830,8 +830,8 @@ export default function PerfilJugador() {
           label: "Dinero",
           iconKey: "dinero",
           lines: [
-            { label: "Dinero total", value: dineroTotal !== null ? fmtMoney(dineroTotal) : EMPTY },
-            { label: "Dinero actual", value: dineroActual !== null ? fmtMoney(dineroActual) : EMPTY },
+            { label: "Disponible", value: dineroActual !== null ? fmtMoney(dineroActual) : EMPTY },
+            { label: "Total ganado", value: dineroTotal !== null ? fmtMoney(dineroTotal) : EMPTY },
           ],
         })
       );
@@ -844,8 +844,8 @@ export default function PerfilJugador() {
           label: "Coins",
           iconKey: "coins",
           lines: [
-            { label: "Coins total", value: coinsTotal !== null ? fmtNum(coinsTotal) : EMPTY },
-            { label: "Coins actual", value: coinsActual !== null ? fmtNum(coinsActual) : EMPTY },
+            { label: "Disponibles", value: coinsActual !== null ? fmtNum(coinsActual) : EMPTY },
+            { label: "Total ganadas", value: coinsTotal !== null ? fmtNum(coinsTotal) : EMPTY },
           ],
         })
       );
@@ -856,7 +856,17 @@ export default function PerfilJugador() {
     }
 
     return output;
-  }, [general, combate, recursos, economia, omitIds, dineroTotal, dineroActual, coinsTotal, coinsActual]);
+  }, [
+    general,
+    combate,
+    recursos,
+    economia,
+    omitIds,
+    dineroActual,
+    dineroTotal,
+    coinsActual,
+    coinsTotal
+  ]);
 
   const shownSections = useMemo(() => {
     if (tab === "all") return sections;
@@ -1098,22 +1108,23 @@ export default function PerfilJugador() {
                       <div className="perfil-tiles">
                         {sec.tiles.map((t, idx) => (
                           <div
-                            key={t.id}
-                            className="perfil-tile pf-tileIn"
-                            style={{ "--i": idx }}
-                            title={t.hint || ""}
-                          >
-                            {t.icon ? (
-                              <img className="perfil-tileIcon" src={t.icon} alt="" draggable="false" />
-                            ) : null}
+  key={t.id}
+  className={`perfil-tile pf-tileIn ${Array.isArray(t.lines) && t.lines.length ? "is-multi" : ""}`}
+  style={{ "--i": idx }}
+  title={t.hint || ""}
+>
+  <div className="perfil-tileHead">
+    {t.icon ? (
+      <img className="perfil-tileIcon" src={t.icon} alt="" draggable="false" />
+    ) : null}
 
-                            <div className="perfil-tileBody">
-                              <div className="perfil-tileLabel">{t.label}</div>
-                              <div className="perfil-tileValue">{renderMetricValue(t)}</div>
-                            </div>
+    <div className="perfil-tileLabel">{t.label}</div>
+  </div>
 
-                            <div className="perfil-tileSheen" />
-                          </div>
+  <div className="perfil-tileValue">{renderMetricValue(t)}</div>
+
+  <div className="perfil-tileSheen" />
+</div>
                         ))}
                       </div>
                     </div>

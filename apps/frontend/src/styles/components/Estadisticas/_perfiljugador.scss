@@ -750,10 +750,9 @@
   overflow: hidden;
   backdrop-filter: blur(10px);
   transition: transform 180ms ease, filter 180ms ease;
-  display: grid;
-  grid-template-columns: 56px 1fr;
-  gap: 12px;
-  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   min-width: 0;
   cursor: default;
 }
@@ -763,16 +762,21 @@
   filter: brightness(1.06);
 }
 
+.perfil-tileHead {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  min-width: 0;
+}
+
 .perfil-tileIcon {
   width: 56px;
   height: 56px;
   object-fit: contain;
   filter: drop-shadow(0 14px 18px rgba(0, 0, 0, 0.4));
   transform: translateY(-2px);
-}
-
-.perfil-tileBody {
-  min-width: 0;
+  flex: 0 0 auto;
 }
 
 .perfil-tileLabel {
@@ -783,6 +787,9 @@
   color: rgba(255, 255, 255, 0.72);
   line-height: 1.15;
   white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+  min-width: 0;
 }
 
 .perfil-tileValue {
@@ -791,10 +798,37 @@
   letter-spacing: 0.6px;
   color: #fff;
   text-shadow: 0 3px 0 rgba(0, 0, 0, 0.55);
-  margin-top: 3px;
+  margin-top: 0;
+  padding-left: 68px;
   white-space: normal;
   overflow: visible;
   text-overflow: unset;
+  min-width: 0;
+}
+
+.perfil-tile.is-multi {
+  gap: 10px;
+}
+
+.perfil-tile.is-multi .perfil-tileHead {
+  grid-template-columns: 48px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+}
+
+.perfil-tile.is-multi .perfil-tileIcon {
+  width: 48px;
+  height: 48px;
+}
+
+.perfil-tile.is-multi .perfil-tileLabel {
+  font-size: 13px;
+  line-height: 1;
+}
+
+.perfil-tile.is-multi .perfil-tileValue {
+  padding-left: 0;
+  margin-top: 2px;
 }
 
 .perfil-tileSheen {
@@ -931,7 +965,7 @@
 .pf-enterName {
   font-family: var(--mc-font);
   font-size: 20px;
-  letter-spacing: .8px;
+  letter-spacing: 0.8px;
   color: rgba(255, 255, 255, 0.96);
   text-shadow: 0 2px 0 rgba(0, 0, 0, 0.62);
   white-space: nowrap;
@@ -1093,10 +1127,10 @@
 }
 
 .pf-multiRow {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 10px;
+  align-items: baseline;
   min-width: 0;
 }
 
@@ -1107,11 +1141,11 @@
   font-size: 12px;
   color: rgba(255, 255, 255, 0.68);
   text-shadow: 0 2px 0 rgba(0, 0, 0, 0.55);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  line-height: 1.15;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
   min-width: 0;
-  flex: 1 1 auto;
 }
 
 .pf-multiNum {
@@ -1121,7 +1155,33 @@
   color: rgba(255, 255, 255, 0.96);
   text-shadow: 0 3px 0 rgba(0, 0, 0, 0.55);
   white-space: nowrap;
+  text-align: right;
   flex: 0 0 auto;
+}
+
+.perfil-tile.is-multi .pf-multiValue {
+  gap: 8px;
+}
+
+.perfil-tile.is-multi .pf-multiRow {
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+}
+
+.perfil-tile.is-multi .pf-multiLabel {
+  font-size: 11px;
+  letter-spacing: 0.7px;
+  line-height: 1.05;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.perfil-tile.is-multi .pf-multiNum {
+  font-size: 17px;
+  line-height: 1;
+  text-align: right;
 }
 
 .perfil-tile .pf-multiNum {
@@ -1135,6 +1195,65 @@
 .perfil-tileValue .pf-multiValue,
 .perfil-quickValue .pf-multiValue {
   margin-top: 2px;
+}
+
+@media (max-width: 980px) {
+  .perfil-tile.is-multi .perfil-tileHead {
+    grid-template-columns: 44px minmax(0, 1fr);
+    gap: 9px;
+  }
+
+  .perfil-tile.is-multi .perfil-tileIcon {
+    width: 44px;
+    height: 44px;
+  }
+
+  .perfil-tile.is-multi .perfil-tileLabel {
+    font-size: 12px;
+  }
+
+  .perfil-tile.is-multi .pf-multiLabel {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
+  }
+}
+
+@media (max-width: 760px) {
+  .perfil-tileValue {
+    padding-left: 0;
+  }
+
+  .perfil-tile.is-multi .perfil-tileValue {
+    padding-left: 0;
+  }
+
+  .pf-multiRow {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+
+  .pf-multiNum {
+    text-align: left;
+  }
+
+  .perfil-tile.is-multi .pf-multiRow {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+  }
+
+  .perfil-tile.is-multi .pf-multiLabel {
+    font-size: 10px;
+    line-height: 1.05;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .perfil-tile.is-multi .pf-multiNum {
+    font-size: 16px;
+    text-align: right;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

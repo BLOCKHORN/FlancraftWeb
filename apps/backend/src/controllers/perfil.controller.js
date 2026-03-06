@@ -28,9 +28,7 @@ const SURVIVAL_PROFILE_SELECT = [
   "dano_recibido",
   "killstreak_max",
   "dinero",
-  "dinero_ganado_total",
   "coins_balance",
-  "coins_ganadas_total",
 ].join(",");
 
 const PLAYER_MATCH_SELECT = [
@@ -55,12 +53,6 @@ const safeText = (value) => {
 const normalizeMetersToKm = (value) => {
   const num = safeNum(value, 0);
   return num > 5000 ? num / 1000 : num;
-};
-
-const resolveLifetimeValue = (totalValue, currentValue) => {
-  const total = safeNum(totalValue, 0);
-  const current = safeNum(currentValue, 0);
-  return Math.max(total, current);
 };
 
 const fetchWebUser = async (uuid) => {
@@ -109,6 +101,43 @@ const fetchSurvivalCoins = async (uuid) => {
   }
 };
 
+const fetchEconomyTotals = async (uuid) => {
+  try {
+    const { data, error } = await db
+      .from("vista_economia_resumen")
+      .select("uuid,servidor,coins_ganadas_total,coins_gastadas_total,dinero_ganado_total,dinero_gastado_total,ultima_actividad_economica")
+      .eq("uuid", uuid)
+      .eq("servidor", SURVIVAL_SERVER)
+      .maybeSingle();
+
+    if (error || !data) {
+      return {
+        coins_ganadas_total: 0,
+        coins_gastadas_total: 0,
+        dinero_ganado_total: 0,
+        dinero_gastado_total: 0,
+        ultima_actividad_economica: null,
+      };
+    }
+
+    return {
+      coins_ganadas_total: safeNum(data.coins_ganadas_total, 0),
+      coins_gastadas_total: safeNum(data.coins_gastadas_total, 0),
+      dinero_ganado_total: safeNum(data.dinero_ganado_total, 0),
+      dinero_gastado_total: safeNum(data.dinero_gastado_total, 0),
+      ultima_actividad_economica: data.ultima_actividad_economica || null,
+    };
+  } catch {
+    return {
+      coins_ganadas_total: 0,
+      coins_gastadas_total: 0,
+      dinero_ganado_total: 0,
+      dinero_gastado_total: 0,
+      ultima_actividad_economica: null,
+    };
+  }
+};
+
 const shapeSurvivalRow = (row, extras = {}) => {
   if (!row) return null;
 
@@ -118,14 +147,15 @@ const shapeSurvivalRow = (row, extras = {}) => {
   const flyKm = normalizeMetersToKm(row.distancia_volada);
 
   const dineroActual = safeNum(row.dinero, 0);
-  const dineroTotal = resolveLifetimeValue(row.dinero_ganado_total, dineroActual);
-
   const coinsActual =
     extras.currentCoins != null
       ? safeNum(extras.currentCoins, 0)
       : safeNum(row.coins_balance, 0);
 
-  const coinsTotal = resolveLifetimeValue(row.coins_ganadas_total, coinsActual);
+  const dineroGanadoTotal = safeNum(extras.economyTotals?.dinero_ganado_total, 0);
+  const dineroGastadoTotal = safeNum(extras.economyTotals?.dinero_gastado_total, 0);
+  const coinsGanadasTotal = safeNum(extras.economyTotals?.coins_ganadas_total, 0);
+  const coinsGastadasTotal = safeNum(extras.economyTotals?.coins_gastadas_total, 0);
   const svpoints = safeNum(extras.svpoints, 0);
 
   return {
@@ -165,9 +195,13 @@ const shapeSurvivalRow = (row, extras = {}) => {
     },
     economia: {
       dinero_actual: dineroActual,
-      dinero_total: dineroTotal,
+      dinero_ganado_total: dineroGanadoTotal,
+      dinero_gastado_total: dineroGastadoTotal,
+      dinero_total: dineroGanadoTotal,
       coins_actual: coinsActual,
-      coins_total: coinsTotal,
+      coins_ganadas_total: coinsGanadasTotal,
+      coins_gastadas_total: coinsGastadasTotal,
+      coins_total: coinsGanadasTotal,
       svpoints,
       points: svpoints,
     },
@@ -236,15 +270,17 @@ exports.obtenerPerfilPorNombre = async (req, res) => {
       return res.status(404).json({ error: "Perfil de survival no encontrado." });
     }
 
-    const [webUser, svpoints, currentCoins] = await Promise.all([
+    const [webUser, svpoints, currentCoins, economyTotals] = await Promise.all([
       fetchWebUser(uuid),
       fetchSurvivalPoints(uuid),
       fetchSurvivalCoins(uuid),
+      fetchEconomyTotals(uuid),
     ]);
 
     const survival = shapeSurvivalRow(survivalRow, {
       svpoints,
       currentCoins,
+      economyTotals,
     });
 
     const displayName =
@@ -327,15 +363,17 @@ exports.obtenerPerfilServidor = async (req, res) => {
       return res.status(404).json({ error: "Servidor no encontrado para este jugador." });
     }
 
-    const [svpoints, currentCoins] = await Promise.all([
+    const [svpoints, currentCoins, economyTotals] = await Promise.all([
       fetchSurvivalPoints(uuid),
       fetchSurvivalCoins(uuid),
+      fetchEconomyTotals(uuid),
     ]);
 
     return res.json(
       shapeSurvivalRow(row, {
         svpoints,
         currentCoins,
+        economyTotals,
       })
     );
   } catch (error) {
