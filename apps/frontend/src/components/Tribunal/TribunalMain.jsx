@@ -20,16 +20,18 @@ import {
   POR_PAGINA,
   parseTimestamp,
   obtenerFechaFin,
-  formatearDuracion,
   esPerma,
   esSancionActiva,
   calcularSituacion,
   situacionLabel,
-  tipoSancionLabel,
   avatarUrl,
   buildPageItems,
-  buildStrikesMap,
-  getStrikesFromMap,
+  buildStrikeTimelineMap,
+  getStrikeFromMap,
+  getStrikeFeedback,
+  getResumenEscala,
+  getDuracionVisible,
+  debeMostrarFechaFin,
 } from "./tribunalUtils";
 
 export default function Sanciones() {
@@ -63,32 +65,37 @@ export default function Sanciones() {
     return () => window.removeEventListener("keydown", onKey);
   }, [leyendaAbierta]);
 
-  const strikesMap = useMemo(() => buildStrikesMap(sanciones), [sanciones]);
+  const sancionesConMeta = useMemo(
+    () => sanciones.map((s, __rowIndex) => ({ ...s, __rowIndex })),
+    [sanciones]
+  );
 
-  const getStrikes = useCallback(
-    (jugador, tipo) => getStrikesFromMap(strikesMap, jugador, tipo),
+  const strikesMap = useMemo(() => buildStrikeTimelineMap(sancionesConMeta), [sancionesConMeta]);
+
+  const getStrike = useCallback(
+    (rowIndex) => getStrikeFromMap(strikesMap, rowIndex),
     [strikesMap]
   );
 
   const resumen = useMemo(() => {
-    const total = sanciones.length;
+    const total = sancionesConMeta.length;
     const permabans = new Set();
     let activas = 0;
 
-    for (const s of sanciones) {
+    for (const s of sancionesConMeta) {
       if (esPerma(s) && s.name) permabans.add(String(s.name).toLowerCase());
       if (esSancionActiva(s, nowMs)) activas++;
     }
 
     return { total, jugadoresPerma: permabans.size, sancionesActivas: activas };
-  }, [sanciones, nowMs]);
+  }, [sancionesConMeta, nowMs]);
 
   const sancionesFiltradas = useMemo(() => {
-    return sanciones.filter((s) => {
+    return sancionesConMeta.filter((s) => {
       const jugadorOK = query ? String(s.name || "").toLowerCase().includes(query) : true;
       return jugadorOK;
     });
-  }, [sanciones, query]);
+  }, [sancionesConMeta, query]);
 
   useEffect(() => {
     setPaginaActual(1);
@@ -234,7 +241,7 @@ export default function Sanciones() {
                     </tr>
                     <tr>
                       <td>Flood</td>
-                      <td>Avisar</td>
+                      <td>Aviso</td>
                       <td>Jail 15m</td>
                       <td>Jail 2h</td>
                     </tr>
@@ -275,9 +282,16 @@ export default function Sanciones() {
               ) : isMobile ? (
                 <div className="sanciones-cards">
                   {sancionesPagina.map((s, index) => {
-                    const strikes = getStrikes(s.name, s.type);
-                    const fechaFin = obtenerFechaFin(s.timestamp, s.duration);
+                    const strike = getStrike(s.__rowIndex);
+                    const strikeFeedback = getStrikeFeedback(s.type, strike, s);
+                    const resumenEscala = getResumenEscala(strike, strikeFeedback.accion, s);
+                    const duracionVisible = getDuracionVisible(s.duration, strikeFeedback.accion, s);
+                    const fechaFin = debeMostrarFechaFin(s.duration, strikeFeedback.accion, s)
+                      ? obtenerFechaFin(s.timestamp, s.duration)
+                      : null;
                     const situacion = calcularSituacion(s, nowMs);
+                    const fechaMs = parseTimestamp(s.timestamp);
+                    const fechaTexto = fechaMs ? new Date(fechaMs).toLocaleString("es-ES") : "-";
 
                     return (
                       <div className={`sancion-card ${situacion}`} key={`${s.name}-${s.timestamp}-${index}`}>
@@ -294,7 +308,6 @@ export default function Sanciones() {
                             <strong onClick={() => navigate(`/perfil/${s.name}`)} title={`Ver perfil de ${s.name}`}>
                               {s.name}
                             </strong>
-                            <span className="mini">{tipoSancionLabel(s)}</span>
                           </div>
                           <span className={`situacion-dot ${situacion}`} aria-hidden />
                         </div>
@@ -303,6 +316,7 @@ export default function Sanciones() {
                           <div>
                             <strong>Moderador:</strong> {s.moderator}
                           </div>
+
                           <div>
                             <strong>Motivo:</strong>{" "}
                             <span className="motivo" title={String(s.type || "")}>
@@ -310,9 +324,16 @@ export default function Sanciones() {
                             </span>
                           </div>
 
+                          {resumenEscala && (
+                            <div className={`strikes ${strikeFeedback.esPermaban ? "permaban" : ""}`}>
+                              <WarningCircle size={14} weight="duotone" />
+                              <strong>{resumenEscala}</strong>
+                            </div>
+                          )}
+
                           <div className="dur-wrap">
                             <div>
-                              <strong>Duración:</strong> {formatearDuracion(s.duration)}
+                              <strong>Duración:</strong> {duracionVisible}
                             </div>
                             {fechaFin && (
                               <div className="duracion-extra">
@@ -322,13 +343,7 @@ export default function Sanciones() {
                           </div>
 
                           <div>
-                            <strong>Fecha:</strong>{" "}
-                            {new Date(parseTimestamp(s.timestamp)).toLocaleString("es-ES")}
-                          </div>
-
-                          <div className={`strikes ${strikes >= 3 ? "permaban" : ""}`}>
-                            <WarningCircle size={14} weight="duotone" /> Strikes: {strikes}
-                            {strikes >= 3 && <strong> · Permaban</strong>}
+                            <strong>Fecha:</strong> {fechaTexto}
                           </div>
 
                           <div className={`situacion-badge ${situacion}`}>
@@ -357,9 +372,16 @@ export default function Sanciones() {
                     </thead>
                     <tbody>
                       {sancionesPagina.map((s, index) => {
-                        const strikes = getStrikes(s.name, s.type);
-                        const fechaFin = obtenerFechaFin(s.timestamp, s.duration);
+                        const strike = getStrike(s.__rowIndex);
+                        const strikeFeedback = getStrikeFeedback(s.type, strike, s);
+                        const resumenEscala = getResumenEscala(strike, strikeFeedback.accion, s);
+                        const duracionVisible = getDuracionVisible(s.duration, strikeFeedback.accion, s);
+                        const fechaFin = debeMostrarFechaFin(s.duration, strikeFeedback.accion, s)
+                          ? obtenerFechaFin(s.timestamp, s.duration)
+                          : null;
                         const situacion = calcularSituacion(s, nowMs);
+                        const fechaMs = parseTimestamp(s.timestamp);
+                        const fechaTexto = fechaMs ? new Date(fechaMs).toLocaleString("es-ES") : "-";
 
                         return (
                           <tr key={`${s.name}-${s.timestamp}-${index}`} className={situacion}>
@@ -395,24 +417,22 @@ export default function Sanciones() {
                                 {s.type}
                               </span>
 
-                              <span className="tipo-sancion-pill">{tipoSancionLabel(s)}</span>
-
-                              <span className={`strikes ${strikes >= 3 ? "permaban" : ""}`}>
-                                <WarningCircle size={14} weight="duotone" /> Strikes: {strikes}
-                                {strikes >= 3 && <strong> (Permaban)</strong>}
-                              </span>
+                              {resumenEscala && (
+                                <span className={`strikes ${strikeFeedback.esPermaban ? "permaban" : ""}`}>
+                                  <WarningCircle size={14} weight="duotone" />
+                                  <strong>{resumenEscala}</strong>
+                                </span>
+                              )}
                             </td>
 
                             <td data-label="Duración">
-                              <div className="truncate" title={formatearDuracion(s.duration)}>
-                                {formatearDuracion(s.duration)}
+                              <div className="truncate" title={duracionVisible}>
+                                {duracionVisible}
                               </div>
                               {fechaFin && <div className="duracion-extra">Finaliza: {fechaFin}</div>}
                             </td>
 
-                            <td data-label="Fecha">
-                              {new Date(parseTimestamp(s.timestamp)).toLocaleString("es-ES")}
-                            </td>
+                            <td data-label="Fecha">{fechaTexto}</td>
 
                             <td data-label="Situación">
                               <span className={`situacion ${situacion}`}>

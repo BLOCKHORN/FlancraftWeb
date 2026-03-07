@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState, useContext, useCallback } from "re
 import { Link, useNavigate } from "react-router-dom";
 import { UserContext } from "../../context/UserContext";
 import {
-  PencilSimple,
   Trash,
   FloppyDisk,
   ArrowLeft,
@@ -13,15 +12,28 @@ import {
   ArrowsClockwise,
   XCircle,
   Funnel,
+  WarningCircle,
+  NotePencil,
 } from "phosphor-react";
+import {
+  parseTimestamp,
+  obtenerFechaFin,
+  calcularSituacion,
+  situacionLabel,
+  avatarUrl,
+  buildStrikeTimelineMap,
+  getStrikeFromMap,
+  getStrikeFeedback,
+  getResumenEscala,
+  getDuracionVisible,
+  debeMostrarFechaFin,
+  esPerma,
+  esSancionActiva,
+} from "./tribunalUtils";
 import "../../styles/components/Tribunal/_tribunaladmin.scss";
-const API_BASE = import.meta.env.VITE_BACKEND_URL || "https://flancraft-backend.onrender.com";
 
-const ESTADOS = [
-  { key: "pendiente", label: "Pendiente" },
-  { key: "revisado", label: "Revisado" },
-  { key: "baneado", label: "Baneado" },
-];
+const API_BASE = import.meta.env.VITE_BACKEND_URL || "https://flancraft-backend.onrender.com";
+const ADMIN_API_KEY = import.meta.env.VITE_TRIBUNAL_ADMIN_KEY || "";
 
 const MOTIVOS = [
   "hacks",
@@ -38,6 +50,13 @@ const MOTIVOS = [
   "otros",
 ];
 
+const SITUACIONES = [
+  { key: "todas", label: "Todas" },
+  { key: "activa", label: "Activas" },
+  { key: "finalizada", label: "Finalizadas" },
+  { key: "perma", label: "Permaban" },
+];
+
 const normalizar = (v) => (v || "").toString().trim().toLowerCase();
 
 const buildApiUrl = (path) => {
@@ -47,91 +66,15 @@ const buildApiUrl = (path) => {
   return `${base}/api${path.startsWith("/") ? path : `/${path}`}`;
 };
 
-const iconoEstado = (estadoVal) => {
-  const props = { size: 18, weight: "duotone" };
-  switch (normalizar(estadoVal || "pendiente")) {
-    case "baneado":
-      return <Skull {...props} />;
-    case "revisado":
-      return <CheckCircle {...props} />;
-    default:
-      return <HourglassMedium {...props} />;
-  }
-};
+const buildAdminHeaders = (withJson = false) => {
+  const headers = {
+    Accept: "application/json",
+  };
 
-const labelEstado = (estadoVal) => {
-  const k = normalizar(estadoVal || "pendiente");
-  return ESTADOS.find((e) => e.key === k)?.label || "Pendiente";
-};
+  if (withJson) headers["Content-Type"] = "application/json";
+  if (ADMIN_API_KEY) headers["x-api-key"] = ADMIN_API_KEY;
 
-const parseTimestamp = (ts) => {
-  if (!ts) return 0;
-  if (typeof ts === "number" && Number.isFinite(ts)) return ts < 1e12 ? ts * 1000 : ts;
-
-  if (typeof ts === "string") {
-    const trimmed = ts.trim();
-    if (/^\d+$/.test(trimmed)) {
-      const n = Number(trimmed);
-      if (Number.isFinite(n)) return n < 1e12 ? n * 1000 : n;
-    }
-    const p = Date.parse(trimmed);
-    return Number.isFinite(p) ? p : 0;
-  }
-
-  const n = Number(ts);
-  if (Number.isFinite(n)) return n < 1e12 ? n * 1000 : n;
-  return 0;
-};
-
-const parseDurationToMs = (raw) => {
-  if (!raw) return null;
-  const str = String(raw).toLowerCase().trim();
-  if (/(perma|perm|permanent|infinite|∞)/.test(str)) return Infinity;
-
-  if (/^\d+$/.test(str)) {
-    const secs = Number(str);
-    return secs * 1000;
-  }
-
-  const regex = /(\d+)\s*([smhd])/g;
-  const unitMs = { s: 1000, m: 60000, h: 3600000, d: 86400000 };
-  let total = 0;
-  let match;
-
-  while ((match = regex.exec(str)) !== null) {
-    const val = parseInt(match[1], 10);
-    const unit = match[2];
-    total += val * (unitMs[unit] || 0);
-  }
-
-  return total > 0 ? total : null;
-};
-
-const formatearDuracion = (raw) => {
-  if (!raw) return "Desconocida";
-  const ms = parseDurationToMs(raw);
-  if (ms === Infinity) return "Permaban";
-  if (!ms) return String(raw);
-
-  const d = Math.floor(ms / 86400000);
-  const h = Math.floor((ms % 86400000) / 3600000);
-  const m = Math.floor((ms % 3600000) / 60000);
-  const s = Math.floor((ms % 60000) / 1000);
-
-  const partes = [];
-  if (d) partes.push(`${d} ${d === 1 ? "día" : "días"}`);
-  if (h) partes.push(`${h} ${h === 1 ? "hora" : "horas"}`);
-  if (m) partes.push(`${m} ${m === 1 ? "minuto" : "minutos"}`);
-  if (!d && !h && !m && s) partes.push(`${s} ${s === 1 ? "segundo" : "segundos"}`);
-  return partes.length ? partes.join(" ") : String(raw);
-};
-
-const obtenerFechaFin = (timestamp, raw) => {
-  const start = parseTimestamp(timestamp);
-  if (!start) return null;
-  const ms = parseDurationToMs(raw);
-  if (!ms || ms === Infinity) return null;
-  return new Date(start + ms).toLocaleString("es-ES");
+  return headers;
 };
 
 const pickArray = (payload) => {
@@ -142,27 +85,49 @@ const pickArray = (payload) => {
   return [];
 };
 
+const iconoSituacion = (situacion) => {
+  const props = { size: 18, weight: "duotone" };
+  if (situacion === "perma") return <Skull {...props} />;
+  if (situacion === "activa") return <HourglassMedium {...props} />;
+  return <CheckCircle {...props} />;
+};
+
 export default function TribunalAdminPanel() {
   const { user } = useContext(UserContext);
   const navigate = useNavigate();
 
   const [sanciones, setSanciones] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [busyId, setBusyId] = useState(null);
   const [errorMsg, setErrorMsg] = useState("");
+  const [notice, setNotice] = useState(null);
 
   const [editingId, setEditingId] = useState(null);
   const [observacion, setObservacion] = useState("");
-  const [estado, setEstado] = useState("pendiente");
   const [motivoEditado, setMotivoEditado] = useState("otros");
 
   const [q, setQ] = useState("");
-  const [fEstado, setFEstado] = useState("todos");
+  const [fSituacion, setFSituacion] = useState("todas");
+  const [fMotivo, setFMotivo] = useState("todos");
+  const [nowMs, setNowMs] = useState(() => Date.now());
 
   const denied = user === null || !user?.loggedIn || !user?.rol_admin;
 
-  const cargarSanciones = useCallback(async () => {
+  useEffect(() => {
+    const id = setInterval(() => setNowMs(Date.now()), 30000);
+    return () => clearInterval(id);
+  }, []);
+
+  useEffect(() => {
+    if (!notice) return;
+    const id = setTimeout(() => setNotice(null), 3200);
+    return () => clearTimeout(id);
+  }, [notice]);
+
+  const cargarSanciones = useCallback(async (withNotice = false) => {
     setLoading(true);
     setErrorMsg("");
+
     try {
       const res = await fetch(buildApiUrl("/sanciones"), {
         headers: { Accept: "application/json" },
@@ -184,6 +149,13 @@ export default function TribunalAdminPanel() {
 
       const arr = pickArray(json);
       setSanciones(arr);
+
+      if (withNotice) {
+        setNotice({
+          type: "success",
+          message: `Panel actualizado. ${arr.length} registros cargados.`,
+        });
+      }
     } catch (err) {
       setSanciones([]);
       setErrorMsg(err?.message || "No se pudieron cargar las sanciones.");
@@ -199,21 +171,23 @@ export default function TribunalAdminPanel() {
   const cerrarEdicion = () => {
     setEditingId(null);
     setObservacion("");
-    setEstado("pendiente");
     setMotivoEditado("otros");
   };
 
   const guardarCambios = async (sancion) => {
     try {
-      setLoading(true);
+      setBusyId(sancion.id);
       setErrorMsg("");
+
+      if (!ADMIN_API_KEY) {
+        throw new Error("Falta VITE_TRIBUNAL_ADMIN_KEY en el frontend.");
+      }
 
       const res = await fetch(buildApiUrl(`/sanciones/${sancion.id}`), {
         method: "PATCH",
-        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        headers: buildAdminHeaders(true),
         body: JSON.stringify({
           observacion,
-          estado,
           type: motivoEditado,
           revisado_por: user?.uid || null,
         }),
@@ -235,10 +209,14 @@ export default function TribunalAdminPanel() {
 
       await cargarSanciones();
       cerrarEdicion();
+      setNotice({
+        type: "success",
+        message: `Registro de ${sancion.name} actualizado.`,
+      });
     } catch (err) {
       setErrorMsg(err?.message || "No se pudieron guardar los cambios.");
     } finally {
-      setLoading(false);
+      setBusyId(null);
     }
   };
 
@@ -246,60 +224,98 @@ export default function TribunalAdminPanel() {
     if (!confirm(`¿Seguro que deseas eliminar la sanción de ${nombre}?`)) return;
 
     try {
-      setLoading(true);
+      setBusyId(id);
       setErrorMsg("");
 
-      const res = await fetch(buildApiUrl(`/sanciones/${id}`), { method: "DELETE" });
+      if (!ADMIN_API_KEY) {
+        throw new Error("Falta VITE_TRIBUNAL_ADMIN_KEY en el frontend.");
+      }
+
+      const res = await fetch(buildApiUrl(`/sanciones/${id}`), {
+        method: "DELETE",
+        headers: buildAdminHeaders(false),
+      });
+
+      const text = await res.text();
+      let json = null;
+
+      try {
+        json = text ? JSON.parse(text) : null;
+      } catch {
+        json = null;
+      }
 
       if (!res.ok) {
-        const text = await res.text();
-        let json = null;
-
-        try {
-          json = text ? JSON.parse(text) : null;
-        } catch {
-          json = null;
-        }
-
         const msg = (json && (json.error || json.message)) || `HTTP ${res.status}`;
         throw new Error(msg);
       }
 
       await cargarSanciones();
+      setNotice({
+        type: "success",
+        message: `Registro de ${nombre} eliminado.`,
+      });
     } catch (err) {
       setErrorMsg(err?.message || "No se pudo eliminar la sanción.");
     } finally {
-      setLoading(false);
+      setBusyId(null);
     }
   };
 
+  const sancionesConMeta = useMemo(
+    () => sanciones.map((s, __rowIndex) => ({ ...s, __rowIndex })),
+    [sanciones]
+  );
+
+  const strikesMap = useMemo(
+    () => buildStrikeTimelineMap(sancionesConMeta),
+    [sancionesConMeta]
+  );
+
   const stats = useMemo(() => {
-    const total = sanciones.length;
-    const pendientes = sanciones.filter((s) => normalizar(s.estado) === "pendiente").length;
-    const revisadas = sanciones.filter((s) => normalizar(s.estado) === "revisado").length;
-    const baneadas = sanciones.filter((s) => normalizar(s.estado) === "baneado").length;
-    return { total, pendientes, revisadas, baneadas };
-  }, [sanciones]);
+    const total = sancionesConMeta.length;
+    let activas = 0;
+    let finalizadas = 0;
+    let permabans = 0;
+
+    for (const s of sancionesConMeta) {
+      const situacion = calcularSituacion(s, nowMs);
+      if (situacion === "activa") activas++;
+      if (situacion === "finalizada") finalizadas++;
+      if (situacion === "perma") permabans++;
+    }
+
+    return { total, activas, finalizadas, permabans };
+  }, [sancionesConMeta, nowMs]);
 
   const sancionesFiltradas = useMemo(() => {
     const qq = normalizar(q);
-    const est = normalizar(fEstado);
+    const situacionFiltro = normalizar(fSituacion);
+    const motivoFiltro = normalizar(fMotivo);
 
-    const list = sanciones.filter((s) => {
+    const list = sancionesConMeta.filter((s) => {
       const name = normalizar(s.name);
       const type = normalizar(s.type);
+      const moderator = normalizar(s.moderator);
       const obs = normalizar(s.observacion);
-      const estadoRow = normalizar(s.estado) || "pendiente";
+      const situacion = calcularSituacion(s, nowMs);
 
-      const matchQ = !qq || name.includes(qq) || type.includes(qq) || obs.includes(qq);
-      const matchEstado = est === "todos" ? true : estadoRow === est;
+      const matchQ =
+        !qq ||
+        name.includes(qq) ||
+        type.includes(qq) ||
+        moderator.includes(qq) ||
+        obs.includes(qq);
 
-      return matchQ && matchEstado;
+      const matchSituacion = situacionFiltro === "todas" ? true : situacion === situacionFiltro;
+      const matchMotivo = motivoFiltro === "todos" ? true : type === motivoFiltro;
+
+      return matchQ && matchSituacion && matchMotivo;
     });
 
-    list.sort((a, b) => parseTimestamp(b.timestamp) - parseTimestamp(a.timestamp));
+    list.sort((a, b) => (parseTimestamp(b.timestamp) || 0) - (parseTimestamp(a.timestamp) || 0));
     return list;
-  }, [sanciones, q, fEstado]);
+  }, [sancionesConMeta, q, fSituacion, fMotivo, nowMs]);
 
   if (denied) {
     return (
@@ -334,9 +350,6 @@ export default function TribunalAdminPanel() {
 
           <div className="tribAdmin__session">
             <span className="tribAdmin__sessionTag">Sesión</span>
-            <span className="tribAdmin__sessionId" title={user?.uid}>
-              {user?.uid}
-            </span>
             <span className={`tribAdmin__role tribAdmin__role--${normalizar(user?.rol_admin)}`}>
               {user?.rol_admin}
             </span>
@@ -345,32 +358,39 @@ export default function TribunalAdminPanel() {
 
         <header className="tribAdmin__header">
           <div className="tribAdmin__titleWrap">
-            <h1 className="tribAdmin__title">Panel de Administración</h1>
-            <p className="tribAdmin__subtitle">Survival · Revisa sanciones, deja observaciones y marca su estado.</p>
+            <h1 className="tribAdmin__title">Panel de Tribunal</h1>
+            <p className="tribAdmin__subtitle">
+              Survival · Este panel sirve para auditar registros, añadir notas internas,
+              corregir motivos mal clasificados y eliminar entradas erróneas.
+            </p>
+
+            <div className="tribAdmin__explain">
+              La sanción ya ha sido aplicada por el sistema. Aquí no se decide el castigo: aquí se revisa el registro.
+            </div>
           </div>
 
           <div className="tribAdmin__chips">
             <div className="statChip statChip--pending">
               <HourglassMedium size={18} weight="duotone" />
               <div>
-                <div className="statChip__value">{stats.pendientes}</div>
-                <div className="statChip__label">Pendientes</div>
+                <div className="statChip__value">{stats.activas}</div>
+                <div className="statChip__label">Activas</div>
               </div>
             </div>
 
             <div className="statChip statChip--reviewed">
               <CheckCircle size={18} weight="duotone" />
               <div>
-                <div className="statChip__value">{stats.revisadas}</div>
-                <div className="statChip__label">Revisadas</div>
+                <div className="statChip__value">{stats.finalizadas}</div>
+                <div className="statChip__label">Finalizadas</div>
               </div>
             </div>
 
             <div className="statChip statChip--banned">
               <Skull size={18} weight="duotone" />
               <div>
-                <div className="statChip__value">{stats.baneadas}</div>
-                <div className="statChip__label">Baneadas</div>
+                <div className="statChip__value">{stats.permabans}</div>
+                <div className="statChip__label">Permaban</div>
               </div>
             </div>
 
@@ -390,7 +410,7 @@ export default function TribunalAdminPanel() {
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="Buscar por jugador, motivo u observación…"
+              placeholder="Buscar por jugador, moderador, motivo o nota…"
             />
             {q?.trim() && (
               <button className="iconBtn" onClick={() => setQ("")} aria-label="Limpiar búsqueda">
@@ -401,27 +421,49 @@ export default function TribunalAdminPanel() {
 
           <div className="tribAdmin__filters">
             <div className="selectWrap">
-              <span className="selectWrap__label">Estado</span>
-              <select value={fEstado} onChange={(e) => setFEstado(e.target.value)}>
-                <option value="todos">Todos</option>
-                {ESTADOS.map((e) => (
-                  <option key={e.key} value={e.key}>
-                    {e.label}
+              <span className="selectWrap__label">Situación</span>
+              <select value={fSituacion} onChange={(e) => setFSituacion(e.target.value)}>
+                {SITUACIONES.map((item) => (
+                  <option key={item.key} value={item.key}>
+                    {item.label}
                   </option>
                 ))}
               </select>
             </div>
 
-            <button className="tribBtn tribBtn--primary" onClick={cargarSanciones} disabled={loading}>
+            <div className="selectWrap">
+              <span className="selectWrap__label">Motivo</span>
+              <select value={fMotivo} onChange={(e) => setFMotivo(e.target.value)}>
+                <option value="todos">Todos</option>
+                {MOTIVOS.map((m) => (
+                  <option key={m} value={m}>
+                    {m}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <button
+              className="tribBtn tribBtn--primary"
+              onClick={() => cargarSanciones(true)}
+              disabled={loading}
+            >
               <ArrowsClockwise size={18} weight="bold" />
-              {loading ? "Cargando…" : "Recargar"}
+              {loading ? "Cargando…" : "Actualizar"}
             </button>
           </div>
         </div>
 
+        {notice && (
+          <div className={`tribAdmin__notice tribAdmin__notice--${notice.type}`}>
+            <div className="tribAdmin__noticeTitle">Hecho</div>
+            <div className="tribAdmin__noticeDesc">{notice.message}</div>
+          </div>
+        )}
+
         {errorMsg && (
           <div className="tribAdmin__error">
-            <div className="tribAdmin__errorTitle">No se pudo cargar</div>
+            <div className="tribAdmin__errorTitle">Ha ocurrido un problema</div>
             <div className="tribAdmin__errorDesc">{errorMsg}</div>
             <div className="tribAdmin__errorHint">
               Endpoint: <span className="mono">{buildApiUrl("/sanciones")}</span>
@@ -433,19 +475,21 @@ export default function TribunalAdminPanel() {
           <table className="tribAdmin__table">
             <thead>
               <tr>
-                <th>Jugador</th>
-                <th>Motivo</th>
-                <th>Duración</th>
-                <th>Estado</th>
-                <th>Observación</th>
-                <th>Acción</th>
+                <th className="colJugador">Jugador</th>
+                <th className="colModerador">Moderador</th>
+                <th className="colMotivo">Motivo</th>
+                <th className="colEscala">Escala</th>
+                <th className="colDuracion">Duración</th>
+                <th className="colSituacion">Situación</th>
+                <th className="colNota">Nota interna</th>
+                <th className="colAccion">Acción</th>
               </tr>
             </thead>
 
             <tbody>
               {sancionesFiltradas.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="tribAdmin__empty">
+                  <td colSpan={8} className="tribAdmin__empty">
                     <div className="tribAdmin__emptyInner">
                       <Funnel size={22} weight="duotone" />
                       <div>
@@ -453,7 +497,9 @@ export default function TribunalAdminPanel() {
                           {loading ? "Cargando…" : "No hay resultados"}
                         </div>
                         <div className="tribAdmin__emptyDesc">
-                          {loading ? "Obteniendo sanciones del backend." : "Ajusta filtros o prueba otra búsqueda."}
+                          {loading
+                            ? "Obteniendo registros del backend."
+                            : "Prueba otra búsqueda o ajusta los filtros."}
                         </div>
                       </div>
                     </div>
@@ -461,22 +507,35 @@ export default function TribunalAdminPanel() {
                 </tr>
               ) : (
                 sancionesFiltradas.map((s) => {
-                  const estRow = normalizar(s.estado) || "pendiente";
-                  const fechaFin = obtenerFechaFin(s.timestamp, s.duration);
+                  const strike = getStrikeFromMap(strikesMap, s.__rowIndex);
+                  const strikeFeedback = getStrikeFeedback(s.type, strike, s);
+                  const resumenEscala = getResumenEscala(strike, strikeFeedback.accion, s);
+                  const duracionVisible = getDuracionVisible(s.duration, strikeFeedback.accion, s);
+                  const fechaFin = debeMostrarFechaFin(s.duration, strikeFeedback.accion, s)
+                    ? obtenerFechaFin(s.timestamp, s.duration)
+                    : null;
+                  const situacion = calcularSituacion(s, nowMs);
+                  const fechaMs = parseTimestamp(s.timestamp);
+                  const fechaTexto = fechaMs ? new Date(fechaMs).toLocaleString("es-ES") : "-";
                   const motivoRow = (s.type || "otros").toString().trim();
                   const motivoKey = normalizar(motivoRow).replace(/\s+/g, "-") || "otros";
+                  const isBusy = busyId === s.id;
+                  const isEditing = editingId === s.id;
+                  const perma = esPerma(s);
+                  const activa = esSancionActiva(s, nowMs);
 
                   return (
-                    <tr key={s.id} className={`row row--${estRow}`}>
+                    <tr key={s.id} className={`row row--${situacion}`}>
                       <td data-label="Jugador">
                         <Link to={`/perfil/${s.name}`} className="playerLink">
                           <div className="playerCell">
                             <div className="avatarFrame">
                               <img
-                                src={`https://mc-heads.net/avatar/${s.name}/32`}
+                                src={avatarUrl(s.name, 32)}
                                 alt={s.name}
                                 className="avatar"
                                 loading="lazy"
+                                decoding="async"
                               />
                             </div>
                             <div className="playerMeta">
@@ -489,8 +548,15 @@ export default function TribunalAdminPanel() {
                         </Link>
                       </td>
 
+                      <td data-label="Moderador">
+                        <div className="moderatorCell">
+                          <div className="moderatorCell__name">{s.moderator || "Sistema"}</div>
+                          <div className="moderatorCell__date">{fechaTexto}</div>
+                        </div>
+                      </td>
+
                       <td data-label="Motivo">
-                        {editingId === s.id ? (
+                        {isEditing ? (
                           <select
                             className="inlineSelect"
                             value={motivoEditado}
@@ -509,56 +575,65 @@ export default function TribunalAdminPanel() {
                         )}
                       </td>
 
+                      <td data-label="Escala">
+                        {resumenEscala ? (
+                          <div className={`strikeBadge ${/ban\s*perm/i.test(resumenEscala) ? "permaban" : ""}`}>
+                            <WarningCircle size={14} weight="duotone" />
+                            <span>{resumenEscala}</span>
+                          </div>
+                        ) : (
+                          <span className="muted">Sin escala detectada</span>
+                        )}
+                      </td>
+
                       <td data-label="Duración">
                         <div className="duration">
-                          <div className="duration__main">{formatearDuracion(s.duration)}</div>
-                          {fechaFin && <div className="duration__sub">Termina: {fechaFin}</div>}
+                          <div className="duration__main">{duracionVisible}</div>
+                          {fechaFin && <div className="duration__sub">Finaliza: {fechaFin}</div>}
+                          {!fechaFin && perma && <div className="duration__sub">Sin caducidad</div>}
+                          {!fechaFin && !perma && !activa && <div className="duration__sub">Ya cumplida</div>}
                         </div>
                       </td>
 
-                      <td data-label="Estado">
-                        <span className={`badge badge--estado badge--${estRow}`}>
-                          <span className="badge__icon">{iconoEstado(estRow)}</span>
-                          {labelEstado(estRow)}
+                      <td data-label="Situación">
+                        <span className={`badge badge--estado badge--${situacion}`}>
+                          <span className="badge__icon">{iconoSituacion(situacion)}</span>
+                          {situacionLabel(situacion)}
                         </span>
                       </td>
 
-                      <td data-label="Observación">
-                        {editingId === s.id ? (
+                      <td data-label="Nota interna">
+                        {isEditing ? (
                           <textarea
                             className="inlineTextarea"
                             value={observacion}
                             onChange={(e) => setObservacion(e.target.value)}
-                            placeholder="Escribe una observación clara…"
+                            placeholder="Añade contexto interno o corrige detalles del registro…"
                           />
                         ) : (
                           <div className={`obs ${s.observacion ? "" : "obs--empty"}`}>
-                            {s.observacion || "—"}
+                            {s.observacion || "Sin nota interna"}
                           </div>
                         )}
                       </td>
 
                       <td data-label="Acción">
-                        {editingId === s.id ? (
+                        {isEditing ? (
                           <div className="actions actions--edit">
-                            <select
-                              className="inlineSelect"
-                              value={estado}
-                              onChange={(e) => setEstado(e.target.value)}
+                            <button
+                              className="tribBtn tribBtn--save"
+                              onClick={() => guardarCambios(s)}
+                              disabled={isBusy}
                             >
-                              {ESTADOS.map((e) => (
-                                <option key={e.key} value={e.key}>
-                                  {e.label}
-                                </option>
-                              ))}
-                            </select>
-
-                            <button className="tribBtn tribBtn--save" onClick={() => guardarCambios(s)} disabled={loading}>
                               <FloppyDisk size={18} weight="bold" />
-                              Guardar
+                              {isBusy ? "Guardando…" : "Guardar"}
                             </button>
 
-                            <button className="tribBtn tribBtn--ghost" onClick={cerrarEdicion} disabled={loading}>
+                            <button
+                              className="tribBtn tribBtn--ghost"
+                              onClick={cerrarEdicion}
+                              disabled={isBusy}
+                            >
                               Cancelar
                             </button>
                           </div>
@@ -569,22 +644,22 @@ export default function TribunalAdminPanel() {
                               onClick={() => {
                                 setEditingId(s.id);
                                 setObservacion(s.observacion || "");
-                                setEstado(s.estado || "pendiente");
                                 setMotivoEditado(s.type || "otros");
                               }}
+                              disabled={isBusy}
                             >
-                              <PencilSimple size={18} weight="bold" />
-                              Editar
+                              <NotePencil size={18} weight="bold" />
+                              Anotar
                             </button>
 
-                            {(user.rol_admin === "admin" || user.rol_admin === "owner") && (
+                            {(user?.rol_admin === "admin" || user?.rol_admin === "owner") && (
                               <button
                                 className="tribBtn tribBtn--danger"
                                 onClick={() => eliminarSancion(s.id, s.name)}
-                                disabled={loading}
+                                disabled={isBusy}
                               >
                                 <Trash size={18} weight="bold" />
-                                Eliminar
+                                {isBusy ? "Eliminando…" : "Eliminar"}
                               </button>
                             )}
                           </div>
@@ -602,7 +677,9 @@ export default function TribunalAdminPanel() {
               Mostrando <b>{sancionesFiltradas.length}</b> de <b>{sanciones.length}</b>
             </div>
             <div className="tribAdmin__footRight">
-              <span className="hint">Observación ideal: qué pasó, evidencia y decisión.</span>
+              <span className="hint">
+                Uso recomendado: corregir motivo, añadir nota interna o borrar registros erróneos.
+              </span>
             </div>
           </div>
         </div>

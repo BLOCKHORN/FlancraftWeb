@@ -1,6 +1,6 @@
 const db = require("../models/db");
 
-const RANGOS_VALIDOS = ["nova", "alpha", "inmortal"];
+const RANGOS_VALIDOS = new Set(["nova", "alpha", "inmortal"]);
 const FLOODGATE_PREFIX_HEX = "0000000000000000";
 
 const cleanText = (v) => String(v || "").trim();
@@ -28,16 +28,57 @@ const getJson = async (url) => {
   return { ok: res.ok, status: res.status, data };
 };
 
+const mapUsuarioResponse = (usuario) => ({
+  ...(usuario || {}),
+  es_premium: false,
+});
+
+const parseRango = (value) => {
+  if (value === null || value === undefined) return { ok: true, value: null };
+
+  const rango = String(value).trim().toLowerCase();
+  if (!rango || rango === "null" || rango === "none") {
+    return { ok: true, value: null };
+  }
+
+  if (!RANGOS_VALIDOS.has(rango)) {
+    return { ok: false, value: null };
+  }
+
+  return { ok: true, value: rango };
+};
+
+const actualizarRangoUsuario = async (uuid, rangoUsuario) => {
+  const uuidClean = cleanText(uuid);
+
+  const { data: existente, error: errorBusqueda } = await db
+    .from("usuarios")
+    .select("uuid")
+    .eq("uuid", uuidClean)
+    .maybeSingle();
+
+  if (errorBusqueda) throw errorBusqueda;
+  if (!existente) return false;
+
+  const { error: errorUpdate } = await db
+    .from("usuarios")
+    .update({ rango_usuario: rangoUsuario })
+    .eq("uuid", uuidClean);
+
+  if (errorUpdate) throw errorUpdate;
+  return true;
+};
+
 exports.obtenerUsuarios = async (req, res) => {
   try {
     const { data, error } = await db
       .from("usuarios")
-      .select("uuid, uid, nivel, xp_actual, rango_usuario, es_premium, wallet_coins")
+      .select("uuid, uid, nivel, xp_actual, rango_usuario, wallet_coins")
       .order("uid", { ascending: true });
 
     if (error) throw error;
 
-    return res.status(200).json(data || []);
+    return res.status(200).json((data || []).map(mapUsuarioResponse));
   } catch (err) {
     console.error("[OBTENER TODOS LOS USUARIOS]", err);
     return res.status(500).json({ error: "Error al obtener usuarios." });
@@ -54,7 +95,7 @@ exports.obtenerUsuario = async (req, res) => {
   try {
     const { data: usuario, error: errorUsuario } = await db
       .from("usuarios")
-      .select("uuid, uid, xp_actual, nivel, rango_usuario, es_premium, wallet_coins")
+      .select("uuid, uid, xp_actual, nivel, rango_usuario, wallet_coins")
       .eq("uuid", uuid)
       .maybeSingle();
 
@@ -70,7 +111,7 @@ exports.obtenerUsuario = async (req, res) => {
     if (errorPermiso) throw errorPermiso;
 
     return res.status(200).json({
-      ...usuario,
+      ...mapUsuarioResponse(usuario),
       rol_admin: permiso?.rol || null,
     });
   } catch (err) {
@@ -172,15 +213,18 @@ exports.obtenerSkinUsuario = async (req, res) => {
 };
 
 exports.asignarRangoUsuario = async (req, res) => {
-  const { uuid, rango_usuario } = req.body;
+  const uuid = cleanText(req.body?.uuid || req.body?.uuid_jugador);
+  const parsed = parseRango(req.body?.rango_usuario ?? req.body?.rango ?? null);
 
-  if (!uuid || (rango_usuario !== null && !RANGOS_VALIDOS.includes(rango_usuario))) {
+  if (!uuid || !parsed.ok) {
     return res.status(400).json({ error: "Datos inválidos para asignar rango." });
   }
 
   try {
-    const { error } = await db.from("usuarios").update({ rango_usuario }).eq("uuid", uuid);
-    if (error) throw error;
+    const updated = await actualizarRangoUsuario(uuid, parsed.value);
+    if (!updated) {
+      return res.status(404).json({ error: "Usuario no encontrado para asignar rango." });
+    }
 
     return res.status(200).json({ mensaje: "Rango asignado correctamente." });
   } catch (err) {
@@ -190,24 +234,30 @@ exports.asignarRangoUsuario = async (req, res) => {
 };
 
 exports.registrarCompraRango = async (req, res) => {
-  const { uuid, rango_usuario } = req.body;
+  const uuid = cleanText(req.body?.uuid || req.body?.uuid_jugador);
+  const parsed = parseRango(req.body?.rango_usuario ?? req.body?.rango ?? null);
 
-  if (!uuid || (rango_usuario !== null && !RANGOS_VALIDOS.includes(rango_usuario))) {
-    return res.status(400).json({ error: "Datos inválidos para asignar rango." });
+  if (!uuid || !parsed.ok) {
+    return res.status(400).json({ error: "Datos inválidos para registrar el rango." });
   }
 
   try {
-    const { error } = await db.from("usuarios").update({ rango_usuario }).eq("uuid", uuid);
-    if (error) throw error;
+    const updated = await actualizarRangoUsuario(uuid, parsed.value);
+    if (!updated) {
+      return res.status(404).json({ error: "Usuario no encontrado para registrar rango." });
+    }
 
     return res.status(200).json({
-      mensaje: "Rango registrado correctamente (permanente).",
+      mensaje: "Rango sincronizado correctamente.",
+      rango_usuario: parsed.value,
     });
   } catch (err) {
     console.error("[REGISTRAR COMPRA RANGO]", err);
     return res.status(500).json({ error: "Error al registrar el rango." });
   }
 };
+
+exports.sincronizarRangoUsuario = exports.registrarCompraRango;
 
 exports.obtenerRangosExpirados = async (req, res) => {
   return res.status(200).json([]);

@@ -1,5 +1,15 @@
 export const POR_PAGINA = 25;
 
+export const REGLAS_SANCION = {
+  hacks: ["Jail 12h", "Jail 5d", "Ban perm."],
+  fly: ["Jail 6h", "Jail 3d", "Ban perm."],
+  insultos: ["Jail 30m", "Jail 5h", "Ban perm."],
+  tpakill: ["Jail 6h", "Jail 5d", "Ban perm."],
+  grief: ["Jail 2h", "Jail 8h", "Jail 5d"],
+  spam: ["Jail 1d", "Jail 10d", "Ban perm."],
+  flood: ["Aviso", "Jail 15m", "Jail 2h"],
+};
+
 export const parseTimestamp = (t) => {
   if (!t) return null;
 
@@ -107,13 +117,6 @@ export const situacionLabel = (codigo) => {
   return "Finalizada";
 };
 
-export const tipoSancionLabel = (s) => {
-  const bt = String(s?.bantype || "").toLowerCase();
-  if (bt === "perma" || bt === "permanent") return "BAN PERMANENTE";
-  if (bt === "temp" || bt === "tempban" || bt === "ban") return "BAN TEMPORAL";
-  return "JAIL";
-};
-
 export const avatarUrl = (name, size) => `https://mc-heads.net/avatar/${name}/${size}`;
 
 export const buildPageItems = (current, total) => {
@@ -133,19 +136,103 @@ export const buildPageItems = (current, total) => {
   return items;
 };
 
-export const buildStrikesMap = (sanciones) => {
-  const map = new Map();
-  for (const s of sanciones || []) {
-    const name = String(s?.name || "");
-    const type = String(s?.type || "");
-    if (!name || !type) continue;
-    const key = `${name.toLowerCase()}|${type.toLowerCase()}`;
-    map.set(key, (map.get(key) || 0) + 1);
+export const normalizarMotivo = (value) =>
+  String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/\s+/g, "")
+    .replace(/[^a-z0-9]/g, "");
+
+export const buildStrikeTimelineMap = (sanciones) => {
+  const counters = new Map();
+  const rowMap = new Map();
+
+  const ordered = [...(sanciones || [])].sort((a, b) => {
+    const ta = parseTimestamp(a?.timestamp) || 0;
+    const tb = parseTimestamp(b?.timestamp) || 0;
+    if (ta !== tb) return ta - tb;
+    return (a?.__rowIndex || 0) - (b?.__rowIndex || 0);
+  });
+
+  for (const s of ordered) {
+    const player = String(s?.name || "").trim().toLowerCase();
+    const motive = normalizarMotivo(s?.type);
+
+    if (!player || !motive) continue;
+
+    const key = `${player}|${motive}`;
+    const strike = (counters.get(key) || 0) + 1;
+
+    counters.set(key, strike);
+    rowMap.set(s.__rowIndex, strike);
   }
-  return map;
+
+  return rowMap;
 };
 
-export const getStrikesFromMap = (map, jugador, tipo) => {
-  const key = `${String(jugador || "").toLowerCase()}|${String(tipo || "").toLowerCase()}`;
-  return map.get(key) || 0;
+export const getStrikeFromMap = (map, rowIndex) => map.get(rowIndex) || 0;
+
+export const getStrikeFeedback = (motivo, strike, sancion) => {
+  const reglas = REGLAS_SANCION[normalizarMotivo(motivo)];
+
+  if (reglas?.length && strike > 0) {
+    const index = Math.min(strike, reglas.length) - 1;
+    const accion = reglas[index];
+    return {
+      accion,
+      esPermaban: /ban\s*perm/i.test(accion),
+    };
+  }
+
+  if (esPerma(sancion)) {
+    return {
+      accion: "Ban perm.",
+      esPermaban: true,
+    };
+  }
+
+  return {
+    accion: null,
+    esPermaban: false,
+  };
+};
+
+export const getResumenEscala = (strike, accion, sancion) => {
+  const partes = [];
+
+  if (strike > 0) partes.push(`${strike}ª vez`);
+
+  const a = String(accion || "").trim().toLowerCase();
+
+  if (a === "aviso") partes.push("Aviso");
+  if (/^jail\b/.test(a)) partes.push(accion);
+
+  if (a && /ban\s*perm/.test(a) && !esPerma(sancion)) {
+    partes.push("Ban perm.");
+  }
+
+  if (a && /^ban\b/.test(a) && !/ban\s*perm/.test(a) && !esPerma(sancion)) {
+    partes.push(accion);
+  }
+
+  return partes.join(" · ");
+};
+
+export const getDuracionVisible = (raw, accion, sancion) => {
+  const a = String(accion || "").trim().toLowerCase();
+
+  if (a === "aviso") return "Sin duración";
+  if (esPerma(sancion)) return "Sin caducidad";
+
+  return formatearDuracion(raw);
+};
+
+export const debeMostrarFechaFin = (raw, accion, sancion) => {
+  const a = String(accion || "").trim().toLowerCase();
+
+  if (a === "aviso") return false;
+  if (esPerma(sancion)) return false;
+
+  return !!obtenerFechaFinMs(sancion?.timestamp, raw);
 };

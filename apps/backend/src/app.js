@@ -38,10 +38,13 @@ const corsOptions = {
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   allowedHeaders: [
     "Content-Type",
+    "Accept",
     "Authorization",
     "X-Requested-With",
     "X-Vote-Ingest-Secret",
     "x-vote-ingest-secret",
+    "X-API-Key",
+    "x-api-key",
   ],
 };
 

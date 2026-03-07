@@ -1,5 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
+import {
+  CheckCircle,
+  HourglassMedium,
+  WarningCircle,
+  XCircle,
+} from "phosphor-react";
+import { supabase } from "../../lib/supabaseClient";
 import "../../styles/components/Estadisticas/_perfiljugador.scss";
 
 const API_BASE = (import.meta.env.VITE_BACKEND_URL || "http://localhost:10000").trim().replace(/\/$/, "");
@@ -7,6 +14,7 @@ const apiUrl = (path) => (API_BASE ? `${API_BASE}${path}` : path);
 
 const EMPTY = "-";
 const SERVER_ID = "survival";
+const SANCTIONS_LIMIT = 8;
 const nf = new Intl.NumberFormat("es-ES");
 
 const skinCache = new Map();
@@ -51,6 +59,16 @@ const ICONS = {
   esmeralda: "/assets/statsperfil/esmeralda.png",
   cosecha: "/assets/statsperfil/cosecha.png",
   pesca: "/assets/statsperfil/pesca.png",
+};
+
+const SANCTION_RULES = {
+  hacks: ["Jail 12h", "Jail 5d", "Ban perm."],
+  fly: ["Jail 6h", "Jail 3d", "Ban perm."],
+  insultos: ["Jail 30m", "Jail 5h", "Ban perm."],
+  tpakill: ["Jail 6h", "Jail 5d", "Ban perm."],
+  grief: ["Jail 2h", "Jail 8h", "Jail 5d"],
+  spam: ["Jail 1d", "Jail 10d", "Ban perm."],
+  flood: ["Aviso", "Jail 15m", "Jail 2h"],
 };
 
 const fetchJSON = async (url, signal) => {
@@ -343,6 +361,327 @@ const loadServerBundle = async (uuid, signal) => {
   return normalizeServerData(data);
 };
 
+const parseSanctionTimestamp = (t) => {
+  if (!t) return null;
+
+  if (typeof t === "string" && !/^\d+$/.test(t.trim())) {
+    const d = new Date(t);
+    const time = d.getTime();
+    return Number.isNaN(time) ? null : time;
+  }
+
+  const n = Number(t);
+  if (Number.isNaN(n)) return null;
+
+  return n < 1e12 ? n * 1000 : n;
+};
+
+const parseSanctionDurationToMs = (raw) => {
+  if (!raw) return null;
+  const str = String(raw).toLowerCase().trim();
+
+  if (/(perma|perm|permanent|infinite|∞)/.test(str)) return Infinity;
+
+  if (/^\d+$/.test(str)) {
+    const secs = Number(str);
+    return secs * 1000;
+  }
+
+  const regex = /(\d+)\s*([smhd])/g;
+  let match;
+  let total = 0;
+  const unitMs = { s: 1000, m: 60000, h: 3600000, d: 86400000 };
+
+  while ((match = regex.exec(str)) !== null) {
+    const val = parseInt(match[1], 10);
+    const unit = match[2];
+    total += val * unitMs[unit];
+  }
+
+  return total > 0 ? total : null;
+};
+
+const getSanctionEndMs = (timestamp, raw) => {
+  const start = parseSanctionTimestamp(timestamp);
+  if (!start) return null;
+  const ms = parseSanctionDurationToMs(raw);
+  if (!ms || ms === Infinity) return null;
+  return start + ms;
+};
+
+const getSanctionEndText = (timestamp, raw) => {
+  const endMs = getSanctionEndMs(timestamp, raw);
+  if (!endMs) return null;
+  return new Date(endMs).toLocaleString("es-ES");
+};
+
+const isPermanentSanction = (s) => {
+  const bt = String(s?.bantype || "").toLowerCase();
+  if (bt === "perma" || bt === "permanent") return true;
+  const ms = parseSanctionDurationToMs(s?.duration);
+  return ms === Infinity;
+};
+
+const isRevokedSanction = (s) => {
+  const state = String(s?.estado || "").toLowerCase();
+  return state === "revocado" || state === "revocada" || state === "anulado" || state === "anulada";
+};
+
+const isSanctionActiveNow = (s, nowMs) => {
+  if (isRevokedSanction(s)) return false;
+  if (isPermanentSanction(s)) return true;
+
+  const endMs = getSanctionEndMs(s.timestamp, s.duration);
+  if (!endMs) return false;
+  return endMs > nowMs;
+};
+
+const getSanctionSituation = (s, nowMs) => {
+  if (isPermanentSanction(s)) return "perma";
+  if (isSanctionActiveNow(s, nowMs)) return "activa";
+  return "finalizada";
+};
+
+const getSanctionSituationLabel = (code) => {
+  if (code === "perma") return "PERMABAN";
+  if (code === "activa") return "Activa";
+  return "Finalizada";
+};
+
+const normalizeSanctionReason = (value) =>
+  String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/\s+/g, "")
+    .replace(/[^a-z0-9]/g, "");
+
+const buildSanctionStrikeMap = (rows) => {
+  const counters = new Map();
+  const rowMap = new Map();
+
+  const ordered = [...(rows || [])].sort((a, b) => {
+    const ta = parseSanctionTimestamp(a?.timestamp) || 0;
+    const tb = parseSanctionTimestamp(b?.timestamp) || 0;
+    if (ta !== tb) return ta - tb;
+    return (a?.__rowIndex || 0) - (b?.__rowIndex || 0);
+  });
+
+  for (const row of ordered) {
+    const player = String(row?.name || "").trim().toLowerCase();
+    const reason = normalizeSanctionReason(row?.type);
+
+    if (!player || !reason) continue;
+
+    const key = `${player}|${reason}`;
+    const strike = (counters.get(key) || 0) + 1;
+
+    counters.set(key, strike);
+    rowMap.set(row.__rowIndex, strike);
+  }
+
+  return rowMap;
+};
+
+const getSanctionStrike = (map, rowIndex) => map.get(rowIndex) || 0;
+
+const getSanctionFeedback = (reason, strike, sanction) => {
+  const rules = SANCTION_RULES[normalizeSanctionReason(reason)];
+
+  if (rules?.length && strike > 0) {
+    const index = Math.min(strike, rules.length) - 1;
+    const action = rules[index];
+    return {
+      action,
+      isPermaban: /ban\s*perm/i.test(action),
+    };
+  }
+
+  if (isPermanentSanction(sanction)) {
+    return {
+      action: "Ban perm.",
+      isPermaban: true,
+    };
+  }
+
+  return {
+    action: null,
+    isPermaban: false,
+  };
+};
+
+const isBanAction = (action, sanction) => {
+  const bt = String(sanction?.bantype || "").toLowerCase();
+  const a = String(action || "").toLowerCase().trim();
+
+  if (isPermanentSanction(sanction)) return true;
+  if (/ban\s*perm/.test(a)) return true;
+  if (/^ban\b/.test(a)) return true;
+  if (bt === "perma" || bt === "permanent" || bt === "ban" || bt === "tempban" || bt === "temp") return true;
+
+  return false;
+};
+
+const getSanctionSummary = (strike, action, sanction) => {
+  const parts = [];
+  const a = String(action || "").trim().toLowerCase();
+
+  if (strike > 0) parts.push(`${strike}ª vez`);
+
+  if (a === "aviso") parts.push("Aviso");
+  if (/^jail\b/.test(a)) parts.push(action);
+  if (/^ban\b/.test(a) && !isPermanentSanction(sanction)) parts.push(action);
+
+  return parts.join(" · ");
+};
+
+const getSanctionDurationVisible = (raw, action, sanction) => {
+  const a = String(action || "").trim().toLowerCase();
+
+  if (a === "aviso") return "Sin duración";
+  if (isPermanentSanction(sanction)) return "Sin caducidad";
+
+  const ms = parseSanctionDurationToMs(raw);
+  if (ms === Infinity) return "Sin caducidad";
+  if (!ms) return raw ? String(raw) : "Desconocida";
+
+  const d = Math.floor(ms / 86400000);
+  const h = Math.floor((ms % 86400000) / 3600000);
+  const m = Math.floor((ms % 3600000) / 60000);
+  const s = Math.floor((ms % 60000) / 1000);
+
+  const parts = [];
+  if (d) parts.push(`${d} ${d === 1 ? "día" : "días"}`);
+  if (h) parts.push(`${h} ${h === 1 ? "hora" : "horas"}`);
+  if (m) parts.push(`${m} ${m === 1 ? "minuto" : "minutos"}`);
+  if (!d && !h && !m && s) parts.push(`${s} ${s === 1 ? "segundo" : "segundos"}`);
+
+  return parts.length ? parts.join(" ") : String(raw);
+};
+
+const shouldShowSanctionEnd = (raw, action, sanction) => {
+  const a = String(action || "").trim().toLowerCase();
+
+  if (a === "aviso") return false;
+  if (isPermanentSanction(sanction)) return false;
+
+  return !!getSanctionEndMs(sanction?.timestamp, raw);
+};
+
+const buildSanctionCandidates = (values, platformKey) => {
+  const set = new Set();
+
+  for (const value of values) {
+    const raw = String(value || "").trim();
+    if (!raw) continue;
+    set.add(raw);
+    set.add(cleanPlayerName(raw));
+  }
+
+  if (platformKey === "bedrock") {
+    const current = Array.from(set);
+    for (const value of current) {
+      const clean = cleanPlayerName(value);
+      if (!clean) continue;
+      set.add(clean);
+      set.add(`.${clean}`);
+    }
+  }
+
+  return Array.from(set).filter(Boolean);
+};
+
+const fetchPlayerSanctions = async (candidateNames) => {
+  const merged = new Map();
+
+  for (const candidate of candidateNames) {
+    const { data, error } = await supabase
+      .from("jails")
+      .select("*")
+      .eq("server", SERVER_ID)
+      .ilike("name", candidate)
+      .order("timestamp", { ascending: false });
+
+    if (error) {
+      throw error;
+    }
+
+    for (const row of data || []) {
+      const key = [
+        row?.id ?? "",
+        row?.name ?? "",
+        row?.timestamp ?? "",
+        row?.type ?? "",
+        row?.moderator ?? "",
+        row?.duration ?? "",
+      ].join("|");
+
+      if (!merged.has(key)) {
+        merged.set(key, row);
+      }
+    }
+  }
+
+  return Array.from(merged.values()).sort((a, b) => {
+    const ta = parseSanctionTimestamp(a?.timestamp) || 0;
+    const tb = parseSanctionTimestamp(b?.timestamp) || 0;
+    return tb - ta;
+  });
+};
+
+const getSanctionsTone = (row, hasHistory) => {
+  if (row && row.isBan && (row.situacion === "perma" || row.situacion === "activa")) return "ban";
+  if (row && !row.isBan && row.situacion === "activa") return "active";
+  if (hasHistory) return "history";
+  return "clean";
+};
+
+const getSanctionsHeadline = (tone) => {
+  if (tone === "ban") return "Actualmente baneado";
+  if (tone === "active") return "Sanción activa en curso";
+  if (tone === "history") return "Historial disciplinario archivado";
+  return "Jugador ejemplar";
+};
+
+const getSanctionsSubtext = (tone, row, count) => {
+  if (tone === "ban") {
+    return `Este jugador tiene una sanción de expulsión activa en ${SERVER_ID}. ${row?.type ? `Motivo actual: ${row.type}.` : ""}`.trim();
+  }
+
+  if (tone === "active") {
+    return `Este jugador está cumpliendo una sanción activa en ${SERVER_ID}. ${row?.type ? `Motivo actual: ${row.type}.` : ""}`.trim();
+  }
+
+  if (tone === "history") {
+    return `No hay sanciones activas ahora mismo, pero sí consta historial público en el tribunal. Total registradas: ${count}.`;
+  }
+
+  return `Este jugador mantiene un expediente limpio en ${SERVER_ID}. No consta ningún castigo en el historial público del tribunal.`;
+};
+
+const getHeroRecord = (tone, hasHistory) => {
+  if (tone === "ban") {
+    return { tone: "ban", label: "Baneado" };
+  }
+
+  if (tone === "active") {
+    return { tone: "active", label: "Bajo sanción" };
+  }
+
+  if (hasHistory) {
+    return { tone: "history", label: "Historial archivado" };
+  }
+
+  return { tone: "clean", label: "Jugador ejemplar" };
+};
+
+const renderToneIcon = (tone, size = 16) => {
+  if (tone === "ban") return <XCircle size={size} weight="bold" />;
+  if (tone === "active") return <HourglassMedium size={size} weight="bold" />;
+  if (tone === "clean") return <CheckCircle size={size} weight="bold" />;
+  return <WarningCircle size={size} weight="bold" />;
+};
+
 export default function PerfilJugador() {
   const { nombre } = useParams();
   const nav = useNavigate();
@@ -359,6 +698,10 @@ export default function PerfilJugador() {
   const [perfil, setPerfil] = useState(null);
   const [serverData, setServerData] = useState(null);
   const [xpData, setXpData] = useState(null);
+
+  const [sanctions, setSanctions] = useState([]);
+  const [sanctionsLoading, setSanctionsLoading] = useState(true);
+  const [sanctionsError, setSanctionsError] = useState("");
 
   const [tab, setTab] = useState("all");
   const [animKey, setAnimKey] = useState(0);
@@ -392,6 +735,9 @@ export default function PerfilJugador() {
     setPerfil(null);
     setServerData(null);
     setXpData(null);
+    setSanctions([]);
+    setSanctionsError("");
+    setSanctionsLoading(true);
     setTab("all");
     setAnimKey((v) => v + 1);
 
@@ -500,6 +846,58 @@ export default function PerfilJugador() {
 
   const plataformaLabel =
     platformKey === "bedrock" ? "Bedrock" : platformKey === "java" ? "Java" : "";
+
+  const sanctionCandidates = useMemo(
+    () =>
+      buildSanctionCandidates(
+        [
+          nombre,
+          displayName,
+          jugador?.uid,
+          jugador?.nombre_minecraft,
+          jugador?.nombre,
+        ],
+        platformKey
+      ),
+    [nombre, displayName, jugador?.uid, jugador?.nombre_minecraft, jugador?.nombre, platformKey]
+  );
+
+  const sanctionsQueryKey = sanctionCandidates.join("|");
+
+  useEffect(() => {
+    let active = true;
+
+    const run = async () => {
+      try {
+        setSanctionsLoading(true);
+        setSanctionsError("");
+
+        if (!sanctionCandidates.length) {
+          if (!active) return;
+          setSanctions([]);
+          return;
+        }
+
+        const rows = await fetchPlayerSanctions(sanctionCandidates);
+
+        if (!active) return;
+        setSanctions(rows || []);
+      } catch (e) {
+        if (!active) return;
+        setSanctions([]);
+        setSanctionsError("No se pudo cargar el historial disciplinario.");
+      } finally {
+        if (!active) return;
+        setSanctionsLoading(false);
+      }
+    };
+
+    run();
+
+    return () => {
+      active = false;
+    };
+  }, [sanctionsQueryKey]);
 
   const rankRaw = useMemo(() => {
     if (!hasWebAccount) return "";
@@ -865,7 +1263,7 @@ export default function PerfilJugador() {
     dineroActual,
     dineroTotal,
     coinsActual,
-    coinsTotal
+    coinsTotal,
   ]);
 
   const shownSections = useMemo(() => {
@@ -900,6 +1298,63 @@ export default function PerfilJugador() {
     null;
 
   const updatedTxt = useMemo(() => fmtUpdated(updatedRaw), [updatedRaw]);
+
+  const sanctionsWithMeta = useMemo(
+    () => sanctions.map((s, __rowIndex) => ({ ...s, __rowIndex })),
+    [sanctions]
+  );
+
+  const sanctionStrikeMap = useMemo(
+    () => buildSanctionStrikeMap(sanctionsWithMeta),
+    [sanctionsWithMeta]
+  );
+
+  const sanctionRows = useMemo(() => {
+    return sanctionsWithMeta.map((row) => {
+      const strike = getSanctionStrike(sanctionStrikeMap, row.__rowIndex);
+      const feedback = getSanctionFeedback(row.type, strike, row);
+      const situacion = getSanctionSituation(row, Date.now());
+      const isBan = isBanAction(feedback.action, row);
+      const durationVisible = getSanctionDurationVisible(row.duration, feedback.action, row);
+      const endText = shouldShowSanctionEnd(row.duration, feedback.action, row)
+        ? getSanctionEndText(row.timestamp, row.duration)
+        : null;
+      const dateMs = parseSanctionTimestamp(row.timestamp);
+      const dateText = dateMs ? new Date(dateMs).toLocaleString("es-ES") : EMPTY;
+
+      return {
+        ...row,
+        strike,
+        feedback,
+        situacion,
+        situacionLabel: getSanctionSituationLabel(situacion),
+        isBan,
+        resumenEscala: getSanctionSummary(strike, feedback.action, row),
+        durationVisible,
+        endText,
+        dateText,
+      };
+    });
+  }, [sanctionsWithMeta, sanctionStrikeMap]);
+
+  const activeSanction = useMemo(
+    () => sanctionRows.find((row) => row.situacion === "perma" || row.situacion === "activa") || null,
+    [sanctionRows]
+  );
+
+  const latestSanction = sanctionRows[0] || null;
+  const hasSanctionHistory = sanctionRows.length > 0;
+  const sanctionsTone = getSanctionsTone(activeSanction, hasSanctionHistory);
+  const sanctionsHeadline = getSanctionsHeadline(sanctionsTone);
+  const sanctionsSubtext = getSanctionsSubtext(sanctionsTone, activeSanction || latestSanction, sanctionRows.length);
+  const heroRecord = getHeroRecord(sanctionsTone, hasSanctionHistory);
+  const hasBanOverlay = sanctionsTone === "ban";
+  const hasFlagOverlay = sanctionsTone === "active";
+
+  const visibleSanctions = useMemo(
+    () => sanctionRows.slice(0, SANCTIONS_LIMIT),
+    [sanctionRows]
+  );
 
   const rootClass = useMemo(
     () => ["perfil-epic", enterFx ? "pf-enter" : ""].filter(Boolean).join(" "),
@@ -951,11 +1406,19 @@ export default function PerfilJugador() {
               </div>
             </div>
 
-            <div className={`perfil-hero ${rankClass}`} style={{ "--hero-bg": `url(${heroBgUrl})` }}>
+            <div
+              className={[
+                "perfil-hero",
+                rankClass,
+                hasBanOverlay ? "is-banned" : "",
+                hasFlagOverlay ? "is-flagged" : "",
+              ].filter(Boolean).join(" ")}
+              style={{ "--hero-bg": `url(${heroBgUrl})` }}
+            >
               <div className="perfil-heroBg" />
 
               <div className="perfil-heroInner">
-                <div className="perfil-skinSlot">
+                <div className={`perfil-skinSlot ${hasBanOverlay ? "is-banned" : hasFlagOverlay ? "is-flagged" : ""}`}>
                   <SkinRender
                     variant="body"
                     uuid={jugador?.uuid}
@@ -963,6 +1426,8 @@ export default function PerfilJugador() {
                     platformKey={platformKey}
                     className="perfil-skinBody"
                   />
+                  {hasBanOverlay ? <div className="perfil-banStamp">BAN</div> : null}
+                  {hasFlagOverlay ? <div className="perfil-banStamp is-flagged">JAIL</div> : null}
                 </div>
 
                 <div className="perfil-heroMain">
@@ -980,6 +1445,11 @@ export default function PerfilJugador() {
                     </div>
 
                     <div className="perfil-subRow">
+                      <div className={`perfil-recordBadge is-${heroRecord.tone}`}>
+                        {renderToneIcon(heroRecord.tone, 14)}
+                        <span>{heroRecord.label}</span>
+                      </div>
+
                       {plataformaLabel ? (
                         <div className={`perfil-platform ${platformKey === "bedrock" ? "is-bedrock" : "is-java"}`}>
                           {plataformaLabel}
@@ -1033,7 +1503,7 @@ export default function PerfilJugador() {
                 </div>
 
                 <div className="perfil-heroSide">
-                  <div className="perfil-headCard">
+                  <div className={`perfil-headCard ${hasBanOverlay ? "is-banned" : hasFlagOverlay ? "is-flagged" : ""}`}>
                     <SkinRender
                       variant="head"
                       uuid={jugador?.uuid}
@@ -1108,28 +1578,172 @@ export default function PerfilJugador() {
                       <div className="perfil-tiles">
                         {sec.tiles.map((t, idx) => (
                           <div
-  key={t.id}
-  className={`perfil-tile pf-tileIn ${Array.isArray(t.lines) && t.lines.length ? "is-multi" : ""}`}
-  style={{ "--i": idx }}
-  title={t.hint || ""}
->
-  <div className="perfil-tileHead">
-    {t.icon ? (
-      <img className="perfil-tileIcon" src={t.icon} alt="" draggable="false" />
-    ) : null}
+                            key={t.id}
+                            className={`perfil-tile pf-tileIn ${Array.isArray(t.lines) && t.lines.length ? "is-multi" : ""}`}
+                            style={{ "--i": idx }}
+                            title={t.hint || ""}
+                          >
+                            <div className="perfil-tileHead">
+                              {t.icon ? (
+                                <img className="perfil-tileIcon" src={t.icon} alt="" draggable="false" />
+                              ) : null}
 
-    <div className="perfil-tileLabel">{t.label}</div>
-  </div>
+                              <div className="perfil-tileLabel">{t.label}</div>
+                            </div>
 
-  <div className="perfil-tileValue">{renderMetricValue(t)}</div>
+                            <div className="perfil-tileValue">{renderMetricValue(t)}</div>
 
-  <div className="perfil-tileSheen" />
-</div>
+                            <div className="perfil-tileSheen" />
+                          </div>
                         ))}
                       </div>
                     </div>
                   ))}
                 </div>
+              )}
+            </div>
+
+            <div className="perfil-sanctionsPanel">
+              <div className="perfil-sanctionsHead">
+                <div className="perfil-sectionTitle">Sanciones</div>
+                <div className={`perfil-sanctionsState is-${sanctionsTone}`}>
+                  {renderToneIcon(sanctionsTone, 15)}
+                  <span>
+                    {sanctionsTone === "ban"
+                      ? "Baneado"
+                      : sanctionsTone === "active"
+                      ? "Sanción activa"
+                      : sanctionsTone === "history"
+                      ? "Historial"
+                      : "Limpio"}
+                  </span>
+                </div>
+              </div>
+
+              {sanctionsLoading ? (
+                <div className="perfil-sanctionsSkeleton">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <div key={i} className="perfil-sanctionsSkeletonItem" />
+                  ))}
+                </div>
+              ) : sanctionsError ? (
+                <div className="perfil-errorBox">
+                  <div className="perfil-errorTitle">No se pudo cargar</div>
+                  <div className="perfil-errorMsg">{sanctionsError}</div>
+                </div>
+              ) : !hasSanctionHistory ? (
+                <div className="perfil-sanctionsEmpty">
+                  <div className="perfil-sanctionsEmptyIcon">
+                    <CheckCircle size={24} weight="bold" />
+                  </div>
+                  <div className="perfil-sanctionsEmptyText">
+                    <div className="perfil-sanctionsEmptyTitle">Jugador ejemplar</div>
+                    <div className="perfil-sanctionsEmptySub">
+                      Este jugador mantiene un expediente limpio en Survival. No hay sanciones registradas en el historial público del tribunal.
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className={`perfil-sanctionsHero is-${sanctionsTone}`}>
+                    <div className="perfil-sanctionsHeroMain">
+                      <div className={`perfil-sanctionsHeroIcon is-${sanctionsTone}`}>
+                        {renderToneIcon(sanctionsTone, 22)}
+                      </div>
+
+                      <div className="perfil-sanctionsHeroText">
+                        <div className="perfil-sanctionsHeroTitle">{sanctionsHeadline}</div>
+                        <div className="perfil-sanctionsHeroSub">{sanctionsSubtext}</div>
+                      </div>
+                    </div>
+
+                    <div className="perfil-sanctionsStats">
+                      <div className="perfil-sanctionsStat">
+                        <div className="perfil-sanctionsStatLabel">Estado actual</div>
+                        <div className="perfil-sanctionsStatValue">
+                          {sanctionsTone === "ban"
+                            ? "PERMABAN"
+                            : sanctionsTone === "active"
+                            ? "ACTIVA"
+                            : sanctionsTone === "history"
+                            ? "ARCHIVADO"
+                            : "LIMPIO"}
+                        </div>
+                      </div>
+
+                      <div className="perfil-sanctionsStat">
+                        <div className="perfil-sanctionsStatLabel">Historial</div>
+                        <div className="perfil-sanctionsStatValue">{fmtNum(sanctionRows.length)}</div>
+                      </div>
+
+                      <div className="perfil-sanctionsStat">
+                        <div className="perfil-sanctionsStatLabel">Último motivo</div>
+                        <div className="perfil-sanctionsStatValue is-small">
+                          {latestSanction?.type || EMPTY}
+                        </div>
+                      </div>
+
+                      <div className="perfil-sanctionsStat">
+                        <div className="perfil-sanctionsStatLabel">Última fecha</div>
+                        <div className="perfil-sanctionsStatValue is-small">
+                          {latestSanction?.dateText || EMPTY}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="perfil-sanctionsList">
+                    {visibleSanctions.map((row) => (
+                      <div key={`${row.name}-${row.timestamp}-${row.type}-${row.moderator}`} className={`perfil-sanctionRow is-${row.situacion}`}>
+                        <div className="perfil-sanctionMain">
+                          <div className="perfil-sanctionReason">{row.type || "Sanción"}</div>
+
+                          <div className="perfil-sanctionMeta">
+                            {row.resumenEscala ? (
+                              <span className={`perfil-sanctionScale ${row.feedback.isPermaban ? "is-permaban" : ""}`}>
+                                <WarningCircle size={13} weight="duotone" />
+                                <strong>{row.resumenEscala}</strong>
+                              </span>
+                            ) : null}
+
+                            {row.moderator ? (
+                              <span className="perfil-sanctionModerator">Moderador: {row.moderator}</span>
+                            ) : null}
+                          </div>
+                        </div>
+
+                        <div className="perfil-sanctionCell">
+                          <div className="perfil-sanctionCellLabel">Duración</div>
+                          <div className="perfil-sanctionCellValue">{row.durationVisible}</div>
+                          {row.endText ? (
+                            <div className="perfil-sanctionCellSub">Finaliza: {row.endText}</div>
+                          ) : null}
+                        </div>
+
+                        <div className="perfil-sanctionCell">
+                          <div className="perfil-sanctionCellLabel">Fecha</div>
+                          <div className="perfil-sanctionCellValue">{row.dateText}</div>
+                        </div>
+
+                        <div className="perfil-sanctionStateWrap">
+                          <span className={`perfil-sanctionBadge is-${row.situacion}`}>
+                            {row.situacion === "perma" && <XCircle size={14} weight="bold" />}
+                            {row.situacion === "activa" && <HourglassMedium size={14} weight="bold" />}
+                            {row.situacion === "finalizada" && <CheckCircle size={14} weight="bold" />}
+                            <span>{row.situacionLabel}</span>
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {sanctionRows.length > visibleSanctions.length ? (
+                    <div className="perfil-sanctionsFoot">
+                      Mostrando las últimas <strong>{fmtNum(visibleSanctions.length)}</strong> de{" "}
+                      <strong>{fmtNum(sanctionRows.length)}</strong> sanciones registradas.
+                    </div>
+                  ) : null}
+                </>
               )}
             </div>
           </div>
