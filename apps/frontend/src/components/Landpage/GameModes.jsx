@@ -5,7 +5,7 @@ const mode = {
   id: "survival",
   name: "Survival",
   description:
-    "La experiencia survival de siempre, con economía, clanes y un mundo vivo en constante expansión. Todo FlanCraft, reunido en un único reino para que la aventura se sienta más grande que nunca.",
+    "Survival es ahora el centro de FlanCraft. Un único mundo donde se junta todo: economía, clanes, progreso y un montón de gente dando vida al servidor cada día. Más movimiento, más historias y más razones para entrar y quedarte.",
   image: "/assets/modes/survival.webp",
   icon: "/assets/reinos/survival-clasico.webp",
 };
@@ -31,13 +31,6 @@ const GameModes = () => {
                 <span className="gm-single-title">{mode.name}</span>
               </div>
             </div>
-
-            <div className="gm-single-divider" />
-
-            <p className="gm-single-note">
-              Más actividad, más comercio, más guerras, más historias. Un solo
-              mundo para que cada sesión cuente.
-            </p>
           </div>
         </div>
 
