@@ -1,4 +1,3 @@
-// src/components/Landpage/VoteWidget.jsx
 import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import "../../styles/components/Landpage/vote-widget-mini.scss";
@@ -16,11 +15,23 @@ import {
   headCandidates,
 } from "../Voto/vote.shared";
 
+const COOLDOWN_24H = 24 * 60 * 60 * 1000;
+
+function cleanNick(value = "") {
+  return String(value ?? "")
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, "")
+    .replace(/[^A-Za-z0-9_]/g, "")
+    .slice(0, 16);
+}
+
 function bindImgFallback(imgEl, candidates) {
   if (!imgEl) return;
   imgEl.dataset.srcList = JSON.stringify(candidates || []);
   imgEl.dataset.srcIdx = "0";
 }
+
 function advanceImgFallback(e) {
   const img = e.currentTarget;
   const list = safeJson(img.dataset.srcList || "[]", []);
@@ -91,27 +102,19 @@ export default function VoteWidget({ visible = true }) {
 
   const [open, setOpen] = useState(false);
   const [serverStatus, setServerStatus] = useState(null);
-
   const [pending, setPending] = useState({});
   const [panelMaxHeight, setPanelMaxHeight] = useState(0);
-
   const [topState, setTopState] = useState({ list: [], total: 0, page: 0, limit: 10 });
-
   const [serverOffsetMs, setServerOffsetMs] = useState(0);
   const [nowTick, setNowTick] = useState(0);
-
-
-  // expand + paginación de “más sitios”
   const [moreOpen, setMoreOpen] = useState(false);
   const [morePage, setMorePage] = useState(0);
-
-  // anim favicon al votar (click) y al hover
   const [liftSiteId, setLiftSiteId] = useState("");
   const [hoverSiteId, setHoverSiteId] = useState("");
 
-  const { userUuid, userName, guestNick, setGuestNick, guestSaved, setGuestSaved, effectiveNick, identityKey } = useVoteIdentity();
+  const { userUuid, userName, guestNick, setGuestNick, guestSaved, setGuestSaved, effectiveNick, identityKey } =
+    useVoteIdentity();
 
-  // tick 1s solo cuando está abierto
   useEffect(() => {
     if (!open) return;
     setNowTick(Date.now());
@@ -119,13 +122,13 @@ export default function VoteWidget({ visible = true }) {
     return () => clearInterval(id);
   }, [open]);
 
-  // Cerrar con ESC / click fuera
   useEffect(() => {
     if (!open) return;
 
     const onKey = (e) => {
       if (e.key === "Escape") setOpen(false);
     };
+
     const onPointer = (e) => {
       const root = rootRef.current;
       if (!root) return;
@@ -144,7 +147,7 @@ export default function VoteWidget({ visible = true }) {
   }, [open]);
 
   const fetchStatus = useCallback(async () => {
-    const key = (userUuid || effectiveNick || "anon").trim();
+    const key = String(userUuid || effectiveNick || "").trim();
     if (!key) return;
 
     try {
@@ -153,6 +156,7 @@ export default function VoteWidget({ visible = true }) {
         credentials: "include",
         cache: "no-store",
       });
+
       if (!r.ok) return;
 
       const j = await r.json();
@@ -164,9 +168,7 @@ export default function VoteWidget({ visible = true }) {
       } else {
         setServerOffsetMs(0);
       }
-    } catch {
-      // ignore
-    }
+    } catch {}
   }, [userUuid, effectiveNick]);
 
   const fetchTop = useCallback(async (page = 0, limit = 10) => {
@@ -175,6 +177,7 @@ export default function VoteWidget({ visible = true }) {
         apiUrl(`/api/votos/top?range=30d&limit=${limit}&page=${page}`),
         { method: "GET", credentials: "include", cache: "no-store" }
       );
+
       if (!r.ok) return;
 
       const j = await r.json();
@@ -184,12 +187,9 @@ export default function VoteWidget({ visible = true }) {
       const lim = Number.isFinite(Number(j.limit)) ? Number(j.limit) : limit;
 
       setTopState({ list, total, page: p, limit: lim });
-    } catch {
-      // ignore
-    }
+    } catch {}
   }, []);
 
-  // Polling cuando abierto
   useEffect(() => {
     if (!open) return;
 
@@ -198,10 +198,8 @@ export default function VoteWidget({ visible = true }) {
 
     const id = setInterval(fetchStatus, 8000);
     return () => clearInterval(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, fetchStatus, fetchTop]);
+  }, [open, fetchStatus, fetchTop, topState.limit]);
 
-  // Limpia pending cuando el server confirma
   useEffect(() => {
     const items = serverStatus?.items;
     if (!Array.isArray(items) || !items.length) return;
@@ -272,12 +270,12 @@ export default function VoteWidget({ visible = true }) {
     return { items, done, total, remaining, progress, real: false };
   }, [serverStatus, serverOffsetMs, nowTick, identityKey]);
 
-  // panel height
   useEffect(() => {
     if (!open) {
       setPanelMaxHeight(0);
       return;
     }
+
     const el = panelInnerRef.current;
     if (!el) return;
 
@@ -294,14 +292,17 @@ export default function VoteWidget({ visible = true }) {
     };
   }, [open, computed.items.length, topState.list.length, moreOpen, morePage]);
 
+  useEffect(() => {
+    if (!moreOpen) setMorePage(0);
+  }, [moreOpen]);
+
   const handlePillClick = useCallback(() => setOpen((v) => !v), []);
 
   const handleVoteClick = useCallback(
     (site) => {
       const t = Date.now();
-      setLocalLast(identityKey, site.id, t);
 
-      // lift (click)
+      setLocalLast(identityKey, site.id, t);
       setLiftSiteId(site.id);
       window.setTimeout(() => setLiftSiteId(""), 650);
 
@@ -321,7 +322,6 @@ export default function VoteWidget({ visible = true }) {
 
   const titleMain = "VOTOS DIARIOS";
 
-  // feedback NO redundante y corto (no se corta)
   const progressText =
     computed.remaining > 0
       ? `HOY ${computed.done}/${computed.total}`
@@ -336,7 +336,6 @@ export default function VoteWidget({ visible = true }) {
 
   const showGuest = !userUuid && !userName;
 
-  // Lista principal: 5 + “más”
   const PAGE_SIZE = 5;
   const primarySites = computed.items.slice(0, PAGE_SIZE);
   const remainingSites = computed.items.slice(PAGE_SIZE);
@@ -346,10 +345,6 @@ export default function VoteWidget({ visible = true }) {
   const moreSliceStart = morePageClamped * PAGE_SIZE;
   const moreSliceEnd = moreSliceStart + PAGE_SIZE;
   const moreSitesPage = remainingSites.slice(moreSliceStart, moreSliceEnd);
-
-  useEffect(() => {
-    if (!moreOpen) setMorePage(0);
-  }, [moreOpen]);
 
   if (!visible) return null;
 
@@ -397,14 +392,16 @@ export default function VoteWidget({ visible = true }) {
         style={{ maxHeight: open ? panelMaxHeight : 0 }}
       >
         <div ref={panelInnerRef} className="vw-panel-mini" role="dialog" aria-label="Panel de votos">
-          {/* INVITADO */}
           {showGuest && (
             <div className="vw-guest vw-guest--compact">
               <div className="vw-guest__row">
                 <input
                   className="vw-guest__input"
                   value={guestNick}
-                  onChange={(e) => setGuestNick(cleanNick(e.target.value))}
+                  onChange={(e) => {
+                    setGuestNick(cleanNick(e.target.value));
+                    if (guestSaved) setGuestSaved(false);
+                  }}
                   placeholder="Tu nick"
                   maxLength={16}
                   aria-label="Nick invitado"
@@ -433,7 +430,6 @@ export default function VoteWidget({ visible = true }) {
             </div>
           )}
 
-          {/* LISTA PRINCIPAL (solo 5) */}
           <div className="vw-list-mini">
             {primarySites.map((s, idx) => {
               const isPending = !!pending[s.id];
@@ -488,7 +484,6 @@ export default function VoteWidget({ visible = true }) {
               );
             })}
 
-            {/* Toggle “mostrar más” + paginación */}
             {remainingSites.length > 0 && (
               <>
                 <div className="vw-sep" aria-hidden="true" />
@@ -596,12 +591,10 @@ export default function VoteWidget({ visible = true }) {
             )}
           </div>
 
-          {/* TOP VOTANTES */}
           {topList.length > 0 && (
             <div className="vw-top-mini vw-top-mini--compact">
               <div className="vw-top-mini__title">
                 <span className="vw-top-mini__titleText">TOP VOTANTES</span>
-                {/* 6/6 eliminado */}
               </div>
 
               <div className="vw-top-mini__rows vw-top-mini__rows--top3">

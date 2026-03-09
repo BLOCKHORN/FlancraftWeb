@@ -669,7 +669,7 @@ const Home = () => {
                   src="/assets/h1.png"
                   alt="FlanCraft Minecraft Network"
                   decoding="async"
-                  fetchPriority="high"
+                  fetchpriority="high"
                 />
               </div>
 
