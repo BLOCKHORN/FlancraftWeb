@@ -1,5 +1,7 @@
 import { useEffect, useState, useRef, useLayoutEffect, useCallback } from "react";
 import { Lock, CheckCircle } from "lucide-react";
+import { apiUrl } from "../../lib/env";
+import { getAuthToken } from "../../lib/auth/storage";
 import "../../styles/components/Dashboard/_rewardlist.scss";
 
 // Niveles: 1,5,10,15,20,25,30,35,40,45,50
@@ -19,8 +21,6 @@ const RECOMPENSAS = [
 
 const COIN_ICON = "/tienda/assets/coin.png";
 
-const API_BASE =
-  import.meta.env.VITE_BACKEND_URL || "https://flancraft-backend.onrender.com";
 
 export default function RewardList({
   user,
@@ -57,7 +57,9 @@ export default function RewardList({
         setLoading(true);
         setError(null);
 
-        const res = await fetch(`${API_BASE}/api/recompensas/reclamadas/${user.uuid}`);
+        const res = await fetch(apiUrl(`/api/recompensas/reclamadas/${user.uuid}`), {
+          headers: getAuthToken() ? { Authorization: `Bearer ${getAuthToken()}` } : undefined,
+        });
         const data = await res.json();
         if (!res.ok) throw new Error(data?.error || "Error al cargar reclamadas");
 
@@ -192,9 +194,12 @@ export default function RewardList({
     const cantidadUI = parseInt(recompensa?.descripcion || "0", 10) || 0;
 
     try {
-      const res = await fetch(`${API_BASE}/api/recompensas/reclamar`, {
+      const res = await fetch(apiUrl(`/api/recompensas/reclamar`), {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(getAuthToken() ? { Authorization: `Bearer ${getAuthToken()}` } : {}),
+        },
         body: JSON.stringify({ uuid: user.uuid, nivel }),
       });
 

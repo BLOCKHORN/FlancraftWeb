@@ -1,13 +1,10 @@
 import React, { useState, useContext, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { UserContext } from "../../context/UserContext";
+import { apiGet, apiPost } from "../../lib/api/client";
+import { buildUserSession } from "../../lib/auth/session";
+import { persistSession } from "../../lib/auth/storage";
 import "../../styles/components/Auth/_loginmodal.scss";
-
-const API = (import.meta.env.VITE_BACKEND_URL || "https://flancraft-backend.onrender.com")
-  .trim()
-  .replace(/\/$/, "");
-
-const apiUrl = (path) => `${API}${path}`;
 
 const CODE_RE = /^[0-9]{6}$/;
 
@@ -115,17 +112,16 @@ export default function LoginModal({ onClose, initialStep, initialToken, autoVal
   };
 
   const goToDashboard = (uuid, username, rol_admin, extras = {}) => {
-    const userData = {
+    const userData = buildUserSession({
       uuid,
       username,
       loggedIn: true,
       rol_admin,
-      token: extras.token,
       ...extras,
-    };
-    localStorage.setItem("flan_user", JSON.stringify(userData));
-    if (extras.token) localStorage.setItem("token", extras.token);
-    setUser(userData);
+    });
+
+    persistSession(userData, extras.token);
+    setUser(userData, extras.token);
     navigate("/dashboard");
     cerrarModal();
   };
@@ -189,21 +185,15 @@ export default function LoginModal({ onClose, initialStep, initialToken, autoVal
     setError(null);
     setLoading(true);
     try {
-      const res = await fetch(apiUrl("/api/vincular/login"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ uid: form.username, password: form.password }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        const message = getErrorMessage("login", res.status, data?.error);
+      let data;
+      try {
+        data = await apiPost("/api/vincular/login", { uid: form.username, password: form.password });
+      } catch (err) {
+        const message = getErrorMessage("login", err?.status, err?.data?.error || err?.message);
         throw new Error(message);
       }
 
-      const usuarioRes = await fetch(apiUrl(`/api/usuarios/${data.uuid}`));
-      const usuarioData = await usuarioRes.json();
+      const usuarioData = await apiGet(`/api/usuarios/${data.uuid}`);
 
       goToDashboard(data.uuid, data.uid || data.username || form.username, usuarioData?.rol_admin || null, {
         token: data.token,
@@ -229,16 +219,11 @@ export default function LoginModal({ onClose, initialStep, initialToken, autoVal
     setError(null);
     setLoading(true);
     try {
-      const res = await fetch(apiUrl("/api/vincular/validate"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(isCode ? { codigo: raw } : { token: raw }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        const message = getErrorMessage("vincular-validate", res.status, data?.error);
+      let data;
+      try {
+        data = await apiPost("/api/vincular/validate", isCode ? { codigo: raw } : { token: raw });
+      } catch (err) {
+        const message = getErrorMessage("vincular-validate", err?.status, err?.data?.error || err?.message);
         throw new Error(message);
       }
 
@@ -271,32 +256,17 @@ export default function LoginModal({ onClose, initialStep, initialToken, autoVal
       if (String(form.token || "").trim()) payload.token = String(form.token).trim();
       if (String(form.codigo || "").trim()) payload.codigo = String(form.codigo).trim();
 
-      const registerRes = await fetch(apiUrl("/api/vincular/registrar"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      const registerData = await registerRes.json();
-
-      if (!registerRes.ok) {
-        const message = getErrorMessage("register", registerRes.status, registerData?.error);
+      try {
+        await apiPost("/api/vincular/registrar", payload);
+      } catch (err) {
+        const message = getErrorMessage("register", err?.status, err?.data?.error || err?.message);
         throw new Error(message);
       }
 
       localStorage.removeItem("prefill_vincular_token");
 
-      const loginRes = await fetch(apiUrl("/api/vincular/login"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ uid: form.username, password: form.password }),
-      });
-
-      const loginData = await loginRes.json();
-      if (!loginRes.ok) throw new Error(loginData?.error || "No se pudo iniciar sesión tras registrarte.");
-
-      const usuarioRes = await fetch(apiUrl(`/api/usuarios/${form.uuid}`));
-      const usuarioData = await usuarioRes.json();
+      const loginData = await apiPost("/api/vincular/login", { uid: form.username, password: form.password });
+      const usuarioData = await apiGet(`/api/usuarios/${form.uuid}`);
 
       goToDashboard(form.uuid, form.username, usuarioData?.rol_admin || null, {
         token: loginData?.token,
@@ -317,16 +287,11 @@ export default function LoginModal({ onClose, initialStep, initialToken, autoVal
     setError(null);
     setLoading(true);
     try {
-      const res = await fetch(apiUrl("/api/reset/validate"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token: form.token }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        const message = getErrorMessage("reset-validate", res.status, data?.error);
+      let data;
+      try {
+        data = await apiPost("/api/reset/validate", { token: form.token });
+      } catch (err) {
+        const message = getErrorMessage("reset-validate", err?.status, err?.data?.error || err?.message);
         throw new Error(message);
       }
 
@@ -346,19 +311,13 @@ export default function LoginModal({ onClose, initialStep, initialToken, autoVal
 
     setLoading(true);
     try {
-      const res = await fetch(apiUrl("/api/reset/set-password"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      try {
+        await apiPost("/api/reset/set-password", {
           token: form.token,
           nuevaPassword: form.password,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        const message = getErrorMessage("reset-change", res.status, data?.error);
+        });
+      } catch (err) {
+        const message = getErrorMessage("reset-change", err?.status, err?.data?.error || err?.message);
         throw new Error(message);
       }
 

@@ -2,7 +2,8 @@ const db = require("../models/db");
 
 // POST /api/recompensas/reclamar
 exports.reclamarRecompensa = async (req, res) => {
-  const { uuid, nivel } = req.body;
+  const uuid = req.usuario?.uuid;
+  const { nivel } = req.body;
 
   if (!uuid || nivel === undefined || nivel === null) {
     return res.status(400).json({ error: "Faltan datos obligatorios." });
@@ -63,9 +64,15 @@ exports.reclamarRecompensa = async (req, res) => {
 // GET /api/recompensas/reclamadas/:uuid
 exports.getRecompensasReclamadas = async (req, res) => {
   const { uuid } = req.params;
+  const sessionUuid = req.usuario?.uuid;
+  const sessionRole = String(req.usuario?.rol_admin || "").toLowerCase();
 
   if (!uuid) {
     return res.status(400).json({ error: "UUID faltante." });
+  }
+
+  if (sessionUuid !== uuid && sessionRole !== "admin" && sessionRole !== "owner") {
+    return res.status(403).json({ error: "No puedes consultar recompensas de otro usuario." });
   }
 
   try {

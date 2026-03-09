@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion as Motion } from "framer-motion";
+import { UserContext } from "../../context/UserContext";
+import Seo from "../SEO/Seo";
+import { buildBreadcrumbJsonLd, buildCanonical } from "../../lib/seo/siteSeo";
+import { apiUrl } from "../../lib/env";
 import "../../styles/components/Noticias/_allnews.scss";
-
-const API_URL =
-  import.meta.env.VITE_BACKEND_URL || "https://flancraft-backend.onrender.com";
 
 const MONTHS_ES = {
   enero: 0,
@@ -93,8 +94,7 @@ const AllNews = () => {
   const [serverFilter, setServerFilter] = useState("all");
 
   const listRef = useRef(null);
-
-  const user = JSON.parse(localStorage.getItem("flan_user"));
+  const { user } = useContext(UserContext);
   const isOwner = user?.rol_admin === "owner";
 
   const itemVariants = {
@@ -109,7 +109,7 @@ const AllNews = () => {
   useEffect(() => {
     const fetchNoticias = async () => {
       try {
-        const res = await fetch(`${API_URL}/api/noticias`);
+        const res = await fetch(apiUrl(`/api/noticias`));
         const data = await res.json();
 
         const publicadas = (Array.isArray(data) ? data : [])
@@ -287,7 +287,17 @@ const AllNews = () => {
   const dateOf = (n) => n?.fecha || n?.created_at || n?.fecha_creacion;
 
   return (
-    <section className="allNews">
+    <>
+      <Seo
+        title="Noticias de FlanCraft | Actualizaciones del servidor"
+        description="Lee las últimas noticias, actualizaciones y anuncios de FlanCraft. Cambios del servidor, eventos y novedades de la comunidad."
+        canonical={buildCanonical("/news")}
+        jsonLd={buildBreadcrumbJsonLd([
+          { name: "Inicio", item: buildCanonical("/") },
+          { name: "Noticias", item: buildCanonical("/news") },
+        ])}
+      />
+      <section className="allNews">
       <header className="allNews__hero">
         <div className="allNews__heroBg" aria-hidden="true" />
         <div className="allNews__heroFade" aria-hidden="true" />
@@ -461,6 +471,7 @@ const AllNews = () => {
         </div>
       </main>
     </section>
+    </>
   );
 };
 

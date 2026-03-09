@@ -13,10 +13,19 @@ import "../../styles/components/Landpage/_home.scss";
 import MapRPG from "./MapRPG";
 import ServerStatus from "./ServerStatus";
 import VoteWidget from "./VoteWidget";
-import LoginModal from "../Auth/LoginModal";
+import Seo from "../SEO/Seo";
 
 import { UserContext } from "../../context/UserContext";
+import { useAuthModal } from "../../context/AuthModalContext";
+import { apiGet } from "../../lib/api/client";
 import { useNavigate, useLocation } from "react-router-dom";
+import {
+  buildBreadcrumbJsonLd,
+  buildCanonical,
+  buildFaqJsonLd,
+  buildOrganizationJsonLd,
+  buildWebSiteJsonLd,
+} from "../../lib/seo/siteSeo";
 
 import llamadaSoundFile from "/assets/sounds/llamada.mp3";
 import alasSoundFile from "/assets/sounds/alas.mp3";
@@ -33,12 +42,6 @@ const SectionDivider = lazy(() => import("./SectionDivider"));
 const SectionDivider2 = lazy(() => import("./SectionDivider2"));
 const SectionDividerGameModes = lazy(() => import("./SectionDividerGameModes"));
 const SectionDividerNews = lazy(() => import("./SectionDividerNews"));
-
-const API_BASE = (
-  import.meta.env.VITE_BACKEND_URL || "https://flancraft-backend.onrender.com"
-)
-  .trim()
-  .replace(/\/$/, "");
 
 const DRAGON_FLIGHT_DURATION_MS = 14000;
 const LOGIN_TEASER_DELAY_MS = 1100;
@@ -143,18 +146,9 @@ const pickDisplayName = (source) =>
   source?.name ||
   null;
 
-const readStoredUser = () => {
-  try {
-    const raw = localStorage.getItem("flan_user");
-    return raw ? JSON.parse(raw) : null;
-  } catch (_) {
-    return null;
-  }
-};
-
 const Home = () => {
-  const { user, setUser } = useContext(UserContext);
-  const [showLogin, setShowLogin] = useState(false);
+  const { user } = useContext(UserContext);
+  const { openAuthModal } = useAuthModal();
 
   const [isLoaded, setIsLoaded] = useState(false);
   const [mensajeCarga, setMensajeCarga] = useState(mensajesCarga[0]);
@@ -383,15 +377,10 @@ const Home = () => {
 
     const fetchPlayerName = async () => {
       try {
-        const res = await fetch(`${API_BASE}/api/usuarios/${user.uuid}`, {
+        const data = await apiGet(`/api/usuarios/${user.uuid}`, {
+          clearSessionOn401: false,
           signal: controller.signal,
         });
-
-        if (!res.ok) {
-          throw new Error("Respuesta no OK");
-        }
-
-        const data = await res.json();
         const nextName = pickDisplayName(data) || "aventurero";
 
         playerNameCacheRef.current.set(user.uuid, nextName);
@@ -452,21 +441,12 @@ const Home = () => {
 
   const handleMainButtonClick = useCallback(() => {
     if (!isLoggedIn) {
-      setShowLogin(true);
+      openAuthModal();
       return;
     }
 
     navigate("/dashboard");
-  }, [isLoggedIn, navigate]);
-
-  const handleCloseLogin = useCallback(() => {
-    setShowLogin(false);
-
-    const stored = readStoredUser();
-    if (stored?.loggedIn) {
-      setUser(stored);
-    }
-  }, [setUser]);
+  }, [isLoggedIn, navigate, openAuthModal]);
 
   const handleCloseTeaser = useCallback(() => {
     setShowLoginTeaser(false);
@@ -589,6 +569,29 @@ const Home = () => {
 
   return (
     <>
+      <Seo
+        title="FlanCraft | Servidor de Minecraft Español Java y Bedrock"
+        description="FlanCraft es un servidor de Minecraft español con Survival, economía, eventos, niveles, tienda y comunidad activa para Java y Bedrock."
+        canonical={buildCanonical("/")}
+        jsonLd={[
+          buildOrganizationJsonLd(),
+          buildWebSiteJsonLd(),
+          buildBreadcrumbJsonLd([{ name: "Inicio", item: buildCanonical("/") }]),
+          buildFaqJsonLd([
+            {
+              question: "¿FlanCraft funciona en Java y Bedrock?",
+              answer:
+                "Sí. FlanCraft está pensado para soportar jugadores de Java y Bedrock dentro de una misma comunidad.",
+            },
+            {
+              question: "¿Qué ofrece FlanCraft además de Survival?",
+              answer:
+                "El proyecto combina Survival, economía, logros, niveles, voto, tienda, noticias y progreso conectado con la web.",
+            },
+          ]),
+        ]}
+      />
+
       {!isLoaded && (
         <div className="pantalla-carga fade-in">
           <div className="loader-gema" />
@@ -640,6 +643,22 @@ const Home = () => {
             <div className="hero-overlay" />
 
             <div className="hero-content">
+              <h1
+                style={{
+                  position: "absolute",
+                  width: 1,
+                  height: 1,
+                  padding: 0,
+                  margin: -1,
+                  overflow: "hidden",
+                  clip: "rect(0, 0, 0, 0)",
+                  whiteSpace: "nowrap",
+                  border: 0,
+                }}
+              >
+                Servidor de Minecraft Español Java y Bedrock
+              </h1>
+
               <div
                 className={
                   "hero-logo" + (isDragonPresent ? " hero-logo--hidden" : "")
@@ -669,7 +688,7 @@ const Home = () => {
 
               <p className="hero-tagline">
                 Tu aventura empieza aquí. Sube de nivel y deja tu legado en el
-                mejor servidor Español de Minecraft.
+                mejor servidor Español de Minecraft Java y Bedrock.
               </p>
 
               {isLoggedIn && (
@@ -732,8 +751,6 @@ const Home = () => {
 
           <MapRPG />
         </div>
-
-        {showLogin && <LoginModal onClose={handleCloseLogin} />}
 
         <Suspense fallback={null}>
           <SectionDividerNews />

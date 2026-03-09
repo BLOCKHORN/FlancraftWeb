@@ -6,7 +6,8 @@ const toInt = (v) => {
 };
 
 exports.transferToServer = async (req, res) => {
-  const { uuid, servidor, amount } = req.body;
+  const uuid = req.usuario?.uuid;
+  const { servidor, amount } = req.body;
 
   if (!uuid || !servidor) {
     return res.status(400).json({ error: "Faltan datos obligatorios." });

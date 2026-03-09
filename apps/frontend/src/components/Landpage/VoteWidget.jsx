@@ -3,127 +3,18 @@ import React, { useEffect, useMemo, useRef, useState, useCallback } from "react"
 import { useNavigate } from "react-router-dom";
 import "../../styles/components/Landpage/vote-widget-mini.scss";
 
-const API_BASE =
-  import.meta.env.VITE_BACKEND_URL || "https://flancraft-backend.onrender.com";
-
-// defaults
-const HOUR = 60 * 60 * 1000;
-const COOLDOWN_24H = 24 * HOUR;
-const COOLDOWN_15H = 15 * HOUR;
-
-const SITES = [
-  {
-    id: "v1",
-    label: "ServidoresDeMinecraft",
-    url: "https://servidoresdeminecraft.es/server/vote/wvkYI63n/play.flancraft.com#google_vignette",
-    cooldownMs: COOLDOWN_15H,
-  },
-  {
-    id: "v2",
-    label: "Minecraft-Server",
-    url: "https://minecraft-server.net/vote/FlanCraft/",
-    cooldownMs: COOLDOWN_24H,
-  },
-  {
-    id: "v3",
-    label: "MineStatus",
-    url: "https://minestatus.net/server/vote/play.flancraft.com",
-    cooldownMs: COOLDOWN_24H,
-  },
-  {
-    id: "v4",
-    label: "Minecraft-MP",
-    url: "https://minecraft-mp.com/server/333849/vote/",
-    cooldownMs: COOLDOWN_24H,
-  },
-  {
-    id: "v5",
-    label: "MinecraftServers",
-    url: "https://minecraftservers.org/vote/663927",
-    cooldownMs: COOLDOWN_24H,
-  },
-];
-
-function pad2(n) {
-  return String(n).padStart(2, "0");
-}
-function msToHMS(ms) {
-  const total = Math.max(0, Math.floor(ms / 1000));
-  const h = Math.floor(total / 3600);
-  const m = Math.floor((total % 3600) / 60);
-  const s = total % 60;
-  return `${pad2(h)}:${pad2(m)}:${pad2(s)}`;
-}
-function getHostname(url) {
-  try {
-    return new URL(url).hostname;
-  } catch {
-    return "";
-  }
-}
-function faviconUrlFor(siteUrl) {
-  const host = getHostname(siteUrl);
-  if (!host) return "";
-  return `https://www.google.com/s2/favicons?sz=64&domain=${encodeURIComponent(host)}`;
-}
-function safeJson(str, fallback) {
-  try {
-    return JSON.parse(str);
-  } catch {
-    return fallback;
-  }
-}
-function normalizarRango(r) {
-  const s = String(r || "").toLowerCase().trim();
-  if (s.includes("nova")) return "nova";
-  if (s.includes("alpha")) return "alpha";
-  if (s.includes("inmortal")) return "inmortal";
-  return "unrank";
-}
-function cleanNick(v) {
-  return String(v || "")
-    .trim()
-    .replace(/\s+/g, "")
-    .slice(0, 16);
-}
-function ensureDeviceId() {
-  const k = "vw_device_id";
-  let id = window.localStorage.getItem(k);
-  if (id) return id;
-  id = `d_${Math.random().toString(16).slice(2)}${Date.now().toString(16)}`;
-  window.localStorage.setItem(k, id);
-  return id;
-}
-function localKey(identityKey, siteId) {
-  return `vw_last_click::${identityKey}::${siteId}`;
-}
-function getLocalLast(identityKey, siteId) {
-  const v = Number(window.localStorage.getItem(localKey(identityKey, siteId)) || 0);
-  return Number.isFinite(v) ? v : 0;
-}
-function setLocalLast(identityKey, siteId, ms) {
-  try {
-    window.localStorage.setItem(localKey(identityKey, siteId), String(ms));
-  } catch {
-    // ignore
-  }
-}
-
-// Heads con fallback real
-function headCandidates({ uuid, name, size = 32 }) {
-  const n = encodeURIComponent(String(name || "").trim());
-  const u = encodeURIComponent(String(uuid || "").trim());
-  const s = Number(size) || 32;
-
-  const arr = [];
-  if (u) arr.push(`https://mc-heads.net/head/${u}/${s}`);
-  if (n) arr.push(`https://mc-heads.net/head/${n}/${s}`);
-  if (n) arr.push(`https://minotar.net/helm/${n}/${s}.png`);
-  if (u) arr.push(`https://minotar.net/helm/${u}/${s}.png`);
-  if (n) arr.push(`https://visage.surgeplay.com/face/${s}/${n}.png`);
-  if (u) arr.push(`https://visage.surgeplay.com/face/${s}/${u}.png`);
-  return arr;
-}
+import { apiUrl } from "../../lib/env";
+import useVoteIdentity from "../Voto/useVoteIdentity";
+import {
+  EXTERNAL_VOTE_SITES as SITES,
+  faviconUrlFor,
+  safeJson,
+  normalizarRango,
+  getLocalLast,
+  setLocalLast,
+  msToHMS,
+  headCandidates,
+} from "../Voto/vote.shared";
 
 function bindImgFallback(imgEl, candidates) {
   if (!imgEl) return;
@@ -209,10 +100,6 @@ export default function VoteWidget({ visible = true }) {
   const [serverOffsetMs, setServerOffsetMs] = useState(0);
   const [nowTick, setNowTick] = useState(0);
 
-  const [guestNick, setGuestNick] = useState(() =>
-    cleanNick(window.localStorage.getItem("vw_guest_nick") || "")
-  );
-  const [guestSaved, setGuestSaved] = useState(false);
 
   // expand + paginación de “más sitios”
   const [moreOpen, setMoreOpen] = useState(false);
@@ -222,25 +109,7 @@ export default function VoteWidget({ visible = true }) {
   const [liftSiteId, setLiftSiteId] = useState("");
   const [hoverSiteId, setHoverSiteId] = useState("");
 
-  const storedA = window.localStorage.getItem("flan_user");
-  const storedB = window.localStorage.getItem("fc_user");
-  const fcUser = safeJson(storedA || storedB || "null", null);
-
-  const userUuid =
-    (fcUser && (fcUser.uuid || fcUser.uuid_jugador)) ||
-    window.localStorage.getItem("uuid") ||
-    window.localStorage.getItem("uuid_jugador") ||
-    "";
-
-  const userName =
-    (fcUser && (fcUser.uid || fcUser.username || fcUser.nombre_minecraft)) ||
-    window.localStorage.getItem("uid") ||
-    window.localStorage.getItem("username") ||
-    "";
-
-  const deviceId = useMemo(() => ensureDeviceId(), []);
-  const effectiveNick = cleanNick(userName || guestNick);
-  const identityKey = (userUuid || effectiveNick || deviceId || "device").trim();
+  const { userUuid, userName, guestNick, setGuestNick, guestSaved, setGuestSaved, effectiveNick, identityKey } = useVoteIdentity();
 
   // tick 1s solo cuando está abierto
   useEffect(() => {
@@ -279,7 +148,7 @@ export default function VoteWidget({ visible = true }) {
     if (!key) return;
 
     try {
-      const r = await fetch(`${API_BASE}/api/votos/status/${encodeURIComponent(key)}`, {
+      const r = await fetch(apiUrl(`/api/votos/status/${encodeURIComponent(key)}`), {
         method: "GET",
         credentials: "include",
         cache: "no-store",
@@ -303,7 +172,7 @@ export default function VoteWidget({ visible = true }) {
   const fetchTop = useCallback(async (page = 0, limit = 10) => {
     try {
       const r = await fetch(
-        `${API_BASE}/api/votos/top?range=30d&limit=${limit}&page=${page}`,
+        apiUrl(`/api/votos/top?range=30d&limit=${limit}&page=${page}`),
         { method: "GET", credentials: "include", cache: "no-store" }
       );
       if (!r.ok) return;

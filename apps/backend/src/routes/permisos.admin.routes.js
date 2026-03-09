@@ -1,11 +1,12 @@
 const express = require("express");
 const router = express.Router();
 const controller = require("../controllers/permisos.admin.controller");
+const requireRole = require("../middlewares/requireRole");
 
-router.get("/", controller.getPermisos);
-router.get("/usuarios", controller.getUsuarios); // NUEVA RUTA
-router.post("/", controller.asignarPermiso);
-router.delete("/:uuid", controller.eliminarPermiso);
-router.patch("/:uuid", controller.actualizarPermisoRol);
+router.get("/", ...requireRole("owner"), controller.getPermisos);
+router.get("/usuarios", ...requireRole("owner"), controller.getUsuarios);
+router.post("/", ...requireRole("owner"), controller.asignarPermiso);
+router.delete("/:uuid", ...requireRole("owner"), controller.eliminarPermiso);
+router.patch("/:uuid", ...requireRole("owner"), controller.actualizarPermisoRol);
 
 module.exports = router;

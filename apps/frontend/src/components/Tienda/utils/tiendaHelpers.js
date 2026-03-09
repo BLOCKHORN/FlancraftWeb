@@ -1,5 +1,4 @@
-export const API_URL = import.meta.env.VITE_BACKEND_URL || "https://flancraft-backend.onrender.com";
-export const API_BASE = String(API_URL || "").replace(/\/$/, "");
+import { API_BASE } from "../../../lib/env";
 
 export const TEBEX_PATH = import.meta.env.VITE_TEBEX_PATH || "/api/tebex";
 export const TEBEX_URL = `${API_BASE}${TEBEX_PATH}`;

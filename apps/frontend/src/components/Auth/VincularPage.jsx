@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import LoginModal from "./LoginModal";
+import Seo from "../SEO/Seo";
 
 export default function VincularPage() {
   const location = useLocation();
@@ -24,6 +25,7 @@ export default function VincularPage() {
 
   return (
     <>
+      <Seo title="Vincular cuenta | FlanCraft" noindex />
       {open && (
         <LoginModal
           onClose={() => setOpen(false)}

@@ -1,12 +1,9 @@
 import { NavLink, Link, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useRef, useState, useMemo, useContext, useLayoutEffect, useCallback } from "react";
 import { UserContext } from "../../context/UserContext";
+import { apiUrl } from "../../lib/env";
+import { clearSessionStorage } from "../../lib/auth/storage";
 import "../../styles/components/Navbar/navbarDesktop.scss";
-
-const API_BASE = (import.meta.env.VITE_BACKEND_URL || "https://flancraft-backend.onrender.com")
-  .trim()
-  .replace(/\/$/, "");
-const apiUrl = (path) => (API_BASE ? `${API_BASE}${path}` : path);
 
 const toInt = (v) => {
   const n = Number(v);
@@ -64,7 +61,7 @@ const NavbarDesktop = ({
   navItems,
   saleNav,
 }) => {
-  const { setUser } = useContext(UserContext);
+  const { logout } = useContext(UserContext);
   const navigate = useNavigate();
 
   const [rangoDatos, setRangoDatos] = useState(null);
@@ -260,10 +257,8 @@ const NavbarDesktop = ({
   const walletCoins = useMemo(() => formatInt(userData?.walletCoins ?? 0), [userData?.walletCoins]);
 
   const handleLogout = () => {
-    localStorage.removeItem("flan_user");
-    localStorage.removeItem("rol_admin");
-    localStorage.removeItem("token");
-    setUser(null);
+    clearSessionStorage();
+    logout();
     navigate("/");
     window.location.reload();
   };

@@ -1,7 +1,5 @@
-useMinecraftProfile.js// apps/frontend/src/components/Tienda/hooks/useMinecraftProfile.js
 import { useEffect, useMemo, useState } from "react";
-
-const API_BASE = import.meta.env.VITE_BACKEND_URL || "http://localhost:10000";
+import { apiUrl } from "../../../lib/env";
 
 // cache cliente (extra; el backend ya cachea 12h)
 const memCache = new Map(); // key -> { uuid, name, exp }
@@ -77,7 +75,7 @@ export default function useMinecraftProfile(username) {
     (async () => {
       try {
         const r = await fetch(
-          `${API_BASE}/api/minecraft/uuid/${encodeURIComponent(name)}`,
+          apiUrl(`/api/minecraft/uuid/${encodeURIComponent(name)}`),
           {
             method: "GET",
             signal: ac.signal,

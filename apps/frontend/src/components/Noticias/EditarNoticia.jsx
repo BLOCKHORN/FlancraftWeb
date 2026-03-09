@@ -10,25 +10,10 @@ import TextStyle from "@tiptap/extension-text-style";
 import Color from "@tiptap/extension-color";
 import Iframe from "../../config/Iframe";
 import toast from "react-hot-toast";
+import { apiUrl } from "../../lib/env";
+import { getAuthToken } from "../../lib/auth/storage";
+import Seo from "../SEO/Seo";
 import "../../styles/components/Noticias/_editarnoticia.scss";
-
-const API_BASE = (import.meta.env.VITE_BACKEND_URL || "https://flancraft-backend.onrender.com")
-  .trim()
-  .replace(/\/$/, "");
-
-const safeJsonParse = (v) => {
-  try {
-    return JSON.parse(v);
-  } catch {
-    return null;
-  }
-};
-
-const getToken = () => {
-  const stored = localStorage.getItem("flan_user");
-  const parsed = stored ? safeJsonParse(stored) : null;
-  return parsed?.token || null;
-};
 
 const slugify = (value) => {
   const s = String(value || "")
@@ -413,7 +398,7 @@ const EditarNoticia = () => {
 
     const cargarNoticia = async () => {
       try {
-        const token = getToken();
+        const token = getAuthToken();
 
         if (!token) {
           toast.error("Debes iniciar sesión como admin para editar noticias");
@@ -423,7 +408,7 @@ const EditarNoticia = () => {
 
         setLoading(true);
 
-        const res = await fetch(`${API_BASE}/api/noticias/id/${id}`, {
+        const res = await fetch(apiUrl(`/api/noticias/id/${id}`), {
           signal: controller.signal,
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -460,7 +445,7 @@ const EditarNoticia = () => {
 
   const guardarCambios = async () => {
     try {
-      const token = getToken();
+      const token = getAuthToken();
       if (!token) throw new Error("NO_TOKEN");
       if (!editor) throw new Error("NO_EDITOR");
 
@@ -488,7 +473,7 @@ const EditarNoticia = () => {
         contenido_html: contenidoHtml,
       };
 
-      const res = await fetch(`${API_BASE}/api/noticias/${id}`, {
+      const res = await fetch(apiUrl(`/api/noticias/${id}`), {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -537,7 +522,9 @@ const EditarNoticia = () => {
   }
 
   return (
-    <div className="editar-noticia-page">
+    <>
+      <Seo title="Panel interno | FlanCraft" noindex />
+      <div className="editar-noticia-page">
       <section className="ed-hero" style={heroStyle}>
         <div className="ed-hero__wrap">
           <div className="ed-hero__top">
@@ -709,6 +696,7 @@ const EditarNoticia = () => {
         </div>
       </main>
     </div>
+    </>
   );
 };
 

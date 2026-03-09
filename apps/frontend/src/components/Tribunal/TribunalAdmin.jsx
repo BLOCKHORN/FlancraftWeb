@@ -31,9 +31,9 @@ import {
   esSancionActiva,
 } from "./tribunalUtils";
 import "../../styles/components/Tribunal/_tribunaladmin.scss";
-
-const API_BASE = import.meta.env.VITE_BACKEND_URL || "https://flancraft-backend.onrender.com";
-const ADMIN_API_KEY = import.meta.env.VITE_TRIBUNAL_ADMIN_KEY || "";
+import { getAuthToken } from "../../lib/auth/storage";
+import { apiUrl } from "../../lib/env";
+import Seo from "../SEO/Seo";
 
 const MOTIVOS = [
   "hacks",
@@ -59,12 +59,7 @@ const SITUACIONES = [
 
 const normalizar = (v) => (v || "").toString().trim().toLowerCase();
 
-const buildApiUrl = (path) => {
-  const base = String(API_BASE || "").trim().replace(/\/+$/, "");
-  if (!base) return path;
-  if (/\/api$/i.test(base)) return `${base}${path.startsWith("/") ? path : `/${path}`}`;
-  return `${base}/api${path.startsWith("/") ? path : `/${path}`}`;
-};
+const buildApiUrl = (path) => apiUrl(path);
 
 const buildAdminHeaders = (withJson = false) => {
   const headers = {
@@ -72,7 +67,8 @@ const buildAdminHeaders = (withJson = false) => {
   };
 
   if (withJson) headers["Content-Type"] = "application/json";
-  if (ADMIN_API_KEY) headers["x-api-key"] = ADMIN_API_KEY;
+  const token = getAuthToken();
+  if (token) headers.Authorization = `Bearer ${token}`;
 
   return headers;
 };
@@ -179,10 +175,6 @@ export default function TribunalAdminPanel() {
       setBusyId(sancion.id);
       setErrorMsg("");
 
-      if (!ADMIN_API_KEY) {
-        throw new Error("Falta VITE_TRIBUNAL_ADMIN_KEY en el frontend.");
-      }
-
       const res = await fetch(buildApiUrl(`/sanciones/${sancion.id}`), {
         method: "PATCH",
         headers: buildAdminHeaders(true),
@@ -226,10 +218,6 @@ export default function TribunalAdminPanel() {
     try {
       setBusyId(id);
       setErrorMsg("");
-
-      if (!ADMIN_API_KEY) {
-        throw new Error("Falta VITE_TRIBUNAL_ADMIN_KEY en el frontend.");
-      }
 
       const res = await fetch(buildApiUrl(`/sanciones/${id}`), {
         method: "DELETE",
@@ -340,7 +328,9 @@ export default function TribunalAdminPanel() {
   }
 
   return (
-    <section className="tribAdmin">
+    <>
+      <Seo title="Panel interno | FlanCraft" noindex />
+      <section className="tribAdmin">
       <div className="tribAdmin__wrap">
         <div className="tribAdmin__topbar">
           <button className="tribBtn tribBtn--ghost" onClick={() => navigate("/tribunal")}>
@@ -685,5 +675,6 @@ export default function TribunalAdminPanel() {
         </div>
       </div>
     </section>
+    </>
   );
 }

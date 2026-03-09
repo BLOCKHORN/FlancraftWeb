@@ -1,9 +1,13 @@
 // src/components/Noticias/NewsDetail.jsx
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import Seo from "../SEO/Seo";
+import { UserContext } from "../../context/UserContext";
+import { apiGet } from "../../lib/api/client";
+import { sanitizeHtml } from "../../lib/security/sanitizeHtml";
+import { buildBreadcrumbJsonLd, buildCanonical } from "../../lib/seo/siteSeo";
+import { hasMinRole } from "../../lib/auth/roles";
 import "../../styles/components/Noticias/_newsdetail.scss";
-
-const API_URL = "https://flancraft-backend.onrender.com";
 
 const escapeHtml = (unsafe = "") =>
   String(unsafe)
@@ -136,20 +140,12 @@ const NewsDetail = () => {
   const [progress, setProgress] = useState(0);
 
   const shareRef = useRef(null);
+  const { user } = useContext(UserContext);
 
-  const user = useMemo(() => {
-    try {
-      return JSON.parse(localStorage.getItem("flan_user"));
-    } catch {
-      return null;
-    }
-  }, []);
-
-  const STAFF_ROLES = useMemo(() => ["owner", "admin", "srmod", "mod"], []);
   const canEdit = useMemo(() => {
     if (!user) return false;
-    return STAFF_ROLES.includes(user.rol_admin) || STAFF_ROLES.includes(user.rango_staff);
-  }, [user, STAFF_ROLES]);
+    return hasMinRole(user.rol_admin, "mod") || hasMinRole(user.rango_staff, "mod");
+  }, [user]);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" });
@@ -161,12 +157,16 @@ const NewsDetail = () => {
     const fetchNoticia = async () => {
       setStatus("loading");
       try {
-        const res = await fetch(`${API_URL}/api/noticias/${slug}`);
-        if (!res.ok) {
-          setStatus("notfound");
-          return;
+        let data;
+        try {
+          data = await apiGet(`/api/noticias/${slug}`, { clearSessionOn401: false });
+        } catch (err) {
+          if (err?.status === 404) {
+            setStatus("notfound");
+            return;
+          }
+          throw err;
         }
-        const data = await res.json();
         setNoticia(data);
         setStatus("loaded");
       } catch {
@@ -176,8 +176,7 @@ const NewsDetail = () => {
 
     const fetchRelacionadas = async () => {
       try {
-        const res = await fetch(`${API_URL}/api/noticias`);
-        const data = await res.json();
+        const data = await apiGet(`/api/noticias`, { clearSessionOn401: false });
         const otras = (data || []).filter((n) => n.slug !== slug).slice(0, 8);
         setRelacionadas(otras);
       } catch {
@@ -268,12 +267,14 @@ const NewsDetail = () => {
   const contentHtml = useMemo(() => {
     if (!noticia) return "";
 
-    if (noticia.contenido_html) return noticia.contenido_html;
-    if (typeof noticia.contenido === "string") return noticia.contenido;
-    if (typeof noticia.contenido === "object" && noticia.contenido?.type === "doc") {
-      return tiptapJsonToHtml(noticia.contenido);
+    let html = "";
+    if (noticia.contenido_html) html = noticia.contenido_html;
+    else if (typeof noticia.contenido === "string") html = noticia.contenido;
+    else if (typeof noticia.contenido === "object" && noticia.contenido?.type === "doc") {
+      html = tiptapJsonToHtml(noticia.contenido);
     }
-    return "";
+
+    return sanitizeHtml(html);
   }, [noticia]);
 
   const heroSrc = useMemo(() => (noticia?.portada || noticia?.imagen || "").trim(), [noticia]);
@@ -360,6 +361,36 @@ const NewsDetail = () => {
 
   return (
     <div className="news-detail nd-loaded">
+      <Seo
+        title={`${noticia.titulo || "Noticia"} | FlanCraft`}
+        description={String(noticia.descripcion || noticia.resumen || stripHtml(contentHtml || "")).slice(0, 155)}
+        canonical={buildCanonical(`/news/${noticia.slug || slug}`)}
+        image={heroSrc || undefined}
+        jsonLd={[
+          buildBreadcrumbJsonLd([
+            { name: "Inicio", item: buildCanonical("/") },
+            { name: "Noticias", item: buildCanonical("/news") },
+            { name: noticia.titulo || "Noticia", item: buildCanonical(`/news/${noticia.slug || slug}`) },
+          ]),
+          {
+          "@context": "https://schema.org",
+          "@type": "Article",
+          headline: noticia.titulo || "Noticia",
+          description: String(noticia.descripcion || noticia.resumen || stripHtml(contentHtml || "")).slice(0, 155),
+          image: heroSrc || undefined,
+          url: `https://www.flancraft.com/news/${noticia.slug || slug}`,
+          datePublished: noticia.fecha || noticia.created_at || undefined,
+          author: {
+            "@type": "Organization",
+            name: "FlanCraft",
+          },
+          publisher: {
+            "@type": "Organization",
+            name: "FlanCraft",
+          },
+        },
+        ]}
+      />
       <div className="nd-progress" style={{ transform: `scaleX(${progress})` }} />
 
       <section className="nd-hero" style={heroStyle}>

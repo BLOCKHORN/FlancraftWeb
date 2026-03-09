@@ -15,6 +15,8 @@ import useIsMobile from "../../hooks/useIsMobile";
 import useTribunalSanciones from "./useTribunalSanciones";
 
 import "../../styles/components/Tribunal/_tribunalmain.scss";
+import Seo from "../SEO/Seo";
+import { buildBreadcrumbJsonLd, buildCanonical } from "../../lib/seo/siteSeo";
 
 import {
   POR_PAGINA,
@@ -121,6 +123,16 @@ export default function Sanciones() {
   }, []);
 
   return (
+    <>
+      <Seo
+        title="Tribunal de FlanCraft | Historial de sanciones"
+        description="Consulta el historial público de sanciones de FlanCraft y revisa el estado actual de los castigos del servidor."
+        canonical={buildCanonical("/tribunal")}
+        jsonLd={buildBreadcrumbJsonLd([
+          { name: "Inicio", item: buildCanonical("/") },
+          { name: "Tribunal", item: buildCanonical("/tribunal") },
+        ])}
+      />
     <section className="tribunal-epic">
       <div className="tribunal-shell">
         <div className="tribunal-frame">
@@ -511,5 +523,6 @@ export default function Sanciones() {
         </div>
       </div>
     </section>
+    </>
   );
 }

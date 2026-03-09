@@ -6,23 +6,18 @@ import "../../../styles/components/Tienda/tienda-layout.scss";
 import "../../../styles/components/Tienda/tienda-layout-sticky.scss";
 
 import { UserContext } from "../../../context/UserContext";
+import { apiUrl } from "../../../lib/env";
+import { getStoredUser } from "../../../lib/auth/storage";
 import TiendaStorefront from "./TiendaStorefront";
 import TiendaCarritoLateral from "./TiendaCarritoLateral";
 import TiendaModalJugador from "../modals/TiendaModalJugador";
 import useTiendaCarrito from "../hooks/useTiendaCarrito";
 import TiendaFooter from "./TiendaFooter";
 import TiendaTopDonatorPip from "./TiendaTopDonatorPip";
+import Seo from "../../SEO/Seo";
+import { buildBreadcrumbJsonLd, buildCanonical } from "../../../lib/seo/siteSeo";
 
-const API_BASE = import.meta.env.VITE_BACKEND_URL || "http://localhost:10000";
-
-const readWebUser = () => {
-  try {
-    const raw = localStorage.getItem("flan_user");
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
-  }
-};
+const readWebUser = () => getStoredUser();
 
 const uid = () => Math.random().toString(16).slice(2);
 
@@ -403,7 +398,7 @@ const TiendaLayout = () => {
 
     const load = async () => {
       try {
-        const r = await fetch(`${API_BASE}/api/tebex/fx`, { signal: ctrl.signal });
+        const r = await fetch(apiUrl(`/api/tebex/fx`), { signal: ctrl.signal });
         const data = await r.json().catch(() => null);
         if (!r.ok) throw new Error(data?.error || "fx");
         if (!cancelled) setFx(data);
@@ -579,6 +574,16 @@ const TiendaLayout = () => {
   }, [isCompact, esPortada, location.pathname]);
 
   return (
+    <>
+      <Seo
+        title="Tienda de FlanCraft | Rangos, packs y ventajas"
+        description="Explora la tienda oficial de FlanCraft y descubre rangos, ventajas y artículos para apoyar al servidor."
+        canonical={buildCanonical("/tienda")}
+        jsonLd={buildBreadcrumbJsonLd([
+          { name: "Inicio", item: buildCanonical("/") },
+          { name: "Tienda", item: buildCanonical("/tienda") },
+        ])}
+      />
     <div
       ref={rootRef}
       className={[
@@ -754,6 +759,7 @@ const TiendaLayout = () => {
 
       <TiendaFooter />
     </div>
+    </>
   );
 };
 

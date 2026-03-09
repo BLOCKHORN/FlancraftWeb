@@ -13,8 +13,7 @@ const {
   eliminarNoticia,
 } = require("../controllers/noticias.controller");
 
-const verificarAuth = require("../middlewares/verificaToken");
-const verificaOwner = require("../middlewares/verificaOwner");
+const requireRole = require("../middlewares/requireRole");
 
 /* =========================
  *  RUTAS PÚBLICAS
@@ -28,22 +27,22 @@ router.get("/", obtenerNoticias);
  * ========================= */
 
 // listado completo (ADMIN)
-router.get("/todas", verificarAuth, verificaOwner, obtenerTodasLasNoticias);
+router.get("/todas", ...requireRole("admin"), obtenerTodasLasNoticias);
 
 // obtener por ID para el editor admin
-router.get("/id/:id", verificarAuth, verificaOwner, obtenerNoticiaPorId);
+router.get("/id/:id", ...requireRole("admin"), obtenerNoticiaPorId);
 
 // preview (POST)
-router.post("/preview", verificarAuth, generarVistaPrevia);
+router.post("/preview", ...requireRole("admin"), generarVistaPrevia);
 
 // crear
-router.post("/", verificarAuth, verificaOwner, crearNoticia);
+router.post("/", ...requireRole("admin"), crearNoticia);
 
 // actualizar
-router.put("/:id", verificarAuth, verificaOwner, actualizarNoticia);
+router.put("/:id", ...requireRole("admin"), actualizarNoticia);
 
 // eliminar
-router.delete("/:id", verificarAuth, verificaOwner, eliminarNoticia);
+router.delete("/:id", ...requireRole("admin"), eliminarNoticia);
 
 /* =========================
  *  RUTA PÚBLICA POR SLUG (AL FINAL)

@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const controller = require("../controllers/usuarios.controller");
 const db = require("../models/db");
+const requireRole = require("../middlewares/requireRole");
 
 router.get("/", controller.obtenerUsuarios);
 
@@ -23,9 +24,10 @@ router.get("/vinculados", async (req, res) => {
 });
 
 
-router.patch("/rango", controller.asignarRangoUsuario);
+router.patch("/rango", ...requireRole("admin"), controller.asignarRangoUsuario);
+router.patch("/premium", ...requireRole("admin"), controller.actualizarPremiumUsuario);
 
-router.post("/rango/comprado", controller.registrarCompraRango);
+router.post("/rango/comprado", ...requireRole("admin"), controller.registrarCompraRango);
 router.get("/:uuid/skin", controller.obtenerSkinUsuario);
 router.get("/:uuid/xp", controller.obtenerXPUsuario);
 

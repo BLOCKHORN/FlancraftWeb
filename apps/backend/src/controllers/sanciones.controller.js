@@ -165,7 +165,7 @@ exports.obtenerSancionesPorJugador = async (req, res) => {
 // PATCH /api/sanciones/:id
 exports.actualizarSancion = async (req, res) => {
   const auth = requireApiKey(req);
-  if (!auth.ok) return res.status(auth.code).json({ error: auth.error });
+  if (!auth.ok && !req.usuario?.uuid) return res.status(auth.code).json({ error: auth.error });
 
   const id = safeId(req.params.id);
   if (!id) return res.status(400).json({ error: "id no válido" });
@@ -198,7 +198,7 @@ exports.actualizarSancion = async (req, res) => {
 // DELETE /api/sanciones/:id
 exports.eliminarSancion = async (req, res) => {
   const auth = requireApiKey(req);
-  if (!auth.ok) return res.status(auth.code).json({ error: auth.error });
+  if (!auth.ok && !req.usuario?.uuid) return res.status(auth.code).json({ error: auth.error });
 
   const id = safeId(req.params.id);
   if (!id) return res.status(400).json({ error: "id no válido" });

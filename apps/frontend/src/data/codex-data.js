@@ -1,81 +1,80 @@
-// src/data/codex-data.js
 const codexData = [
   {
-    title: "NUESTRA HISTORIA",
-    subtitle: "un equipo pequeño, con una pasión muy grande",
+    title: "Sin plantillas ni atajos",
     badgeColor: "#7fd9ff",
     bg: "/assets/comic/panel1.webp",
+    video: "/assets/comic/panel1.mp4",
     thumb: "/assets/comic/panel1.webp",
     description:
-      "Detrás de FlanCraft no hay un “equipo invisible”.\n" +
-      "Somos un grupo reducido de personas que llevamos tiempo construyendo esto con calma y con criterio.\n" +
-      "Nos importa que el servidor se sienta cuidado: el ambiente, los detalles y la experiencia de jugar.",
+      "FlanCraft no nació de un generador automático de servidores. Nació de noches sin dormir, de darle mil vueltas a cada bloque y de una obsesión casi enfermiza por los detalles.\n" +
+      "Desde el minuto uno tuvimos algo claro: no queríamos ser otro servidor de usar y tirar. Queríamos un sitio con alma, de esos que cuidas como si fuera tu casa.\n" +
+      "Si nos ves ir un poco más despacio que el resto, es porque preferimos hacerlo bien antes que hacerlo rápido.",
   },
   {
-    title: "ESTO VA EN SERIO",
-    subtitle: "estructura para crecer a largo plazo",
+    title: "Aquí no cerramos el mes que viene",
     badgeColor: "#7ae582",
     bg: "/assets/comic/panel2.webp",
+    video: "/assets/comic/panel2.mp4",
     thumb: "/assets/comic/panel2.webp",
     description:
-      "FlanCraft no está planteado como un proyecto de “temporada”.\n" +
-      "Estamos dando el paso de construirlo con estructura real: Blockhorn.\n" +
-      "La intención es clara: continuidad, estabilidad y una base sólida para seguir mejorando durante años.",
+      "Seguro que te ha pasado: te vicias a un server, construyes algo épico y, de repente, desaparece. Qué rabia, ¿verdad?\n" +
+      "Nosotros buscamos justo lo contrario. Queremos una base sólida, una dirección que no cambie según el humor con el que nos levantemos y la seguridad de que tu progreso está a salvo.\n" +
+      "Para nosotros, la continuidad no es una promesa vacía; es nuestra prioridad absoluta.",
   },
   {
-    title: "POR QUÉ EXISTE FLANCRAFT",
-    subtitle: "un servidor con rumbo y continuidad",
+    title: "Survival, pero del que engancha",
     badgeColor: "#fbc531",
     bg: "/assets/comic/panel3.webp",
+    video: "/assets/comic/panel3.mp4",
     thumb: "/assets/comic/panel3.webp",
     description:
-      "Muchos servidores aparecen con fuerza y desaparecen igual de rápido.\n" +
-      "Nosotros queríamos lo contrario: un lugar al que puedas volver y sientas que sigue avanzando.\n" +
-      "Buen ambiente, normas claras y cambios que tienen sentido.",
+      "En FlanCraft todo gira en torno al Survival, pero no queríamos el típico mundo vacío donde no hay nada que hacer tras dos horas.\n" +
+      "La economía, los rangos y los retos no están puestos por rellenar. Todo está conectado para que cada diamante que piques y cada reto que superes de verdad valga la pena.\n" +
+      "Queremos que jugar aquí se sienta consistente. Que cada paso que des en el servidor tenga su recompensa.",
   },
   {
-    title: "NUESTRO ENFOQUE",
-    subtitle: "menos promesas, más resultado",
+    title: "Una web que sirve para algo",
     badgeColor: "#a29bfe",
     bg: "/assets/comic/panel4.webp",
+    video: "/assets/comic/panel4.mp4",
     thumb: "/assets/comic/panel4.webp",
     description:
-      "Preferimos avanzar paso a paso, pero con calidad.\n" +
-      "Antes de lanzar algo, lo probamos, lo ajustamos y lo dejamos fino.\n" +
-      "Si algo falla, se arregla. Y si algo no está al nivel, se rehace.",
+      "Odiamos las webs que solo sirven para poner cuatro fotos bonitas. Nuestra web es, literalmente, una extensión de tu inventario.\n" +
+      "Tu perfil, tus logros y las recompensas están enlazados en tiempo real. No es decoración; es una herramienta para que gestiones tu progreso cómodamente.\n" +
+      "Si algo existe fuera de Minecraft, es porque va a darte una ventaja real dentro de él.",
   },
   {
-    title: "CONSTRUCCIÓN PROPIA",
-    subtitle: "coherencia entre web y juego",
+    title: "La comunidad manda",
     badgeColor: "#ff8bd1",
     bg: "/assets/comic/panel5.webp",
+    video: "/assets/comic/panel5.mp4",
     thumb: "/assets/comic/panel5.webp",
     description:
-      "Nos obsesiona que todo encaje.\n" +
-      "Por eso hemos creado sistemas conectados a tu cuenta: perfil, progreso y funciones vinculadas.\n" +
-      "La idea es simple: que lo que haces dentro del servidor tenga continuidad y se note el trabajo detrás.",
+      "Un servidor sin una comunidad con ganas es solo un puñado de código frío. Por eso, aquí no mandamos nosotros solos.\n" +
+      "Escuchamos lo que nos dices, ajustamos lo que no termina de encajar y potenciamos lo que de verdad os divierte.\n" +
+      "FlanCraft tiene que estar vivo, tiene que evolucionar contigo y no ser simplemente un sitio que está 'abierto'.",
   },
   {
-    title: "LA COMUNIDAD CUENTA",
-    subtitle: "escuchar, ajustar, mejorar",
+    title: "Calidad por encima de humo",
     badgeColor: "#ffb86b",
     bg: "/assets/comic/panel6.webp",
+    video: "/assets/comic/panel6.mp4",
     thumb: "/assets/comic/panel6.webp",
     description:
-      "No vamos a venderte humo: esto se construye con gente.\n" +
-      "Leemos feedback, revisamos lo que no encaja y reforzamos lo que funciona.\n" +
-      "Queremos que FlanCraft crezca contigo, no a tu costa.",
+      "No esperes que te prometamos veinte funciones locas para luego dejar la mitad a medias. No somos así.\n" +
+      "Nos compensa mucho más sacar pocas cosas, pero que funcionen perfecto y tengan sentido dentro del juego.\n" +
+      "Si algo no está a la altura, se revisa. Y si hay que tirarlo y empezar de cero para que sea excelente, lo hacemos sin que nos tiemble el pulso.",
   },
   {
-    title: "SI TE QUEDAS, CRECEMOS",
-    subtitle: "bienvenido a FlanCraft",
+    title: "Hacer de esto algo grande",
     badgeColor: "#00d2ff",
     bg: "/assets/comic/panel7.webp",
+    video: "/assets/comic/panel7.mp4",
     thumb: "/assets/comic/panel7.webp",
     description:
-      "Gracias por llegar hasta aquí.\n" +
-      "Si te apetece formar parte, vincula tu cuenta y entra al Dashboard.\n" +
-      "Ahí verás tu perfil y tu progreso, y accederás a todo lo que vamos conectando al juego con el tiempo.",
+      "Nuestro objetivo es ridículamente sencillo: que entres hoy a jugar y mañana sigas teniendo las mismas ganas de volver.\n" +
+      "Queremos crecer con cabeza, con criterio y manteniendo siempre esa esencia que nos hace diferentes.\n" +
+      "Si decides quedarte por aquí, prepárate, porque FlanCraft solo acaba de empezar.",
   },
 ];
 

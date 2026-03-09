@@ -1,0 +1,114 @@
+.server-landing {
+  min-height: 100vh;
+  padding: 7.5rem 1.5rem 4rem;
+  background:
+    radial-gradient(circle at top, rgba(255, 178, 62, 0.18), transparent 32%),
+    linear-gradient(180deg, #090612 0%, #130a1f 42%, #1d1021 100%);
+  color: #f8ead3;
+}
+
+.server-landing__hero,
+.server-landing__grid,
+.server-landing__content,
+.server-landing__faq,
+.server-landing__links {
+  width: min(1100px, 100%);
+  margin: 0 auto 2rem;
+}
+
+.server-landing__heroContent,
+.server-landing__card,
+.server-landing__contentBlock,
+.server-landing__faqItem,
+.server-landing__links {
+  background: rgba(18, 10, 22, 0.72);
+  border: 1px solid rgba(255, 214, 162, 0.16);
+  border-radius: 24px;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+}
+
+.server-landing__heroContent {
+  padding: 2rem;
+}
+
+.server-landing__eyebrow {
+  margin: 0 0 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 0.78rem;
+  color: #f6c76b;
+}
+
+.server-landing h1,
+.server-landing h2,
+.server-landing h3 {
+  margin: 0 0 0.8rem;
+}
+
+.server-landing h1 {
+  font-size: clamp(2.15rem, 5vw, 4rem);
+  line-height: 1.05;
+}
+
+.server-landing__lead,
+.server-landing p,
+.server-landing a {
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+.server-landing__actions,
+.server-landing__linkGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+}
+
+.server-landing__button,
+.server-landing__linkGrid a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0.85rem 1.15rem;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff6e9;
+  text-decoration: none;
+  border: 1px solid rgba(255, 214, 162, 0.2);
+}
+
+.server-landing__button--primary {
+  background: linear-gradient(180deg, #ffbf59 0%, #f09b2d 100%);
+  color: #291304;
+  font-weight: 700;
+}
+
+.server-landing__grid,
+.server-landing__faqList {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.server-landing__card,
+.server-landing__contentBlock,
+.server-landing__faqItem {
+  padding: 1.35rem;
+}
+
+.server-landing__content {
+  display: grid;
+  gap: 1rem;
+}
+
+.server-landing__links {
+  padding: 1.35rem;
+}
+
+@media (max-width: 900px) {
+  .server-landing__grid,
+  .server-landing__faqList {
+    grid-template-columns: 1fr;
+  }
+}

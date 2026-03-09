@@ -4,12 +4,9 @@ import { supabase } from "@lib/supabaseClient";
 import NavbarMobile from "./NavbarMobile";
 import NavbarDesktop from "./NavbarDesktop";
 import useIsMobile from "../../hooks/useIsMobile";
+import { apiUrl } from "../../lib/env";
+import { getAuthToken, clearSessionStorage } from "../../lib/auth/storage";
 import "../../styles/components/Navbar/navbar.scss";
-
-const API_BASE = (import.meta.env.VITE_BACKEND_URL || "https://flancraft-backend.onrender.com")
-  .trim()
-  .replace(/\/$/, "");
-const apiUrl = (path) => (API_BASE ? `${API_BASE}${path}` : path);
 
 const SERVERS_COINS = [{ key: "survival", label: "SURVIVAL" }];
 
@@ -91,7 +88,7 @@ const buildAvatarHeadUrl = (uuid, username, size) => {
 };
 
 const Navbar = ({ onLoginClick }) => {
-  const { user } = useContext(UserContext);
+  const { user, logout } = useContext(UserContext);
 
   const baseLoggedIn = Boolean(user && user.loggedIn);
   const isMobile = useIsMobile();
@@ -227,7 +224,7 @@ const Navbar = ({ onLoginClick }) => {
       if (!silent) setUserLoading(true);
 
       try {
-        const token = localStorage.getItem("token");
+        const token = getAuthToken();
 
         const [userRes, monedasRes, walletRes] = await Promise.all([
           supabase.from("usuarios").select("*").eq("uuid", user.uuid).single(),
@@ -249,7 +246,8 @@ const Navbar = ({ onLoginClick }) => {
 
         if (walletRes) {
           if (walletRes.status === 401) {
-            localStorage.removeItem("token");
+            clearSessionStorage();
+            logout();
           } else if (walletRes.ok) {
             const w = await walletRes.json();
             walletCoins = toInt(w?.walletBalance ?? w?.wallet_balance ?? walletCoins);

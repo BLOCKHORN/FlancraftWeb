@@ -1,8 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { apiUrl } from "../../../lib/env";
 import "../../../styles/components/Tienda/tienda-oferta-countdown.scss";
-
-const API_BASE =
-  import.meta.env.VITE_BACKEND_URL || "https://flancraft-backend.onrender.com";
 
 function clamp(n, a, b) {
   return Math.max(a, Math.min(b, n));
@@ -25,7 +23,7 @@ async function fetchSale() {
   try {
     const isDev = import.meta.env.DEV;
     const refresh = isDev ? "?refresh=1" : "";
-    const res = await fetch(`${API_BASE}/api/tebex/sale${refresh}`);
+    const res = await fetch(apiUrl(`/api/tebex/sale${refresh}`));
     if (!res.ok) return null;
     const json = await res.json();
     if (!json?.ok || !json?.active || !json?.sale?.expire) return null;

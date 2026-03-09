@@ -1,8 +1,7 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
+import { apiUrl } from "../../lib/env";
 import "../../styles/components/Landpage/_newshighlight.scss";
-
-const API_URL = "https://flancraft-backend.onrender.com/api/noticias";
 
 // ==============================
 // Helpers de contenido / fechas
@@ -73,7 +72,7 @@ const NewsHighlight = () => {
     const fetchNews = async () => {
       setStatus("loading");
       try {
-        const res = await fetch(API_URL);
+        const res = await fetch(apiUrl(`/api/noticias`));
         const data = await res.json();
         const sorted = (data || []).sort(
           (a, b) => new Date(b.fecha) - new Date(a.fecha)

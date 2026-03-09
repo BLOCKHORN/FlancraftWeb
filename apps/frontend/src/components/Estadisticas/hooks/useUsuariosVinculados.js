@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-
-const API_BASE = import.meta.env.VITE_BACKEND_URL || "http://localhost:10000";
+import { apiUrl } from "../../../lib/env";
 
 export default function useUsuariosVinculados() {
   const [usuariosVinculados, setUsuariosVinculados] = useState({});
@@ -10,7 +9,7 @@ export default function useUsuariosVinculados() {
 
     (async () => {
       try {
-        const res = await fetch(`${API_BASE}/api/usuarios`, { signal: controller.signal });
+        const res = await fetch(apiUrl(`/api/usuarios`), { signal: controller.signal });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const usuarios = await res.json();
 

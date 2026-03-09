@@ -1,249 +1,63 @@
 @use "../../base/_variables" as *;
 @use "../Tienda/storefront/mixins" as *;
 
-/* =========================================================
-   LOGROS — Skin estilo NOTICIAS/DASHBOARD
-   - Mantiene layout / tamaños
-   - Solo cambia apariencia (más limpio, 1px borders, clip-path, mc-font)
-   ========================================================= */
-
-.logros-epic{
+.logros-epic {
   margin: 0 auto;
   margin-top: 0.4rem;
   padding: 1.85rem 2.2rem 2.1rem;
   width: 100%;
   max-width: 100%;
   border-radius: 0;
-
   background: rgba(10, 13, 20, 0.62);
-  border: 1px solid rgba(255,255,255,0.10);
-  box-shadow: 0 26px 70px rgba(0,0,0,0.36);
-
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 26px 70px rgba(0, 0, 0, 0.36);
   clip-path: polygon(16px 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%, 0 16px);
-
   color: #eef2ff;
   overflow: hidden;
   position: relative;
 }
 
-.logros-epic::before{
-  content:"";
-  position:absolute;
-  inset:0;
-  pointer-events:none;
+.logros-epic::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
   background:
-    radial-gradient(120% 90% at 50% 0%, rgba(86,110,210,0.10), transparent 60%),
-    linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.00) 35%, rgba(0,0,0,0.22) 100%);
+    radial-gradient(120% 90% at 50% 0%, rgba(86, 110, 210, 0.1), transparent 60%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0) 35%, rgba(0, 0, 0, 0.22) 100%);
   opacity: 0.95;
 }
 
-/* =========================================================
-   CABECERA
-   ========================================================= */
-
-.logros-header{
+.logros-header {
   text-align: center;
   margin-bottom: 1rem;
   position: relative;
   z-index: 1;
 }
 
-.logros-titulo{
+.logros-titulo {
   margin: 0;
   font-family: var(--mc-font);
   font-weight: 950;
   letter-spacing: 0.06em;
   font-size: clamp(1.55rem, 2.1vw, 2.05rem);
   text-transform: uppercase;
-  text-shadow: 0 18px 50px rgba(0,0,0,0.55);
+  text-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
 }
 
-.logros-subtitulo-secundario{
+.logros-subtitulo-secundario {
   margin-top: 0.25rem;
   font-family: var(--mc-font);
   font-weight: 950;
   font-size: 0.82rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  opacity: 0.78;
-  color: rgba(238,242,255,0.82);
-  text-shadow: 0 10px 18px rgba(0,0,0,0.40);
+  opacity: 0.82;
+  color: rgba(238, 242, 255, 0.82);
+  text-shadow: 0 10px 18px rgba(0, 0, 0, 0.4);
 }
 
-/* =========================================================
-   PRÓXIMAMENTE
-   ========================================================= */
-
-.logros-proximamente-mode{
-  .logros-tab-tipo:disabled{
-    cursor: not-allowed;
-    opacity: 0.72;
-    transform: none !important;
-  }
-  .logros-tab-tipo.bloqueado{
-    filter: saturate(0.85) brightness(0.95);
-  }
-}
-
-.logros-soon-wrap{
-  max-width: 980px;
-  margin: 0.9rem auto 0.2rem;
-  padding: 0 0.6rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.9rem;
-  position: relative;
-  z-index: 1;
-}
-
-.logros-soon-card{
-  position: relative;
-  border-radius: 0;
-  padding: 1.05rem 1.15rem;
-
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.10);
-  box-shadow: 0 18px 54px rgba(0,0,0,0.28);
-
-  clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
-
-  display: flex;
-  align-items: center;
-  gap: 0.85rem;
-  overflow: hidden;
-}
-
-.logros-soon-card::before{
-  content:"";
-  position:absolute;
-  inset:0;
-  pointer-events:none;
-  background:
-    radial-gradient(circle at 12% 20%, rgba(0, 214, 255, 0.10), transparent 55%),
-    radial-gradient(circle at 88% 85%, rgba(146, 254, 157, 0.08), transparent 55%),
-    linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(0,0,0,0.18) 100%);
-  opacity: 0.95;
-}
-
-.logros-soon-icon{
-  width: 44px;
-  height: 44px;
-  border-radius: 0;
-  display: grid;
-  place-items: center;
-
-  background: rgba(0,0,0,0.20);
-  border: 1px solid rgba(255,255,255,0.10);
-  box-shadow:
-    0 12px 18px rgba(0,0,0,0.38),
-    inset 0 1px 0 rgba(255,255,255,0.10);
-
-  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
-}
-
-@keyframes soonClockPulse{
-  0%,100%{ transform: translateY(0) rotate(0deg); filter: brightness(1); }
-  50%{ transform: translateY(-1px) rotate(-2deg); filter: brightness(1.06); }
-}
-
-.logros-soon-clock{
-  color: rgba(100,190,255,0.92);
-  filter:
-    drop-shadow(0 0 6px rgba(0, 232, 255, 0.35))
-    drop-shadow(0 0 14px rgba(0, 170, 255, 0.18));
-  animation: soonClockPulse 1.4s ease-in-out infinite;
-}
-
-.logros-soon-text{ min-width: 0; position: relative; z-index: 1; }
-
-.logros-soon-title{
-  margin: 0 0 0.25rem 0;
-  font-family: var(--mc-font);
-  font-weight: 950;
-  letter-spacing: 0.06em;
-  font-size: 1.05rem;
-  text-transform: uppercase;
-  color: rgba(248,250,255,0.96);
-  text-shadow: 0 16px 40px rgba(0,0,0,0.55);
-}
-
-.logros-soon-desc{
-  margin: 0;
-  font-family: var(--mc-font);
-  font-weight: 900;
-  font-size: 0.88rem;
-  opacity: 0.88;
-  color: rgba(238,242,255,0.86);
-}
-
-.logros-soon-desc2{
-  margin: 0.25rem 0 0;
-  font-family: var(--mc-font);
-  font-weight: 950;
-  font-size: 0.78rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  opacity: 0.72;
-  color: rgba(238,242,255,0.76);
-}
-
-.logros-soon-reinos{
-  border-radius: 0;
-  padding: 0.85rem 0.9rem;
-
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.10);
-  box-shadow: 0 18px 54px rgba(0,0,0,0.22);
-
-  clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
-
-  position: relative;
-  overflow: hidden;
-}
-
-.logros-soon-reinos::before{
-  content:"";
-  position:absolute;
-  inset:0;
-  pointer-events:none;
-  background:
-    radial-gradient(circle at 18% 10%, rgba(0, 201, 255, 0.10), transparent 60%),
-    linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(0,0,0,0.20) 100%);
-  opacity: 0.95;
-}
-
-.logros-soon-reinos-title{
-  margin: 0 0 0.65rem;
-  text-align: center;
-  font-family: var(--mc-font);
-  font-weight: 950;
-  font-size: 0.78rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  opacity: 0.86;
-  position: relative;
-  z-index: 1;
-}
-
-.reinos-grid-soon{
-  position: relative;
-  z-index: 1;
-
-  .reino-card--soon{
-    cursor: default;
-    pointer-events: none;
-    opacity: 0.92;
-    filter: saturate(0.95) brightness(0.98);
-  }
-  .reino-card--soon:hover{ transform: none !important; }
-  .reino-card--soon .reino-img{ transform: translateY(0) scale(1) !important; }
-}
-
-/* =========================================================
-   TABS: PERMANENTES / DIARIAS / SEMANALES
-   ========================================================= */
-
-.logros-tabs-tipo{
+.logros-tabs-tipo {
   margin: 0.75rem auto 0.4rem;
   padding: 0.22rem;
   display: inline-flex;
@@ -251,101 +65,73 @@
   justify-content: center;
   gap: 0.25rem;
   border-radius: 0;
-
   background: rgba(10, 13, 20, 0.55);
-  border: 1px solid rgba(255,255,255,0.10);
-  box-shadow:
-    0 18px 54px rgba(0,0,0,0.22),
-    inset 0 1px 0 rgba(255,255,255,0.08);
-
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 18px 54px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.08);
   clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
   position: relative;
   z-index: 1;
 }
 
-.logros-tab-tipo{
+.logros-tab-tipo {
   border: none;
   padding: 0.34rem 1rem;
   border-radius: 0;
   cursor: pointer;
-
   font-family: var(--mc-font);
   font-weight: 950;
   font-size: 0.74rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-
   background: transparent;
-  color: rgba(238,242,255,0.70);
-
-  transition:
-    transform 160ms cubic-bezier(.16,1,.3,1),
-    filter 160ms ease,
-    background 160ms ease,
-    color 160ms ease,
-    box-shadow 160ms ease;
-
+  color: rgba(238, 242, 255, 0.7);
+  transition: transform 160ms cubic-bezier(.16, 1, .3, 1), filter 160ms ease, background 160ms ease, color 160ms ease, box-shadow 160ms ease;
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
   white-space: nowrap;
-
   clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
 }
 
-.logros-tab-tipo:hover{
+.logros-tab-tipo:hover {
   transform: translateY(-1px);
   filter: brightness(1.06);
-  color: rgba(248,250,255,0.92);
+  color: rgba(248, 250, 255, 0.92);
 }
 
-.logros-tab-tipo.activo{
-  background: linear-gradient(180deg, rgba(120,186,86,0.96), rgba(46,128,66,0.92));
-  color: rgba(248,250,255,0.98);
-
-  box-shadow:
-    0 0 0 1px rgba(10,30,12,0.55),
-    0 14px 22px rgba(0,0,0,0.30);
-
-  text-shadow: 0 16px 40px rgba(0,0,0,0.45);
+.logros-tab-tipo.activo {
+  background: linear-gradient(180deg, rgba(120, 186, 86, 0.96), rgba(46, 128, 66, 0.92));
+  color: rgba(248, 250, 255, 0.98);
+  box-shadow: 0 0 0 1px rgba(10, 30, 12, 0.55), 0 14px 22px rgba(0, 0, 0, 0.3);
+  text-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
 }
 
-.logros-tab-tipo:disabled{ cursor: not-allowed; }
-
-.logros-tab-icon-wrap{
+.logros-tab-icon-wrap {
   width: 32px;
   height: 32px;
-  border-radius: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: visible;
-
-  background: rgba(0,0,0,0.18);
-  border: 1px solid rgba(255,255,255,0.10);
-
+  background: rgba(0, 0, 0, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
 }
 
-.logros-tab-icon{
+.logros-tab-icon {
   width: 32px;
   height: 32px;
   object-fit: contain;
   transform: translateY(0) scale(1);
   transition: transform 260ms ease;
-  filter: drop-shadow(0 10px 12px rgba(0,0,0,0.45));
+  filter: drop-shadow(0 10px 12px rgba(0, 0, 0, 0.45));
 }
 
 .logros-tab-tipo:hover .logros-tab-icon,
-.logros-tab-tipo.activo .logros-tab-icon{
+.logros-tab-tipo.activo .logros-tab-icon {
   transform: translateY(-2px) scale(1.06);
 }
 
-/* =========================================================
-   TOOLBAR
-   ========================================================= */
-
-.logros-toolbar{
+.logros-toolbar {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -355,11 +141,7 @@
   z-index: 1;
 }
 
-/* =========================================================
-   REINOS
-   ========================================================= */
-
-.logros-reinos-wrapper{
+.logros-reinos-wrapper {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -368,155 +150,65 @@
   z-index: 1;
 }
 
-.todos-pill{
-  padding: 0.38rem 1rem;
-  border-radius: 0;
-  border: 1px solid rgba(255,255,255,0.10);
-
-  background: rgba(10, 13, 20, 0.55);
-  color: rgba(238,242,255,0.90);
-
-  font-family: var(--mc-font);
-  font-weight: 950;
-  font-size: 0.75rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-
-  cursor: pointer;
-
-  box-shadow:
-    0 18px 54px rgba(0,0,0,0.20),
-    inset 0 1px 0 rgba(255,255,255,0.08);
-
-  transition: transform 160ms cubic-bezier(.16,1,.3,1), filter 160ms ease, box-shadow 160ms ease;
-  clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
-
-  &.activo{
-    background: linear-gradient(180deg, rgba(120,186,86,0.96), rgba(46,128,66,0.92));
-    color: rgba(248,250,255,0.98);
-    box-shadow:
-      0 0 0 1px rgba(10,30,12,0.55),
-      0 14px 22px rgba(0,0,0,0.30);
-    text-shadow: 0 16px 40px rgba(0,0,0,0.45);
-  }
-
-  &:hover{ transform: translateY(-1px); filter: brightness(1.06); }
-  &:active{ transform: translateY(1px); filter: brightness(0.98); }
-}
-
-.todos-pill.todos-pill-claimable{
-  box-shadow:
-    0 0 0 1px rgba(10,30,12,0.55),
-    0 14px 22px rgba(0,0,0,0.30),
-    0 0 18px rgba(120, 186, 86, 0.14);
-}
-
-.reinos-grid{
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0.7rem;
-}
-
-.reino-card{
+.reino-card {
   position: relative;
   width: 110px;
   padding: 0.48rem 0.45rem 0.55rem;
-  border-radius: 0;
-  border: 1px solid rgba(255,255,255,0.10);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   cursor: pointer;
-
-  background: rgba(255,255,255,0.04);
-  box-shadow: 0 18px 54px rgba(0,0,0,0.22);
-  color: rgba(238,242,255,0.92);
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: 0 18px 54px rgba(0, 0, 0, 0.22);
+  color: rgba(238, 242, 255, 0.92);
   text-align: center;
-
-  transition: transform 160ms cubic-bezier(.16,1,.3,1), filter 160ms ease, box-shadow 160ms ease;
+  transition: transform 160ms cubic-bezier(.16, 1, .3, 1), filter 160ms ease, box-shadow 160ms ease;
   clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
   overflow: hidden;
 }
 
-.reino-card::before{
-  content:"";
-  position:absolute;
-  inset:0;
-  pointer-events:none;
+.reino-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
   background:
-    radial-gradient(120% 80% at 50% 0%, rgba(255,255,255,0.10), transparent 62%),
-    linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(0,0,0,0.22) 100%);
+    radial-gradient(120% 80% at 50% 0%, rgba(255, 255, 255, 0.1), transparent 62%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, rgba(0, 0, 0, 0.22) 100%);
   opacity: 0.95;
 }
 
-.reino-card:hover{
+.reino-card:hover {
   transform: translateY(-2px);
   filter: brightness(1.06);
 }
 
-.reino-card.activo{
-  box-shadow:
-    0 0 0 1px rgba(120,186,86,0.22),
-    0 18px 54px rgba(0,0,0,0.24);
+.reino-card.activo {
+  box-shadow: 0 0 0 1px rgba(120, 186, 86, 0.22), 0 18px 54px rgba(0, 0, 0, 0.24);
 }
 
-@keyframes reinoClaimBlink{
-  0%,100%{
-    box-shadow: 0 18px 54px rgba(0,0,0,0.22);
-    transform: translateY(0);
-    filter: saturate(1) brightness(1);
-  }
-  50%{
-    box-shadow:
-      0 18px 54px rgba(0,0,0,0.22),
-      0 0 0 2px rgba(120,186,86,0.14),
-      0 0 18px rgba(120,186,86,0.12);
-    transform: translateY(-1px);
-    filter: saturate(1.08) brightness(1.05);
-  }
-}
-
-.reino-card.reino-card-claimable{
-  animation: reinoClaimBlink 1.35s ease-in-out infinite;
-}
-.reino-card.reino-card-claimable::after{
-  content:"";
-  position:absolute;
-  top: 8px;
-  right: 8px;
-  width: 10px;
-  height: 10px;
-  border-radius: 999px;
-  background: radial-gradient(circle at 30% 30%, rgba(120,186,86,1), rgba(100,190,255,1));
-  box-shadow:
-    0 0 0 1px rgba(0,0,0,0.9),
-    0 0 14px rgba(120,186,86,0.38);
-}
-
-.reino-img-wrap{
+.reino-img-wrap {
   position: relative;
-  border-radius: 0;
   height: 76px;
-  overflow: visible;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.reino-img{
+.reino-img {
   width: 70px;
   height: 70px;
   object-fit: contain;
   transform: translateY(0) scale(1);
   transition: transform 260ms ease;
-  filter: drop-shadow(0 12px 16px rgba(0,0,0,0.45));
+  filter: drop-shadow(0 12px 16px rgba(0, 0, 0, 0.45));
 }
 
 .reino-card:hover .reino-img,
-.reino-card.activo .reino-img{
+.reino-card.activo .reino-img {
   transform: translateY(-6px) scale(1.06);
 }
 
-.reino-nombre{
-  display:block;
+.reino-nombre {
+  display: block;
   margin-top: 0.32rem;
   font-family: var(--mc-font);
   font-weight: 950;
@@ -527,13 +219,9 @@
   z-index: 1;
 }
 
-/* =========================================================
-   ORDEN
-   ========================================================= */
-
-.logros-filtros-orden{
-  display:flex;
-  align-items:center;
+.logros-filtros-orden {
+  display: flex;
+  align-items: center;
   gap: 0.5rem;
   font-family: var(--mc-font);
   font-weight: 950;
@@ -544,41 +232,34 @@
   z-index: 1;
 }
 
-.orden-label{
-  display:inline-flex;
-  align-items:center;
+.orden-label {
+  display: inline-flex;
+  align-items: center;
   gap: 0.25rem;
   opacity: 0.86;
-  svg{ width: 15px; height: 15px; }
+
+  svg {
+    width: 15px;
+    height: 15px;
+  }
 }
 
-.orden-select{
-  border-radius: 0;
-  border: 1px solid rgba(255,255,255,0.10);
-
+.orden-select {
+  border: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(10, 13, 20, 0.55);
-  color: rgba(238,242,255,0.92);
-
+  color: rgba(238, 242, 255, 0.92);
   padding: 0.36rem 1rem;
   font-size: 0.78rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-
   appearance: none;
-  box-shadow:
-    0 18px 54px rgba(0,0,0,0.18),
-    inset 0 1px 0 rgba(255,255,255,0.08);
-
+  box-shadow: 0 18px 54px rgba(0, 0, 0, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.08);
   clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
 }
 
-/* =========================================================
-   ESTADOS
-   ========================================================= */
-
-.logros-estado{
+.logros-estado {
   margin-top: 0.6rem;
-  text-align:center;
+  text-align: center;
   font-family: var(--mc-font);
   font-weight: 950;
   font-size: 0.8rem;
@@ -587,517 +268,385 @@
   opacity: 0.82;
   position: relative;
   z-index: 1;
-
-  &.logros-estado-error{ color: rgba(255, 200, 210, 0.95); }
 }
 
-/* =========================================================
-   LISTA + OVERLAY
-   ========================================================= */
+.logros-estado.logros-estado-error {
+  color: rgba(255, 200, 210, 0.95);
+}
 
-.logros-list-wrapper{
+.logros-list-wrapper {
   position: relative;
   margin-top: 0.8rem;
   min-height: 140px;
   z-index: 1;
 }
 
-.logros-lista{
-  list-style:none;
+.logros-lista {
+  list-style: none;
   margin: 0 auto;
   padding: 0 0.6rem;
-  max-width: 1150px;
-  display:flex;
+  max-width: 1120px;
+  display: flex;
   flex-direction: column;
-  gap: 0.8rem;
+  gap: 0.9rem;
 }
 
-/* Cascada */
-.logros-lista-entrante .logro-row{
+.logros-lista-entrante .logro-row {
   opacity: 0;
   transform: translateY(10px);
   animation: logrosCascadeIn 0.45s ease-out forwards;
   animation-delay: var(--delay, 0ms);
 }
-.logros-lista-saliente .logro-row{
+
+.logros-lista-saliente .logro-row {
   opacity: 1;
   transform: translateY(0);
   animation: logrosCascadeOut 0.35s ease-in forwards;
   animation-delay: var(--delay, 0ms);
 }
-@keyframes logrosCascadeIn{
-  0%{ opacity:0; transform: translateY(10px); }
-  100%{ opacity:1; transform: translateY(0); }
-}
-@keyframes logrosCascadeOut{
-  0%{ opacity:1; transform: translateY(0); }
-  100%{ opacity:0; transform: translateY(-8px); }
+
+@keyframes logrosCascadeIn {
+  0% { opacity: 0; transform: translateY(10px); }
+  100% { opacity: 1; transform: translateY(0); }
 }
 
-/* =========================================================
-   TARJETA LOGRO
-   ========================================================= */
+@keyframes logrosCascadeOut {
+  0% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-8px); }
+}
 
-.logro-row{
+.logro-row {
   position: relative;
-  display:flex;
-  align-items: stretch;
-  gap: 0.9rem;
-  padding: 1.05rem 8rem 1.15rem 1.1rem;
-  border-radius: 0;
-  overflow:hidden;
-
-  border: 1px solid rgba(255,255,255,0.10);
-  background: rgba(255,255,255,0.04);
-  box-shadow: 0 18px 54px rgba(0,0,0,0.28);
-
+  display: flex;
+  gap: 1rem;
+  padding: 1.1rem 1.15rem 1.2rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(180deg, rgba(16, 24, 39, 0.9), rgba(7, 13, 24, 0.92));
+  box-shadow: 0 18px 54px rgba(0, 0, 0, 0.28);
   clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
-
-  transform-origin: center;
-  transition: transform 160ms cubic-bezier(.16,1,.3,1), filter 160ms ease, box-shadow 160ms ease, border-color 160ms ease, background 160ms ease;
-  isolation: auto;
+  transition: transform 160ms cubic-bezier(.16, 1, .3, 1), border-color 160ms ease, box-shadow 160ms ease;
+  isolation: isolate;
 }
 
-.logro-row::before{
-  content:"";
-  position:absolute;
-  inset:0;
-  pointer-events:none;
-  z-index:0;
+.logro-row::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
   background:
-    radial-gradient(120% 70% at 50% 0%, rgba(255,255,255,0.10), transparent 62%),
-    linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(0,0,0,0.24) 100%);
-  opacity: 0.95;
+    linear-gradient(90deg, rgba(var(--rarity-rgb, 119, 170, 255), 0.12), transparent 24%),
+    radial-gradient(120% 90% at 0% 0%, rgba(255, 255, 255, 0.06), transparent 55%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0));
 }
 
-.logro-row:hover{
+.logro-row:hover {
   transform: translateY(-2px);
-  filter: drop-shadow(0 1.25rem 1.75rem rgba(0,0,0,0.40));
-  border-color: rgba(120,186,86,0.16);
-  background: rgba(255,255,255,0.05);
+  border-color: rgba(var(--rarity-rgb, 119, 170, 255), 0.28);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.34);
 }
 
-/* =========================================================
-   CAPAS / Z-INDEX
-   ========================================================= */
+.logro-row--base { --rarity: #93a8c9; --rarity-soft: #6fb681; --rarity-rgb: 147, 168, 201; }
+.logro-row--veterana { --rarity: #67d4ff; --rarity-soft: #8bc9ff; --rarity-rgb: 103, 212, 255; }
+.logro-row--epica { --rarity: #b47cff; --rarity-soft: #d599ff; --rarity-rgb: 180, 124, 255; }
+.logro-row--legendaria { --rarity: #ffad33; --rarity-soft: #ffd27a; --rarity-rgb: 255, 173, 51; }
+.logro-row--agil { --rarity: #79d372; --rarity-soft: #9ce58f; --rarity-rgb: 121, 211, 114; }
+.logro-row--media { --rarity: #4ad0ff; --rarity-soft: #8de4ff; --rarity-rgb: 74, 208, 255; }
+.logro-row--alta { --rarity: #ffb84d; --rarity-soft: #ffd78c; --rarity-rgb: 255, 184, 77; }
+.logro-row--seria { --rarity: #79b5ff; --rarity-soft: #a5cfff; --rarity-rgb: 121, 181, 255; }
+.logro-row--dura { --rarity: #c275ff; --rarity-soft: #d8a4ff; --rarity-rgb: 194, 117, 255; }
+.logro-row--elite { --rarity: #ff9f43; --rarity-soft: #ffd07f; --rarity-rgb: 255, 159, 67; }
 
-.logro-reino-overlay{
-  position:absolute;
-  top: 0.22rem;
-  bottom: 0.22rem;
-  right: 0.65rem;
-  width: 7rem;
-  overflow:hidden;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  pointer-events:none;
-  z-index:1;
+.logro-row.logro-reclamado {
+  border-color: rgba(120, 186, 86, 0.2);
+  background: linear-gradient(180deg, rgba(18, 31, 22, 0.92), rgba(8, 18, 11, 0.94));
 }
 
-.logro-acento,
-.logro-main{
+.logro-row.logro-reclamado::before {
+  background:
+    linear-gradient(90deg, rgba(120, 186, 86, 0.14), transparent 24%),
+    radial-gradient(120% 90% at 0% 0%, rgba(255, 255, 255, 0.04), transparent 55%);
+}
+
+.logro-main {
   position: relative;
-  z-index: 5;
-}
-
-.logro-top-right{ position: relative; z-index: 10; }
-.logro-claim-btn{ position: relative; z-index: 12; }
-
-/* =========================================================
-   ACENTO (solo enciende cuando completado)
-   ========================================================= */
-
-.logro-acento{
-  width: 4px;
-  margin-block: 0.12rem;
-  border-radius: 0;
-  background: rgba(255,255,255,0.10);
-  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.35);
-  opacity: 0.65;
-  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
-}
-
-.logro-row.logro-completado .logro-acento{
-  background: linear-gradient(180deg, rgba(100,190,255,0.92), rgba(120,186,86,0.92));
-  box-shadow:
-    0 0 10px rgba(100,190,255,0.18),
-    0 0 16px rgba(120,186,86,0.14),
-    inset 0 0 0 1px rgba(0,0,0,0.35);
-  opacity: 1;
-}
-
-.logro-row.logro-reclamado .logro-acento{
-  background: linear-gradient(180deg, rgba(120,186,86,0.95), rgba(60,190,120,0.75));
-  box-shadow:
-    0 0 10px rgba(120,186,86,0.14),
-    0 0 18px rgba(120,186,86,0.10),
-    inset 0 0 0 1px rgba(0,0,0,0.35);
-}
-
-.logro-main{
+  z-index: 1;
   flex: 1;
-  display:flex;
+  display: flex;
   flex-direction: column;
-  gap: 0.55rem;
+  gap: 0.75rem;
 }
 
-/* TOP */
-.logro-top{
-  display:flex;
+.logro-top {
+  display: flex;
   justify-content: space-between;
   align-items: flex-start;
   gap: 1rem;
 }
 
-.logro-top-left{ min-width:0; }
-
-.logro-nombre{
-  margin: 0 0 0.15rem 0;
-  font-family: var(--mc-font);
-  font-weight: 950;
-  letter-spacing: 0.04em;
-  font-size: 1.02rem;
-  text-transform: uppercase;
-  color: rgba(248,250,255,0.96);
-  text-shadow: 0 16px 40px rgba(0,0,0,0.55);
+.logro-copy {
+  min-width: 0;
+  flex: 1;
 }
 
-.logro-descripcion{
+.logro-meta-line {
+  margin: 0 0 0.18rem;
+  font-family: var(--mc-font);
+  font-size: 0.72rem;
+  font-weight: 950;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(221, 231, 255, 0.62);
+}
+
+.logro-nombre {
   margin: 0;
   font-family: var(--mc-font);
-  font-weight: 900;
-  font-size: 0.86rem;
-  opacity: 0.88;
-  color: rgba(238,242,255,0.86);
-}
-
-/* TOP RIGHT */
-.logro-top-right{
-  display:flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 0.35rem;
-}
-
-.logro-xp-wrap{
-  display:inline-flex;
-  align-items:center;
-  gap: 0.55rem;
-}
-
-.logro-xp-status-img{
-  height: 26px;
-  width: auto;
-  display:block;
-  filter: drop-shadow(0 10px 12px rgba(0,0,0,0.55));
-}
-
-.logro-xp-chip{
-  position: relative;
-  padding: 0.30rem 0.95rem;
-  border-radius: 0;
-
-  font-family: var(--mc-font);
   font-weight: 950;
-  font-size: 0.74rem;
+  font-size: clamp(1.06rem, 1.3vw, 1.34rem);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--rarity);
+  text-shadow: 0 0 18px rgba(var(--rarity-rgb, 119, 170, 255), 0.12), 0 12px 30px rgba(0, 0, 0, 0.55);
+}
+
+.logro-submeta {
+  margin-top: 0.18rem;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.logro-rareza-text,
+.logro-state-text {
+  font-family: var(--mc-font);
+  font-size: 0.7rem;
+  font-weight: 950;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.logro-rareza-text {
+  color: var(--rarity-soft);
+}
+
+.logro-state-text--progreso { color: rgba(210, 224, 255, 0.82); }
+.logro-state-text--lista { color: #8ce48f; }
+.logro-state-text--completa { color: #8fd4ff; }
+.logro-state-text--reclamada { color: #9fe39c; }
+
+.logro-submeta-dot {
+  color: rgba(255, 255, 255, 0.22);
+  font-weight: 900;
+}
+
+.logro-descripcion {
+  margin: 0.22rem 0 0;
+  font-family: var(--mc-font);
+  font-size: 0.86rem;
+  font-weight: 900;
+  color: rgba(238, 242, 255, 0.9);
+}
+
+.logro-side {
+  display: flex;
+  align-items: flex-start;
+}
+
+.logro-xp-chip {
+  padding: 0.42rem 0.9rem;
+  border: 1px solid rgba(var(--rarity-rgb, 119, 170, 255), 0.28);
+  background: linear-gradient(180deg, rgba(var(--rarity-rgb, 119, 170, 255), 0.2), rgba(6, 10, 18, 0.55));
+  color: #f8fbff;
+  font-family: var(--mc-font);
+  font-size: 0.78rem;
+  font-weight: 950;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  white-space: nowrap;
+}
 
-  background: linear-gradient(180deg, rgba(255,255,255,0.10), rgba(0,0,0,0.18));
-  color: rgba(238,242,255,0.92);
-
-  border: 1px solid rgba(255,255,255,0.12);
-  box-shadow:
-    0 18px 54px rgba(0,0,0,0.18),
-    inset 0 1px 0 rgba(255,255,255,0.10);
-
+.logro-objective-box {
+  padding: 0.78rem 0.95rem 0.82rem;
+  background: linear-gradient(180deg, rgba(8, 14, 26, 0.94), rgba(4, 9, 18, 0.96));
+  border: 1px solid rgba(255, 255, 255, 0.08);
   clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
 }
 
-/* =========================================================
-   PROGRESO
-   ========================================================= */
-
-.logro-progress{
-  display:flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
-.logro-progress-track{
-  position: relative;
-  height: 10px;
-  border-radius: 999px;
-  overflow:hidden;
-
-  background: rgba(0,0,0,0.24);
-  border: 1px solid rgba(255,255,255,0.10);
-
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.08),
-    0 12px 22px rgba(0,0,0,0.18);
-}
-
-.logro-progress-fill{
-  position:absolute;
-  inset:0;
-  border-radius: inherit;
-  background: linear-gradient(90deg, rgba(120,186,86,0.92), rgba(100,190,255,0.85));
-  box-shadow:
-    0 0 16px rgba(120,186,86,0.16),
-    0 0 22px rgba(100,190,255,0.12);
-  transform-origin:left;
-  transition: width 0.5s ease-out;
-}
-
-.logro-progress-meta{
-  display:flex;
-  justify-content: flex-end;
+.logro-block-label {
+  display: block;
+  margin-bottom: 0.22rem;
   font-family: var(--mc-font);
+  font-size: 0.72rem;
   font-weight: 950;
-  font-size: 0.76rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: rgba(214, 224, 255, 0.6);
+}
+
+.logro-objetivo-texto {
+  margin: 0;
+  font-family: var(--mc-font);
+  font-size: 0.92rem;
+  font-weight: 950;
+  color: rgba(248, 250, 255, 0.97);
+}
+
+.logro-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 0.38rem;
+}
+
+.logro-progress-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.logro-progress-label,
+.logro-progress-percentage {
+  font-family: var(--mc-font);
+  font-size: 0.72rem;
+  font-weight: 950;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.logro-progress-label { color: rgba(214, 224, 255, 0.62); }
+.logro-progress-percentage { color: rgba(248, 250, 255, 0.92); }
+
+.logro-progress-track {
+  position: relative;
+  height: 12px;
+  overflow: hidden;
+  background: rgba(5, 10, 18, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+}
+
+.logro-progress-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 0;
+  background: linear-gradient(90deg, var(--rarity), var(--rarity-soft));
+  box-shadow: 0 0 18px rgba(var(--rarity-rgb, 119, 170, 255), 0.18);
+  transition: width 0.45s ease;
+}
+
+.logro-progress-meta {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.42rem;
+  font-family: var(--mc-font);
+  font-size: 0.8rem;
+  font-weight: 950;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  opacity: 0.92;
-  color: rgba(238,242,255,0.86);
+  color: rgba(245, 248, 255, 0.94);
 }
 
-.logro-progress-texto{
-  padding: 0.14rem 0.65rem;
-  border-radius: 0;
-  border: 1px solid rgba(255,255,255,0.10);
-
-  background: rgba(10, 13, 20, 0.55);
-  box-shadow:
-    0 18px 54px rgba(0,0,0,0.16),
-    inset 0 1px 0 rgba(255,255,255,0.08);
-
-  clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+.logro-progress-divider {
+  color: rgba(255, 255, 255, 0.26);
 }
 
-/* =========================================================
-   FOOTER (botón abajo centrado)
-   ========================================================= */
-
-.logro-footer{
-  margin-top: 0.35rem;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  min-height: 46px;
+.logro-footer {
+  margin-top: 0.2rem;
+  display: flex;
+  justify-content: center;
 }
 
-/* =========================================================
-   BOTÓN (skin dashboard, mantiene tamaño 260x44)
-   ========================================================= */
-
-.tsf-btn{
-  margin-top: auto;
+.tsf-btn {
   position: relative;
   width: 100%;
   max-width: 260px;
   height: 44px;
-
   border: 0;
   padding: 0;
   cursor: pointer;
   user-select: none;
-  -webkit-tap-highlight-color: transparent;
-
   background: transparent;
-  transition: transform 160ms cubic-bezier(.16,1,.3,1), filter 160ms ease;
+  transition: transform 160ms cubic-bezier(.16, 1, .3, 1), filter 160ms ease;
 }
 
-.tsf-btn:hover{
+.tsf-btn:hover {
   transform: translateY(-2px);
   filter: brightness(1.04);
 }
 
-.tsf-btn:active{
-  transform: translateY(0px);
+.tsf-btn:active {
+  transform: translateY(0);
   filter: brightness(0.98);
 }
 
-.tsf-btnFace{
-  position:absolute;
-  inset:0;
+.tsf-btnFace {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
   border: 1px solid rgba(10, 30, 12, 0.55);
-  border-radius: 0;
-
-  display:grid;
-  place-items:center;
-
-  background: linear-gradient(180deg, rgba(120,186,86,0.96), rgba(46,128,66,0.92));
-  box-shadow:
-    0 16px 44px rgba(0,0,0,0.22),
-    inset 0 1px 0 rgba(255,255,255,0.22);
-
+  background: linear-gradient(180deg, rgba(120, 186, 86, 0.96), rgba(46, 128, 66, 0.92));
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.22);
   clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
-  overflow:hidden;
 }
 
-.tsf-btnFace::after{
-  content:"";
-  position:absolute;
-  inset:0;
-  pointer-events:none;
-  opacity: 0.10;
-  background: repeating-linear-gradient(135deg, rgba(0,0,0,0.22) 0 1px, transparent 1px 4px);
-  mix-blend-mode: overlay;
+.tsf-btnDepth {
+  display: none;
 }
 
-.tsf-btnDepth{ display:none; }
-
-.tsf-btnLabel{
+.tsf-btnLabel {
   font-family: var(--mc-font);
   font-weight: 950;
-  letter-spacing:0.04em;
   font-size: 0.92rem;
-  line-height:1;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: rgba(248,250,255,0.98);
-  text-shadow: 0 16px 40px rgba(0,0,0,0.45);
+  color: rgba(248, 250, 255, 0.98);
+  text-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
 }
 
-.tsf-btn:disabled{
+.tsf-btn:disabled {
   cursor: not-allowed;
   transform: none;
   filter: none;
   opacity: 0.68;
 }
 
-/* Claimable: pulso + shine sutil */
-@keyframes claimBtnPulse{
-  0%,100%{ transform: translateY(0) scale(1); filter: brightness(1) saturate(1); }
-  50%{ transform: translateY(-1px) scale(1.02); filter: brightness(1.05) saturate(1.05); }
-}
-@keyframes claimBtnShine{
-  0%{ transform: translateX(-140%) skewX(-18deg); opacity: 0; }
-  20%{ opacity: 0.45; }
-  55%{ opacity: 0.18; }
-  100%{ transform: translateX(140%) skewX(-18deg); opacity: 0; }
+.logro-row.logro-claimable .tsf-btnFace {
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.22), 0 0 0 1px rgba(120, 186, 86, 0.2), 0 0 20px rgba(120, 186, 86, 0.16);
 }
 
-.logro-row.logro-claimable .tsf-btn{
-  animation: claimBtnPulse 1.1s ease-in-out infinite;
-}
-.logro-row.logro-claimable .tsf-btnFace::before{
-  content:"";
-  position:absolute;
-  inset:0;
-  width: 42%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.60) 45%, transparent 85%);
-  transform: translateX(-140%) skewX(-18deg);
-  opacity: 0;
-  pointer-events:none;
-  animation: claimBtnShine 1.7s ease-in-out infinite;
+.logros-loading-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  background: radial-gradient(circle at center, rgba(0, 0, 0, 0.22), transparent 60%);
+  z-index: 3;
 }
 
-/* =========================================================
-   RECLAMADO (verde suave)
-   ========================================================= */
-
-.logro-row.logro-reclamado{
-  background: rgba(120,186,86,0.10);
-  border-color: rgba(120,186,86,0.18);
-}
-
-/* =========================================================
-   FRANJA DEL REINO (overlay sutil)
-   ========================================================= */
-
-.logro-reino-glow{
-  position:absolute;
-  inset:0;
-  mix-blend-mode: screen;
-  opacity: 0.40;
-  pointer-events:none;
-  background:
-    radial-gradient(circle at 40% 30%, rgba(100,190,255,0.12), transparent 60%),
-    radial-gradient(circle at 60% 70%, rgba(120,186,86,0.10), transparent 62%);
-}
-
-.logro-reino-img{
-  position: relative;
-  width: 150px;
-  height: 150px;
-  rotate: 15deg;
-  object-fit: contain;
-  filter: drop-shadow(0 0 14px rgba(0,0,0,0.85));
-  transform: translateY(0) scale(0.98);
-  transition: transform 180ms ease, filter 180ms ease, opacity 180ms ease;
-  opacity: 0.88;
-}
-
-.logro-row:hover .logro-reino-img,
-.logro-row.logro-completado .logro-reino-img{
-  transform: translateY(-1px) scale(1.03);
-  opacity: 1;
-  filter: drop-shadow(0 0 18px rgba(0,0,0,1));
-}
-
-/* =========================================================
-   CLAIMABLE (ring suave)
-   ========================================================= */
-
-@keyframes logroClaimRing{
-  0%,100%{
-    box-shadow: 0 18px 54px rgba(0,0,0,0.28);
-  }
-  50%{
-    box-shadow:
-      0 18px 54px rgba(0,0,0,0.28),
-      0 0 0 2px rgba(120,186,86,0.12),
-      0 0 18px rgba(120,186,86,0.10);
-  }
-}
-
-.logro-row.logro-claimable{
-  animation: logroClaimRing 2.8s ease-in-out infinite;
-}
-
-/* Accesibilidad */
-@media (prefers-reduced-motion: reduce){
-  .logro-row.logro-claimable,
-  .logro-row.logro-claimable .tsf-btn,
-  .reino-card.reino-card-claimable{
-    animation: none !important;
-  }
-  .logro-row.logro-claimable .tsf-btnFace::before{ animation: none !important; }
-}
-
-/* =========================================================
-   OVERLAY CARGA
-   ========================================================= */
-
-.logros-loading-overlay{
-  position:absolute;
-  inset:0;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  pointer-events:none;
-  background: radial-gradient(circle at center, rgba(0,0,0,0.22), transparent 60%);
-  z-index:3;
-}
-
-.logros-loading-inner{
-  display:flex;
+.logros-loading-inner {
+  display: flex;
   flex-direction: column;
-  align-items:center;
+  align-items: center;
   gap: 0.4rem;
 }
 
-.logros-loading-gem{
+.logros-loading-gem {
   width: 40px;
   height: 50px;
   animation: logrosSpinGem 1.1s linear infinite, logrosPulseGlow 1.4s ease-in-out infinite alternate;
-  filter: drop-shadow(0 0 14px rgba(100,190,255,0.55));
+  filter: drop-shadow(0 0 14px rgba(100, 190, 255, 0.55));
 }
 
-.logros-loading-text{
+.logros-loading-text {
   font-family: var(--mc-font);
   font-weight: 950;
   font-size: 0.78rem;
@@ -1106,192 +655,132 @@
   opacity: 0.86;
 }
 
-@keyframes logrosSpinGem{ from{ transform: rotate(0deg);} to{ transform: rotate(360deg);} }
-@keyframes logrosPulseGlow{
-  0%{ filter: drop-shadow(0 0 10px rgba(100,190,255,0.35)); }
-  100%{ filter: drop-shadow(0 0 18px rgba(120,186,86,0.40)); }
-}
+@keyframes logrosSpinGem { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes logrosPulseGlow { from { filter: drop-shadow(0 0 10px rgba(100, 190, 255, 0.35)); } to { filter: drop-shadow(0 0 18px rgba(120, 186, 86, 0.4)); } }
 
-/* =========================================================
-   COUNTDOWN
-   ========================================================= */
-
-.logros-countdown{
+.logros-countdown {
   margin-top: 0.8rem;
-  display:flex;
+  display: flex;
   flex-direction: column;
-  align-items:center;
+  align-items: center;
   gap: 0.4rem;
   position: relative;
   z-index: 1;
-
-  .countdown-label{
-    font-family: var(--mc-font);
-    font-weight: 950;
-    font-size: 0.8rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: rgba(238,242,255,0.82);
-  }
-
-  .countdown-digits{
-    display:inline-flex;
-    align-items:center;
-    gap: 0.4rem;
-    padding: 0.35rem 0.9rem;
-    border-radius: 0;
-
-    background: rgba(10, 13, 20, 0.55);
-    border: 1px solid rgba(255,255,255,0.10);
-
-    box-shadow:
-      0 18px 54px rgba(0,0,0,0.18),
-      inset 0 1px 0 rgba(255,255,255,0.08);
-
-    clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
-  }
-
-  .countdown-block{
-    display:flex;
-    flex-direction: column;
-    align-items:center;
-    min-width: 2.4rem;
-  }
-
-  .countdown-number{
-    font-family: var(--mc-font);
-    font-weight: 950;
-    font-size: 1.35rem;
-    line-height: 1;
-    color: rgba(100,190,255,0.92);
-    letter-spacing: 0.06em;
-    text-shadow: 0 0 16px rgba(100,190,255,0.18);
-  }
-
-  .countdown-unit{
-    font-family: var(--mc-font);
-    font-weight: 950;
-    font-size: 0.55rem;
-    text-transform: uppercase;
-    letter-spacing: 0.18em;
-    color: rgba(214,243,255,0.80);
-  }
-
-  .countdown-sep{
-    font-size: 1rem;
-    margin: 0 0.12rem;
-    color: rgba(227,255,255,0.70);
-    text-shadow: 0 0 12px rgba(100,190,255,0.18);
-  }
 }
 
-@media (max-width: 768px){
-  .logros-countdown{
-    .countdown-digits{ padding: 0.3rem 0.7rem; gap: 0.3rem; }
-    .countdown-number{ font-size: 1.15rem; }
-  }
+.logros-countdown .countdown-label {
+  font-family: var(--mc-font);
+  font-weight: 950;
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(238, 242, 255, 0.82);
 }
 
-/* =========================================================
-   PAGINACIÓN
-   ========================================================= */
+.logros-countdown .countdown-digits {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.9rem;
+  background: rgba(10, 13, 20, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 18px 54px rgba(0, 0, 0, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+}
 
-.logros-paginacion{
+.logros-countdown .countdown-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 2.4rem;
+}
+
+.logros-countdown .countdown-number {
+  font-family: var(--mc-font);
+  font-weight: 950;
+  font-size: 1.35rem;
+  line-height: 1;
+  color: rgba(100, 190, 255, 0.92);
+  letter-spacing: 0.06em;
+}
+
+.logros-countdown .countdown-unit {
+  font-family: var(--mc-font);
+  font-weight: 950;
+  font-size: 0.55rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: rgba(214, 243, 255, 0.8);
+}
+
+.logros-countdown .countdown-sep {
+  font-size: 1rem;
+  margin: 0 0.12rem;
+  color: rgba(227, 255, 255, 0.7);
+}
+
+.logros-paginacion {
   margin-top: 1.05rem;
   padding: 0.85rem 0.95rem;
-  border-radius: 0;
-  display:flex;
+  display: flex;
   flex-wrap: wrap;
-  align-items:center;
-  justify-content:center;
+  align-items: center;
+  justify-content: center;
   gap: 0.65rem 0.75rem;
-
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.10);
-  box-shadow: 0 18px 54px rgba(0,0,0,0.22);
-
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 18px 54px rgba(0, 0, 0, 0.22);
   clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
   position: relative;
   z-index: 1;
 }
 
-.logros-pag-btn{
-  height: 36px;
-  padding: 0 0.9rem;
-  border-radius: 0;
-  border: 1px solid rgba(255,255,255,0.12);
-  cursor:pointer;
-
+.logros-pag-btn,
+.logros-pag-num {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(10, 13, 20, 0.55);
+  color: rgba(238, 242, 255, 0.92);
   font-family: var(--mc-font);
   font-weight: 950;
-  font-size: 0.78rem;
-  letter-spacing: 0.06em;
   text-transform: uppercase;
-
-  color: rgba(248,250,255,0.98);
-  background: rgba(10, 13, 20, 0.55);
-
-  box-shadow:
-    0 18px 54px rgba(0,0,0,0.18),
-    inset 0 1px 0 rgba(255,255,255,0.08);
-
-  transition: transform 160ms cubic-bezier(.16,1,.3,1), filter 160ms ease;
-  user-select:none;
-
+  box-shadow: 0 18px 54px rgba(0, 0, 0, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.08);
   clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+  cursor: pointer;
+  transition: transform 160ms cubic-bezier(.16, 1, .3, 1), filter 160ms ease;
 }
 
-.logros-pag-btn:hover{ transform: translateY(-1px); filter: brightness(1.06); }
-.logros-pag-btn:active{ transform: translateY(1px); filter: brightness(0.98); }
+.logros-pag-btn {
+  height: 36px;
+  padding: 0 0.9rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+}
 
-.logros-pag-btn:disabled{
+.logros-pag-num {
+  width: 36px;
+  height: 36px;
+  font-size: 0.86rem;
+}
+
+.logros-pag-btn:hover,
+.logros-pag-num:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.06);
+}
+
+.logros-pag-num.activo {
+  background: linear-gradient(180deg, rgba(120, 186, 86, 0.96), rgba(46, 128, 66, 0.92));
+  color: rgba(248, 250, 255, 0.98);
+}
+
+.logros-pag-btn:disabled {
   opacity: 0.55;
   cursor: not-allowed;
   transform: none;
   filter: none;
 }
 
-.logros-pag-numeros{
-  display:flex;
-  align-items:center;
-  gap: 0.45rem;
-}
-
-.logros-pag-num{
-  width: 36px;
-  height: 36px;
-  border-radius: 0;
-  border: 1px solid rgba(255,255,255,0.10);
-  cursor:pointer;
-
-  font-family: var(--mc-font);
-  font-weight: 950;
-  font-size: 0.86rem;
-  letter-spacing: 0.04em;
-
-  color: rgba(238,242,255,0.92);
-  background: rgba(10, 13, 20, 0.55);
-
-  box-shadow:
-    0 18px 54px rgba(0,0,0,0.16),
-    inset 0 1px 0 rgba(255,255,255,0.08);
-
-  transition: transform 160ms cubic-bezier(.16,1,.3,1), filter 160ms ease;
-
-  clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
-}
-
-.logros-pag-num:hover{ transform: translateY(-1px); filter: brightness(1.08); }
-.logros-pag-num:active{ transform: translateY(1px); filter: brightness(0.98); }
-
-.logros-pag-num.activo{
-  color: rgba(248,250,255,0.98);
-  background: linear-gradient(180deg, rgba(120,186,86,0.96), rgba(46,128,66,0.92));
-  border-color: rgba(10,30,12,0.55);
-  text-shadow: 0 16px 40px rgba(0,0,0,0.45);
-}
-
-.logros-pag-info{
+.logros-pag-info {
   font-family: var(--mc-font);
   font-weight: 950;
   font-size: 0.72rem;
@@ -1299,73 +788,171 @@
   text-transform: uppercase;
   opacity: 0.86;
   white-space: nowrap;
-  color: rgba(238,242,255,0.82);
+  color: rgba(238, 242, 255, 0.82);
 }
 
-@media (max-width: 600px){
-  .logros-paginacion{ padding: 0.8rem 0.8rem; gap: 0.55rem 0.6rem; }
-  .logros-pag-btn{ flex: 1 1 140px; justify-content: center; }
-  .logros-pag-numeros{ width: 100%; justify-content: center; order: 3; }
-  .logros-pag-info{ width: 100%; text-align:center; order: 4; opacity: 0.85; }
+@media (max-width: 1024px) {
+  .logros-epic {
+    padding-inline: 1.4rem;
+  }
+
+  .logro-top {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .logro-side {
+    width: 100%;
+  }
 }
 
-@media (max-width: 380px){
-  .logros-pag-btn{ flex: 1 1 100%; }
-  .logros-pag-num{ width: 34px; height: 34px; font-size: 0.82rem; }
+@media (max-width: 680px) {
+  .logros-tabs-tipo {
+    width: 100%;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .logros-tab-tipo {
+    flex: 1 1 auto;
+    text-align: center;
+    padding-inline: 0.5rem;
+  }
+
+  .reino-card {
+    width: 96px;
+  }
+
+  .reino-img-wrap {
+    height: 70px;
+  }
+
+  .reino-img {
+    width: 64px;
+    height: 64px;
+  }
+
+  .logros-lista {
+    padding-inline: 0;
+  }
+
+  .logro-row {
+    padding: 0.95rem 0.9rem 1rem;
+  }
+
+  .logro-nombre {
+    font-size: 1rem;
+  }
+
+  .logro-objetivo-texto {
+    font-size: 0.86rem;
+  }
+
+  .tsf-btn {
+    max-width: 100%;
+  }
 }
 
-/* =========================================================
-   RESPONSIVE
-   ========================================================= */
+@media (prefers-reduced-motion: reduce) {
+  .logros-lista-entrante .logro-row,
+  .logros-lista-saliente .logro-row,
+  .logros-loading-gem {
+    animation: none !important;
+  }
 
-@media (max-width: 1024px){
-  .logros-epic{ padding-inline: 1.4rem; }
-  .logro-top{ flex-direction: column; align-items: flex-start; }
-  .logro-top-right{ flex-direction: row; align-items: center; gap: 0.6rem; }
+  .logro-row,
+  .logros-lista-entrante .logro-row,
+  .logros-lista-saliente .logro-row {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+.logros-dev-banner{
+  margin: 1rem auto 0;
+  width: min(980px, 100%);
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  padding: 0.95rem 1rem;
+  background:
+    linear-gradient(180deg, rgba(255, 184, 77, 0.14), rgba(255, 138, 61, 0.08)),
+    rgba(15, 10, 6, 0.78);
+  border: 1px solid rgba(255, 184, 77, 0.34);
+  box-shadow:
+    0 18px 42px rgba(0,0,0,0.22),
+    inset 0 1px 0 rgba(255,255,255,0.06);
+  clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
+  position: relative;
+  overflow: hidden;
+}
+
+.logros-dev-banner::before{
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 12% 20%, rgba(255, 214, 102, 0.14), transparent 42%),
+    linear-gradient(180deg, rgba(255,255,255,0.04), rgba(0,0,0,0.12));
+  opacity: 0.9;
+}
+
+.logros-dev-banner__icon{
+  position: relative;
+  z-index: 1;
+  flex: 0 0 40px;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  color: #ffcf70;
+  background: rgba(255, 185, 87, 0.12);
+  border: 1px solid rgba(255, 204, 112, 0.28);
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+}
+
+.logros-dev-banner__copy{
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+}
+
+.logros-dev-banner__eyebrow{
+  display: block;
+  margin-bottom: 0.22rem;
+  font-family: var(--mc-font);
+  font-size: 0.78rem;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #ffd892;
+}
+
+.logros-dev-banner__text{
+  margin: 0;
+  font-family: var(--mc-font);
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: rgba(255, 244, 223, 0.92);
 }
 
 @media (max-width: 680px){
-  .logros-tabs-tipo{ width: 100%; justify-content: center; flex-wrap: wrap; }
-  .logros-tab-tipo{ flex: 1 1 auto; text-align: center; padding-inline: 0.5rem; }
+  .logros-dev-banner{
+    padding: 0.9rem 0.85rem;
+    gap: 0.7rem;
+  }
 
-  .reino-card{ width: 96px; }
-  .reino-img-wrap{ height: 70px; }
-  .reino-img{ width: 64px; height: 64px; }
+  .logros-dev-banner__icon{
+    flex-basis: 36px;
+    width: 36px;
+    height: 36px;
+  }
 
-  .logros-lista{ padding-inline: 0; }
-  .logro-row{ padding-inline: 0.9rem 6.2rem; }
+  .logros-dev-banner__eyebrow{
+    font-size: 0.72rem;
+  }
 
-  .logro-top-right{ align-items: flex-start; flex-direction: column; }
-  .logro-reino-overlay{ width: 5.8rem; }
-  .logro-reino-img{ width: 50px; height: 50px; }
-
-  .tsf-btn{ width: 100%; max-width: 100%; }
-}
-
-/* =========================================================
-   FIX DEFINITIVO: nunca ocultar items por culpa de animaciones
-   ========================================================= */
-
-.logro-row{
-  opacity: 1 !important;
-  transform: translateY(0) !important;
-}
-
-.logros-lista-entrante .logro-row{
-  animation: logrosCascadeIn 0.45s ease-out both;
-  animation-delay: var(--delay, 0ms);
-}
-
-.logros-lista-saliente .logro-row{
-  animation: logrosCascadeOut 0.35s ease-in both;
-  animation-delay: var(--delay, 0ms);
-}
-
-@media (prefers-reduced-motion: reduce){
-  .logros-lista-entrante .logro-row,
-  .logros-lista-saliente .logro-row{
-    animation: none !important;
-    opacity: 1 !important;
-    transform: translateY(0) !important;
+  .logros-dev-banner__text{
+    font-size: 0.76rem;
   }
 }

@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import LoginModal from "../../Auth/LoginModal";
+import { UserContext } from "../../../context/UserContext";
+import { useAuthModal } from "../../../context/AuthModalContext";
+import { apiUrl } from "../../../lib/env";
+import { clearSessionStorage, getAuthToken } from "../../../lib/auth/storage";
 import "../../../styles/components/Tienda/daily-free-claim-card.scss";
 import "../../../styles/components/Tienda/daily-free-claim-burst.scss";
-
-const API = import.meta.env.VITE_API_URL || "https://flancraft-backend.onrender.com";
 
 function msToShort(ms) {
   const s = Math.max(0, Math.floor(ms / 1000));
@@ -80,10 +81,11 @@ export default function DailyFreeClaimCard() {
   const [claiming, setClaiming] = useState(false);
 
   const [modal, setModal] = useState(null);
-  const [showLogin, setShowLogin] = useState(false);
+  const { user, logout } = useContext(UserContext);
+  const { openAuthModal } = useAuthModal();
 
-  const [token, setToken] = useState(() => localStorage.getItem("token"));
-  const isLocked = !token;
+  const [token, setToken] = useState(() => getAuthToken());
+  const isLocked = !user?.loggedIn || !token;
 
   const emitBalances = (detail) => {
     try {
@@ -116,12 +118,13 @@ export default function DailyFreeClaimCard() {
     (async () => {
       try {
         setLoading(true);
-        const r = await fetch(`${API}/api/daily-claim/status`, {
+        const r = await fetch(apiUrl(`/api/daily-claim/status`), {
           headers: { Authorization: `Bearer ${token}` },
         });
 
         if (r.status === 401) {
-          localStorage.removeItem("token");
+          clearSessionStorage();
+          logout();
           if (!alive) return;
           setToken(null);
           setStatus({ claimedToday: false });
@@ -172,11 +175,8 @@ export default function DailyFreeClaimCard() {
     });
   };
 
-  const openAuthModal = () => {
-    setModal({
-      phase: "auth",
-      particlesKey: `${Date.now()}_${Math.random()}`,
-    });
+  const openClaimLogin = () => {
+    openAuthModal();
   };
 
   const nextStep = () => {
@@ -192,7 +192,7 @@ export default function DailyFreeClaimCard() {
   const handleClaim = async () => {
     setClaiming(true);
     try {
-      const res = await fetch(`${API}/api/daily-claim`, {
+      const res = await fetch(apiUrl(`/api/daily-claim`), {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       });
@@ -229,18 +229,6 @@ export default function DailyFreeClaimCard() {
   if (loading) return null;
 
   const isRewardFlow = !!(modal && !modal.error && modal.phase !== "auth");
-
-  const loginNode =
-    showLogin &&
-    createPortal(
-      <LoginModal
-        onClose={() => {
-          setShowLogin(false);
-          setToken(localStorage.getItem("token"));
-        }}
-      />,
-      document.body
-    );
 
   const modalNode =
     modal &&
@@ -294,7 +282,7 @@ export default function DailyFreeClaimCard() {
                         className="dailyClaimBtn dailyClaimBtn--primary"
                         onClick={() => {
                           setModal(null);
-                          setShowLogin(true);
+                          openClaimLogin();
                         }}
                       >
                         Iniciar sesión
@@ -411,7 +399,6 @@ export default function DailyFreeClaimCard() {
       </div>
 
       {modalNode}
-      {loginNode}
     </>
   );
 }

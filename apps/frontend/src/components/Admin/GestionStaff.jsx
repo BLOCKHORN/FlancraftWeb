@@ -1,11 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState, useContext } from "react";
 import { UserContext } from "../../context/UserContext";
+import { apiUrl } from "../../lib/env";
+import { getAuthToken } from "../../lib/auth/storage";
+import Seo from "../SEO/Seo";
 import "../../styles/components/Admin/_gestionstaff.scss";
-
-const API_BASE =
-  import.meta?.env?.VITE_BACKEND_URL ||
-  import.meta?.env?.VITE_API_URL ||
-  "https://flancraft-backend.onrender.com";
 
 /* =========================
    SVGs propios (sin libs)
@@ -86,6 +84,11 @@ const RANGO_ICONS = {
 export default function GestionStaff() {
   const { user } = useContext(UserContext);
 
+  const authHeaders = useMemo(() => {
+    const token = getAuthToken();
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  }, []);
+
   const [usuarios, setUsuarios] = useState([]);
   const [permisos, setPermisos] = useState([]);
 
@@ -131,8 +134,8 @@ export default function GestionStaff() {
 
     try {
       const [usuariosRes, permisosRes] = await Promise.all([
-        fetch(`${API_BASE}/api/usuarios`, { signal: controller.signal }),
-        fetch(`${API_BASE}/api/permisos-admin`, { signal: controller.signal }),
+        fetch(apiUrl(`/api/usuarios`), { signal: controller.signal, headers: authHeaders }),
+        fetch(apiUrl(`/api/permisos-admin`), { signal: controller.signal, headers: authHeaders }),
       ]);
 
       if (!usuariosRes.ok || !permisosRes.ok) {
@@ -209,15 +212,16 @@ export default function GestionStaff() {
       setBusy(uuid, { permiso: true });
 
       if (!nuevoRol) {
-        const res = await fetch(`${API_BASE}/api/permisos-admin/${uuid}`, {
+        const res = await fetch(apiUrl(`/api/permisos-admin/${uuid}`), {
           method: "DELETE",
+          headers: authHeaders,
         });
         if (!res.ok) throw new Error("No se pudo eliminar el permiso.");
         pushToast("Permiso eliminado", "success");
       } else {
-        const res = await fetch(`${API_BASE}/api/permisos-admin`, {
+        const res = await fetch(apiUrl(`/api/permisos-admin`), {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", ...authHeaders },
           body: JSON.stringify({ uuid, rol: nuevoRol }),
         });
         if (!res.ok) throw new Error("No se pudo asignar el permiso.");
@@ -236,9 +240,9 @@ export default function GestionStaff() {
     try {
       setBusy(uuid, { rango: true });
 
-      const res = await fetch(`${API_BASE}/api/usuarios/rango`, {
+      const res = await fetch(apiUrl(`/api/usuarios/rango`), {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...authHeaders },
         body: JSON.stringify({ uuid, rango_usuario: nuevoRango || null }),
       });
 
@@ -259,9 +263,9 @@ export default function GestionStaff() {
 
       setBusy(uuid, { premium: true });
 
-      const res = await fetch(`${API_BASE}/api/usuarios/premium`, {
+      const res = await fetch(apiUrl(`/api/usuarios/premium`), {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...authHeaders },
         body: JSON.stringify({ uuid, es_premium: nuevoEstado }),
       });
 
@@ -297,7 +301,9 @@ export default function GestionStaff() {
   const filtrados = usuariosFiltrados?.length || 0;
 
   return (
-    <div className="staffwrap">
+    <>
+      <Seo title="Panel interno | FlanCraft" noindex />
+      <div className="staffwrap">
       <section className="staffwrap__panel">
         <div className="staffwrap__header">
           <div className="staffwrap__titlebox">
@@ -537,5 +543,6 @@ export default function GestionStaff() {
         ))}
       </div>
     </div>
+    </>
   );
 }

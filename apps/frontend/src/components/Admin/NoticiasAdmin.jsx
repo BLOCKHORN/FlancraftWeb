@@ -10,10 +10,9 @@ import Iframe from "../../config/Iframe";
 import toast from "react-hot-toast";
 import "../../styles/components/Admin/_noticiasadmin.scss";
 import { UserContext } from "../../context/UserContext";
-
-const API_BASE = (import.meta.env.VITE_BACKEND_URL || "https://flancraft-backend.onrender.com")
-  .trim()
-  .replace(/\/$/, "");
+import { apiUrl } from "../../lib/env";
+import { getAuthToken } from "../../lib/auth/storage";
+import Seo from "../SEO/Seo";
 
 const DEFAULT_EDITOR_COLOR = "rgba(245, 248, 255, 0.92)";
 
@@ -28,20 +27,6 @@ const CATEGORIA_LABELS = CATEGORIAS.reduce((acc, item) => {
   acc[item.id] = item.label;
   return acc;
 }, {});
-
-const safeJsonParse = (v) => {
-  try {
-    return JSON.parse(v);
-  } catch {
-    return null;
-  }
-};
-
-const getToken = () => {
-  const stored = localStorage.getItem("flan_user");
-  const parsed = stored ? safeJsonParse(stored) : null;
-  return parsed?.token || null;
-};
 
 const slugify = (value) => {
   const s = String(value || "")
@@ -517,13 +502,13 @@ const NoticiasAdmin = () => {
   }, [form.portada]);
 
   const request = useCallback(async (path, options = {}) => {
-    const token = getToken();
+    const token = getAuthToken();
     const headers = {
       ...(options.headers || {}),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     };
 
-    const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
+    const res = await fetch(apiUrl(path), { ...options, headers });
     return res;
   }, []);
 
@@ -787,7 +772,9 @@ const NoticiasAdmin = () => {
   }
 
   return (
-    <div className="noticias-admin-page">
+    <>
+      <Seo title="Panel interno | FlanCraft" noindex />
+      <div className="noticias-admin-page">
       <section className="na-hero" style={heroStyle}>
         <div className="na-hero__wrap">
           <div className="na-hero__top">
@@ -1172,6 +1159,7 @@ const NoticiasAdmin = () => {
         </section>
       </main>
     </div>
+    </>
   );
 };
 

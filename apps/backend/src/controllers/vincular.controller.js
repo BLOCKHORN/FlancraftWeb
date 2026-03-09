@@ -286,3 +286,33 @@ exports.loginUsuario = async (req, res) => {
     return res.status(500).json({ error: "Error interno al iniciar sesión." });
   }
 };
+exports.obtenerSesionActual = async (req, res) => {
+  const uuid = req.usuario?.uuid;
+  if (!uuid) {
+    return res.status(401).json({ error: "Sesión inválida." });
+  }
+
+  try {
+    const { data: usuario, error: userError } = await db
+      .from("usuarios")
+      .select("uuid, uid, xp_actual, nivel, rango_usuario, wallet_coins")
+      .eq("uuid", uuid)
+      .maybeSingle();
+
+    if (userError) throw userError;
+    if (!usuario) return res.status(404).json({ error: "Usuario no encontrado." });
+
+    return res.status(200).json({
+      uuid: usuario.uuid,
+      username: usuario.uid,
+      rol_admin: req.usuario?.rol_admin || null,
+      rango_usuario: usuario.rango_usuario || null,
+      nivel: usuario.nivel || 1,
+      xp_actual: usuario.xp_actual || 0,
+      wallet_coins: usuario.wallet_coins || 0,
+    });
+  } catch (err) {
+    console.error("[SESION ACTUAL ERROR]", err);
+    return res.status(500).json({ error: "Error al obtener la sesión actual." });
+  }
+};

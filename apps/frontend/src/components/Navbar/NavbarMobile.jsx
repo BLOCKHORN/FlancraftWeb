@@ -1,13 +1,8 @@
 import { NavLink, useLocation } from "react-router-dom";
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import LogoutButton from "../Auth/LogoutButton";
-import LoginModal from "../Auth/LoginModal";
-
-const API_BASE = (import.meta.env.VITE_BACKEND_URL || "https://flancraft-backend.onrender.com")
-  .trim()
-  .replace(/\/$/, "");
-
-const apiUrl = (path) => (API_BASE ? `${API_BASE}${path}` : path);
+import { useAuthModal } from "../../context/AuthModalContext";
+import { apiUrl } from "../../lib/env";
 
 const toInt = (v) => {
   const n = Number(v);
@@ -64,7 +59,7 @@ const NavbarMobile = ({
   const profileButtonRef = useRef(null);
   const location = useLocation();
   const isHome = location.pathname === "/";
-  const [loginModalOpen, setLoginModalOpen] = useState(false);
+  const { openAuthModal } = useAuthModal();
 
   const [rangoDatos, setRangoDatos] = useState(null);
   const [xpNavbar, setXpNavbar] = useState({ level: null, actual: 0, requerida: 1 });
@@ -115,7 +110,6 @@ const NavbarMobile = ({
       if (e.key !== "Escape") return;
       if (profileOpen) setProfileOpen(false);
       if (menuOpen) setMenuOpen(false);
-      if (loginModalOpen) setLoginModalOpen(false);
     };
 
     document.addEventListener("pointerdown", onPointerDown, { passive: true });
@@ -125,7 +119,7 @@ const NavbarMobile = ({
       document.removeEventListener("pointerdown", onPointerDown);
       document.removeEventListener("keydown", onKeyDown);
     };
-  }, [profileOpen, menuOpen, loginModalOpen, setProfileOpen, setMenuOpen]);
+  }, [profileOpen, menuOpen, setProfileOpen, setMenuOpen]);
 
   useEffect(() => {
     const fetchDatosUsuarioMobile = async () => {
@@ -279,7 +273,7 @@ const NavbarMobile = ({
         </div>
 
         {!isLoggedIn ? (
-          <button className="profile-button full" onClick={() => setLoginModalOpen(true)} type="button">
+          <button className="profile-button full" onClick={() => openAuthModal()} type="button">
             <span className="profile-greeting">Iniciar sesión</span>
           </button>
         ) : isUserLoading ? (
@@ -491,7 +485,7 @@ const NavbarMobile = ({
         </div>
       </div>
 
-      {loginModalOpen && <LoginModal onClose={() => setLoginModalOpen(false)} />}
+      
     </>
   );
 };

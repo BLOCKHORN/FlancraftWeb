@@ -1,644 +1,618 @@
-@use "../../base/_variables" as *;
-
-/* ==========================================================================
-   RITUAL (serio + coherente con la sección inferior)
-   - Título: IM Fell English SC
-   - Texto: legible (mantiene look pro)
-   - Bordes: max 3px
-   - Color/estilo: se mantiene (teal/blue sobrio)
-   ========================================================================== */
-
-.ritual-eko {
+.flancraft-chronicles {
+  --panel-color: #7fd9ff;
   position: relative;
-  isolation: isolate;
+  min-height: 100svh;
+  padding: clamp(22px, 3vw, 42px);
+  background: #070b12;
+  color: #fff;
   overflow: hidden;
-
-  min-height: calc(100svh - 80px);
-  min-height: calc(100vh - 80px);
-
-  padding:
-    calc(clamp(2.2rem, 5.2vh, 4.2rem) + env(safe-area-inset-top))
-    clamp(1.1rem, 3.2vw, 3.6rem)
-    calc(clamp(2.0rem, 4.8vh, 4.0rem) + env(safe-area-inset-bottom));
-
   display: flex;
   align-items: center;
   justify-content: center;
-
-  --r: 3px;
-
-  /* Fuente */
-  --ritual-font-title: "IM Fell English SC", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --ritual-font-body: var(--tsf-font-body, system-ui, -apple-system, "Segoe UI", sans-serif);
-  --ritual-font-cta: var(--tsf-font-display, "IM Fell English SC", system-ui);
-
-  /* Paleta */
-  --accent: #7fd9ff;
-  --ink: rgba(240, 252, 255, 0.92);
-  --ink-dim: rgba(240, 252, 255, 0.76);
-
-  --panelA: rgba(8, 18, 28, 0.92);
-  --panelB: rgba(4, 10, 18, 0.94);
-  --panelC: rgba(6, 20, 30, 0.96);
-
-  --line2: rgba(255, 255, 255, 0.06);
-  --shadow: rgba(0, 0, 0, 0.85);
-  --glow: rgba(0, 220, 255, 0.18);
-
-  color: var(--ink);
-  font-family: var(--ritual-font-body);
+  font-family: "Bitter", serif;
+  isolation: isolate;
 }
 
-/* Fondo */
-.ritual-bg-layer {
+.chronicle-scene-bg {
+  position: absolute;
+  inset: -4%;
+  z-index: 0;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  filter: blur(18px) saturate(0.9) brightness(0.38);
+  transform: scale(1.06);
+}
+
+.chronicle-bg-effects {
   position: absolute;
   inset: 0;
-  overflow: hidden;
+  z-index: 1;
   pointer-events: none;
-  z-index: 0;
 
-  .ritual-video-bg,
-  .ritual-image-bg {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    background-size: cover;
-    background-position: center;
-    filter: saturate(1.02) contrast(1.03);
-    transform: scale(1.02);
-  }
-
-  .ritual-bg-vignette {
+  .scene-dim {
     position: absolute;
     inset: 0;
     background:
-      radial-gradient(circle at 15% 15%, rgba(0, 225, 255, 0.16), transparent 50%),
-      radial-gradient(circle at 80% 85%, rgba(0, 0, 0, 0.86), transparent 58%),
-      linear-gradient(to bottom, rgba(2, 8, 14, 0.90), rgba(2, 8, 14, 0.76), rgba(2, 8, 14, 0.92));
+      linear-gradient(
+        180deg,
+        rgba(6, 10, 18, 0.3) 0%,
+        rgba(7, 10, 16, 0.46) 32%,
+        rgba(5, 7, 12, 0.76) 100%
+      );
+  }
+
+  .scene-vignette {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(circle at center, rgba(0, 0, 0, 0) 28%, rgba(0, 0, 0, 0.46) 76%, rgba(0, 0, 0, 0.78) 100%);
+  }
+
+  .scene-top-glow {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(circle at 50% 8%, rgba(255, 255, 255, 0.08), transparent 34%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent 24%);
+    mix-blend-mode: screen;
+  }
+
+  .floating-glow {
+    position: absolute;
+    width: clamp(280px, 42vw, 680px);
+    height: clamp(280px, 42vw, 680px);
+    top: 50%;
+    left: 50%;
+    translate: -50% -50%;
+    border-radius: 50%;
+    filter: blur(140px);
+    opacity: 0.12;
   }
 }
 
-/* Tarjeta */
-.ritual-card {
+.chronicle-container {
   position: relative;
-  z-index: 1;
+  z-index: 2;
+  width: min(100%, 1280px);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(20px, 2.4vw, 34px);
+}
 
+.chronicle-header {
+  text-align: center;
+  max-width: 920px;
+  margin: 0 auto;
+
+  .chapter-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.45rem 0.85rem;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(12px);
+    text-transform: uppercase;
+    letter-spacing: 0.22em;
+    font-size: 0.76rem;
+    font-weight: 800;
+    color: var(--panel-color);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+  }
+
+  .main-title {
+    margin: 0.9rem 0 0.55rem;
+    font-family: "IM Fell English SC", serif;
+    font-size: clamp(2.2rem, 5vw, 4.35rem);
+    line-height: 0.96;
+    letter-spacing: 0.02em;
+    text-shadow: 0 8px 26px rgba(0, 0, 0, 0.42);
+  }
+
+  .main-subtitle {
+    margin: 0 auto;
+    max-width: 780px;
+    color: rgba(255, 255, 255, 0.82);
+    font-size: clamp(0.98rem, 1.5vw, 1.08rem);
+    line-height: 1.7;
+    text-wrap: balance;
+  }
+}
+
+.chronicle-stage {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: clamp(10px, 1.8vw, 22px);
+}
+
+.stage-center {
+  min-width: 0;
+}
+
+.comic-panel-wrapper {
   width: 100%;
-  max-width: 1120px;
-  border-radius: var(--r);
+  max-width: 980px;
+  margin: 0 auto;
+  filter: drop-shadow(0 28px 60px rgba(0, 0, 0, 0.45));
+}
 
-  padding: clamp(1.7rem, 3.6vh, 2.4rem) clamp(1.4rem, 2.8vw, 2.4rem);
-
-  background:
-    radial-gradient(circle at 18% 12%, rgba(255, 255, 255, 0.06), transparent 56%),
-    linear-gradient(135deg, var(--panelA), var(--panelB), var(--panelC));
-
-  border: 2px solid rgba(0, 0, 0, 0.55);
-
-  box-shadow:
-    0 18px 60px var(--shadow),
-    0 0 0 1px var(--line2),
-    0 0 42px var(--glow);
-
+.comic-frame {
+  position: relative;
+  aspect-ratio: 16 / 9;
   overflow: hidden;
+  border-radius: 26px;
+  background: #050505;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.02),
+    0 28px 70px rgba(0, 0, 0, 0.58),
+    0 0 0 5px rgba(5, 7, 12, 0.42);
 
   &::before {
     content: "";
     position: absolute;
-    inset: 2px;
-    border-radius: calc(var(--r) - 1px);
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    inset: 0;
+    z-index: 1;
     pointer-events: none;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.02) 0%, transparent 18%),
+      linear-gradient(180deg, rgba(7, 10, 16, 0.04) 0%, rgba(7, 10, 16, 0.26) 46%, rgba(7, 10, 16, 0.88) 100%);
   }
 
   &::after {
     content: "";
     position: absolute;
     inset: 0;
+    z-index: 1;
     pointer-events: none;
-    background: linear-gradient(to bottom, rgba(255, 255, 255, 0.06), transparent 35%);
-    opacity: 0.75;
-  }
-
-  &--unlocked {
     box-shadow:
-      0 22px 70px rgba(0, 0, 0, 0.92),
-      0 0 0 1px rgba(255, 255, 255, 0.10),
-      0 0 56px rgba(0, 230, 255, 0.25);
+      inset 0 0 0 1px rgba(255, 255, 255, 0.06),
+      inset 0 0 34px rgba(0, 0, 0, 0.12),
+      0 0 0 1px rgba(255, 255, 255, 0.04);
   }
 }
 
-/* Flechas */
-.ritual-arrow {
+.panel-media-stack {
   position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  background: #050505;
+}
+
+.panel-media {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.panel-media-image {
+  z-index: 0;
+  transform: scale(1);
+  transition:
+    transform 0.7s ease,
+    filter 0.35s ease,
+    opacity 0.22s ease;
+}
+
+.panel-media-stack:hover .panel-media-image {
+  transform: scale(1.015);
+}
+
+.panel-media-video {
+  z-index: 2;
+  opacity: 0;
+  transition: opacity 0.24s ease;
+  pointer-events: none;
+}
+
+.panel-media-video.visible {
+  opacity: 1;
+}
+
+.panel-play-trigger {
+  position: absolute;
+  left: 50%;
   top: 50%;
-  transform: translateY(-50%);
-
-  width: 44px;
-  height: 44px;
-  display: grid;
-  place-items: center;
-
+  z-index: 4;
+  width: 88px;
+  height: 88px;
+  padding: 0;
   border: 0;
   background: transparent;
-  padding: 0;
+  color: #fff;
+  transform: translate(-50%, -50%);
+  display: grid;
+  place-items: center;
   cursor: pointer;
+  transition:
+    transform 0.24s ease,
+    opacity 0.22s ease,
+    filter 0.22s ease;
 
-  font-size: 2.1rem;
-  color: rgba(240, 252, 255, 0.92);
+  &:hover {
+    transform: translate(-50%, -50%) scale(1.05);
+    filter: drop-shadow(0 0 20px color-mix(in srgb, var(--panel-color) 34%, transparent));
+  }
 
-  text-shadow:
-    0 0 10px rgba(0, 230, 255, 0.25),
-    0 0 16px rgba(0, 230, 255, 0.14);
+  &:active {
+    transform: translate(-50%, -50%) scale(0.98);
+  }
+}
 
-  transition: transform 0.14s ease-out, opacity 0.14s ease-out, text-shadow 0.14s ease-out;
+.panel-play-trigger-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: rgba(8, 12, 18, 0.34);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.04),
+    0 14px 34px rgba(0, 0, 0, 0.32),
+    0 0 28px color-mix(in srgb, var(--panel-color) 20%, transparent);
+}
+
+.panel-play-trigger-core {
+  position: relative;
+  z-index: 1;
+  width: 58px;
+  height: 58px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.08) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 10px 22px rgba(0, 0, 0, 0.24);
+
+  svg {
+    font-size: 1.45rem;
+    transform: translateX(2px);
+  }
+}
+
+.panel-loading-state {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(180deg, rgba(6, 10, 16, 0.06), rgba(6, 10, 16, 0.18));
+  pointer-events: none;
+}
+
+.panel-loading-spinner {
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  border: 3px solid rgba(255, 255, 255, 0.24);
+  border-top-color: var(--panel-color);
+  animation: ritual-spin 0.85s linear infinite;
+  box-shadow: 0 0 18px color-mix(in srgb, var(--panel-color) 28%, transparent);
+}
+
+@keyframes ritual-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.frame-shade {
+  position: absolute;
+  inset: 0;
   z-index: 2;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 78% 16%, rgba(255, 255, 255, 0.07), transparent 24%),
+    linear-gradient(180deg, rgba(8, 11, 17, 0.03) 0%, rgba(8, 11, 17, 0.1) 34%, rgba(8, 11, 17, 0.78) 100%);
+}
 
-  &--left { left: 0.8rem; }
-  &--right { right: 0.8rem; }
+.narrative-box {
+  position: absolute;
+  left: clamp(16px, 2vw, 26px);
+  right: auto;
+  bottom: clamp(16px, 2vw, 26px);
+  z-index: 3;
+  width: min(430px, calc(100% - 32px));
+  padding: clamp(18px, 2vw, 26px);
+  border-radius: 22px;
+  background: rgba(246, 244, 238, 0.96);
+  backdrop-filter: blur(12px);
+  color: #111;
+  box-shadow:
+    0 16px 40px rgba(0, 0, 0, 0.22),
+    0 0 0 1px rgba(0, 0, 0, 0.08);
+  transition:
+    opacity 0.22s ease,
+    transform 0.28s ease,
+    filter 0.28s ease;
+
+  &.is-hidden {
+    opacity: 0;
+    transform: translateY(18px);
+    filter: blur(8px);
+    pointer-events: none;
+  }
+}
+
+.narrative-accent {
+  display: block;
+  width: 58px;
+  height: 6px;
+  border-radius: 999px;
+  margin-bottom: 14px;
+  box-shadow: 0 0 18px rgba(0, 0, 0, 0.08);
+}
+
+.panel-title {
+  margin: 0 0 0.85rem;
+  font-family: "IM Fell English SC", serif;
+  font-size: clamp(1.48rem, 2vw, 1.9rem);
+  line-height: 1.02;
+  color: #0b1019;
+  text-wrap: balance;
+}
+
+.panel-text {
+  font-size: clamp(0.95rem, 1.25vw, 1rem);
+  line-height: 1.68;
+  color: rgba(16, 18, 24, 0.9);
+
+  p {
+    margin: 0;
+  }
+
+  p + p {
+    margin-top: 0.8rem;
+  }
+}
+
+.nav-btn {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-size: 1.6rem;
+  cursor: pointer;
+  backdrop-filter: blur(16px);
+  transition:
+    transform 0.22s ease,
+    background 0.22s ease,
+    border-color 0.22s ease,
+    box-shadow 0.22s ease,
+    opacity 0.22s ease;
+  box-shadow:
+    0 14px 28px rgba(0, 0, 0, 0.2),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.04);
 
   &:hover:not(:disabled) {
-    transform: translateY(-50%) scale(1.06);
-    text-shadow:
-      0 0 14px rgba(0, 255, 255, 0.40),
-      0 0 22px rgba(0, 255, 255, 0.20);
+    transform: translateY(-2px) scale(1.06);
+    background: color-mix(in srgb, var(--panel-color) 34%, rgba(255, 255, 255, 0.08));
+    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow:
+      0 18px 36px rgba(0, 0, 0, 0.24),
+      0 0 24px color-mix(in srgb, var(--panel-color) 36%, transparent);
   }
 
   &:disabled {
-    opacity: 0.18;
-    cursor: default;
-    text-shadow: 0 0 6px rgba(0, 0, 0, 0.75);
-  }
-
-  &:focus-visible {
-    outline: 2px solid rgba(255, 255, 255, 0.45);
-    outline-offset: 3px;
-    border-radius: var(--r);
-  }
-}
-
-/* Cabecera */
-.ritual-card-header {
-  text-align: center;
-  margin-bottom: 1.55rem;
-  position: relative;
-}
-
-.ritual-card-crest {
-  width: 120px;
-  height: 8px;
-  margin: 0 auto 0.75rem;
-  border-radius: var(--r);
-  background: linear-gradient(
-    90deg,
-    rgba(0, 230, 255, 0),
-    rgba(0, 230, 255, 0.28),
-    rgba(0, 230, 255, 0)
-  );
-  box-shadow: 0 0 18px rgba(0, 255, 255, 0.22);
-  opacity: 0.9;
-}
-
-/* TÍTULO: vuelve a IM Fell (coherencia con la sección de abajo) */
-.ritual-title {
-  font-family: var(--ritual-font-title);
-  font-size: clamp(2.05rem, 3.3vw, 2.9rem);
-  letter-spacing: 0.10em;
-  text-transform: uppercase;
-  color: var(--accent);
-
-  text-shadow:
-    0 2px 0 rgba(0, 0, 0, 0.65),
-    0 0 18px rgba(0, 230, 255, 0.14);
-
-  margin-bottom: 0.35rem;
-}
-
-.ritual-subrow {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.ritual-subtitle {
-  font-family: var(--ritual-font-body);
-  font-size: 0.95rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: rgba(240, 252, 255, 0.78);
-}
-
-/* Cuerpo */
-.ritual-body {
-  display: flex;
-  flex-direction: column;
-  gap: 1.35rem;
-}
-
-.ritual-description {
-  max-width: 760px;
-  margin: 0 auto;
-  text-align: center;
-
-  font-family: var(--ritual-font-body);
-  font-size: 0.98rem;
-  line-height: 1.7;
-
-  color: var(--ink-dim);
-  text-wrap: pretty;
-
-  p + p { margin-top: 0.55rem; }
-}
-
-/* Miniaturas */
-.ritual-thumbs-row {
-  display: flex;
-  justify-content: center;
-}
-
-.ritual-thumbs-track {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-
-  padding: 0.45rem 0.55rem;
-
-  border-radius: var(--r);
-  border: 2px solid rgba(0, 0, 0, 0.55);
-
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(0, 0, 0, 0.55));
-
-  box-shadow:
-    0 16px 30px rgba(0, 0, 0, 0.65),
-    0 0 0 1px rgba(255, 255, 255, 0.06);
-
-  overflow-x: auto;
-  overflow-y: hidden;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-
-  scroll-snap-type: x mandatory;
-  scroll-padding: 14px;
-
-  &::-webkit-scrollbar { display: none; }
-}
-
-.carousel-thumb-wrapper {
-  flex: 0 0 auto;
-  position: relative;
-
-  width: 50px;
-  height: 50px;
-
-  border-radius: var(--r);
-  border: 2px solid rgba(0, 0, 0, 0.55);
-  padding: 2px;
-
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.10), rgba(0, 0, 0, 0.85));
-  box-shadow: 0 0 12px rgba(0, 0, 0, 0.75);
-
-  overflow: hidden;
-  cursor: pointer;
-
-  scroll-snap-align: center;
-
-  transition: transform 0.14s ease-out, opacity 0.14s ease-out, box-shadow 0.14s ease-out, border-color 0.14s ease-out;
-
-  &.center {
-    transform: translateY(-4px) scale(1.08);
-    border-color: rgba(255, 255, 255, 0.40);
-    box-shadow:
-      0 0 18px rgba(0, 0, 0, 0.85),
-      0 0 24px rgba(0, 230, 255, 0.18);
-    animation: ritual-thumb-float 2.6s ease-in-out infinite;
-  }
-
-  &.left,
-  &.right { opacity: 0.85; }
-
-  &.hidden {
     opacity: 0.28;
-    transform: scale(0.94);
-  }
-
-  &:hover {
-    transform: translateY(-3px) scale(1.05);
-    box-shadow:
-      0 0 18px rgba(0, 0, 0, 0.85),
-      0 0 22px rgba(0, 230, 255, 0.16);
-  }
-
-  &:focus-visible {
-    outline: 2px solid rgba(255, 255, 255, 0.45);
-    outline-offset: 3px;
-  }
-
-  img.carousel-item {
-    width: 100%;
-    height: 100%;
-    border-radius: calc(var(--r) - 1px);
-    object-fit: cover;
+    cursor: not-allowed;
   }
 }
 
-/* Progreso + CTA */
-.ritual-footer {
+.chronicle-footer {
   display: flex;
   flex-direction: column;
-  gap: 1.1rem;
-  margin-top: 0.2rem;
+  align-items: center;
+  gap: 1.4rem;
 }
 
-.ritual-progress {
+.timeline-stepper {
   display: flex;
-  flex-direction: column;
-  gap: 0.45rem;
-  align-items: stretch;
-  --progress: 0%;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
-.ritual-progress-label {
-  font-family: var(--ritual-font-body);
-  font-size: 0.78rem;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  opacity: 0.78;
-  text-align: center;
-}
-
-.ritual-progress-track {
-  position: relative;
-  height: 10px;
-  border-radius: var(--r);
-
-  border: 2px solid rgba(0, 0, 0, 0.55);
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0.55), rgba(255, 255, 255, 0.05));
-
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
-  overflow: hidden;
-}
-
-.ritual-progress-fill {
-  position: absolute;
-  inset: 0;
-  width: var(--progress);
-
-  background: linear-gradient(
-    90deg,
-    rgba(0, 230, 255, 0.16),
-    rgba(0, 230, 255, 0.55),
-    rgba(255, 255, 255, 0.80),
-    rgba(0, 230, 255, 0.55),
-    rgba(0, 230, 255, 0.16)
-  );
-
-  box-shadow: 0 0 18px rgba(0, 255, 242, 0.22);
-  transition: width 0.45s ease-out;
-  will-change: width;
-}
-
-.ritual-progress-gem {
-  position: absolute;
-  top: 50%;
-  left: clamp(2%, var(--progress), 98%);
-  transform: translate(-50%, -50%) rotate(45deg);
-
+.step-dot {
   width: 14px;
   height: 14px;
-  border-radius: var(--r);
-
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(0, 230, 255, 0.55));
-  border: 2px solid rgba(0, 0, 0, 0.75);
-  box-shadow: 0 0 18px rgba(0, 255, 255, 0.28);
-
-  transition: left 0.45s ease-out;
-  will-change: left;
-}
-
-/* CTA */
-.ritual-cta-wrapper {
-  display: flex;
-  justify-content: center;
-}
-
-.ritual-cta {
-  position: relative;
-  width: min(520px, 100%);
-  padding: 0.88rem 2rem;
-
-  border-radius: var(--r);
-  border: 2px solid rgba(0, 0, 0, 0.60);
-
-  font-family: var(--ritual-font-cta);
-  font-size: 1.0rem;
-  letter-spacing: 0.10em;
-  text-transform: uppercase;
-
-  color: rgba(240, 252, 255, 0.92);
-
-  background: linear-gradient(180deg, rgba(28, 120, 142, 0.92), rgba(10, 54, 70, 0.95));
-
-  box-shadow:
-    0 14px 30px rgba(0, 0, 0, 0.75),
-    0 0 0 1px rgba(255, 255, 255, 0.06);
-
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
   cursor: pointer;
-  overflow: hidden;
+  transition:
+    transform 0.2s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease,
+    opacity 0.2s ease;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
 
-  transition: transform 0.14s ease-out, box-shadow 0.14s ease-out, opacity 0.14s ease-out, filter 0.14s ease-out;
-
-  &::after {
-    content: "";
-    position: absolute;
-    top: -140%;
-    left: -40%;
-    width: 40%;
-    height: 360%;
-    background: linear-gradient(130deg, transparent, rgba(255, 255, 255, 0.65), transparent);
-    opacity: 0;
-    transform: translateX(-120%);
-    pointer-events: none;
+  &.viewed {
+    background: rgba(255, 255, 255, 0.24);
   }
 
-  &--locked {
-    opacity: 0.46;
-    cursor: default;
-    filter: grayscale(0.25);
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.72);
-  }
-
-  &--just-unlocked {
-    animation: ritual-cta-pulse-soft 1.8s ease-in-out infinite;
-
-    &::after {
-      opacity: 0.65;
-      animation: ritual-cta-shine 0.85s ease-out forwards;
-    }
-  }
-
-  &:hover:not(.ritual-cta--locked):not(:disabled) {
-    transform: translateY(-1px) scale(1.01);
+  &.active {
+    background: var(--panel-color);
     box-shadow:
-      0 18px 42px rgba(0, 0, 0, 0.90),
-      0 0 46px rgba(0, 230, 255, 0.22);
-
-    &::after {
-      opacity: 0.65;
-      animation: ritual-cta-shine 0.7s ease-out forwards;
-    }
-  }
-
-  &:focus-visible {
-    outline: 2px solid rgba(255, 255, 255, 0.45);
-    outline-offset: 3px;
+      0 0 0 4px rgba(255, 255, 255, 0.08),
+      0 0 22px color-mix(in srgb, var(--panel-color) 48%, transparent);
   }
 }
 
-/* Overlay acceso */
-.ritual-access-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 30;
-
-  background: radial-gradient(circle at 30% 10%, rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.92));
-  display: flex;
+.finish-cta {
+  min-width: min(100%, 320px);
+  padding: 1rem 1.8rem;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  font-family: "IM Fell English SC", serif;
+  font-size: 1.08rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 12px;
+  transition:
+    transform 0.22s ease,
+    box-shadow 0.22s ease,
+    border-color 0.22s ease,
+    background 0.22s ease,
+    color 0.22s ease;
 
-  padding:
-    calc(1.1rem + env(safe-area-inset-top))
-    1.1rem
-    calc(1.1rem + env(safe-area-inset-bottom));
-}
-
-.ritual-access-card {
-  width: min(560px, 100%);
-  border-radius: var(--r);
-  border: 2px solid rgba(0, 0, 0, 0.60);
-
-  padding: 1.8rem 1.9rem;
-
-  background: linear-gradient(135deg, rgba(6, 16, 26, 0.96), rgba(2, 7, 12, 0.98));
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.92);
-
-  color: rgba(240, 252, 255, 0.92);
-  text-align: left;
-}
-
-.ritual-access-title {
-  font-family: var(--ritual-font-title);
-  font-size: 1.35rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  margin-bottom: 0.8rem;
-  color: var(--accent);
-}
-
-.ritual-access-text {
-  font-family: var(--ritual-font-body);
-  font-size: 0.95rem;
-  line-height: 1.7;
-  color: rgba(240, 252, 255, 0.80);
-
-  & + & { margin-top: 0.55rem; }
-}
-
-.ritual-access-close {
-  margin-top: 1.1rem;
-  padding: 0.62rem 1.3rem;
-
-  border-radius: var(--r);
-  border: 2px solid rgba(255, 255, 255, 0.18);
-  background: rgba(255, 255, 255, 0.04);
-
-  color: rgba(240, 252, 255, 0.90);
-  font-family: var(--ritual-font-cta);
-  letter-spacing: 0.10em;
-  text-transform: uppercase;
-
-  cursor: pointer;
-  transition: transform 0.12s ease-out, background 0.12s ease-out;
-
-  &:hover {
-    transform: translateY(-1px);
-    background: rgba(255, 255, 255, 0.08);
+  &.ready {
+    background: linear-gradient(180deg, color-mix(in srgb, var(--panel-color) 88%, #ffffff) 0%, var(--panel-color) 100%);
+    color: #0a1018;
+    border-color: transparent;
+    box-shadow:
+      0 18px 44px rgba(0, 0, 0, 0.24),
+      0 0 28px color-mix(in srgb, var(--panel-color) 22%, transparent);
+    cursor: pointer;
   }
 
-  &:focus-visible {
-    outline: 2px solid rgba(255, 255, 255, 0.45);
-    outline-offset: 3px;
+  &.locked {
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.52);
+    border-style: dashed;
+    cursor: not-allowed;
+  }
+
+  &:disabled {
+    pointer-events: none;
   }
 }
 
-/* Animaciones */
-@keyframes ritual-cta-shine {
-  0% { transform: translateX(-120%); }
-  100% { transform: translateX(330%); }
-}
-
-@keyframes ritual-cta-pulse-soft {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.015); }
-  100% { transform: scale(1); }
-}
-
-@keyframes ritual-thumb-float {
-  0% { transform: translateY(-4px) scale(1.08); }
-  50% { transform: translateY(-7px) scale(1.08); }
-  100% { transform: translateY(-4px) scale(1.08); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .ritual-cta,
-  .carousel-thumb-wrapper.center { animation: none !important; }
-
-  .ritual-progress-fill,
-  .ritual-progress-gem,
-  .ritual-arrow,
-  .carousel-thumb-wrapper { transition: none !important; }
-}
-
-/* Responsive */
-@media (max-width: 900px) {
-  .ritual-card { padding: 1.6rem 1.35rem; }
-
-  .ritual-title {
-    font-size: clamp(1.85rem, 4.8vw, 2.35rem);
-    letter-spacing: 0.09em;
+@media (max-width: 1100px) {
+  .chronicle-stage {
+    grid-template-columns: 1fr;
+    gap: 16px;
   }
 
-  .ritual-arrow {
-    width: 42px;
-    height: 42px;
-    font-size: 2rem;
+  .nav-btn {
+    position: absolute;
+    bottom: 14px;
+    z-index: 5;
+  }
 
-    &--left { left: 0.55rem; }
-    &--right { right: 0.55rem; }
+  .nav-btn.prev {
+    left: 14px;
+  }
+
+  .nav-btn.next {
+    right: 14px;
+  }
+
+  .comic-panel-wrapper {
+    max-width: none;
   }
 }
 
-@media (max-width: 640px) {
-  .ritual-card { padding: 1.45rem 1.15rem 1.75rem; }
-
-  .ritual-description {
-    font-size: 0.88rem;
-    line-height: 1.6;
+@media (max-width: 768px) {
+  .flancraft-chronicles {
+    padding: 16px;
   }
 
-  .carousel-thumb-wrapper {
+  .chronicle-header .main-title {
+    font-size: clamp(1.9rem, 10vw, 3rem);
+  }
+
+  .chronicle-header .main-subtitle {
+    font-size: 0.94rem;
+    line-height: 1.65;
+  }
+
+  .comic-frame {
+    aspect-ratio: 4 / 5;
+    border-radius: 22px;
+  }
+
+  .narrative-box {
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    width: auto;
+    padding: 16px;
+    border-radius: 18px;
+  }
+
+  .panel-title {
+    font-size: 1.38rem;
+  }
+
+  .panel-text {
+    font-size: 0.93rem;
+    line-height: 1.62;
+  }
+
+  .panel-play-trigger {
+    width: 76px;
+    height: 76px;
+  }
+
+  .panel-play-trigger-core {
+    width: 52px;
+    height: 52px;
+
+    svg {
+      font-size: 1.28rem;
+    }
+  }
+
+  .nav-btn {
+    width: 52px;
+    height: 52px;
+    font-size: 1.45rem;
+  }
+
+  .finish-cta {
+    width: 100%;
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .chronicle-header .chapter-count {
+    font-size: 0.68rem;
+    letter-spacing: 0.18em;
+  }
+
+  .comic-frame {
+    aspect-ratio: 10 / 14;
+  }
+
+  .panel-title {
+    font-size: 1.28rem;
+  }
+
+  .panel-text {
+    font-size: 0.9rem;
+  }
+
+  .panel-play-trigger {
+    width: 68px;
+    height: 68px;
+  }
+
+  .panel-play-trigger-core {
     width: 46px;
     height: 46px;
-  }
 
-  .ritual-cta {
-    padding: 0.82rem 1.4rem;
-    font-size: 0.95rem;
+    svg {
+      font-size: 1.16rem;
+    }
   }
-}
-
-@media (hover: none) and (pointer: coarse) {
-  .carousel-thumb-wrapper:hover { transform: none; }
-  .ritual-cta:hover:not(.ritual-cta--locked):not(:disabled) { transform: none; }
 }

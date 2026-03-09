@@ -1,13 +1,12 @@
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useContext, useEffect, useRef, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import RewardList from "./RewardList";
 import LogroList from "./LogroList";
+import { UserContext } from "../../context/UserContext";
+import { apiUrl } from "../../lib/env";
+import { clearSessionStorage, getAuthToken } from "../../lib/auth/storage";
+import Seo from "../SEO/Seo";
 import "../../styles/components/Dashboard/_dashboardpage.scss";
-
-const API_BASE = (import.meta.env.VITE_BACKEND_URL || "https://flancraft-backend.onrender.com")
-  .trim()
-  .replace(/\/$/, "");
-const apiUrl = (path) => (API_BASE ? `${API_BASE}${path}` : path);
 
 const SERVER_KEY = "survival";
 const SERVER_LABEL = "SURVIVAL";
@@ -61,6 +60,7 @@ const parseCoinsPayload = (m) => {
 };
 
 export default function DashboardPage() {
+  const { user: sessionUser, setUser: setSessionUser, logout } = useContext(UserContext);
   const [user, setUser] = useState(null);
   const [xpData, setXpData] = useState(null);
   const [walletBalance, setWalletBalance] = useState(0);
@@ -100,31 +100,19 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
-    const stored = localStorage.getItem("flan_user");
-    if (!stored) return navigate("/");
+    if (!sessionUser?.uuid || !sessionUser?.loggedIn) return navigate("/");
 
-    let parsed = null;
-
-    try {
-      parsed = JSON.parse(stored);
-    } catch {
-      return navigate("/");
-    }
-
-    if (!parsed?.uuid || !parsed?.loggedIn) return navigate("/");
-
-    const token = localStorage.getItem("token");
-    const rolAdminLS = (localStorage.getItem("rol_admin") || "").trim();
+    const token = getAuthToken();
 
     const cargarDatos = async () => {
       try {
         setError(null);
 
         const reqs = [
-          fetch(apiUrl(`/api/usuarios/${parsed.uuid}`)),
-          fetch(apiUrl(`/api/monedas/${parsed.uuid}`)),
-          fetch(apiUrl(`/api/usuarios/${parsed.uuid}/xp`)),
-          fetch(apiUrl(`/api/usuarios/${parsed.uuid}/skin`)),
+          fetch(apiUrl(`/api/usuarios/${sessionUser.uuid}`)),
+          fetch(apiUrl(`/api/monedas/${sessionUser.uuid}`)),
+          fetch(apiUrl(`/api/usuarios/${sessionUser.uuid}/xp`)),
+          fetch(apiUrl(`/api/usuarios/${sessionUser.uuid}/skin`)),
         ];
 
         if (token) {
@@ -184,7 +172,8 @@ export default function DashboardPage() {
 
         if (walletRes) {
           if (walletRes.status === 401) {
-            localStorage.removeItem("token");
+            clearSessionStorage();
+            logout();
           } else if (walletRes.ok) {
             const w = await safeJson(walletRes, null);
             wallet = toInt(w?.walletBalance ?? w?.wallet_balance ?? wallet);
@@ -196,7 +185,7 @@ export default function DashboardPage() {
 
         setUser({
           ...usuario,
-          rol_admin: usuario?.rol_admin || (rolAdminLS || null),
+          rol_admin: usuario?.rol_admin || sessionUser?.rol_admin || null,
           monedas: monedasRaw,
           coinsByServer: coinsByServerParsed,
           rango_usuario,
@@ -207,6 +196,15 @@ export default function DashboardPage() {
         setXpData(xp);
 
         emitBalances({ walletCoins: wallet, coinsByServer: coinsByServerParsed });
+
+        setSessionUser({
+          ...sessionUser,
+          wallet_coins: wallet,
+          rol_admin: usuario?.rol_admin || sessionUser?.rol_admin || null,
+          rango_usuario,
+          nivel: usuario?.nivel,
+          xp_actual: usuario?.xp_actual,
+        }, token);
       } catch (err) {
         setError(err.message || "Error");
       } finally {
@@ -215,13 +213,13 @@ export default function DashboardPage() {
     };
 
     cargarDatos();
-  }, [navigate]);
+  }, [navigate, sessionUser, logout, setSessionUser]);
 
   const actualizarMonedas = async () => {
     if (!user) return;
 
     try {
-      const token = localStorage.getItem("token");
+      const token = getAuthToken();
 
       const reqs = [
         fetch(apiUrl(`/api/monedas/${user.uuid}`)),
@@ -250,7 +248,8 @@ export default function DashboardPage() {
 
       if (walletRes) {
         if (walletRes.status === 401) {
-          localStorage.removeItem("token");
+          clearSessionStorage();
+            logout();
           wallet = 0;
         } else if (walletRes.ok) {
           const w = await safeJson(walletRes, null);
@@ -267,6 +266,11 @@ export default function DashboardPage() {
       }));
 
       emitBalances({ walletCoins: wallet, coinsByServer: coinsByServerParsed });
+
+      setSessionUser({
+        ...sessionUser,
+        wallet_coins: wallet,
+      }, token);
     } catch (err) {
       console.error("[BALANCES]", err.message);
     }
@@ -361,7 +365,7 @@ export default function DashboardPage() {
     setTransferLoading(true);
 
     try {
-      const token = localStorage.getItem("token");
+      const token = getAuthToken();
       const res = await fetch(apiUrl(`/api/wallet/transfer`), {
         method: "POST",
         headers: {
@@ -406,6 +410,7 @@ export default function DashboardPage() {
 
   return (
     <section className="dashboard-epic">
+      <Seo title="Dashboard | FlanCraft" noindex />
       {!loading && !error && user && (
         <div className="dashboard-shell">
           <header className="dash-hero-title">

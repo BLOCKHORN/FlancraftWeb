@@ -1,19 +1,19 @@
-// src/main.jsx
 import "./config/lucidePatch";
-import "./utils/devBackendProxy"; 
-
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import App from "./App";
 import { UserProvider } from "./context/UserContext";
+import { AuthModalProvider } from "./context/AuthModalContext";
 import "./styles/base/main.scss";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <BrowserRouter>
       <UserProvider>
-        <App />
+        <AuthModalProvider>
+          <App />
+        </AuthModalProvider>
       </UserProvider>
     </BrowserRouter>
   </React.StrictMode>

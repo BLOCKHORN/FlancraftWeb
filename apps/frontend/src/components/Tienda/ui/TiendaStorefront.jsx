@@ -8,6 +8,8 @@ import RangosComparativaPanel from "../details/RangosComparativaPanel";
 import RangoWalletModal from "../details/RangoWalletModal";
 import { UserContext } from "../../../context/UserContext";
 import { supabase } from "@lib/supabaseClient";
+import { clearSessionStorage, getAuthToken } from "../../../lib/auth/storage";
+import { apiUrl } from "../../../lib/env";
 
 import { ANTES_DE_COMPRAR } from "../details/data/antesDeComprarData";
 
@@ -34,9 +36,6 @@ import {
 } from "./storefront/storefront.utils";
 
 import { useStorefrontData, useUiScale } from "./storefront/storefront.hooks";
-
-const API_BASE = (import.meta.env.VITE_BACKEND_URL || "https://flancraft-backend.onrender.com").trim().replace(/\/$/, "");
-const apiUrl = (path) => (API_BASE ? `${API_BASE}${path}` : path);
 
 const toInt = (v) => {
   const n = Number(v);
@@ -71,13 +70,13 @@ const parseWalletFromDaily = (w) => {
 };
 
 const readToken = () => {
-  const t = localStorage.getItem("token");
+  const t = getAuthToken();
   return t && String(t).trim() ? String(t).trim() : null;
 };
 
 export default function TiendaStorefront({ carrito, toggleProducto, onCambiarCantidad, onSetCantidad, onAgregar }) {
   const wrapRef = useRef(null);
-  const { user } = useContext(UserContext);
+  const { user, logout } = useContext(UserContext);
 
   const { loading, err, dataByServer } = useStorefrontData();
 
@@ -192,7 +191,8 @@ export default function TiendaStorefront({ carrito, toggleProducto, onCambiarCan
 
       if (walletRes) {
         if (walletRes.status === 401) {
-          localStorage.removeItem("token");
+          clearSessionStorage();
+          logout();
         } else if (walletRes.ok) {
           const w = await walletRes.json().catch(() => ({}));
           const parsed = parseWalletFromDaily(w);

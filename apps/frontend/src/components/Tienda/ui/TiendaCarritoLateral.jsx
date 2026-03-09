@@ -2,9 +2,8 @@
 import React, { useMemo, useState, useCallback } from "react";
 import useMinecraftProfile from "../hooks/useMinecraftProfile";
 import TiendaCheckoutModal from "../modals/TiendaCheckoutModal";
+import { apiUrl } from "../../../lib/env";
 import "../../../styles/components/Tienda/tienda-carrito.scss";
-
-const API_BASE = import.meta.env.VITE_BACKEND_URL || "http://localhost:10000";
 
 function formatCurrency(amount, currency = "USD") {
   const n = Number(amount);
@@ -132,7 +131,7 @@ export default function TiendaCarritoLateral({
         quantity: pickQty(it),
       }));
 
-      const r = await fetch(`${API_BASE}/api/tebex/checkout`, {
+      const r = await fetch(apiUrl(`/api/tebex/checkout`), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

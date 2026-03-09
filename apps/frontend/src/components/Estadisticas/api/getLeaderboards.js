@@ -1,8 +1,4 @@
-const API_BASE = (
-  import.meta.env.VITE_BACKEND_URL || "http://localhost:10000"
-)
-  .trim()
-  .replace(/\/$/, "");
+import { apiUrl } from "../../../lib/env";
 
 const toSafeInt = (value, fallback) => {
   const num = Number.parseInt(String(value ?? ""), 10);
@@ -29,7 +25,7 @@ export async function getLeaderboards({
     params.set("asc", String(Boolean(asc)));
   }
 
-  const url = `${API_BASE}/api/stats/leaderboards?${params.toString()}`;
+  const url = apiUrl(`/api/stats/leaderboards?${params.toString()}`);
 
   const res = await fetch(url, {
     method: "GET",
@@ -39,7 +35,7 @@ export async function getLeaderboards({
     signal,
   });
 
-  const text = await res.text().catch(() => "");
+  const text = await res.text();
   let data = null;
 
   try {
@@ -49,9 +45,9 @@ export async function getLeaderboards({
   }
 
   if (!res.ok) {
-    const detail =
-      data?.error || text || res.statusText || "Error desconocido";
-    const error = new Error(`Error leaderboard HTTP ${res.status} :: ${detail}`);
+    const error = new Error(
+      data?.error || data?.message || text || `Error ${res.status}`
+    );
     error.status = res.status;
     error.body = data ?? text;
     throw error;
@@ -59,5 +55,3 @@ export async function getLeaderboards({
 
   return data ?? { total: 0, resultados: [] };
 }
-
-export { API_BASE };

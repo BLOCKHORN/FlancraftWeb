@@ -30,7 +30,7 @@ const getJson = async (url) => {
 
 const mapUsuarioResponse = (usuario) => ({
   ...(usuario || {}),
-  es_premium: false,
+  es_premium: usuario?.es_premium === true,
 });
 
 const parseRango = (value) => {
@@ -73,7 +73,7 @@ exports.obtenerUsuarios = async (req, res) => {
   try {
     const { data, error } = await db
       .from("usuarios")
-      .select("uuid, uid, nivel, xp_actual, rango_usuario, wallet_coins")
+      .select("uuid, uid, nivel, xp_actual, rango_usuario, wallet_coins, es_premium")
       .order("uid", { ascending: true });
 
     if (error) throw error;
@@ -95,7 +95,7 @@ exports.obtenerUsuario = async (req, res) => {
   try {
     const { data: usuario, error: errorUsuario } = await db
       .from("usuarios")
-      .select("uuid, uid, xp_actual, nivel, rango_usuario, wallet_coins")
+      .select("uuid, uid, xp_actual, nivel, rango_usuario, wallet_coins, es_premium")
       .eq("uuid", uuid)
       .maybeSingle();
 
@@ -230,6 +230,39 @@ exports.asignarRangoUsuario = async (req, res) => {
   } catch (err) {
     console.error("[ASIGNAR RANGO USUARIO]", err);
     return res.status(500).json({ error: "Error al asignar rango al usuario." });
+  }
+};
+
+
+exports.actualizarPremiumUsuario = async (req, res) => {
+  const uuid = cleanText(req.body?.uuid || req.body?.uuid_jugador);
+  const esPremium = req.body?.es_premium === true;
+
+  if (!uuid) {
+    return res.status(400).json({ error: "Faltan datos para actualizar premium." });
+  }
+
+  try {
+    const { data: existente, error: errorBusqueda } = await db
+      .from("usuarios")
+      .select("uuid")
+      .eq("uuid", uuid)
+      .maybeSingle();
+
+    if (errorBusqueda) throw errorBusqueda;
+    if (!existente) return res.status(404).json({ error: "Usuario no encontrado." });
+
+    const { error } = await db
+      .from("usuarios")
+      .update({ es_premium: esPremium })
+      .eq("uuid", uuid);
+
+    if (error) throw error;
+
+    return res.status(200).json({ mensaje: "Premium actualizado correctamente.", es_premium: esPremium });
+  } catch (err) {
+    console.error("[ACTUALIZAR PREMIUM USUARIO]", err);
+    return res.status(500).json({ error: "Error al actualizar premium." });
   }
 };
 

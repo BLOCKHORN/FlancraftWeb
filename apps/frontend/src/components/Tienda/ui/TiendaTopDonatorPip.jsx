@@ -5,10 +5,8 @@ import React, {
   useState,
   useLayoutEffect,
 } from "react";
+import { apiUrl } from "../../../lib/env";
 import "../../../styles/components/Tienda/tienda-topdonator-pip.scss";
-
-const API_BASE =
-  import.meta.env.VITE_BACKEND_URL || "https://flancraft-backend.onrender.com";
 
 const TTL_MS = 5 * 60 * 1000;
 
@@ -159,7 +157,7 @@ export default function TiendaTopDonatorPip({ server = "global" }) {
       try {
         const refresh = isDev ? "?refresh=1" : "";
         const data = await fetchJson(
-          `${API_BASE}/api/tebex/top-donator${refresh}`
+          apiUrl(`/api/tebex/top-donator${refresh}`)
         );
         if (!data?.ok) throw new Error("TopDonator inválido");
         if (!alive) return;

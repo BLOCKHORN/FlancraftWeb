@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { apiUrl } from "../../../lib/env";
 import "../../../styles/components/Tienda/tienda-modal-jugador.scss";
-
-const API_BASE = import.meta.env.VITE_BACKEND_URL || "http://localhost:10000";
 
 export default function TiendaModalJugador({ onConfirmar, onCerrar }) {
   const [nombre, setNombre] = useState("");
@@ -52,7 +51,7 @@ export default function TiendaModalJugador({ onConfirmar, onCerrar }) {
 
       try {
         const res = await fetch(
-          `${API_BASE}/api/minecraft/uuid/${encodeURIComponent(nombreLimpio)}`,
+          apiUrl(`/api/minecraft/uuid/${encodeURIComponent(nombreLimpio)}`),
           { signal: controller.signal }
         );
 
@@ -81,7 +80,7 @@ export default function TiendaModalJugador({ onConfirmar, onCerrar }) {
 
   const resolverUuid = async (username) => {
     const res = await fetch(
-      `${API_BASE}/api/minecraft/uuid/${encodeURIComponent(username)}`
+      apiUrl(`/api/minecraft/uuid/${encodeURIComponent(username)}`)
     );
     if (!res.ok) return "";
     const data = await res.json();

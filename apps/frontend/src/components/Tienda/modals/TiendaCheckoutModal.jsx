@@ -1,9 +1,9 @@
 // src/components/Tienda/modals/TiendaCheckoutModal.jsx
 import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { createPortal } from "react-dom";
+import useTebexScript from "../../../hooks/useTebexScript";
+import { apiUrl } from "../../../lib/env";
 import "../../../styles/components/Tienda/tienda-checkout-modal.scss";
-
-const API_BASE = import.meta.env.VITE_BACKEND_URL || "http://localhost:10000";
 
 function safeStr(x) {
   return String(x ?? "").trim();
@@ -68,6 +68,7 @@ export default function TiendaCheckoutModal({
   devForceSuccess = false,
 }) {
   const hostRef = useRef(null);
+  const tebexReady = useTebexScript(Boolean(open));
 
   const [error, setError] = useState("");
   const [rendered, setRendered] = useState(false);
@@ -191,7 +192,7 @@ export default function TiendaCheckoutModal({
 
     try {
       const r = await fetch(
-        `${API_BASE}/api/tebex/checkout-status/${encodeURIComponent(id)}`,
+        apiUrl(`/api/tebex/checkout-status/${encodeURIComponent(id)}`),
         { method: "GET", headers: { "Accept": "application/json" } }
       );
       const data = await r.json().catch(() => ({}));
@@ -204,8 +205,8 @@ export default function TiendaCheckoutModal({
 
   const mountCheckout = useCallback(() => {
     const Tebex = window?.Tebex;
-    if (!Tebex?.checkout?.init || !Tebex?.checkout?.render) {
-      setError('Tebex.js no está cargado. Revisa el <script defer src="https://js.tebex.io/v/1.js"></script>.');
+    if (!tebexReady || !Tebex?.checkout?.init || !Tebex?.checkout?.render) {
+      setError('La pasarela de pago todavía no está lista. Prueba otra vez en unos segundos.');
       return;
     }
 
@@ -233,7 +234,7 @@ export default function TiendaCheckoutModal({
     } catch (e) {
       setError(String(e?.message || "No se pudo renderizar el checkout."));
     }
-  }, [safeIdent]);
+  }, [safeIdent, tebexReady]);
 
   // Enganchar eventos Tebex UNA sola vez
   const tebexHookedRef = useRef(false);
