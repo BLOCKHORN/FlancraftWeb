@@ -125,6 +125,41 @@ const parseGenericRank = (value) => {
   return { present: true, ok: true, user: null, staff: null };
 };
 
+const normalizeUserName = (value) => {
+  const raw = cleanText(value);
+  if (!raw) return null;
+  return raw.replace(/^\.+/, "");
+};
+
+const buscarUsuarioParaSync = async ({ uuid, username }) => {
+  const uuidClean = cleanText(uuid);
+  const userClean = normalizeUserName(username);
+
+  if (uuidClean) {
+    const { data, error } = await db
+      .from("usuarios")
+      .select("uuid, uid, xp_actual, nivel, rango_usuario, rango_staff, wallet_coins, es_premium")
+      .eq("uuid", uuidClean)
+      .maybeSingle();
+
+    if (error) throw error;
+    if (data) return data;
+  }
+
+  if (userClean) {
+    const { data, error } = await db
+      .from("usuarios")
+      .select("uuid, uid, xp_actual, nivel, rango_usuario, rango_staff, wallet_coins, es_premium")
+      .ilike("uid", userClean)
+      .maybeSingle();
+
+    if (error) throw error;
+    if (data) return data;
+  }
+
+  return null;
+};
+
 const actualizarRangosUsuario = async (uuid, patch) => {
   const uuidClean = cleanText(uuid);
 
@@ -387,24 +422,20 @@ exports.actualizarPremiumUsuario = async (req, res) => {
 
 exports.registrarCompraRango = async (req, res) => {
   const uuid = cleanText(req.body?.uuid || req.body?.uuid_jugador);
+  const username = cleanText(req.body?.username || req.body?.nombre_jugador || req.body?.uid);
   const parsedUsuario = parseRankField(req.body?.rango_usuario, RANGOS_USUARIO);
   const parsedStaff = parseRankField(req.body?.rango_staff, RANGOS_STAFF);
   const parsedGeneric = parseGenericRank(req.body?.rango ?? req.body?.rango_real);
 
-  if (!uuid || !parsedUsuario.ok || !parsedStaff.ok || !parsedGeneric.ok) {
+  if ((!uuid && !username) || !parsedUsuario.ok || !parsedStaff.ok || !parsedGeneric.ok) {
     return res.status(400).json({ error: "Datos inválidos para sincronizar el rango." });
   }
 
   try {
-    const { data: existente, error: errorBusqueda } = await db
-      .from("usuarios")
-      .select("uuid, rango_usuario, rango_staff")
-      .eq("uuid", uuid)
-      .maybeSingle();
+    const existente = await buscarUsuarioParaSync({ uuid, username });
 
-    if (errorBusqueda) throw errorBusqueda;
     if (!existente) {
-      return res.status(404).json({ error: "Usuario no encontrado para registrar el rango." });
+      return res.status(404).json({ error: "Usuario no encontrado para sincronizar el rango." });
     }
 
     let nextUsuario = normalizeRangoUsuario(existente.rango_usuario);
@@ -418,13 +449,15 @@ exports.registrarCompraRango = async (req, res) => {
     if (parsedUsuario.present) nextUsuario = parsedUsuario.value;
     if (parsedStaff.present) nextStaff = parsedStaff.value;
 
-    const updated = await actualizarRangosUsuario(uuid, {
+    const updated = await actualizarRangosUsuario(existente.uuid, {
       rango_usuario: nextUsuario,
       rango_staff: nextStaff,
     });
 
     return res.status(200).json({
       mensaje: "Rango sincronizado correctamente.",
+      uuid: updated?.uuid || existente.uuid,
+      uid: updated?.uid || existente.uid || username || null,
       rango_usuario: updated?.rango_usuario || null,
       rango_staff: updated?.rango_staff || null,
       rango_real: updated?.rango_real || "usuario",
@@ -437,6 +470,7 @@ exports.registrarCompraRango = async (req, res) => {
 };
 
 exports.sincronizarRangoUsuario = exports.registrarCompraRango;
+exports.syncRangoDesdePlugin = exports.registrarCompraRango;
 
 exports.obtenerRangosExpirados = async (req, res) => {
   return res.status(200).json([]);
