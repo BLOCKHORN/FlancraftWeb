@@ -238,7 +238,7 @@ const NavbarMobile = ({
   );
 
   const walletTip =
-    "Las Wallet Coins se consiguen con el daily, el voto y los logros. Puedes enviarlas al servidor en la cantidad que elijas.";
+    "Las Wallet Coins se consiguen con el daily claim y los logros. Puedes enviarlas al servidor en la cantidad que elijas.";
 
   const storeSaleActive = useMemo(() => isSaleValid(saleNav), [saleNav?.active, saleNav?.expire]);
   const storeSalePercent = toInt(saleNav?.percent || 0);

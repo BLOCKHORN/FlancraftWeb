@@ -1,6 +1,13 @@
 const db = require("../models/db");
 
-const RANGOS_VALIDOS = new Set(["nova", "alpha", "inmortal"]);
+const RANGOS_USUARIO_ORDEN = ["nova", "alpha", "inmortal"];
+const RANGOS_STAFF_ORDEN = ["builder", "helper", "srhelper", "mod", "srmod", "admin", "owner"];
+const RANGOS_DISPLAY_ORDEN = ["usuario", ...RANGOS_USUARIO_ORDEN, ...RANGOS_STAFF_ORDEN];
+
+const RANGOS_USUARIO = new Set(RANGOS_USUARIO_ORDEN);
+const RANGOS_STAFF = new Set(RANGOS_STAFF_ORDEN);
+const RANGOS_DISPLAY = new Set(RANGOS_DISPLAY_ORDEN);
+
 const FLOODGATE_PREFIX_HEX = "0000000000000000";
 
 const cleanText = (v) => String(v || "").trim();
@@ -12,73 +19,164 @@ const isFloodgateUuid = (uuid) => {
   return compact.length === 32 && compact.startsWith(FLOODGATE_PREFIX_HEX);
 };
 
-const xuidFromFloodgateUuid = (uuid) => {
-  try {
-    const compact = cleanText(uuid).replace(/-/g, "").toLowerCase();
-    if (compact.length !== 32 || !compact.startsWith(FLOODGATE_PREFIX_HEX)) return null;
-    return BigInt(`0x${compact.slice(16)}`).toString(10);
-  } catch {
-    return null;
-  }
+const normalizeRank = (value) => {
+  if (value === null || value === undefined) return null;
+
+  let rank = String(value).trim().toLowerCase();
+  if (!rank) return null;
+
+  if (rank.startsWith("group.")) rank = rank.slice("group.".length);
+
+  rank = rank.replace(/[\s_-]+/g, "");
+
+  if (rank === "none" || rank === "null" || rank === "usuario") return null;
+  if (rank === "srhelper" || rank === "helper" || rank === "builder" || rank === "mod" || rank === "srmod" || rank === "admin" || rank === "owner") return rank;
+  if (rank === "nova" || rank === "alpha" || rank === "inmortal") return rank;
+
+  return null;
 };
 
-const getJson = async (url) => {
-  const res = await fetch(url);
-  const data = await res.json().catch(() => null);
-  return { ok: res.ok, status: res.status, data };
+const normalizeRangoUsuario = (value) => {
+  const rank = normalizeRank(value);
+  return rank && RANGOS_USUARIO.has(rank) ? rank : null;
 };
 
-const mapUsuarioResponse = (usuario) => ({
-  ...(usuario || {}),
-  es_premium: usuario?.es_premium === true,
-});
-
-const parseRango = (value) => {
-  if (value === null || value === undefined) return { ok: true, value: null };
-
-  const rango = String(value).trim().toLowerCase();
-  if (!rango || rango === "null" || rango === "none") {
-    return { ok: true, value: null };
-  }
-
-  if (!RANGOS_VALIDOS.has(rango)) {
-    return { ok: false, value: null };
-  }
-
-  return { ok: true, value: rango };
+const normalizeRangoStaff = (value) => {
+  const rank = normalizeRank(value);
+  return rank && RANGOS_STAFF.has(rank) ? rank : null;
 };
 
-const actualizarRangoUsuario = async (uuid, rangoUsuario) => {
+const resolveDisplayRank = (rangoUsuario, rangoStaff, rolAdmin) => {
+  const userRank = normalizeRangoUsuario(rangoUsuario);
+  const staffRank = normalizeRangoStaff(rangoStaff);
+  const adminRank = normalizeRangoStaff(rolAdmin);
+
+  const candidates = [userRank, staffRank, adminRank].filter(Boolean);
+  if (!candidates.length) return "usuario";
+
+  let best = "usuario";
+  let bestIndex = 0;
+
+  for (const rank of candidates) {
+    const index = RANGOS_DISPLAY_ORDEN.indexOf(rank);
+    if (index > bestIndex) {
+      best = rank;
+      bestIndex = index;
+    }
+  }
+
+  return best;
+};
+
+const mapUsuarioResponse = (usuario, rolAdminRaw = null) => {
+  const rango_usuario = normalizeRangoUsuario(usuario?.rango_usuario);
+  const rango_staff = normalizeRangoStaff(usuario?.rango_staff);
+  const rol_admin = normalizeRangoStaff(rolAdminRaw) || rango_staff;
+
+  return {
+    ...(usuario || {}),
+    rango_usuario,
+    rango_staff,
+    rol_admin,
+    rango_real: resolveDisplayRank(rango_usuario, rango_staff, rol_admin),
+    es_premium: usuario?.es_premium === true,
+  };
+};
+
+const parseRankField = (value, allowedSet) => {
+  if (value === undefined) return { present: false, ok: true, value: null };
+  if (value === null) return { present: true, ok: true, value: null };
+
+  const raw = String(value).trim();
+  if (!raw || raw.toLowerCase() === "null" || raw.toLowerCase() === "none" || raw.toLowerCase() === "usuario") {
+    return { present: true, ok: true, value: null };
+  }
+
+  const rank = normalizeRank(raw);
+  if (!rank || !allowedSet.has(rank)) {
+    return { present: true, ok: false, value: null };
+  }
+
+  return { present: true, ok: true, value: rank };
+};
+
+const parseGenericRank = (value) => {
+  if (value === undefined) return { present: false, ok: true, user: null, staff: null };
+  if (value === null) return { present: true, ok: true, user: null, staff: null };
+
+  const raw = String(value).trim();
+  if (!raw || raw.toLowerCase() === "null" || raw.toLowerCase() === "none" || raw.toLowerCase() === "usuario") {
+    return { present: true, ok: true, user: null, staff: null };
+  }
+
+  const rank = normalizeRank(raw);
+  if (!rank || !RANGOS_DISPLAY.has(rank)) {
+    return { present: true, ok: false, user: null, staff: null };
+  }
+
+  if (RANGOS_USUARIO.has(rank)) {
+    return { present: true, ok: true, user: rank, staff: null };
+  }
+
+  if (RANGOS_STAFF.has(rank)) {
+    return { present: true, ok: true, user: null, staff: rank };
+  }
+
+  return { present: true, ok: true, user: null, staff: null };
+};
+
+const actualizarRangosUsuario = async (uuid, patch) => {
   const uuidClean = cleanText(uuid);
 
   const { data: existente, error: errorBusqueda } = await db
     .from("usuarios")
-    .select("uuid")
+    .select("uuid, uid, xp_actual, nivel, rango_usuario, rango_staff, wallet_coins, es_premium")
     .eq("uuid", uuidClean)
     .maybeSingle();
 
   if (errorBusqueda) throw errorBusqueda;
-  if (!existente) return false;
+  if (!existente) return null;
 
-  const { error: errorUpdate } = await db
+  const update = {};
+
+  if (Object.prototype.hasOwnProperty.call(patch || {}, "rango_usuario")) {
+    update.rango_usuario = normalizeRangoUsuario(patch.rango_usuario);
+  }
+
+  if (Object.prototype.hasOwnProperty.call(patch || {}, "rango_staff")) {
+    update.rango_staff = normalizeRangoStaff(patch.rango_staff);
+  }
+
+  if (!Object.keys(update).length) {
+    return mapUsuarioResponse(existente);
+  }
+
+  const { data: updated, error: errorUpdate } = await db
     .from("usuarios")
-    .update({ rango_usuario: rangoUsuario })
-    .eq("uuid", uuidClean);
+    .update(update)
+    .eq("uuid", uuidClean)
+    .select("uuid, uid, xp_actual, nivel, rango_usuario, rango_staff, wallet_coins, es_premium")
+    .maybeSingle();
 
   if (errorUpdate) throw errorUpdate;
-  return true;
+
+  return mapUsuarioResponse(updated || { ...existente, ...update });
 };
 
 exports.obtenerUsuarios = async (req, res) => {
   try {
-    const { data, error } = await db
+    const { data: usuarios, error: errorUsuarios } = await db
       .from("usuarios")
-      .select("uuid, uid, nivel, xp_actual, rango_usuario, wallet_coins, es_premium")
+      .select("uuid, uid, nivel, xp_actual, rango_usuario, rango_staff, wallet_coins, es_premium")
       .order("uid", { ascending: true });
 
-    if (error) throw error;
+    if (errorUsuarios) throw errorUsuarios;
 
-    return res.status(200).json((data || []).map(mapUsuarioResponse));
+    const listaUsuarios = Array.isArray(usuarios) ? usuarios : [];
+
+    return res.status(200).json(
+      listaUsuarios.map((row) => mapUsuarioResponse(row))
+    );
   } catch (err) {
     console.error("[OBTENER TODOS LOS USUARIOS]", err);
     return res.status(500).json({ error: "Error al obtener usuarios." });
@@ -95,25 +193,14 @@ exports.obtenerUsuario = async (req, res) => {
   try {
     const { data: usuario, error: errorUsuario } = await db
       .from("usuarios")
-      .select("uuid, uid, xp_actual, nivel, rango_usuario, wallet_coins, es_premium")
+      .select("uuid, uid, xp_actual, nivel, rango_usuario, rango_staff, wallet_coins, es_premium")
       .eq("uuid", uuid)
       .maybeSingle();
 
     if (errorUsuario) throw errorUsuario;
     if (!usuario) return res.status(404).json({ error: "Usuario no encontrado." });
 
-    const { data: permiso, error: errorPermiso } = await db
-      .from("permisos_admin")
-      .select("rol")
-      .eq("uuid", uuid)
-      .maybeSingle();
-
-    if (errorPermiso) throw errorPermiso;
-
-    return res.status(200).json({
-      ...mapUsuarioResponse(usuario),
-      rol_admin: permiso?.rol || null,
-    });
+    return res.status(200).json(mapUsuarioResponse(usuario));
   } catch (err) {
     console.error("[OBTENER USUARIO]", err);
     return res.status(500).json({ error: "Error interno del servidor." });
@@ -214,25 +301,57 @@ exports.obtenerSkinUsuario = async (req, res) => {
 
 exports.asignarRangoUsuario = async (req, res) => {
   const uuid = cleanText(req.body?.uuid || req.body?.uuid_jugador);
-  const parsed = parseRango(req.body?.rango_usuario ?? req.body?.rango ?? null);
+  const parsed = parseRankField(req.body?.rango_usuario ?? req.body?.rango ?? null, RANGOS_USUARIO);
 
   if (!uuid || !parsed.ok) {
     return res.status(400).json({ error: "Datos inválidos para asignar rango." });
   }
 
   try {
-    const updated = await actualizarRangoUsuario(uuid, parsed.value);
+    const updated = await actualizarRangosUsuario(uuid, { rango_usuario: parsed.value });
     if (!updated) {
       return res.status(404).json({ error: "Usuario no encontrado para asignar rango." });
     }
 
-    return res.status(200).json({ mensaje: "Rango asignado correctamente." });
+    return res.status(200).json({
+      mensaje: "Rango de usuario asignado correctamente.",
+      rango_usuario: updated.rango_usuario,
+      rango_staff: updated.rango_staff,
+      rango_real: updated.rango_real,
+      rol_admin: updated.rol_admin,
+    });
   } catch (err) {
     console.error("[ASIGNAR RANGO USUARIO]", err);
     return res.status(500).json({ error: "Error al asignar rango al usuario." });
   }
 };
 
+exports.asignarRangoStaff = async (req, res) => {
+  const uuid = cleanText(req.body?.uuid || req.body?.uuid_jugador);
+  const parsed = parseRankField(req.body?.rango_staff ?? req.body?.rango ?? null, RANGOS_STAFF);
+
+  if (!uuid || !parsed.ok) {
+    return res.status(400).json({ error: "Datos inválidos para asignar rango staff." });
+  }
+
+  try {
+    const updated = await actualizarRangosUsuario(uuid, { rango_staff: parsed.value });
+    if (!updated) {
+      return res.status(404).json({ error: "Usuario no encontrado para asignar rango staff." });
+    }
+
+    return res.status(200).json({
+      mensaje: "Rango staff asignado correctamente.",
+      rango_usuario: updated.rango_usuario,
+      rango_staff: updated.rango_staff,
+      rango_real: updated.rango_real,
+      rol_admin: updated.rol_admin,
+    });
+  } catch (err) {
+    console.error("[ASIGNAR RANGO STAFF]", err);
+    return res.status(500).json({ error: "Error al asignar rango staff al usuario." });
+  }
+};
 
 exports.actualizarPremiumUsuario = async (req, res) => {
   const uuid = cleanText(req.body?.uuid || req.body?.uuid_jugador);
@@ -268,21 +387,48 @@ exports.actualizarPremiumUsuario = async (req, res) => {
 
 exports.registrarCompraRango = async (req, res) => {
   const uuid = cleanText(req.body?.uuid || req.body?.uuid_jugador);
-  const parsed = parseRango(req.body?.rango_usuario ?? req.body?.rango ?? null);
+  const parsedUsuario = parseRankField(req.body?.rango_usuario, RANGOS_USUARIO);
+  const parsedStaff = parseRankField(req.body?.rango_staff, RANGOS_STAFF);
+  const parsedGeneric = parseGenericRank(req.body?.rango ?? req.body?.rango_real);
 
-  if (!uuid || !parsed.ok) {
-    return res.status(400).json({ error: "Datos inválidos para registrar el rango." });
+  if (!uuid || !parsedUsuario.ok || !parsedStaff.ok || !parsedGeneric.ok) {
+    return res.status(400).json({ error: "Datos inválidos para sincronizar el rango." });
   }
 
   try {
-    const updated = await actualizarRangoUsuario(uuid, parsed.value);
-    if (!updated) {
-      return res.status(404).json({ error: "Usuario no encontrado para registrar rango." });
+    const { data: existente, error: errorBusqueda } = await db
+      .from("usuarios")
+      .select("uuid, rango_usuario, rango_staff")
+      .eq("uuid", uuid)
+      .maybeSingle();
+
+    if (errorBusqueda) throw errorBusqueda;
+    if (!existente) {
+      return res.status(404).json({ error: "Usuario no encontrado para registrar el rango." });
     }
+
+    let nextUsuario = normalizeRangoUsuario(existente.rango_usuario);
+    let nextStaff = normalizeRangoStaff(existente.rango_staff);
+
+    if (parsedGeneric.present) {
+      nextUsuario = parsedGeneric.user;
+      nextStaff = parsedGeneric.staff;
+    }
+
+    if (parsedUsuario.present) nextUsuario = parsedUsuario.value;
+    if (parsedStaff.present) nextStaff = parsedStaff.value;
+
+    const updated = await actualizarRangosUsuario(uuid, {
+      rango_usuario: nextUsuario,
+      rango_staff: nextStaff,
+    });
 
     return res.status(200).json({
       mensaje: "Rango sincronizado correctamente.",
-      rango_usuario: parsed.value,
+      rango_usuario: updated?.rango_usuario || null,
+      rango_staff: updated?.rango_staff || null,
+      rango_real: updated?.rango_real || "usuario",
+      rol_admin: updated?.rol_admin || null,
     });
   } catch (err) {
     console.error("[REGISTRAR COMPRA RANGO]", err);

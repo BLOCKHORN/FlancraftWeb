@@ -64,6 +64,18 @@ function plural(base, amount, pluralForm) {
   return clampNumber(amount) === 1 ? base : pluralForm;
 }
 
+function normalizeRoleValue(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function isOwnerUser(user) {
+  const rolAdmin = normalizeRoleValue(user?.rol_admin);
+  const rangoStaff = normalizeRoleValue(user?.rango_staff);
+
+  if (rolAdmin) return rolAdmin === "owner";
+  return rangoStaff === "owner";
+}
+
 function buildObjectiveText(tipo, objetivo) {
   const amount = clampNumber(objetivo);
 
@@ -291,6 +303,8 @@ function LogroList({ user, onXpClaimed }) {
   const buttonRefs = useRef({});
   const listaTopRef = useRef(null);
 
+  const esOwner = useMemo(() => isOwnerUser(user), [user]);
+
   const manejarCambioTipoMision = (nuevoTipo) => {
     if (LOGROS_PROXIMAMENTE) return;
     if (nuevoTipo === tipoMision) return;
@@ -300,7 +314,13 @@ function LogroList({ user, onXpClaimed }) {
 
   useEffect(() => {
     const fetchLogros = async () => {
-      if (!user?.uuid) return;
+      if (!user?.uuid || !esOwner) {
+        setLogros([]);
+        setError(null);
+        setResetAt(null);
+        setCargando(false);
+        return;
+      }
 
       try {
         setCargando(true);
@@ -347,10 +367,10 @@ function LogroList({ user, onXpClaimed }) {
     }
 
     fetchLogros();
-  }, [user?.uuid, tipoMision, servidorActivo]);
+  }, [user?.uuid, esOwner, tipoMision, servidorActivo]);
 
   useEffect(() => {
-    if (!resetAt || tipoMision === "permanente") {
+    if (!resetAt || tipoMision === "permanente" || !esOwner) {
       setTiempoRestante(null);
       return;
     }
@@ -363,7 +383,7 @@ function LogroList({ user, onXpClaimed }) {
     actualizar();
     const id = setInterval(actualizar, 1000);
     return () => clearInterval(id);
-  }, [resetAt, tipoMision]);
+  }, [resetAt, tipoMision, esOwner]);
 
   const reclamarMision = async (logro) => {
     try {
@@ -453,12 +473,13 @@ function LogroList({ user, onXpClaimed }) {
   const hayLogros = logrosOrdenados.length > 0;
   const hayClaimables = logrosOrdenados.some((item) => esClaimable(item));
 
-  const subtituloTab =
-    tipoMision === "permanente"
-      ? "Haz historia con metas que no caducan"
-      : tipoMision === "diaria"
-      ? "Encargos del día con objetivo claro y botín inmediato"
-      : "Retos largos para una semana que deje huella";
+  const subtituloTab = !esOwner
+    ? "Sección disponible solo para owners durante las pruebas"
+    : tipoMision === "permanente"
+    ? "Haz historia con metas que no caducan"
+    : tipoMision === "diaria"
+    ? "Encargos del día con objetivo claro y botín inmediato"
+    : "Retos largos para una semana que deje huella";
 
   const totalPaginas = Math.max(1, Math.ceil(logrosOrdenados.length / PAGE_SIZE));
 
@@ -500,8 +521,8 @@ function LogroList({ user, onXpClaimed }) {
             <button
               key={tab.id}
               type="button"
-              disabled={LOGROS_PROXIMAMENTE}
-              className={["logros-tab-tipo", tipoMision === tab.id ? "activo" : "", LOGROS_PROXIMAMENTE ? "bloqueado" : ""].filter(Boolean).join(" ")}
+              disabled={LOGROS_PROXIMAMENTE || !esOwner}
+              className={["logros-tab-tipo", tipoMision === tab.id ? "activo" : "", LOGROS_PROXIMAMENTE || !esOwner ? "bloqueado" : ""].filter(Boolean).join(" ")}
               onClick={() => manejarCambioTipoMision(tab.id)}
             >
               <div className="logros-tab-icon-wrap">
@@ -514,7 +535,7 @@ function LogroList({ user, onXpClaimed }) {
 
         <p className="logros-subtitulo-secundario">{LOGROS_PROXIMAMENTE ? "Sistema en preparación" : subtituloTab}</p>
 
-        {MISIONES_MODO_PRUEBAS && (
+        {MISIONES_MODO_PRUEBAS && esOwner && (
           <div className="logros-dev-banner" role="status" aria-live="polite">
             <div className="logros-dev-banner__icon">
               <TriangleAlert size={18} />
@@ -529,7 +550,7 @@ function LogroList({ user, onXpClaimed }) {
           </div>
         )}
 
-        {!LOGROS_PROXIMAMENTE && tipoMision !== "permanente" && tiempoRestante && (
+        {!LOGROS_PROXIMAMENTE && esOwner && tipoMision !== "permanente" && tiempoRestante && (
           <div className={`logros-countdown logros-countdown-${tipoMision}`}>
             <span className="countdown-label">{tipoMision === "diaria" ? "La rotación diaria termina en" : "Este ciclo semanal termina en"}</span>
 
@@ -573,6 +594,18 @@ function LogroList({ user, onXpClaimed }) {
               <h3 className="logros-soon-title">En mantenimiento</h3>
               <p className="logros-soon-desc">Estamos puliendo el tablero de desafíos.</p>
               <p className="logros-soon-desc2">Vuelve en breve para seguir progresando.</p>
+            </div>
+          </div>
+        </div>
+      ) : !esOwner ? (
+        <div className="logros-soon-wrap">
+          <div className="logros-soon-card">
+            <div className="logros-soon-icon">
+              <TriangleAlert size={22} className="logros-soon-clock" />
+            </div>
+            <div className="logros-soon-text">
+              <h3 className="logros-soon-title">Acceso restringido</h3>
+              <p className="logros-soon-desc2">Cuando terminemos las pruebas se abrirán al resto de usuarios.</p>
             </div>
           </div>
         </div>

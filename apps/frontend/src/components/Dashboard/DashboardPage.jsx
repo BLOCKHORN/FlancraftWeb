@@ -12,9 +12,68 @@ const SERVER_KEY = "survival";
 const SERVER_LABEL = "SURVIVAL";
 const SERVER_ICON = "/assets/reinos/survival-clasico.webp";
 
+const DISPLAY_RANK_ORDER = ["usuario", "nova", "alpha", "inmortal", "builder", "helper", "srhelper", "mod", "srmod", "admin", "owner"];
+const USER_RANKS = new Set(["nova", "alpha", "inmortal"]);
+const STAFF_PANEL_RANKS = new Set(["mod", "srmod", "admin", "owner"]);
+const DISPLAY_RANK_LABELS = {
+  usuario: "USUARIO",
+  nova: "NOVA",
+  alpha: "ALPHA",
+  inmortal: "INMORTAL",
+  builder: "BUILDER",
+  helper: "HELPER",
+  srhelper: "SRHELPER",
+  mod: "MOD",
+  srmod: "SRMOD",
+  admin: "ADMIN",
+  owner: "OWNER",
+};
+
 const toInt = (v) => {
   const n = Number(v);
   return Number.isFinite(n) ? Math.max(0, Math.floor(n)) : 0;
+};
+
+const normalizeRank = (value) => {
+  if (value === null || value === undefined) return null;
+  const rank = String(value).trim().toLowerCase().replace(/[\s_-]+/g, "");
+  return DISPLAY_RANK_ORDER.includes(rank) ? rank : null;
+};
+
+const resolveDisplayRankFromUser = (user) => {
+  const explicit = normalizeRank(user?.rango_real);
+  if (explicit) return explicit;
+
+  const ranks = [
+    normalizeRank(user?.rango_usuario),
+    normalizeRank(user?.rango_staff),
+    normalizeRank(user?.rol_admin),
+  ].filter(Boolean);
+
+  if (!ranks.length) return "usuario";
+
+  let best = "usuario";
+  let bestIndex = 0;
+
+  for (const rank of ranks) {
+    const index = DISPLAY_RANK_ORDER.indexOf(rank);
+    if (index > bestIndex) {
+      best = rank;
+      bestIndex = index;
+    }
+  }
+
+  return best;
+};
+
+const resolveStaffPanelRole = (user) => {
+  const direct = normalizeRank(user?.rol_admin);
+  if (direct && STAFF_PANEL_RANKS.has(direct)) return direct;
+
+  const staff = normalizeRank(user?.rango_staff);
+  if (staff && STAFF_PANEL_RANKS.has(staff)) return staff;
+
+  return null;
 };
 
 const safeJson = async (res, fallback = null) => {
@@ -84,6 +143,9 @@ export default function DashboardPage() {
   const walletRef = useRef(null);
   const navigate = useNavigate();
 
+  const sessionUuid = sessionUser?.uuid;
+  const sessionLoggedIn = sessionUser?.loggedIn;
+
   const emitBalances = (detail) => {
     try {
       window.dispatchEvent(new CustomEvent("fc:balances", { detail: detail || {} }));
@@ -100,19 +162,23 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
-    if (!sessionUser?.uuid || !sessionUser?.loggedIn) return navigate("/");
+    if (!sessionUuid || !sessionLoggedIn) {
+      navigate("/");
+      return;
+    }
 
     const token = getAuthToken();
 
     const cargarDatos = async () => {
       try {
+        setLoading(true);
         setError(null);
 
         const reqs = [
-          fetch(apiUrl(`/api/usuarios/${sessionUser.uuid}`)),
-          fetch(apiUrl(`/api/monedas/${sessionUser.uuid}`)),
-          fetch(apiUrl(`/api/usuarios/${sessionUser.uuid}/xp`)),
-          fetch(apiUrl(`/api/usuarios/${sessionUser.uuid}/skin`)),
+          fetch(apiUrl(`/api/usuarios/${sessionUuid}`)),
+          fetch(apiUrl(`/api/monedas/${sessionUuid}`)),
+          fetch(apiUrl(`/api/usuarios/${sessionUuid}/xp`)),
+          fetch(apiUrl(`/api/usuarios/${sessionUuid}/skin`)),
         ];
 
         if (token) {
@@ -165,7 +231,15 @@ export default function DashboardPage() {
 
         const coinsByServerParsed = parseCoinsPayload(monedasRaw);
 
-        const rango_usuario = usuario?.rango_usuario || null;
+        const rol_admin = normalizeRank(usuario?.rol_admin);
+        const rango_usuario = normalizeRank(usuario?.rango_usuario);
+        const rango_staff = normalizeRank(usuario?.rango_staff);
+        const rango_real = resolveDisplayRankFromUser({
+          ...usuario,
+          rol_admin,
+          rango_usuario,
+          rango_staff,
+        });
         const es_premium = usuario?.es_premium === true;
 
         let wallet = toInt(usuario?.wallet_coins ?? 0);
@@ -174,7 +248,10 @@ export default function DashboardPage() {
           if (walletRes.status === 401) {
             clearSessionStorage();
             logout();
-          } else if (walletRes.ok) {
+            return;
+          }
+
+          if (walletRes.ok) {
             const w = await safeJson(walletRes, null);
             wallet = toInt(w?.walletBalance ?? w?.wallet_balance ?? wallet);
           }
@@ -183,28 +260,40 @@ export default function DashboardPage() {
         setSkinUrl(skin?.skin_url || null);
         setWalletBalance(wallet);
 
-        setUser({
+        const hydratedUser = {
           ...usuario,
-          rol_admin: usuario?.rol_admin || sessionUser?.rol_admin || null,
+          rol_admin,
           monedas: monedasRaw,
           coinsByServer: coinsByServerParsed,
           rango_usuario,
+          rango_staff,
+          rango_real,
           es_premium,
           wallet_coins: wallet,
-        });
+        };
 
+        setUser(hydratedUser);
         setXpData(xp);
 
         emitBalances({ walletCoins: wallet, coinsByServer: coinsByServerParsed });
 
-        setSessionUser({
-          ...sessionUser,
-          wallet_coins: wallet,
-          rol_admin: usuario?.rol_admin || sessionUser?.rol_admin || null,
-          rango_usuario,
-          nivel: usuario?.nivel,
-          xp_actual: usuario?.xp_actual,
-        }, token);
+        setSessionUser(
+          {
+            ...sessionUser,
+            loggedIn: true,
+            uuid: sessionUuid,
+            uid: usuario?.uid || sessionUser?.uid,
+            wallet_coins: wallet,
+            rol_admin,
+            rango_usuario,
+            rango_staff,
+            rango_real,
+            nivel: usuario?.nivel,
+            xp_actual: usuario?.xp_actual,
+            es_premium,
+          },
+          token
+        );
       } catch (err) {
         setError(err.message || "Error");
       } finally {
@@ -213,7 +302,7 @@ export default function DashboardPage() {
     };
 
     cargarDatos();
-  }, [navigate, sessionUser, logout, setSessionUser]);
+  }, [navigate, sessionUuid, sessionLoggedIn, logout, setSessionUser]);
 
   const actualizarMonedas = async () => {
     if (!user) return;
@@ -249,7 +338,7 @@ export default function DashboardPage() {
       if (walletRes) {
         if (walletRes.status === 401) {
           clearSessionStorage();
-            logout();
+          logout();
           wallet = 0;
         } else if (walletRes.ok) {
           const w = await safeJson(walletRes, null);
@@ -267,10 +356,13 @@ export default function DashboardPage() {
 
       emitBalances({ walletCoins: wallet, coinsByServer: coinsByServerParsed });
 
-      setSessionUser({
-        ...sessionUser,
-        wallet_coins: wallet,
-      }, token);
+      setSessionUser(
+        {
+          ...sessionUser,
+          wallet_coins: wallet,
+        },
+        token
+      );
     } catch (err) {
       console.error("[BALANCES]", err.message);
     }
@@ -311,13 +403,16 @@ export default function DashboardPage() {
   const porcentajeNivel = user ? Math.min(100, (toInt(user.xp_actual) / xpDelNivelActual) * 100) : 0;
 
   const rangoKey = useMemo(() => {
-    const r = (user?.rango_usuario || "").toString().trim().toLowerCase();
-    if (!r) return "none";
-    if (r.includes("nova")) return "nova";
-    if (r.includes("alpha")) return "alpha";
-    if (r.includes("inmortal")) return "inmortal";
-    return "none";
+    const r = normalizeRank(user?.rango_usuario);
+    if (!r || !USER_RANKS.has(r)) return "none";
+    return r;
   }, [user?.rango_usuario]);
+
+  const displayRankKey = useMemo(() => resolveDisplayRankFromUser(user), [user]);
+
+  const displayRankLabel = useMemo(() => DISPLAY_RANK_LABELS[displayRankKey] || "USUARIO", [displayRankKey]);
+
+  const adminRoleKey = useMemo(() => resolveStaffPanelRole(user), [user]);
 
   const avatarBg = useMemo(() => {
     switch (rangoKey) {
@@ -441,10 +536,10 @@ export default function DashboardPage() {
                       )}
                     </div>
 
-                    {user.rango_usuario && (
+                    {USER_RANKS.has(displayRankKey) && (
                       <img
-                        src={`/assets/etiquetas/${user.rango_usuario.toLowerCase().trim()}.webp`}
-                        alt={user.rango_usuario}
+                        src={`/assets/etiquetas/${displayRankKey}.webp`}
+                        alt={displayRankLabel}
                         className="avatar-rango-badge"
                         loading="eager"
                         decoding="async"
@@ -459,9 +554,9 @@ export default function DashboardPage() {
                       <h2 className="player-nombre">{user.uid}</h2>
 
                       <div className="player-badges">
-                        {user.rol_admin && (
-                          <span className={`badge-staff badge-${user.rol_admin.toLowerCase()}`}>
-                            {user.rol_admin.toUpperCase()}
+                        {displayRankKey !== "usuario" && (
+                          <span className={`badge-staff badge-${displayRankKey}`}>
+                            {displayRankLabel}
                           </span>
                         )}
 
@@ -615,7 +710,7 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              {user.rol_admin && (
+              {adminRoleKey && (
                 <div className="dash-admin">
                   <div className="admin-head">
                     <div className="admin-title">Panel del control</div>
@@ -628,7 +723,7 @@ export default function DashboardPage() {
                       <span className="tsf-btnDepth" />
                     </button>
 
-                    {String(user.rol_admin || "").toLowerCase() === "owner" && (
+                    {adminRoleKey === "owner" && (
                       <>
                         <button className="tsf-btn tsf-btn--green" onClick={() => navigate("/admin")}>
                           <span className="tsf-btnFace">Gestión de staff</span>
