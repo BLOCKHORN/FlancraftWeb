@@ -23,6 +23,12 @@ const MONTHS_ES = {
   diciembre: 11,
 };
 
+const normalizeRole = (value) => {
+  if (value === null || value === undefined) return null;
+  const role = String(value).trim().toLowerCase().replace(/[\s_-]+/g, "");
+  return role || null;
+};
+
 function parseAnyDate(value) {
   if (!value) return NaN;
   if (typeof value === "number") return value;
@@ -33,10 +39,7 @@ function parseAnyDate(value) {
   const iso = Date.parse(s);
   if (!Number.isNaN(iso)) return iso;
 
-  // dd/mm/yyyy (opcional hh:mm)
-  const m1 = s.match(
-    /^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2}))?$/
-  );
+  const m1 = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2}))?$/);
   if (m1) {
     const dd = Number(m1[1]);
     const mm = Number(m1[2]) - 1;
@@ -46,7 +49,6 @@ function parseAnyDate(value) {
     return new Date(yy, mm, dd, hh, mi, 0).getTime();
   }
 
-  // "7 de julio de 2025"
   const normalized = s
     .toLowerCase()
     .normalize("NFD")
@@ -64,7 +66,6 @@ function parseAnyDate(value) {
 }
 
 function getSortKey(n) {
-  // 1) created_at si existe (última creada real)
   const created =
     n?.created_at ||
     n?.createdAt ||
@@ -75,16 +76,114 @@ function getSortKey(n) {
   const tCreated = created ? parseAnyDate(created) : NaN;
   if (!Number.isNaN(tCreated)) return tCreated;
 
-  // 2) fecha
   const tFecha = parseAnyDate(n?.fecha);
   if (!Number.isNaN(tFecha)) return tFecha;
 
-  // 3) id
   const id = Number(n?.id);
   if (!Number.isNaN(id)) return id;
 
   return 0;
 }
+
+const generarSlug = (titulo) =>
+  String(titulo || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9 ]/g, "")
+    .replace(/\s+/g, "-")
+    .trim();
+
+const preloadImages = (urls, onDone) => {
+  let loaded = 0;
+
+  if (!urls.length) {
+    onDone();
+    return;
+  }
+
+  urls.forEach((url) => {
+    const img = new Image();
+    img.src = url;
+    img.onload = img.onerror = () => {
+      loaded += 1;
+      if (loaded === urls.length) onDone();
+    };
+  });
+};
+
+const formatDate = (dateStr) => {
+  const ts = parseAnyDate(dateStr);
+  if (Number.isNaN(ts)) return "";
+  const d = new Date(ts);
+  return d.toLocaleDateString("es-ES", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
+};
+
+const truncate = (text, limit = 160) => {
+  const t = String(text || "").trim();
+  if (!t) return "";
+  return t.length <= limit ? t : t.slice(0, t.lastIndexOf(" ", limit)) + "...";
+};
+
+const extractSubtitleAndDescription = (contenido) => {
+  try {
+    if (typeof contenido === "string") {
+      const div = document.createElement("div");
+      div.innerHTML = contenido;
+      const text = div.textContent || div.innerText || "";
+      const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
+      return {
+        subtitulo: lines[0] || "",
+        descripcion: truncate(lines.slice(1).join(" "), 170),
+      };
+    }
+
+    if (
+      typeof contenido === "object" &&
+      contenido !== null &&
+      Array.isArray(contenido?.content)
+    ) {
+      let subtitulo = "";
+      let descripcion = "";
+
+      for (const block of contenido.content) {
+        if (!block?.content) continue;
+
+        const textoPlano = block.content
+          .filter((c) => c.type === "text")
+          .map((c) => c.text)
+          .join(" ")
+          .replace(/\s+/g, " ")
+          .trim();
+
+        if (!textoPlano) continue;
+
+        if (!subtitulo && (block.type === "heading" || block.type === "paragraph")) {
+          subtitulo = textoPlano;
+          continue;
+        }
+
+        descripcion += `${textoPlano} `;
+        if (descripcion.length > 180) break;
+      }
+
+      if (!descripcion && subtitulo) {
+        descripcion = subtitulo;
+        subtitulo = "";
+      }
+
+      return { subtitulo, descripcion: truncate(descripcion.trim(), 170) };
+    }
+
+    return { subtitulo: "", descripcion: "" };
+  } catch {
+    return { subtitulo: "", descripcion: "" };
+  }
+};
 
 const AllNews = () => {
   const [newsData, setNewsData] = useState([]);
@@ -95,7 +194,13 @@ const AllNews = () => {
 
   const listRef = useRef(null);
   const { user } = useContext(UserContext);
-  const isOwner = user?.rol_admin === "owner";
+
+  const effectiveRole = useMemo(
+    () => normalizeRole(user?.rango_staff || user?.rol_admin),
+    [user]
+  );
+
+  const isOwner = user?.loggedIn && effectiveRole === "owner";
 
   const itemVariants = {
     hidden: { opacity: 0, y: 12 },
@@ -122,15 +227,14 @@ const AllNews = () => {
 
         setNewsData(publicadas);
 
-        // preload: 1 featured + primeros de la lista
-        const preload = [
-          publicadas[0],
-          ...publicadas.slice(1, 1 + visibleCount),
-        ]
+        const preload = [publicadas[0], ...publicadas.slice(1, 1 + visibleCount)]
           .filter(Boolean)
           .map((n) => n.portada || "/assets/placeholder.png");
 
-        preloadImages(preload);
+        preloadImages(preload, () => {
+          setImagesLoaded(true);
+          setTimeout(() => setLoading(false), 180);
+        });
       } catch (error) {
         console.error("Error al obtener noticias:", error);
         setImagesLoaded(true);
@@ -139,111 +243,7 @@ const AllNews = () => {
     };
 
     fetchNoticias();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const generarSlug = (titulo) => {
-    return String(titulo)
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^a-z0-9 ]/g, "")
-      .replace(/\s+/g, "-")
-      .trim();
-  };
-
-  const preloadImages = (urls) => {
-    let loaded = 0;
-    if (!urls.length) {
-      setImagesLoaded(true);
-      setLoading(false);
-      return;
-    }
-    urls.forEach((url) => {
-      const img = new Image();
-      img.src = url;
-      img.onload = img.onerror = () => {
-        loaded++;
-        if (loaded === urls.length) {
-          setImagesLoaded(true);
-          setTimeout(() => setLoading(false), 180);
-        }
-      };
-    });
-  };
-
-  const formatDate = (dateStr) => {
-    const ts = parseAnyDate(dateStr);
-    if (Number.isNaN(ts)) return "";
-    const d = new Date(ts);
-    return d.toLocaleDateString("es-ES", {
-      day: "2-digit",
-      month: "long",
-      year: "numeric",
-    });
-  };
-
-  const truncate = (text, limit = 160) => {
-    const t = String(text || "").trim();
-    if (!t) return "";
-    return t.length <= limit ? t : t.slice(0, t.lastIndexOf(" ", limit)) + "...";
-  };
-
-  const extractSubtitleAndDescription = (contenido) => {
-    try {
-      if (typeof contenido === "string") {
-        const div = document.createElement("div");
-        div.innerHTML = contenido;
-        const text = div.textContent || div.innerText || "";
-        const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
-        return {
-          subtitulo: lines[0] || "",
-          descripcion: truncate(lines.slice(1).join(" "), 170),
-        };
-      }
-
-      if (
-        typeof contenido === "object" &&
-        contenido !== null &&
-        Array.isArray(contenido?.content)
-      ) {
-        let subtitulo = "";
-        let descripcion = "";
-
-        for (const block of contenido.content) {
-          if (!block?.content) continue;
-
-          const textoPlano = block.content
-            .filter((c) => c.type === "text")
-            .map((c) => c.text)
-            .join(" ")
-            .replace(/\s+/g, " ")
-            .trim();
-
-          if (!textoPlano) continue;
-
-          if (!subtitulo && (block.type === "heading" || block.type === "paragraph")) {
-            subtitulo = textoPlano;
-            continue;
-          }
-
-          descripcion += textoPlano + " ";
-          if (descripcion.length > 180) break;
-        }
-
-        if (!descripcion && subtitulo) {
-          descripcion = subtitulo;
-          subtitulo = "";
-        }
-
-        return { subtitulo, descripcion: truncate(descripcion.trim(), 170) };
-      }
-
-      return { subtitulo: "", descripcion: "" };
-    } catch {
-      return { subtitulo: "", descripcion: "" };
-    }
-  };
+  }, [visibleCount]);
 
   const servidoresDisponibles = useMemo(() => {
     const set = new Set();
@@ -261,10 +261,7 @@ const AllNews = () => {
     );
   }, [newsData, serverFilter]);
 
-  // ✅ Arriba SOLO 1
   const mainFeatured = dataFiltrada[0] || null;
-
-  // ✅ El resto va abajo
   const rest = dataFiltrada.slice(1, 1 + visibleCount);
 
   const scrollToList = () => {
@@ -281,8 +278,7 @@ const AllNews = () => {
   const mainExcerpt = useMemo(() => {
     if (!mainFeatured) return { subtitulo: "", descripcion: "" };
     return extractSubtitleAndDescription(mainFeatured.contenido);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mainFeatured?.id]);
+  }, [mainFeatured]);
 
   const dateOf = (n) => n?.fecha || n?.created_at || n?.fecha_creacion;
 
@@ -297,180 +293,181 @@ const AllNews = () => {
           { name: "Noticias", item: buildCanonical("/news") },
         ])}
       />
+
       <section className="allNews">
-      <header className="allNews__hero">
-        <div className="allNews__heroBg" aria-hidden="true" />
-        <div className="allNews__heroFade" aria-hidden="true" />
+        <header className="allNews__hero">
+          <div className="allNews__heroBg" aria-hidden="true" />
+          <div className="allNews__heroFade" aria-hidden="true" />
 
-        <div className="allNews__heroInner">
-          <div className="allNews__topRow">
-            {isOwner && (
-              <Link to="/admin/noticias" className="allNews__adminBtn">
-                Crear noticia
-              </Link>
-            )}
-          </div>
+          <div className="allNews__heroInner">
+            <div className="allNews__topRow">
+              {isOwner && (
+                <Link to="/admin/noticias" className="allNews__adminBtn">
+                  Crear noticia
+                </Link>
+              )}
+            </div>
 
-          <Motion.h1
-            className="allNews__title"
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35 }}
-          >
-            Noticias
-          </Motion.h1>
+            <Motion.h1
+              className="allNews__title"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35 }}
+            >
+              Noticias
+            </Motion.h1>
 
-
-
-          <div className="allNews__featuredSolo">
-            {!imagesLoaded || loading ? (
-              <div className="allNews__featuredCardSolo is-skeleton">
-                <div className="skHeroMedia" />
-                <div className="skHeroInfo">
-                  <div className="skLine skTitle" />
-                  <div className="skLine skP" />
-                  <div className="skLine skMeta" />
-                </div>
-              </div>
-            ) : (
-              mainFeatured && (
-                <Motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.35, delay: 0.05 }}
-                >
-                  <Link to={`/news/${mainFeatured.slug}`} className="allNews__featuredCardSolo">
-                    <div className="heroMedia heroMedia--contain">
-                      <img
-                        src={mainFeatured.portada || "/assets/placeholder.png"}
-                        alt={mainFeatured.titulo}
-                        loading="eager"
-                      />
-                      <div className="heroOverlay" />
-                    </div>
-
-                    <div className="heroInfo">
-                      <div className="meta">
-                        <span className="date">{formatDate(dateOf(mainFeatured))}</span>
-                        {mainFeatured?.servidor && (
-                          <span className="tag">
-                            {String(mainFeatured.servidor).toUpperCase()}
-                          </span>
-                        )}
-                        <span className="badgeLatest">ÚLTIMA</span>
-                      </div>
-
-                      <h3 className="heroTitle">{mainFeatured.titulo}</h3>
-
-
-                    </div>
-                  </Link>
-                </Motion.div>
-              )
-            )}
-          </div>
-
-          <div className="allNews__ctaRow">
-            <button className="allNews__ctaBtn" onClick={scrollToList} type="button">
-              Ver todas
-            </button>
-          </div>
-        </div>
-      </header>
-
-      <main className="allNews__body" ref={listRef}>
-        <div className="allNews__bodyInner">
-          <div className="allNews__sectionHead">
-            <h2 className="allNews__sectionTitle">Últimos artículos</h2>
-
-            {servidoresDisponibles.length > 0 && (
-              <div className="allNews__filters">
-                <button
-                  type="button"
-                  className={`pill ${serverFilter === "all" ? "is-active" : ""}`}
-                  onClick={() => setServerFilter("all")}
-                >
-                  Todos
-                </button>
-
-                {servidoresDisponibles.slice(0, 6).map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    className={`pill ${serverFilter === s ? "is-active" : ""}`}
-                    onClick={() => setServerFilter(s)}
-                  >
-                    {s.toUpperCase()}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="allNews__list">
-            {!imagesLoaded || loading ? (
-              Array.from({ length: 8 }).map((_, i) => (
-                <div key={i} className="allNews__listCard is-skeleton">
-                  <div className="skThumb" />
-                  <div className="skText">
+            <div className="allNews__featuredSolo">
+              {!imagesLoaded || loading ? (
+                <div className="allNews__featuredCardSolo is-skeleton">
+                  <div className="skHeroMedia" />
+                  <div className="skHeroInfo">
                     <div className="skLine skTitle" />
-                    <div className="skLine skP" />
                     <div className="skLine skP" />
                     <div className="skLine skMeta" />
                   </div>
                 </div>
-              ))
-            ) : (
-              rest.map((item, index) => {
-                const { subtitulo, descripcion } = extractSubtitleAndDescription(item.contenido);
-
-                return (
+              ) : (
+                mainFeatured && (
                   <Motion.div
-                    key={item.id}
-                    custom={index}
-                    variants={itemVariants}
-                    initial="hidden"
-                    animate="visible"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.35, delay: 0.05 }}
                   >
-                    <Link to={`/news/${item.slug}`} className="allNews__listCard">
-                      <div className="thumb">
+                    <Link to={`/news/${mainFeatured.slug}`} className="allNews__featuredCardSolo">
+                      <div className="heroMedia heroMedia--contain">
                         <img
-                          src={item.portada || "/assets/placeholder.png"}
-                          alt={item.titulo}
-                          loading="lazy"
+                          src={mainFeatured.portada || "/assets/placeholder.png"}
+                          alt={mainFeatured.titulo}
+                          loading="eager"
                         />
+                        <div className="heroOverlay" />
                       </div>
 
-                      <div className="text">
+                      <div className="heroInfo">
                         <div className="meta">
-                          <span className="date">{formatDate(dateOf(item))}</span>
-                          {item?.servidor && (
+                          <span className="date">{formatDate(dateOf(mainFeatured))}</span>
+                          {mainFeatured?.servidor && (
                             <span className="tag">
-                              {String(item.servidor).toUpperCase()}
+                              {String(mainFeatured.servidor).toUpperCase()}
                             </span>
                           )}
+                          <span className="badgeLatest">ÚLTIMA</span>
                         </div>
 
-                        <h4 className="title">{item.titulo}</h4>
-                        {subtitulo ? <div className="sub">{subtitulo}</div> : null}
+                        <h3 className="heroTitle">{mainFeatured.titulo}</h3>
+
+                        {mainExcerpt.subtitulo ? (
+                          <div className="heroSubtitle">{mainExcerpt.subtitulo}</div>
+                        ) : null}
                       </div>
                     </Link>
                   </Motion.div>
-                );
-              })
-            )}
-          </div>
+                )
+              )}
+            </div>
 
-          {!loading && dataFiltrada.length > 1 + visibleCount && (
-            <div className="allNews__more">
-              <button className="allNews__moreBtn" onClick={showMore} type="button">
-                Mostrar más
+            <div className="allNews__ctaRow">
+              <button className="allNews__ctaBtn" onClick={scrollToList} type="button">
+                Ver todas
               </button>
             </div>
-          )}
-        </div>
-      </main>
-    </section>
+          </div>
+        </header>
+
+        <main className="allNews__body" ref={listRef}>
+          <div className="allNews__bodyInner">
+            <div className="allNews__sectionHead">
+              <h2 className="allNews__sectionTitle">Últimos artículos</h2>
+
+              {servidoresDisponibles.length > 0 && (
+                <div className="allNews__filters">
+                  <button
+                    type="button"
+                    className={`pill ${serverFilter === "all" ? "is-active" : ""}`}
+                    onClick={() => setServerFilter("all")}
+                  >
+                    Todos
+                  </button>
+
+                  {servidoresDisponibles.slice(0, 6).map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      className={`pill ${serverFilter === s ? "is-active" : ""}`}
+                      onClick={() => setServerFilter(s)}
+                    >
+                      {s.toUpperCase()}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="allNews__list">
+              {!imagesLoaded || loading ? (
+                Array.from({ length: 8 }).map((_, i) => (
+                  <div key={i} className="allNews__listCard is-skeleton">
+                    <div className="skThumb" />
+                    <div className="skText">
+                      <div className="skLine skTitle" />
+                      <div className="skLine skP" />
+                      <div className="skLine skP" />
+                      <div className="skLine skMeta" />
+                    </div>
+                  </div>
+                ))
+              ) : (
+                rest.map((item, index) => {
+                  const { subtitulo } = extractSubtitleAndDescription(item.contenido);
+
+                  return (
+                    <Motion.div
+                      key={item.id}
+                      custom={index}
+                      variants={itemVariants}
+                      initial="hidden"
+                      animate="visible"
+                    >
+                      <Link to={`/news/${item.slug}`} className="allNews__listCard">
+                        <div className="thumb">
+                          <img
+                            src={item.portada || "/assets/placeholder.png"}
+                            alt={item.titulo}
+                            loading="lazy"
+                          />
+                        </div>
+
+                        <div className="text">
+                          <div className="meta">
+                            <span className="date">{formatDate(dateOf(item))}</span>
+                            {item?.servidor && (
+                              <span className="tag">
+                                {String(item.servidor).toUpperCase()}
+                              </span>
+                            )}
+                          </div>
+
+                          <h4 className="title">{item.titulo}</h4>
+                          {subtitulo ? <div className="sub">{subtitulo}</div> : null}
+                        </div>
+                      </Link>
+                    </Motion.div>
+                  );
+                })
+              )}
+            </div>
+
+            {!loading && dataFiltrada.length > 1 + visibleCount && (
+              <div className="allNews__more">
+                <button className="allNews__moreBtn" onClick={showMore} type="button">
+                  Mostrar más
+                </button>
+              </div>
+            )}
+          </div>
+        </main>
+      </section>
     </>
   );
 };

@@ -3,8 +3,15 @@ const db = require("../models/db");
 const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 200;
 
+const STAFF_ORDER = ["builder", "helper", "srhelper", "mod", "srmod", "admin", "owner"];
+
 const normalizeText = (v) => String(v ?? "").trim();
 const normalizeLower = (v) => normalizeText(v).toLowerCase();
+
+const normalizeRole = (value) => {
+  const role = normalizeLower(value).replace(/[\s_-]+/g, "");
+  return role || null;
+};
 
 const toInt = (v, fallback) => {
   const n = Number.parseInt(String(v ?? ""), 10);
@@ -21,12 +28,59 @@ const safeBigint = (v) => {
   return Number.isFinite(n) ? Math.trunc(n) : null;
 };
 
+const hasMinRole = (currentRole, minRole) => {
+  const currentIndex = STAFF_ORDER.indexOf(normalizeRole(currentRole));
+  const minIndex = STAFF_ORDER.indexOf(normalizeRole(minRole));
+
+  if (currentIndex === -1 || minIndex === -1) return false;
+  return currentIndex >= minIndex;
+};
+
+const getRequestRole = (req) => {
+  return normalizeRole(req?.usuario?.rango_staff || req?.usuario?.rol_admin);
+};
+
 const requireApiKey = (req) => {
   const incoming = normalizeText(req.headers["x-api-key"]);
   const secret = normalizeText(process.env.JAILTRACKER_SECRET);
-  if (!secret) return { ok: false, code: 500, error: "Server not configured" };
-  if (!incoming || incoming !== secret) return { ok: false, code: 403, error: "Forbidden: invalid token" };
+
+  if (!secret) {
+    return { ok: false, code: 500, error: "Server not configured" };
+  }
+
+  if (!incoming || incoming !== secret) {
+    return { ok: false, code: 403, error: "Forbidden: invalid token" };
+  }
+
   return { ok: true };
+};
+
+const canPatchSanction = (req) => {
+  const auth = requireApiKey(req);
+  if (auth.ok) return { ok: true };
+
+  const role = getRequestRole(req);
+  if (hasMinRole(role, "mod")) return { ok: true };
+
+  if (req.usuario?.uuid) {
+    return { ok: false, code: 403, error: "No tienes permisos suficientes." };
+  }
+
+  return auth;
+};
+
+const canDeleteSanction = (req) => {
+  const auth = requireApiKey(req);
+  if (auth.ok) return { ok: true };
+
+  const role = getRequestRole(req);
+  if (hasMinRole(role, "admin")) return { ok: true };
+
+  if (req.usuario?.uuid) {
+    return { ok: false, code: 403, error: "No tienes permisos suficientes." };
+  }
+
+  return auth;
 };
 
 const pickOrder = (raw) => {
@@ -55,9 +109,6 @@ const buildFilters = (query, q) => {
   return q;
 };
 
-// POST /api/jails  (alias: POST /api/sanciones)
-// Body esperado (plugin):
-// { uuid, name, moderator, duration, timestamp, server, type, banType }
 exports.registrarSancion = async (req, res) => {
   const auth = requireApiKey(req);
   if (!auth.ok) return res.status(auth.code).json({ error: auth.error });
@@ -69,7 +120,6 @@ exports.registrarSancion = async (req, res) => {
     const duration = normalizeText(req.body.duration) || null;
     const server = normalizeLower(req.body.server) || null;
     const type = normalizeLower(req.body.type) || null;
-
     const bantype = normalizeLower(req.body.banType ?? req.body.bantype);
     const timestamp = safeBigint(req.body.timestamp) ?? Date.now();
 
@@ -86,7 +136,7 @@ exports.registrarSancion = async (req, res) => {
       server,
       type,
       bantype,
-      estado: "pendiente"
+      estado: "pendiente",
     };
 
     const { data, error } = await db.from("jails").insert(payload).select("*").single();
@@ -99,7 +149,6 @@ exports.registrarSancion = async (req, res) => {
   }
 };
 
-// GET /api/sanciones
 exports.obtenerSanciones = async (req, res) => {
   try {
     const limit = Math.min(MAX_LIMIT, Math.max(1, toInt(req.query.limit, DEFAULT_LIMIT)));
@@ -120,8 +169,8 @@ exports.obtenerSanciones = async (req, res) => {
         limit,
         offset,
         total: count ?? 0,
-        hasMore: (offset + limit) < (count ?? 0)
-      }
+        hasMore: offset + limit < (count ?? 0),
+      },
     });
   } catch (err) {
     console.error("[GET SANCIONES]", err);
@@ -129,7 +178,6 @@ exports.obtenerSanciones = async (req, res) => {
   }
 };
 
-// GET /api/sanciones/jugador/:nombre
 exports.obtenerSancionesPorJugador = async (req, res) => {
   const nombre = normalizeText(req.params.nombre);
   if (!nombre) return res.status(400).json({ error: "Nombre de jugador no válido" });
@@ -153,8 +201,8 @@ exports.obtenerSancionesPorJugador = async (req, res) => {
         limit,
         offset,
         total: count ?? 0,
-        hasMore: (offset + limit) < (count ?? 0)
-      }
+        hasMore: offset + limit < (count ?? 0),
+      },
     });
   } catch (err) {
     console.error("[GET SANCIONES JUGADOR]", err);
@@ -162,10 +210,9 @@ exports.obtenerSancionesPorJugador = async (req, res) => {
   }
 };
 
-// PATCH /api/sanciones/:id
 exports.actualizarSancion = async (req, res) => {
-  const auth = requireApiKey(req);
-  if (!auth.ok && !req.usuario?.uuid) return res.status(auth.code).json({ error: auth.error });
+  const auth = canPatchSanction(req);
+  if (!auth.ok) return res.status(auth.code).json({ error: auth.error });
 
   const id = safeId(req.params.id);
   if (!id) return res.status(400).json({ error: "id no válido" });
@@ -173,19 +220,24 @@ exports.actualizarSancion = async (req, res) => {
   try {
     const patch = {};
 
-    if (req.body.estado != null) patch.estado = normalizeLower(req.body.estado);
+    if (req.body.estado != null) patch.estado = normalizeLower(req.body.estado) || null;
     if (req.body.observacion != null) patch.observacion = normalizeText(req.body.observacion) || null;
     if (req.body.revisado_por != null) patch.revisado_por = normalizeText(req.body.revisado_por) || null;
-
-    if (req.body.type != null) patch.type = normalizeLower(req.body.type);
+    if (req.body.type != null) patch.type = normalizeLower(req.body.type) || null;
     if (req.body.duration != null) patch.duration = normalizeText(req.body.duration) || null;
-    if (req.body.bantype != null) patch.bantype = normalizeLower(req.body.bantype);
+    if (req.body.bantype != null) patch.bantype = normalizeLower(req.body.bantype) || null;
 
-    if (Object.keys(patch).length === 0) {
+    if (!Object.keys(patch).length) {
       return res.status(400).json({ error: "No hay campos para actualizar" });
     }
 
-    const { data, error } = await db.from("jails").update(patch).eq("id", id).select("*").single();
+    const { data, error } = await db
+      .from("jails")
+      .update(patch)
+      .eq("id", id)
+      .select("*")
+      .single();
+
     if (error) throw error;
 
     return res.status(200).json({ success: true, data });
@@ -195,10 +247,9 @@ exports.actualizarSancion = async (req, res) => {
   }
 };
 
-// DELETE /api/sanciones/:id
 exports.eliminarSancion = async (req, res) => {
-  const auth = requireApiKey(req);
-  if (!auth.ok && !req.usuario?.uuid) return res.status(auth.code).json({ error: auth.error });
+  const auth = canDeleteSanction(req);
+  if (!auth.ok) return res.status(auth.code).json({ error: auth.error });
 
   const id = safeId(req.params.id);
   if (!id) return res.status(400).json({ error: "id no válido" });

@@ -11,7 +11,8 @@ const safeJsonParse = (value) => {
 
 export function getStoredUser() {
   if (typeof window === "undefined") return null;
-  return safeJsonParse(window.localStorage.getItem(USER_KEY));
+  const parsed = safeJsonParse(window.localStorage.getItem(USER_KEY));
+  return parsed && typeof parsed === "object" ? parsed : null;
 }
 
 export function getAuthToken() {
@@ -26,14 +27,18 @@ export function persistSession(user, token) {
     window.localStorage.setItem(USER_KEY, JSON.stringify(user));
   }
 
-  if (token) {
+  if (typeof token === "string" && token.trim()) {
     window.localStorage.setItem(TOKEN_KEY, token);
   }
 }
 
 export function clearSessionStorage() {
   if (typeof window === "undefined") return;
+
   window.localStorage.removeItem(USER_KEY);
   window.localStorage.removeItem(TOKEN_KEY);
   window.localStorage.removeItem("rol_admin");
+  window.localStorage.removeItem("rango_staff");
+  window.localStorage.removeItem("rango_usuario");
+  window.localStorage.removeItem("rango_real");
 }

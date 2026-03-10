@@ -1,4 +1,3 @@
-// src/components/Noticias/NewsDetail.jsx
 import React, { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Seo from "../SEO/Seo";
@@ -16,6 +15,12 @@ const escapeHtml = (unsafe = "") =>
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
+
+const normalizeRole = (value) => {
+  if (value === null || value === undefined) return null;
+  const role = String(value).trim().toLowerCase().replace(/[\s_-]+/g, "");
+  return role || null;
+};
 
 const renderMarks = (text, marks = []) =>
   (marks || []).reduce((acc, mark) => {
@@ -120,12 +125,12 @@ const calcReadingMinutes = (noticia) => {
   let text = "";
   if (noticia?.contenido_html) text = stripHtml(noticia.contenido_html);
   else if (typeof noticia?.contenido === "string") text = stripHtml(noticia.contenido);
-  else if (typeof noticia?.contenido === "object" && noticia?.contenido?.type === "doc")
+  else if (typeof noticia?.contenido === "object" && noticia?.contenido?.type === "doc") {
     text = extractTextFromTiptap(noticia.contenido);
+  }
 
   const words = text ? text.split(/\s+/).filter(Boolean).length : 0;
-  const mins = Math.max(1, Math.round(words / 220));
-  return mins;
+  return Math.max(1, Math.round(words / 220));
 };
 
 const NewsDetail = () => {
@@ -142,13 +147,18 @@ const NewsDetail = () => {
   const shareRef = useRef(null);
   const { user } = useContext(UserContext);
 
+  const effectiveRole = useMemo(
+    () => normalizeRole(user?.rango_staff || user?.rol_admin),
+    [user]
+  );
+
   const canEdit = useMemo(() => {
-    if (!user) return false;
-    return hasMinRole(user.rol_admin, "mod") || hasMinRole(user.rango_staff, "mod");
-  }, [user]);
+    if (!user?.loggedIn) return false;
+    return hasMinRole(effectiveRole, "owner");
+  }, [user, effectiveRole]);
 
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "instant" });
+    window.scrollTo({ top: 0, behavior: "auto" });
   }, [slug]);
 
   useEffect(() => {
@@ -197,6 +207,7 @@ const NewsDetail = () => {
       const max = Math.max(1, scrollHeight - clientHeight);
       setProgress(Math.min(1, Math.max(0, scrollTop / max)));
     };
+
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
@@ -216,6 +227,7 @@ const NewsDetail = () => {
 
     window.addEventListener("mousedown", onDown);
     window.addEventListener("keydown", onKey);
+
     return () => {
       window.removeEventListener("mousedown", onDown);
       window.removeEventListener("keydown", onKey);
@@ -224,10 +236,23 @@ const NewsDetail = () => {
 
   const handleCopy = () => {
     const url = window.location.href;
-    navigator.clipboard.writeText(url).then(() => {
-      setCopiado(true);
-      setTimeout(() => setCopiado(false), 2200);
-    });
+
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(url).then(() => {
+        setCopiado(true);
+        setTimeout(() => setCopiado(false), 2200);
+      });
+      return;
+    }
+
+    const input = document.createElement("input");
+    input.value = url;
+    document.body.appendChild(input);
+    input.select();
+    document.execCommand("copy");
+    document.body.removeChild(input);
+    setCopiado(true);
+    setTimeout(() => setCopiado(false), 2200);
   };
 
   const irAEditar = () => {
@@ -243,13 +268,25 @@ const NewsDetail = () => {
 
     switch (platform) {
       case "x":
-        window.open(`https://twitter.com/intent/tweet?url=${url}&text=${title}`, "_blank", "noopener,noreferrer");
+        window.open(
+          `https://twitter.com/intent/tweet?url=${url}&text=${title}`,
+          "_blank",
+          "noopener,noreferrer"
+        );
         break;
       case "telegram":
-        window.open(`https://t.me/share/url?url=${url}&text=${title}`, "_blank", "noopener,noreferrer");
+        window.open(
+          `https://t.me/share/url?url=${url}&text=${title}`,
+          "_blank",
+          "noopener,noreferrer"
+        );
         break;
       case "whatsapp":
-        window.open(`https://api.whatsapp.com/send?text=${title}%20-%20${url}`, "_blank", "noopener,noreferrer");
+        window.open(
+          `https://api.whatsapp.com/send?text=${title}%20-%20${url}`,
+          "_blank",
+          "noopener,noreferrer"
+        );
         break;
       case "discord":
         handleCopy();
@@ -277,7 +314,11 @@ const NewsDetail = () => {
     return sanitizeHtml(html);
   }, [noticia]);
 
-  const heroSrc = useMemo(() => (noticia?.portada || noticia?.imagen || "").trim(), [noticia]);
+  const heroSrc = useMemo(
+    () => (noticia?.portada || noticia?.imagen || "").trim(),
+    [noticia]
+  );
+
   const heroStyle = useMemo(
     () => (heroSrc ? { "--nd-hero": `url("${heroSrc}")` } : undefined),
     [heroSrc]
@@ -359,11 +400,15 @@ const NewsDetail = () => {
 
   if (!noticia) return null;
 
+  const descriptionText = String(
+    noticia.descripcion || noticia.resumen || stripHtml(contentHtml || "")
+  ).slice(0, 155);
+
   return (
     <div className="news-detail nd-loaded">
       <Seo
         title={`${noticia.titulo || "Noticia"} | FlanCraft`}
-        description={String(noticia.descripcion || noticia.resumen || stripHtml(contentHtml || "")).slice(0, 155)}
+        description={descriptionText}
         canonical={buildCanonical(`/news/${noticia.slug || slug}`)}
         image={heroSrc || undefined}
         jsonLd={[
@@ -373,24 +418,25 @@ const NewsDetail = () => {
             { name: noticia.titulo || "Noticia", item: buildCanonical(`/news/${noticia.slug || slug}`) },
           ]),
           {
-          "@context": "https://schema.org",
-          "@type": "Article",
-          headline: noticia.titulo || "Noticia",
-          description: String(noticia.descripcion || noticia.resumen || stripHtml(contentHtml || "")).slice(0, 155),
-          image: heroSrc || undefined,
-          url: `https://www.flancraft.com/news/${noticia.slug || slug}`,
-          datePublished: noticia.fecha || noticia.created_at || undefined,
-          author: {
-            "@type": "Organization",
-            name: "FlanCraft",
+            "@context": "https://schema.org",
+            "@type": "Article",
+            headline: noticia.titulo || "Noticia",
+            description: descriptionText,
+            image: heroSrc || undefined,
+            url: `https://www.flancraft.com/news/${noticia.slug || slug}`,
+            datePublished: noticia.fecha || noticia.created_at || undefined,
+            author: {
+              "@type": "Organization",
+              name: "FlanCraft",
+            },
+            publisher: {
+              "@type": "Organization",
+              name: "FlanCraft",
+            },
           },
-          publisher: {
-            "@type": "Organization",
-            name: "FlanCraft",
-          },
-        },
         ]}
       />
+
       <div className="nd-progress" style={{ transform: `scaleX(${progress})` }} />
 
       <section className="nd-hero" style={heroStyle}>
@@ -474,36 +520,21 @@ const NewsDetail = () => {
                       <span>X</span>
                     </button>
 
-                    <button
-                      type="button"
-                      className="nd-shareItem"
-                      onClick={() => handleShare("discord")}
-                      role="menuitem"
-                    >
+                    <button type="button" className="nd-shareItem" onClick={() => handleShare("discord")} role="menuitem">
                       <span className="nd-shareItem__icon discord">
                         <i className="fa-brands fa-discord" aria-hidden="true" />
                       </span>
                       <span>Discord</span>
                     </button>
 
-                    <button
-                      type="button"
-                      className="nd-shareItem"
-                      onClick={() => handleShare("telegram")}
-                      role="menuitem"
-                    >
+                    <button type="button" className="nd-shareItem" onClick={() => handleShare("telegram")} role="menuitem">
                       <span className="nd-shareItem__icon telegram">
                         <i className="fa-brands fa-telegram" aria-hidden="true" />
                       </span>
                       <span>Telegram</span>
                     </button>
 
-                    <button
-                      type="button"
-                      className="nd-shareItem"
-                      onClick={() => handleShare("whatsapp")}
-                      role="menuitem"
-                    >
+                    <button type="button" className="nd-shareItem" onClick={() => handleShare("whatsapp")} role="menuitem">
                       <span className="nd-shareItem__icon whatsapp">
                         <i className="fa-brands fa-whatsapp" aria-hidden="true" />
                       </span>
@@ -563,7 +594,10 @@ const NewsDetail = () => {
                     <div className="nd-card__title">{n.titulo}</div>
                     <div className="nd-card__meta">
                       {n.fecha
-                        ? new Date(n.fecha).toLocaleDateString("es-ES", { day: "2-digit", month: "short" })
+                        ? new Date(n.fecha).toLocaleDateString("es-ES", {
+                            day: "2-digit",
+                            month: "short",
+                          })
                         : ""}
                     </div>
                   </div>

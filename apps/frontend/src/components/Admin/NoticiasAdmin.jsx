@@ -57,12 +57,27 @@ const isProbablyHtml = (s) => {
   return v.includes("<") && v.includes(">");
 };
 
+const safeJsonParse = (value) => {
+  try {
+    return JSON.parse(String(value || ""));
+  } catch {
+    return null;
+  }
+};
+
+const normalizeStaffRole = (value) =>
+  String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_-]+/g, "");
+
 const normalizeCategoria = (value) => {
   const v = String(value || "")
     .trim()
     .toLowerCase();
 
   if (CATEGORIA_LABELS[v]) return v;
+
   if (
     v === "survival" ||
     v === "lobby" ||
@@ -140,16 +155,19 @@ const ensureEditorDefaults = (editor) => {
 
 const MenuBar = ({ editor }) => {
   const fileInputRef = useRef(null);
+
   if (!editor) return null;
 
   const setLink = () => {
     const prev = editor.getAttributes("link").href;
     const url = window.prompt("URL del enlace:", prev || "https://");
     if (url === null) return;
+
     if (!String(url).trim()) {
       editor.chain().focus().unsetLink().run();
       return;
     }
+
     editor
       .chain()
       .focus()
@@ -490,10 +508,10 @@ const NoticiasAdmin = () => {
     onUpdate: () => setDirty(true),
   });
 
-  const isOwner = useMemo(
-    () => Boolean(user?.loggedIn && String(user?.rol_admin || "").toLowerCase() === "owner"),
-    [user]
-  );
+  const isOwner = useMemo(() => {
+    const role = normalizeStaffRole(user?.rango_staff || user?.rol_admin);
+    return Boolean(user?.loggedIn && role === "owner");
+  }, [user]);
 
   const heroStyle = useMemo(() => {
     const src = String(form.portada || "").trim();
@@ -507,14 +525,13 @@ const NoticiasAdmin = () => {
       ...(options.headers || {}),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     };
-
-    const res = await fetch(apiUrl(path), { ...options, headers });
-    return res;
+    return fetch(apiUrl(path), { ...options, headers });
   }, []);
 
   const fetchNoticias = useCallback(async () => {
     try {
       const res = await request("/api/noticias/todas");
+
       if (res.status === 401 || res.status === 403) throw new Error("NO_AUTH");
       if (!res.ok) throw new Error("FETCH_FAIL");
 
@@ -556,7 +573,7 @@ const NoticiasAdmin = () => {
   }, [isOwner, fetchNoticias]);
 
   useEffect(() => {
-    if (!editor || !contenidoPendiente) return;
+    if (!editor || contenidoPendiente === null || contenidoPendiente === undefined) return;
 
     try {
       if (typeof contenidoPendiente === "string") {
@@ -565,8 +582,11 @@ const NoticiasAdmin = () => {
           editor.commands.setContent(html, false, { preserveWhitespace: true });
         } else {
           const json = safeJsonParse(contenidoPendiente);
-          if (json?.type === "doc") editor.commands.setContent(json);
-          else editor.commands.setContent(contenidoPendiente);
+          if (json?.type === "doc") {
+            editor.commands.setContent(json);
+          } else {
+            editor.commands.setContent(contenidoPendiente);
+          }
         }
       } else {
         editor.commands.setContent(contenidoPendiente);
@@ -743,9 +763,7 @@ const NoticiasAdmin = () => {
   const noticiasFiltradas =
     filtroServidor === "todos"
       ? noticias
-      : noticias.filter(
-          (n) => normalizeCategoria(n?.servidor || "global") === filtroServidor
-        );
+      : noticias.filter((n) => normalizeCategoria(n?.servidor || "global") === filtroServidor);
 
   const onCancelEdit = () => {
     if (dirty) {
@@ -775,390 +793,391 @@ const NoticiasAdmin = () => {
     <>
       <Seo title="Panel interno | FlanCraft" noindex />
       <div className="noticias-admin-page">
-      <section className="na-hero" style={heroStyle}>
-        <div className="na-hero__wrap">
-          <div className="na-hero__top">
-            <div className="na-hero__titleblock">
-              <div className="na-hero__kicker">Panel Admin</div>
-              <h1 className="na-hero__title">{form.id ? "Editar noticia" : "Crear noticia"}</h1>
-              <div className="na-hero__sub">
-                {form.id ? (
-                  <>
-                    Estás editando: <strong>{form.titulo || "Sin título"}</strong>
-                  </>
-                ) : (
-                  <>Publica noticias con portada tipo banner y organízalas por categoría.</>
-                )}
+        <section className="na-hero" style={heroStyle}>
+          <div className="na-hero__wrap">
+            <div className="na-hero__top">
+              <div className="na-hero__titleblock">
+                <div className="na-hero__kicker">Panel Admin</div>
+                <h1 className="na-hero__title">{form.id ? "Editar noticia" : "Crear noticia"}</h1>
+                <div className="na-hero__sub">
+                  {form.id ? (
+                    <>
+                      Estás editando: <strong>{form.titulo || "Sin título"}</strong>
+                    </>
+                  ) : (
+                    <>Publica noticias con portada tipo banner y organízalas por categoría.</>
+                  )}
+                </div>
+              </div>
+
+              <div className="na-hero__actions">
+                <span className={`na-pill ${dirty ? "is-dirty" : "is-clean"}`}>
+                  {dirty ? "Cambios sin guardar" : "Todo guardado"}
+                </span>
+
+                <button
+                  type="button"
+                  className="na-btn na-btn--ghost"
+                  onClick={onCancelEdit}
+                  disabled={isSubmitting}
+                >
+                  <span className="na-btn__icon" aria-hidden="true">
+                    <i className="fa-solid fa-xmark" />
+                  </span>
+                  <span>Cancelar</span>
+                </button>
+
+                <button
+                  type="submit"
+                  form="na-form"
+                  className="na-btn na-btn--solid"
+                  disabled={isSubmitting}
+                >
+                  <span className="na-btn__icon" aria-hidden="true">
+                    <i
+                      className={`fa-solid ${
+                        isSubmitting ? "fa-spinner fa-spin" : "fa-floppy-disk"
+                      }`}
+                    />
+                  </span>
+                  <span>{isSubmitting ? "Guardando..." : form.id ? "Guardar" : "Publicar"}</span>
+                </button>
               </div>
             </div>
 
-            <div className="na-hero__actions">
-              <span className={`na-pill ${dirty ? "is-dirty" : "is-clean"}`}>
-                {dirty ? "Cambios sin guardar" : "Todo guardado"}
-              </span>
-
-              <button
-                type="button"
-                className="na-btn na-btn--ghost"
-                onClick={onCancelEdit}
-                disabled={isSubmitting}
-              >
-                <span className="na-btn__icon" aria-hidden="true">
-                  <i className="fa-solid fa-xmark" />
-                </span>
-                <span>Cancelar</span>
-              </button>
-
-              <button
-                type="submit"
-                form="na-form"
-                className="na-btn na-btn--solid"
-                disabled={isSubmitting}
-              >
-                <span className="na-btn__icon" aria-hidden="true">
-                  <i
-                    className={`fa-solid ${
-                      isSubmitting ? "fa-spinner fa-spin" : "fa-floppy-disk"
-                    }`}
-                  />
-                </span>
-                <span>{isSubmitting ? "Guardando..." : form.id ? "Guardar" : "Publicar"}</span>
-              </button>
+            <div className="na-hero__media">
+              {form.portada ? (
+                <img className="na-hero__img" src={form.portada} alt="Portada" loading="eager" />
+              ) : (
+                <div className="na-hero__placeholder">
+                  <div className="na-hero__placeholderTitle">Sin portada</div>
+                  <div className="na-hero__placeholderHint">
+                    Pega una URL de portada para ver el banner completo aquí.
+                  </div>
+                </div>
+              )}
             </div>
           </div>
+        </section>
 
-          <div className="na-hero__media">
-            {form.portada ? (
-              <img className="na-hero__img" src={form.portada} alt="Portada" loading="eager" />
-            ) : (
-              <div className="na-hero__placeholder">
-                <div className="na-hero__placeholderTitle">Sin portada</div>
-                <div className="na-hero__placeholderHint">
-                  Pega una URL de portada para ver el banner completo aquí.
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </section>
-
-      <main className="na-shell">
-        <section className="na-card na-card--form">
-          <form id="na-form" onSubmit={handleSubmit} className="na-form">
-            <div className="na-grid">
-              <aside className="na-meta">
-                <div className="na-sectionTitle">
-                  <span className="na-marker" />
-                  Datos generales
-                </div>
-
-                <div className="na-field">
-                  <label className="na-label">Título</label>
-                  <input
-                    className="na-input"
-                    type="text"
-                    placeholder="Título de la noticia"
-                    value={form.titulo}
-                    onChange={(e) => handleChangeTitulo(e.target.value)}
-                  />
-                  <div className="na-hint">Se mostrará en el listado y en el hero.</div>
-                </div>
-
-                <div className="na-field">
-                  <label className="na-label">Slug</label>
-                  <input
-                    className="na-input"
-                    type="text"
-                    placeholder="mi-noticia-epica"
-                    value={form.slug}
-                    onChange={(e) => {
-                      setSlugTouched(true);
-                      setForm((prev) => ({ ...prev, slug: e.target.value }));
-                      setDirty(true);
-                    }}
-                  />
-                  <div className="na-hint">Se genera desde el título si no lo editas.</div>
-
-                  <div className="na-previewUrl">
-                    <span className="na-previewUrl__label">Preview:</span>
-                    <span className="na-previewUrl__value">
-                      /news/{slugify(form.slug || form.titulo) || "..."}
-                    </span>
+        <main className="na-shell">
+          <section className="na-card na-card--form">
+            <form id="na-form" onSubmit={handleSubmit} className="na-form">
+              <div className="na-grid">
+                <aside className="na-meta">
+                  <div className="na-sectionTitle">
+                    <span className="na-marker" />
+                    Datos generales
                   </div>
-                </div>
 
-                <div className="na-field">
-                  <label className="na-label">Portada (URL)</label>
-                  <input
-                    className="na-input"
-                    type="text"
-                    placeholder="https://..."
-                    value={form.portada}
-                    onChange={(e) => {
-                      setForm((prev) => ({ ...prev, portada: e.target.value }));
-                      setDirty(true);
-                    }}
-                  />
-                  <div className="na-hint">Recomendado: imagen panorámica (banner apaisado).</div>
-                </div>
-
-                <div className="na-sectionTitle">
-                  <span className="na-marker" />
-                  Publicación
-                </div>
-
-                <div className="na-field">
-                  <label className="na-label">Categoría</label>
-                  <select
-                    className="na-select"
-                    value={form.servidor}
-                    onChange={(e) => {
-                      setForm((prev) => ({
-                        ...prev,
-                        servidor: normalizeCategoria(e.target.value),
-                      }));
-                      setDirty(true);
-                    }}
-                  >
-                    {CATEGORIAS.map((categoria) => (
-                      <option key={categoria.id} value={categoria.id}>
-                        {categoria.label}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="na-hint">
-                    Global para anuncios generales. El resto separa tienda, web y sorteos.
-                  </div>
-                </div>
-
-                <div className="na-field">
-                  <label className="na-check">
+                  <div className="na-field">
+                    <label className="na-label">Título</label>
                     <input
-                      type="checkbox"
-                      checked={form.usarFechaManual}
+                      className="na-input"
+                      type="text"
+                      placeholder="Título de la noticia"
+                      value={form.titulo}
+                      onChange={(e) => handleChangeTitulo(e.target.value)}
+                    />
+                    <div className="na-hint">Se mostrará en el listado y en el hero.</div>
+                  </div>
+
+                  <div className="na-field">
+                    <label className="na-label">Slug</label>
+                    <input
+                      className="na-input"
+                      type="text"
+                      placeholder="mi-noticia-epica"
+                      value={form.slug}
                       onChange={(e) => {
-                        setForm((prev) => ({ ...prev, usarFechaManual: e.target.checked }));
+                        setSlugTouched(true);
+                        setForm((prev) => ({ ...prev, slug: e.target.value }));
                         setDirty(true);
                       }}
                     />
-                    <span>Usar fecha manual</span>
-                  </label>
+                    <div className="na-hint">Se genera desde el título si no lo editas.</div>
 
-                  {form.usarFechaManual && (
-                    <div className="na-inline">
-                      <label className="na-label">Fecha</label>
+                    <div className="na-previewUrl">
+                      <span className="na-previewUrl__label">Preview:</span>
+                      <span className="na-previewUrl__value">
+                        /news/{slugify(form.slug || form.titulo) || "..."}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="na-field">
+                    <label className="na-label">Portada (URL)</label>
+                    <input
+                      className="na-input"
+                      type="text"
+                      placeholder="https://..."
+                      value={form.portada}
+                      onChange={(e) => {
+                        setForm((prev) => ({ ...prev, portada: e.target.value }));
+                        setDirty(true);
+                      }}
+                    />
+                    <div className="na-hint">Recomendado: imagen panorámica (banner apaisado).</div>
+                  </div>
+
+                  <div className="na-sectionTitle">
+                    <span className="na-marker" />
+                    Publicación
+                  </div>
+
+                  <div className="na-field">
+                    <label className="na-label">Categoría</label>
+                    <select
+                      className="na-select"
+                      value={form.servidor}
+                      onChange={(e) => {
+                        setForm((prev) => ({
+                          ...prev,
+                          servidor: normalizeCategoria(e.target.value),
+                        }));
+                        setDirty(true);
+                      }}
+                    >
+                      {CATEGORIAS.map((categoria) => (
+                        <option key={categoria.id} value={categoria.id}>
+                          {categoria.label}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="na-hint">
+                      Global para anuncios generales. El resto separa tienda, web y sorteos.
+                    </div>
+                  </div>
+
+                  <div className="na-field">
+                    <label className="na-check">
                       <input
-                        className="na-input"
-                        type="datetime-local"
-                        value={form.fecha || ""}
+                        type="checkbox"
+                        checked={form.usarFechaManual}
                         onChange={(e) => {
-                          setForm((prev) => ({ ...prev, fecha: e.target.value }));
+                          setForm((prev) => ({ ...prev, usarFechaManual: e.target.checked }));
                           setDirty(true);
                         }}
                       />
-                    </div>
-                  )}
-                </div>
+                      <span>Usar fecha manual</span>
+                    </label>
 
-                {form.id && (
-                  <div className="na-metaFooter">
-                    <button
-                      type="button"
-                      className="na-btn na-btn--danger"
-                      onClick={onCancelEdit}
-                      disabled={isSubmitting}
-                    >
-                      <span className="na-btn__icon" aria-hidden="true">
-                        <i className="fa-solid fa-arrow-left" />
-                      </span>
-                      <span>Salir edición</span>
-                    </button>
-                  </div>
-                )}
-              </aside>
-
-              <section className="na-editor">
-                <div className="na-sectionTitle">
-                  <span className="na-marker" />
-                  Contenido
-                </div>
-
-                <div className="na-editorBox">
-                  <MenuBar editor={editor} />
-                  <div className="na-editorContent">
-                    {editor ? (
-                      <EditorContent editor={editor} />
-                    ) : (
-                      <p className="na-loading">Cargando editor...</p>
+                    {form.usarFechaManual && (
+                      <div className="na-inline">
+                        <label className="na-label">Fecha</label>
+                        <input
+                          className="na-input"
+                          type="datetime-local"
+                          value={form.fecha || ""}
+                          onChange={(e) => {
+                            setForm((prev) => ({ ...prev, fecha: e.target.value }));
+                            setDirty(true);
+                          }}
+                        />
+                      </div>
                     )}
                   </div>
-                </div>
 
-                <div className="na-htmlBox">
-                  <div className="na-htmlBox__head">
-                    <i className="fa-solid fa-code" aria-hidden="true" />
-                    <span>Pegar HTML (opcional)</span>
+                  {form.id && (
+                    <div className="na-metaFooter">
+                      <button
+                        type="button"
+                        className="na-btn na-btn--danger"
+                        onClick={onCancelEdit}
+                        disabled={isSubmitting}
+                      >
+                        <span className="na-btn__icon" aria-hidden="true">
+                          <i className="fa-solid fa-arrow-left" />
+                        </span>
+                        <span>Salir edición</span>
+                      </button>
+                    </div>
+                  )}
+                </aside>
+
+                <section className="na-editor">
+                  <div className="na-sectionTitle">
+                    <span className="na-marker" />
+                    Contenido
                   </div>
-                  <textarea
-                    className="na-textarea"
-                    value={htmlInput}
-                    onChange={(e) => setHtmlInput(e.target.value)}
-                    placeholder="Pega aquí HTML de noticias antiguas o contenido externo para convertirlo."
-                  />
-                  <div className="na-htmlBox__actions">
-                    <button
-                      type="button"
-                      className="na-btn na-btn--ghost"
-                      onClick={() => setHtmlInput("")}
-                      disabled={!htmlInput}
-                    >
-                      <span className="na-btn__icon" aria-hidden="true">
-                        <i className="fa-solid fa-broom" />
-                      </span>
-                      <span>Limpiar</span>
-                    </button>
 
-                    <button
-                      type="button"
-                      className="na-btn na-btn--solid"
-                      onClick={handlePasteHtml}
-                      disabled={!htmlInput}
-                    >
-                      <span className="na-btn__icon" aria-hidden="true">
-                        <i className="fa-solid fa-wand-magic-sparkles" />
-                      </span>
-                      <span>Aplicar HTML</span>
-                    </button>
+                  <div className="na-editorBox">
+                    <MenuBar editor={editor} />
+                    <div className="na-editorContent">
+                      {editor ? (
+                        <EditorContent editor={editor} />
+                      ) : (
+                        <p className="na-loading">Cargando editor...</p>
+                      )}
+                    </div>
                   </div>
-                </div>
-              </section>
-            </div>
-          </form>
-        </section>
 
-        <section className="na-card na-card--list">
-          <div className="na-listHead">
-            <button
-              type="button"
-              className={verGuardadas ? "na-toggle is-open" : "na-toggle"}
-              onClick={() => setVerGuardadas((v) => !v)}
-            >
-              <span>Noticias publicadas</span>
-              <span className="na-toggle__count">({noticias.length})</span>
-              <span className="na-caret" aria-hidden="true" />
-            </button>
+                  <div className="na-htmlBox">
+                    <div className="na-htmlBox__head">
+                      <i className="fa-solid fa-code" aria-hidden="true" />
+                      <span>Pegar HTML (opcional)</span>
+                    </div>
+                    <textarea
+                      className="na-textarea"
+                      value={htmlInput}
+                      onChange={(e) => setHtmlInput(e.target.value)}
+                      placeholder="Pega aquí HTML de noticias antiguas o contenido externo para convertirlo."
+                    />
+                    <div className="na-htmlBox__actions">
+                      <button
+                        type="button"
+                        className="na-btn na-btn--ghost"
+                        onClick={() => setHtmlInput("")}
+                        disabled={!htmlInput}
+                      >
+                        <span className="na-btn__icon" aria-hidden="true">
+                          <i className="fa-solid fa-broom" />
+                        </span>
+                        <span>Limpiar</span>
+                      </button>
 
-            <div className="na-filter">
-              <span className="na-filter__label">Filtrar:</span>
-              <div className="na-tabs">
-                <button
-                  type="button"
-                  className={filtroServidor === "todos" ? "na-tab is-active" : "na-tab"}
-                  onClick={() => setFiltroServidor("todos")}
-                >
-                  Todos
-                </button>
+                      <button
+                        type="button"
+                        className="na-btn na-btn--solid"
+                        onClick={handlePasteHtml}
+                        disabled={!htmlInput}
+                      >
+                        <span className="na-btn__icon" aria-hidden="true">
+                          <i className="fa-solid fa-wand-magic-sparkles" />
+                        </span>
+                        <span>Aplicar HTML</span>
+                      </button>
+                    </div>
+                  </div>
+                </section>
+              </div>
+            </form>
+          </section>
 
-                {CATEGORIAS.map((categoria) => (
+          <section className="na-card na-card--list">
+            <div className="na-listHead">
+              <button
+                type="button"
+                className={verGuardadas ? "na-toggle is-open" : "na-toggle"}
+                onClick={() => setVerGuardadas((v) => !v)}
+              >
+                <span>Noticias publicadas</span>
+                <span className="na-toggle__count">({noticias.length})</span>
+                <span className="na-caret" aria-hidden="true" />
+              </button>
+
+              <div className="na-filter">
+                <span className="na-filter__label">Filtrar:</span>
+                <div className="na-tabs">
                   <button
-                    key={categoria.id}
                     type="button"
-                    className={
-                      filtroServidor === categoria.id ? "na-tab is-active" : "na-tab"
-                    }
-                    onClick={() => setFiltroServidor(categoria.id)}
+                    className={filtroServidor === "todos" ? "na-tab is-active" : "na-tab"}
+                    onClick={() => setFiltroServidor("todos")}
                   >
-                    {categoria.label}
+                    Todos
                   </button>
-                ))}
+
+                  {CATEGORIAS.map((categoria) => (
+                    <button
+                      key={categoria.id}
+                      type="button"
+                      className={filtroServidor === categoria.id ? "na-tab is-active" : "na-tab"}
+                      onClick={() => setFiltroServidor(categoria.id)}
+                    >
+                      {categoria.label}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
 
-          {verGuardadas && (
-            <>
-              {noticiasFiltradas.length === 0 ? (
-                <div className="na-empty">No hay noticias para este filtro.</div>
-              ) : (
-                <div className="na-list">
-                  {noticiasFiltradas.map((n) => {
-                    const categoria = normalizeCategoria(n?.servidor || "global");
-                    const categoriaLabel = getCategoriaLabel(categoria);
-                    const isActive = n?.id === form.id;
+            {verGuardadas && (
+              <>
+                {noticiasFiltradas.length === 0 ? (
+                  <div className="na-empty">No hay noticias para este filtro.</div>
+                ) : (
+                  <div className="na-list">
+                    {noticiasFiltradas.map((n) => {
+                      const categoria = normalizeCategoria(n?.servidor || "global");
+                      const categoriaLabel = getCategoriaLabel(categoria);
+                      const isActive = n?.id === form.id;
 
-                    return (
-                      <div
-                        key={n.id}
-                        className={isActive ? "na-item is-active" : "na-item"}
-                        onClick={() => handleEdit(n)}
-                        role="button"
-                        tabIndex={0}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" || e.key === " ") handleEdit(n);
-                        }}
-                      >
-                        <div className="na-item__thumb">
-                          {n.portada ? (
-                            <img src={n.portada} alt="Portada" loading="lazy" />
-                          ) : (
-                            <div className="na-item__thumbEmpty">
-                              <i className="fa-regular fa-image" aria-hidden="true" />
+                      return (
+                        <div
+                          key={n.id}
+                          className={isActive ? "na-item is-active" : "na-item"}
+                          onClick={() => handleEdit(n)}
+                          role="button"
+                          tabIndex={0}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              handleEdit(n);
+                            }
+                          }}
+                        >
+                          <div className="na-item__thumb">
+                            {n.portada ? (
+                              <img src={n.portada} alt="Portada" loading="lazy" />
+                            ) : (
+                              <div className="na-item__thumbEmpty">
+                                <i className="fa-regular fa-image" aria-hidden="true" />
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="na-item__body">
+                            <div className="na-item__title">{n.titulo}</div>
+                            <div className="na-item__meta">
+                              <span className="na-item__date">
+                                {new Date(n.fecha).toLocaleDateString("es-ES", {
+                                  day: "numeric",
+                                  month: "short",
+                                  year: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
+                              </span>
+
+                              <span className={`na-badge na-badge--${categoria}`}>
+                                {categoriaLabel}
+                              </span>
                             </div>
-                          )}
-                        </div>
+                          </div>
 
-                        <div className="na-item__body">
-                          <div className="na-item__title">{n.titulo}</div>
-                          <div className="na-item__meta">
-                            <span className="na-item__date">
-                              {new Date(n.fecha).toLocaleDateString("es-ES", {
-                                day: "numeric",
-                                month: "short",
-                                year: "numeric",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}
-                            </span>
+                          <div className="na-item__actions">
+                            <button
+                              type="button"
+                              className="na-miniBtn"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEdit(n);
+                              }}
+                            >
+                              Editar
+                            </button>
 
-                            <span className={`na-badge na-badge--${categoria}`}>
-                              {categoriaLabel}
-                            </span>
+                            <button
+                              type="button"
+                              className="na-miniBtn na-miniBtn--danger"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDelete(n.id);
+                              }}
+                            >
+                              Eliminar
+                            </button>
                           </div>
                         </div>
-
-                        <div className="na-item__actions">
-                          <button
-                            type="button"
-                            className="na-miniBtn"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleEdit(n);
-                            }}
-                          >
-                            Editar
-                          </button>
-
-                          <button
-                            type="button"
-                            className="na-miniBtn na-miniBtn--danger"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDelete(n.id);
-                            }}
-                          >
-                            Eliminar
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </>
-          )}
-        </section>
-      </main>
-    </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </>
+            )}
+          </section>
+        </main>
+      </div>
     </>
   );
 };

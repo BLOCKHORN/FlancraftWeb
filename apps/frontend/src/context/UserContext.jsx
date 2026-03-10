@@ -4,12 +4,19 @@ import { clearSessionStorage, getStoredUser, persistSession } from "../lib/auth/
 
 export const UserContext = createContext();
 
+const getInitialUser = () => {
+  const stored = getStoredUser();
+  return stored?.loggedIn || stored?.uuid ? buildUserSession(stored) : { loggedIn: false };
+};
+
 export const UserProvider = ({ children }) => {
-  const [user, setUserState] = useState(() => getStoredUser() || { loggedIn: false });
+  const [user, setUserState] = useState(getInitialUser);
   const [loading, setLoading] = useState(true);
 
   const setUser = useCallback((nextUser, token) => {
-    const normalized = nextUser?.loggedIn ? buildUserSession(nextUser) : { loggedIn: false };
+    const normalized =
+      nextUser?.loggedIn || nextUser?.uuid ? buildUserSession(nextUser) : { loggedIn: false };
+
     setUserState(normalized);
 
     if (normalized.loggedIn) {
@@ -21,10 +28,16 @@ export const UserProvider = ({ children }) => {
 
   const refreshSession = useCallback(async () => {
     setLoading(true);
-    const hydrated = await hydrateSessionFromBackend();
-    setUserState(hydrated?.loggedIn ? buildUserSession(hydrated) : { loggedIn: false });
-    setLoading(false);
-    return hydrated;
+    try {
+      const hydrated = await hydrateSessionFromBackend();
+      const normalized =
+        hydrated?.loggedIn || hydrated?.uuid ? buildUserSession(hydrated) : { loggedIn: false };
+
+      setUserState(normalized);
+      return normalized;
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   const logout = useCallback(() => {
@@ -35,23 +48,34 @@ export const UserProvider = ({ children }) => {
   useEffect(() => {
     let mounted = true;
 
-    hydrateSessionFromBackend().then((hydrated) => {
-      if (!mounted) return;
-      setUserState(hydrated?.loggedIn ? buildUserSession(hydrated) : { loggedIn: false });
-      setLoading(false);
-    });
+    const init = async () => {
+      try {
+        const hydrated = await hydrateSessionFromBackend();
+        if (!mounted) return;
+
+        setUserState(
+          hydrated?.loggedIn || hydrated?.uuid ? buildUserSession(hydrated) : { loggedIn: false }
+        );
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+
+    init();
 
     return () => {
       mounted = false;
     };
   }, []);
 
-
   useEffect(() => {
     const onStorage = (event) => {
       if (event.key && event.key !== "flan_user" && event.key !== "token") return;
+
       const stored = getStoredUser();
-      setUserState(stored?.loggedIn ? buildUserSession(stored) : { loggedIn: false });
+      setUserState(
+        stored?.loggedIn || stored?.uuid ? buildUserSession(stored) : { loggedIn: false }
+      );
     };
 
     window.addEventListener("storage", onStorage);
@@ -59,7 +83,13 @@ export const UserProvider = ({ children }) => {
   }, []);
 
   const value = useMemo(
-    () => ({ user, setUser, loading, logout, refreshSession }),
+    () => ({
+      user,
+      setUser,
+      loading,
+      logout,
+      refreshSession,
+    }),
     [user, setUser, loading, logout, refreshSession]
   );
 
