@@ -4,7 +4,6 @@ import { apiUrl } from "../../lib/env";
 import { getAuthToken } from "../../lib/auth/storage";
 import "../../styles/components/Dashboard/_rewardlist.scss";
 
-// Niveles: 1,5,10,15,20,25,30,35,40,45,50
 const RECOMPENSAS = [
   { nivel: 1, descripcion: "12 COINS", tipo: "coin" },
   { nivel: 5, descripcion: "94 COINS", tipo: "coin" },
@@ -21,12 +20,20 @@ const RECOMPENSAS = [
 
 const COIN_ICON = "/tienda/assets/coin.png";
 
+const safeJson = async (res, fallback = null) => {
+  if (!res) return fallback;
+  try {
+    return await res.json();
+  } catch {
+    return fallback;
+  }
+};
 
 export default function RewardList({
   user,
   xpData,
   coinsRef,
-  ecosRef, // compat
+  ecosRef,
   onActualizarMonedas,
 }) {
   const saldoRef = coinsRef || ecosRef;
@@ -34,7 +41,6 @@ export default function RewardList({
   const [reclamadas, setReclamadas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
   const [claimingNivel, setClaimingNivel] = useState(null);
 
   const scrollRef = useRef(null);
@@ -44,11 +50,82 @@ export default function RewardList({
   const [offsetNodo1, setOffsetNodo1] = useState(0);
   const [anchoBarra, setAnchoBarra] = useState("0px");
 
-  // ==========================
-  // CARGAR RECOMPENSAS YA RECLAMADAS
-  // ==========================
+  const calcularProgresoVisual = useCallback(() => {
+    if (!xpData) return 0;
+
+    const niveles = Array.isArray(xpData.niveles) ? xpData.niveles : [];
+    const xpActual = Number(xpData.xp_total_actual || 0);
+
+    const xpMinimo = niveles.find((n) => Number(n?.nivel) === 1)?.xp_total_acumulada || 0;
+    if (xpActual <= xpMinimo) return 0;
+
+    const nodos = RECOMPENSAS.map(
+      (r) => niveles.find((n) => Number(n?.nivel) === r.nivel)?.xp_total_acumulada || 0
+    );
+
+    const totalTramos = nodos.length - 1;
+
+    for (let i = 0; i < totalTramos; i++) {
+      const inicio = Number(nodos[i] || 0);
+      const fin = Number(nodos[i + 1] || 0);
+
+      if (xpActual >= fin) continue;
+      if (fin <= inicio) return 0;
+
+      const progresoRelativo = (xpActual - inicio) / (fin - inicio);
+      return ((i + progresoRelativo) / totalTramos) * 100;
+    }
+
+    return 100;
+  }, [xpData]);
+
+  const recalcularBarra = useCallback(() => {
+    if (!nodo1Ref.current || !nodoFinalRef.current || !xpData) return;
+
+    const left = nodo1Ref.current.offsetLeft + nodo1Ref.current.offsetWidth / 2;
+    const totalWidth =
+      nodoFinalRef.current.offsetLeft + nodoFinalRef.current.offsetWidth / 2 - left;
+
+    const porcentaje = calcularProgresoVisual();
+
+    setOffsetNodo1(left);
+
+    if (porcentaje <= 0) {
+      setAnchoBarra("0px");
+      return;
+    }
+
+    if (porcentaje >= 100) {
+      setAnchoBarra(`${totalWidth}px`);
+      return;
+    }
+
+    setAnchoBarra(`${(totalWidth * porcentaje) / 100}px`);
+  }, [xpData, calcularProgresoVisual]);
+
+  useLayoutEffect(() => {
+    recalcularBarra();
+  }, [recalcularBarra, reclamadas]);
+
   useEffect(() => {
-    if (!user?.uuid) return;
+    const onResize = () => recalcularBarra();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [recalcularBarra]);
+
+  useEffect(() => {
+    if (!user?.uuid) {
+      setReclamadas([]);
+      setLoading(false);
+      return;
+    }
+
+    const token = getAuthToken();
+    if (!token) {
+      setReclamadas([]);
+      setLoading(false);
+      return;
+    }
 
     let cancelled = false;
 
@@ -58,72 +135,38 @@ export default function RewardList({
         setError(null);
 
         const res = await fetch(apiUrl(`/api/recompensas/reclamadas/${user.uuid}`), {
-          headers: getAuthToken() ? { Authorization: `Bearer ${getAuthToken()}` } : undefined,
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data?.error || "Error al cargar reclamadas");
 
-        if (!cancelled) setReclamadas(Array.isArray(data) ? data : []);
+        const data = await safeJson(res, []);
+
+        if (!res.ok) {
+          throw new Error(data?.error || "Error al cargar reclamadas");
+        }
+
+        if (!cancelled) {
+          setReclamadas(Array.isArray(data) ? data : []);
+        }
       } catch (err) {
-        if (!cancelled) setError(err.message || "Error");
+        if (!cancelled) {
+          setError(err.message || "Error");
+          setReclamadas([]);
+        }
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+          requestAnimationFrame(() => recalcularBarra());
+        }
       }
     })();
 
-    return () => { cancelled = true; };
-  }, [user?.uuid]);
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.uuid, recalcularBarra]);
 
-  // ==========================
-  // LÓGICA DE PROGRESO VISUAL
-  // ==========================
-  const calcularProgresoVisual = useCallback(() => {
-    if (!xpData) return 0;
-
-    const niveles = xpData.niveles || [];
-    const xpActual = Number(xpData.xp_total_actual || 0);
-
-    const xpMinimo = niveles.find((n) => n.nivel === 1)?.xp_total_acumulada || 0;
-    if (xpActual <= xpMinimo) return 0;
-
-    const nodos = RECOMPENSAS.map(
-      (r) => niveles.find((n) => n.nivel === r.nivel)?.xp_total_acumulada || 0
-    );
-
-    const totalTramos = nodos.length - 1;
-
-    for (let i = 0; i < totalTramos; i++) {
-      const inicio = nodos[i];
-      const fin = nodos[i + 1];
-
-      if (xpActual >= fin) continue;
-
-      const progresoRelativo = (xpActual - inicio) / (fin - inicio);
-      return ((i + progresoRelativo) / totalTramos) * 100;
-    }
-
-    return 100;
-  }, [xpData]);
-
-  useLayoutEffect(() => {
-    if (nodo1Ref.current && nodoFinalRef.current && xpData) {
-      const left = nodo1Ref.current.offsetLeft + nodo1Ref.current.offsetWidth / 2;
-      setOffsetNodo1(left);
-
-      const totalWidth =
-        nodoFinalRef.current.offsetLeft + nodoFinalRef.current.offsetWidth / 2 - left;
-
-      const porcentaje = calcularProgresoVisual();
-
-      if (porcentaje <= 0) setAnchoBarra("0px");
-      else if (porcentaje >= 100) setAnchoBarra(`${totalWidth}px`);
-      else setAnchoBarra(`${(totalWidth * porcentaje) / 100}px`);
-    }
-  }, [xpData, calcularProgresoVisual]);
-
-  // ==========================
-  // HELPERS
-  // ==========================
   const readNumberFromRef = (ref) => {
     if (!ref?.current) return 0;
     const raw = String(ref.current.textContent || "");
@@ -171,21 +214,21 @@ export default function RewardList({
 
       moneda.getBoundingClientRect();
 
-      moneda.style.transform = `translate(${
-        endX - startX + (Math.random() * 30 - 15)
-      }px, ${endY - startY + (Math.random() * 30 - 15)}px) scale(0.5)`;
+      moneda.style.transform = `translate(${endX - startX + (Math.random() * 30 - 15)}px, ${endY - startY + (Math.random() * 30 - 15)}px) scale(0.5)`;
       moneda.style.opacity = "0";
 
       setTimeout(() => moneda.remove(), 700 + Math.random() * 300);
     }
   };
 
-  // ==========================
-  // RECLAMAR RECOMPENSA (wallet real)
-  // ==========================
   const handleReclamar = async (nivel) => {
-    if (!user?.uuid) return;
-    if (claimingNivel) return;
+    if (!user?.uuid || claimingNivel) return;
+
+    const token = getAuthToken();
+    if (!token) {
+      setError("Tu sesión ha expirado. Vuelve a iniciar sesión.");
+      return;
+    }
 
     setClaimingNivel(nivel);
     setError(null);
@@ -198,13 +241,19 @@ export default function RewardList({
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(getAuthToken() ? { Authorization: `Bearer ${getAuthToken()}` } : {}),
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ uuid: user.uuid, nivel }),
+        body: JSON.stringify({
+          uuid: user.uuid,
+          nivel,
+        }),
       });
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || "Error");
+      const data = await safeJson(res, null);
+
+      if (!res.ok) {
+        throw new Error(data?.error || "Error reclamando recompensa");
+      }
 
       const coinsAñadidos = Number(data?.coinsAñadidos) || cantidadUI;
       const nuevoSaldoCoins =
@@ -235,10 +284,10 @@ export default function RewardList({
       setReclamadas((prev) => (prev.includes(nivel) ? prev : [...prev, nivel]));
 
       if (typeof onActualizarMonedas === "function") {
-        onActualizarMonedas();
+        await onActualizarMonedas();
       }
     } catch (err) {
-      console.error("Error reclamando recompensa:", err.message);
+      console.error("[REWARDLIST reclamar]", err);
       setError(err.message || "Error reclamando recompensa");
     } finally {
       setClaimingNivel(null);
@@ -248,16 +297,17 @@ export default function RewardList({
   const calcularProgreso = (nivel, index) => {
     if (!xpData) return "pendiente";
 
-    const nodoXP =
-      xpData.niveles?.find((n) => n.nivel === nivel)?.xp_total_acumulada || 0;
-
     const progresoActual = Number(xpData.xp_total_actual || 0);
+    const niveles = Array.isArray(xpData.niveles) ? xpData.niveles : [];
+
+    const nodoXP =
+      niveles.find((n) => Number(n?.nivel) === nivel)?.xp_total_acumulada || 0;
 
     if (progresoActual >= nodoXP) return "progresado";
 
     const anteriorNodo = RECOMPENSAS[index - 1];
     const xpAnterior = anteriorNodo
-      ? xpData.niveles?.find((n) => n.nivel === anteriorNodo.nivel)?.xp_total_acumulada || 0
+      ? niveles.find((n) => Number(n?.nivel) === anteriorNodo.nivel)?.xp_total_acumulada || 0
       : 0;
 
     if (progresoActual >= xpAnterior && progresoActual < nodoXP) return "siguiente";
@@ -312,8 +362,6 @@ export default function RewardList({
               const puedeReclamar = estadoNodo === "progresado" && !yaReclamada;
               const isClaimingThis = claimingNivel === r.nivel;
 
-              const icono = <img src={COIN_ICON} alt="COIN" />;
-
               return (
                 <div
                   key={r.nivel}
@@ -332,7 +380,7 @@ export default function RewardList({
                       .join(" ")}
                   >
                     <div className="reward-icon">
-                      {estadoNodo !== "pendiente" ? icono : <Lock size={20} />}
+                      {estadoNodo !== "pendiente" ? <img src={COIN_ICON} alt="COIN" /> : <Lock size={20} />}
                     </div>
 
                     <div className="reward-desc">{r.descripcion}</div>

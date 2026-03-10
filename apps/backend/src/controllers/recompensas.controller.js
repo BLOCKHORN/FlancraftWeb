@@ -1,23 +1,38 @@
 const db = require("../models/db");
 
-// POST /api/recompensas/reclamar
-exports.reclamarRecompensa = async (req, res) => {
-  const uuid = req.usuario?.uuid;
-  const { nivel } = req.body;
+const STAFF_ROLES = new Set(["admin", "owner"]);
 
-  if (!uuid || nivel === undefined || nivel === null) {
-    return res.status(400).json({ error: "Faltan datos obligatorios." });
+const normalizeRole = (value) => {
+  if (value === null || value === undefined) return null;
+  const role = String(value).trim().toLowerCase().replace(/[\s_-]+/g, "");
+  return role || null;
+};
+
+const getSessionRole = (req) => {
+  return normalizeRole(req.usuario?.rol_admin) || normalizeRole(req.usuario?.rango_staff);
+};
+
+exports.reclamarRecompensa = async (req, res) => {
+  const sessionUuid = req.usuario?.uuid || null;
+  const sessionRole = getSessionRole(req);
+  const bodyUuid = String(req.body?.uuid || "").trim();
+  const nivelNum = Number(req.body?.nivel);
+
+  if (!sessionUuid) {
+    return res.status(401).json({ error: "No autorizado." });
   }
 
-  const nivelNum = Number(nivel);
+  if (bodyUuid && bodyUuid !== sessionUuid && !STAFF_ROLES.has(sessionRole)) {
+    return res.status(403).json({ error: "No puedes reclamar recompensas de otro usuario." });
+  }
+
   if (!Number.isFinite(nivelNum) || nivelNum <= 0) {
     return res.status(400).json({ error: "Nivel inválido." });
   }
 
   try {
-    // RPC atómica (devuelve JSON)
     const { data, error } = await db.rpc("claim_reward_wallet", {
-      p_uuid: uuid,
+      p_uuid: sessionUuid,
       p_nivel: nivelNum,
     });
 
@@ -31,7 +46,6 @@ exports.reclamarRecompensa = async (req, res) => {
       return res.status(500).json({ error: "Error interno al reclamar recompensa." });
     }
 
-    // data es jsonb => { code, coins_added, wallet_balance }
     const code = data?.code;
 
     if (code === "NOT_FOUND") return res.status(404).json({ error: "Jugador no encontrado." });
@@ -61,17 +75,20 @@ exports.reclamarRecompensa = async (req, res) => {
   }
 };
 
-// GET /api/recompensas/reclamadas/:uuid
 exports.getRecompensasReclamadas = async (req, res) => {
-  const { uuid } = req.params;
-  const sessionUuid = req.usuario?.uuid;
-  const sessionRole = String(req.usuario?.rol_admin || "").toLowerCase();
+  const uuid = String(req.params?.uuid || "").trim();
+  const sessionUuid = req.usuario?.uuid || null;
+  const sessionRole = getSessionRole(req);
+
+  if (!sessionUuid) {
+    return res.status(401).json({ error: "No autorizado." });
+  }
 
   if (!uuid) {
     return res.status(400).json({ error: "UUID faltante." });
   }
 
-  if (sessionUuid !== uuid && sessionRole !== "admin" && sessionRole !== "owner") {
+  if (sessionUuid !== uuid && !STAFF_ROLES.has(sessionRole)) {
     return res.status(403).json({ error: "No puedes consultar recompensas de otro usuario." });
   }
 
@@ -79,11 +96,15 @@ exports.getRecompensasReclamadas = async (req, res) => {
     const { data, error } = await db
       .from("recompensas_reclamadas")
       .select("nivel")
-      .eq("uuid_jugador", uuid);
+      .eq("uuid_jugador", uuid)
+      .order("nivel", { ascending: true });
 
-    if (error) throw error;
+    if (error) {
+      console.error("[RECOMPENSAS RECLAMADAS QUERY ERROR]", error);
+      return res.status(500).json({ error: "Error interno al obtener recompensas reclamadas." });
+    }
 
-    return res.status(200).json((data || []).map((row) => row.nivel));
+    return res.status(200).json((data || []).map((row) => Number(row.nivel)).filter(Number.isFinite));
   } catch (err) {
     console.error("[RECOMPENSAS RECLAMADAS ERROR]", err);
     return res.status(500).json({ error: "Error interno al obtener recompensas reclamadas." });

@@ -1,5 +1,4 @@
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
 const HEX32_RE = /^[a-f0-9]{32}$/i;
 const READABLE_RE = /^[A-Za-z0-9_-]{12,64}$/;
 
