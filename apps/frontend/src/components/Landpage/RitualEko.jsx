@@ -24,7 +24,7 @@ function resolveVideo(item) {
   return "";
 }
 
-const ChroniclePanelMedia = memo(function ChroniclePanelMedia({ item, onPlaybackChange }) {
+const ChroniclePanelMedia = memo(function ChroniclePanelMedia({ item, onPlaybackChange, compact }) {
   const poster = resolvePoster(item);
   const video = resolveVideo(item);
   const videoRef = useRef(null);
@@ -44,7 +44,7 @@ const ChroniclePanelMedia = memo(function ChroniclePanelMedia({ item, onPlayback
     clearResetTimer();
     resetTimerRef.current = setTimeout(() => {
       setVideoMounted(false);
-    }, 180);
+    }, 160);
   };
 
   const restaurarPoster = () => {
@@ -66,6 +66,15 @@ const ChroniclePanelMedia = memo(function ChroniclePanelMedia({ item, onPlayback
     clearResetTimer();
     setLoading(true);
     setVideoMounted(true);
+  };
+
+  const togglePlayback = () => {
+    if (loading) return;
+    if (playing) {
+      restaurarPoster();
+      return;
+    }
+    reproducir();
   };
 
   useEffect(() => {
@@ -92,8 +101,22 @@ const ChroniclePanelMedia = memo(function ChroniclePanelMedia({ item, onPlayback
     };
   }, [onPlaybackChange]);
 
+  const handleKeyDown = (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      reproducir();
+    }
+  };
+
   return (
-    <div className={`panel-media-stack ${playing ? "is-playing" : ""} ${loading ? "is-loading" : ""}`}>
+    <div
+      className={`panel-media-stack ${playing ? "is-playing" : ""} ${loading ? "is-loading" : ""} ${!playing && !loading ? "is-interactive" : ""}`}
+      role={!playing && !loading ? "button" : undefined}
+      tabIndex={!playing && !loading ? 0 : -1}
+      onClick={!playing && !loading ? reproducir : undefined}
+      onKeyDown={!playing && !loading ? handleKeyDown : undefined}
+      aria-label={!playing && !loading ? `Reproducir escena de ${item?.title || "FlanCraft"}` : undefined}
+    >
       <img
         src={poster}
         alt={item?.title || "Panel de FlanCraft"}
@@ -129,11 +152,29 @@ const ChroniclePanelMedia = memo(function ChroniclePanelMedia({ item, onPlayback
         />
       ) : null}
 
-      {!playing && !loading && (
+      <button
+        type="button"
+        className={`panel-inline-action ${playing ? "is-secondary" : ""}`}
+        onClick={(event) => {
+          event.stopPropagation();
+          togglePlayback();
+        }}
+        aria-label={playing ? `Volver al panel de ${item?.title || "FlanCraft"}` : `Ver escena de ${item?.title || "FlanCraft"}`}
+      >
+        <span className="panel-inline-action-icon">
+          {playing ? <HiChevronLeft /> : <HiPlay />}
+        </span>
+        <span>{playing ? "VOLVER" : "VER ESCENA"}</span>
+      </button>
+
+      {!compact && !playing && !loading && (
         <button
           type="button"
           className="panel-play-trigger"
-          onClick={reproducir}
+          onClick={(event) => {
+            event.stopPropagation();
+            reproducir();
+          }}
           aria-label={`Reproducir escena de ${item?.title || "FlanCraft"}`}
         >
           <span className="panel-play-trigger-ring" />
@@ -141,6 +182,12 @@ const ChroniclePanelMedia = memo(function ChroniclePanelMedia({ item, onPlayback
             <HiPlay />
           </span>
         </button>
+      )}
+
+      {!playing && !loading && (
+        <div className="panel-tap-hint" aria-hidden="true">
+          Toca la imagen para ver la escena
+        </div>
       )}
 
       {loading && (
@@ -157,15 +204,36 @@ export default function RitualEko() {
   const [direction, setDirection] = useState(0);
   const [viewed, setViewed] = useState(() => Array(codexData.length).fill(false));
   const [panelPlaying, setPanelPlaying] = useState(false);
+  const [isCompact, setIsCompact] = useState(() =>
+    typeof window !== "undefined" ? window.matchMedia("(max-width: 768px)").matches : false
+  );
+
   const navigate = useNavigate();
   const { user } = useContext(UserContext);
 
-  const current = codexData[index];
+  const current = codexData[index] || {};
   const allViewed = useMemo(() => viewed.every(Boolean), [viewed]);
   const isLoggedIn = Boolean(user?.uuid || user?.id || user?.nombre_minecraft);
 
   useEffect(() => {
     setViewed((prev) => codexData.map((_, i) => prev[i] ?? false));
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const media = window.matchMedia("(max-width: 768px)");
+    const handleChange = (event) => setIsCompact(event.matches);
+
+    setIsCompact(media.matches);
+
+    if (media.addEventListener) {
+      media.addEventListener("change", handleChange);
+      return () => media.removeEventListener("change", handleChange);
+    }
+
+    media.addListener(handleChange);
+    return () => media.removeListener(handleChange);
   }, []);
 
   useEffect(() => {
@@ -188,86 +256,52 @@ export default function RitualEko() {
     goToIndex(index + step);
   };
 
-  const panelVariants = {
-    enter: (dir) => ({
-      x: dir > 0 ? 90 : -90,
-      opacity: 0,
-      scale: 0.97,
+  const panelVariants = useMemo(
+    () => ({
+      enter: (dir) => ({
+        x: isCompact ? (dir > 0 ? 22 : -22) : dir > 0 ? 72 : -72,
+        opacity: 0,
+        scale: isCompact ? 0.996 : 0.985,
+      }),
+      center: {
+        x: 0,
+        opacity: 1,
+        scale: 1,
+        transition: {
+          duration: isCompact ? 0.24 : 0.34,
+          ease: [0.22, 1, 0.36, 1],
+        },
+      },
+      exit: (dir) => ({
+        x: isCompact ? (dir < 0 ? 22 : -22) : dir < 0 ? 72 : -72,
+        opacity: 0,
+        scale: isCompact ? 0.996 : 0.985,
+        transition: {
+          duration: isCompact ? 0.18 : 0.24,
+          ease: [0.55, 0, 0.1, 1],
+        },
+      }),
     }),
-    center: {
-      x: 0,
-      opacity: 1,
-      scale: 1,
-      transition: {
-        duration: 0.42,
-        ease: [0.22, 1, 0.36, 1],
-      },
-    },
-    exit: (dir) => ({
-      x: dir < 0 ? 90 : -90,
-      opacity: 0,
-      scale: 0.97,
-      transition: {
-        duration: 0.28,
-        ease: [0.55, 0, 0.1, 1],
-      },
-    }),
-  };
-
-  const bgVariants = {
-    initial: { opacity: 0, scale: 1.06 },
-    animate: {
-      opacity: 1,
-      scale: 1,
-      transition: {
-        duration: 0.6,
-        ease: [0.22, 1, 0.36, 1],
-      },
-    },
-    exit: {
-      opacity: 0,
-      scale: 1.03,
-      transition: {
-        duration: 0.35,
-        ease: [0.4, 0, 1, 1],
-      },
-    },
-  };
+    [isCompact]
+  );
 
   return (
     <section
       className="flancraft-chronicles"
       style={{ "--panel-color": current?.badgeColor || "#7fd9ff" }}
     >
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={`bg-${index}`}
-          className="chronicle-scene-bg"
-          style={{ backgroundImage: `url(${resolvePoster(current)})` }}
-          variants={bgVariants}
-          initial="initial"
-          animate="animate"
-          exit="exit"
-        />
-      </AnimatePresence>
+      <div
+        className="chronicle-scene-bg"
+        style={{ backgroundImage: `url(${resolvePoster(current)})` }}
+      />
 
       <div className="chronicle-bg-effects">
         <div className="scene-dim" />
         <div className="scene-vignette" />
         <div className="scene-top-glow" />
-        <motion.div
+        <div
           className="floating-glow"
           style={{ backgroundColor: current?.badgeColor || "#7fd9ff" }}
-          animate={{
-            x: [0, 16, -12, 0],
-            y: [0, -14, 12, 0],
-            scale: [1, 1.06, 0.98, 1],
-          }}
-          transition={{
-            duration: 10,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
         />
       </div>
 
@@ -275,9 +309,9 @@ export default function RitualEko() {
         <header className="chronicle-header">
           <motion.span
             key={`cap-${index}`}
-            initial={{ opacity: 0, y: -10 }}
+            initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.28 }}
+            transition={{ duration: 0.22 }}
             className="chapter-count"
           >
             REGISTRO #{String(index + 1).padStart(2, "0")}
@@ -292,19 +326,9 @@ export default function RitualEko() {
         </header>
 
         <main className="chronicle-stage">
-          <button
-            type="button"
-            className="nav-btn prev"
-            onClick={() => paginate(-1)}
-            disabled={index === 0}
-            aria-label="Viñeta anterior"
-          >
-            <HiChevronLeft />
-          </button>
-
           <div className="stage-center">
             <AnimatePresence initial={false} custom={direction} mode="wait">
-              <motion.div
+              <motion.article
                 key={index}
                 custom={direction}
                 variants={panelVariants}
@@ -314,9 +338,14 @@ export default function RitualEko() {
                 className="comic-panel-wrapper"
               >
                 <div className="comic-frame">
-                  <ChroniclePanelMedia item={current} onPlaybackChange={setPanelPlaying} />
-
-                  <div className="frame-shade" />
+                  <div className="comic-media-shell">
+                    <ChroniclePanelMedia
+                      item={current}
+                      onPlaybackChange={setPanelPlaying}
+                      compact={isCompact}
+                    />
+                    <div className="frame-shade" />
+                  </div>
 
                   <div className={`narrative-box ${panelPlaying ? "is-hidden" : ""}`}>
                     <span
@@ -334,40 +363,52 @@ export default function RitualEko() {
                     </div>
                   </div>
                 </div>
-              </motion.div>
+              </motion.article>
             </AnimatePresence>
           </div>
-
-          <button
-            type="button"
-            className="nav-btn next"
-            onClick={() => paginate(1)}
-            disabled={index === codexData.length - 1}
-            aria-label="Siguiente viñeta"
-          >
-            <HiChevronRight />
-          </button>
         </main>
 
         <footer className="chronicle-footer">
-          <div className="timeline-stepper">
-            {codexData.map((item, i) => (
-              <motion.button
-                type="button"
-                key={item.id || item.title || i}
-                className={`step-dot ${i === index ? "active" : ""} ${viewed[i] ? "viewed" : ""}`}
-                onClick={() => goToIndex(i)}
-                whileHover={{ scale: 1.12 }}
-                whileTap={{ scale: 0.92 }}
-                aria-label={`Ir a ${item.title}`}
-              />
-            ))}
+          <div className="chronicle-controls">
+            <button
+              type="button"
+              className="nav-btn"
+              onClick={() => paginate(-1)}
+              disabled={index === 0}
+              aria-label="Viñeta anterior"
+            >
+              <HiChevronLeft />
+            </button>
+
+            <div className="timeline-stepper">
+              {codexData.map((item, i) => (
+                <motion.button
+                  type="button"
+                  key={item.id || item.title || i}
+                  className={`step-dot ${i === index ? "active" : ""} ${viewed[i] ? "viewed" : ""}`}
+                  onClick={() => goToIndex(i)}
+                  whileHover={{ scale: 1.08 }}
+                  whileTap={{ scale: 0.92 }}
+                  aria-label={`Ir a ${item.title}`}
+                />
+              ))}
+            </div>
+
+            <button
+              type="button"
+              className="nav-btn"
+              onClick={() => paginate(1)}
+              disabled={index === codexData.length - 1}
+              aria-label="Siguiente viñeta"
+            >
+              <HiChevronRight />
+            </button>
           </div>
 
           <motion.button
             type="button"
-            whileHover={allViewed ? { scale: 1.03 } : undefined}
-            whileTap={allViewed ? { scale: 0.97 } : undefined}
+            whileHover={allViewed ? { scale: 1.02 } : undefined}
+            whileTap={allViewed ? { scale: 0.98 } : undefined}
             className={`finish-cta ${allViewed ? "ready" : "locked"}`}
             disabled={!allViewed}
             onClick={() => {

@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useEffect, useRef, useState } from "react";
+import React, { memo, useEffect, useRef, useState } from "react";
 import { HiPause, HiPlay } from "react-icons/hi2";
 import "../../styles/components/Landpage/_gamemodes.scss";
 
@@ -15,11 +15,21 @@ const mode = {
 
 const GameModeMedia = memo(function GameModeMedia({ item }) {
   const videoRef = useRef(null);
+  const unmountTimerRef = useRef(null);
   const [videoMounted, setVideoMounted] = useState(false);
   const [playing, setPlaying] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const stopVideo = useCallback(() => {
+  const clearUnmountTimer = () => {
+    if (unmountTimerRef.current) {
+      clearTimeout(unmountTimerRef.current);
+      unmountTimerRef.current = null;
+    }
+  };
+
+  const stopVideo = () => {
+    clearUnmountTimer();
+
     const node = videoRef.current;
 
     if (node) {
@@ -28,48 +38,52 @@ const GameModeMedia = memo(function GameModeMedia({ item }) {
       try {
         node.currentTime = 0;
       } catch {}
-
-      node.removeAttribute("src");
-      node.load();
     }
 
     setPlaying(false);
     setLoading(false);
-    setVideoMounted(false);
-  }, []);
+
+    unmountTimerRef.current = setTimeout(() => {
+      setVideoMounted(false);
+    }, 120);
+  };
+
+  const startVideo = () => {
+    if (!item.video || loading || playing) return;
+    clearUnmountTimer();
+    setLoading(true);
+    setVideoMounted(true);
+  };
+
+  const togglePlayback = () => {
+    if (playing || loading) {
+      stopVideo();
+      return;
+    }
+
+    startVideo();
+  };
 
   useEffect(() => {
+    clearUnmountTimer();
+    setVideoMounted(false);
     setPlaying(false);
     setLoading(false);
-    setVideoMounted(false);
   }, [item.video]);
-
-  useEffect(() => {
-    return () => {
-      const node = videoRef.current;
-
-      if (node) {
-        node.pause();
-        node.removeAttribute("src");
-        node.load();
-      }
-    };
-  }, []);
 
   useEffect(() => {
     if (!videoMounted || !item.video) return;
 
-    const node = videoRef.current;
-    if (!node) return;
-
     let cancelled = false;
-    let frameId = 0;
 
-    const startPlayback = async () => {
+    const tryPlay = async () => {
+      const node = videoRef.current;
+      if (!node) return;
+
       try {
-        node.loop = true;
         node.muted = true;
         node.playsInline = true;
+        node.loop = true;
 
         const playPromise = node.play();
 
@@ -88,28 +102,44 @@ const GameModeMedia = memo(function GameModeMedia({ item }) {
       }
     };
 
-    frameId = window.requestAnimationFrame(startPlayback);
+    const id = window.setTimeout(tryPlay, 0);
 
     return () => {
       cancelled = true;
-      window.cancelAnimationFrame(frameId);
+      window.clearTimeout(id);
     };
-  }, [videoMounted, item.video, stopVideo]);
+  }, [videoMounted, item.video]);
 
-  const togglePlayback = () => {
-    if (!item.video) return;
+  useEffect(() => {
+    return () => {
+      clearUnmountTimer();
 
-    if (playing || loading) {
-      stopVideo();
-      return;
+      const node = videoRef.current;
+
+      if (node) {
+        node.pause();
+        node.removeAttribute("src");
+        node.load();
+      }
+    };
+  }, []);
+
+  const handleKeyDown = (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      togglePlayback();
     }
-
-    setLoading(true);
-    setVideoMounted(true);
   };
 
   return (
-    <div className={`gm-media-stack ${playing ? "is-playing" : ""} ${loading ? "is-loading" : ""}`}>
+    <div
+      className={`gm-media-stack ${playing ? "is-playing" : ""} ${loading ? "is-loading" : ""} ${!playing && !loading ? "is-interactive" : ""}`}
+      role="button"
+      tabIndex={0}
+      onClick={togglePlayback}
+      onKeyDown={handleKeyDown}
+      aria-label={playing ? `Detener vídeo de ${item.name}` : `Reproducir vídeo de ${item.name}`}
+    >
       <img
         src={item.image}
         alt={item.name}
@@ -122,13 +152,15 @@ const GameModeMedia = memo(function GameModeMedia({ item }) {
         <video
           ref={videoRef}
           key={item.video}
-          className={`gm-media gm-media-video ${playing ? "visible" : ""}`}
+          className={`gm-media gm-media-video ${videoMounted ? "visible" : ""}`}
           src={item.video}
+          poster={item.image}
           muted
           playsInline
           loop
           preload="metadata"
           onLoadedData={() => setLoading(false)}
+          onCanPlay={() => setLoading(false)}
           onWaiting={() => setLoading(true)}
           onPlaying={() => {
             setPlaying(true);
@@ -147,15 +179,18 @@ const GameModeMedia = memo(function GameModeMedia({ item }) {
 
       <button
         type="button"
-        className={`gm-play-trigger ${playing ? "is-active" : ""}`}
-        onClick={togglePlayback}
+        className={`gm-inline-action ${playing ? "is-active" : ""}`}
+        onClick={(event) => {
+          event.stopPropagation();
+          togglePlayback();
+        }}
         aria-label={playing ? `Detener vídeo de ${item.name}` : `Reproducir vídeo de ${item.name}`}
         aria-pressed={playing}
       >
-        <span className="gm-play-trigger-ring" />
-        <span className="gm-play-trigger-core">
+        <span className="gm-inline-action-icon">
           {playing ? <HiPause /> : <HiPlay />}
         </span>
+        <span>{playing ? "DETENER" : "VER ESCENA"}</span>
       </button>
 
       {loading && (
@@ -169,10 +204,7 @@ const GameModeMedia = memo(function GameModeMedia({ item }) {
 
 const GameModes = () => {
   return (
-    <section
-      className="gamemodes-wrapper"
-      style={{ "--gm-accent": mode.accent }}
-    >
+    <section className="gamemodes-wrapper" style={{ "--gm-accent": mode.accent }}>
       <div className="gm-bg" />
       <div className="gm-inner">
         <div className="gm-selector-block gm-selector-block--single">
@@ -186,6 +218,7 @@ const GameModes = () => {
               <div className="gm-single-icon">
                 <img src={mode.icon} alt={mode.name} />
               </div>
+
               <div className="gm-single-meta">
                 <span className="gm-single-label">Modo principal</span>
                 <span className="gm-single-title">{mode.name}</span>
@@ -204,13 +237,7 @@ const GameModes = () => {
               <img
                 className="gm-marco"
                 src="/assets/marcomadera.webp"
-                alt="Marco Flancraft"
-              />
-
-              <img
-                className="gm-florituras"
-                src="/assets/florituras.webp"
-                alt="Decoración Flancraft"
+                alt="Marco FlanCraft"
               />
             </div>
           </div>

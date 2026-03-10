@@ -5,7 +5,7 @@ import { getAuthToken } from "../../lib/auth/storage";
 import "../../styles/components/Dashboard/_logrolist.scss";
 
 const PAGE_SIZE = 10;
-const LOGROS_PROXIMAMENTE = true;
+const LOGROS_PROXIMAMENTE = false;
 const NF = new Intl.NumberFormat("es-ES");
 const MISIONES_MODO_PRUEBAS = String(import.meta.env.VITE_MISIONES_MODO_PRUEBAS || "false").toLowerCase() === "true";
 
