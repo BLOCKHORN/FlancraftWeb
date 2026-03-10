@@ -9,6 +9,10 @@ const HEX32_RE = /^[a-f0-9]{32}$/i;
 const READABLE_RE = /^[A-Za-z0-9_-]{12,64}$/;
 const CODE_RE = /^[0-9]{6}$/;
 
+const RANGOS_USUARIO_ORDEN = ["nova", "alpha", "inmortal"];
+const RANGOS_STAFF_ORDEN = ["builder", "helper", "srhelper", "mod", "srmod", "admin", "owner"];
+const RANGOS_DISPLAY_ORDEN = ["usuario", ...RANGOS_USUARIO_ORDEN, ...RANGOS_STAFF_ORDEN];
+
 function isValidToken(t) {
   if (!t) return false;
   const s = String(t).trim();
@@ -23,6 +27,55 @@ function buildUrl(token) {
   const webBase = String(process.env.VINCULAR_WEB_URL || "https://www.flancraft.com/vincular").trim();
   const sep = webBase.includes("?") ? "&" : "?";
   return `${webBase}${sep}token=${encodeURIComponent(token)}`;
+}
+
+function normalizeRank(value) {
+  if (value === null || value === undefined) return null;
+
+  let rank = String(value).trim().toLowerCase();
+  if (!rank) return null;
+
+  if (rank.startsWith("group.")) rank = rank.slice("group.".length);
+
+  rank = rank.replace(/[\s_-]+/g, "");
+
+  if (rank === "none" || rank === "null" || rank === "usuario") return null;
+  if (RANGOS_USUARIO_ORDEN.includes(rank)) return rank;
+  if (RANGOS_STAFF_ORDEN.includes(rank)) return rank;
+
+  return null;
+}
+
+function normalizeRangoUsuario(value) {
+  const rank = normalizeRank(value);
+  return rank && RANGOS_USUARIO_ORDEN.includes(rank) ? rank : null;
+}
+
+function normalizeRangoStaff(value) {
+  const rank = normalizeRank(value);
+  return rank && RANGOS_STAFF_ORDEN.includes(rank) ? rank : null;
+}
+
+function resolveDisplayRank(rangoUsuario, rangoStaff, rolAdmin) {
+  const userRank = normalizeRangoUsuario(rangoUsuario);
+  const staffRank = normalizeRangoStaff(rangoStaff);
+  const adminRank = normalizeRangoStaff(rolAdmin);
+
+  const candidates = [userRank, staffRank, adminRank].filter(Boolean);
+  if (!candidates.length) return "usuario";
+
+  let best = "usuario";
+  let bestIndex = 0;
+
+  for (const rank of candidates) {
+    const index = RANGOS_DISPLAY_ORDEN.indexOf(rank);
+    if (index > bestIndex) {
+      best = rank;
+      bestIndex = index;
+    }
+  }
+
+  return best;
 }
 
 exports.vincular = async (req, res) => {
@@ -159,6 +212,7 @@ exports.validarToken = async (req, res) => {
 exports.marcarToken = async (req, res) => {
   const { token } = req.body;
   const tok = String(token || "").trim();
+
   if (!isValidToken(tok)) {
     return res.status(400).json({ error: "Token inválido." });
   }
@@ -171,6 +225,7 @@ exports.marcarToken = async (req, res) => {
       .eq("utilizado", false);
 
     if (error) throw error;
+
     return res.status(200).json({ message: "Token marcado como utilizado" });
   } catch (err) {
     console.error("[MARCAR TOKEN ERROR]", err);
@@ -206,6 +261,10 @@ exports.registrarUsuario = async (req, res) => {
       password: hashedPassword,
       xp_actual: 0,
       nivel: 1,
+      rango_usuario: null,
+      rango_staff: null,
+      es_premium: false,
+      wallet_coins: 0,
     });
 
     if (insertError) throw insertError;
@@ -223,6 +282,7 @@ exports.registrarUsuario = async (req, res) => {
       q = isValidToken(tok) ? q.eq("token", tok) : q.eq("codigo", cod);
 
       const { data: vinc, error: vErr } = await q.maybeSingle();
+
       if (!vErr && vinc?.uuid_jugador) {
         await db
           .from("vinculaciones")
@@ -240,7 +300,7 @@ exports.registrarUsuario = async (req, res) => {
 };
 
 exports.loginUsuario = async (req, res) => {
-  const { uid, password } = req.body;
+  const { uid, password } = req.body || {};
 
   if (!uid || !password) {
     return res.status(400).json({ error: "Faltan campos obligatorios." });
@@ -249,28 +309,33 @@ exports.loginUsuario = async (req, res) => {
   try {
     const { data: user, error } = await db
       .from("usuarios")
-      .select("uuid, uid, password")
+      .select("uuid, uid, password, rango_usuario, rango_staff, es_premium, wallet_coins, nivel, xp_actual")
       .eq("uid", uid)
       .maybeSingle();
 
     if (error) throw error;
     if (!user) return res.status(404).json({ error: "Usuario no encontrado." });
 
-    const validPassword = await bcrypt.compare(password, user.password);
+    const validPassword = await bcrypt.compare(String(password), String(user.password || ""));
     if (!validPassword) {
       return res.status(401).json({ error: "Contraseña incorrecta." });
     }
 
-    const { data: permiso, error: rolError } = await db
-      .from("permisos_admin")
-      .select("rol")
-      .eq("uuid", user.uuid)
-      .maybeSingle();
-
-    if (rolError) throw rolError;
+    const rango_usuario = normalizeRangoUsuario(user.rango_usuario);
+    const rango_staff = normalizeRangoStaff(user.rango_staff);
+    const rol_admin = rango_staff;
+    const rango_real = resolveDisplayRank(rango_usuario, rango_staff, rol_admin);
 
     const token = jwt.sign(
-      { uuid: user.uuid, username: user.uid, rol_admin: permiso?.rol || null },
+      {
+        uuid: user.uuid,
+        uid: user.uid,
+        username: user.uid,
+        rango_usuario,
+        rango_staff,
+        rol_admin,
+        rango_real,
+      },
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
@@ -278,7 +343,15 @@ exports.loginUsuario = async (req, res) => {
     return res.status(200).json({
       uuid: user.uuid,
       username: user.uid,
-      rol_admin: permiso?.rol || null,
+      uid: user.uid,
+      rango_usuario,
+      rango_staff,
+      rol_admin,
+      rango_real,
+      es_premium: user.es_premium === true,
+      wallet_coins: Number(user.wallet_coins || 0),
+      nivel: Number(user.nivel || 1),
+      xp_actual: Number(user.xp_actual || 0),
       token,
     });
   } catch (err) {
@@ -286,8 +359,10 @@ exports.loginUsuario = async (req, res) => {
     return res.status(500).json({ error: "Error interno al iniciar sesión." });
   }
 };
+
 exports.obtenerSesionActual = async (req, res) => {
   const uuid = req.usuario?.uuid;
+
   if (!uuid) {
     return res.status(401).json({ error: "Sesión inválida." });
   }
@@ -295,21 +370,30 @@ exports.obtenerSesionActual = async (req, res) => {
   try {
     const { data: usuario, error: userError } = await db
       .from("usuarios")
-      .select("uuid, uid, xp_actual, nivel, rango_usuario, wallet_coins")
+      .select("uuid, uid, xp_actual, nivel, rango_usuario, rango_staff, wallet_coins, es_premium")
       .eq("uuid", uuid)
       .maybeSingle();
 
     if (userError) throw userError;
     if (!usuario) return res.status(404).json({ error: "Usuario no encontrado." });
 
+    const rango_usuario = normalizeRangoUsuario(usuario.rango_usuario);
+    const rango_staff = normalizeRangoStaff(usuario.rango_staff);
+    const rol_admin = rango_staff;
+    const rango_real = resolveDisplayRank(rango_usuario, rango_staff, rol_admin);
+
     return res.status(200).json({
       uuid: usuario.uuid,
       username: usuario.uid,
-      rol_admin: req.usuario?.rol_admin || null,
-      rango_usuario: usuario.rango_usuario || null,
-      nivel: usuario.nivel || 1,
-      xp_actual: usuario.xp_actual || 0,
-      wallet_coins: usuario.wallet_coins || 0,
+      uid: usuario.uid,
+      rol_admin,
+      rango_staff,
+      rango_usuario,
+      rango_real,
+      nivel: Number(usuario.nivel || 1),
+      xp_actual: Number(usuario.xp_actual || 0),
+      wallet_coins: Number(usuario.wallet_coins || 0),
+      es_premium: usuario.es_premium === true,
     });
   } catch (err) {
     console.error("[SESION ACTUAL ERROR]", err);
