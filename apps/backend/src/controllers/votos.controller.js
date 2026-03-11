@@ -1,5 +1,6 @@
 const crypto = require("crypto");
 const supabase = require("../models/db");
+const { evaluateWebAchievementsForUser } = require("../services/webLogros.service");
 
 const COOLDOWN_MS = 24 * 60 * 60 * 1000;
 
@@ -67,7 +68,6 @@ function patternsForSiteId(siteId) {
 async function resolveUserUuidFromKey(key) {
   const k = String(key || "").trim();
   if (!k) return null;
-
   if (isUuid(k)) return k;
 
   try {
@@ -168,12 +168,33 @@ async function ingestVote(req, res) {
         return res.status(200).json({ ok: true, inserted: false, duplicate: true, username, service });
       }
 
-      return res.status(500).json({ ok: false, error: "Error insertando voto", details: error.message || String(error) });
+      return res.status(500).json({
+        ok: false,
+        error: "Error insertando voto",
+        details: error.message || String(error),
+      });
+    }
+
+    if (data?.user_uuid) {
+      try {
+await evaluateWebAchievementsForUser(data.user_uuid, {
+  types: ["vote_count", "vote_streak", "account_age_days"],
+});
+      } catch (webAchievementError) {
+        console.error("[WEB LOGROS VOTO EVAL ERROR]", {
+          uuid: data.user_uuid,
+          message: webAchievementError?.message || String(webAchievementError),
+        });
+      }
     }
 
     return res.status(200).json({ ok: true, inserted: true, duplicate: false, vote: data });
   } catch (e) {
-    return res.status(500).json({ ok: false, error: "Excepción insertando voto", details: e?.message || String(e) });
+    return res.status(500).json({
+      ok: false,
+      error: "Excepción insertando voto",
+      details: e?.message || String(e),
+    });
   }
 }
 
@@ -196,12 +217,20 @@ async function getRanking(req, res) {
       .range(offset, offset + limit - 1);
 
     if (error) {
-      return res.status(500).json({ ok: false, error: "Error obteniendo ranking", details: error.message || String(error) });
+      return res.status(500).json({
+        ok: false,
+        error: "Error obteniendo ranking",
+        details: error.message || String(error),
+      });
     }
 
     return res.status(200).json({ ok: true, limit, offset, order: orderCol, items: data || [] });
   } catch (e) {
-    return res.status(500).json({ ok: false, error: "Excepción obteniendo ranking", details: e?.message || String(e) });
+    return res.status(500).json({
+      ok: false,
+      error: "Excepción obteniendo ranking",
+      details: e?.message || String(e),
+    });
   }
 }
 
@@ -221,7 +250,11 @@ async function getResumen(req, res) {
 
     const anyErr = totalR.error || hoyR.error || d7R.error || d30R.error;
     if (anyErr) {
-      return res.status(500).json({ ok: false, error: "Error calculando resumen", details: String(anyErr?.message || anyErr) });
+      return res.status(500).json({
+        ok: false,
+        error: "Error calculando resumen",
+        details: String(anyErr?.message || anyErr),
+      });
     }
 
     return res.status(200).json({
@@ -237,7 +270,11 @@ async function getResumen(req, res) {
       },
     });
   } catch (e) {
-    return res.status(500).json({ ok: false, error: "Excepción calculando resumen", details: e?.message || String(e) });
+    return res.status(500).json({
+      ok: false,
+      error: "Excepción calculando resumen",
+      details: e?.message || String(e),
+    });
   }
 }
 
@@ -260,7 +297,11 @@ async function getTop(req, res) {
       .range(offset, offset + limit - 1);
 
     if (error) {
-      return res.status(500).json({ ok: false, error: "Error obteniendo top", details: error.message || String(error) });
+      return res.status(500).json({
+        ok: false,
+        error: "Error obteniendo top",
+        details: error.message || String(error),
+      });
     }
 
     const rows = data || [];
@@ -300,7 +341,11 @@ async function getTop(req, res) {
       list,
     });
   } catch (e) {
-    return res.status(500).json({ ok: false, error: "Excepción obteniendo top", details: e?.message || String(e) });
+    return res.status(500).json({
+      ok: false,
+      error: "Excepción obteniendo top",
+      details: e?.message || String(e),
+    });
   }
 }
 
@@ -378,7 +423,11 @@ async function getStatus(req, res) {
       },
     });
   } catch (e) {
-    return res.status(500).json({ ok: false, error: "Excepción obteniendo status", details: e?.message || String(e) });
+    return res.status(500).json({
+      ok: false,
+      error: "Excepción obteniendo status",
+      details: e?.message || String(e),
+    });
   }
 }
 

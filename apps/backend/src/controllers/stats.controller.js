@@ -121,6 +121,48 @@ const resolveServerOrReject = (value) => {
   return SURVIVAL_SERVER;
 };
 
+const normalizeJobId = (value) =>
+  String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "_");
+
+const sanitizeJobsStats = (value) => {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .map((job) => {
+      const rawId =
+        textOrUndef(job?.id) ||
+        textOrUndef(job?.job) ||
+        textOrUndef(job?.name) ||
+        textOrUndef(job?.nombre) ||
+        null;
+
+      const nombre =
+        textOrUndef(job?.nombre) ||
+        textOrUndef(job?.name) ||
+        textOrUndef(job?.job) ||
+        textOrUndef(job?.id) ||
+        null;
+
+      if (!nombre) return null;
+
+      return {
+        id: normalizeJobId(rawId || nombre),
+        nombre,
+        nivel: num(job?.nivel ?? job?.level, 0),
+        xp: num(job?.xp ?? job?.experience, 0),
+        xp_max: num(job?.xp_max ?? job?.xpMax ?? job?.maxExperience, 0),
+      };
+    })
+    .filter((job) => job && job.id && job.nombre)
+    .sort((a, b) => {
+      if (b.nivel !== a.nivel) return b.nivel - a.nivel;
+      return b.xp - a.xp;
+    });
+};
+
 exports.importarStat = async (req, res) => {
   const { uuid, nombre_minecraft, servidor, tipo, categoria, valor } = req.body;
   const server = resolveServerOrReject(servidor);
@@ -163,7 +205,8 @@ exports.importarStatsAgrupadas = async (req, res) => {
   }
 
   const syncContext = String(req.body.sync_context || "online").toLowerCase();
-  const allowExtras = syncContext === "online";
+  const allowExtras = syncContext === "online" || syncContext === "logout";
+  const hasJobsStats = Object.prototype.hasOwnProperty.call(req.body, "jobs_stats");
 
   const baseUpdate = {
     bloques_minados: num(req.body.bloques_minados),
@@ -200,6 +243,12 @@ exports.importarStatsAgrupadas = async (req, res) => {
     );
     setIfDefined(extrasUpdate, "killstreak_max", numOrUndef(req.body.killstreak_max));
     setIfDefined(extrasUpdate, "muertes_pvp", numOrUndef(req.body.muertes_pvp));
+    setIfDefined(extrasUpdate, "coins_ganadas_total", numOrUndef(req.body.coins_ganadas_total));
+    setIfDefined(extrasUpdate, "dinero_ganado_total", numOrUndef(req.body.dinero_ganado_total));
+  }
+
+  if (hasJobsStats) {
+    extrasUpdate.jobs_stats = sanitizeJobsStats(req.body.jobs_stats);
   }
 
   const { data: existing, error: findErr } = await db
@@ -215,9 +264,10 @@ exports.importarStatsAgrupadas = async (req, res) => {
   }
 
   if (existing) {
-    const updatePayload = allowExtras
-      ? { ...baseUpdate, ...extrasUpdate }
-      : { ...baseUpdate };
+    const updatePayload = {
+      ...baseUpdate,
+      ...(allowExtras ? extrasUpdate : hasJobsStats ? { jobs_stats: extrasUpdate.jobs_stats } : {}),
+    };
 
     const { error: updErr } = await db
       .from("estadisticas_agrupadas")
@@ -234,6 +284,7 @@ exports.importarStatsAgrupadas = async (req, res) => {
       success: true,
       mode: "update",
       sync_context: syncContext,
+      jobs_stats_updated: hasJobsStats,
     });
   }
 
@@ -243,6 +294,10 @@ exports.importarStatsAgrupadas = async (req, res) => {
     ...baseUpdate,
     ...(allowExtras ? extrasUpdate : {}),
   };
+
+  if (!allowExtras && hasJobsStats) {
+    insertPayload.jobs_stats = sanitizeJobsStats(req.body.jobs_stats);
+  }
 
   const { error: insErr } = await db
     .from("estadisticas_agrupadas")
@@ -257,6 +312,7 @@ exports.importarStatsAgrupadas = async (req, res) => {
     success: true,
     mode: "insert",
     sync_context: syncContext,
+    jobs_stats_updated: hasJobsStats,
   });
 };
 

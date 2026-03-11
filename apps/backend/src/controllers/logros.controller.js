@@ -1,5 +1,6 @@
 const crypto = require("crypto");
 const db = require("../models/db");
+const { evaluateWebAchievementsForUser } = require("../services/webLogros.service");
 
 const DAILY_MISSIONS_PER_SERVER = 5;
 const WEEKLY_MISSIONS_PER_SERVER = 8;
@@ -309,9 +310,25 @@ async function sumarXpUsuario(uuid, xp) {
 
   if (error) throw error;
 
+  try {
+    await evaluateWebAchievementsForUser(uuid, {
+      types: ["first_level", "top_rank"],
+      context: {
+        previousLevel: base.nivel,
+        currentLevel: nuevoNivel,
+      },
+    });
+  } catch (webAchievementError) {
+    console.error("[WEB LOGROS XP EVAL ERROR]", {
+      uuid,
+      message: webAchievementError?.message || String(webAchievementError),
+    });
+  }
+
   return {
     xp_actual: nuevaXP,
     nivel: nuevoNivel,
+    subio_nivel: nuevoNivel > base.nivel,
   };
 }
 

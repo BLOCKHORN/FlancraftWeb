@@ -1,4 +1,5 @@
 const db = require("../models/db");
+const { evaluateWebAchievementsForUser, getWebAchievementsForProfile } = require("../services/webLogros.service");
 
 const SURVIVAL_SERVER = "survival";
 
@@ -29,6 +30,7 @@ const SURVIVAL_PROFILE_SELECT = [
   "killstreak_max",
   "dinero",
   "coins_balance",
+  "jobs_stats",
 ].join(",");
 
 const PLAYER_MATCH_SELECT = [
@@ -38,6 +40,10 @@ const PLAYER_MATCH_SELECT = [
   "plataforma",
   "ultima_actualizacion",
 ].join(",");
+
+const RANGOS_USUARIO_ORDEN = ["nova", "alpha", "inmortal"];
+const RANGOS_STAFF_ORDEN = ["builder", "helper", "srhelper", "mod", "srmod", "admin", "owner"];
+const RANGOS_DISPLAY_ORDEN = ["usuario", ...RANGOS_USUARIO_ORDEN, ...RANGOS_STAFF_ORDEN];
 
 const safeNum = (value, fallback = 0) => {
   const num = Number(value);
@@ -55,16 +61,143 @@ const normalizeMetersToKm = (value) => {
   return num > 5000 ? num / 1000 : num;
 };
 
+const normalizeRank = (value) => {
+  if (value === undefined || value === null) return null;
+
+  let rank = String(value).trim().toLowerCase();
+  if (!rank) return null;
+
+  if (rank.startsWith("group.")) {
+    rank = rank.slice("group.".length);
+  }
+
+  rank = rank.replace(/[\s_-]+/g, "");
+
+  if (!rank || rank === "null" || rank === "none" || rank === "usuario") return null;
+
+  if (
+    rank === "nova" ||
+    rank === "alpha" ||
+    rank === "inmortal" ||
+    rank === "builder" ||
+    rank === "helper" ||
+    rank === "srhelper" ||
+    rank === "mod" ||
+    rank === "srmod" ||
+    rank === "admin" ||
+    rank === "owner"
+  ) {
+    return rank;
+  }
+
+  return null;
+};
+
+const normalizeRangoUsuario = (value) => {
+  const rank = normalizeRank(value);
+  return rank && RANGOS_USUARIO_ORDEN.includes(rank) ? rank : null;
+};
+
+const normalizeRangoStaff = (value) => {
+  const rank = normalizeRank(value);
+  return rank && RANGOS_STAFF_ORDEN.includes(rank) ? rank : null;
+};
+
+const resolveDisplayRank = (rangoUsuario, rangoStaff, rolAdmin = null) => {
+  const userRank = normalizeRangoUsuario(rangoUsuario);
+  const staffRank = normalizeRangoStaff(rangoStaff);
+  const adminRank = normalizeRangoStaff(rolAdmin);
+
+  const candidates = [userRank, staffRank, adminRank].filter(Boolean);
+  if (!candidates.length) return "usuario";
+
+  let best = "usuario";
+  let bestIndex = 0;
+
+  for (const rank of candidates) {
+    const index = RANGOS_DISPLAY_ORDEN.indexOf(rank);
+    if (index > bestIndex) {
+      best = rank;
+      bestIndex = index;
+    }
+  }
+
+  return best;
+};
+
+const normalizeJobId = (value) =>
+  String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "_");
+
+const normalizeJobsStats = (value) => {
+  let parsed = value;
+
+  if (typeof parsed === "string") {
+    try {
+      parsed = JSON.parse(parsed);
+    } catch {
+      parsed = [];
+    }
+  }
+
+  if (!Array.isArray(parsed)) return [];
+
+  return parsed
+    .map((job) => {
+      const rawId =
+        safeText(job?.id) ||
+        safeText(job?.job) ||
+        safeText(job?.name) ||
+        safeText(job?.nombre) ||
+        null;
+
+      const nombre =
+        safeText(job?.nombre) ||
+        safeText(job?.name) ||
+        safeText(job?.job) ||
+        safeText(job?.id) ||
+        "Trabajo";
+
+      return {
+        id: normalizeJobId(rawId || nombre),
+        nombre,
+        nivel: safeNum(job?.nivel ?? job?.level, 0),
+        xp: safeNum(job?.xp ?? job?.experience, 0),
+        xp_max: safeNum(job?.xp_max ?? job?.xpMax ?? job?.maxExperience, 0),
+      };
+    })
+    .filter((job) => job.id && job.nombre)
+    .sort((a, b) => {
+      if (b.nivel !== a.nivel) return b.nivel - a.nivel;
+      return b.xp - a.xp;
+    });
+};
+
 const fetchWebUser = async (uuid) => {
   try {
     const { data, error } = await db
       .from("usuarios")
-      .select("uuid,uid,rango_usuario,nivel,xp_actual,wallet_coins,es_premium")
+      .select("uuid,uid,rango_usuario,rango_staff,nivel,xp_actual,wallet_coins,es_premium")
       .eq("uuid", uuid)
       .maybeSingle();
 
     if (error) return null;
-    return data || null;
+    if (!data) return null;
+
+    const rango_usuario = normalizeRangoUsuario(data.rango_usuario);
+    const rango_staff = normalizeRangoStaff(data.rango_staff);
+    const rol_admin = rango_staff;
+    const rango_real = resolveDisplayRank(rango_usuario, rango_staff, rol_admin);
+
+    return {
+      ...data,
+      rango_usuario,
+      rango_staff,
+      rol_admin,
+      rango_real,
+    };
   } catch {
     return null;
   }
@@ -157,6 +290,7 @@ const shapeSurvivalRow = (row, extras = {}) => {
   const coinsGanadasTotal = safeNum(extras.economyTotals?.coins_ganadas_total, 0);
   const coinsGastadasTotal = safeNum(extras.economyTotals?.coins_gastadas_total, 0);
   const svpoints = safeNum(extras.svpoints, 0);
+  const jobsList = normalizeJobsStats(row.jobs_stats);
 
   return {
     servidor: SURVIVAL_SERVER,
@@ -204,6 +338,9 @@ const shapeSurvivalRow = (row, extras = {}) => {
       coins_total: coinsGanadasTotal,
       svpoints,
       points: svpoints,
+    },
+    trabajos: {
+      lista: jobsList,
     },
   };
 };
@@ -270,18 +407,47 @@ exports.obtenerPerfilPorNombre = async (req, res) => {
       return res.status(404).json({ error: "Perfil de survival no encontrado." });
     }
 
-    const [webUser, svpoints, currentCoins, economyTotals] = await Promise.all([
-      fetchWebUser(uuid),
-      fetchSurvivalPoints(uuid),
-      fetchSurvivalCoins(uuid),
-      fetchEconomyTotals(uuid),
-    ]);
+const [webUser, svpoints, currentCoins, economyTotals] = await Promise.all([
+  fetchWebUser(uuid),
+  fetchSurvivalPoints(uuid),
+  fetchSurvivalCoins(uuid),
+  fetchEconomyTotals(uuid),
+]);
 
-    const survival = shapeSurvivalRow(survivalRow, {
-      svpoints,
-      currentCoins,
-      economyTotals,
-    });
+try {
+await evaluateWebAchievementsForUser(uuid, {
+  types: ["top_rank", "daily_claim_count", "vote_count", "vote_streak", "account_age_days"],
+});
+} catch (webAchievementError) {
+  console.error("[WEB LOGROS PERFIL EVAL ERROR]", {
+    uuid,
+    message: webAchievementError?.message || String(webAchievementError),
+  });
+}
+
+let logrosWeb = {
+  otorgados: [],
+  ranking_actual: {
+    posicion_top_10: null,
+    es_top_1_actual: false,
+    es_top_10_actual: false,
+  },
+};
+
+try {
+  logrosWeb = await getWebAchievementsForProfile(uuid);
+} catch (webAchievementError) {
+  console.error("[WEB LOGROS PERFIL FETCH ERROR]", {
+    uuid,
+    message: webAchievementError?.message || String(webAchievementError),
+  });
+}
+
+const survival = shapeSurvivalRow(survivalRow, {
+  svpoints,
+  currentCoins,
+  economyTotals,
+});
 
     const displayName =
       safeText(webUser?.uid) ||
@@ -300,30 +466,35 @@ exports.obtenerPerfilPorNombre = async (req, res) => {
       nombre_minecraft: displayName,
       plataforma,
       rango_usuario: webUser?.rango_usuario ?? null,
+      rango_staff: webUser?.rango_staff ?? null,
+      rol_admin: webUser?.rol_admin ?? null,
+      rango_real: webUser?.rango_real ?? "usuario",
       nivel: webUser?.nivel ?? null,
       xp_actual: webUser?.xp_actual ?? null,
       wallet_coins: webUser?.wallet_coins == null ? null : safeNum(webUser.wallet_coins, 0),
       es_premium: webUser?.es_premium ?? null,
       actualizado: survivalRow?.ultima_actualizacion || null,
+      logros_web_total: Array.isArray(logrosWeb?.otorgados) ? logrosWeb.otorgados.length : 0,
     };
 
-    return res.json({
-      jugador,
-      servidores: {
-        survival,
-      },
-      servidor_activo: SURVIVAL_SERVER,
-      totales: {
-        points_total: safeNum(svpoints, 0),
-        tiempo_jugado_total: safeNum(survival?.general?.tiempo_jugado, 0),
-        kills_pvp_total: safeNum(survival?.combate?.kills_pvp, 0),
-        wallet_coins: jugador.wallet_coins,
-        points: {
-          svpoints: safeNum(svpoints, 0),
-          network_points: safeNum(svpoints, 0),
-        },
-      },
-    });
+return res.json({
+  jugador,
+  logros_web: logrosWeb,
+  servidores: {
+    survival,
+  },
+  servidor_activo: SURVIVAL_SERVER,
+  totales: {
+    points_total: safeNum(svpoints, 0),
+    tiempo_jugado_total: safeNum(survival?.general?.tiempo_jugado, 0),
+    kills_pvp_total: safeNum(survival?.combate?.kills_pvp, 0),
+    wallet_coins: jugador.wallet_coins,
+    points: {
+      svpoints: safeNum(svpoints, 0),
+      network_points: safeNum(svpoints, 0),
+    },
+  },
+});
   } catch (error) {
     console.error("[Perfil] Error buscando por nombre:", error.message);
     return res.status(500).json({ error: "Error al cargar perfil." });

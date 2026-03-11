@@ -1,4 +1,5 @@
 const db = require("../models/db");
+const { evaluateWebAchievementsForUser } = require("../services/webLogros.service");
 
 const STAFF_ROLES = new Set(["admin", "owner"]);
 
@@ -62,6 +63,17 @@ exports.reclamarRecompensa = async (req, res) => {
 
     const coinsAñadidos = Number(data?.coins_added ?? 0) || 0;
     const nuevoSaldoCoins = Number(data?.wallet_balance ?? 0) || 0;
+
+    try {
+await evaluateWebAchievementsForUser(sessionUuid, {
+  types: ["account_age_days"],
+});
+    } catch (webAchievementError) {
+      console.error("[WEB LOGROS RECOMPENSA EVAL ERROR]", {
+        uuid: sessionUuid,
+        message: webAchievementError?.message || String(webAchievementError),
+      });
+    }
 
     return res.status(200).json({
       message: "Recompensa reclamada correctamente.",

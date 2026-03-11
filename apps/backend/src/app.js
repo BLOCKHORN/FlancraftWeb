@@ -24,6 +24,7 @@ const votosRoutes = require("./routes/votos.routes");
 const monedasRoutes = require("./routes/monedas.routes");
 const walletRoutes = require("./routes/wallet.routes");
 const dailyClaimRoutes = require("./routes/dailyClaim.routes");
+const webLogrosRoutes = require("./routes/webLogros.routes");
 
 const app = express();
 
@@ -84,7 +85,9 @@ app.use("/api/wallet", walletRoutes);
 
 app.use("/api/logros", logrosRoutes);
 app.use("/api/logros", logrosEstadisticasRoutes);
+
 app.use("/api/misiones", misionesRoutes);
+app.use("/api/web-logros", webLogrosRoutes);
 
 app.use("/api/monedas", monedasRoutes);
 app.use("/api/sanciones", sancionesRoutes);

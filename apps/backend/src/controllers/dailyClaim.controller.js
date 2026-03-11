@@ -1,5 +1,6 @@
 // src/controllers/dailyClaim.controller.js
 const db = require("../models/db");
+const { evaluateWebAchievementsForUser } = require("../services/webLogros.service");
 
 const TZ = "Europe/Madrid";
 const DEBUG =
@@ -318,7 +319,18 @@ exports.claimDaily = async (req, res) => {
 
     if (errUpsert) throw errUpsert;
 
-    return res.status(200).json({
+try {
+  await evaluateWebAchievementsForUser(uuid, {
+    types: ["daily_claim_count", "account_age_days"],
+  });
+} catch (webAchievementError) {
+  console.error("[WEB LOGROS DAILY CLAIM EVAL ERROR]", {
+    uuid,
+    message: webAchievementError?.message || String(webAchievementError),
+  });
+}
+
+return res.status(200).json({
       message: "Recompensa diaria añadida a tu Wallet.",
       amount,
       walletBalance,
