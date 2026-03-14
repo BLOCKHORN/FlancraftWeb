@@ -17,7 +17,6 @@ export const ANTES_DE_COMPRAR = {
       "En caso de no recibir el artículo solicitado en un plazo máximo de 24 horas, contacta con el equipo de FlanCraft a través de las siguientes vías:",
     links: [
       { label: "Discord", href: "https://discord.gg/jBAkS2Ewbr" },
-      { label: "Twitter / X", href: "https://x.com/flancraftserver" },
     ],
   },
   reembolso: {

@@ -115,44 +115,42 @@ export default function TiendaOfertaCountdown({ variant = "default" }) {
       : `${pad2(h)}:${pad2(m)}:${pad2(s)}`;
 
   return (
-    <div
-      className={`tienda-oferta-strip ${isTabs ? "tienda-oferta-strip--tabs" : ""}`}
-      aria-label="Oferta activa"
-    >
+    <div className={`mc-oferta-wrapper ${isTabs ? "is-tabs" : ""}`} aria-label="Oferta activa">
       <span className="sr-only" role="status" aria-live="polite">
         {announce}
       </span>
 
-      <div className="tienda-oferta-panel" title={`Termina en ${timeText}`}>
-        {/* CTA DENTRO (en el margen libre) */}
-        <div className="tienda-oferta-cta" aria-hidden="true">
-          <span className="cta-particles" />
+      <div className="mc-oferta-stone-panel" title={`Termina en ${timeText}`}>
+        
+        <div className="mc-oferta-art">
+          <div className="mc-oferta-glow"></div>
           <img
             src="/tienda/assets/ofertas-ultra.png"
-            alt=""
-            className="tienda-oferta-image"
+            alt="Oferta"
+            className="mc-oferta-img"
             draggable="false"
+            onError={(e) => { e.target.style.display = 'none'; }} 
           />
         </div>
 
-        <div className="tienda-oferta-row">
-          <div className="tienda-oferta-line" aria-label={`Termina en ${timeText}`}>
-            <span className="tienda-oferta-text">Descuentos activos</span>
-            <span className="tienda-oferta-dot">•</span>
-            <span className="tienda-oferta-time">
-              <span className="time-label">Termina en</span>
-              <span className="time-value">{timeText}</span>
-            </span>
+        <div className="mc-oferta-content">
+          <div className="mc-oferta-header">
+            <h3 className="mc-oferta-title">¡DESCUENTOS ACTIVOS!</h3>
+            {percent > 0 && <div className="mc-oferta-tag">-{percent}%</div>}
           </div>
 
-          {percent > 0 && <span className="tienda-oferta-percent">-{percent}%</span>}
+          <div className="mc-oferta-timer-row">
+            <span className="mc-oferta-label">TERMINA EN:</span>
+            <span className="mc-oferta-time">{timeText}</span>
+          </div>
+
+          <div className="mc-oferta-progress-container" aria-hidden="true">
+            <div className="mc-oferta-progress-bar" style={{ width: `${progress * 100}%` }}>
+              <div className="mc-oferta-progress-shine"></div>
+            </div>
+          </div>
         </div>
 
-        <div className="tienda-oferta-bar" aria-hidden="true">
-          <span className="tienda-oferta-barFill" style={{ width: `${progress * 100}%` }} />
-          <span className="tienda-oferta-barPattern" />
-          <span className="tienda-oferta-barShine" />
-        </div>
       </div>
     </div>
   );

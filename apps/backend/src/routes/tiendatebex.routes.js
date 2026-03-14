@@ -5,13 +5,13 @@ const router = express.Router();
 
 const {
   obtenerFx,
-
   obtenerDatosTienda,
   forzarActualizarCache,
   obtenerDescripcionProducto,
   crearPedidoTebex,
   obtenerSaleActiva,
   obtenerTopDonator,
+  obtenerTopDonators,
   obtenerPagosRecientes,
   obtenerSidebarRaw,
   obtenerBasketHeadless,
@@ -20,6 +20,7 @@ const {
   quitarCodigoBasket,
   agregarPaqueteBasket,
   obtenerRecomendaciones,
+  obtenerEstadoPackBienvenida,
   webhookPing,
   webhookHandler,
   health,
@@ -27,11 +28,11 @@ const {
 
 router.get("/health", health);
 
-// FX (visualización)
 router.get("/fx", obtenerFx);
 
 router.get("/sidebar-raw", obtenerSidebarRaw);
 router.get("/top-donator", obtenerTopDonator);
+router.get("/top-donators", obtenerTopDonators);
 router.get("/recent-payments", obtenerPagosRecientes);
 
 router.get("/sale", obtenerSaleActiva);
@@ -42,7 +43,6 @@ router.get("/:server/package/:id", obtenerDescripcionProducto);
 
 router.post("/checkout", crearPedidoTebex);
 
-// Basket (modal)
 router.get("/basket/:ident", obtenerBasketHeadless);
 router.post("/basket/:ident/code", aplicarCodigoBasket);
 router.post("/basket/:ident/code/remove", quitarCodigoBasket);
@@ -50,7 +50,8 @@ router.post("/basket/:ident/packages", agregarPaqueteBasket);
 
 router.get("/checkout-status/:ident", obtenerCheckoutStatus);
 
-// Recomendaciones
+router.get("/bienvenida/status", obtenerEstadoPackBienvenida);
+
 router.get("/recommendations", obtenerRecomendaciones);
 router.get("/:server/recommendations", obtenerRecomendaciones);
 

@@ -1,432 +1,382 @@
 /* src/styles/components/Tienda/tienda-checkout-modal.scss */
 
+@font-face {
+  font-family: 'MinecraftSeven';
+  src: url('/fonts/MinecraftBold.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+$mc-font: 'MinecraftSeven', 'Montserrat', sans-serif;
+
 @media (prefers-reduced-motion: reduce) {
   .wcc * { animation: none !important; transition: none !important; }
 }
 
-@keyframes wccPop {
-  0% { transform: translateY(10px) scale(.985); opacity: 0; }
+@keyframes wccModalPop {
+  0% { transform: translateY(20px) scale(0.95); opacity: 0; }
   100% { transform: translateY(0) scale(1); opacity: 1; }
 }
 
-@keyframes wccShine {
-  0%, 100% { opacity: .35; transform: translateX(-18%); }
-  50% { opacity: .55; transform: translateX(18%); }
+@keyframes wpFloatBlock {
+  0% { transform: translateY(0) rotate(0deg); }
+  100% { transform: translateY(-20px) rotate(10deg); }
 }
 
-/* ✅ Overlay SIEMPRE por encima de todo */
-.wcc{
+@keyframes textPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Overlay general */
+.wcc {
   position: fixed;
   inset: 0;
-
-  /* >>> CLAVE <<< */
   z-index: 2147483647;
   isolation: isolate;
-
   display: grid;
   place-items: center;
-
-  /* margen exterior como Wynncraft (aire alrededor) */
   padding: 5vh 4vw;
-
   opacity: 0;
   pointer-events: none;
-  transition: opacity .18s ease;
+  transition: opacity 0.2s ease;
+  font-family: $mc-font;
 }
 
-.wcc--open{
+.wcc--open {
   opacity: 1;
   pointer-events: auto;
 }
 
-.wcc__backdrop{
+.wcc__backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(0,0,0,.78);
-  backdrop-filter: blur(2px);
-  -webkit-backdrop-filter: blur(2px);
+  background: rgba(0,0,0,0.85);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
 }
 
-/* Contenedor: sin header, solo el iframe/checkout */
-.wcc__embed{
+/* Contenedor principal de Tebex */
+.wcc__embed {
   position: relative;
-
-  --wccW: 840px;
-  --wccH: 760px;
-
-  width: min(var(--wccW), 94vw);
-  height: min(var(--wccH), 88vh);
-
-  border-radius: 0;
+  
+  /* Flexibilidad absoluta para no asfixiar a Zoid */
+  width: 90vw;
+  max-width: 900px; 
+  height: 85vh;
+  max-height: 800px;
+  
+  background: #0a0a0a;
+  border: 4px solid #000;
+  box-shadow: inset -2px -2px 0px rgba(0,0,0,0.8), inset 2px 2px 0px rgba(255,255,255,0.05), 0 20px 50px rgba(0,0,0,0.8);
+  border-radius: 2px;
   overflow: hidden;
-
-  box-shadow: 0 28px 80px rgba(0,0,0,.72);
+  animation: wccModalPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-.wcc__host{
-  position: relative;
+.wcc__host {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
-  overflow: hidden;
-  background: transparent;
+  background: #0a0a0a;
 }
 
-/* Loading overlay */
-.wcc__loading{
+/* Iframe ocupando 100% sin asfixiarse */
+.wcc__host iframe {
+  width: 100% !important;
+  height: 100% !important;
+  border: none !important;
+  display: block;
+}
+
+/* Pantalla de Carga Animada */
+.wcc__loading {
   position: absolute;
   inset: 0;
-  display: grid;
-  place-items: center;
-
-  color: rgba(255,255,255,.78);
-  font-size: 12px;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-
-  background: rgba(0,0,0,.55);
-  z-index: 2;
-}
-
-/* Error simple */
-.wcc__error{
-  position: absolute;
-  top: 12px;
-  left: 12px;
-  right: 12px;
   z-index: 10;
-
-  padding: 10px 10px;
-  border: 1px solid rgba(255,100,100,.22);
-  background: rgba(255,80,80,.10);
-  color: rgba(255,220,220,.92);
-  font-size: 12px;
-  line-height: 1.25;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  background: #11151d;
 }
 
-/* Scrollbars dark (por si Tebex usa scroll interno) */
-.wcc__embed *::-webkit-scrollbar{
-  width: 10px;
-  height: 10px;
+.wcc__loading-block {
+  width: 48px;
+  height: 48px;
+  background: #5EE034;
+  border: 4px solid #000;
+  box-shadow: inset -4px -4px 0px rgba(0,0,0,0.3), inset 4px 4px 0px rgba(255,255,255,0.4);
+  animation: wpFloatBlock 0.5s ease-in-out infinite alternate;
 }
-.wcc__embed *::-webkit-scrollbar-thumb{
-  background: rgba(255,255,255,.16);
-  border: 2px solid rgba(0,0,0,.35);
-  border-radius: 999px;
+
+.wcc__loading-text {
+  color: #fbbf24;
+  font-size: 1.2rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  text-shadow: 3px 3px 0 #000;
+  animation: textPulse 1.5s infinite;
+  text-align: center;
+  padding: 0 20px;
 }
-.wcc__embed *::-webkit-scrollbar-track{
-  background: rgba(0,0,0,.35);
+
+.wcc__error {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  right: 16px;
+  z-index: 20;
+  padding: 16px;
+  background: #ef4444;
+  border: 4px solid #000;
+  color: #fff;
+  font-size: 1rem;
+  text-shadow: 2px 2px 0 #000;
+  text-align: center;
+  box-shadow: inset -3px -3px 0px rgba(0,0,0,0.3), inset 3px 3px 0px rgba(255,255,255,0.3);
 }
+
+.wcc__embed *::-webkit-scrollbar { width: 12px; height: 12px; }
+.wcc__embed *::-webkit-scrollbar-track { background: #0a0c14; border-left: 2px solid #000; }
+.wcc__embed *::-webkit-scrollbar-thumb { background: #374151; border: 2px solid #000; }
 
 /* =========================
-   ✅ RESULT OVERLAY (SUCCESS / MAYBEPAID)
+   PANTALLAS DE RESULTADO
    ========================= */
 
-.wcc__result{
+.wcc__result {
   position: absolute;
   inset: 0;
   z-index: 30;
   display: grid;
   place-items: center;
-  padding: 18px;
-
-  /* Oscurecer un poco el checkout detrás + blur suave */
-  background: radial-gradient(circle at 50% 35%, rgba(0,0,0,.56), rgba(0,0,0,.72));
-  backdrop-filter: blur(2px);
-  -webkit-backdrop-filter: blur(2px);
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(4px);
 }
 
-.wcc__resultCard{
-  width: min(680px, 92vw);
-  border-radius: 0;
-  overflow: hidden;
-  animation: wccPop .18s ease-out;
-
-  /* “panel” más acorde tienda */
-  background:
-    linear-gradient(180deg, rgba(28, 22, 16, .96), rgba(14, 11, 8, .96));
-  border: 1px solid rgba(255, 236, 190, .10);
-  box-shadow:
-    0 22px 70px rgba(0,0,0,.75),
-    0 0 0 1px rgba(0,0,0,.55) inset;
-
-  position: relative;
+.wcc__resultCard {
+  width: min(680px, 100%);
+  background: #151923;
+  border: 4px solid #000;
+  box-shadow: inset -4px -4px 0px #0a0c14, inset 4px 4px 0px #2a3143, 0 20px 50px rgba(0,0,0,0.8);
+  border-radius: 2px;
+  animation: wccModalPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  max-height: 90vh;
+  overflow-y: auto;
 }
 
-/* brillo sutil tipo “barniz” */
-.wcc__resultCard::before{
-  content: "";
-  position: absolute;
-  inset: -2px;
-  background:
-    linear-gradient(90deg,
-      rgba(255,255,255,0) 0%,
-      rgba(255, 232, 185, .10) 40%,
-      rgba(255,255,255,0) 80%);
-  mix-blend-mode: screen;
-  opacity: .35;
-  pointer-events: none;
-  animation: wccShine 3.2s ease-in-out infinite;
-}
-
-/* ribetes arriba/abajo (estilo “marco”) */
-.wcc__resultCard::after{
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background:
-    linear-gradient(to bottom, rgba(255, 211, 126, .12), rgba(255,255,255,0) 22%),
-    linear-gradient(to top, rgba(255, 211, 126, .10), rgba(255,255,255,0) 22%);
-  opacity: .65;
-}
-
-.wcc__resultTop{
+.wcc__resultTop {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 14px 16px;
-
-  background:
-    linear-gradient(180deg, rgba(0,0,0,.35), rgba(0,0,0,0));
-  border-bottom: 1px solid rgba(255, 236, 190, .10);
+  gap: 16px;
+  padding: 20px;
+  background: #0f131a;
+  border-bottom: 4px solid #000;
 }
 
-.wcc__badge{
-  width: 34px;
-  height: 34px;
+.wcc__badge {
+  width: 48px;
+  height: 48px;
   display: grid;
   place-items: center;
-  border-radius: 6px;
-  color: #eaf8e3;
-  box-shadow:
-    0 10px 22px rgba(0,0,0,.45),
-    0 0 0 1px rgba(0,0,0,.55) inset;
+  border: 4px solid #000;
+  color: #fff;
+  flex-shrink: 0;
 }
 
-.wcc__badge--ok{
-  background: linear-gradient(180deg, rgba(109,191,42,.42), rgba(20,80,18,.55));
-  border: 1px solid rgba(109,191,42,.40);
-  text-shadow: 0 1px 0 rgba(0,0,0,.55);
-  box-shadow:
-    0 0 18px rgba(109,191,42,.18),
-    0 10px 22px rgba(0,0,0,.45),
-    0 0 0 1px rgba(0,0,0,.55) inset;
+.wcc__badge--ok {
+  background: #5EE034;
+  box-shadow: inset -4px -4px 0px rgba(0,0,0,0.3), inset 4px 4px 0px rgba(255,255,255,0.4);
 }
 
-.wcc__badge--warn{
-  background: linear-gradient(180deg, rgba(255, 186, 85, .35), rgba(80, 50, 10, .60));
-  border: 1px solid rgba(255, 186, 85, .32);
-  color: rgba(255, 238, 210, .95);
+.wcc__badge--warn {
+  background: #fbbf24;
+  box-shadow: inset -4px -4px 0px rgba(0,0,0,0.3), inset 4px 4px 0px rgba(255,255,255,0.5);
+  color: #000;
 }
 
-.wcc__resultTitles{
-  min-width: 0;
-}
+.wcc__resultTitles { min-width: 0; }
 
-.wcc__resultTitle{
-  font-family: "IM Fell English SC", serif;
-  letter-spacing: .08em;
+.wcc__resultTitle {
+  font-family: $mc-font;
+  color: #fbbf24;
+  font-size: 1.5rem;
+  letter-spacing: 1px;
   text-transform: uppercase;
-  color: rgba(255, 244, 220, .96);
-  font-size: 14px;
+  text-shadow: 3px 3px 0 #000;
   line-height: 1.1;
 }
 
-.wcc__resultSub{
-  margin-top: 2px;
-  font-size: 12px;
-  color: rgba(255, 238, 210, .72);
-  line-height: 1.25;
+.wcc__resultSub {
+  margin-top: 4px;
+  font-size: 0.9rem;
+  color: #94a3b8;
+  font-family: 'Montserrat', sans-serif;
+  text-shadow: 1px 1px 0 #000;
+  line-height: 1.4;
 }
 
-.wcc__resultSub b{
-  color: rgba(255, 248, 230, .92);
-  font-weight: 700;
-}
+.highlight-user { color: #fff; font-weight: bold; }
+.wcc__resultBody { padding: 20px; }
 
-.wcc__resultBody{
-  padding: 14px 16px 16px;
-}
-
-.wcc__hint{
+.wcc__hint {
   display: flex;
-  gap: 10px;
+  gap: 12px;
   align-items: flex-start;
-
-  padding: 10px 10px;
-  border: 1px solid rgba(0, 155, 228, .16);
-  background: rgba(0, 155, 228, .07);
-  box-shadow: 0 0 0 1px rgba(0,0,0,.45) inset;
+  padding: 16px;
+  background: #1e3a8a;
+  border: 4px solid #000;
+  box-shadow: inset -3px -3px 0px rgba(0,0,0,0.3), inset 3px 3px 0px rgba(255,255,255,0.2);
 }
 
-.wcc__hintIcon{
-  color: rgba(175, 225, 255, .92);
-  margin-top: 1px;
+.wcc__hintIcon { color: #fff; flex-shrink: 0; margin-top: 2px; }
+.wcc__hintText {
+  color: #fff;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  font-family: 'Montserrat', sans-serif;
+  text-shadow: 1px 1px 0 #000;
 }
 
-.wcc__hintText{
-  color: rgba(230, 248, 255, .86);
-  font-size: 12px;
-  line-height: 1.35;
+.wcc__items {
+  margin-top: 20px;
+  padding: 16px;
+  background: #11151d;
+  border: 4px solid #000;
+  box-shadow: inset -3px -3px 0px #0a0c14, inset 3px 3px 0px #1f2937;
 }
 
-/* resumen */
-.wcc__items{
-  margin-top: 12px;
-  padding: 12px 12px 10px;
-  border: 1px solid rgba(255, 236, 190, .12);
-  background: rgba(0,0,0,.22);
-}
-
-.wcc__itemsTitle{
-  font-family: "IM Fell English SC", serif;
-  letter-spacing: .08em;
+.wcc__itemsTitle {
+  font-family: $mc-font;
+  color: #94a3b8;
+  font-size: 1rem;
+  letter-spacing: 1px;
   text-transform: uppercase;
-  color: rgba(255, 244, 220, .92);
-  font-size: 12px;
-  margin-bottom: 8px;
+  text-shadow: 2px 2px 0 #000;
+  margin-bottom: 12px;
+  border-bottom: 2px solid #1f2937;
+  padding-bottom: 8px;
 }
 
-.wcc__itemsList{
+.wcc__itemsList {
   list-style: none;
   padding: 0;
   margin: 0;
   display: grid;
-  gap: 6px;
+  gap: 8px;
 }
 
-.wcc__itemsList li{
+.wcc__itemsList li {
   display: flex;
-  align-items: baseline;
   justify-content: space-between;
+  align-items: center;
+  font-family: 'Montserrat', sans-serif;
+  color: #fff;
+  font-size: 0.9rem;
   gap: 12px;
-  padding-bottom: 6px;
-  border-bottom: 1px dashed rgba(255, 236, 190, .10);
 }
 
-.wcc__itemsList li:last-child{
-  border-bottom: 0;
-  padding-bottom: 0;
+.wcc__itemName { font-weight: 500; line-height: 1.3; }
+.wcc__itemQty {
+  color: #5EE034;
+  font-weight: bold;
+  font-family: $mc-font;
+  text-shadow: 2px 2px 0 #000;
+  flex-shrink: 0;
 }
 
-.wcc__itemName{
-  color: rgba(255, 244, 220, .86);
-  font-size: 12px;
-  line-height: 1.2;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.wcc__itemsMore {
+  color: #fbbf24 !important;
+  font-family: $mc-font !important;
+  margin-top: 4px;
 }
 
-.wcc__itemQty{
-  color: rgba(109,191,42,.90);
-  font-weight: 800;
-  font-size: 12px;
-  letter-spacing: .02em;
-}
-
-.wcc__itemsMore{
-  color: rgba(255, 238, 210, .62);
-  font-size: 12px;
-}
-
-.wcc__itemsFoot{
-  margin-top: 8px;
-  font-size: 11px;
-  color: rgba(255, 238, 210, .60);
-  letter-spacing: .06em;
+.wcc__itemsFoot {
+  margin-top: 16px;
+  font-size: 0.8rem;
+  color: #6b7280;
   text-transform: uppercase;
 }
 
-/* actions */
-.wcc__actions{
-  margin-top: 12px;
+.wcc__actions {
+  margin-top: 24px;
   display: flex;
-  gap: 10px;
+  gap: 12px;
   justify-content: flex-end;
   flex-wrap: wrap;
 }
 
-.wcc__btn{
-  appearance: none;
-  border: 1px solid rgba(255, 236, 190, .18);
-  background: linear-gradient(180deg, rgba(40, 30, 20, .75), rgba(15, 12, 8, .85));
-  color: rgba(255, 244, 220, .90);
-
-  padding: 10px 12px;
-  min-height: 38px;
-
-  font-family: "IM Fell English SC", serif;
-  letter-spacing: .10em;
+.wcc__btn {
+  padding: 12px 20px;
+  border: 4px solid #000;
+  font-family: $mc-font;
+  font-size: 1rem;
   text-transform: uppercase;
-  font-size: 12px;
-
-  box-shadow:
-    0 10px 22px rgba(0,0,0,.35),
-    0 0 0 1px rgba(0,0,0,.45) inset;
-
   cursor: pointer;
-  transition: transform .12s ease, filter .12s ease, box-shadow .12s ease;
+  transition: filter 0.1s, transform 0.1s;
+  text-shadow: 2px 2px 0 #000;
+  color: #fff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-.wcc__btn:hover{
-  filter: brightness(1.05);
-  transform: translateY(-1px);
-  box-shadow:
-    0 14px 30px rgba(0,0,0,.42),
-    0 0 0 1px rgba(0,0,0,.45) inset;
+.wcc__btn:hover { filter: brightness(1.15); }
+.wcc__btn:active { transform: translateY(2px); }
+
+.wcc__btn--primary {
+  background: #5EE034;
+  box-shadow: inset -4px -4px 0px rgba(0,0,0,0.3), inset 4px 4px 0px rgba(255,255,255,0.4);
+}
+.wcc__btn--primary:active { box-shadow: inset -2px -2px 0px rgba(0,0,0,0.3), inset 2px 2px 0px rgba(255,255,255,0.4); }
+
+.wcc__btn--secondary {
+  background: #374151;
+  box-shadow: inset -4px -4px 0px rgba(0,0,0,0.3), inset 4px 4px 0px rgba(255,255,255,0.2);
+}
+.wcc__btn--secondary:active { box-shadow: inset -2px -2px 0px rgba(0,0,0,0.3), inset 2px 2px 0px rgba(255,255,255,0.2); }
+
+.wcc__fineprint {
+  margin-top: 16px;
+  font-size: 0.75rem;
+  color: #6b7280;
+  font-family: 'Montserrat', sans-serif;
+  text-align: center;
 }
 
-.wcc__btn:active{
-  transform: translateY(0);
-  filter: brightness(.98);
-}
-
-.wcc__btn:focus-visible{
-  outline: none;
-  box-shadow:
-    0 0 0 2px rgba(0, 155, 228, .26),
-    0 0 0 1px rgba(0,0,0,.45) inset,
-    0 14px 30px rgba(0,0,0,.42);
-}
-
-.wcc__btn--primary{
-  border-color: rgba(109,191,42,.42);
-  background: linear-gradient(180deg, rgba(109,191,42,.46), rgba(18,70,18,.78));
-  color: rgba(240, 255, 232, .96);
-  box-shadow:
-    0 0 22px rgba(109,191,42,.14),
-    0 12px 26px rgba(0,0,0,.45),
-    0 0 0 1px rgba(0,0,0,.45) inset;
-}
-
-.wcc__fineprint{
-  margin-top: 10px;
-  font-size: 11px;
-  color: rgba(255, 238, 210, .58);
-  line-height: 1.35;
-  border-top: 1px solid rgba(255, 236, 190, .10);
-  padding-top: 10px;
-}
-
-/* Responsive */
-@media (max-width: 560px){
-  .wcc__embed{
-    --wccW: 94vw;
-    --wccH: 88vh;
+/* ===============================
+   RESPONSIVE MÓVIL Y TABLET
+   =============================== */
+@media (max-width: 600px) {
+  .wcc { padding: 0; }
+  .wcc__embed {
+    width: 100vw;
+    height: 100vh;
+    max-width: none;
+    max-height: none;
+    border: none;
+    border-radius: 0;
   }
-
-  .wcc__resultCard{
-    width: min(96vw, 680px);
-  }
-
-  .wcc__actions{
-    justify-content: stretch;
-  }
-
-  .wcc__btn{
-    width: 100%;
-    justify-content: center;
+  .wcc__result { padding: 12px; }
+  .wcc__resultCard { width: 100%; }
+  .wcc__resultTop {
+    flex-direction: column;
     text-align: center;
+    padding: 16px 12px;
+    gap: 12px;
   }
+  .wcc__badge { width: 56px; height: 56px; }
+  .wcc__resultTitle { font-size: 1.3rem; }
+  .wcc__resultSub { font-size: 0.85rem; }
+  .wcc__resultBody { padding: 16px 12px; }
+  .wcc__hint { padding: 12px; gap: 10px; }
+  .wcc__hintText { font-size: 0.85rem; }
+  .wcc__items { padding: 12px; }
+  .wcc__actions { flex-direction: column; gap: 12px; }
+  .wcc__btn { width: 100%; padding: 16px; }
 }

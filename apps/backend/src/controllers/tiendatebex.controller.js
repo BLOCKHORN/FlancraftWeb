@@ -2,6 +2,8 @@
 
 const crypto = require("crypto");
 const tebex = require("./tebex.helpers");
+const welcomePackService = require("./tebexWelcomePack.service");
+const tebexPaymentsService = require("./tebexPayments.service");
 
 const FX_TTL_SEC = 6 * 60 * 60;
 let fxCache = { data: null, cacheAt: 0, inflight: null };
@@ -14,6 +16,61 @@ function normalizeIso(code, fallback = "EUR") {
 function uniqSortedUpper(list) {
   const set = new Set((list || []).map((x) => String(x || "").trim().toUpperCase()).filter(Boolean));
   return Array.from(set).sort((a, b) => a.localeCompare(b));
+}
+
+function getCurrentPeriodInfo() {
+  const now = new Date();
+  const y = now.getUTCFullYear();
+  const m = String(now.getUTCMonth() + 1).padStart(2, "0");
+  const periodKey = `${y}-${m}`;
+  const txt = new Intl.DateTimeFormat("es-ES", {
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(now);
+  const periodLabel = txt.charAt(0).toUpperCase() + txt.slice(1);
+  return { periodKey, periodLabel };
+}
+
+async function buildSidebarFallbackTop({ force = false, server = "global", limit = 3 } = {}) {
+  const { periodKey, periodLabel } = getCurrentPeriodInfo();
+  const sidebar = await tebex.getSidebarModulesCached(force);
+  const modTop = tebex.pickTopCustomerModule(sidebar);
+  const top = modTop ? tebex.normalizeTopDonatorFromModule(modTop) : null;
+
+  if (!top) {
+    return {
+      ok: true,
+      source: "empty",
+      periodKey,
+      periodLabel,
+      server,
+      count: 0,
+      empty: true,
+      items: [],
+    };
+  }
+
+  return {
+    ok: true,
+    source: "sidebar_fallback",
+    periodKey,
+    periodLabel,
+    server,
+    count: Math.min(1, limit),
+    empty: false,
+    items: [
+      {
+        rank: 1,
+        username: top.username,
+        uuid: top.uuid,
+        amount: top.amount,
+        currency: top.currency,
+        server,
+        latestPurchaseAt: null,
+      },
+    ],
+  };
 }
 
 async function fetchFxFromFrankfurter(base) {
@@ -235,6 +292,7 @@ const crearPedidoTebex = async (req, res) => {
   const jugador = String(body.jugador || "").trim();
   const codigoDescuentoRaw = body.codigoDescuento ?? body.coupon ?? body.codigo_descuento ?? "";
   const coupon = String(codigoDescuentoRaw || "").trim();
+  const uuidJugador = String(body.uuidJugador || body.uuid || "").trim();
 
   if (!jugador) return res.status(400).json({ ok: false, error: 'Falta "jugador".' });
 
@@ -249,6 +307,23 @@ const crearPedidoTebex = async (req, res) => {
 
   basket = basket.filter((it) => Number.isFinite(it.id) && it.id > 0 && Number.isFinite(it.quantity) && it.quantity > 0);
   if (!basket.length) return res.status(400).json({ ok: false, error: "Carrito invalido (ids/cantidades)." });
+
+  try {
+    const guard = await welcomePackService.assertBasketAllowed({ jugador, uuid: uuidJugador, basket });
+    if (guard?.blocked) {
+      return res.status(409).json({
+        ok: false,
+        code: "WELCOME_PACK_ALREADY_OWNED",
+        error: "El Pack de Bienvenida ya fue comprado por esta cuenta.",
+      });
+    }
+  } catch (guardError) {
+    return res.status(500).json({
+      ok: false,
+      error: "No se pudo validar el Pack de Bienvenida.",
+      detail: guardError?.message || "unknown",
+    });
+  }
 
   const token = String(tebex.WEBSTORE_TOKEN || "").trim();
   if (!token) return res.status(500).json({ ok: false, error: "Falta TEBEX_WEBSTORE_TOKEN (webstore identifier)." });
@@ -307,7 +382,7 @@ const crearPedidoTebex = async (req, res) => {
       complete_auto_redirect: true,
       username: jugador,
       ...(ipv4 ? { ip_address: ipv4 } : {}),
-      custom: { mc_username: jugador, source: "flancraft-web", ts: Date.now() },
+      custom: welcomePackService.buildCheckoutCustom({ jugador, uuid: uuidJugador, basket }),
     };
 
     const created = await fetchJson(createBasketUrl, {
@@ -427,6 +502,29 @@ const obtenerTopDonator = async (req, res) => {
   try {
     const refresh = String(req.query.refresh || "").trim().toLowerCase();
     const force = refresh === "1" || refresh === "true";
+    const server = String(req.query.server || "global").trim().toLowerCase() || "global";
+
+    try {
+      const ranking = await tebexPaymentsService.getMonthlyTopDonators({
+        server,
+        limit: 1,
+        force,
+      });
+
+      if (Array.isArray(ranking?.items) && ranking.items.length) {
+        const first = ranking.items[0];
+        return res.json({
+          ok: true,
+          username: first.username,
+          uuid: first.uuid,
+          amount: first.amount,
+          currency: first.currency,
+          periodLabel: `TOP DONADOR · ${String(ranking.periodLabel || "Mes actual").toUpperCase()}`,
+          serverLabel: String(server || "global").toUpperCase(),
+          cacheado: new Date().toISOString(),
+        });
+      }
+    } catch {}
 
     const c = tebex.headlessCache.topDonator;
     if (!force && c.cacheAt && !tebex.isExpired(c) && c.data) {
@@ -448,9 +546,51 @@ const obtenerTopDonator = async (req, res) => {
       };
 
     tebex.headlessCache.topDonator = { data: payload, cacheAt: tebex.nowSec() };
-    return res.json({ ok: true, ...payload, cacheado: new Date(tebex.headlessCache.topDonator.cacheAt * 1000).toISOString() });
+    return res.json({
+      ok: true,
+      ...payload,
+      cacheado: new Date(tebex.headlessCache.topDonator.cacheAt * 1000).toISOString(),
+    });
   } catch (e) {
-    return res.status(500).json({ ok: false, error: "No se pudo obtener el Top Donator (Headless).", detail: e?.message || "unknown" });
+    return res.status(500).json({
+      ok: false,
+      error: "No se pudo obtener el Top Donator.",
+      detail: e?.message || "unknown",
+    });
+  }
+};
+
+const obtenerTopDonators = async (req, res) => {
+  try {
+    const refresh = String(req.query.refresh || "").trim().toLowerCase();
+    const force = refresh === "1" || refresh === "true";
+    const server = String(req.query.server || "global").trim().toLowerCase() || "global";
+    const limit = Math.max(1, Math.min(10, Number(req.query.limit || 3)));
+
+    try {
+      const ranking = await tebexPaymentsService.getMonthlyTopDonators({
+        server,
+        limit,
+        force,
+      });
+
+      if (Array.isArray(ranking?.items) && ranking.items.length) {
+        return res.json({
+          ok: true,
+          source: "database",
+          ...ranking,
+        });
+      }
+    } catch {}
+
+    const fallback = await buildSidebarFallbackTop({ force, server, limit });
+    return res.json(fallback);
+  } catch (e) {
+    return res.status(500).json({
+      ok: false,
+      error: "No se pudo obtener el Top Donators.",
+      detail: e?.message || "unknown",
+    });
   }
 };
 
@@ -703,31 +843,68 @@ const obtenerRecomendaciones = async (req, res) => {
   }
 };
 
+const obtenerEstadoPackBienvenida = async (req, res) => {
+  try {
+    const jugador = String(req.query?.jugador || req.query?.nombreJugador || "").trim();
+    const uuid = String(req.query?.uuid || req.query?.uuidJugador || "").trim();
+    const refresh = String(req.query?.refresh || "").trim().toLowerCase();
+
+    const status = await welcomePackService.getWelcomePackStatus({
+      jugador,
+      uuid,
+      refresh: refresh === "1" || refresh === "true",
+    });
+
+    return res.json({ ok: true, ...status });
+  } catch (e) {
+    return res.status(500).json({
+      ok: false,
+      error: "No se pudo obtener el estado del Pack de Bienvenida.",
+      detail: e?.message || "unknown",
+    });
+  }
+};
+
 const webhookPing = (_req, res) => {
   res.status(200).send("ok");
 };
 
 const webhookHandler = async (req, res) => {
   try {
-    if (!tebex.WEBHOOK_SECRET) return res.status(500).json({ ok: false, error: "Falta TEBEX_WEBHOOK_SECRET" });
+    if (!tebex.WEBHOOK_SECRET) {
+      return res.status(500).json({ ok: false, error: "Falta TEBEX_WEBHOOK_SECRET" });
+    }
 
     const signature = req.get("X-Signature") || req.get("x-signature") || "";
     const raw = req.rawBody;
 
-    if (!raw || !Buffer.isBuffer(raw)) return res.status(400).json({ ok: false, error: "Missing raw body" });
+    if (!raw || !Buffer.isBuffer(raw)) {
+      return res.status(400).json({ ok: false, error: "Missing raw body" });
+    }
 
     const bodyHash = tebex.sha256Hex(raw);
     const expected = tebex.hmacSha256Hex(tebex.WEBHOOK_SECRET, bodyHash);
 
-    if (!tebex.timingSafeEqualHex(expected, signature)) return res.status(401).json({ ok: false, error: "Invalid signature" });
+    if (!tebex.timingSafeEqualHex(expected, signature)) {
+      return res.status(401).json({ ok: false, error: "Invalid signature" });
+    }
 
     const evt = JSON.parse(raw.toString("utf8") || "{}");
 
-    if (evt?.type === "validation.webhook") return res.status(200).json({ id: evt.id });
+    if (evt?.type === "validation.webhook") {
+      return res.status(200).json({ id: evt.id });
+    }
+
+    await welcomePackService.handleWelcomePackWebhook(evt);
+    await tebexPaymentsService.persistPaymentFromWebhook(evt);
 
     return res.status(200).json({ ok: true });
   } catch (e) {
-    return res.status(500).json({ ok: false, error: "Webhook error", detail: e?.message || "unknown" });
+    return res.status(500).json({
+      ok: false,
+      error: "Webhook error",
+      detail: e?.message || "unknown",
+    });
   }
 };
 
@@ -740,6 +917,7 @@ module.exports = {
   obtenerSaleActiva,
   obtenerSidebarRaw,
   obtenerTopDonator,
+  obtenerTopDonators,
   obtenerPagosRecientes,
   obtenerBasketHeadless,
   obtenerCheckoutStatus,
@@ -747,6 +925,7 @@ module.exports = {
   quitarCodigoBasket,
   agregarPaqueteBasket,
   obtenerRecomendaciones,
+  obtenerEstadoPackBienvenida,
   webhookPing,
   webhookHandler,
   health,

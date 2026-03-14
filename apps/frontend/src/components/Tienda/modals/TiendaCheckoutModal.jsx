@@ -1,9 +1,15 @@
 // src/components/Tienda/modals/TiendaCheckoutModal.jsx
 import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { createPortal } from "react-dom";
-import useTebexScript from "../../../hooks/useTebexScript";
 import { apiUrl } from "../../../lib/env";
 import "../../../styles/components/Tienda/tienda-checkout-modal.scss";
+
+// MEMORIA EXTERNA: Sobrevive a los re-renders
+const TEBEX_MEM = {
+  inited: false,
+  ident: null,
+  eventsBound: false
+};
 
 function safeStr(x) {
   return String(x ?? "").trim();
@@ -12,13 +18,7 @@ function safeStr(x) {
 function IconCheck() {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path
-        d="M20 6L9 17l-5-5"
-        stroke="currentColor"
-        strokeWidth="2.6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
+      <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="3.5" strokeLinecap="square" strokeLinejoin="miter" />
     </svg>
   );
 }
@@ -26,13 +26,8 @@ function IconCheck() {
 function IconInfo() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path
-        d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20Z"
-        stroke="currentColor"
-        strokeWidth="2.2"
-      />
-      <path d="M12 10v7" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
-      <path d="M12 7h.01" stroke="currentColor" strokeWidth="3.4" strokeLinecap="round" />
+      <path d="M12 20v-8" stroke="currentColor" strokeWidth="3" strokeLinecap="square" />
+      <path d="M12 8V6" stroke="currentColor" strokeWidth="3" strokeLinecap="square" />
     </svg>
   );
 }
@@ -40,14 +35,9 @@ function IconInfo() {
 function IconWarn() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M12 9v4" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
-      <path d="M12 17h.01" stroke="currentColor" strokeWidth="3.6" strokeLinecap="round" />
-      <path
-        d="M10.3 4.2 2.4 18a2 2 0 0 0 1.7 3h15.8a2 2 0 0 0 1.7-3L13.7 4.2a2 2 0 0 0-3.4 0Z"
-        stroke="currentColor"
-        strokeWidth="2.0"
-        strokeLinejoin="round"
-      />
+      <path d="M12 9v5" stroke="currentColor" strokeWidth="3" strokeLinecap="square" />
+      <path d="M12 18v-2" stroke="currentColor" strokeWidth="3" strokeLinecap="square" />
+      <path d="M12 3L2 21h20L12 3z" stroke="currentColor" strokeWidth="2.5" strokeLinejoin="miter" />
     </svg>
   );
 }
@@ -56,24 +46,17 @@ export default function TiendaCheckoutModal({
   open,
   ident,
   onClose,
-
-  // UX/feedback + limpiar carrito
   playerName = "",
   server = "oneblock",
   cartItems = [],
   currencyHint = "EUR",
   onPaid,
-
-  // ✅ DEV: fuerza éxito sin pagar
   devForceSuccess = false,
 }) {
   const hostRef = useRef(null);
-  const tebexReady = useTebexScript(Boolean(open));
 
   const [error, setError] = useState("");
   const [rendered, setRendered] = useState(false);
-
-  // fases: checkout | success | maybePaid | error
   const [phase, setPhase] = useState("checkout");
   const [detail, setDetail] = useState(null);
 
@@ -83,13 +66,11 @@ export default function TiendaCheckoutModal({
   const player = useMemo(() => safeStr(playerName) || "—", [playerName]);
   const cur = useMemo(() => safeStr(currencyHint).toUpperCase() || "EUR", [currencyHint]);
 
-  // refs para evitar closures viejas
   const onCloseRef = useRef(onClose);
   const onPaidRef = useRef(onPaid);
   const openRef = useRef(open);
   const identRef = useRef(safeIdent);
   const phaseRef = useRef(phase);
-  const paidFiredRef = useRef(false);
   const autoCloseTimerRef = useRef(null);
   const pollStopRef = useRef(false);
 
@@ -99,7 +80,6 @@ export default function TiendaCheckoutModal({
   useEffect(() => { identRef.current = safeIdent; }, [safeIdent]);
   useEffect(() => { phaseRef.current = phase; }, [phase]);
 
-  // ✅ PORTAL ROOT (para estar por encima de todo y evitar stacking contexts por transform)
   const portalRef = useRef(null);
   useEffect(() => {
     const el = document.createElement("div");
@@ -113,22 +93,19 @@ export default function TiendaCheckoutModal({
     };
   }, []);
 
-  // ✅ cuando se abre, re-append para ser el último nodo del body (gana en empate de z-index)
   useEffect(() => {
     if (!open) return;
     const el = portalRef.current;
     if (el && el.parentNode === document.body) {
-      document.body.appendChild(el); // mover al final
+      document.body.appendChild(el); 
     }
   }, [open]);
 
   const close = useCallback(() => {
     setError("");
-    setRendered(false);
     setPhase("checkout");
     setDetail(null);
 
-    // parar timers/poll
     pollStopRef.current = true;
     if (autoCloseTimerRef.current) {
       clearTimeout(autoCloseTimerRef.current);
@@ -138,44 +115,27 @@ export default function TiendaCheckoutModal({
     onCloseRef.current?.();
   }, []);
 
-  // ESC para cerrar
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e) => {
-      if (e.key === "Escape") close();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open, close]);
+  // ❌ ¡AQUÍ ESTABA EL LISTENER DE LA TECLA ESCAPE! Lo he borrado para que no puedan salir con el teclado.
 
-  // Bloqueo scroll
+  // Bloqueo de scroll global
   useEffect(() => {
     if (!open) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev || "";
-    };
+    return () => { document.body.style.overflow = prev || ""; };
   }, [open]);
-
-  const firePaidOnce = useCallback((payload) => {
-    if (paidFiredRef.current) return;
-    paidFiredRef.current = true;
-    onPaidRef.current?.(payload);
-  }, []);
 
   const showSuccess = useCallback((payload) => {
     setError("");
     setDetail(payload || null);
     setPhase("success");
-    firePaidOnce(payload);
+    onPaidRef.current?.(payload);
 
-    // autocierra bonito
     if (autoCloseTimerRef.current) clearTimeout(autoCloseTimerRef.current);
     autoCloseTimerRef.current = setTimeout(() => {
       if (openRef.current) close();
     }, 6500);
-  }, [close, firePaidOnce]);
+  }, [close]);
 
   const showMaybePaid = useCallback((payload) => {
     setDetail(payload || null);
@@ -189,7 +149,6 @@ export default function TiendaCheckoutModal({
   const verifyPaid = useCallback(async (basketIdent) => {
     const id = safeStr(basketIdent);
     if (!id) return { ok: false, paid: false };
-
     try {
       const r = await fetch(
         apiUrl(`/api/tebex/checkout-status/${encodeURIComponent(id)}`),
@@ -205,114 +164,106 @@ export default function TiendaCheckoutModal({
 
   const mountCheckout = useCallback(() => {
     const Tebex = window?.Tebex;
-    if (!tebexReady || !Tebex?.checkout?.init || !Tebex?.checkout?.render) {
-      setError('La pasarela de pago todavía no está lista. Prueba otra vez en unos segundos.');
+    
+    if (!Tebex?.checkout?.init || !Tebex?.checkout?.render) {
+      setError('La pasarela de pago no está lista. Recarga la página.');
       return;
     }
 
     const host = hostRef.current;
     if (!host) return;
+    
+    host.innerHTML = ""; 
 
-    // Tamaño exacto del contenedor
-    const rect = host.getBoundingClientRect();
-    const w = Math.max(360, Math.floor(rect.width));
-    const h = Math.max(520, Math.floor(rect.height));
+    if (TEBEX_MEM.inited && TEBEX_MEM.ident !== safeIdent) {
+      window.location.href = `https://checkout.tebex.io/checkout/${safeIdent}`;
+      return;
+    }
+
+    if (!TEBEX_MEM.inited) {
+      try {
+        Tebex.checkout.init({
+          ident: safeIdent,
+          theme: "dark",
+          locale: "es_ES",
+          colors: [
+            { name: "primary", color: "#5EE034" },
+            { name: "secondary", color: "#fbbf24" },
+          ],
+        });
+        TEBEX_MEM.inited = true;
+        TEBEX_MEM.ident = safeIdent;
+      } catch (e) {
+        window.location.href = `https://checkout.tebex.io/checkout/${safeIdent}`;
+        return;
+      }
+    }
 
     try {
-      Tebex.checkout.init({
-        ident: safeIdent,
-        theme: "dark",
-        locale: "es_ES",
-        colors: [
-          { name: "primary", color: "#6dbf2a" },
-          { name: "secondary", color: "#009BE4" },
-        ],
-      });
-
-      Tebex.checkout.render(host, w, h, false);
-      setRendered(true);
+      Tebex.checkout.render(host, "100%", "100%", false);
+      setTimeout(() => setRendered(true), 1500);
     } catch (e) {
-      setError(String(e?.message || "No se pudo renderizar el checkout."));
+      window.location.href = `https://checkout.tebex.io/checkout/${safeIdent}`;
     }
-  }, [safeIdent, tebexReady]);
+  }, [safeIdent]);
 
-  // Enganchar eventos Tebex UNA sola vez
-  const tebexHookedRef = useRef(false);
+  // ✅ Enrutador Global (Revisado)
   useEffect(() => {
-    // ✅ en devForceSuccess no necesitamos enganchar eventos
+    window.__flanTebexCallback = async (type, ev) => {
+      if (!openRef.current) return;
+      const currentIdent = identRef.current;
+
+      if (type === "success") {
+        showSuccess({ source: "event:payment:complete", ident: currentIdent, event: ev || null });
+      } else if (type === "error") {
+        setPhase("error");
+        setDetail({ source: "event:payment:error", event: ev || null });
+        setError("El pago no se ha podido completar.");
+      } else if (type === "close") {
+        if (phaseRef.current === "success" || phaseRef.current === "maybePaid") return;
+        
+        // Verificamos por última vez si el pago se coló milisegundos antes de darle a cancelar
+        const chk = await verifyPaid(currentIdent);
+        if (chk.ok && chk.paid) {
+          showSuccess({ source: "event:close + status:paid", ident: currentIdent, status: chk.data });
+        } else {
+          // ⚠️ RECARGA LA PÁGINA SI EL USUARIO DA A CANCELAR
+          window.location.reload();
+        }
+      }
+    };
+
+    return () => { window.__flanTebexCallback = null; };
+  }, [showSuccess, showMaybePaid, verifyPaid]);
+
+  useEffect(() => {
     if (import.meta.env.DEV && devForceSuccess) return;
 
     const Tebex = window?.Tebex;
     if (!Tebex?.checkout?.on) return;
 
-    if (tebexHookedRef.current) return;
-    tebexHookedRef.current = true;
+    if (TEBEX_MEM.eventsBound) return;
+    TEBEX_MEM.eventsBound = true;
 
-    Tebex.checkout.on("payment:complete", async (ev) => {
-      if (!openRef.current) return;
-      const currentIdent = identRef.current;
+    Tebex.checkout.on("payment:complete", (ev) => window.__flanTebexCallback?.("success", ev));
+    Tebex.checkout.on("payment:error", (ev) => window.__flanTebexCallback?.("error", ev));
+    Tebex.checkout.on("close", (ev) => window.__flanTebexCallback?.("close", ev));
+  }, [devForceSuccess]);
 
-      showSuccess({
-        source: "event:payment:complete",
-        ident: currentIdent,
-        event: ev || null,
-      });
-    });
-
-    Tebex.checkout.on("payment:error", (ev) => {
-      if (!openRef.current) return;
-      setPhase("error");
-      setDetail({ source: "event:payment:error", event: ev || null });
-      setError("El pago no se ha podido completar. Revisa los datos o prueba otro método.");
-    });
-
-    Tebex.checkout.on("close", async () => {
-      if (!openRef.current) return;
-
-      if (phaseRef.current === "success" || phaseRef.current === "maybePaid") {
-        return;
-      }
-
-      const currentIdent = identRef.current;
-      const chk = await verifyPaid(currentIdent);
-
-      if (chk.ok && chk.paid) {
-        showSuccess({
-          source: "event:close + status:paid",
-          ident: currentIdent,
-          status: chk.data,
-        });
-      } else {
-        showMaybePaid({
-          source: "event:close",
-          ident: currentIdent,
-          status: chk.data || null,
-        });
-      }
-    });
-  }, [showSuccess, showMaybePaid, verifyPaid, devForceSuccess]);
-
-  // abrir: reset + render
   useEffect(() => {
     if (!open) return;
 
     pollStopRef.current = false;
-    paidFiredRef.current = false;
 
     setError("");
-    setRendered(false);
     setPhase("checkout");
     setDetail(null);
+    setRendered(false);
 
-    // ✅ DEV: fuerza éxito sin montar Tebex
     if (import.meta.env.DEV && devForceSuccess) {
       const t = setTimeout(() => {
-        showSuccess({
-          source: "dev:force-success",
-          ident: safeIdent || "DEV_FAKE_IDENT",
-        });
-      }, 700);
-
+        showSuccess({ source: "dev:force-success", ident: safeIdent || "DEV_FAKE_IDENT" });
+      }, 1500);
       return () => clearTimeout(t);
     }
 
@@ -327,7 +278,6 @@ export default function TiendaCheckoutModal({
     return () => cancelAnimationFrame(raf);
   }, [open, hasIdent, mountCheckout, devForceSuccess, showSuccess, safeIdent]);
 
-  // Fallback polling (solo en modo real)
   useEffect(() => {
     if (!open || !hasIdent) return;
     if (import.meta.env.DEV && devForceSuccess) return;
@@ -336,34 +286,24 @@ export default function TiendaCheckoutModal({
     pollStopRef.current = false;
 
     const tick = async () => {
-      if (pollStopRef.current) return;
-      if (!openRef.current) return;
-      if (phaseRef.current !== "checkout") return;
+      if (pollStopRef.current || !openRef.current || phaseRef.current !== "checkout") return;
 
       tries += 1;
-
       const chk = await verifyPaid(identRef.current);
       if (chk.ok && chk.paid) {
-        showSuccess({
-          source: "poll:status:paid",
-          ident: identRef.current,
-          status: chk.data,
-        });
+        showSuccess({ source: "poll:status:paid", ident: identRef.current, status: chk.data });
         return;
       }
-
       if (tries < 48) setTimeout(tick, 2500);
     };
 
     const t0 = setTimeout(tick, 3000);
-
     return () => {
       clearTimeout(t0);
       pollStopRef.current = true;
     };
   }, [open, hasIdent, verifyPaid, showSuccess, devForceSuccess]);
 
-  // UI de items (resumen)
   const itemsPreview = useMemo(() => {
     const list = Array.isArray(cartItems) ? cartItems : [];
     const simplified = list.map((it) => ({
@@ -383,34 +323,51 @@ export default function TiendaCheckoutModal({
       aria-label="Checkout"
       aria-hidden={!open}
     >
-      <div className="wcc__backdrop" onClick={open ? close : undefined} />
+      {/* ❌ NO HAY ONCLICK AQUÍ, EL FONDO ES INMUNE A CLICS */}
+      <div className="wcc__backdrop" />
 
-      <div className="wcc__embed" onClick={(e) => e.stopPropagation()}>
-        {error ? <div className="wcc__error">{error}</div> : null}
+      {/* ❌ NO HAY ONCLICK AQUÍ TAMPOCO */}
+      <div className="wcc__embed">
+        
+        <div 
+          className="wcc__host" 
+          ref={hostRef} 
+          style={{ display: phase === "checkout" && !error ? "block" : "none" }}
+        ></div>
 
-        <div className="wcc__host" ref={hostRef}>
-          {!error && hasIdent && open && !rendered && !(import.meta.env.DEV && devForceSuccess) ? (
-            <div className="wcc__loading">Cargando pago…</div>
-          ) : null}
+        {!error && hasIdent && open && !rendered && phase === "checkout" && !(import.meta.env.DEV && devForceSuccess) ? (
+          <div className="wcc__loading">
+            <div className="wcc__loading-block"></div>
+            <span className="wcc__loading-text">Conectando con la pasarela...</span>
+          </div>
+        ) : null}
 
-          {/* ✅ DEV loading */}
-          {open && import.meta.env.DEV && devForceSuccess && phase === "checkout" ? (
-            <div className="wcc__loading">Simulando compra…</div>
-          ) : null}
-        </div>
+        {open && import.meta.env.DEV && devForceSuccess && phase === "checkout" ? (
+          <div className="wcc__loading">
+            <div className="wcc__loading-block"></div>
+            <span className="wcc__loading-text">Simulando compra...</span>
+          </div>
+        ) : null}
 
-        {/* RESULTADOS */}
+        {error ? (
+          <div className="wcc__error">
+            <p style={{ margin: "0 0 12px 0" }}>{error}</p>
+            <button className="wcc__btn wcc__btn--secondary" onClick={() => window.location.reload()}>
+              RECARGAR PÁGINA
+            </button>
+          </div>
+        ) : null}
+
+        {/* PANTALLA ÉXITO */}
         {phase === "success" ? (
           <div className="wcc__result" role="status" aria-live="polite">
             <div className="wcc__resultCard">
               <div className="wcc__resultTop">
-                <div className="wcc__badge wcc__badge--ok" aria-hidden="true">
-                  <IconCheck />
-                </div>
+                <div className="wcc__badge wcc__badge--ok" aria-hidden="true"><IconCheck /></div>
                 <div className="wcc__resultTitles">
-                  <div className="wcc__resultTitle">Compra completada</div>
+                  <div className="wcc__resultTitle">¡COMPRA COMPLETADA!</div>
                   <div className="wcc__resultSub">
-                    Se ha procesado correctamente para <b>{player}</b> ({server})
+                    Se ha procesado para <span className="highlight-user">{player}</span> ({server})
                   </div>
                 </div>
               </div>
@@ -419,14 +376,14 @@ export default function TiendaCheckoutModal({
                 <div className="wcc__hint">
                   <span className="wcc__hintIcon" aria-hidden="true"><IconInfo /></span>
                   <div className="wcc__hintText">
-                    Los artículos se entregan automáticamente en el juego. Si no aparecen al instante,
-                    espera unos segundos y vuelve a entrar al servidor.
+                    Los artículos se entregan automáticamente. Si no aparecen al instante,
+                    espera unos segundos y vuelve a entrar.
                   </div>
                 </div>
 
                 {itemsPreview.head.length ? (
                   <div className="wcc__items">
-                    <div className="wcc__itemsTitle">Resumen</div>
+                    <div className="wcc__itemsTitle">RESUMEN DEL BOTÍN</div>
                     <ul className="wcc__itemsList">
                       {itemsPreview.head.map((x, idx) => (
                         <li key={idx}>
@@ -435,41 +392,36 @@ export default function TiendaCheckoutModal({
                         </li>
                       ))}
                       {itemsPreview.rest ? (
-                        <li className="wcc__itemsMore">+{itemsPreview.rest} más</li>
+                        <li className="wcc__itemsMore">Y {itemsPreview.rest} bloques más...</li>
                       ) : null}
                     </ul>
-                    <div className="wcc__itemsFoot">Moneda: {cur}</div>
+                    <div className="wcc__itemsFoot">MONEDA DE PAGO: {cur}</div>
                   </div>
                 ) : null}
 
                 <div className="wcc__actions">
                   <button className="wcc__btn wcc__btn--primary" type="button" onClick={close}>
-                    Volver a la tienda
+                    VOLVER A LA TIENDA
                   </button>
-                  <button className="wcc__btn" type="button" onClick={close}>
-                    Cerrar
+                  <button className="wcc__btn wcc__btn--secondary" type="button" onClick={close}>
+                    CERRAR
                   </button>
-                </div>
-
-                <div className="wcc__fineprint">
-                  Si tras 2–3 minutos no lo recibes, revisa que compras con la cuenta correcta o reconecta.
                 </div>
               </div>
             </div>
           </div>
         ) : null}
 
+        {/* PANTALLA CERRADO SIN CONFIRMAR */}
         {phase === "maybePaid" ? (
           <div className="wcc__result" role="status" aria-live="polite">
             <div className="wcc__resultCard">
               <div className="wcc__resultTop">
-                <div className="wcc__badge wcc__badge--warn" aria-hidden="true">
-                  <IconWarn />
-                </div>
+                <div className="wcc__badge wcc__badge--warn" aria-hidden="true"><IconWarn /></div>
                 <div className="wcc__resultTitles">
-                  <div className="wcc__resultTitle">Pago finalizado</div>
+                  <div className="wcc__resultTitle">PAGO FINALIZADO</div>
                   <div className="wcc__resultSub">
-                    Si completaste la compra, recibirás tus artículos en el juego en breve.
+                    Si se completó, recibirás tus artículos pronto.
                   </div>
                 </div>
               </div>
@@ -478,14 +430,14 @@ export default function TiendaCheckoutModal({
                 <div className="wcc__hint">
                   <span className="wcc__hintIcon" aria-hidden="true"><IconInfo /></span>
                   <div className="wcc__hintText">
-                    El checkout se ha cerrado. Puedes volver al servidor con <b>{player}</b> y esperar unos segundos.
-                    Si no aparecen, reconecta.
+                    El checkout se ha cerrado. Vuelve al servidor con <span className="highlight-user">{player}</span>.
+                    Si no aparece nada, reconecta.
                   </div>
                 </div>
 
                 <div className="wcc__actions">
                   <button className="wcc__btn wcc__btn--primary" type="button" onClick={close}>
-                    Entendido
+                    ENTENDIDO
                   </button>
                 </div>
               </div>
@@ -496,8 +448,6 @@ export default function TiendaCheckoutModal({
     </div>
   );
 
-  // Si aún no existe el portal root (primer render), no pintamos nada
   if (!portalRef.current) return null;
-
   return createPortal(content, portalRef.current);
 }

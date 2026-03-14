@@ -1,5 +1,5 @@
 import React, { useState, useContext, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { UserContext } from "../../context/UserContext";
 import { apiGet, apiPost } from "../../lib/api/client";
 import { buildUserSession } from "../../lib/auth/session";
@@ -46,25 +46,20 @@ const getErrorMessage = (context, status, backendError) => {
         return "No hemos encontrado ninguna cuenta con esos datos. Vincula tu cuenta en el servidor con /vincular.";
       if (status === 429) return "Has hecho demasiados intentos seguidos. Espera unos segundos antes de volver a probar.";
       return "No se ha podido iniciar sesión ahora mismo. Inténtalo de nuevo en unos segundos.";
-
     case "vincular-validate":
       if (status === 404) return "Ese token/código no existe o ya se ha usado.";
       if (status === 410) return "Ese token/código ha caducado. Genera uno nuevo con /vincular en el servidor.";
       if (status === 409) return "Este usuario ya está registrado. Inicia sesión.";
       return "El token/código no es válido. Prueba a generarlo otra vez con /vincular.";
-
     case "register":
       if (status === 409) return "Ya existe una cuenta web asociada a este jugador.";
       return "No se ha podido crear tu cuenta web. Inténtalo de nuevo en unos segundos.";
-
     case "reset-validate":
       if (status === 404) return "Ese token de reseteo no existe o ya se ha usado.";
       if (status === 410) return "Ese token de reseteo ha caducado. Genera uno nuevo con /resetweb en el servidor.";
       return "El token de reseteo no es válido. Prueba a generar uno nuevo con /resetweb.";
-
     case "reset-change":
       return "No se ha podido cambiar la contraseña. Inténtalo de nuevo en unos segundos.";
-
     default:
       return "Ha ocurrido un error inesperado. Inténtalo de nuevo.";
   }
@@ -91,6 +86,7 @@ export default function LoginModal({ onClose, initialStep, initialToken, autoVal
 
   const { setUser } = useContext(UserContext);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const usernameRef = useRef(null);
   const tokenRef = useRef(null);
@@ -122,7 +118,13 @@ export default function LoginModal({ onClose, initialStep, initialToken, autoVal
 
     persistSession(userData, extras.token);
     setUser(userData, extras.token);
-    navigate("/dashboard");
+
+    const isStore = location.pathname.startsWith("/tienda") || location.pathname.startsWith("/store");
+
+    if (!isStore) {
+      navigate("/dashboard");
+    }
+    
     cerrarModal();
   };
 

@@ -1,25 +1,300 @@
-@use "../../base/_variables" as *;
+// Variables de color extraídas de tu imagen
+$bg-overlay: rgba(0, 0, 0, 0.65);
 
-.coinshopModal {
+// Borde exterior gris-azulado
+$outer-base: #8088a0;
+$outer-border: #1e202f; // Contorno más oscuro
+$outer-light: #b8bed1; // Luz superior/izquierda
+$outer-dark: #5a6278; // Sombra inferior/derecha
+
+// Panel interior oscuro
+$inner-base: #1e202f;
+$inner-border: #151622;
+$inner-shadow: #11121c;
+
+// Tarjetas y textos
+$card-bg: #222533;
+$card-border: #32364a;
+$card-hover: #2d3142;
+$text-title: #ffffff;
+$text-lore: #9fa5bd;
+$text-price: #ffc800;
+
+// Base y animaciones del Overlay
+.mc-modal-overlay {
   position: fixed;
   inset: 0;
-  z-index: 99999;
-  display: grid;
-  place-items: center;
-  padding: 16px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  font-family: 'Minecraft', 'Courier New', Courier, monospace;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+
+  &.is-open {
+    opacity: 1;
+    pointer-events: auto;
+
+    .mc-modal-content {
+      // Efecto Pop/Rebote al abrir
+      transform: translate(0, 0) scale(1);
+      opacity: 1;
+      transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
+    }
+  }
+
+  &.is-exit {
+    opacity: 0;
+    pointer-events: none;
+    
+    .mc-modal-content {
+      transform: translate(var(--csx, 0), var(--csy, 0)) scale(var(--css, 0.8));
+      opacity: 0;
+      transition: transform 0.25s ease-in, opacity 0.2s ease-in;
+    }
+  }
 }
 
-.coinshopModal__backdrop {
+.mc-modal-backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.72);
+  background-color: $bg-overlay;
   backdrop-filter: blur(2px);
 }
 
-.coinshopModal__panel {
+// === CONTENEDOR EXTERIOR (Bordes y Textura) ===
+.mc-modal-content {
   position: relative;
+  width: 900px;
+  max-width: 95vw;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  
+  // Recreación del borde estilo Minecraft
+  background-color: $outer-base;
+  border: 4px solid $outer-border;
+  box-shadow: 
+    inset 4px 4px 0 $outer-light,
+    inset -4px -4px 0 $outer-dark,
+    0 15px 40px rgba(0,0,0,0.7); // Sombra exterior
+    
+  // Animación base para origen dinámico
+  transform: translate(var(--csx, 0), var(--csy, 0)) scale(var(--css, 0.8));
+  opacity: 0;
+}
+
+// === CABECERA (Placa del título y botones) ===
+.mc-modal-header-container {
+  display: flex;
+  justify-content: center; // Centra la placa del título
+  align-items: flex-start;
+  margin-bottom: 12px;
+  position: relative;
+  min-height: 40px;
+
+  // Botón Atrás (absoluto a la izquierda)
+  .mc-back-btn {
+    position: absolute;
+    left: 4px;
+    top: 4px;
+    width: 36px;
+    height: 36px;
+    background-color: #6a6a6a;
+    color: white;
+    font-weight: bold;
+    font-size: 1.2rem;
+    border: 2px solid #111;
+    box-shadow: inset 2px 2px 0 #9e9e9e, inset -2px -2px 0 #3b3b3b;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    &:hover { background-color: #7a7a7a; }
+    &:active { box-shadow: inset 2px 2px 0 #3b3b3b, inset -2px -2px 0 #9e9e9e; }
+  }
+
+  // Placa del Título centrada
+  .mc-modal-title-plate {
+    background-color: #35384b;
+    border: 2px solid #1e202f;
+    padding: 6px 24px;
+    box-shadow: inset 2px 2px 0 #545873, inset -2px -2px 0 #222430;
+    clip-path: polygon(10px 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 10px 100%, 0 50%);
+    
+    h2 {
+      color: $text-title;
+      font-size: 1.15rem;
+      margin: 0;
+      text-shadow: 2px 2px 0px #000;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+  }
+
+  // Botón de Cerrar rojo (absoluto a la derecha)
+  .mc-close-btn {
+    position: absolute;
+    right: 4px;
+    top: 0;
+    width: 38px;
+    height: 38px;
+    background-color: #d32f2f;
+    color: white;
+    font-weight: bold;
+    font-size: 1.4rem;
+    border: 2px solid #1e202f;
+    box-shadow: inset 3px 3px 0 #ff6666, inset -3px -3px 0 #800000;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: inherit;
+    transition: filter 0.1s;
+
+    &:hover { filter: brightness(1.2); }
+    &:active { box-shadow: inset 3px 3px 0 #800000, inset -3px -3px 0 #ff6666; }
+  }
+}
+
+// === PANEL INTERIOR OSCURO ===
+.mc-inner-panel {
+  background-color: $inner-base;
+  border: 4px solid $outer-border;
+  box-shadow: inset 4px 4px 0 $inner-shadow; // Sensación de profundidad
+  padding: 10px;
+  overflow-y: auto;
+  flex-grow: 1;
+
+  &::-webkit-scrollbar { width: 8px; }
+  &::-webkit-scrollbar-track { background: $inner-shadow; }
+  &::-webkit-scrollbar-thumb {
+    background: $outer-base;
+    border: 1px solid $outer-border;
+  }
+}
+
+.mc-loading {
+  text-align: center;
+  color: white;
+  padding: 40px;
+  font-size: 1.2rem;
+  text-shadow: 2px 2px 0px #000;
+}
+
+// === CUADRÍCULA Y TARJETAS ===
+.mc-items-grid {
   display: grid;
-  place-items: center;
-  width: min(98vw, 1200px);
-  max-height: calc(100vh - 48px);
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 6px;
+}
+
+.mc-item-card {
+  background-color: $card-bg;
+  border: 2px solid $card-border;
+  display: flex;
+  align-items: center;
+  padding: 8px;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  user-select: none;
+
+  &:hover {
+    background-color: $card-hover;
+    border-color: #4a506d;
+    transform: translateY(-2px) scale(1.01); // UX: Las tarjetas "flotan" al pasar el ratón
+    box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+    z-index: 1;
+  }
+
+  &:active {
+    transform: translateY(0) scale(0.99); // Sensación de pulsación
+  }
+
+  .mc-icon-container {
+    width: 46px;
+    height: 46px;
+    flex-shrink: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-right: 12px;
+    background-color: #1a1c26; // Fondo más oscuro para el ítem
+    border: 1px solid #111;
+    box-shadow: inset 0 0 5px rgba(0,0,0,0.8);
+
+    .mc-item-icon {
+      width: 32px;
+      height: 32px;
+      object-fit: contain;
+      image-rendering: pixelated;
+    }
+  }
+
+  .mc-item-details {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    overflow: hidden;
+
+    .mc-item-name {
+      color: $text-title;
+      font-size: 0.95rem;
+      margin-bottom: 2px;
+      text-shadow: 1px 1px 0px #000;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .mc-item-lore {
+      color: $text-lore;
+      font-size: 0.75rem;
+      margin-bottom: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      min-height: 14px;
+    }
+
+    .mc-item-price {
+      color: $text-price;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      text-shadow: 1px 1px 0px #000;
+
+      // CAMBIO: Estilos para la imagen real de la moneda
+      .mc-coin-img {
+        width: 14px;
+        height: 14px;
+        margin-right: 6px;
+        image-rendering: pixelated;
+        filter: drop-shadow(1px 1px 0px #000); // Para que resalte bien
+      }
+    }
+  }
+}
+
+// Tooltip (se mantiene intacto)
+.mcTooltip {
+  position: fixed;
+  background-color: #110111;
+  border: 2px solid #280562;
+  box-shadow: 0 0 8px rgba(0,0,0,0.9);
+  padding: 8px;
+  border-radius: 4px;
+  z-index: 10000;
+  pointer-events: none;
+  font-family: 'Minecraft', monospace;
+  
+  .mcTipContent { display: flex; flex-direction: column; gap: 4px; }
+  .mcTipTitle { font-size: 1rem; text-shadow: 1px 1px 0 #000; margin-bottom: 4px; }
+  .mcTipLore { display: flex; flex-direction: column; gap: 2px; }
+  .mcTipLine { font-size: 0.85rem; text-shadow: 1px 1px 0 #000; }
+  .mcInlineCoin img { width: 12px; height: 12px; vertical-align: middle; margin-right: 4px; }
 }

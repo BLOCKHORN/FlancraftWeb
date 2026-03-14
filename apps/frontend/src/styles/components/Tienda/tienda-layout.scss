@@ -1,384 +1,253 @@
-@use "../../base/_variables" as *;
-
-.tienda-layout,
-.tienda-root,
-.tienda-page {
-  overflow-x: hidden;
+@font-face {
+  font-family: 'MinecraftSeven';
+  src: url('/fonts/MinecraftBold.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
 }
 
 html.tienda,
 body.tienda {
-  height: 100%;
-  overflow: hidden;
-  overscroll-behavior: none;
-}
-
-@keyframes shelfExpandIn {
-  0% { transform: translateY(18px) scale(0.9); opacity: 0; filter: blur(1px) saturate(0.92); }
-  55% { transform: translateY(0) scale(1.03); opacity: 1; filter: none; }
-  100% { transform: translateY(0) scale(1); opacity: 1; filter: none; }
-}
-
-.tienda-layout {
-  --r: 3px;
-
-  --sidebar-w: clamp(320px, 24vw, 420px);
-
-  --pad-x: clamp(14px, 2.2vw, 22px);
-  --pad-y: clamp(12px, 2.0vw, 20px);
-  --gap-x: clamp(14px, 2vw, 22px);
-
-  --top-offset: var(--navH, var(--app-header-h, 65px));
---footer-peek: var(--tienda-footer-peek, 20px);
---footer-safe: max(var(--footer-peek), env(safe-area-inset-bottom));
---footer-visible-h: var(--tienda-footer-visible, var(--footer-safe));  
---vh: var(--vvh, 100vh);
-  --available-h: calc(var(--vh) - var(--top-offset));
-
-  position: relative;
-  display: flex;
-  justify-content: stretch;
-
-  background-color: #050302;
-  color: #fbe8c5;
-
-  height: var(--available-h);
-  min-height: var(--available-h);
-  overflow: hidden;
-
-  isolation: isolate;
-}
-
-.tienda-layout::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  right: var(--sidebar-w);
-  background: url("/assets/tienda.webp") left top / cover no-repeat;
-  pointer-events: none;
-  z-index: 0;
-}
-
-.tienda-layout-main {
-  position: relative;
-  z-index: 1;
-
-  width: 100%;
-  height: 100%;
-  min-height: 0;
-
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) var(--sidebar-w);
-  column-gap: var(--gap-x);
-
-  padding: 0;
-  box-sizing: border-box;
-
-  overflow: hidden;
-}
-
-.tienda-layout-left {
-  min-width: 0;
-  min-height: 0;
-  display: flex;
-  overflow: hidden;
-
-  padding: var(--pad-y) 0 calc(var(--pad-y) + var(--footer-visible-h)) var(--pad-x);
-  box-sizing: border-box;
-}
-
-.tienda-shelf-frame {
-  flex: 1;
-  min-width: 0;
-  min-height: 0;
-  display: flex;
-  padding: 0;
-  background: transparent;
-  box-sizing: border-box;
-  justify-content: stretch;
-  align-items: stretch;
-  overflow: hidden;
-}
-
-.tienda-shelf-inner {
-  width: 100%;
-  min-width: 0;
-  min-height: 0;
-  display: flex;
-  justify-content: stretch;
-  align-items: stretch;
-  overflow: hidden;
-  transition: max-width 260ms ease, transform 260ms ease, filter 260ms ease, opacity 260ms ease;
-}
-
-.tienda-layout.is-portada .tienda-shelf-inner {
-  max-width: 100%;
-  height: 100%;
-  min-height: 0;
-  overflow: hidden;
-  padding: 0;
-}
-
-.tienda-layout.is-contenido .tienda-shelf-inner {
-  max-width: 100%;
-  height: 100%;
-  overflow: hidden;
-}
-
-.tienda-layout.is-expanding.is-contenido .tienda-shelf-inner {
-  animation: shelfExpandIn 520ms cubic-bezier(0.2, 0.9, 0.2, 1) both;
-}
-
-.tienda-shelf-fit {
-  flex: 1;
-  min-width: 0;
-  min-height: 0;
-  height: 100%;
-  overflow: hidden;
-  display: grid;
-  place-items: start center;
-}
-
-.tienda-shelf-fitInner {
-  width: 100%;
-  min-width: 0;
-  transform-origin: top center;
-}
-
-.tienda-layout.is-desktop.is-portada .tienda-shelf-fitInner {
-  transform: scale(var(--fitScale, 1));
-}
-
-.tienda-layout.is-desktop.is-portada .tienda-shelf-fitInner {
-  width: calc(100% / var(--fitScale, 1));
-}
-
-.tienda-layout-sidebar {
-  min-width: 0;
-  min-height: 0;
-  display: flex;
-  justify-content: flex-end;
-  align-items: stretch;
-  overflow: hidden;
-
-  padding: 0 0 calc(var(--footer-visible-h) + 60px) 0;
-  box-sizing: border-box;
-}
-
-.tienda-sidebar-card {
-  position: relative;
-  z-index: 2;
-
-  width: 100%;
-  max-width: var(--sidebar-w);
-  height: 100%;
-  min-height: 0;
-
-  box-sizing: border-box;
-  border-radius: var(--r);
-  padding: 0;
-
-  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.7), 0 18px 40px rgba(0, 0, 0, 0.95);
-
-  display: flex;
-  flex-direction: column;
-
-  overflow: hidden;
-}
-
-.tienda-cart-wrap {
-  position: relative;
-  flex: 1;
-  min-height: 0;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.tienda-cart-wrap .carrito-lateral {
-  flex: 1;
-  min-height: 0;
-  height: 100%;
-  display: flex;
-  overflow: hidden;
-}
-
-.tienda-layout.is-compact {
-  --sidebar-w: 0px;
-
-  height: auto;
-  min-height: calc(var(--vh) - var(--top-offset));
-  overflow: visible;
-
-  --pad-x: clamp(10px, 2vw, 18px);
-  --pad-y: clamp(10px, 1.6vw, 16px);
-  --gap-x: clamp(12px, 2vw, 18px);
-}
-
-.tienda-layout.is-compact::before {
-  right: 0;
-  background: url("/assets/tienda.webp") center top / cover no-repeat;
-}
-
-.tienda-layout.is-compact .tienda-layout-main {
-  height: auto;
-  min-height: 0;
-  overflow: visible;
-
-  display: flex;
-  flex-direction: column;
-  gap: clamp(8px, 2.0vw, 14px);
-
-  padding: var(--pad-y) var(--pad-x) calc(var(--pad-y) + 84px);
-}
-
-.tienda-layout.is-compact .tienda-layout-sidebar {
-  display: none !important;
-}
-
-.tienda-layout.is-compact .tienda-layout-left {
-padding: var(--pad-y) 0 calc(var(--pad-y) + var(--footer-visible-h) + 12px) var(--pad-x);  overflow: visible;
-}
-
-.tienda-layout.is-compact .tienda-shelf-frame,
-.tienda-layout.is-compact .tienda-shelf-inner,
-.tienda-layout.is-compact .tienda-shelf-fit {
-  overflow: visible;
-}
-
-.tienda-layout.is-compact .tienda-shelf-fitInner {
-  transform: none;
-  width: 100%;
-}
-
-.tienda-layout.is-compact .tienda-shelf-inner {
-  width: 100%;
-  max-width: 100%;
-  height: auto;
-  padding: 0;
-}
-
-.tienda-layout.is-compact.is-contenido .tienda-shelf-inner {
-  height: auto;
-}
-
-.tienda-layout.is-compact .tienda-shelf-inner .tienda-tebex {
-  width: 100%;
-  max-width: 100%;
   margin: 0;
-  justify-content: stretch !important;
-  align-items: stretch !important;
-  --frameSize: 11px;
-  --frameRadius: 0.75rem;
-}
-
-.tienda-layout.is-compact .tienda-shelf-inner .tienda-tebex .tienda-contenido {
-  padding: 0.5rem 0 !important;
+  padding: 0;
   width: 100%;
-  max-width: none;
+  height: 100%;
+  background-color: #050608;
+  color: #ffffff;
+  font-family: 'Montserrat', sans-serif;
+  overflow-x: hidden;
+}
+
+/* Scrollbar Pixelada Global */
+::-webkit-scrollbar {
+  width: 12px;
+}
+::-webkit-scrollbar-track {
+  background: #0a0c14;
+  border-left: 2px solid #000;
+}
+::-webkit-scrollbar-thumb {
+  background: #2a3143;
+  border: 2px solid #000;
+  box-shadow: inset 2px 2px 0px rgba(255,255,255,0.1);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3b445c;
+}
+
+/* Contenedor Raíz */
+.pixel-layout-root {
+  position: relative;
+  min-height: calc(100vh - var(--navH, 65px));
+  display: flex;
+  flex-direction: column;
+  background-color: #0f131a;
+  background-image: 
+    linear-gradient(rgba(15, 19, 26, 0.272), rgba(15, 19, 26, 0.276)),
+    url("/assets/tienda.webp");
+  background-size: cover;
+  background-position: center top;
+  background-attachment: fixed;
+  padding-bottom: 80px; /* Espacio para el footer */
+}
+
+/* Grid Layout (Storefront + Sidebar) */
+.pixel-layout-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 380px;
+  gap: 24px;
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 30px 24px;
   box-sizing: border-box;
+  flex: 1;
+  align-items: start;
 }
 
+/* Área de Contenido Principal (Estilo Inventario) */
+.pixel-content-area {
+  background: #151923;
+  border: 4px solid #000;
+  box-shadow: inset -4px -4px 0px #0a0c14, inset 4px 4px 0px #2a3143, 0 15px 30px rgba(0,0,0,0.6);
+  border-radius: 2px;
+  padding: 24px;
+  min-height: 75vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Área Lateral (Sidebar Container Invisible) */
+.pixel-sidebar-area {
+  display: flex;
+  flex-direction: column;
+  gap: 24px; /* Espacio entre el carrito y el Top Donators */
+  position: sticky;
+  top: calc(var(--navH, 65px) + 24px);
+  /* Dejamos que haga scroll la columna entera si el contenido (Carrito + Donators) es muy largo */
+  max-height: calc(100vh - var(--navH, 65px) - 48px);
+  overflow-y: auto;
+  
+  /* Ocultamos la barra de scroll de la columna para que se vea más limpio */
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Caja del Carrito (Nueva) */
+.pixel-cart-box {
+  background: #151923;
+  border: 4px solid #000;
+  box-shadow: inset -4px -4px 0px #0a0c14, inset 4px 4px 0px #2a3143, 0 15px 30px rgba(0,0,0,0.6);
+  border-radius: 2px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Botón Flotante Mobile */
+.pixel-mobile-cart-btn {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 900;
+  width: calc(100% - 32px);
+  max-width: 400px;
+  padding: 0;
+  
+  /* Estructura gruesa y dura */
+  border: 4px solid #000;
+  background: #5EE034;
+  box-shadow: inset -4px -4px 0px rgba(0,0,0,0.3), inset 4px 4px 0px rgba(255,255,255,0.4), 0 15px 25px rgba(0,0,0,0.6);
+  color: white;
+  cursor: pointer;
+  border-radius: 0; /* Minecraft no usa border-radius */
+  transition: filter 0.1s, transform 0.1s;
+
+  .cart-btn-inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    font-family: 'MinecraftSeven', sans-serif;
+  }
+
+  .cart-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    
+    svg {
+      color: #fff;
+      filter: drop-shadow(2px 2px 0 #000);
+    }
+  }
+
+  .cart-qty {
+    background: #000;
+    color: #5EE034;
+    padding: 4px 10px;
+    font-size: 14px;
+    font-weight: 800;
+    border: 2px solid #1f2937;
+    box-shadow: inset -2px -2px 0 rgba(255,255,255,0.1), inset 2px 2px 0 rgba(0,0,0,0.5);
+    display: grid;
+    place-items: center;
+    line-height: 1;
+  }
+
+  .cart-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .cart-price {
+    font-size: 1.1rem;
+    font-weight: bold;
+    text-shadow: 2px 2px 0 #000;
+    color: #fff;
+    /* Un pequeño fondo translúcido para resaltar el precio */
+    background: rgba(0,0,0,0.2);
+    padding: 4px 8px;
+    border-radius: 2px;
+  }
+
+  .cart-buy {
+    font-size: 1.1rem;
+    font-weight: 900;
+    color: #fff;
+    text-shadow: 2px 2px 0 #000;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    /* Evita que se colapse el texto si la pantalla es muy pequeña */
+    white-space: nowrap; 
+  }
+
+  &:hover:not(:disabled) {
+    filter: brightness(1.15);
+  }
+
+  &:active:not(:disabled) {
+    transform: translate(-50%, 4px);
+    box-shadow: inset -2px -2px 0px rgba(0,0,0,0.3), inset 2px 2px 0px rgba(255,255,255,0.4), 0 5px 10px rgba(0,0,0,0.6);
+  }
+
+  &:disabled {
+    background: #374151;
+    box-shadow: inset -4px -4px 0px #1f2937, inset 4px 4px 0px #4b5563, 0 15px 25px rgba(0,0,0,0.5);
+    color: #9ca3af;
+    cursor: not-allowed;
+    
+    .cart-qty { 
+      background: #1f2937; 
+      border-color: #0a0c14; 
+      color: #9ca3af; 
+      box-shadow: none;
+    }
+    
+    .cart-left svg { filter: none; color: #9ca3af; }
+    .cart-price { background: transparent; text-shadow: none; }
+    .cart-buy { text-shadow: none; }
+  }
+}
+
+/* Modal Carrito Mobile */
+.mobile-cart-modal {
+  width: 95%;
+  max-width: 450px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.mobile-cart-content {
+  padding: 24px 16px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 24px; /* Espacio extra entre el carrito y el Top Donators en móvil */
+  height: 100%;
+}
+/* Wrapper exclusivo para el Top Donators en Móvil */
+.pixel-mobile-top-donators-area {
+  padding: 0 12px 32px 12px; /* Margen para que respire antes del footer */
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+/* Responsive */
 @media (max-width: 1024px) {
-  .tienda-layout {
-    --gap-x: clamp(12px, 2vw, 18px);
-    --pad-x: clamp(12px, 2.2vw, 18px);
-    --pad-y: clamp(10px, 1.8vw, 16px);
+  .pixel-layout-grid {
+    grid-template-columns: 1fr;
+    padding: 16px 12px;
   }
-
-  .tienda-layout-main {
-    grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
-  }
-}
-
-@media (max-width: 767.98px) {
-  html.tienda,
-  body.tienda {
-    overflow: auto;
-  }
-
-  .tienda-layout.is-compact {
-    --pad-x: 0px;
-    --pad-y: clamp(6px, 2vw, 10px);
-    --gap-x: 0px;
-  }
-
-  .tienda-layout.is-compact .tienda-layout-main {
-    padding: var(--pad-y) 0 calc(var(--pad-y) + 84px);
-  }
-}
-
-@media (max-width: 479.98px) {
-  .tienda-layout.is-compact .tienda-layout-main {
-    padding-bottom: calc(var(--pad-y) + 84px);
-  }
-}
-
-.tienda-fly-layer {
-  position: fixed;
-  inset: 0;
-  z-index: 9999;
-  pointer-events: none;
-  overflow: visible;
-}
-
-.tienda-flyer {
-  position: fixed;
-  width: 52px;
-  height: 52px;
-  object-fit: contain;
-  will-change: transform, opacity, filter;
-  transform: translateZ(0);
-  filter: drop-shadow(0 10px 14px rgba(0,0,0,0.55));
-  animation: tiendaFlyToBasket 900ms cubic-bezier(.16,1,.3,1) both;
-}
-
-@keyframes tiendaFlyToBasket {
-  0% { transform: translate3d(0, 0, 0) scale(1); opacity: 0.95; }
-  55% { transform: translate3d(calc(var(--dx) * 0.65), calc(var(--dy) * 0.65), 0) scale(0.9); opacity: 1; }
-  100% { transform: translate3d(var(--dx), var(--dy), 0) scale(0.2); opacity: 0; }
-}
-@media (max-width: 767.98px) {
-  html.tienda,
-  body.tienda {
-    height: auto !important;
-    min-height: 100% !important;
-    overflow: auto !important;
-    overscroll-behavior: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-  }
-
-  .tienda-layout,
-  .tienda-layout-main,
-  .tienda-layout-left,
-  .tienda-shelf-frame,
-  .tienda-shelf-inner,
-  .tienda-shelf-fit {
-    overflow: visible !important;
-    height: auto !important;
-    min-height: 0 !important;
-  }
-
-  .tienda-layout.is-compact {
-    height: auto !important;
-    min-height: 100dvh !important;
-  }
-
-  .tienda-layout.is-compact .tienda-layout-main {
-    overflow: visible !important;
-  }
-
-  .tienda-layout.is-compact .tienda-layout-left {
-    padding: var(--pad-y) 0 calc(var(--pad-y) + 84px + env(safe-area-inset-bottom)) var(--pad-x) !important;
-  }
-
-  .tienda-shelf-fit {
-    display: block !important;
-    place-items: initial !important;
-  }
-
-  .tienda-shelf-fitInner {
-    width: 100% !important;
+  
+  .pixel-content-area {
+    padding: 16px;
+    min-height: calc(100vh - var(--navH, 65px) - 100px); /* Espacio para el boton flotante */
   }
 }

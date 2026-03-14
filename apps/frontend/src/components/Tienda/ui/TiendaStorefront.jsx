@@ -1,16 +1,15 @@
 import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import "../../../styles/components/Tienda/tienda-storefront.scss";
-import TiendaOfertaCountdown from "./TiendaOfertaCountdown";
-import CoinshopModal from "../coinshop/CoinshopModal";
+import CoinshopModal from "./CoinshopModal";
 import DailyFreeClaimCard from "./DailyFreeClaimCard";
-import BonusArrowUp from "./icons/BonusArrowUp";
 import RangosComparativaPanel from "../details/RangosComparativaPanel";
 import RangoWalletModal from "../details/RangoWalletModal";
+import TiendaWelcomePackPopup from "./TiendaWelcomePackPopup";
+import TiendaOfertaCountdown from "./TiendaOfertaCountdown"; 
 import { UserContext } from "../../../context/UserContext";
 import { supabase } from "@lib/supabaseClient";
 import { clearSessionStorage, getAuthToken } from "../../../lib/auth/storage";
 import { apiUrl } from "../../../lib/env";
-
 import { ANTES_DE_COMPRAR } from "../details/data/antesDeComprarData";
 
 import {
@@ -30,12 +29,17 @@ import {
   pickCoinsPackages,
   pickRangosPackages,
   rankKeyFromName,
-  setTiltVars,
   sortByPriceAsc,
   parseCoinsFromPkg,
 } from "./storefront/storefront.utils";
 
-import { useStorefrontData, useUiScale } from "./storefront/storefront.hooks";
+import { useStorefrontData } from "./storefront/storefront.hooks";
+
+const BonusArrowUp = ({ className }) => (
+  <svg className={className} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 19V5M5 12l7-7 7 7" />
+  </svg>
+);
 
 const toInt = (v) => {
   const n = Number(v);
@@ -74,59 +78,32 @@ const readToken = () => {
   return t && String(t).trim() ? String(t).trim() : null;
 };
 
-export default function TiendaStorefront({ carrito, toggleProducto, onCambiarCantidad, onSetCantidad, onAgregar }) {
+export default function TiendaStorefront({
+  carrito,
+  toggleProducto,
+  onCambiarCantidad,
+  onSetCantidad,
+  onAgregar,
+  nombreConfirmado,
+  uuidConfirmado,
+}) {
   const wrapRef = useRef(null);
   const { user, logout } = useContext(UserContext);
-
   const { loading, err, dataByServer } = useStorefrontData();
 
-  const [ready, setReady] = useState(false);
-
   const [activeRank, setActiveRank] = useState(null);
-  const openRankDetails = useCallback((key) => setActiveRank(key), []);
-  const closeRankDetails = useCallback(() => setActiveRank(null), []);
-
-  const [hoverFx, setHoverFx] = useState(null);
-
   const [coinshopOpen, setCoinshopOpen] = useState(false);
   const [coinshopFromRect, setCoinshopFromRect] = useState(null);
-
   const [rankWalletPrices, setRankWalletPrices] = useState({ nova: null, alpha: null, inmortal: null });
   const [pricesLoaded, setPricesLoaded] = useState(false);
-
   const [walletCoins, setWalletCoins] = useState(null);
   const [walletLoading, setWalletLoading] = useState(false);
-
   const [walletModalOpen, setWalletModalOpen] = useState(false);
   const [walletModalRankKey, setWalletModalRankKey] = useState(null);
   const [walletModalLoading, setWalletModalLoading] = useState(false);
   const [walletModalError, setWalletModalError] = useState(null);
   const [walletModalSuccess, setWalletModalSuccess] = useState(false);
-
   const [antesOpen, setAntesOpen] = useState(false);
-  const openAntes = useCallback((ev) => {
-    ev?.preventDefault?.();
-    setAntesOpen(true);
-  }, []);
-  const closeAntes = useCallback(() => setAntesOpen(false), []);
-
-  useEffect(() => {
-    if (!antesOpen) return;
-    const onKey = (e) => {
-      if (e.key === "Escape") closeAntes();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [antesOpen, closeAntes]);
-
-  useUiScale(wrapRef);
-
-  useEffect(() => {
-    if (!loading && !err) {
-      const t = setTimeout(() => setReady(true), 20);
-      return () => clearTimeout(t);
-    }
-  }, [loading, err]);
 
   useEffect(() => {
     let alive = true;
@@ -162,6 +139,7 @@ export default function TiendaStorefront({ carrito, toggleProducto, onCambiarCan
     };
 
     loadPrices();
+
     return () => {
       alive = false;
     };
@@ -206,7 +184,7 @@ export default function TiendaStorefront({ carrito, toggleProducto, onCambiarCan
     } finally {
       setWalletLoading(false);
     }
-  }, [user?.uuid]);
+  }, [user?.uuid, logout]);
 
   useEffect(() => {
     if (!user?.uuid) {
@@ -217,8 +195,9 @@ export default function TiendaStorefront({ carrito, toggleProducto, onCambiarCan
     fetchWalletBalance();
   }, [user?.uuid, fetchWalletBalance]);
 
-  const openCoinshopFromEl = (el) => {
+  const openCoinshopFromEl = useCallback((el) => {
     const r = el?.getBoundingClientRect?.();
+
     if (r) {
       setCoinshopFromRect({
         left: r.left,
@@ -231,11 +210,20 @@ export default function TiendaStorefront({ carrito, toggleProducto, onCambiarCan
     } else {
       setCoinshopFromRect(null);
     }
-    setCoinshopOpen(true);
-  };
 
-  const openCoinshopFromEvent = (ev) => openCoinshopFromEl(ev?.currentTarget);
-  const closeCoinshop = () => setCoinshopOpen(false);
+    setCoinshopOpen(true);
+  }, []);
+
+  const openCoinshopFromEvent = useCallback(
+    (ev) => {
+      openCoinshopFromEl(ev?.currentTarget);
+    },
+    [openCoinshopFromEl]
+  );
+
+  const closeCoinshop = useCallback(() => {
+    setCoinshopOpen(false);
+  }, []);
 
   const openWalletModal = useCallback(
     (rankKey) => {
@@ -257,9 +245,7 @@ export default function TiendaStorefront({ carrito, toggleProducto, onCambiarCan
   }, []);
 
   const serverKey = "survival";
-  const activeData = dataByServer?.[serverKey] || { cats: [], packs: [], bust: null, currency: null };
-
-  const fmtMoney = useCallback((amountFromTebex) => formatUSD(amountFromTebex), []);
+  const activeData = dataByServer?.[serverKey] || { cats: [], packs: [], bust: null };
 
   const rangosAll = useMemo(() => {
     return pickRangosPackages({
@@ -277,23 +263,19 @@ export default function TiendaStorefront({ carrito, toggleProducto, onCambiarCan
       by[key].push(p);
     }
 
-    by.nova.sort(sortByPriceAsc);
-    by.alpha.sort(sortByPriceAsc);
-    by.inmortal.sort(sortByPriceAsc);
-
-    const pickMain = (arr) => (arr && arr.length ? arr[0] : null);
+    const pickMain = (arr) => (arr && arr.length ? arr.sort(sortByPriceAsc)[0] : null);
 
     return [
-      { key: "nova", label: "NOVA", deg: "/tienda/assets/degverde.svg", pkg: pickMain(by.nova) },
-      { key: "alpha", label: "ALPHA", deg: "/tienda/assets/degazul.svg", pkg: pickMain(by.alpha) },
-      { key: "inmortal", label: "INMORTAL", deg: "/tienda/assets/degrojo.svg", pkg: pickMain(by.inmortal), best: true },
+      { key: "nova", label: "NOVA", pkg: pickMain(by.nova) },
+      { key: "alpha", label: "ALPHA", pkg: pickMain(by.alpha) },
+      { key: "inmortal", label: "INMORTAL", pkg: pickMain(by.inmortal), best: true },
     ];
   }, [rangosAll]);
 
   const rankMetaByKey = useMemo(() => {
-    const m = new Map();
-    for (const r of rankCards) m.set(r.key, r);
-    return m;
+    const map = new Map();
+    for (const rank of rankCards) map.set(rank.key, rank);
+    return map;
   }, [rankCards]);
 
   const coinsPackages = useMemo(() => {
@@ -304,68 +286,6 @@ export default function TiendaStorefront({ carrito, toggleProducto, onCambiarCan
     }).sort(sortByPriceAsc);
   }, [serverKey, activeData.cats, activeData.packs]);
 
-  const isInCart = (pkg) => {
-    if (!pkg) return false;
-    const id = getPackageId(pkg);
-    return (carrito || []).some((it) => String(it?.id) === String(id));
-  };
-
-  const getQtyInCart = (pkg) => {
-    if (!pkg) return 0;
-    const id = getPackageId(pkg);
-    const it = (carrito || []).find((x) => String(x?.id) === String(id));
-    const q = Number(it?.quantity || it?.cantidad || 0) || 0;
-    return Math.max(0, Math.min(999, q));
-  };
-
-  const handleBuyRank = (pkg, ev) => {
-    const target = ev?.currentTarget || ev?.target;
-    const rect = target?.getBoundingClientRect?.();
-
-    const imgRaw = getPackageImage(pkg);
-    const img = withCacheBust(imgRaw, activeData.bust);
-
-    if (rect && img) document.dispatchEvent(new CustomEvent("tienda:fly", { detail: { img, rect } }));
-    toggleProducto(normalizeProductForCart(pkg, 1));
-  };
-
-  const changeCoinsQty = (pkg, delta, ev) => {
-    if (!pkg) return;
-
-    const id = getPackageId(pkg);
-    const norm = normalizeProductForCart(pkg, 1);
-
-    if (delta > 0) {
-      const target = ev?.currentTarget || ev?.target;
-      const rect = target?.getBoundingClientRect?.();
-
-      const imgRaw = getPackageImage(pkg);
-      const img = withCacheBust(imgRaw, activeData.bust);
-
-      if (rect && img) document.dispatchEvent(new CustomEvent("tienda:fly", { detail: { img, rect } }));
-    }
-
-    if (typeof onCambiarCantidad === "function") return onCambiarCantidad(id, delta, norm);
-
-    if (typeof onSetCantidad === "function") {
-      const cur = getQtyInCart(pkg);
-      const next = Math.max(0, Math.min(999, cur + delta));
-      return onSetCantidad(id, next, norm);
-    }
-
-    if (typeof onAgregar === "function") {
-      if (delta > 0) return onAgregar(norm, 1);
-      return;
-    }
-
-    if (delta > 0 && getQtyInCart(pkg) <= 0) return toggleProducto(norm);
-  };
-
-  const onRankTap = (key) => {
-    if (activeRank === key) return closeRankDetails();
-    return openRankDetails(key);
-  };
-
   const coinsValue = useMemo(() => {
     return buildCoinsValueMap(coinsPackages, {
       getId: getPackageId,
@@ -374,44 +294,45 @@ export default function TiendaStorefront({ carrito, toggleProducto, onCambiarCan
     });
   }, [coinsPackages]);
 
-  const rootFxClass = hoverFx ? `fx-${hoverFx}` : "";
+  const getQtyInCart = useCallback(
+    (pkg) => {
+      const it = (carrito || []).find((x) => String(x?.id) === String(getPackageId(pkg)));
+      return Math.max(0, Math.min(999, Number(it?.quantity || it?.cantidad || 0) || 0));
+    },
+    [carrito]
+  );
 
-  const onRankBuySplitClick = (rankKey, pkg, ev) => {
-    ev.stopPropagation();
-    if (!pkg) return;
+  const handleBuyRank = useCallback(
+    (pkg) => {
+      toggleProducto(normalizeProductForCart(pkg, 1));
+    },
+    [toggleProducto]
+  );
 
-    const btn = ev.currentTarget;
-    const rect = btn?.getBoundingClientRect?.();
-    const x = (ev.clientX ?? 0) - (rect?.left ?? 0);
-    const w = rect?.width ?? 0;
-    const isLeft = w > 0 ? x <= w / 2 : true;
+  const changeCoinsQty = useCallback(
+    (pkg, delta) => {
+      if (!pkg) return;
+      const id = getPackageId(pkg);
+      const norm = normalizeProductForCart(pkg, 1);
 
-    if (isLeft) {
-      handleBuyRank(pkg, ev);
-      return;
-    }
-
-    openWalletModal(rankKey);
-  };
+      if (typeof onCambiarCantidad === "function") return onCambiarCantidad(id, delta, norm);
+      if (typeof onSetCantidad === "function") return onSetCantidad(id, Math.max(0, Math.min(999, getQtyInCart(pkg) + delta)), norm);
+      if (typeof onAgregar === "function" && delta > 0) return onAgregar(norm, 1);
+      if (delta > 0 && getQtyInCart(pkg) <= 0) return toggleProducto(norm);
+    },
+    [onCambiarCantidad, onSetCantidad, onAgregar, getQtyInCart, toggleProducto]
+  );
 
   const walletRankMeta = walletModalRankKey ? rankMetaByKey.get(walletModalRankKey) : null;
-  const walletRankPrice = walletModalRankKey ? rankWalletPrices?.[walletModalRankKey] ?? null : null;
-
-  const walletNeedsLogin = useMemo(() => {
-    const token = readToken();
-    return !user?.uuid || !token;
-  }, [user?.uuid, walletModalOpen]);
-
-  const canConfirmWallet = useMemo(() => {
-    if (!walletModalRankKey) return false;
-    const p = Number(walletRankPrice);
-    if (!Number.isFinite(p) || p <= 0) return false;
-    if (walletNeedsLogin) return false;
-
-    const w = Number(walletCoins);
-    if (!Number.isFinite(w)) return false;
-    return w >= p;
-  }, [walletModalRankKey, walletRankPrice, walletNeedsLogin, walletCoins]);
+  const walletRankPrice = walletModalRankKey ? Number(rankWalletPrices?.[walletModalRankKey]) : NaN;
+  const walletNeedsLogin = !user?.uuid || !readToken();
+  const canConfirmWallet =
+    !!walletModalRankKey &&
+    Number.isFinite(walletRankPrice) &&
+    walletRankPrice > 0 &&
+    !walletNeedsLogin &&
+    Number.isFinite(Number(walletCoins)) &&
+    Number(walletCoins) >= walletRankPrice;
 
   const confirmWalletBuy = useCallback(async () => {
     if (!walletModalRankKey) return;
@@ -464,22 +385,17 @@ export default function TiendaStorefront({ carrito, toggleProducto, onCambiarCan
     }
   }, [walletModalRankKey, rankWalletPrices, fetchWalletBalance]);
 
-  const panelIconSrc = useMemo(() => withCacheBust("/assets/reinos/survival-clasico.webp", activeData.bust), [activeData.bust]);
-
   return (
-    <div className={`tienda-storefront tsf-brawl2 ${ready ? "is-ready" : ""} ${rootFxClass}`} ref={wrapRef}>
-      <div className="tsf-bgFX" aria-hidden="true" />
-
+    <div className="pixel-storefront" ref={wrapRef}>
       <CoinshopModal open={coinshopOpen} fromRect={coinshopFromRect} onClose={closeCoinshop} />
 
       <RangoWalletModal
         open={walletModalOpen}
         onClose={closeWalletModal}
         rankKey={walletModalRankKey}
+        rankIcon={walletRankMeta?.pkg ? getPackageImage(walletRankMeta.pkg) : null}
         rankLabel={walletRankMeta?.label}
-        rankDeg={walletRankMeta?.deg}
-        rankIcon={walletRankMeta?.pkg ? withCacheBust(getPackageImage(walletRankMeta.pkg), activeData.bust) : null}
-        price={walletRankPrice}
+        price={Number.isFinite(walletRankPrice) ? walletRankPrice : null}
         walletCoins={walletCoins}
         loading={walletModalLoading || walletLoading}
         error={walletModalError}
@@ -493,379 +409,236 @@ export default function TiendaStorefront({ carrito, toggleProducto, onCambiarCan
         }}
       />
 
-      {activeRank ? (
-<RangosComparativaPanel
-  rankKey={activeRank}
-  onClose={closeRankDetails}
-  onPickRank={(rk) => setActiveRank(rk)}
-  rankCards={rankCards}
-  bust={activeData.bust}
-  rankWalletPrices={rankWalletPrices}
-  pricesLoaded={pricesLoaded}
-  onBuyEur={(pkg, ev) => handleBuyRank(pkg, ev)}
-  onBuyCoins={(pkg, ev, rk) => {
-    ev?.stopPropagation?.();
-    openWalletModal(rk);
-  }}
-/>
-      ) : null}
+      <TiendaWelcomePackPopup
+        nombreConfirmado={nombreConfirmado}
+        uuidConfirmado={uuidConfirmado}
+        carrito={carrito}
+        onAgregar={onAgregar}
+      />
 
-      <div className="tsf-scroll">
-        {loading && (
-          <div className="tsf-state">
-            <div className="tsf-loader" />
-            <div className="tsf-state-text">Cargando tienda…</div>
-          </div>
-        )}
+      {activeRank && (
+        <RangosComparativaPanel
+          rankKey={activeRank}
+          onClose={() => setActiveRank(null)}
+          onPickRank={setActiveRank}
+          rankCards={rankCards}
+          rankWalletPrices={rankWalletPrices}
+          pricesLoaded={pricesLoaded}
+          bust={activeData.bust}
+          onBuyEur={handleBuyRank}
+          onBuyCoins={(_, ev, rk) => {
+            ev?.stopPropagation?.();
+            openWalletModal(rk);
+          }}
+        />
+      )}
 
-        {!loading && err && (
-          <div className="tsf-state tsf-state--error">
-            <div className="tsf-state-text">{err}</div>
-            <button className="tsf-retry" onClick={() => window.location.reload()}>
-              Reintentar
-            </button>
-          </div>
-        )}
+      {loading ? (
+        <div className="pixel-state-box">
+          <div className="pixel-spinner"></div>
+          <span>Cargando inventario...</span>
+        </div>
+      ) : err ? (
+        <div className="pixel-state-box error">
+          <span>{err}</span>
+          <button className="pixel-btn-gray" onClick={() => window.location.reload()}>
+            REINTENTAR
+          </button>
+        </div>
+      ) : (
+        <div className="pixel-store-scroll">
+          
+          <TiendaOfertaCountdown />
 
-        {!loading && !err && (
-          <>
-            <section className="tsf-ranks" aria-label="Rangos">
-              <div className="tsf-content">
-                <div className="tsf-ranksRow">
-                  {rankCards.map((r, idx) => {
-                    const pkg = r.pkg;
+          <section className="pixel-section">
+            <h2 className="pixel-section-title">RANGOS PERMANENTES</h2>
+            <div className="pixel-ranks-grid">
+              {rankCards.map((r) => {
+                const pkg = r.pkg;
+                const priceInfo = pkg ? getDiscountMeta(pkg, getPackagePrice, getPackageOriginalPrice) : null;
+                const coinsPrice = rankWalletPrices?.[r.key];
+                const active = activeRank === r.key;
 
-const disc = pkg
-  ? getDiscountMeta(pkg, getPackagePrice, getPackageOriginalPrice)
-  : { price: null, original: null, onSale: false, discountPct: null };
+                return (
+                  <div
+                    key={r.key}
+                    className={`pixel-card rank-card ${r.key} ${active ? "active" : ""}`}
+                    onClick={() => setActiveRank(active ? null : r.key)}
+                  >
+                    <div className="card-bg-glow"></div>
+                    {r.best && <div className="pixel-tag best-tag">TOP</div>}
 
-const priceBase = disc.price;
-const originalBase = disc.original;
-const onSale = disc.onSale;
+                    <div className="card-content-wrapper">
+                      <div className="rank-header">
+                        <span className="rank-name">{r.label}</span>
+                      </div>
 
-                    const walletPrice = rankWalletPrices?.[r.key];
-                    const coinsPrice = Number.isFinite(Number(walletPrice)) && Number(walletPrice) > 0 ? Number(walletPrice) : null;
+                      <div className="card-image-wrapper">
+                        {pkg && <img src={withCacheBust(getPackageImage(pkg), activeData.bust)} alt={r.label} />}
+                      </div>
+                    </div>
 
-                    const tebexImg = pkg ? withCacheBust(getPackageImage(pkg), activeData.bust) : "";
-
-                    const active = activeRank === r.key;
-                    const cart = isInCart(pkg);
-
-                    return (
-                      <article
-                        key={r.key}
-                        className={`tsf-rank ${r.key} ${active ? "is-active" : ""} ${cart ? "is-inCart" : ""}`}
-                        style={{ "--i": idx }}
-                        onClick={() => onRankTap(r.key)}
-                        role="button"
-                        tabIndex={0}
-                        aria-label={`Rango ${r.label}`}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" || e.key === " ") onRankTap(r.key);
-                        }}
-                        onMouseEnter={() => setHoverFx(r.key)}
-                        onMouseLeave={() => setHoverFx(null)}
-                        onMouseMove={(ev) => setTiltVars(ev.currentTarget, ev)}
-                        onMouseLeaveCapture={(ev) => {
-                          ev.currentTarget.style.removeProperty("--rx");
-                          ev.currentTarget.style.removeProperty("--ry");
-                          ev.currentTarget.style.removeProperty("--mx");
-                          ev.currentTarget.style.removeProperty("--my");
+                    <div className="rank-actions">
+                      <button
+                        className="pixel-btn-green split-btn btn-container-query"
+                        disabled={!pkg}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleBuyRank(pkg);
                         }}
                       >
-                        <div className="tsf-rankLabel">
-                          <span className="tsf-rankTop">Rango</span>
-                          <span className="tsf-rankName">{r.label}</span>
-                        </div>
-
-                        <div className="tsf-square">
-                          <img className="tsf-deg" src={r.deg} alt="" draggable="false" />
-                          <span className="tsf-rankParticles" aria-hidden="true" />
-
-                          {r.best && <div className="tsf-best">TOP</div>}
-
-                          <div className="tsf-perma" aria-hidden="true">
-                            PERMANENTE
-                          </div>
-
-                          {tebexImg ? <img className="tsf-icon" src={tebexImg} alt="" draggable="false" /> : <div className="tsf-iconFallback" />}
-
-                          <div className="tsf-squareCta">
-                            <button
-                              type="button"
-                              className={`tsf-ctaSplit ${cart ? "is-in" : ""}`}
-                              onClick={(e) => {
-                                if (!pkg) return;
-                                onRankBuySplitClick(r.key, pkg, e);
-                              }}
-                              disabled={!pkg}
-                              aria-label={`Comprar ${r.label} (dinero o coins)`}
-                              title="Izquierda: dinero · Derecha: wallet coins"
-                            >
-<span className="tsf-ctaSplitSide tsf-ctaSplitSide--usd" aria-label="Comprar con dinero">
-  <span className={`tsf-ctaSplitPriceStack ${onSale && originalBase != null ? "is-sale" : ""}`}>
-    <span className="tsf-ctaSplitPriceCurrent">{priceBase != null ? fmtMoney(priceBase) : "—"}</span>
-    {onSale && originalBase != null && (
-      <span className="tsf-ctaSplitPriceOld">{fmtMoney(originalBase)}</span>
-    )}
-  </span>
-</span>
-
-                              <span className="tsf-ctaSplitSide tsf-ctaSplitSide--coins" aria-label="Comprar con wallet coins">
-                                <span className="tsf-ctaSplitCoins">
-                                  <span className="tsf-ctaSplitValue">{coinsPrice != null ? fmtInt(coinsPrice) : pricesLoaded ? "—" : "…"}</span>
-                                  <img className="tsf-ctaCoinIcon" src="/tienda/assets/coin.png" alt="" draggable="false" />
-                                </span>
-                              </span>
-
-                              <span className="tsf-ctaSplitDepth" aria-hidden="true" />
-                              <span className="tsf-ctaSplitShine" aria-hidden="true" />
-                              <span className="tsf-ctaSplitDivider" aria-hidden="true" />
-                            </button>
-                          </div>
-                        </div>
-                      </article>
-                    );
-                  })}
-                </div>
-              </div>
-            </section>
-
-            <section className="tsf-coins" aria-label="Coins">
-              <div className="tsf-content">
-                <div className="tsf-coinsHeader">
-                  <div className="tsf-tabsStack">
-                    <TiendaOfertaCountdown variant="tabs" />
-                  </div>
-                </div>
-
-                <div className="tsf-coinsPanel" aria-label="Lotes de coins Survival">
-                  <div className="tsf-coinsPanelHeader">
-                    <div className="tsf-coinsPanelHeaderInner">
-                      <h2 className="tsf-coinsPanelTitle">
-                        <span className="tsf-coinsPanelTitleInner">
-                          {panelIconSrc ? <img className="tsf-coinsPanelTitleIcon" src={panelIconSrc} alt="" draggable="false" /> : null}
-                          <span className="tsf-coinsPanelTitleText">LOTES DE COINS SURVIVAL</span>
-                        </span>
-                      </h2>
+                        {priceInfo?.onSale && <span className="old-price">{formatUSD(priceInfo.original)}</span>}
+                        <span className="new-price">{priceInfo?.price != null ? formatUSD(priceInfo.price) : "—"}</span>
+                      </button>
 
                       <button
-                        type="button"
-                        className="tsf-openShopBtn tsf-openShopBtn--panel"
-                        onClick={openCoinshopFromEvent}
-                        aria-label="Abrir catálogo in-game"
-                        title="Ver catálogo in-game"
+                        className="pixel-btn-gold split-btn btn-container-query"
+                        disabled={!coinsPrice}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openWalletModal(r.key);
+                        }}
                       >
-                        <span className="tsf-openShopInner" aria-hidden="true">
-                          <img src="/tienda/assets/openshop.png" alt="Abrir catálogo" draggable="false" />
+                        <span className="new-price">
+                          <span className="price-text">{coinsPrice != null ? fmtInt(coinsPrice) : pricesLoaded ? "—" : "…"}</span>
+                          <img src="/tienda/assets/coin.png" alt="coins" className="inline-coin" />
                         </span>
                       </button>
                     </div>
                   </div>
+                );
+              })}
+            </div>
+          </section>
 
-                  <div className="tsf-coinsGridWrap" aria-label="Packs de coins Survival">
-                    {coinsPackages?.length ? (
-                      <div className="tsf-coinsGrid tsf-coinsGrid--linear4 is-in">
-                        <article
-                          className="tsf-coinWrap tsf-coinWrap--daily"
-                          key="daily-claim"
-                          style={{ "--i": 0 }}
-                          onMouseMove={(ev) => setTiltVars(ev.currentTarget, ev)}
-                          onMouseLeave={(ev) => {
-                            ev.currentTarget.style.removeProperty("--rx");
-                            ev.currentTarget.style.removeProperty("--ry");
-                            ev.currentTarget.style.removeProperty("--mx");
-                            ev.currentTarget.style.removeProperty("--my");
-                          }}
-                        >
-                          <div className="tsf-coinFrame tsf-coinFrame--daily" aria-label="Claim gratuito diario">
-                            <div className="tsf-dailyInFrame">
-                              <DailyFreeClaimCard />
-                            </div>
-                          </div>
-                        </article>
-
-                        {coinsPackages.map((p, idx) => {
-                          const gridIndex = idx + 1;
-                          const idRaw = getPackageId(p);
-                          const idKey = String(idRaw ?? getPackageName(p));
-
-                          const name = getPackageName(p);
-
-                          const disc = getDiscountMeta(p, getPackagePrice, getPackageOriginalPrice);
-                          const priceBase = disc.price;
-                          const onSale = disc.onSale;
-                          const originalBase = disc.original;
-                          const discountPct = disc.discountPct;
-
-                          const img = withCacheBust(getPackageImage(p), activeData.bust);
-
-                          const amount = parseCoinsFromPkg(p, getPackageName);
-                          const qty = getQtyInCart(p);
-
-                          const meta = coinsValue?.map?.get(idKey) || { isBest: false, extraNice: 0 };
-                          const hasBonus = amount != null && meta.extraNice >= 500 && meta.extraNice < amount;
-                          const baseAmount = hasBonus ? Math.max(0, amount - meta.extraNice) : null;
-                          const bonusAmount = hasBonus ? meta.extraNice : null;
-
-                          return (
-                            <article
-                              className={`tsf-coinWrap ${qty > 0 ? "is-inCart" : ""} ${meta?.isBest ? "is-best" : ""}`}
-                              key={idKey}
-                              style={{ "--i": gridIndex }}
-                              onMouseMove={(ev) => setTiltVars(ev.currentTarget, ev)}
-                              onMouseLeave={(ev) => {
-                                ev.currentTarget.style.removeProperty("--rx");
-                                ev.currentTarget.style.removeProperty("--ry");
-                                ev.currentTarget.style.removeProperty("--mx");
-                                ev.currentTarget.style.removeProperty("--my");
-                              }}
-                            >
-                              <div className="tsf-coinFrame tsf-coinFrame--brawl" aria-label={`Pack ${name}`}>
-                                <div className="tsf-coinQtyTop" aria-label="Cantidad de coins">
-                                  X{amount != null ? fmtInt(amount) : "—"}
-                                </div>
-
-                                <button
-                                  type="button"
-                                  className="tsf-coinArtBtn"
-                                  onClick={openCoinshopFromEvent}
-                                  aria-label={`Ver ${name} en el catálogo`}
-                                  title="Ver en catálogo"
-                                >
-                                  <img className="tsf-coinImg" src={img} alt="" draggable="false" />
-                                </button>
-
-                                {hasBonus && baseAmount != null && bonusAmount != null && (
-                                  <div className="tsf-coinBand tsf-coinBand--bonus" aria-label="Bonus incluido">
-                                    <span className="tsf-coinBandInner">
-                                      <span className="tsf-coinBandText">
-                                        {fmtInt(baseAmount)} + {fmtInt(bonusAmount)}
-                                        <BonusArrowUp className="tsf-coinBandIcon" />
-                                      </span>
-                                    </span>
-                                  </div>
-                                )}
-
-                                <button
-                                  type="button"
-                                  className={`tsf-buyBtn ${qty > 0 ? "is-in" : ""}`}
-                                  onClick={(ev) => {
-                                    ev.stopPropagation();
-                                    changeCoinsQty(p, +1, ev);
-                                  }}
-                                  aria-label={`Comprar ${name}`}
-                                >
-                                  <span className="tsf-buyBtnFace">
-                                    <span className="tsf-buyPrice">{priceBase != null ? fmtMoney(priceBase) : "—"}</span>
-                                    {onSale && originalBase != null && <span className="tsf-buyOld">{fmtMoney(originalBase)}</span>}
-                                  </span>
-
-                                  <span className="tsf-buyBtnDepth" aria-hidden="true" />
-
-                                  {qty > 0 && <span className="tsf-buyQtyPill">x{qty}</span>}
-                                </button>
-
-                                {discountPct != null && discountPct > 0 && onSale && (
-                                  <span className="tsf-saleBadge tsf-saleBadge--corner" aria-hidden="true">
-                                    -{discountPct}%
-                                  </span>
-                                )}
-                                {meta?.isBest && (
-                                  <span className="tsf-bestBadge" aria-hidden="true">
-                                    TOP
-                                  </span>
-                                )}
-                              </div>
-                            </article>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      <div className="tsf-empty">No hay productos de coins para Survival (o no se ha encontrado la categoría).</div>
-                    )}
-                  </div>
-
-                  <div className="tsf-antesLine" role="note" aria-label="Aviso antes de comprar">
-                    <span className="tsf-antesLineText">Aviso para padres:</span>
-                    <button type="button" className="tsf-antesLineBtn" onClick={openAntes} aria-haspopup="dialog">
-                      Leer “Antes de comprar”
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </section>
-          </>
-        )}
-      </div>
-
-      {antesOpen && (
-        <div
-          className="tsf-antesModalOverlay"
-          role="dialog"
-          aria-modal="true"
-          aria-label={ANTES_DE_COMPRAR.titulo}
-          onMouseDown={closeAntes}
-        >
-          <div className="tsf-antesModal" onMouseDown={(e) => e.stopPropagation()}>
-            <div className="tsf-antesModalHead">
-              <div className="tsf-antesModalTitle">{ANTES_DE_COMPRAR.titulo}</div>
-              <button type="button" className="tsf-antesModalClose" onClick={closeAntes} aria-label="Cerrar">
-                Cerrar
+          <section className="pixel-section">
+            <div className="pixel-section-header">
+              <h2 className="pixel-section-title">LOTES DE COINS SURVIVAL</h2>
+              <button className="pixel-btn-gray open-shop-btn" onClick={openCoinshopFromEvent}>
+                <img src="/tienda/assets/openshop.png" alt="Catálogo" />
+                <span>CATALOGO</span>
               </button>
             </div>
 
-            <div className="tsf-antesModalBody">
-              <div className="tsf-antesBlock">
-                {Array.isArray(ANTES_DE_COMPRAR.intro) &&
-                  ANTES_DE_COMPRAR.intro.map((t, i) => (
-                    <p className="tsf-antesP" key={`intro-${i}`}>
-                      {t}
-                    </p>
-                  ))}
-              </div>
+            <div className="pixel-daily-wrapper">
+              <DailyFreeClaimCard />
+            </div>
 
-              {Array.isArray(ANTES_DE_COMPRAR.avisos) && ANTES_DE_COMPRAR.avisos.length > 0 && (
-                <div className="tsf-antesBlock">
-                  <div className="tsf-antesH">Avisos</div>
-                  <ul className="tsf-antesList">
-                    {ANTES_DE_COMPRAR.avisos.map((t, i) => (
-                      <li className="tsf-antesLi" key={`aviso-${i}`}>
-                        {t}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
+            <div className="pixel-coins-grid">
+              {coinsPackages.map((p) => {
+                const qty = getQtyInCart(p);
+                const disc = getDiscountMeta(p, getPackagePrice, getPackageOriginalPrice);
+                const idRaw = getPackageId(p);
+                const idKey = String(idRaw ?? getPackageName(p));
+                const amount = parseCoinsFromPkg(p, getPackageName);
+                const meta = coinsValue?.map?.get(idKey) || { isBest: false, extraNice: 0 };
+                const hasBonus = amount != null && meta.extraNice > 0 && meta.extraNice < amount;
+                const baseAmount = hasBonus ? Math.max(0, amount - meta.extraNice) : null;
+                const bonusAmount = hasBonus ? meta.extraNice : null;
 
-              {ANTES_DE_COMPRAR.soporte && (
-                <div className="tsf-antesBlock">
-                  <div className="tsf-antesH">{ANTES_DE_COMPRAR.soporte.titulo}</div>
-                  <p className="tsf-antesP">{ANTES_DE_COMPRAR.soporte.texto}</p>
+                return (
+                  <div key={getPackageId(p)} className={`pixel-card coin-card ${qty > 0 ? "in-cart" : ""}`}>
+                    <div className="card-bg-glow"></div>
+                    {qty > 0 && <div className="pixel-tag cart-tag">x{qty}</div>}
+                    {meta.isBest && qty <= 0 && <div className="pixel-tag best-tag">TOP</div>}
 
-                  {Array.isArray(ANTES_DE_COMPRAR.soporte.links) && ANTES_DE_COMPRAR.soporte.links.length > 0 && (
-                    <div className="tsf-antesLinks">
-                      {ANTES_DE_COMPRAR.soporte.links.map((l) => (
-                        <a key={String(l?.href || l?.label || Math.random())} className="tsf-antesLink" href={l.href} target="_blank" rel="noreferrer">
-                          {l.label}
-                        </a>
-                      ))}
+                    <div className="card-content-wrapper">
+                      <div className="coin-amount-wrapper">
+                        <div className="coin-amount">x{amount != null ? fmtInt(amount) : "—"}</div>
+                      </div>
+
+                      <div className="card-image-wrapper coin-image-size">
+                        <img
+                          src={withCacheBust(getPackageImage(p), activeData.bust)}
+                          alt={getPackageName(p)}
+                          onClick={openCoinshopFromEvent}
+                        />
+                      </div>
                     </div>
-                  )}
-                </div>
-              )}
 
-              {ANTES_DE_COMPRAR.reembolso && (
-                <div className="tsf-antesBlock">
-                  <div className="tsf-antesH">{ANTES_DE_COMPRAR.reembolso.titulo}</div>
-                  {Array.isArray(ANTES_DE_COMPRAR.reembolso.bloques) &&
-                    ANTES_DE_COMPRAR.reembolso.bloques.map((t, i) => (
-                      <p className="tsf-antesP" key={`reembolso-${i}`}>
-                        {t}
-                      </p>
+                    <div className="coin-actions">
+                      {hasBonus && baseAmount != null && bonusAmount != null && (
+                        <div className="clean-bonus">
+                          <span className="base">{fmtInt(baseAmount)}</span>
+                          <span className="plus">+</span>
+                          <span className="bonus">
+                            {fmtInt(bonusAmount)} <BonusArrowUp className="bonus-icon" />
+                          </span>
+                        </div>
+                      )}
+
+                      <button className="pixel-btn-green full-btn" onClick={() => changeCoinsQty(p, 1)}>
+                        {disc.onSale && <span className="old-price">{formatUSD(disc.original)}</span>}
+                        <span className="new-price">{disc.price != null ? formatUSD(disc.price) : "—"}</span>
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+
+          <div className="mc-parents-bar">
+            <span className="mc-parents-text">AVISO PARA PADRES:</span>
+            <button className="pixel-btn-gray mc-parents-btn" onClick={() => setAntesOpen(true)}>
+              LEER ANTES DE COMPRAR
+            </button>
+          </div>
+        </div>
+      )}
+
+      {antesOpen && (
+        <div className="mc-parents-overlay is-open" onClick={() => setAntesOpen(false)}>
+          <div className="mc-parents-backdrop" />
+          <div className="mc-parents-modal" onClick={(e) => e.stopPropagation()}>
+            <button className="mc-parents-close" onClick={() => setAntesOpen(false)}>X</button>
+            
+            <div className="mc-parents-content">
+              <div className="mc-title-plate">
+                <h2>{ANTES_DE_COMPRAR.titulo}</h2>
+              </div>
+              
+              <div className="mc-parents-scroll">
+                {ANTES_DE_COMPRAR.intro.map((t, i) => (
+                  <p key={i}>{t}</p>
+                ))}
+
+                {ANTES_DE_COMPRAR.avisos && (
+                  <div>
+                    <h4>Avisos</h4>
+                    <ul>
+                      {ANTES_DE_COMPRAR.avisos.map((t, i) => (
+                        <li key={i}>{t}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {ANTES_DE_COMPRAR.soporte && (
+                  <div>
+                    <h4>{ANTES_DE_COMPRAR.soporte.titulo}</h4>
+                    <p>{ANTES_DE_COMPRAR.soporte.texto}</p>
+                    {ANTES_DE_COMPRAR.soporte.links && (
+                      <div className="mc-parents-links">
+                        {ANTES_DE_COMPRAR.soporte.links.map((l, i) => (
+                          <a key={i} href={l.href} target="_blank" rel="noreferrer" className="pixel-btn-gray link-btn">
+                            {l.label}
+                          </a>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {ANTES_DE_COMPRAR.reembolso && (
+                  <div>
+                    <h4>{ANTES_DE_COMPRAR.reembolso.titulo}</h4>
+                    {ANTES_DE_COMPRAR.reembolso.bloques?.map((t, i) => (
+                      <p key={i}>{t}</p>
                     ))}
-                </div>
-              )}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

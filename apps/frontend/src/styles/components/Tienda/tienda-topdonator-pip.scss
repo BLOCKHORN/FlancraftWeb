@@ -1,242 +1,193 @@
-@use "../../base/_variables" as *;
-
-/* Contenedor ABSOLUTO dentro del WRAP del carrito */
-.tdp-pip {
-  position: absolute;
-  z-index: 6;
-
-  /* ✅ esquina superior izquierda del carrito */
-  top: 10px;
-  left: 10px;
+@font-face {
+  font-family: 'MinecraftSeven';
+  src: url('/fonts/MinecraftBold.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
 }
 
-/* Bolita */
-.tdp-pip__dot {
-  width: 22px;
-  height: 22px;
-  border-radius: 999px;
+$mc-font: 'MinecraftSeven', 'Montserrat', sans-serif;
 
-  border: 1px solid rgba(255, 220, 150, 0.22);
-  background:
-    radial-gradient(circle at 30% 25%, rgba(255, 217, 150, 0.18), transparent 55%),
-    rgba(22, 16, 10, 0.78);
+.store-topdonators {
+  font-family: $mc-font;
+  background: #151923;
+  border: 4px solid #000;
+  box-shadow: inset -4px -4px 0px #0a0c14, inset 4px 4px 0px #2a3143, 0 10px 30px rgba(0,0,0,0.5);
+  padding: 0 16px 16px 16px; /* Menos padding lateral para aprovechar el espacio */
+  color: #fff;
+  border-radius: 2px;
+}
 
-  color: #ffd08a;
+/* Cabecera del bloque */
+.store-topdonators__titleWrap {
+  text-align: center;
+  margin-bottom: 24px;
+  border-bottom: 4px solid #000;
+  background: #0f131a;
+  margin-left: -16px;
+  margin-right: -16px;
+  padding: 12px 16px;
+}
 
-  display: grid;
-  place-items: center;
+.store-topdonators__title {
+  font-size: 1.4rem; /* Más pequeño para que no coma tanto espacio */
+  color: #fbbf24;
+  text-shadow: 2px 2px 0 #000;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
 
-  cursor: pointer;
-  box-shadow: 0 10px 18px rgba(0,0,0,0.22);
-  backdrop-filter: blur(6px);
+.store-topdonators__period {
+  font-size: 0.7rem;
+  color: #94a3b8;
+  text-shadow: 2px 2px 0 #000;
+  margin-top: 4px;
+  text-transform: uppercase;
+}
 
-  transition: transform 140ms ease, filter 140ms ease, background 140ms ease;
+/* Contenedor con Scroll Horizontal */
+.store-topdonators__grid {
+  display: flex;
+  justify-content: flex-start;
+  align-items: stretch;
+  gap: 12px;
+  flex-wrap: nowrap; /* Impide que salten de línea */
+  overflow-x: auto; /* Activa el scroll horizontal */
+  overflow-y: hidden;
+  padding-bottom: 12px; /* Espacio para que la barra de scroll no tape el contenido */
+  padding-top: 8px; /* Espacio para las etiquetas de #1 flotantes */
+  
+  /* Scrollbar horizontal estilo Minecraft */
+  scrollbar-width: thin;
+  scrollbar-color: #374151 #0a0c14;
+
+  &::-webkit-scrollbar {
+    height: 8px; /* Barra finita en horizontal */
+  }
+  &::-webkit-scrollbar-track {
+    background: #0a0c14;
+    border-top: 2px solid #000;
+    border-bottom: 2px solid #000;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: #374151;
+    border: 2px solid #000;
+  }
+}
+
+/* Tarjetas compactas */
+.store-topdonators__card {
+  flex: 0 0 auto; /* Evita que las tarjetas se encojan o estiren, respetan su width */
+  background: #11151d;
+  border: 4px solid #000;
+  box-shadow: inset -3px -3px 0px #0a0c14, inset 3px 3px 0px #1f2937;
+  padding: 16px 8px 12px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 130px; /* Tamaño fijo pequeñito */
+  position: relative;
+  transition: transform 0.2s;
 
   &:hover {
-    transform: translateY(-1px);
-    background:
-      radial-gradient(circle at 30% 25%, rgba(255, 217, 150, 0.22), transparent 55%),
-      rgba(22, 16, 10, 0.88);
-    filter: brightness(1.03);
+    filter: brightness(1.1);
   }
 
-  &:active { transform: translateY(0); }
+  /* El Top 1 sigue siendo el más especial, pero con el mismo ancho */
+  &.is-rank-1 {
+    border-color: #fbbf24;
+    box-shadow: inset -3px -3px 0px rgba(180, 83, 9, 0.4), inset 3px 3px 0px rgba(253, 230, 138, 0.2);
 
-  &:focus-visible {
-    outline: none;
-    box-shadow:
-      0 0 0 3px rgba(255,255,255,0.14),
-      0 0 0 6px rgba(64,200,255,0.12),
-      0 10px 18px rgba(0,0,0,0.22);
+    .store-topdonators__rank {
+      background: #fbbf24;
+      color: #000;
+      text-shadow: none;
+    }
+  }
+
+  &.is-rank-2 .store-topdonators__rank {
+    background: #94a3b8;
+    color: #000;
+    text-shadow: none;
+  }
+
+  &.is-rank-3 .store-topdonators__rank {
+    background: #d97706;
+    color: #000;
+    text-shadow: none;
   }
 }
 
-.tdp-pip__icon {
-  display: block;
-  width: 13px;
-  height: 13px;
-  filter:
-    drop-shadow(0 1px 0 rgba(0,0,0,0.55))
-    drop-shadow(0 0 6px rgba(255, 190, 90, 0.20));
-}
-
-/* Bocadillo (hacia FUERA: a la izquierda del carrito) */
-.tdp-pip__bubble {
+/* Puesto flotante (#1, #2, #3) */
+.store-topdonators__rank {
   position: absolute;
-
-  top: 30px;
-
-  /* ✅ se posiciona fuera del carrito */
-  left: 0;
-  transform: translateX(calc(-100% - 12px));
-
-  width: min(260px, 72vw);
-  border-radius: 12px;
-  padding: 10px 10px 9px;
-
-  background:
-    radial-gradient(circle at 30% 10%, rgba(255,255,255,0.07), transparent 58%),
-    rgba(22, 16, 10, 0.94);
-
-  border: 1px solid rgba(255, 220, 150, 0.18);
-  box-shadow: 0 26px 60px rgba(0,0,0,0.55);
-
-  transform-origin: top right;
-  animation: tdpPop 140ms ease-out both;
-
-  /* fallback por si aún no se midió (no molesta) */
-  --tdp-arrow-x: calc(100% - 19px);
+  top: -12px;
+  background: #1f2937;
+  border: 4px solid #000;
+  padding: 2px 8px;
+  font-size: 1rem;
+  font-weight: 800;
+  color: #fff;
+  text-shadow: 2px 2px 0 #000;
+  box-shadow: inset -2px -2px 0px rgba(0,0,0,0.3), inset 2px 2px 0px rgba(255,255,255,0.2);
 }
 
-/* ✅ colita alineada exacta al centro del pip vía CSS var */
-.tdp-pip__bubble::before {
-  content: "";
-  position: absolute;
-  top: -7px;
-
-  /* la var es el centro; restamos media colita (7px) */
-  left: calc(var(--tdp-arrow-x, 0px) - 7px);
-
-  width: 14px;
-  height: 14px;
-
-  background: rgba(22, 16, 10, 0.94);
-  border-right: 1px solid rgba(255, 220, 150, 0.18);
-  border-top: 1px solid rgba(255, 220, 150, 0.18);
-
-  transform: rotate(45deg);
-  border-top-right-radius: 3px;
-}
-
-@keyframes tdpPop {
-  0% { transform: scale(0.98) translateY(-2px); opacity: 0; }
-  100% { transform: scale(1) translateY(0); opacity: 1; }
-}
-
-.tdp-pip__bubbleHead {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 8px;
-}
-
-.tdp-pip__title {
-  font-weight: 900;
-  font-size: 11px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: rgba(255, 232, 195, 0.95);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.tdp-pip__x {
-  width: 28px;
-  height: 28px;
-  border-radius: 10px;
-  border: 1px solid rgba(255,255,255,0.10);
-  background: rgba(0,0,0,0.22);
-  color: rgba(255,255,255,0.86);
-  cursor: pointer;
-}
-
-.tdp-pip__body {
-  display: grid;
-  grid-template-columns: 48px minmax(0, 1fr);
-  gap: 10px;
-  align-items: center;
-}
-
-.tdp-pip__avatarWrap {
+/* Contenedor del avatar */
+.store-topdonators__avatarWrap {
+  margin-top: 4px;
+  margin-bottom: 10px;
   width: 48px;
   height: 48px;
-  border-radius: 10px;
-
-  background:
-    radial-gradient(circle at 30% 25%, rgba(255, 217, 150, 0.12), transparent 58%),
-    linear-gradient(180deg, rgba(40, 20, 10, 0.88), rgba(18, 9, 4, 0.96));
-
-  box-shadow:
-    0 0 0 1px rgba(255, 220, 150, 0.10),
-    inset 0 0 0 1px rgba(0, 0, 0, 0.60);
-  display: grid;
-  place-items: center;
+  border: 4px solid #000;
+  background: #0f131a;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-.tdp-pip__avatar {
-  width: 38px;
-  height: 38px;
-  border-radius: 8px;
+.store-topdonators__avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
   image-rendering: pixelated;
-  box-shadow: 0 0 0 1px rgba(0,0,0,0.60);
 }
 
-.tdp-pip__info { min-width: 0; }
-
-.tdp-pip__name {
-  font-weight: 950;
-  font-size: 14px;
-  color: #fff1d2;
+/* Nombre del jugador (con truncado) */
+.store-topdonators__name {
+  font-size: 0.85rem;
+  color: #fff;
+  text-shadow: 2px 2px 0 #000;
+  text-align: center;
+  margin-bottom: 8px;
+  
+  /* El truncado evita que los nombres rompan la caja de 130px */
+  width: 100%;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  text-shadow: 0 2px 0 rgba(0,0,0,0.45);
+  padding: 0 4px;
 }
 
-.tdp-pip__amount {
-  margin-top: 3px;
-  font-weight: 900;
-  font-size: 13px;
-  color: #ffd08a;
-  font-variant-numeric: tabular-nums;
-  text-shadow: 0 2px 0 rgba(0,0,0,0.45);
+/* Dinero invertido */
+.store-topdonators__amount {
+  font-size: 0.8rem;
+  color: #5EE034;
+  text-shadow: 2px 2px 0 #000;
+  background: #0f131a;
+  border: 4px solid #000;
+  padding: 4px 6px;
+  width: 100%;
+  text-align: center;
+  box-shadow: inset -2px -2px 0px rgba(0,0,0,0.3), inset 2px 2px 0px rgba(255,255,255,0.1);
+  margin-top: auto; /* Empuja el precio al fondo siempre */
 }
 
-.tdp-pip__hint {
-  margin-top: 8px;
-  font-size: 11px;
-  color: rgba(255, 232, 195, 0.70);
-  opacity: 0.95;
-}
-
-.tdp-pip__hint kbd {
-  font: inherit;
-  padding: 1px 6px;
-  border-radius: 6px;
-  background: rgba(0,0,0,0.25);
-  border: 1px solid rgba(255,255,255,0.10);
-}
-
-/* Mobile: pegado al carrito, NO fijo al viewport */
-@media (max-width: 960px) {
-  .tdp-pip {
-    position: absolute;
-    /* dentro del wrapper del carrito */
-    top: 6px;
-    right: 8px;
-    left: auto;
-    z-index: 6; // por encima del contenido del carrito, sin superar al nav global
-  }
-
-  .tdp-pip__bubble {
-    /* bocadillo justo debajo del botón, alineado al carrito */
-    top: 32px;
-    left: auto;
-    right: 0;
-
-    /* anulamos el translate que lo sacaba hacia la izquierda */
-    transform: none;
-    transform-origin: top right;
-
-    width: min(280px, 90vw);
-  }
-
-  /* flechita alineada al botón en mobile (sin depender de la var JS) */
-  .tdp-pip__bubble::before {
-    top: -7px;
-    left: auto;
-    right: 20px;
-  }
+.store-topdonators__empty {
+  text-align: center;
+  color: #94a3b8;
+  font-size: 0.9rem;
+  padding: 16px 0;
+  text-shadow: 2px 2px 0 #000;
+  text-transform: uppercase;
 }

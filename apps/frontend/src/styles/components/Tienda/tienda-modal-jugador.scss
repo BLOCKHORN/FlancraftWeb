@@ -1,270 +1,243 @@
-/* Modal estilo Wynncraft/Tebex - Elegir cuenta */
+@font-face {
+  font-family: 'MinecraftSeven';
+  src: url('/fonts/MinecraftBold.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+$mc-font: 'MinecraftSeven', 'Montserrat', sans-serif;
 
 .tc-modal-overlay {
   position: fixed;
   inset: 0;
-  z-index: 9999;
-  display: grid;
-  place-items: center;
-  padding: 18px;
-
-  background: rgba(0, 0, 0, 0.58);
-  backdrop-filter: blur(3px);
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+  font-family: $mc-font;
+  animation: wpOverlayFadeIn 0.3s ease-out forwards;
 }
 
 .tc-modal {
-  width: min(860px, 100%);
-  border-radius: 10px;
-  overflow: hidden;
-
-  background: #f7e2b2;
-  border: 2px solid #d2b071;
-
-  box-shadow:
-    0 0 0 1px rgba(90, 59, 23, 0.35),
-    0 18px 44px rgba(0, 0, 0, 0.55);
-
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  color: #2f1f12;
+  background: #151923;
+  border: 4px solid #000;
+  box-shadow: inset -4px -4px 0px #0a0c14, 
+              inset 4px 4px 0px #2a3143, 
+              0 20px 50px rgba(0,0,0,0.8);
+  width: 100%;
+  max-width: 500px; // Más compacto para login
+  position: relative;
+  border-radius: 2px;
+  animation: wpModalPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  color: #fff;
 }
 
 /* ===== Header ===== */
 
 .tc-modal-head {
-  padding: 18px 20px 14px;
-  background: rgba(0, 0, 0, 0.05);
-  border-bottom: 2px solid rgba(0, 0, 0, 0.14);
+  padding: 24px 24px 12px;
+  text-align: center;
 }
 
 .tc-modal-title {
   display: flex;
   align-items: center;
-  gap: 10px;
-
-  font-weight: 900;
-  letter-spacing: 0.02em;
+  justify-content: center;
+  gap: 12px;
+  color: #ffc800; // Amarillo Minecraft Gold
+  font-size: 1.5rem;
   text-transform: uppercase;
-  font-size: 18px;
-}
-
-.tc-modal-ico {
-  font-size: 18px;
-  opacity: 0.9;
+  text-shadow: 2px 2px 0 #000;
+  margin-bottom: 8px;
 }
 
 .tc-modal-desc {
-  margin-top: 6px;
-  font-size: 13.5px;
-  line-height: 1.35;
-  opacity: 0.9;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.9rem;
+  color: #94a3b8;
+  line-height: 1.4;
 }
 
 /* ===== Body ===== */
 
 .tc-modal-body {
-  padding: 16px 20px 10px;
-}
-
-.tc-row {
-  display: grid;
-  grid-template-columns: 1fr 170px;
-  gap: 14px;
-  align-items: start;
+  padding: 12px 24px 20px;
 }
 
 .tc-field {
-  border-radius: 8px;
-  background: rgba(0, 0, 0, 0.06);
-  border: 2px solid rgba(0, 0, 0, 0.18);
-  padding: 12px 12px 10px;
+  background: #0f131a;
+  border: 3px solid #000;
+  box-shadow: inset -3px -3px 0px rgba(255,255,255,0.05);
+  padding: 16px;
+  border-radius: 2px;
 }
 
 .tc-label {
-  font-size: 11px;
-  font-weight: 900;
-  letter-spacing: 0.1em;
+  display: block;
+  font-size: 0.75rem;
+  color: #5ee034; // Verde
   text-transform: uppercase;
-  opacity: 0.85;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
+  letter-spacing: 1px;
 }
 
-/* ✅ input con preview skin */
 .tc-inputwrap {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 
 .tc-headimg {
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
-  border: 2px solid rgba(0, 0, 0, 0.22);
-  background: rgba(0, 0, 0, 0.10);
+  width: 48px;
+  height: 48px;
+  background: #151923;
+  border: 3px solid #000;
   image-rendering: pixelated;
   flex: 0 0 auto;
+  box-shadow: inset 2px 2px 0 rgba(255,255,255,0.1);
 }
 
 .tc-input {
   width: 100%;
-  height: 42px;
-  border-radius: 7px;
-  padding: 0 12px;
-
-  background: rgba(255, 255, 255, 0.55);
-  border: 2px solid rgba(0, 0, 0, 0.22);
+  height: 48px;
+  background: #1a202c;
+  border: 2px solid #3b3e4f;
   outline: none;
+  padding: 0 12px;
+  color: #fff;
+  font-family: $mc-font;
+  font-size: 1rem;
+  transition: border-color 0.2s;
 
-  font-weight: 800;
-  color: #2b180c;
-}
+  &:focus {
+    border-color: #ffc800;
+  }
 
-.tc-input:focus {
-  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.08);
+  &::placeholder {
+    color: #4b5563;
+  }
 }
 
 .tc-hint {
-  margin-top: 8px;
-  font-size: 12px;
-  opacity: 0.85;
+  margin-top: 10px;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.75rem;
+  color: #64748b;
+  font-weight: 500;
 }
 
 .tc-field.is-error {
-  border-color: rgba(160, 35, 35, 0.55);
+  border-color: #ef4444;
+  .tc-label { color: #ef4444; }
 }
 
 .tc-error {
   margin-top: 8px;
-  font-size: 12px;
-  font-weight: 800;
-  color: rgba(150, 25, 25, 0.95);
+  font-size: 0.8rem;
+  color: #f87171;
+  text-shadow: 1px 1px 0 #000;
 }
 
-/* =========================================================
-   ✅ BOTÓN IGUAL AL CHECKOUT (.basket-checkout)
-   ========================================================= */
+/* ===== Botón Continuar (Estilo Verde Store) ===== */
 
 .tc-btn-continue {
-  position: relative;
+  margin-top: 20px;
   width: 100%;
-  height: 62px;
-  border-radius: 0.35rem;
-
-  border: 2px solid #0a3f12;
-  background: #198c28;
-
-  color: #ffffff;
+  padding: 14px;
+  background: #5EE034;
+  border: 4px solid #000;
+  box-shadow: inset -4px -4px 0px rgba(0,0,0,0.25), 
+              inset 4px 4px 0px rgba(255,255,255,0.4);
+  color: white;
+  font-family: $mc-font;
+  font-size: 1.2rem;
   font-weight: 900;
-  letter-spacing: 0.14em;
   text-transform: uppercase;
-  font-size: 1rem;
-
-  box-shadow: 0 4px 0 #06270b;
+  text-shadow: 2px 2px 0 #000;
   cursor: pointer;
+  position: relative;
   overflow: hidden;
+  transition: filter 0.1s;
 
-  transition: transform 0.08s ease, box-shadow 0.08s ease, filter 0.12s ease, opacity 0.12s ease;
+  &:hover:not(:disabled) {
+    filter: brightness(1.15);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(2px);
+    box-shadow: inset -2px -2px 0px rgba(0,0,0,0.25), 
+                inset 2px 2px 0px rgba(255,255,255,0.4);
+  }
+
+  &:disabled {
+    background: #374151;
+    box-shadow: inset -4px -4px 0px #1f2937, 
+                inset 4px 4px 0px #4b5563;
+    cursor: not-allowed;
+    color: #9ca3af;
+    text-shadow: none;
+  }
 }
 
-.tc-btn-continue::before {
+/* Brillo animado para el botón */
+.tc-btn-continue::after {
   content: "";
   position: absolute;
-  top: -45%;
-  left: -55%;
-  width: 28%;
-  height: 210%;
-
+  inset: 0;
   background: linear-gradient(
     115deg,
     rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 0.55) 50%,
+    rgba(255, 255, 255, 0.2) 50%,
     rgba(255, 255, 255, 0) 100%
   );
-
-  transform: translate3d(-200%, 0, 0);
-  opacity: 0;
-  will-change: transform, opacity;
-  pointer-events: none;
-  animation: tcCheckoutShine 3.2s infinite ease-in-out;
-}
-
-@keyframes tcCheckoutShine {
-  0%   { transform: translate3d(-200%, 0, 0); opacity: 0; }
-  10%  { opacity: 0.55; }
-  30%  { transform: translate3d(430%, 0, 0); opacity: 0; }
-  100% { transform: translate3d(430%, 0, 0); opacity: 0; }
-}
-
-.tc-btn-continue:hover:not(:disabled) {
-  filter: brightness(1.05);
-  transform: translateY(-1px);
-  box-shadow: 0 2px 0 #06270b;
-}
-
-.tc-btn-continue:active:not(:disabled) {
-  transform: translateY(2px);
-  box-shadow: 0 1px 0 #06270b;
-}
-
-.tc-btn-continue:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  filter: none;
-  transform: none;
-  box-shadow: 0 4px 0 #06270b;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .tc-btn-continue::before { animation: none !important; }
+  transform: translateX(-100%);
+  transition: none;
+  animation: dailyClaimShine 3s ease-in-out infinite;
 }
 
 /* ===== Footer ===== */
 
 .tc-modal-foot {
-  padding: 10px 20px 16px;
+  padding: 0 24px 24px;
   display: flex;
-  justify-content: flex-end;
-
-  border-top: 2px solid rgba(0, 0, 0, 0.12);
-  background: rgba(0, 0, 0, 0.03);
+  justify-content: center;
 }
 
 .tc-btn-close {
-  height: 42px;
-  padding: 0 14px;
-  border-radius: 8px;
-
-  border: 2px solid rgba(60, 34, 18, 0.8);
-  background: #6b5847;
-  color: #fef7e5;
-
-  font-weight: 900;
-  letter-spacing: 0.09em;
+  width: 100%;
+  padding: 10px;
+  background: #374151; // Gris oscuro pixel
+  border: 4px solid #000;
+  box-shadow: inset -4px -4px 0px rgba(0,0,0,0.3), 
+              inset 4px 4px 0px rgba(255,255,255,0.1);
+  color: #94a3b8;
+  font-family: $mc-font;
+  font-size: 0.9rem;
   text-transform: uppercase;
-
-  box-shadow: 0 3px 0 rgba(60, 34, 18, 0.85);
   cursor: pointer;
+  transition: transform 0.1s;
 
-  transition: transform 0.08s ease, filter 0.12s ease, box-shadow 0.08s ease;
-}
+  &:hover {
+    filter: brightness(1.1);
+    color: #fff;
+  }
 
-.tc-btn-close:hover {
-  filter: brightness(1.05);
-  transform: translateY(-1px);
-}
-
-.tc-btn-close:active {
-  transform: translateY(1px);
-  box-shadow: 0 1px 0 rgba(60, 34, 18, 0.85);
+  &:active {
+    transform: translateY(1px);
+  }
 }
 
 /* ===== Responsive ===== */
 
 @media (max-width: 640px) {
-  .tc-row { grid-template-columns: 1fr; }
-
-  .tc-btn-continue {
-    height: 52px;
-    letter-spacing: 0.14em;
+  .tc-modal {
+    max-width: 100%;
+  }
+  .tc-modal-title {
+    font-size: 1.2rem;
   }
 }

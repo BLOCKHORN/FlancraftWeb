@@ -1,15 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { apiUrl } from "../../../lib/env";
 
-// cache cliente (extra; el backend ya cachea 12h)
-const memCache = new Map(); // key -> { uuid, name, exp }
-const TTL = 1000 * 60 * 30; // 30 min
+const memCache = new Map();
+const TTL = 1000 * 60 * 30;
 
 function buildUrls({ uuid, name }) {
   const safeUuid = (uuid || "").trim();
   const safeName = (name || "").trim();
 
-  // Si hay UUID, mejor. Si no, fallback por name.
   const headUrl = safeUuid
     ? `https://crafthead.net/avatar/${safeUuid}?size=64&overlay`
     : safeName
@@ -33,39 +31,20 @@ export default function useMinecraftProfile(username) {
     error: null,
     uuid: "",
     name: "",
-    headUrl: buildUrls({}).headUrl,
-    bodyUrl: buildUrls({}).bodyUrl,
+    ...buildUrls({})
   });
 
   useEffect(() => {
     const name = String(username || "").trim();
 
-    // Invitado / vacío
     if (!name) {
-      const urls = buildUrls({});
-      setState({
-        loading: false,
-        error: null,
-        uuid: "",
-        name: "",
-        headUrl: urls.headUrl,
-        bodyUrl: urls.bodyUrl,
-      });
+      setState({ loading: false, error: null, uuid: "", name: "", ...buildUrls({}) });
       return;
     }
 
-    const now = Date.now();
     const hit = memCache.get(key);
-    if (hit && hit.exp > now) {
-      const urls = buildUrls({ uuid: hit.uuid, name: hit.name });
-      setState({
-        loading: false,
-        error: null,
-        uuid: hit.uuid,
-        name: hit.name,
-        headUrl: urls.headUrl,
-        bodyUrl: urls.bodyUrl,
-      });
+    if (hit && hit.exp > Date.now()) {
+      setState({ loading: false, error: null, uuid: hit.uuid, name: hit.name, ...buildUrls(hit) });
       return;
     }
 
@@ -74,47 +53,36 @@ export default function useMinecraftProfile(username) {
 
     (async () => {
       try {
-        const r = await fetch(
-          apiUrl(`/api/minecraft/uuid/${encodeURIComponent(name)}`),
-          {
-            method: "GET",
-            signal: ac.signal,
-            headers: { Accept: "application/json" },
-          }
-        );
+        const r = await fetch(apiUrl(`/api/minecraft/uuid/${encodeURIComponent(name)}`), {
+          signal: ac.signal,
+          headers: { Accept: "application/json" },
+        });
 
-        if (!r.ok) {
-          const data = await r.json().catch(() => ({}));
-          throw new Error(data?.error || "No se pudo obtener el perfil.");
-        }
+        if (!r.ok) throw new Error("No encontrado");
 
-        const data = await r.json().catch(() => ({}));
+        const data = await r.json();
         const uuid = String(data?.uuid || "").trim();
         const resolvedName = String(data?.name || name).trim();
 
-        if (!uuid) throw new Error("Respuesta inválida del backend.");
+        if (!uuid) throw new Error("Sin UUID");
 
-        memCache.set(key, { uuid, name: resolvedName, exp: now + TTL });
+        memCache.set(key, { uuid, name: resolvedName, exp: Date.now() + TTL });
 
-        const urls = buildUrls({ uuid, name: resolvedName });
         setState({
           loading: false,
           error: null,
           uuid,
           name: resolvedName,
-          headUrl: urls.headUrl,
-          bodyUrl: urls.bodyUrl,
+          ...buildUrls({ uuid, name: resolvedName }),
         });
       } catch (e) {
         if (ac.signal.aborted) return;
-        const urls = buildUrls({ name });
         setState({
           loading: false,
-          error: e?.message || "Error al obtener el perfil.",
+          error: e.message,
           uuid: "",
           name,
-          headUrl: urls.headUrl,
-          bodyUrl: urls.bodyUrl,
+          ...buildUrls({ name }),
         });
       }
     })();

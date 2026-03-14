@@ -1,0 +1,108 @@
+.wallet-modal {
+  max-width: 420px;
+
+  // Imagen del rango ahora controlada
+  .mc-rank-preview {
+    position: relative;
+    width: 100%;
+    height: 100px; // Altura fija para el contenedor
+    margin: 10px 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    .mc-rank-glow {
+      position: absolute;
+      width: 120px;
+      height: 120px;
+      background: radial-gradient(circle at center, rgba(255, 200, 0, 0.2) 0%, transparent 70%);
+      animation: mcRankGlowPulse 2s infinite alternate;
+    }
+
+    .mc-rank-img {
+      width: 80px; // Tamaño ideal para que no se vea enorme
+      height: 80px;
+      object-fit: contain;
+      image-rendering: pixelated;
+      filter: drop-shadow(0 8px 12px rgba(0,0,0,0.6));
+      z-index: 2;
+      animation: mcRankFloat 3s ease-in-out infinite;
+    }
+  }
+
+  .mc-wallet-hero {
+    margin: 5px 0 20px;
+    .mc-rank-subtitle {
+      color: #9ea3bc;
+      font-size: 0.85rem;
+      display: block;
+      margin-bottom: 2px;
+    }
+    .mc-rank-title {
+      font-size: 2.2rem;
+      margin: 0;
+      text-shadow: 3px 3px 0 #000;
+      &.nova { color: #5ee034; }
+      &.alpha { color: #3b82f6; }
+      &.inmortal { color: #ef4444; }
+    }
+  }
+
+  .mc-stats-container {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    border: 2px solid #111;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 20px;
+    box-shadow: inset 0 0 15px rgba(0,0,0,0.5);
+
+    .mc-stat-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      .label { color: #cbd5e1; font-size: 0.9rem; }
+      .value {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        color: #fff;
+        font-size: 1.1rem;
+        img { width: 18px; height: 18px; image-rendering: pixelated; }
+      }
+      &.divider {
+        border-top: 2px solid rgba(255,255,255,0.1);
+        padding-top: 12px;
+        margin-top: 4px;
+      }
+      &.is-danger .value { color: #f87171; }
+      &.is-success .value { color: #5ee034; }
+    }
+  }
+
+  .mc-wallet-msg {
+    font-size: 0.9rem;
+    margin-bottom: 16px;
+    text-shadow: 1px 1px 0 #000;
+    &.error { color: #f87171; }
+    &.success { color: #5ee034; }
+  }
+
+  .mc-wallet-actions {
+    width: 100%;
+    display: flex;
+    gap: 12px;
+  }
+}
+
+@keyframes mcRankFloat {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-8px) scale(1.05); }
+}
+
+@keyframes mcRankGlowPulse {
+  0% { transform: scale(0.8); opacity: 0.3; }
+  100% { transform: scale(1.2); opacity: 0.6; }
+}

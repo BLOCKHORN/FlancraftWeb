@@ -4,6 +4,7 @@ import { Toaster } from "react-hot-toast";
 import Navbar from "./components/Navbar/Navbar";
 import ProtectedRoute from "./components/Routing/ProtectedRoute";
 import { useAuthModal } from "./context/AuthModalContext";
+import LoginModal from "./components/Auth/LoginModal";
 
 const Home = lazy(() => import("./components/Landpage/Home"));
 const VincularPage = lazy(() => import("./components/Auth/VincularPage"));
@@ -36,7 +37,7 @@ function RouteEffects() {
 }
 
 const App = () => {
-  const { openAuthModal } = useAuthModal();
+  const { isAuthModalOpen, closeAuthModal, authModalStep, openAuthModal } = useAuthModal();
 
   return (
     <>
@@ -70,7 +71,7 @@ const App = () => {
           <Route
             path="/admin"
             element={
-              <ProtectedRoute requireAdmin minRole="owner">
+              <ProtectedRoute>
                 <GestionStaff />
               </ProtectedRoute>
             }
@@ -102,6 +103,13 @@ const App = () => {
           />
         </Routes>
       </Suspense>
+
+      {isAuthModalOpen && (
+        <LoginModal 
+          onClose={closeAuthModal} 
+          initialStep={authModalStep} 
+        />
+      )}
     </>
   );
 };

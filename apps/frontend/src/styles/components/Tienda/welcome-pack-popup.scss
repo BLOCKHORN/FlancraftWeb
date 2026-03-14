@@ -1,0 +1,400 @@
+/* ... (Todo el código anterior de fuentes y animaciones se mantiene igual) ... */
+
+@font-face {
+  font-family: 'MinecraftSeven';
+  src: url('/fonts/MinecraftBold.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+$mc-font: 'MinecraftSeven', 'Montserrat', sans-serif;
+
+.wp-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100000;
+  font-family: $mc-font;
+  animation: wpOverlayFadeIn 0.3s ease-out forwards;
+}
+
+.wp-pixel-modal {
+  background: #151923;
+  border: 4px solid #000;
+  box-shadow: inset -4px -4px 0px #0a0c14, inset 4px 4px 0px #2a3143, 0 20px 50px rgba(0,0,0,0.8);
+  width: 100%;
+  max-width: 680px;
+  position: relative;
+  border-radius: 2px;
+  animation: wpModalPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.wp-close-x {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  background: none;
+  border: none;
+  color: #6b7280;
+  font-size: 20px;
+  cursor: pointer;
+  z-index: 10;
+  transition: color 0.2s;
+  
+  &:hover { color: #f87171; }
+}
+
+.wp-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.25fr;
+  min-height: 420px;
+}
+
+.wp-visual {
+  background: #0f131a;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  border-right: 4px solid #000;
+
+  .wp-pixel-tag {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    background: #fbbf24;
+    color: #000;
+    padding: 6px 12px;
+    font-weight: 800;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    border: 2px solid #000;
+    box-shadow: inset -2px -2px 0px rgba(0,0,0,0.2), inset 2px 2px 0px rgba(255,255,255,0.4);
+  }
+
+  .wp-main-chest {
+    width: 200px;
+    image-rendering: pixelated;
+    filter: drop-shadow(0 15px 10px rgba(0,0,0,0.5));
+    animation: floatItem 3s ease-in-out infinite;
+  }
+
+  .wp-value-badge {
+    margin-top: 25px;
+    text-align: center;
+    span { 
+      display: block; 
+      color: #4ade80; 
+      font-size: 0.9rem; 
+      font-weight: 800;
+      letter-spacing: 0.5px;
+    }
+    small { 
+      color: #94a3b8; 
+      font-size: 0.7rem; 
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+  }
+}
+
+.wp-content {
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+
+  .wp-pixel-title {
+    font-family: $mc-font;
+    color: #ffffff;
+    font-size: 1.8rem;
+    margin: 0 0 20px 0;
+    line-height: 1.1;
+    text-shadow: 3px 3px 0 #000;
+    letter-spacing: 1px;
+  }
+}
+
+.wp-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 25px;
+}
+
+.wp-item {
+  display: flex;
+  align-items: center;
+  background: #11151d;
+  padding: 8px 12px;
+  border: 1px solid #1f2937;
+  border-radius: 4px;
+  gap: 12px;
+
+  .wp-item-icon {
+    width: 28px;
+    height: 28px;
+    img { width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; }
+  }
+
+  .wp-item-text {
+    display: flex;
+    flex-direction: column;
+    .name { font-weight: 800; font-size: 0.8rem; text-transform: uppercase; }
+    .desc { font-size: 0.7rem; color: #94a3b8; margin-top: 2px;}
+    
+    .yellow { color: #fbbf24; }
+    .green { color: #4ade80; }
+    .purple { color: #c084fc; }
+    .blue { color: #60a5fa; }
+  }
+}
+
+.wp-footer {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.wp-pixel-btn-green {
+  width: 100%;
+  padding: 12px;
+  background: #5EE034;
+  border: 4px solid #000;
+  box-shadow: inset -4px -4px 0px rgba(0,0,0,0.25), inset 4px 4px 0px rgba(255,255,255,0.4);
+  color: white;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: filter 0.1s;
+  
+  .old-price {
+    font-size: 0.9rem;
+    color: #b51111;
+    text-decoration: line-through;
+    font-weight: 800;
+    margin-bottom: -2px;
+  }
+
+  .new-price {
+    font-size: 1.6rem;
+    font-weight: 900;
+    text-shadow: 2px 2px 0 #000;
+  }
+  
+  &:hover:not(:disabled) { 
+    filter: brightness(1.15); 
+  }
+  
+  &:active:not(:disabled) { 
+    transform: translateY(2px); 
+    box-shadow: inset -2px -2px 0px rgba(0,0,0,0.25), inset 2px 2px 0px rgba(255,255,255,0.4); 
+  }
+  
+  &:disabled { 
+    background: #374151; 
+    box-shadow: inset -4px -4px 0px #1f2937, inset 4px 4px 0px #4b5563;
+    cursor: not-allowed;
+    .new-price { color: #9ca3af; text-shadow: none; }
+    .old-price { display: none; }
+  }
+}
+
+.wp-disclaimer {
+  text-align: center;
+  color: #4b5563;
+  font-size: 0.65rem;
+  margin: 0;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.wp-mini-badge {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: #151923;
+  border: 4px solid #000;
+  box-shadow: inset -3px -3px 0px #0a0c14, inset 3px 3px 0px #2a3143, 0 10px 20px rgba(0,0,0,0.6);
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  z-index: 99999;
+  animation: slideInRight 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  font-family: $mc-font;
+
+  &:hover { 
+    transform: translateY(-4px) scale(1.02); 
+    border-color: #3b3e4f;
+  }
+  
+  .wp-mini-img { 
+    height: 48px; 
+    width: 48px;
+    object-fit: contain;
+    image-rendering: pixelated; 
+    filter: drop-shadow(0 4px 4px rgba(0,0,0,0.5));
+    animation: wpFloatItem 3s ease-in-out infinite;
+  }
+
+  .wp-mini-info {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 140px;
+
+    .wp-mini-title {
+      color: #fbbf24;
+      font-weight: 800;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      text-shadow: 2px 2px 0 #000;
+      margin-bottom: 4px;
+      letter-spacing: 0.5px;
+    }
+
+    .wp-mini-price {
+      color: #fff;
+      font-size: 1rem;
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      text-shadow: 2px 2px 0 #000;
+      
+      .wp-mini-old {
+        color: #ef4444;
+        font-size: 0.75rem;
+        text-decoration: line-through;
+        text-shadow: 1px 1px 0 #000;
+      }
+    }
+  }
+
+  .wp-mini-add-btn {
+    background-color: #5ee034;
+    border: 3px solid #000;
+    box-shadow: inset -2px -2px 0 rgba(0,0,0,0.25), inset 2px 2px 0 rgba(255,255,255,0.4);
+    color: white;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    font-size: 1.8rem;
+    cursor: pointer;
+    transition: transform 0.1s, filter 0.1s;
+    font-family: $mc-font;
+    line-height: 1;
+
+    &:hover:not(:disabled) {
+      filter: brightness(1.15);
+      transform: scale(1.05);
+    }
+    
+    &:active:not(:disabled) {
+      transform: scale(0.95);
+      box-shadow: inset 2px 2px 0 rgba(0,0,0,0.25), inset -2px -2px 0 rgba(255,255,255,0.4);
+    }
+
+    &:disabled {
+      background-color: #4b5563;
+      box-shadow: inset -2px -2px 0 #1f2937, inset 2px 2px 0 #6b7280;
+      cursor: default;
+      color: #9ca3af;
+    }
+  }
+}
+
+@keyframes slideInRight {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes slideInTop {
+  from { transform: translateY(-100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes floatItem {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes wpFloatItem {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+@keyframes wpOverlayFadeIn {
+  from { opacity: 0; backdrop-filter: blur(0px); }
+  to { opacity: 1; backdrop-filter: blur(4px); }
+}
+
+@keyframes wpModalPop {
+  from { opacity: 0; transform: scale(0.8) translateY(20px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* ===============================
+   RESPONSIVE MÓVIL
+   =============================== */
+@media (max-width: 860px) {
+  .wp-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .wp-visual {
+    border-right: none;
+    border-bottom: 4px solid #000;
+    padding: 30px 0;
+  }
+
+  /* MODIFICACIÓN: De banner a CUBO COMPACTO a la derecha */
+  .wp-mini-badge {
+    bottom: auto;
+    top: calc(var(--navH, 65px) + 20px); // Ajustado para que no tape el logo/nav
+    right: 16px;
+    left: auto; // Quitamos el estiramiento horizontal
+    width: 72px; // Tamaño de cubo
+    height: 72px;
+    padding: 0;
+    justify-content: center;
+    border-radius: 4px;
+    animation: slideInRight 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+    .wp-mini-img {
+      height: 52px;
+      width: 52px;
+      margin: 0;
+    }
+
+    // Ocultamos el texto para que sea un cubo compacto
+    .wp-mini-info {
+      display: none;
+    }
+
+    // El botón de añadir (+) se vuelve un pequeño overlay en la esquina
+    .wp-mini-add-btn {
+      position: absolute;
+      bottom: -8px;
+      right: -8px;
+      width: 32px;
+      height: 32px;
+      font-size: 1.4rem;
+      border-width: 2px;
+      box-shadow: inset -2px -2px 0 rgba(0,0,0,0.25), inset 2px 2px 0 rgba(255,255,255,0.4), 0 4px 8px rgba(0,0,0,0.4);
+    }
+  }
+}

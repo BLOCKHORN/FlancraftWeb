@@ -1,464 +1,526 @@
-/* ==========================================================================
-   src/styles/components/Tienda/daily-free-claim-card.scss
-   (COMPLETO) — Doble moneda tipo “baraja” + NO recorte + rayos/glow
-   ========================================================================== */
-@use "./storefront/mixins" as *;
+@font-face {
+  font-family: "MinecraftBold";
+  src: url("/fonts/MinecraftBold.otf") format("opentype");
+  font-weight: bold;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'MinecraftSeven';
+  src: url('/fonts/minecraftseven.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+$mc-font: "MinecraftBold", "MinecraftSeven", sans-serif;
 
 @import url("https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Nunito:wght@800;900;1000&display=swap");
 
-/* =========================
-   BADGE: REGALO DIARIO
-   ========================= */
-.dailyClaimCard__title{
-  position: absolute;
-  right: 8px;
-  top: 10px;
-  z-index: 8;
+.mt-16 { margin-top: 16px; }
+.w-full { width: 100%; }
 
-  display: inline-flex;
+.mc-stone-banner {
+  display: flex;
   align-items: center;
-  justify-content: center;
-
-  padding: 0.26rem 0.62rem 0.22rem;
-  border-radius: 10px;
-
-  background:
-    radial-gradient(110% 140% at 50% 0%, rgba(255,255,255,0.16), rgba(255,255,255,0) 55%),
-    linear-gradient(180deg, #ffe27a 0%, #ffbf3a 45%, #f59a12 100%);
-
-  border: 3px solid rgba(0,0,0,0.50);
-
-  box-shadow:
-    0 0.95rem 1.25rem rgba(0,0,0,0.28),
-    inset 0 2px 0 rgba(255,255,255,0.18),
-    inset 0 -2px 0 rgba(0,0,0,0.18);
-
-  font-family: "Luckiest Guy", system-ui, sans-serif;
-  letter-spacing: 0.04em;
-  font-size: 0.86rem;
-  line-height: 1;
-
-  @include stroke-white(2px, rgba(0,0,0,0.70));
-
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: calc(100% - 16px);
-}
-
-/* mini pill timer */
-.dailyClaimCard__timer{
-  position: absolute;
-  left: 0px;
-  top: -25px;
-  z-index: 7;
-
-  padding: 4px 8px;
-  background: rgba(0,0,0,0.75);
-  border: 1px solid rgba(255,255,255,0.10);
-
-  font-family: "Nunito", system-ui, sans-serif;
-  font-weight: 1000;
-  font-size: 11px;
-  letter-spacing: 0.06em;
-  color: rgba(255,255,255,0.92);
-}
-
-/* =========================
-   CUERPO (sheet)
-   - OJO: aquí NO se recorta nada. El control se hace con padding/clamps.
-   ========================= */
-.dailyClaimCard__sheet{
-  position: absolute;
-  inset: 52px 10px 52px 10px;
-  z-index: 5;
-
-  display: grid;
-  place-items: center;
-
-  /* 👇 NO recortamos aquí */
+  justify-content: space-between;
+  background-color: #2b2e42;
+  border: 4px solid #11121c;
+  box-shadow: inset 4px 4px 0 #4f556b, inset -4px -4px 0 #1e202f, 0 8px 15px rgba(0,0,0,0.4);
+  padding: 16px 24px;
+  border-radius: 4px;
+  margin-bottom: 24px;
+  gap: 20px;
+  position: relative;
+  font-family: $mc-font;
   overflow: visible;
-  border-radius: 10px;
 
-  padding: 16px 12px 10px 12px;
+  &.is-cooldown, &.is-locked {
+    background-color: #1e202f;
+    box-shadow: inset 4px 4px 0 #2b2e42, inset -4px -4px 0 #11121c;
+    opacity: 0.9;
+    .mc-banner-title { filter: grayscale(1); opacity: 0.7; }
+    .mc-banner-coin { filter: grayscale(1) brightness(0.7) !important; animation: none; }
+    .mc-banner-art::after, .mc-banner-art::before { opacity: 0; }
+  }
 }
 
-/* =========================
-   ART (reward style)
-   - El “escenario” donde vive la baraja
-   ========================= */
-.dailyClaimCard__art{
+.mc-banner-icon-stack {
+  width: 90px;
+  height: 80px;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.mc-banner-art {
   position: relative;
   width: 100%;
   height: 100%;
   display: grid;
   place-items: center;
-
-  /* Controles globales */
-  --dc-scale: 1;
-
-  /* lift vertical global: negativo = sube, positivo = baja */
-  --dc-lift: -2%;
-
-  /* Tamaños base (se refinan en container queries del responsive) */
-  --dc-front-w: min(76%, 150px);
-  --dc-back-w:  min(70%, 140px);
-
-  /* Stack offsets (baraja) */
-  --dc-front-x: 0%;
-  --dc-front-y: 0%;
-  --dc-back-x:  -18%;
-  --dc-back-y:  -10%;
-
-  /* Rotaciones */
-  --dc-front-rot: 0deg;
-  --dc-back-rot: -12deg;
-
-  /* Fondo: evita cortes del brillo */
   overflow: visible;
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: -30px;
+    pointer-events: none;
+    background: radial-gradient(closest-side at 50% 50%, rgba(255,255,255,0.25), transparent 70%);
+    mix-blend-mode: screen;
+    z-index: 0;
+  }
 }
 
-/* Glow central suave */
-.dailyClaimCard__art::before{
-  content:"";
+.mc-banner-coin {
   position: absolute;
-  inset: -60px;
-  pointer-events: none;
-
-  background:
-    radial-gradient(closest-side at 50% 60%,
-      rgba(255,255,255,0.24),
-      rgba(255,255,255,0.00) 68%);
-  mix-blend-mode: screen;
-  opacity: 0.62;
-}
-
-/* Rayos tipo recompensa */
-.dailyClaimCard__art::after{
-  content:"";
-  position: absolute;
-  inset: -70px;
-  pointer-events: none;
-
-  background:
-    radial-gradient(closest-side at 50% 58%, rgba(255,255,255,0.12), rgba(255,255,255,0.00) 70%),
-    repeating-conic-gradient(
-      from -12deg,
-      rgba(255,255,255,0.12) 0deg 10deg,
-      rgba(255,255,255,0.00) 10deg 18deg
-    );
-
-  -webkit-mask: radial-gradient(circle at 50% 58%, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 70%);
-  mask: radial-gradient(circle at 50% 58%, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 70%);
-
-  opacity: 0.42;
-
-  /* usa el lift global para que “nazca” donde toca */
-  transform: translateY(var(--dc-lift)) scale(1.05);
-}
-
-/* =========================
-   MONEDAS (stack real)
-   - Centradas SIEMPRE
-   - Tamaños/offsets por variables (sin hardcode por viewport)
-   ========================= */
-.dailyClaimCard__coin{
-  position: absolute;
-  height: auto;
   object-fit: contain;
   image-rendering: pixelated;
-
   left: 50%;
   top: 50%;
   transform-origin: center;
-  will-change: transform;
+  z-index: 2;
+  filter: drop-shadow(0 8px 10px rgba(0,0,0,0.6));
 
-  /* Vars por moneda (default) */
-  --w: 140px;
-  --x: 0%;
-  --y: 0%;
-  --rot: 0deg;
-  --z: 2;
-  --pulse: 1;
-
-  width: var(--w);
-  z-index: var(--z);
-
-  filter: drop-shadow(0 1.10rem 1.15rem rgba(0,0,0,0.52));
-
-  /* Centro real + lift + offsets */
-  transform:
-    translate(-50%, -50%)
-    translateY(var(--dc-lift))
-    scale(var(--dc-scale))
-    translate(var(--x), var(--y))
-    rotate(var(--rot));
-
-  animation: dcCoinPulse 2.2s ease-in-out infinite;
-}
-
-/* back coin */
-.dailyClaimCard__coin.coin--back{
-  --w: var(--dc-back-w);
-  --x: var(--dc-back-x);
-  --y: var(--dc-back-y);
-  --rot: var(--dc-back-rot);
-  --z: 1;
-  --pulse: 0.85;
-
-  opacity: 0.93;
-
-  filter:
-    drop-shadow(0 0.95rem 1.05rem rgba(0,0,0,0.44))
-    saturate(1.08)
-    brightness(1.02);
-}
-
-/* front coin */
-.dailyClaimCard__coin.coin--front{
-  --w: var(--dc-front-w);
-  --x: var(--dc-front-x);
-  --y: var(--dc-front-y);
-  --rot: var(--dc-front-rot);
-  --z: 2;
-  --pulse: 1.0;
-
-  filter:
-    drop-shadow(0 1.15rem 1.20rem rgba(0,0,0,0.54))
-    saturate(1.05);
-}
-
-/* pulso sin romper el stack */
-@keyframes dcCoinPulse{
-  0%,100%{
-    transform:
-      translate(-50%, -50%)
-      translateY(var(--dc-lift))
-      scale(var(--dc-scale))
-      translate(var(--x), var(--y))
-      rotate(var(--rot));
+  &.coin--back {
+    width: 60px;
+    z-index: 1;
+    transform: translate(-70%, -40%) rotate(-15deg);
+    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5)) brightness(0.85);
+    animation: mcCoinFloatBack 3s ease-in-out infinite;
   }
-  50%{
-    transform:
-      translate(-50%, -50%)
-      translateY(var(--dc-lift))
-      scale(calc(var(--dc-scale) * (1 + (0.035 * var(--pulse)))))
-      translate(var(--x), var(--y))
-      rotate(var(--rot));
+
+  &.coin--front {
+    width: 75px;
+    z-index: 2;
+    transform: translate(-30%, -60%);
+    animation: mcCoinFloatFront 2.5s ease-in-out infinite;
   }
 }
 
-/* =========================
-   CTA
-   ========================= */
-.dailyClaimCard__cta{
-  position:absolute;
-  left: 0;
-  right: 0;
-  bottom: -3px;
-  height: 42px;
-  z-index: 8;
-
-  border:0;
-  padding:0;
-  cursor:pointer;
-  user-select:none;
-  -webkit-tap-highlight-color: transparent;
-
-  background: transparent;
-  overflow: hidden;
-
-  filter: drop-shadow(0 1.05rem 1.55rem rgba(0,0,0,0.42));
-  transition: transform 160ms cubic-bezier(.16,1,.3,1), filter 100ms ease;
+@keyframes mcCoinFloatFront {
+  0%, 100% { transform: translate(-30%, -60%); }
+  50% { transform: translate(-30%, -65%) scale(1.05); }
 }
 
-/* FACE */
-.dailyClaimCard__cta::before{
-  content:"";
-  position:absolute;
-  inset:0;
-  z-index: 1;
-
-  border: 3px solid rgba(0,0,0,0.55);
-
-  background:
-    radial-gradient(140% 120% at 50% 0%, rgba(255,255,255,0.22), rgba(255,255,255,0) 55%),
-    linear-gradient(180deg, #7dff6a 0%, #39e65a 50%, #18b84b 100%);
-
-  box-shadow:
-    inset 0 3px 0 rgba(255,255,255,0.18),
-    inset 0 -3px 0 rgba(0,0,0,0.20);
+@keyframes mcCoinFloatBack {
+  0%, 100% { transform: translate(-70%, -40%) rotate(-15deg); }
+  50% { transform: translate(-70%, -45%) rotate(-15deg) scale(1.02); }
 }
 
-/* DEPTH */
-.dailyClaimCard__cta::after{
-  content:"";
-  position:absolute;
-  left: 0;
-  right: 0;
-  bottom: -0.42rem;
-  height: 0.52rem;
+.mc-banner-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+}
+
+.mc-banner-title {
+  color: #ffc800;
+  font-size: 1.5rem;
+  font-weight: bold;
+  text-shadow: 2px 2px 0px #000;
+  letter-spacing: 1px;
+}
+
+.mc-banner-timer {
+  color: #9ea3bc;
+  font-size: 0.95rem;
+  margin: 0;
+  text-shadow: 1px 1px 0 #000;
+
+  &.is-ready {
+    color: #5ee034;
+  }
+}
+
+.mc-banner-action {
+  flex-shrink: 0;
+  width: 180px;
+}
+
+.mc-banner-cta {
+  width: 100%;
+  padding: 14px 0;
+  background-color: #5ee034;
+  border: 4px solid #111;
+  box-shadow: inset 4px 4px 0 rgba(255,255,255,0.4), inset -4px -4px 0 rgba(0,0,0,0.3), 0 6px 12px rgba(0,0,0,0.5);
+  cursor: pointer;
+  transition: transform 0.1s, filter 0.1s;
+  font-family: inherit;
+
+  .mc-banner-ctaLabel {
+    color: #fff;
+    font-size: 1.2rem;
+    font-weight: bold;
+    text-shadow: 2px 2px 0 #18b84b, -1px -1px 0 #18b84b;
+    letter-spacing: 1px;
+  }
+
+  &:hover:not(:disabled) {
+    filter: brightness(1.15);
+    transform: translateY(-2px) scale(1.02);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(2px) scale(0.98);
+    box-shadow: inset -4px -4px 0 rgba(255,255,255,0.4), inset 4px 4px 0 rgba(0,0,0,0.3);
+  }
+
+  &:disabled {
+    background-color: #3b3e4f;
+    box-shadow: inset 4px 4px 0 #5a6278, inset -4px -4px 0 #1e202f;
+    cursor: not-allowed;
+    .mc-banner-ctaLabel {
+      color: #9ea3bc;
+      text-shadow: 1px 1px 0 #111;
+    }
+  }
+}
+
+.mc-modal-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+  font-family: $mc-font;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+
+  &.is-open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+.mc-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(10, 12, 20, 0.85);
+  backdrop-filter: blur(6px);
   z-index: 0;
-
-  border-radius: 10px;
-  background: linear-gradient(180deg, rgba(0,0,0,0.32), rgba(0,0,0,0.58));
-  filter: blur(0.2px);
-  pointer-events: none;
 }
 
-/* LABEL */
-/* GRATIS — luz desde arriba: arriba limpio, peso abajo */
-.dailyClaimCard__ctaLabel{
+.mc-stone-modal {
+  background-color: #222533;
+  border: 4px solid #11121c;
+  box-shadow: inset 4px 4px 0 #4f556b, inset -4px -4px 0 #151622, 0 20px 50px rgba(0,0,0,0.9);
+  width: 90vw;
+  max-width: 480px;
   position: relative;
-  z-index: 3;
+  border-radius: 2px;
+  padding: 32px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 10;
+  animation: mcModalPopIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  overflow: hidden; // Critical containment
 
-  display: grid;
-  place-items: center;
-  height: 100%;
-
-  font-family:"Luckiest Guy", system-ui, sans-serif;
-  letter-spacing: 0.02em;
-  font-size: 1.16rem;
-  line-height: 1;
-
-  /* relleno (variable para suavizar estados) */
-  color: var(--fill, #F4F1DA);
-
-  /* colores del borde/sombra (tinte verdoso como la referencia) */
-  --stroke: rgba(8, 36, 16, 0.95);   /* contorno base (verde muy oscuro) */
-  --strokeDown: rgba(0, 0, 0, 0.92); /* peso extra SOLO abajo */
-  --shadow: rgba(0, 0, 0, 0.55);
-
-  text-shadow:
-    /* 1) CONTORNO FINO UNIFORME (2px) */
-    -2px  0   0 var(--stroke),
-     2px  0   0 var(--stroke),
-     0   -2px 0 var(--stroke),
-     0    2px 0 var(--stroke),
-    -2px -2px 0 var(--stroke),
-     2px -2px 0 var(--stroke),
-    -2px  2px 0 var(--stroke),
-     2px  2px 0 var(--stroke),
-
-    /* 2) PESO EXTRA (4px) SOLO EN LA MITAD INFERIOR (sin sombras hacia arriba) */
-    -4px  0   0 var(--strokeDown),
-     4px  0   0 var(--strokeDown),
-     0    4px 0 var(--strokeDown),
-    -4px  4px 0 var(--strokeDown),
-     4px  4px 0 var(--strokeDown),
-
-    /* 3) BLOQUE DE SOMBRA ABAJO (pegatina) */
-     0    6px 0 var(--shadow),
-     0   14px 18px rgba(0,0,0,0.18),
-
-    /* 4) “luz” arriba para que el borde superior no se vea pesado */
-     0   -1px 0 rgba(255,255,255,0.22);
-
-  filter: none;
-  animation: dailyClaimGratisPulse 1200ms ease-in-out infinite;
+  &.mc-burst-reveal {
+    border-color: #ffc800;
+    box-shadow: inset 4px 4px 0 #4f556b, inset -4px -4px 0 #151622, 0 0 40px rgba(255, 200, 0, 0.5);
+  }
 }
 
-/* highlight superior suave */
-.dailyClaimCard__ctaLabel::before{
-  content:"";
-  position:absolute;
-  left: 12%;
-  right: 12%;
-  top: 14%;
-  height: 40%;
-  pointer-events: none;
-  z-index: 4;
-
-  background: radial-gradient(70% 120% at 50% 0%,
-    rgba(255,255,255,0.20),
-    rgba(255,255,255,0.00) 70%);
-  mix-blend-mode: screen;
-  opacity: 0.55;
+@keyframes mcModalPopIn {
+  0% { transform: scale(0.7) translateY(40px); opacity: 0; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
 }
 
-/* shine diagonal sutil */
-.dailyClaimCard__ctaLabel::after{
-  content:"";
-  position:absolute;
-  inset:-18px;
-  pointer-events:none;
+.mc-close-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  background-color: #ef4444;
+  color: white;
+  border: 3px solid #111;
+  font-weight: bold;
+  font-size: 1.2rem;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: inherit;
+  box-shadow: inset 2px 2px 0 rgba(255,255,255,0.4);
+  transition: transform 0.1s, filter 0.1s;
+  z-index: 20;
+
+  &:hover {
+    filter: brightness(1.15);
+    transform: scale(1.1);
+  }
+  &:active {
+    transform: scale(0.9);
+    box-shadow: inset -2px -2px 0 rgba(0,0,0,0.3);
+  }
+}
+
+.mc-reward-content {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+  position: relative;
   z-index: 5;
-
-  background: linear-gradient(115deg,
-    rgba(255,255,255,0.00) 38%,
-    rgba(255,255,255,0.20) 48%,
-    rgba(255,255,255,0.00) 58%);
-
-  transform: translateX(-110%);
-  mix-blend-mode: screen;
-  opacity: 0.26;
-
-  animation: dailyClaimShine 1800ms ease-in-out infinite;
 }
 
-@keyframes dailyClaimShine{
-  0%{ transform: translateX(-110%); }
-  55%{ transform: translateX(110%); }
-  100%{ transform: translateX(110%); }
+.mc-reward-text {
+  color: #a0a4b8;
+  font-size: 1rem;
+  line-height: 1.5;
+  margin: 0;
+  text-shadow: 1px 1px 0 #000;
+  font-family: $mc-font;
 }
 
-@keyframes dailyClaimGratisPulse{
-  0%,100%{ transform: scale(1); filter: brightness(1) saturate(1); }
-  50%{ transform: scale(1.06); filter: brightness(1.08) saturate(1.05); }
+.mc-mystery-title {
+  color: #ffc800;
+  font-size: 2.2rem;
+  margin: 0;
+  text-shadow: 3px 3px 0 #000, -1px -1px 0 #000;
+  letter-spacing: 1px;
+  font-family: $mc-font;
 }
 
-.dailyClaimCard__cta:hover{
-  transform: translateY(-3px);
-  filter:
-    drop-shadow(0 1.15rem 1.65rem rgba(0,0,0,0.44))
-    drop-shadow(0 0 16px rgba(255,255,255,0.08));
+.mc-mystery-subtitle {
+  color: #cbd5e1;
+  font-size: 1.1rem;
+  text-shadow: 1px 1px 0 #000;
+  margin-bottom: 16px;
+  font-family: $mc-font;
 }
 
-.dailyClaimCard__cta:active{
-  transform: translateY(2px);
-  filter: drop-shadow(0 0.75rem 1.15rem rgba(0,0,0,0.38));
+.mc-mystery-chest-wrapper {
+  position: relative;
+  width: 220px;
+  height: 260px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: transform 0.2s;
+
+  &:hover {
+    transform: scale(1.05);
+    .mc-chest-img { animation: mcChestShakeHover 0.5s ease-in-out infinite; }
+  }
+
+  .mc-mystery-glow {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center, rgba(59, 130, 246, 0.8) 0%, rgba(37, 99, 235, 0.4) 40%, transparent 70%);
+    animation: mcMysteryPulse 2s infinite alternate;
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  .mc-chest-img {
+    position: relative;
+    z-index: 2;
+    width: 180px;
+    height: 180px;
+    object-fit: contain;
+    image-rendering: pixelated;
+    filter: drop-shadow(0 15px 15px rgba(0,0,0,0.8));
+    animation: mcChestFloat 3s ease-in-out infinite;
+  }
 }
 
-.dailyClaimCard__cta:disabled{
-  cursor: not-allowed;
-  transform: none;
-  opacity: 0.92;
+@keyframes mcMysteryPulse {
+  0% { transform: scale(0.9); opacity: 0.6; }
+  100% { transform: scale(1.1); opacity: 1; }
 }
 
-/* =========================
-   ESTADOS (RECLAMADO / BLOQUEADO)
-   - Mismo render premium que GRATIS (mismo text-shadow)
-   - Solo cambiamos variables para que no quede “bloque tosco”
-   ========================= */
-.dailyClaimCard.is-cooldown .dailyClaimCard__cta::before,
-.dailyClaimCard.is-locked .dailyClaimCard__cta::before{
-  background:
-    radial-gradient(140% 120% at 50% 0%, rgba(255,255,255,0.20), rgba(255,255,255,0) 55%),
-    linear-gradient(180deg, #9ab2c3 0%, #6f8ea5 55%, #415c71 100%);
+@keyframes mcChestFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
 }
 
-/* Texto: mismo sistema, pero más suave y frío */
-.dailyClaimCard.is-cooldown .dailyClaimCard__ctaLabel,
-.dailyClaimCard.is-locked .dailyClaimCard__ctaLabel{
-  --fill: rgba(255,255,255,0.92);
-
-  /* contorno más fino visualmente (sin “placa negra”) */
-  --stroke: rgba(10, 18, 32, 0.88);
-  --strokeDown: rgba(0, 0, 0, 0.62);
-  --shadow: rgba(0, 0, 0, 0.42);
-
-  animation: none;
-  filter: none;
+@keyframes mcChestShakeHover {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-5deg); }
+  75% { transform: rotate(5deg); }
 }
 
-/* Highlights/shine más sutiles */
-.dailyClaimCard.is-cooldown .dailyClaimCard__ctaLabel::before,
-.dailyClaimCard.is-locked .dailyClaimCard__ctaLabel::before{
-  opacity: 0.16;
+.mc-reveal-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  animation: mcRevealPop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-.dailyClaimCard.is-cooldown .dailyClaimCard__ctaLabel::after,
-.dailyClaimCard.is-locked .dailyClaimCard__ctaLabel::after{
-  opacity: 0.12;
-  animation: none;
+@keyframes mcRevealPop {
+  0% { transform: scale(0.5); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.mc-reveal-title {
+  color: #5ee034;
+  font-size: 2.2rem;
+  margin: 0 0 16px 0;
+  text-shadow: 3px 3px 0 #18b84b, -1px -1px 0 #18b84b;
+  letter-spacing: 1px;
+  font-family: $mc-font;
+}
+
+// ==========================================
+// Contained Dopamine & Burst
+// ==========================================
+.mc-contained-spin-rays {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 600px;
+  height: 600px;
+  border-radius: 50%;
+  background: repeating-conic-gradient(
+    from 0deg,
+    rgba(255, 200, 0, 0.25) 0deg 15deg,
+    transparent 15deg 30deg
+  );
+  mask-image: radial-gradient(circle at center, black 10%, transparent 60%);
+  -webkit-mask-image: radial-gradient(circle at center, black 10%, transparent 60%);
+  z-index: 1;
+  pointer-events: none;
+  animation: mcInternalSpinRays 15s linear infinite;
+}
+
+@keyframes mcInternalSpinRays {
+  0% { transform: translate(-50%, -50%) rotate(0deg); }
+  100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+.mc-reward-big-amount {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 24px 0;
+  padding: 32px 64px;
+  background-color: rgba(0,0,0,0.6);
+  border: 3px solid #3b3e4f;
+  border-radius: 8px;
+  box-shadow: inset 0 0 30px rgba(0,0,0,0.9), 0 10px 20px rgba(0,0,0,0.5);
+  position: relative;
+  overflow: hidden;
+  will-change: transform;
+  animation: mcAmountDopaminePulse 2.5s infinite alternate;
+
+  .amount {
+    font-size: 5rem;
+    color: #ffc800;
+    text-shadow: 4px 4px 0 #806600, -2px -2px 0 #806600, 0 0 20px rgba(255,200,0,0.5);
+    font-family: $mc-font;
+    position: relative;
+    z-index: 10;
+    animation: mcNumberContainedPop 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+
+  img {
+    width: 72px;
+    height: 72px;
+    image-rendering: pixelated;
+    filter: drop-shadow(4px 4px 0 #000);
+    position: relative;
+    z-index: 10;
+    animation: mcCoinContainedJump 1s ease-out;
+  }
+}
+
+@keyframes mcAmountDopaminePulse {
+  0% { transform: scale(1); box-shadow: inset 0 0 30px rgba(0,0,0,0.9), 0 10px 20px rgba(0,0,0,0.5); }
+  100% { transform: scale(1.02); box-shadow: inset 0 0 50px rgba(0,0,0,0.9), 0 15px 30px rgba(255, 200, 0, 0.2); }
+}
+
+@keyframes mcNumberContainedPop {
+  0% { transform: scale(0.6); opacity: 0; }
+  60% { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1); }
+}
+
+@keyframes mcCoinContainedJump {
+  0% { transform: translateY(30px) scale(0.5); opacity: 0; }
+  50% { transform: translateY(-20px) scale(1.2); opacity: 1; }
+  100% { transform: translateY(0) scale(1); }
+}
+
+.mc-particles-contained {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  z-index: 20;
+  pointer-events: none;
+}
+
+.mc-particle {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  background-color: #ffc800;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 15px #ffc800, 0 0 30px #ffaa00;
+  opacity: 0;
+  animation: mcContainedParticleShoot var(--pd, 700ms) ease-out var(--pdelay, 0ms) forwards;
+}
+
+@keyframes mcContainedParticleShoot {
+  0% { transform: translate(0,0) scale(var(--ps, 1)); opacity: 1; }
+  100% { transform: translate(var(--dx), var(--dy)) scale(0); opacity: 0; }
+}
+
+.mc-title-plate {
+  background-color: #35384b;
+  border: 2px solid #111;
+  padding: 8px 32px;
+  box-shadow: inset 2px 2px 0 #545873, inset -2px -2px 0 #222430;
+  clip-path: polygon(10px 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 10px 100%, 0 50%);
+  margin-bottom: 12px;
+  position: relative;
+  z-index: 10;
+  
+  h2 {
+    font-size: 1.4rem;
+    margin: 0;
+    text-shadow: 2px 2px 0px #000;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-family: $mc-font;
+  }
+}
+
+@media (max-width: 768px) {
+  .mc-stone-banner {
+    flex-direction: column;
+    text-align: center;
+    padding-top: 32px;
+  }
+  .mc-banner-action {
+    width: 100%;
+  }
+  .mc-reward-big-amount {
+    padding: 24px 32px;
+  }
+  .mc-reward-big-amount .amount {
+    font-size: 3.5rem;
+  }
+  .mc-mystery-chest-wrapper {
+    width: 180px;
+    height: 200px;
+  }
+  .mc-mystery-chest-wrapper .mc-chest-img {
+    width: 130px;
+    height: 130px;
+  }
 }

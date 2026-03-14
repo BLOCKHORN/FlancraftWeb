@@ -5,7 +5,6 @@ import { useAuthModal } from "../../../context/AuthModalContext";
 import { apiUrl } from "../../../lib/env";
 import { clearSessionStorage, getAuthToken } from "../../../lib/auth/storage";
 import "../../../styles/components/Tienda/daily-free-claim-card.scss";
-import "../../../styles/components/Tienda/daily-free-claim-burst.scss";
 
 function msToShort(ms) {
   const s = Math.max(0, Math.floor(ms / 1000));
@@ -29,28 +28,27 @@ function formatInt(n) {
   return new Intl.NumberFormat("es-ES", { maximumFractionDigits: 0 }).format(Math.round(v));
 }
 
-function buildParticles(count = 18) {
+function buildParticles(count = 24) {
   const arr = [];
   for (let i = 0; i < count; i++) {
     const angle = Math.random() * Math.PI * 2;
-    const dist = 90 + Math.random() * 130;
+    const dist = 60 + Math.random() * 80;
     const dx = Math.cos(angle) * dist;
-    const dy = Math.sin(angle) * dist * 0.75;
-    const s = 0.7 + Math.random() * 1.25;
-    const d = 450 + Math.random() * 450;
-    const delay = Math.random() * 90;
+    const dy = Math.sin(angle) * dist * 0.85;
+    const s = 0.8 + Math.random() * 1.5;
+    const d = 500 + Math.random() * 600;
+    const delay = Math.random() * 100;
     arr.push({ id: `${Date.now()}_${i}_${Math.random()}`, dx, dy, s, d, delay });
   }
   return arr;
 }
 
-function useCountUp(active, target, duration = 900) {
+function useCountUp(active, target, duration = 1200) {
   const [val, setVal] = useState(0);
   const rafRef = useRef(null);
 
   useEffect(() => {
     if (!active) return;
-
     let start = null;
     const from = 0;
     const to = Math.max(0, Number(target) || 0);
@@ -79,12 +77,12 @@ export default function DailyFreeClaimCard() {
   const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(true);
   const [claiming, setClaiming] = useState(false);
-
   const [modal, setModal] = useState(null);
+  
   const { user, logout } = useContext(UserContext);
   const { openAuthModal } = useAuthModal();
-
   const [token, setToken] = useState(() => getAuthToken());
+  
   const isLocked = !user?.loggedIn || !token;
 
   const emitBalances = (detail) => {
@@ -99,12 +97,12 @@ export default function DailyFreeClaimCard() {
   }, [status?.nextClaimAt]);
 
   const showCount = !!(modal && !modal.error && modal.phase === "reveal");
-  const countVal = useCountUp(showCount, modal?.amount ?? 0, 900);
+  const countVal = useCountUp(showCount, modal?.amount ?? 0, 1200);
 
   const particles = useMemo(() => {
     if (!modal || modal.error) return [];
-    return buildParticles(modal.phase === "done" ? 26 : 18);
-  }, [modal?.particlesKey]);
+    return buildParticles(modal.phase === "done" ? 30 : 24);
+  }, [modal?.particlesKey, modal?.phase]);
 
   useEffect(() => {
     let alive = true;
@@ -143,10 +141,8 @@ export default function DailyFreeClaimCard() {
       }
     })();
 
-    return () => {
-      alive = false;
-    };
-  }, [token]);
+    return () => { alive = false; };
+  }, [token, user]);
 
   useEffect(() => {
     if (!status?.claimedToday) return;
@@ -173,10 +169,6 @@ export default function DailyFreeClaimCard() {
       nextClaimAt,
       particlesKey: `${Date.now()}_${Math.random()}`,
     });
-  };
-
-  const openClaimLogin = () => {
-    openAuthModal();
   };
 
   const nextStep = () => {
@@ -224,180 +216,144 @@ export default function DailyFreeClaimCard() {
 
   const disabled = !!(status?.claimedToday || claiming);
   const ctaText = status?.claimedToday ? "RECLAMADO" : claiming ? "RECLAMANDO..." : "GRATIS";
-  const timerText = status?.claimedToday ? msToShort(nextMs) : isLocked ? "Inicia sesión" : "Disponible";
+  const timerText = status?.claimedToday ? `Vuelve en ${msToShort(nextMs)}` : isLocked ? "Requiere iniciar sesión" : "¡Recompensa disponible!";
 
   if (loading) return null;
 
-  const isRewardFlow = !!(modal && !modal.error && modal.phase !== "auth");
-
-  const modalNode =
-    modal &&
-    createPortal(
-      <div className={`dailyClaimModal dailyClaimModal--dopamine ${modal?.error ? "is-error" : ""}`} role="dialog" aria-modal="true">
-        <div className="dailyClaimModal__backdrop" onClick={() => setModal(null)} />
-
-        <div className={`dailyClaimModal__panel dailyClaimModal__panel--big ${modal?.phase ? `is-${modal.phase}` : ""}`}>
+  const modalNode = modal && createPortal(
+    <div className="mc-modal-overlay is-open" onClick={() => setModal(null)}>
+      <div className="mc-modal-backdrop" />
+      
+      <div className={`mc-stone-modal ${modal.phase === "reveal" ? "is-bursting mc-burst-reveal" : ""}`} onClick={(e) => e.stopPropagation()}>
+        <button className="mc-close-btn" onClick={() => setModal(null)}>X</button>
+        
+        <div className="mc-reward-content">
           {!modal.error ? (
             <>
-              <div className="dailyClaimModal__fx" aria-hidden="true">
-                <div className="dailyClaimModal__rays" />
-                <div className="dailyClaimModal__shine" />
-                <div className="dailyClaimModal__glow" />
-                <div className="dailyClaimModal__burst" />
-                <div className="dailyClaimModal__particles">
-                  {particles.map((p) => (
-                    <i
-                      key={p.id}
-                      className="dailyClaimParticle"
-                      style={{
-                        "--dx": `${p.dx.toFixed(1)}px`,
-                        "--dy": `${p.dy.toFixed(1)}px`,
-                        "--ps": p.s.toFixed(2),
-                        "--pd": `${p.d.toFixed(0)}ms`,
-                        "--pdelay": `${p.delay.toFixed(0)}ms`,
-                      }}
-                    />
-                  ))}
-                </div>
-              </div>
+              {modal.phase === "auth" && (
+                <>
+                  <div className="mc-title-plate">
+                    <h2>INICIA SESIÓN</h2>
+                  </div>
+                  <p className="mc-reward-text">Para reclamar el regalo diario, vincula tu cuenta en el servidor con <b>/vincular</b> y luego inicia sesión.</p>
+                  <button className="pixel-btn-green split-btn mt-16" onClick={() => { setModal(null); openAuthModal(); }}>
+                    <span className="new-price">INICIAR SESIÓN</span>
+                  </button>
+                </>
+              )}
 
-              <div className="dailyClaimModal__top">
-                <div className="dailyClaimModal__badge">
-                  <span className="t">RECOMPENSA DIARIA</span>
-                  <span className="s">{modal.phase === "auth" ? "Requiere cuenta" : "Gratis"}</span>
-                </div>
-              </div>
+              {modal.phase === "intro" && (
+                <>
+                  <h2 className="mc-mystery-title">¡REGALO MISTERIOSO!</h2>
+                  <p className="mc-mystery-subtitle">¿Qué contendrá tu recompensa de hoy?</p>
+                  
+                  <div className="mc-mystery-chest-wrapper" onClick={nextStep}>
+                    <div className="mc-mystery-glow"></div>
+                    <img src="/tienda/assets/rankskin.png" alt="Recompensa" className="mc-chest-img" />
+                  </div>
+                  
+                  <button className="pixel-btn-green split-btn mt-16" onClick={nextStep}>
+                    <span className="new-price">REVELAR</span>
+                  </button>
+                </>
+              )}
 
-              <div className="dailyClaimModal__center">
-                {modal.phase === "auth" && (
-                  <>
-                    <div className="dailyClaimModal__title">Inicia sesión para reclamar</div>
-                    <div className="dailyClaimModal__hint">
-                      Para reclamar el regalo diario, primero vincula tu cuenta en el servidor con <b>/vincular</b> y luego inicia sesión aquí.
+              {modal.phase === "reveal" && (
+                <div className="mc-reveal-wrapper">
+                  <h2 className="mc-reveal-title">¡HAS GANADO!</h2>
+                  
+                  <div className="mc-reward-big-amount mc-contained-dopamine">
+                    
+                    <div className="mc-contained-burst-layer">
+                      <div className="mc-contained-spin-rays"></div>
+                      <div className="mc-particles-contained">
+                        {particles.map((p) => (
+                          <i
+                            key={p.id}
+                            className="mc-particle"
+                            style={{
+                              "--dx": `${p.dx.toFixed(1)}px`,
+                              "--dy": `${p.dy.toFixed(1)}px`,
+                              "--ps": p.s.toFixed(2),
+                              "--pd": `${p.d.toFixed(0)}ms`,
+                              "--pdelay": `${p.delay.toFixed(0)}ms`,
+                            }}
+                          />
+                        ))}
+                      </div>
                     </div>
 
-                    <div className="dailyClaimModal__ctaRow">
-                      <button
-                        type="button"
-                        className="dailyClaimBtn dailyClaimBtn--primary"
-                        onClick={() => {
-                          setModal(null);
-                          openClaimLogin();
-                        }}
-                      >
-                        Iniciar sesión
-                      </button>
+                    <span className="amount">+{formatInt(countVal)}</span>
+                    <img src="/tienda/assets/coin.png" alt="Coins" />
+                  </div>
+                  
+                  <p className="mc-reward-text">Se han añadido a tu Wallet. Úsalas en la tienda o envíalas al servidor.</p>
+                  
+                  <button className="pixel-btn-green split-btn mt-16 w-full" onClick={nextStep}>
+                    <span className="new-price">CONTINUAR</span>
+                  </button>
+                </div>
+              )}
 
-                      <button type="button" className="dailyClaimBtn" onClick={() => setModal(null)}>
-                        Cerrar
-                      </button>
-                    </div>
-                  </>
-                )}
-
-                {modal.phase !== "auth" && (
-                  <>
-                    <div className="dailyClaimModal__serverName">Wallet</div>
-
-                    {modal.phase === "intro" && (
-                      <>
-                        <div className="dailyClaimModal__title">Preparando recompensa…</div>
-                        <div className="dailyClaimModal__ctaRow">
-                          <button type="button" className="dailyClaimBtn dailyClaimBtn--primary" onClick={nextStep}>
-                            Revelar
-                          </button>
-                        </div>
-                      </>
-                    )}
-
-                    {modal.phase === "reveal" && (
-                      <>
-                        <div className="dailyClaimModal__title">Has ganado</div>
-
-                        <div className="dailyClaimModal__amountBig" aria-label="Cantidad de coins ganados">
-                          <span className="n">{formatInt(countVal)}</span>
-                          <img className="coin" src="/tienda/assets/coin.png" alt="Coin" draggable="false" />
-                        </div>
-
-                        <div className="dailyClaimModal__hint">
-                          Se han añadido a tu <b>Wallet</b>. Desde ahí podrás gastarlas en la tienda o enviarlas a un servidor.
-                        </div>
-
-                        <div className="dailyClaimModal__ctaRow">
-                          <button type="button" className="dailyClaimBtn dailyClaimBtn--primary" onClick={nextStep}>
-                            Continuar
-                          </button>
-                        </div>
-                      </>
-                    )}
-
-                    {modal.phase === "done" && (
-                      <>
-                        <div className="dailyClaimModal__title">Completado</div>
-                        <div className="dailyClaimModal__hint">Vuelve mañana para tu próxima recompensa.</div>
-                        <div className="dailyClaimModal__ctaRow">
-                          <button type="button" className="dailyClaimBtn" onClick={() => setModal(null)}>
-                            Cerrar
-                          </button>
-                        </div>
-                      </>
-                    )}
-                  </>
-                )}
-              </div>
-
-              <button className="dailyClaimModal__x" type="button" aria-label="Cerrar" onClick={() => setModal(null)}>
-                ✕
-              </button>
-
-              {isRewardFlow && <button className="dailyClaimModal__clickCatcher" type="button" aria-label="Siguiente" onClick={nextStep} />}
+              {modal.phase === "done" && (
+                <>
+                  <div className="mc-title-plate">
+                    <h2 style={{color: "#4ade80"}}>¡COMPLETADO!</h2>
+                  </div>
+                  <p className="mc-reward-text">Vuelve mañana para tu próxima recompensa diaria.</p>
+                  <button className="pixel-btn-gray mt-16 w-full" onClick={() => setModal(null)}>
+                    CERRAR
+                  </button>
+                </>
+              )}
             </>
           ) : (
             <>
-              <div className="dailyClaimModal__title">No se pudo reclamar</div>
-              <div className="dailyClaimModal__hint">{modal.error}</div>
-              <div className="dailyClaimModal__ctaRow">
-                <button type="button" className="dailyClaimBtn" onClick={() => setModal(null)}>
-                  Cerrar
-                </button>
+              <div className="mc-title-plate">
+                <h2 style={{color: "#f87171"}}>ERROR</h2>
               </div>
+              <p className="mc-reward-text" style={{color: "#fca5a5"}}>{modal.error}</p>
+              <button className="pixel-btn-gray mt-16 w-full" onClick={() => setModal(null)}>
+                CERRAR
+              </button>
             </>
           )}
         </div>
-      </div>,
-      document.body
-    );
+      </div>
+    </div>,
+    document.body
+  );
 
   return (
     <>
-      <div className={`dailyClaimCard ${disabled ? "is-cooldown" : ""} ${isLocked ? "is-auth" : ""}`}>
-        <div className="dailyClaimCard__title">REGALO DIARIO</div>
-
-        <div className="dailyClaimCard__timer" aria-hidden="true">
-          {timerText}
-        </div>
-
-        <div className="dailyClaimCard__sheet">
-          <div className="dailyClaimCard__art" aria-hidden="true">
-            <img className="dailyClaimCard__coin coin--back" src="/tienda/assets/coin.png" alt="" draggable="false" />
-            <img className="dailyClaimCard__coin coin--front" src="/tienda/assets/coin.png" alt="" draggable="false" />
+      <div className={`mc-stone-banner ${disabled ? "is-cooldown" : ""} ${isLocked ? "is-locked" : ""}`}>
+        <div className="mc-banner-icon-stack">
+          <div className="mc-banner-art" aria-hidden="true">
+            <img className="mc-banner-coin coin--back" src="/tienda/assets/coin.png" alt="" draggable="false" />
+            <img className="mc-banner-coin coin--front" src="/tienda/assets/coin.png" alt="" draggable="false" />
           </div>
         </div>
+        
+        <div className="mc-banner-info">
+          <div className="mc-banner-title">REGALO DIARIO</div>
+          <p className={`mc-banner-timer ${!disabled && !isLocked ? 'is-ready' : ''}`}>{timerText}</p>
+        </div>
 
-        <button
-          type="button"
-          className="dailyClaimCard__cta"
-          disabled={disabled}
-          onClick={() => {
-            if (disabled) return;
-            if (isLocked) return openAuthModal();
-            return handleClaim();
-          }}
-        >
-          <span className="dailyClaimCard__ctaLabel">{ctaText}</span>
-        </button>
+        <div className="mc-banner-action">
+          <button 
+            type="button"
+            className="mc-banner-cta"
+            disabled={disabled}
+            onClick={() => {
+              if (disabled) return;
+              if (isLocked) return openAuthModal();
+              return handleClaim();
+            }}
+          >
+            <span className="mc-banner-ctaLabel">{ctaText}</span>
+          </button>
+        </div>
       </div>
-
       {modalNode}
     </>
   );
