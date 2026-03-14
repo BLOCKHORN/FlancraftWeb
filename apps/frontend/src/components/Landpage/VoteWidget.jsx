@@ -4,9 +4,8 @@ import "../../styles/components/Landpage/vote-widget-mini.scss";
 
 import { apiUrl } from "../../lib/env";
 import useVoteIdentity from "../Voto/useVoteIdentity";
+// Quitamos EXTERNAL_VOTE_SITES y faviconUrlFor de aquí
 import {
-  EXTERNAL_VOTE_SITES as SITES,
-  faviconUrlFor,
   safeJson,
   normalizarRango,
   getLocalLast,
@@ -16,6 +15,30 @@ import {
 } from "../Voto/vote.shared";
 
 const COOLDOWN_24H = 24 * 60 * 60 * 1000;
+
+// 1. CONFIGURACIÓN DE LOS SITIOS BASADA EN TU YAML
+// El 'id' debe coincidir EXACTAMENTE con el 'ServiceSite' del plugin.
+const SITES = [
+  { id: "minecraft.buzz", label: "Minecraft.Buzz", url: "https://minecraft.buzz/vote/11159", cooldownMs: COOLDOWN_24H },
+  { id: "topg.org", label: "TopG.org", url: "https://topg.org/minecraft-servers/server-680447#vote", cooldownMs: COOLDOWN_24H },
+  { id: "minestatus.net", label: "Minestatus", url: "https://minestatus.net/server/vote/play.flancraft.com", cooldownMs: COOLDOWN_24H },
+  { id: "minecraft-mp.com", label: "Minecraft-MP", url: "https://minecraft-mp.com/server/333849/vote/", cooldownMs: COOLDOWN_24H },
+  { id: "minecraftservers.org", label: "MinecraftServers", url: "https://minecraftservers.org/vote/663927", cooldownMs: COOLDOWN_24H },
+  // OJO: Estos dos tenían "VoteURL" como placeholder en tu YAML. He puesto links genéricos, cámbialos si tienes los reales.
+  { id: "TopMinecraftServers", label: "TopMinecraftServers", url: "https://topminecraftservers.org/server/42979", cooldownMs: COOLDOWN_24H },
+  { id: "ServidoresDeMinecraft.ES", label: "ServidoresES", url: "https://servidoresdeminecraft.es/server/status/wvkYI63n/play.flancraft.com", cooldownMs: COOLDOWN_24H }
+];
+
+// 2. HELPER PARA OBTENER LOS FAVICONS AUTOMÁTICAMENTE
+function getFavicon(urlString) {
+  try {
+    const url = new URL(urlString);
+    // Usamos el servicio de Google para extraer favicons en tamaño 64x64
+    return `https://www.google.com/s2/favicons?domain=${url.hostname}&sz=64`;
+  } catch (e) {
+    return "/assets/default-favicon.webp"; // Fallback por si la URL falla
+  }
+}
 
 function cleanNick(value = "") {
   return String(value ?? "")
@@ -174,7 +197,7 @@ export default function VoteWidget({ visible = true }) {
   const fetchTop = useCallback(async (page = 0, limit = 10) => {
     try {
       const r = await fetch(
-        apiUrl(`/api/votos/top?range=30d&limit=${limit}&page=${page}`),
+        apiUrl(`/api/votos/top?range=total&limit=${limit}&page=${page}`),
         { method: "GET", credentials: "include", cache: "no-store" }
       );
 
@@ -228,7 +251,7 @@ export default function VoteWidget({ visible = true }) {
 
         return {
           ...s,
-          favicon: faviconUrlFor(s.url),
+          favicon: getFavicon(s.url), // Extrae el icono dinámicamente
           cooldownMs,
           available,
           left: Math.max(0, left),
@@ -253,7 +276,7 @@ export default function VoteWidget({ visible = true }) {
 
       return {
         ...s,
-        favicon: faviconUrlFor(s.url),
+        favicon: getFavicon(s.url), // Extrae el icono dinámicamente
         available,
         left,
         real: false,
@@ -362,7 +385,7 @@ export default function VoteWidget({ visible = true }) {
       >
         <span className="vw-head">
           <span className="vw-crest" aria-hidden="true">
-            <img src="/assets/voto.webp" alt="" className="vw-crest__img" loading="lazy" />
+            <img src="/assets/voto.png" alt="" className="vw-crest__img" loading="lazy" />
           </span>
 
           <span className="vw-head__mid">
@@ -594,7 +617,7 @@ export default function VoteWidget({ visible = true }) {
           {topList.length > 0 && (
             <div className="vw-top-mini vw-top-mini--compact">
               <div className="vw-top-mini__title">
-                <span className="vw-top-mini__titleText">TOP VOTANTES</span>
+                <span className="vw-top-mini__titleText">TOP VOTANTES TOTALES</span>
               </div>
 
               <div className="vw-top-mini__rows vw-top-mini__rows--top3">
@@ -639,7 +662,7 @@ export default function VoteWidget({ visible = true }) {
 
                       <span className={`vw-toprow__name is-${rangoKey}`}>{name}</span>
 
-                      <span className="vw-toprow__votes" aria-label="Votos (30 días)">
+                      <span className="vw-toprow__votes" aria-label="Votos totales">
                         <span className="vw-toprow__votesTxt">VOTOS</span>
                         <span className="vw-toprow__votesNum">{Number(t.votos || 0) || 0}</span>
                       </span>
@@ -680,7 +703,7 @@ export default function VoteWidget({ visible = true }) {
 
                       <span className={`vw-toprow__name is-${rangoKey}`}>{name}</span>
 
-                      <span className="vw-toprow__votes" aria-label="Votos (30 días)">
+                      <span className="vw-toprow__votes" aria-label="Votos totales">
                         <span className="vw-toprow__votesTxt">VOTOS</span>
                         <span className="vw-toprow__votesNum">{Number(t.votos || 0) || 0}</span>
                       </span>

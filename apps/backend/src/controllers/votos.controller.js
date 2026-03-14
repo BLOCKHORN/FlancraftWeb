@@ -52,12 +52,18 @@ function getClientIp(req) {
   return String(req.ip || "").trim();
 }
 
+// 🔥 AQUÍ ESTÁ LA MAGIA: 
+// El "id" ahora coincide EXACTAMENTE con el ServiceSite del plugin y el frontend.
+// Los "patterns" incluyen tanto el nombre exacto como variaciones antiguas por si
+// tienes votos antiguos en la base de datos que quieras que sigan contando para el cooldown.
 const SITE_MATCH = [
-  { id: "v1", patterns: ["servidoresdeminecraft", "servidores de minecraft", "sdm"] },
-  { id: "v2", patterns: ["minecraft-server", "minecraft server"] },
-  { id: "v3", patterns: ["minestatus"] },
-  { id: "v4", patterns: ["minecraft-mp", "minecraft mp"] },
-  { id: "v5", patterns: ["minecraftservers", "minecraftservers.org"] },
+  { id: "minecraft.buzz", patterns: ["minecraft.buzz"] },
+  { id: "topg.org", patterns: ["topg.org", "topg"] },
+  { id: "minestatus.net", patterns: ["minestatus.net", "minestatus"] },
+  { id: "minecraft-mp.com", patterns: ["minecraft-mp.com", "minecraft-mp", "minecraft mp"] },
+  { id: "minecraftservers.org", patterns: ["minecraftservers.org", "minecraftservers"] },
+  { id: "TopMinecraftServers", patterns: ["topminecraftservers", "topminecraftservers.org"] },
+  { id: "ServidoresDeMinecraft.ES", patterns: ["servidoresdeminecraft", "servidores de minecraft", "sdm"] },
 ];
 
 function patternsForSiteId(siteId) {
@@ -177,9 +183,9 @@ async function ingestVote(req, res) {
 
     if (data?.user_uuid) {
       try {
-await evaluateWebAchievementsForUser(data.user_uuid, {
-  types: ["vote_count", "vote_streak", "account_age_days"],
-});
+        await evaluateWebAchievementsForUser(data.user_uuid, {
+          types: ["vote_count", "vote_streak", "account_age_days"],
+        });
       } catch (webAchievementError) {
         console.error("[WEB LOGROS VOTO EVAL ERROR]", {
           uuid: data.user_uuid,
@@ -380,7 +386,10 @@ async function getStatus(req, res) {
     }
 
     const nowMs = Date.now();
-    const sites = ["v1", "v2", "v3", "v4", "v5"];
+    
+    // 🔥 Ahora coge la lista dinámica directamente desde SITE_MATCH.
+    // Esto asegura que backend y frontend busquen exactamente las mismas keys.
+    const sites = SITE_MATCH.map(site => site.id);
     const items = [];
 
     for (const siteId of sites) {

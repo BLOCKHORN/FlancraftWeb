@@ -1,21 +1,60 @@
-/* src/styles/components/Landpage/vote-widget-mini.scss */
+@mixin mc-shadow-panel {
+  box-shadow: 0 0 0 2px var(--vw-edge),
+              inset 1px 1px 0 rgba(255, 255, 255, 0.08),
+              inset -1px -1px 0 rgba(0, 0, 0, 0.68);
+}
+
+@mixin mc-shadow-element {
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.55),
+              inset 1px 1px 0 rgba(255, 255, 255, 0.08),
+              inset -1px -1px 0 rgba(0, 0, 0, 0.70);
+}
+
+@mixin mc-shadow-btn {
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.55),
+              inset 2px 2px 0 rgba(255, 255, 255, 0.14),
+              inset -2px -2px 0 rgba(0, 0, 0, 0.55);
+}
+
+@keyframes vwRowBuild {
+  0% { opacity: 0; transform: translateY(-4px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes vwFaviconLift {
+  0% { transform: translateY(0) scale(1); filter: drop-shadow(0 2px 0 rgba(0, 0, 0, 0.60)); }
+  50% { transform: translateY(-7px) scale(1.10); filter: drop-shadow(0 10px 14px rgba(0, 0, 0, 0.55)); }
+  100% { transform: translateY(-3px) scale(1.06); filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.55)); }
+}
+
+@keyframes vwPendingPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.85; transform: scale(0.98); }
+}
+
+@keyframes vwShineSweep {
+  0% { transform: translateX(-120%) rotate(10deg); opacity: 0; }
+  15% { opacity: 0.70; }
+  55% { opacity: 0.55; }
+  100% { transform: translateX(120%) rotate(10deg); opacity: 0; }
+}
+
+@keyframes vwFloatMini {
+  0%, 100% { transform: translateY(0); filter: drop-shadow(0 8px 10px rgba(0, 0, 0, 0.55)); }
+  50% { transform: translateY(-4px); filter: drop-shadow(0 12px 14px rgba(0, 0, 0, 0.55)); }
+}
 
 .vote-widget-mini {
   --vw-top: 100px;
   --vw-w: 306px;
-
   --vw-row-h: 30px;
   --vw-col-w: 44px;
-
   --vw-ink: rgba(248, 238, 224, 0.96);
   --vw-sub: rgba(230, 213, 186, 0.78);
-
   --vw-woodA: rgba(36, 26, 19, 0.92);
   --vw-woodB: rgba(22, 16, 12, 0.96);
   --vw-edge: rgba(42, 26, 16, 0.88);
-
   --vw-font: ui-serif, Georgia, "Times New Roman", serif;
-
   --vw-voteText: rgba(255, 246, 228, 0.94);
   --vw-voteTextHover: rgba(255, 255, 255, 0.98);
 
@@ -24,21 +63,66 @@
   top: var(--vw-top);
   left: 14px;
   right: auto;
-
   width: var(--vw-w);
   max-width: calc(100vw - 24px);
-
   filter: drop-shadow(0 16px 30px rgba(0, 0, 0, 0.58));
   pointer-events: auto;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
-
   font-family: var(--vw-font);
+  will-change: transform;
+
+  &.is-open {
+    .vw-arrow__icon {
+      transform: rotate(180deg);
+    }
+    .vw-panel-miniWrapper {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
+  }
+
+  &.is-min {
+    width: 78px;
+    max-width: none;
+
+    .vw-panel-miniWrapper {
+      max-height: 0 !important;
+      opacity: 0 !important;
+      transform: translate3d(0, -6px, 0) !important;
+      pointer-events: none;
+    }
+
+    .vw-pill-mini {
+      height: 78px;
+      padding: 0;
+      border-radius: 3px;
+    }
+
+    .vw-head {
+      grid-template-columns: 1fr;
+      gap: 0;
+      justify-items: center;
+
+      &__mid { display: none; }
+    }
+
+    .vw-arrow { display: none; }
+
+    .vw-crest {
+      width: 78px;
+      height: 78px;
+
+      &__img {
+        width: 54px;
+        height: 54px;
+        animation: vwFloatMini 2.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        will-change: transform, filter;
+      }
+    }
+  }
 }
 
-/* =========================================================
-   PILL
-   ========================================================= */
 .vw-pill-mini {
   width: 100%;
   height: 52px;
@@ -46,25 +130,26 @@
   padding: 6px 10px;
   cursor: pointer;
   border-radius: 3px 3px 0 0;
-
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(0, 0, 0, 0.10) 100%),
-    linear-gradient(180deg, rgba(70, 54, 40, 0.72) 0%, rgba(40, 30, 22, 0.88) 100%);
-
-  box-shadow:
-    0 0 0 2px var(--vw-edge),
-    inset 1px 1px 0 rgba(255, 255, 255, 0.08),
-    inset -1px -1px 0 rgba(0, 0, 0, 0.62);
-
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(0, 0, 0, 0.10) 100%),
+              linear-gradient(180deg, rgba(70, 54, 40, 0.72) 0%, rgba(40, 30, 22, 0.88) 100%);
+  @include mc-shadow-panel;
   color: var(--vw-ink);
   user-select: none;
+  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), filter 0.15s ease;
+  will-change: transform;
 
-  transition: transform .12s ease, filter .12s ease;
+  &:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.05);
+  }
 
-  &:hover { transform: translateY(-1px); filter: brightness(1.05); }
-  &:active { transform: translateY(0); }
-  &:focus,
-  &:focus-visible { outline: none; }
+  &:active {
+    transform: translateY(0);
+  }
+
+  &:focus, &:focus-visible {
+    outline: none;
+  }
 }
 
 .vw-head {
@@ -72,251 +157,239 @@
   grid-template-columns: 40px 1fr 16px;
   gap: 8px;
   align-items: center;
+
+  &__mid {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  &__titleRow {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding-right: 20px;
+  }
+
+  &__title {
+    font-family: "IM Fell English SC", var(--vw-font);
+    font-size: 0.98rem;
+    font-weight: 900;
+    letter-spacing: 0.03em;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__badge {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 20px;
+    height: 20px;
+    display: grid;
+    place-items: center;
+  }
+
+  &__badgeImg {
+    width: 18px;
+    height: 18px;
+    display: block;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.75));
+  }
+
+  &__progress {
+    display: grid;
+    grid-template-columns: 1fr;
+    align-items: center;
+    gap: 6px;
+  }
+
+  &__bar {
+    height: 6px;
+    position: relative;
+    overflow: hidden;
+    background: rgba(0, 0, 0, 0.42);
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.62);
+  }
+
+  &__barFill {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 0%;
+    background: linear-gradient(180deg, #62e784 0%, #2fc962 60%, #1a9a47 100%);
+    box-shadow: 0 0 12px rgba(40, 214, 120, 0.38);
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  &__progressText {
+    font-family: "IM Fell English SC", var(--vw-font);
+    font-size: 0.70rem;
+    color: rgba(255, 226, 170, 0.86);
+    text-align: center;
+    white-space: nowrap;
+  }
 }
 
-.vw-arrow { width: 16px; height: 16px; display: grid; place-items: center; }
-.vw-arrow__icon {
-  width: 14px;
-  height: 14px;
-  position: relative;
-  filter: drop-shadow(0 2px 0 rgba(0, 0, 0, 0.70));
-  transition: transform .18s ease;
+.vw-arrow {
+  width: 16px;
+  height: 16px;
+  display: grid;
+  place-items: center;
+
+  &__icon {
+    width: 14px;
+    height: 14px;
+    position: relative;
+    filter: drop-shadow(0 2px 0 rgba(0, 0, 0, 0.70));
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+
+    &::before {
+      content: "";
+      position: absolute;
+      inset: 3px;
+      border-left: 2px solid rgba(255, 232, 192, 0.95);
+      border-bottom: 2px solid rgba(255, 232, 192, 0.95);
+      transform: rotate(45deg);
+    }
+  }
 }
-.vw-arrow__icon::before {
-  content: "";
-  position: absolute;
-  inset: 3px;
-  border-left: 2px solid rgba(255, 232, 192, 0.95);
-  border-bottom: 2px solid rgba(255, 232, 192, 0.95);
-  transform: rotate(45deg);
-}
-.vote-widget-mini.is-open .vw-arrow__icon { transform: rotate(180deg); }
 
 .vw-crest {
   width: 40px;
   height: 40px;
   display: grid;
   place-items: center;
-}
-.vw-crest__img {
-  width: 34px;
-  height: 34px;
-  display: block;
-  object-fit: contain;
-  filter: drop-shadow(0 8px 10px rgba(0, 0, 0, 0.55));
+
+  &__img {
+    width: 34px;
+    height: 34px;
+    display: block;
+    object-fit: contain;
+    filter: drop-shadow(0 8px 10px rgba(0, 0, 0, 0.55));
+  }
 }
 
-.vw-head__mid { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-
-.vw-head__titleRow {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding-right: 20px; /* badge */
-}
-
-.vw-head__title {
-  font-family: "IM Fell English SC", var(--vw-font);
-  font-size: 0.98rem;
-  font-weight: 900;
-  letter-spacing: .03em;
-  text-align: center;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.vw-head__badge {
-  position: absolute;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 20px;
-  height: 20px;
-  display: grid;
-  place-items: center;
-}
-.vw-head__badgeImg {
-  width: 18px;
-  height: 18px;
-  display: block;
-  object-fit: contain;
-  filter: drop-shadow(0 2px 6px rgba(0,0,0,.75));
-}
-
-.vw-head__progress {
-  display: grid;
-  grid-template-columns: 1fr;
-  align-items: center;
-  gap: 6px;
-}
-.vw-head__bar {
-  height: 6px;
-  position: relative;
-  overflow: hidden;
-  background: rgba(0,0,0,0.42);
-  box-shadow: 0 0 0 1px rgba(0,0,0,0.62) inset;
-}
-.vw-head__barFill {
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 0%;
-  background: linear-gradient(180deg, #62e784 0%, #2fc962 60%, #1a9a47 100%);
-  box-shadow: 0 0 12px rgba(40, 214, 120, 0.38);
-  transition: width .22s ease;
-}
-.vw-head__progressText {
-  font-family: "IM Fell English SC", var(--vw-font);
-  font-size: .70rem;
-  color: rgba(255, 226, 170, 0.86);
-  text-align: center;
-  white-space: nowrap; /* ahora es corto, no se corta */
-}
-
-/* =========================================================
-   PANEL wrapper
-   ========================================================= */
 .vw-panel-miniWrapper {
   max-height: 0;
   opacity: 0;
   transform: translate3d(0, -6px, 0);
   overflow: hidden;
-  transition: max-height .22s ease, opacity .16s ease, transform .16s ease;
+  transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.2s ease,
+              transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: max-height, opacity, transform;
 }
-.vw-panel-miniWrapper.is-open { opacity: 1; transform: translate3d(0, 0, 0); }
 
-/* =========================================================
-   PANEL
-   ========================================================= */
 .vw-panel-mini {
   border-radius: 0 0 3px 3px;
-
-  background:
-    repeating-linear-gradient(0deg, rgba(255,255,255,0.03) 0 1px, rgba(0,0,0,0) 1px 3px),
-    linear-gradient(180deg, var(--vw-woodA) 0%, var(--vw-woodB) 100%);
-
-  box-shadow:
-    0 0 0 2px var(--vw-edge),
-    inset 1px 1px 0 rgba(255, 255, 255, 0.08),
-    inset -1px -1px 0 rgba(0, 0, 0, 0.68);
-
+  background: repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.03) 0 1px, rgba(0, 0, 0, 0) 1px 3px),
+              linear-gradient(180deg, var(--vw-woodA) 0%, var(--vw-woodB) 100%);
+  @include mc-shadow-panel;
   padding: 8px 10px 10px;
-
   max-height: calc(100vh - var(--vw-top) - 74px);
   overflow-y: auto;
   overflow-x: hidden;
+
+  &::-webkit-scrollbar { width: 10px; }
+  &::-webkit-scrollbar-thumb {
+    background: rgba(255, 226, 170, 0.14);
+    border: 2px solid rgba(0, 0, 0, 0.55);
+  }
+  &::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.22); }
 }
 
-.vw-panel-mini::-webkit-scrollbar { width: 10px; }
-.vw-panel-mini::-webkit-scrollbar-thumb {
-  background: rgba(255, 226, 170, 0.14);
-  border: 2px solid rgba(0,0,0,0.55);
-}
-.vw-panel-mini::-webkit-scrollbar-track { background: rgba(0,0,0,0.22); }
-
-/* =========================================================
-   INVITADO
-   ========================================================= */
 .vw-guest {
   margin: 0 0 8px;
   padding: 8px;
-
-  background:
-    linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(0,0,0,0.12) 100%),
-    linear-gradient(180deg, rgba(70, 54, 40, 0.58) 0%, rgba(40, 30, 22, 0.80) 100%);
-
-  box-shadow:
-    0 0 0 2px var(--vw-edge),
-    inset 1px 1px 0 rgba(255, 255, 255, 0.08),
-    inset -1px -1px 0 rgba(0,0,0,0.68);
-
-  border-radius: 2px;
-}
-
-.vw-guest__row {
-  display: grid;
-  grid-template-columns: 1fr 36px;
-  gap: 8px;
-  align-items: center;
-}
-
-.vw-guest__input {
-  height: 30px;
-  padding: 0 10px;
-  border: 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(0, 0, 0, 0.12) 100%),
+              linear-gradient(180deg, rgba(70, 54, 40, 0.58) 0%, rgba(40, 30, 22, 0.80) 100%);
+  @include mc-shadow-panel;
   border-radius: 2px;
 
-  font-family: var(--vw-font);
-  font-size: 0.92rem;
-  font-weight: 700;
-  color: rgba(255,246,228,0.92);
-  text-shadow: 0 1px 0 rgba(0,0,0,0.7);
-
-  background: linear-gradient(180deg, rgba(185,171,147,0.18) 0%, rgba(133,114,91,0.10) 100%);
-  box-shadow:
-    0 0 0 2px rgba(0,0,0,0.55),
-    inset 1px 1px 0 rgba(255,255,255,0.08),
-    inset -1px -1px 0 rgba(0,0,0,0.70);
-
-  outline: none;
-
-  &::placeholder {
-    color: rgba(255, 226, 170, 0.50);
-    text-shadow: 0 1px 0 rgba(0,0,0,0.6);
-    font-weight: 700;
+  &__row {
+    display: grid;
+    grid-template-columns: 1fr 36px;
+    gap: 8px;
+    align-items: center;
   }
-}
 
-.vw-guest__save {
-  height: 30px;
-  width: 36px;
-  border: 0;
-  border-radius: 2px;
-  cursor: pointer;
+  &__input {
+    height: 30px;
+    padding: 0 10px;
+    border: 0;
+    border-radius: 2px;
+    font-family: var(--vw-font);
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: rgba(255, 246, 228, 0.92);
+    text-shadow: 0 1px 0 rgba(0, 0, 0, 0.7);
+    background: linear-gradient(180deg, rgba(185, 171, 147, 0.18) 0%, rgba(133, 114, 91, 0.10) 100%);
+    @include mc-shadow-element;
+    outline: none;
 
-  display: grid;
-  place-items: center;
+    &::placeholder {
+      color: rgba(255, 226, 170, 0.50);
+      text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6);
+      font-weight: 700;
+    }
+  }
 
-  background: linear-gradient(180deg, #ffb35a 0%, #ff8a2a 55%, #d46a10 100%);
-  box-shadow:
-    0 0 0 2px rgba(0,0,0,0.55),
-    inset 2px 2px 0 rgba(255,255,255,0.14),
-    inset -2px -2px 0 rgba(0,0,0,0.55);
+  &__save {
+    height: 30px;
+    width: 36px;
+    border: 0;
+    border-radius: 2px;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    background: linear-gradient(180deg, #ffb35a 0%, #ff8a2a 55%, #d46a10 100%);
+    @include mc-shadow-btn;
+    transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), filter 0.15s ease;
+    will-change: transform;
 
-  transition: transform .12s ease, filter .12s ease;
+    &:hover:not(:disabled) {
+      transform: translateY(-1px);
+      filter: brightness(1.05);
+    }
+    
+    &:active:not(:disabled) { transform: translateY(0); }
+    &:disabled { opacity: 0.55; cursor: not-allowed; }
+    &.is-saved { filter: brightness(1.08) saturate(1.08); }
+  }
 
-  &:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.05); }
-  &:active:not(:disabled) { transform: translateY(0); }
-  &:disabled { opacity: 0.55; cursor: not-allowed; }
+  &__hint {
+    margin-top: 6px;
+    font-family: var(--vw-font);
+    font-size: 0.78rem;
+    color: rgba(255, 226, 170, 0.62);
+    line-height: 1.1;
+    text-align: center;
+  }
 }
 
 .vw-checkIcon {
   width: 18px;
   height: 18px;
   color: rgba(42, 20, 7, 0.98);
-  filter: drop-shadow(0 1px 0 rgba(255,255,255,0.14));
-}
-.vw-guest__save.is-saved { filter: brightness(1.08) saturate(1.08); }
-.vw-checkIcon.is-filled {
-  color: rgba(20, 80, 36, 0.98);
-  filter: drop-shadow(0 2px 10px rgba(40, 214, 120, 0.28));
+  filter: drop-shadow(0 1px 0 rgba(255, 255, 255, 0.14));
+
+  &.is-filled {
+    color: rgba(20, 80, 36, 0.98);
+    filter: drop-shadow(0 2px 10px rgba(40, 214, 120, 0.28));
+  }
 }
 
-.vw-guest__hint {
-  margin-top: 6px;
-  font-family: var(--vw-font);
-  font-size: .78rem;
-  color: rgba(255, 226, 170, 0.62);
-  line-height: 1.1;
-  text-align: center;
+.vw-list-mini {
+  display: flex;
+  flex-direction: column;
 }
-
-/* =========================================================
-   LISTA SITES
-   ========================================================= */
-.vw-list-mini { display: flex; flex-direction: column; }
 
 .vw-row-mini {
   width: 100%;
@@ -325,24 +398,18 @@
   align-items: center;
   column-gap: 8px;
   padding: 4px 0;
-
   opacity: 0;
   transform: translateY(-4px);
-  animation: vwRowBuild 180ms ease forwards;
+  animation: vwRowBuild 200ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
   animation-delay: calc(var(--i) * 35ms);
 }
-@keyframes vwRowBuild { to { opacity: 1; transform: translateY(0); } }
 
 .vw-order-mini,
 .vw-site-mini {
   height: var(--vw-row-h);
   border-radius: 2px;
-
-  background: linear-gradient(180deg, rgba(70,54,40,0.76) 0%, rgba(40,30,22,0.90) 100%);
-  box-shadow:
-    0 0 0 2px var(--vw-edge),
-    inset 1px 1px 0 rgba(255,255,255,0.08),
-    inset -1px -1px 0 rgba(0,0,0,0.70);
+  background: linear-gradient(180deg, rgba(70, 54, 40, 0.76) 0%, rgba(40, 30, 22, 0.90) 100%);
+  @include mc-shadow-panel;
 }
 
 .vw-orderTxt {
@@ -352,7 +419,7 @@
   font-size: 0.96rem;
   font-weight: 900;
   color: rgba(255, 226, 170, 0.92);
-  text-shadow: 0 1px 0 rgba(0,0,0,0.85);
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.85);
 }
 
 .vw-site-mini {
@@ -360,36 +427,36 @@
   place-items: center;
   overflow: hidden;
   position: relative;
-}
-.vw-site-mini__img {
-  width: 26px;
-  height: 26px;
-  display: block;
-  filter: drop-shadow(0 2px 0 rgba(0,0,0,0.60));
-  transform: translateY(0);
-}
 
-/* lift favicon (hover en botón → clase is-lift) */
-@keyframes vwFaviconLift {
-  0% { transform: translateY(0) scale(1); filter: drop-shadow(0 2px 0 rgba(0,0,0,0.60)); }
-  50% { transform: translateY(-7px) scale(1.10); filter: drop-shadow(0 10px 14px rgba(0,0,0,0.55)); }
-  100% { transform: translateY(-3px) scale(1.06); filter: drop-shadow(0 8px 12px rgba(0,0,0,0.55)); }
-}
-.vw-site-mini.is-lift .vw-site-mini__img {
-  animation: vwFaviconLift 520ms cubic-bezier(.2,.9,.2,1);
-}
+  &__img {
+    width: 26px;
+    height: 26px;
+    display: block;
+    filter: drop-shadow(0 2px 0 rgba(0, 0, 0, 0.60));
+    transform: translateY(0);
+    will-change: transform, filter;
+  }
 
-.vw-site-mini__fallback {
-  position: absolute;
-  opacity: 0;
-  font-family: var(--vw-font);
-  font-weight: 900;
-  font-size: .82rem;
-  color: rgba(255, 246, 228, 0.88);
-  text-shadow: 0 1px 0 rgba(0,0,0,0.7);
+  &.is-lift &__img {
+    animation: vwFaviconLift 520ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  &__fallback {
+    position: absolute;
+    opacity: 0;
+    font-family: var(--vw-font);
+    font-weight: 900;
+    font-size: 0.82rem;
+    color: rgba(255, 246, 228, 0.88);
+    text-shadow: 0 1px 0 rgba(0, 0, 0, 0.7);
+    transition: opacity 0.2s ease;
+  }
+
+  &.is-fallback {
+    .vw-site-mini__fallback { opacity: 1; }
+    .vw-site-mini__img { opacity: 0; }
+  }
 }
-.vw-site-mini.is-fallback .vw-site-mini__fallback { opacity: 1; }
-.vw-site-mini.is-fallback .vw-site-mini__img { opacity: 0; }
 
 .vw-action-mini {
   min-width: 0;
@@ -400,9 +467,6 @@
   align-self: stretch;
 }
 
-/* =========================================================
-   BOTÓN VOTAR (FULL-WIDTH + SIN MÁRGENES + SLAB/RUNA)
-   ========================================================= */
 .vw-btn-mini {
   position: relative;
   width: 100%;
@@ -410,142 +474,104 @@
   border: 0;
   border-radius: 2px;
   cursor: pointer;
-
   display: grid;
   place-items: center;
-
   font-family: var(--vw-font);
   font-weight: 900;
   font-size: 0.92rem;
-
   background-color: rgba(30, 20, 12, 0.85);
-
-  box-shadow:
-    0 0 0 2px rgba(0,0,0,0.58),
-    inset 1px 1px 0 rgba(255,255,255,0.12),
-    inset -1px -1px 0 rgba(0,0,0,0.60),
-    0 5px 0 rgba(0,0,0,0.18);
-
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.58),
+              inset 1px 1px 0 rgba(255, 255, 255, 0.12),
+              inset -1px -1px 0 rgba(0, 0, 0, 0.60),
+              0 5px 0 rgba(0, 0, 0, 0.18);
   overflow: hidden;
-  transition: transform .12s ease, filter .12s ease;
+  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), filter 0.15s ease;
+  will-change: transform;
 
-  &:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.05); }
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+    filter: brightness(1.05);
+  }
+
   &:active:not(:disabled) { transform: translateY(0); }
   &:disabled { opacity: 0.68; cursor: not-allowed; }
-  &:focus,
-  &:focus-visible { outline: none; }
-}
+  &:focus, &:focus-visible { outline: none; }
 
-/* style “slab” verde arriba (sin svg → 0 márgenes raros) */
-.vw-btn-mini.is-store {
-  background-image:
-    linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(0,0,0,0.18) 100%),
-    linear-gradient(180deg, rgba(55, 40, 28, 0.98) 0%, rgba(28, 20, 14, 0.98) 100%),
-    repeating-linear-gradient(
-      90deg,
-      rgba(255,255,255,0.035) 0 6px,
-      rgba(0,0,0,0) 6px 12px
-    );
-}
+  &.is-store {
+    background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(0, 0, 0, 0.18) 100%),
+                      linear-gradient(180deg, rgba(55, 40, 28, 0.98) 0%, rgba(28, 20, 14, 0.98) 100%),
+                      repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.035) 0 6px, rgba(0, 0, 0, 0) 6px 12px);
 
-/* banda “runa/vida” superior */
-.vw-btn-mini.is-store::before {
-  content: "";
-  position: absolute;
-  left: 0; right: 0; top: 0;
-  height: 34%;
-  background:
-    linear-gradient(180deg, rgba(120, 255, 160, 0.60) 0%, rgba(40, 210, 110, 0.70) 55%, rgba(14, 140, 72, 0.85) 100%);
-  box-shadow:
-    inset 0 -2px 0 rgba(0,0,0,0.55),
-    0 0 14px rgba(60, 230, 130, 0.18);
-  opacity: 0.95;
-  pointer-events: none;
-}
+    &::before {
+      content: "";
+      position: absolute;
+      left: 0; right: 0; top: 0;
+      height: 34%;
+      background: linear-gradient(180deg, rgba(120, 255, 160, 0.60) 0%, rgba(40, 210, 110, 0.70) 55%, rgba(14, 140, 72, 0.85) 100%);
+      box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.55), 0 0 14px rgba(60, 230, 130, 0.18);
+      opacity: 0.95;
+      pointer-events: none;
+    }
 
-.vw-btn-mini.is-locked {
-  background-image:
-    linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(0,0,0,0.14) 100%),
-    linear-gradient(180deg, #9c9ea3 0%, #7f8186 100%);
-  filter: grayscale(0.12);
-}
+    &:hover .vw-btn-mini__label {
+      color: var(--vw-voteTextHover);
+      text-shadow: 0 2px 12px rgba(0, 0, 0, 0.45), 0 0 14px rgba(255, 255, 255, 0.12);
+      transform: translateY(-0.5px);
+    }
 
-.vw-btn-mini__label {
-  position: relative;
-  z-index: 2;
+    &:hover::after {
+      opacity: 1;
+      animation: vwShineSweep 620ms cubic-bezier(0.4, 0, 0.2, 1);
+    }
+  }
 
-  color: var(--vw-voteText);
-  text-shadow:
-    0 2px 0 rgba(0,0,0,0.65),
-    0 0 10px rgba(0,0,0,0.35);
+  &.is-locked {
+    background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(0, 0, 0, 0.14) 100%),
+                      linear-gradient(180deg, #9c9ea3 0%, #7f8186 100%);
+    filter: grayscale(0.12);
 
-  transition: color .22s ease, text-shadow .22s ease, transform .22s ease;
-}
+    .vw-btn-mini__label {
+      color: rgba(30, 18, 10, 0.86);
+      text-shadow: 0 1px 0 rgba(255, 255, 255, 0.12);
+    }
+  }
 
-.vw-btn-mini.is-locked .vw-btn-mini__label {
-  color: rgba(30, 18, 10, 0.86);
-  text-shadow: 0 1px 0 rgba(255,255,255,0.12);
-}
+  &.is-pending {
+    animation: vwPendingPulse 1.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  }
 
-.vw-btn-mini.is-store:hover .vw-btn-mini__label {
-  color: var(--vw-voteTextHover);
-  text-shadow:
-    0 2px 12px rgba(0,0,0,0.45),
-    0 0 14px rgba(255,255,255,0.12);
-  transform: translateY(-0.5px);
-}
+  &__label {
+    position: relative;
+    z-index: 2;
+    color: var(--vw-voteText);
+    text-shadow: 0 2px 0 rgba(0, 0, 0, 0.65), 0 0 10px rgba(0, 0, 0, 0.35);
+    transition: color 0.22s ease, text-shadow 0.22s ease, transform 0.22s ease;
+    will-change: transform, color;
+  }
 
-@keyframes vwPendingPulse { 50% { filter: brightness(1.08); } }
-.vw-btn-mini.is-pending { animation: vwPendingPulse 1.05s ease-in-out infinite; }
-
-.vw-btn-mini::after {
-  content: "";
-  position: absolute;
-  inset: -40% -80%;
-  z-index: 1;
-  pointer-events: none;
-
-  background: linear-gradient(
-    120deg,
-    rgba(255,255,255,0) 0%,
-    rgba(255,255,255,0.10) 35%,
-    rgba(255,255,255,0.46) 50%,
-    rgba(255,255,255,0.10) 65%,
-    rgba(255,255,255,0) 100%
-  );
-
-  transform: translateX(-120%) rotate(10deg);
-  opacity: 0;
-}
-@keyframes vwShineSweep {
-  0% { transform: translateX(-120%) rotate(10deg); opacity: 0; }
-  15% { opacity: 0.70; }
-  55% { opacity: 0.55; }
-  100% { transform: translateX(120%) rotate(10deg); opacity: 0; }
-}
-.vw-btn-mini.is-store:hover::after {
-  opacity: 1;
-  animation: vwShineSweep 620ms ease-out;
+  &::after {
+    content: "";
+    position: absolute;
+    inset: -40% -80%;
+    z-index: 1;
+    pointer-events: none;
+    background: linear-gradient(120deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.10) 35%,
+                                rgba(255, 255, 255, 0.46) 50%, rgba(255, 255, 255, 0.10) 65%, rgba(255, 255, 255, 0) 100%);
+    transform: translateX(-120%) rotate(10deg);
+    opacity: 0;
+    will-change: transform, opacity;
+  }
 }
 
 .vw-sep {
   height: 1px;
   width: 100%;
   margin: 3px 0;
-  background: linear-gradient(
-    90deg,
-    rgba(0,0,0,0) 0%,
-    rgba(255,220,170,0.14) 18%,
-    rgba(0,0,0,0.55) 50%,
-    rgba(255,220,170,0.14) 82%,
-    rgba(0,0,0,0) 100%
-  );
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0) 0%, rgba(255, 220, 170, 0.14) 18%,
+                              rgba(0, 0, 0, 0.55) 50%, rgba(255, 220, 170, 0.14) 82%, rgba(0, 0, 0, 0) 100%);
+  &--thin { opacity: 0.7; }
 }
-.vw-sep--thin { opacity: 0.7; }
 
-/* =========================================================
-   MOSTRAR MÁS + PAGINACIÓN
-   ========================================================= */
 .vw-moreToggle {
   width: 100%;
   border: 0;
@@ -553,28 +579,31 @@
   margin: 4px 0 0;
   padding: 6px 8px;
   border-radius: 2px;
-
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-
-  background: linear-gradient(180deg, rgba(70,54,40,0.62) 0%, rgba(40,30,22,0.86) 100%);
-  box-shadow: 0 0 0 2px rgba(0,0,0,0.55);
-
+  background: linear-gradient(180deg, rgba(70, 54, 40, 0.62) 0%, rgba(40, 30, 22, 0.86) 100%);
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.55);
   color: rgba(255, 226, 170, 0.90);
   font-family: "IM Fell English SC", var(--vw-font);
   font-weight: 900;
-  letter-spacing: .02em;
-
-  transition: transform .12s ease, filter .12s ease;
+  letter-spacing: 0.02em;
+  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), filter 0.15s ease;
+  will-change: transform;
 
   &:hover { transform: translateY(-1px); filter: brightness(1.05); }
   &:active { transform: translateY(0); }
 }
 
-.vw-chev { width: 16px; height: 16px; color: rgba(255, 226, 170, 0.92); }
-.vw-chev.is-up { transform: rotate(180deg); }
+.vw-chev {
+  width: 16px;
+  height: 16px;
+  color: rgba(255, 226, 170, 0.92);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &.is-up { transform: rotate(180deg); }
+}
 
 .vw-moreWrap {
   margin-top: 6px;
@@ -588,266 +617,201 @@
   grid-template-columns: 36px 1fr 36px;
   align-items: center;
   gap: 8px;
+
+  &__btn {
+    height: 30px;
+    border: 0;
+    border-radius: 2px;
+    cursor: pointer;
+    background: linear-gradient(180deg, #ffb35a 0%, #ff8a2a 55%, #d46a10 100%);
+    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.55);
+    font-family: var(--vw-font);
+    font-weight: 900;
+    font-size: 1.1rem;
+    color: rgba(42, 20, 7, 0.98);
+    transition: transform 0.15s ease, filter 0.15s ease;
+
+    &:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.05); }
+    &:active:not(:disabled) { transform: translateY(0); }
+    &:disabled { opacity: 0.55; cursor: not-allowed; }
+  }
+
+  &__info {
+    text-align: center;
+    font-family: "IM Fell English SC", var(--vw-font);
+    font-weight: 900;
+    font-size: 0.80rem;
+    color: rgba(255, 226, 170, 0.80);
+  }
 }
 
-.vw-morePager__btn {
-  height: 30px;
-  border: 0;
-  border-radius: 2px;
-  cursor: pointer;
-
-  background: linear-gradient(180deg, #ffb35a 0%, #ff8a2a 55%, #d46a10 100%);
-  box-shadow: 0 0 0 2px rgba(0,0,0,0.55);
-
-  font-family: var(--vw-font);
-  font-weight: 900;
-  font-size: 1.1rem;
-  color: rgba(42, 20, 7, 0.98);
-
-  &:disabled { opacity: 0.55; cursor: not-allowed; }
-}
-
-.vw-morePager__info {
-  text-align: center;
-  font-family: "IM Fell English SC", var(--vw-font);
-  font-weight: 900;
-  font-size: .80rem;
-  color: rgba(255, 226, 170, 0.80);
-}
-
-/* =========================================================
-   TOP VOTANTES
-   ========================================================= */
 .vw-top-mini {
   margin-top: 10px;
   padding: 7px;
   border-radius: 2px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(0, 0, 0, 0.12) 100%),
+              linear-gradient(180deg, rgba(70, 54, 40, 0.58) 0%, rgba(40, 30, 22, 0.84) 100%);
+  @include mc-shadow-panel;
 
-  background:
-    linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(0,0,0,0.12) 100%),
-    linear-gradient(180deg, rgba(70,54,40,0.58) 0%, rgba(40,30,22,0.84) 100%);
+  &__title {
+    padding: 0 2px 6px;
+    margin: 0 0 7px;
+    border-bottom: 1px solid rgba(255, 220, 170, 0.14);
+    font-family: "IM Fell English SC", var(--vw-font);
+    font-size: 0.82rem;
+    font-weight: 900;
+    color: rgba(255, 226, 170, 0.92);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
 
-  box-shadow:
-    0 0 0 2px var(--vw-edge),
-    inset 1px 1px 0 rgba(255,255,255,0.08),
-    inset -1px -1px 0 rgba(0,0,0,0.68);
+  &__titleText { text-align: center; letter-spacing: 0.03em; }
+
+  &__rows {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+
+    &--rest { margin-top: 7px; }
+  }
 }
-
-.vw-top-mini__title {
-  padding: 0 2px 6px;
-  margin: 0 0 7px;
-  border-bottom: 1px solid rgba(255, 220, 170, 0.14);
-
-  font-family: "IM Fell English SC", var(--vw-font);
-  font-size: .82rem;
-  font-weight: 900;
-  color: rgba(255, 226, 170, 0.92);
-
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-.vw-top-mini__titleText { text-align: center; letter-spacing: .03em; }
-
-.vw-top-mini__rows { display: flex; flex-direction: column; gap: 5px; }
-.vw-top-mini__rows--rest { margin-top: 7px; }
 
 .vw-toprow {
   border: 0;
   width: 100%;
   cursor: pointer;
   text-align: left;
-
   display: grid;
   grid-template-columns: 38px 38px minmax(0, 1fr) auto;
   align-items: center;
   gap: 8px;
-
   padding: 6px 7px;
   border-radius: 2px;
-
-  background: linear-gradient(180deg, rgba(25,18,14,0.78) 0%, rgba(15,11,8,0.92) 100%);
-
-  box-shadow:
-    0 0 0 2px rgba(0,0,0,0.55),
-    inset 1px 1px 0 rgba(255,255,255,0.06),
-    inset -1px -1px 0 rgba(0,0,0,0.72);
-
-  transition: transform .12s ease, filter .12s ease;
+  background: linear-gradient(180deg, rgba(25, 18, 14, 0.78) 0%, rgba(15, 11, 8, 0.92) 100%);
+  @include mc-shadow-element;
+  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), filter 0.15s ease;
+  will-change: transform;
 
   &:hover { transform: translateY(-1px); filter: brightness(1.06); }
   &:active { transform: translateY(0); }
-  &:focus,
-  &:focus-visible { outline: none; }
+  &:focus, &:focus-visible { outline: none; }
+
+  &__rank {
+    text-align: center;
+    font-family: var(--vw-font);
+    font-size: 0.92rem;
+    font-weight: 900;
+    color: rgba(255, 226, 170, 0.90);
+    text-shadow: 0 1px 0 rgba(0, 0, 0, 0.85);
+  }
+
+  &__headWrap {
+    width: 38px;
+    height: 38px;
+    display: grid;
+    place-items: center;
+    position: relative;
+  }
+
+  &__head {
+    width: 30px;
+    height: 30px;
+    border-radius: 2px;
+    object-fit: cover;
+    image-rendering: pixelated;
+    @include mc-shadow-element;
+  }
+
+  &__crown {
+    position: absolute;
+    left: -10px;
+    top: -12px;
+    width: 26px;
+    height: 26px;
+    transform: rotate(-8deg);
+    filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.55));
+  }
+
+  &__name {
+    min-width: 0;
+    font-family: var(--vw-font);
+    font-size: 0.95rem;
+    font-weight: 900;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: rgba(255, 246, 228, 0.92);
+    text-shadow: 0 1px 0 rgba(0, 0, 0, 0.75);
+  }
+
+  &__votes {
+    padding: 4px 10px;
+    border-radius: 2px;
+    background: linear-gradient(180deg, #ffb35a 0%, #ff8a2a 55%, #d46a10 100%);
+    @include mc-shadow-btn;
+    display: grid;
+    grid-template-rows: auto auto;
+    align-items: center;
+    justify-items: center;
+    min-width: 44px;
+  }
+
+  &__votesTxt {
+    font-family: var(--vw-font);
+    font-size: 0.62rem;
+    font-weight: 900;
+    letter-spacing: 0.03em;
+    color: rgba(42, 20, 7, 0.86);
+    line-height: 1.0;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.16);
+  }
+
+  &__votesNum {
+    font-family: var(--vw-font);
+    font-size: 0.96rem;
+    font-weight: 900;
+    color: rgba(42, 20, 7, 0.98);
+    line-height: 1.0;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.16);
+  }
+
+  &.is-nova &__name { color: rgba(90, 235, 130, 0.98); }
+  &.is-alpha &__name { color: rgba(120, 185, 255, 0.98); }
+  &.is-inmortal &__name { color: rgba(255, 150, 90, 0.98); }
 }
 
-.vw-toprow__rank {
-  text-align: center;
-  font-family: var(--vw-font);
-  font-size: .92rem;
-  font-weight: 900;
-  color: rgba(255, 226, 170, 0.90);
-  text-shadow: 0 1px 0 rgba(0,0,0,0.85);
-}
-
-.vw-toprow__headWrap {
-  width: 38px;
-  height: 38px;
-  display: grid;
-  place-items: center;
-  position: relative;
-}
-
-.vw-toprow__head {
-  width: 30px;
-  height: 30px;
-  border-radius: 2px;
-  object-fit: cover;
-  image-rendering: pixelated;
-
-  box-shadow:
-    0 0 0 2px rgba(0,0,0,0.55),
-    inset 1px 1px 0 rgba(255,255,255,0.08),
-    inset -1px -1px 0 rgba(0,0,0,0.70);
-}
-
-/* Corona del usuario #1 */
-.vw-toprow__crown {
-  position: absolute;
-  left: -10px;
-  top: -12px;
-  width: 26px;
-  height: 26px;
-  transform: rotate(-8deg);
-  filter: drop-shadow(0 6px 10px rgba(0,0,0,0.55));
-}
 .vw-crown { width: 100%; height: 100%; }
 
-.vw-toprow__name {
-  min-width: 0;
-  font-family: var(--vw-font);
-  font-size: .95rem;
-  font-weight: 900;
-
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-
-  color: rgba(255, 246, 228, 0.92);
-  text-shadow: 0 1px 0 rgba(0,0,0,0.75);
-}
-
-.vw-toprow__votes {
-  padding: 4px 10px;
-  border-radius: 2px;
-
-  background: linear-gradient(180deg, #ffb35a 0%, #ff8a2a 55%, #d46a10 100%);
-  box-shadow:
-    0 0 0 2px rgba(0,0,0,0.55),
-    inset 2px 2px 0 rgba(255,255,255,0.14),
-    inset -2px -2px 0 rgba(0,0,0,0.55);
-
-  display: grid;
-  grid-template-rows: auto auto;
-  align-items: center;
-  justify-items: center;
-
-  min-width: 44px;
-}
-
-.vw-toprow__votesTxt {
-  font-family: var(--vw-font);
-  font-size: .62rem;
-  font-weight: 900;
-  letter-spacing: .03em;
-  color: rgba(42, 20, 7, 0.86);
-  line-height: 1.0;
-  text-shadow: 0 1px 0 rgba(255,255,255,0.16);
-}
-
-.vw-toprow__votesNum {
-  font-family: var(--vw-font);
-  font-size: .96rem;
-  font-weight: 900;
-  color: rgba(42, 20, 7, 0.98);
-  line-height: 1.0;
-  text-shadow: 0 1px 0 rgba(255,255,255,0.16);
-}
-
-.vw-toprow.is-nova .vw-toprow__name { color: rgba(90, 235, 130, 0.98); }
-.vw-toprow.is-alpha .vw-toprow__name { color: rgba(120, 185, 255, 0.98); }
-.vw-toprow.is-inmortal .vw-toprow__name { color: rgba(255, 150, 90, 0.98); }
-
-/* =========================================================
-   MIN (pip) — más pequeño + NO sigue scroll + levita
-   ========================================================= */
-@keyframes vwFloatMini {
-  0% { transform: translateY(0); filter: drop-shadow(0 8px 10px rgba(0,0,0,0.55)); }
-  50% { transform: translateY(-4px); filter: drop-shadow(0 12px 14px rgba(0,0,0,0.55)); }
-  100% { transform: translateY(0); filter: drop-shadow(0 8px 10px rgba(0,0,0,0.55)); }
-}
-
-.vote-widget-mini.is-min {
-  width: 78px;
-  max-width: none;
-
-  .vw-panel-miniWrapper { max-height: 0 !important; opacity: 0 !important; transform: translate3d(0, -6px, 0) !important; }
-
-  /* IMPORTANTE: NO ponemos fixed en el botón interno.
-     El root ya es fixed → así NO “sigue” scroll por transforms externos. */
-  .vw-pill-mini {
-    width: 100%;
-    height: 78px;
-    padding: 0;
-    border-radius: 3px;
-    background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(0, 0, 0, 0.10) 100%),
-      linear-gradient(180deg, rgba(70, 54, 40, 0.72) 0%, rgba(40, 30, 22, 0.88) 100%);
-  }
-
-  .vw-head { grid-template-columns: 1fr; gap: 0; justify-items: center; }
-  .vw-head__mid { display: none; }
-  .vw-arrow { display: none; }
-
-  .vw-crest { width: 78px; height: 78px; }
-  .vw-crest__img {
-    width: 54px;
-    height: 54px;
-    animation: vwFloatMini 2.2s ease-in-out infinite;
-    will-change: transform, filter;
-  }
-}
-
-/* =========================================================
-   Responsive
-   ========================================================= */
 @media (max-width: 768px) {
   .vote-widget-mini {
     --vw-top: 78px;
     left: 10px;
     right: auto;
     width: min(var(--vw-w), calc(100vw - 20px));
-  }
 
-  .vote-widget-mini.is-min {
-    width: 48px;
-    left: 10px;
+    &.is-min {
+      width: 48px;
+      left: 10px;
 
-    .vw-pill-mini {
-      height: 48px;
-      padding: 0;
-      border-radius: 3px;
-      background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(0, 0, 0, 0.10) 100%),
-        linear-gradient(180deg, rgba(70, 54, 40, 0.72) 0%, rgba(40, 30, 22, 0.88) 100%);
+      .vw-pill-mini {
+        height: 48px;
+      }
+
+      .vw-crest {
+        width: 48px;
+        height: 48px;
+
+        &__img {
+          width: 34px;
+          height: 34px;
+          animation-duration: 2.4s;
+        }
+      }
     }
-
-    .vw-crest { width: 48px; height: 48px; }
-    .vw-crest__img { width: 34px; height: 34px; animation-duration: 2.4s; }
   }
 }
 
-/* Reduce motion */
 @media (prefers-reduced-motion: reduce) {
   .vw-row-mini,
   .vw-btn-mini.is-pending,
