@@ -30,8 +30,9 @@ function nowSec() {
   return Math.floor(Date.now() / 1000);
 }
 
+// CORRECCIÓN 1: Evitar que guarde "[object Object]"
 function toText(v, fallback = "") {
-  if (v === null || v === undefined) return fallback;
+  if (v === null || v === undefined || typeof v === "object") return fallback;
   const s = String(v).trim();
   return s || fallback;
 }
@@ -208,8 +209,13 @@ function extractPaymentRecord(evt) {
     ])
   );
 
+  // CORRECCIÓN 2: Buscar primero en "custom" y soportar el nuevo formato de Tebex
   const username = toText(
     firstFromCandidates(candidates, [
+      ["custom", "mc_username"],
+      ["basket", "custom", "mc_username"],
+      ["customer", "username", "username"],
+      ["username", "username"],
       ["username"],
       ["ign"],
       ["player", "name"],
@@ -225,6 +231,10 @@ function extractPaymentRecord(evt) {
 
   const uuid = toText(
     firstFromCandidates(candidates, [
+      ["custom", "mc_uuid"],
+      ["basket", "custom", "mc_uuid"],
+      ["customer", "username", "id"],
+      ["username", "id"],
       ["uuid"],
       ["player", "uuid"],
       ["customer", "uuid"],
@@ -319,7 +329,7 @@ async function persistPaymentFromWebhook(evt) {
     return { ok: false, skipped: true, reason: "event_not_paid" };
   }
 
-if (!record.username || !Number.isFinite(record.amount) || record.amount < 0) {
+  if (!record.username || !Number.isFinite(record.amount) || record.amount < 0) {
     return { ok: false, skipped: true, reason: "incomplete_payload", record };
   }
 
