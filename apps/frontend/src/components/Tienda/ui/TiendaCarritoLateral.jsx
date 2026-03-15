@@ -86,7 +86,7 @@ export default function TiendaCarritoLateral({
       const r = await fetch(apiUrl(`/api/tebex/checkout`), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ jugador: nombreConfirmado, uuidJugador: uuidConfirmado || "", items, moneda: "USD" }),
+        body: JSON.stringify({ jugador: nombreConfirmado, uuidJugador: uuidConfirmado || "", items, moneda: "USD", server }),
       });
       const data = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(data?.error || "Error");

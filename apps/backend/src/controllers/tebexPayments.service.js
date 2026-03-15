@@ -319,7 +319,7 @@ async function persistPaymentFromWebhook(evt) {
     return { ok: false, skipped: true, reason: "event_not_paid" };
   }
 
-  if (!record.username || !Number.isFinite(record.amount) || record.amount <= 0) {
+if (!record.username || !Number.isFinite(record.amount) || record.amount < 0) {
     return { ok: false, skipped: true, reason: "incomplete_payload", record };
   }
 

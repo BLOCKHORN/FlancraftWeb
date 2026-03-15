@@ -152,51 +152,45 @@ export default function DailyFreeClaimCard() {
 
   useEffect(() => {
     if (!modal) return;
-    const onKey = (e) => e.key === "Escape" && setModal(null);
+    const onKey = (e) => e.key === "Escape" && !claiming && setModal(null);
     window.addEventListener("keydown", onKey);
     document.body.style.overflow = "hidden";
     return () => {
       window.removeEventListener("keydown", onKey);
       document.body.style.overflow = "";
     };
-  }, [modal]);
+  }, [modal, claiming]);
 
-  const openRewardModal = ({ amount, walletBalance, nextClaimAt }) => {
-    setModal({
-      phase: "intro",
-      amount,
-      walletBalance: Number(walletBalance) || 0,
-      nextClaimAt,
-      particlesKey: `${Date.now()}_${Math.random()}`,
-    });
-  };
-
-  const nextStep = () => {
-    setModal((m) => {
-      if (!m || m.error) return m;
-      if (m.phase === "auth") return m;
-      if (m.phase === "intro") return { ...m, phase: "reveal", particlesKey: `${Date.now()}_${Math.random()}` };
-      if (m.phase === "reveal") return { ...m, phase: "done", particlesKey: `${Date.now()}_${Math.random()}` };
-      return m;
-    });
-  };
-
-  const handleClaim = async () => {
+  // Al hacer clic en "REVELAR", disparamos la vibración + la API
+  const handleClaimClick = async () => {
+    if (claiming) return;
     setClaiming(true);
+    
+    // Pasamos a fase de vibración inmediatamente
+    setModal((m) => ({ ...m, phase: "vibrating" }));
+
     try {
-      const res = await fetch(apiUrl(`/api/daily-claim`), {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      });
+      // Usamos Promise.all para obligar a que dure al menos el 1.5s de la animación
+      const [res] = await Promise.all([
+        fetch(apiUrl(`/api/daily-claim`), {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        }),
+        new Promise((resolve) => setTimeout(resolve, 1500)) 
+      ]);
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Error");
+      if (!res.ok) throw new Error(data.error || "Error al reclamar");
 
-      openRewardModal({
+      // Transición exitosa a la explosión final
+      setModal((m) => ({
+        ...m,
+        phase: "reveal",
         amount: data.amount,
         walletBalance: data.walletBalance,
         nextClaimAt: data.nextClaimAt,
-      });
+        particlesKey: `${Date.now()}_${Math.random()}`,
+      }));
 
       setStatus((s) => ({
         ...(s || {}),
@@ -208,24 +202,35 @@ export default function DailyFreeClaimCard() {
 
       emitBalances({ walletCoins: data.walletBalance });
     } catch (e) {
-      setModal({ error: e.message });
+      setModal((m) => ({ ...m, error: e.message }));
     } finally {
       setClaiming(false);
     }
   };
 
+  const handleContinue = () => {
+    setModal((m) => ({ ...m, phase: "done", particlesKey: `${Date.now()}_${Math.random()}` }));
+  };
+
+  const handleCloseModal = () => {
+    if (claiming) return; // Evitar que se cierre en mitad de la vibración/petición
+    setModal(null);
+  };
+
   const disabled = !!(status?.claimedToday || claiming);
-  const ctaText = status?.claimedToday ? "RECLAMADO" : claiming ? "RECLAMANDO..." : "GRATIS";
+  // Modificado: El CTA text solo debe decir "RECLAMANDO..." si el botón inicial del banner es el que carga, 
+  // pero como ahora la carga es en el modal, se quedará como "GRATIS" hasta que se vuelva "RECLAMADO".
+  const ctaText = status?.claimedToday ? "RECLAMADO" : "GRATIS";
   const timerText = status?.claimedToday ? `Vuelve en ${msToShort(nextMs)}` : isLocked ? "Requiere iniciar sesión" : "¡Recompensa disponible!";
 
   if (loading) return null;
 
   const modalNode = modal && createPortal(
-    <div className="mc-modal-overlay is-open" onClick={() => setModal(null)}>
+    <div className="mc-modal-overlay is-open no-tap-highlight" onClick={handleCloseModal}>
       <div className="mc-modal-backdrop" />
       
       <div className={`mc-stone-modal ${modal.phase === "reveal" ? "is-bursting mc-burst-reveal" : ""}`} onClick={(e) => e.stopPropagation()}>
-        <button className="mc-close-btn" onClick={() => setModal(null)}>X</button>
+        <button className="mc-close-btn no-tap-highlight" onClick={handleCloseModal}>X</button>
         
         <div className="mc-reward-content">
           {!modal.error ? (
@@ -236,24 +241,39 @@ export default function DailyFreeClaimCard() {
                     <h2>INICIA SESIÓN</h2>
                   </div>
                   <p className="mc-reward-text">Para reclamar el regalo diario, vincula tu cuenta en el servidor con <b>/vincular</b> y luego inicia sesión.</p>
-                  <button className="pixel-btn-green split-btn mt-16" onClick={() => { setModal(null); openAuthModal(); }}>
+                  <button className="pixel-btn-green split-btn mt-16 no-tap-highlight" onClick={() => { setModal(null); openAuthModal(); }}>
                     <span className="new-price">INICIAR SESIÓN</span>
                   </button>
                 </>
               )}
 
-              {modal.phase === "intro" && (
+              {(modal.phase === "intro" || modal.phase === "vibrating") && (
                 <>
                   <h2 className="mc-mystery-title">¡REGALO MISTERIOSO!</h2>
                   <p className="mc-mystery-subtitle">¿Qué contendrá tu recompensa de hoy?</p>
                   
-                  <div className="mc-mystery-chest-wrapper" onClick={nextStep}>
+                  <div 
+                    className="mc-mystery-chest-wrapper no-tap-highlight" 
+                    onClick={modal.phase === "intro" ? handleClaimClick : undefined}
+                    style={{ cursor: modal.phase === "vibrating" ? "default" : "pointer" }}
+                  >
                     <div className="mc-mystery-glow"></div>
-                    <img src="/tienda/assets/rankskin.png" alt="Recompensa" className="mc-chest-img" />
+                    <img 
+                      src="/tienda/assets/rankskin.png" 
+                      alt="Recompensa" 
+                      className={`mc-chest-img ${modal.phase === "vibrating" ? "is-vibrating" : ""}`} 
+                      draggable="false"
+                    />
                   </div>
                   
-                  <button className="pixel-btn-green split-btn mt-16" onClick={nextStep}>
-                    <span className="new-price">REVELAR</span>
+                  <button 
+                    className="pixel-btn-green split-btn mt-16 no-tap-highlight" 
+                    onClick={modal.phase === "intro" ? handleClaimClick : undefined}
+                    disabled={modal.phase === "vibrating"}
+                  >
+                    <span className="new-price">
+                      {modal.phase === "vibrating" ? "ABRIENDO..." : "REVELAR"}
+                    </span>
                   </button>
                 </>
               )}
@@ -289,7 +309,7 @@ export default function DailyFreeClaimCard() {
                   
                   <p className="mc-reward-text">Se han añadido a tu Wallet. Úsalas en la tienda o envíalas al servidor.</p>
                   
-                  <button className="pixel-btn-green split-btn mt-16 w-full" onClick={nextStep}>
+                  <button className="pixel-btn-green split-btn mt-16 w-full no-tap-highlight" onClick={handleContinue}>
                     <span className="new-price">CONTINUAR</span>
                   </button>
                 </div>
@@ -301,7 +321,7 @@ export default function DailyFreeClaimCard() {
                     <h2 style={{color: "#4ade80"}}>¡COMPLETADO!</h2>
                   </div>
                   <p className="mc-reward-text">Vuelve mañana para tu próxima recompensa diaria.</p>
-                  <button className="pixel-btn-gray mt-16 w-full" onClick={() => setModal(null)}>
+                  <button className="pixel-btn-gray mt-16 w-full no-tap-highlight" onClick={() => setModal(null)}>
                     CERRAR
                   </button>
                 </>
@@ -313,7 +333,7 @@ export default function DailyFreeClaimCard() {
                 <h2 style={{color: "#f87171"}}>ERROR</h2>
               </div>
               <p className="mc-reward-text" style={{color: "#fca5a5"}}>{modal.error}</p>
-              <button className="pixel-btn-gray mt-16 w-full" onClick={() => setModal(null)}>
+              <button className="pixel-btn-gray mt-16 w-full no-tap-highlight" onClick={() => setModal(null)}>
                 CERRAR
               </button>
             </>
@@ -326,7 +346,7 @@ export default function DailyFreeClaimCard() {
 
   return (
     <>
-      <div className={`mc-stone-banner ${disabled ? "is-cooldown" : ""} ${isLocked ? "is-locked" : ""}`}>
+      <div className={`mc-stone-banner ${status?.claimedToday ? "is-cooldown" : ""} ${isLocked ? "is-locked" : ""} no-tap-highlight`}>
         <div className="mc-banner-icon-stack">
           <div className="mc-banner-art" aria-hidden="true">
             <img className="mc-banner-coin coin--back" src="/tienda/assets/coin.png" alt="" draggable="false" />
@@ -336,18 +356,20 @@ export default function DailyFreeClaimCard() {
         
         <div className="mc-banner-info">
           <div className="mc-banner-title">REGALO DIARIO</div>
-          <p className={`mc-banner-timer ${!disabled && !isLocked ? 'is-ready' : ''}`}>{timerText}</p>
+          <p className={`mc-banner-timer ${!status?.claimedToday && !isLocked ? 'is-ready' : ''}`}>{timerText}</p>
         </div>
 
         <div className="mc-banner-action">
           <button 
             type="button"
-            className="mc-banner-cta"
-            disabled={disabled}
+            className="mc-banner-cta no-tap-highlight"
+            disabled={status?.claimedToday}
             onClick={() => {
-              if (disabled) return;
+              if (status?.claimedToday) return;
               if (isLocked) return openAuthModal();
-              return handleClaim();
+              
+              // Aquí en el banner exterior, ahora SOLO abrimos el modal en fase intro.
+              setModal({ phase: "intro" });
             }}
           >
             <span className="mc-banner-ctaLabel">{ctaText}</span>

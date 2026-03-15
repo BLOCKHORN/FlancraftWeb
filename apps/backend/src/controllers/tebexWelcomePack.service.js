@@ -176,10 +176,11 @@ async function assertBasketAllowed({ jugador, uuid, basket }) {
   };
 }
 
-function buildCheckoutCustom({ jugador, uuid, basket }) {
+function buildCheckoutCustom({ jugador, uuid, basket, server }) { // <-- Añadido 'server'
   return {
     mc_username: toStr(jugador),
     mc_uuid: normalizeUuid(uuid),
+    server: toStr(server || "global"),
     source: "flancraft-web",
     ts: Date.now(),
     package_ids: (Array.isArray(basket) ? basket : [])
@@ -194,6 +195,8 @@ function extractEventSubject(evt) {
 
 function pickCandidateArrays(subject) {
   return [
+    subject?.packages,
+    subject?.basket?.packages,
     subject?.products,
     subject?.rows,
     subject?.basket?.rows,

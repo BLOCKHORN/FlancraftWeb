@@ -1,4 +1,8 @@
 const db = require("../models/db");
+const {
+  enrichLeaderboardWith24hMovement,
+  maybeStoreLeaderboardSnapshot,
+} = require("../services/leaderboardSnapshots.service");
 
 const SURVIVAL_SERVER = "survival";
 const DEFAULT_LIMIT = 10;
@@ -163,6 +167,52 @@ const sanitizeJobsStats = (value) => {
     });
 };
 
+const buildRankedRows = (rows) => {
+  const list = Array.isArray(rows) ? rows : [];
+  return list.map((row, index) => ({
+    ...row,
+    global_rank: index + 1,
+  }));
+};
+
+const fetchAllLeaderboardRows = async ({ tipo, ascending }) => {
+  const spec = VIEWS_BY_TIPO[tipo];
+
+  if (spec) {
+    const { data, count, error } = await db
+      .from(spec.view)
+      .select("*", { count: "exact" })
+      .eq("servidor", SURVIVAL_SERVER)
+      .order(spec.order, { ascending })
+      .range(0, MAX_LIMIT - 1);
+
+    if (error) {
+      throw error;
+    }
+
+    return {
+      data: Array.isArray(data) ? data : [],
+      count: Number.isFinite(Number(count)) ? Number(count) : Array.isArray(data) ? data.length : 0,
+    };
+  }
+
+  const { data, count, error } = await db
+    .from("vista_estadisticas_agrupadas_wallet")
+    .select("*", { count: "exact" })
+    .eq("servidor", SURVIVAL_SERVER)
+    .order(tipo, { ascending })
+    .range(0, MAX_LIMIT - 1);
+
+  if (error) {
+    throw error;
+  }
+
+  return {
+    data: Array.isArray(data) ? data : [],
+    count: Number.isFinite(Number(count)) ? Number(count) : Array.isArray(data) ? data.length : 0,
+  };
+};
+
 exports.importarStat = async (req, res) => {
   const { uuid, nombre_minecraft, servidor, tipo, categoria, valor } = req.body;
   const server = resolveServerOrReject(servidor);
@@ -299,9 +349,7 @@ exports.importarStatsAgrupadas = async (req, res) => {
     insertPayload.jobs_stats = sanitizeJobsStats(req.body.jobs_stats);
   }
 
-  const { error: insErr } = await db
-    .from("estadisticas_agrupadas")
-    .insert([insertPayload]);
+  const { error: insErr } = await db.from("estadisticas_agrupadas").insert([insertPayload]);
 
   if (insErr) {
     console.error("[FlanSync] Error al insertar stats:", insErr.message);
@@ -335,9 +383,7 @@ exports.obtenerRankingEstadisticas = async (req, res) => {
     query = query.eq("tipo", tipo);
   }
 
-  query = query
-    .order("valor", { ascending: false })
-    .range(offset, offset + limit - 1);
+  query = query.order("valor", { ascending: false }).range(offset, offset + limit - 1);
 
   const { data, count, error } = await query;
 
@@ -367,36 +413,38 @@ exports.obtenerLeaderboards = async (req, res) => {
     return res.json({ total: 0, resultados: [] });
   }
 
-  const spec = VIEWS_BY_TIPO[tipo];
+  try {
+    const { data, count } = await fetchAllLeaderboardRows({
+      tipo,
+      ascending,
+    });
 
-  if (spec) {
-    const { data, count, error } = await db
-      .from(spec.view)
-      .select("*", { count: "exact" })
-      .order(spec.order, { ascending })
-      .range(offset, offset + limit - 1);
+    const rankedRows = buildRankedRows(data);
 
-    if (error) {
-      console.error("[FlanSync] Error al obtener leaderboard:", error.message);
-      return res.status(500).json({ error: "Error al obtener datos." });
-    }
+    const enrichedRows = await enrichLeaderboardWith24hMovement({
+      servidor: SURVIVAL_SERVER,
+      tipo,
+      rows: rankedRows,
+    });
 
-    return res.json({ total: count, resultados: data || [] });
-  }
+    maybeStoreLeaderboardSnapshot({
+      servidor: SURVIVAL_SERVER,
+      tipo,
+      rows: rankedRows,
+    }).catch((error) => {
+      console.error("[FlanSync] Error guardando snapshot leaderboard:", error.message);
+    });
 
-  const { data, count, error } = await db
-    .from("vista_estadisticas_agrupadas_wallet")
-    .select("*", { count: "exact" })
-    .eq("servidor", SURVIVAL_SERVER)
-    .order(tipo, { ascending })
-    .range(offset, offset + limit - 1);
+    const paged = enrichedRows.slice(offset, offset + limit);
 
-  if (error) {
-    console.error("[FlanSync] Error al obtener leaderboard agrupado:", error.message);
+    return res.json({
+      total: count,
+      resultados: paged,
+    });
+  } catch (error) {
+    console.error("[FlanSync] Error al obtener leaderboard:", error.message);
     return res.status(500).json({ error: "Error al obtener datos." });
   }
-
-  return res.json({ total: count, resultados: data || [] });
 };
 
 exports.obtenerPerfilJugador = async (req, res) => {

@@ -293,6 +293,7 @@ const crearPedidoTebex = async (req, res) => {
   const codigoDescuentoRaw = body.codigoDescuento ?? body.coupon ?? body.codigo_descuento ?? "";
   const coupon = String(codigoDescuentoRaw || "").trim();
   const uuidJugador = String(body.uuidJugador || body.uuid || "").trim();
+  const server = String(body.server || "global").trim().toLowerCase();
 
   if (!jugador) return res.status(400).json({ ok: false, error: 'Falta "jugador".' });
 
@@ -382,7 +383,7 @@ const crearPedidoTebex = async (req, res) => {
       complete_auto_redirect: true,
       username: jugador,
       ...(ipv4 ? { ip_address: ipv4 } : {}),
-      custom: welcomePackService.buildCheckoutCustom({ jugador, uuid: uuidJugador, basket }),
+      custom: welcomePackService.buildCheckoutCustom({ jugador, uuid: uuidJugador, basket, server }),
     };
 
     const created = await fetchJson(createBasketUrl, {
