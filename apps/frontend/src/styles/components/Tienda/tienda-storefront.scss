@@ -127,13 +127,105 @@ $mc-font: "MinecraftBold", "MinecraftSeven", sans-serif;
 }
 
 .coin-card {
-  box-shadow: inset -4px -4px 0 #0a0c14, inset 4px 4px 0 rgba(56, 189, 248, 0.15);
-  .card-bg-glow { background: radial-gradient(circle at center, rgba(56, 189, 248, 0.15) 0%, transparent 80%); }
+  background: linear-gradient(135deg, #0055ff 0%, #0088ff 100%);
+  border: 4px solid #002244;
+  box-shadow: 
+    inset 4px 4px 0 rgba(255, 255, 255, 0.2), 
+    inset -4px -4px 0 rgba(0, 0, 0, 0.2);
+  position: relative;
+  overflow: visible; // Crucial para que el badge no se corte
+  transition: transform 0.2s, border-color 0.2s;
+
+  .card-bg-glow {
+    position: absolute;
+    inset: 0;
+    overflow: hidden; // El brillo se queda dentro
+    background-image: 
+      linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+    background-size: 16px 16px;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: linear-gradient(
+        45deg, 
+        transparent 45%, 
+        rgba(255, 255, 255, 0.1) 50%, 
+        transparent 55%
+      );
+      animation: crystalShine 6s infinite;
+    }
+  }
+
+  .coin-amount-wrapper .coin-amount {
+    color: #ffea00;
+    font-size: 1.8rem;
+    text-shadow: 2px 2px 0 #000;
+    position: relative;
+    z-index: 5;
+  }
+
+  // Por defecto la imagen no flota
+  .card-image-wrapper img {
+    animation: none;
+    filter: drop-shadow(0 10px 5px rgba(0,0,0,0.3));
+  }
+
+  // ESTADO: HOVER
+  &:hover {
+    transform: translateY(-4px);
+    border-color: #5ee034;
+    .card-image-wrapper img {
+      animation: floatItem 3.5s ease-in-out infinite;
+    }
+  }
+
+  // ESTADO: EN CARRITO (Se queda fijo)
+  &.in-cart {
+    border-color: #5ee034 !important; // Forzamos el color verde
+    transform: translateY(-4px); // Se queda elevado
+    background: linear-gradient(135deg, #0044cc 0%, #0066ee 100%);
+    
+    .card-image-wrapper img {
+      animation: floatItem 3.5s ease-in-out infinite; // Sigue flotando
+    }
+  }
+
+  // EL BADGE (Contador x1, x2...)
+  .cart-tag {
+    position: absolute;
+    top: -16px;
+    left: -16px;
+    background: #5ee034 !important;
+    color: #fff !important;
+    border: 4px solid #000 !important;
+    padding: 6px 10px;
+    font-family: $mc-font;
+    font-size: 1.1rem;
+    text-shadow: 2px 2px 0 #000;
+    z-index: 100;
+    box-shadow: 
+      inset -2px -2px 0 rgba(0, 0, 0, 0.3), 
+      inset 2px 2px 0 rgba(255, 255, 255, 0.4), 
+      0 6px 0 #000;
+    display: block;
+    white-space: nowrap;
+  }
+}
+
+@keyframes crystalShine {
+  0% { transform: translateX(-100%) translateY(-100%); }
+  15%, 100% { transform: translateX(100%) translateY(100%); }
 }
 
 @keyframes floatItem {
   0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-6px); }
+  50% { transform: translateY(-10px); }
 }
 
 .card-image-wrapper {

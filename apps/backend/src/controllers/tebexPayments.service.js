@@ -389,7 +389,9 @@ async function getMonthlyTopDonators({ server = "global", limit = 3, force = fal
   for (const row of rows) {
     const username = toText(row.username);
     const uuid = toText(row.uuid);
-    const key = uuid || username.toLowerCase();
+    
+    // CORRECCIÓN 3: Agrupar siempre por username para evitar duplicados si a veces falta el UUID
+    const key = username ? username.toLowerCase() : uuid;
     if (!key) continue;
 
     const amount = Number(row.amount || 0);
