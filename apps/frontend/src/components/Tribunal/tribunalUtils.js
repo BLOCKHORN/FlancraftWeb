@@ -1,13 +1,13 @@
 export const POR_PAGINA = 25;
 
 export const REGLAS_SANCION = {
-  hacks: ["Jail 12h", "Jail 5d", "Ban perm."],
-  fly: ["Jail 6h", "Jail 3d", "Ban perm."],
-  insultos: ["Jail 30m", "Jail 5h", "Ban perm."],
-  tpakill: ["Jail 6h", "Jail 5d", "Ban perm."],
-  grief: ["Jail 2h", "Jail 8h", "Jail 5d"],
-  spam: ["Jail 1d", "Jail 10d", "Ban perm."],
+  hacks: ["Jail 12h", "Jail 5d", "Ban"],
+  insultos: ["Jail 30m", "Jail 5h", "Ban"],
+  tpakill: ["Jail 6h", "Jail 5d", "Ban"],
+  grif: ["Jail 2h", "Jail 8h", "Jail 5d"],
+  spam: ["Jail 1d", "Jail 10d", "Ban"],
   flood: ["Aviso", "Jail 15m", "Jail 2h"],
+  multicuenta: ["Aviso", "Jail 12h", "Ban"],
 };
 
 export const parseTimestamp = (t) => {
@@ -86,7 +86,7 @@ export const formatearDuracion = (raw) => {
 
 export const esPerma = (s) => {
   const bt = String(s?.bantype || "").toLowerCase();
-  if (bt === "perma" || bt === "permanent") return true;
+  if (bt === "ban" || bt === "perma" || bt === "permanent") return true;
   const ms = parseDurationToMs(s?.duration);
   return ms === Infinity;
 };
@@ -136,13 +136,18 @@ export const buildPageItems = (current, total) => {
   return items;
 };
 
-export const normalizarMotivo = (value) =>
-  String(value || "")
+export const normalizarMotivo = (value) => {
+  const raw = String(value || "")
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
     .replace(/\s+/g, "")
     .replace(/[^a-z0-9]/g, "");
+
+  if (raw === "grief") return "grif";
+  if (raw === "fly") return "hacks";
+  return raw;
+};
 
 export const buildStrikeTimelineMap = (sanciones) => {
   const counters = new Map();
@@ -181,13 +186,13 @@ export const getStrikeFeedback = (motivo, strike, sancion) => {
     const accion = reglas[index];
     return {
       accion,
-      esPermaban: /ban\s*perm/i.test(accion),
+      esPermaban: /^ban\b/i.test(accion),
     };
   }
 
   if (esPerma(sancion)) {
     return {
-      accion: "Ban perm.",
+      accion: "Ban",
       esPermaban: true,
     };
   }
@@ -198,7 +203,7 @@ export const getStrikeFeedback = (motivo, strike, sancion) => {
   };
 };
 
-export const getResumenEscala = (strike, accion, sancion) => {
+export const getResumenEscala = (strike, accion) => {
   const partes = [];
 
   if (strike > 0) partes.push(`${strike}ª vez`);
@@ -207,14 +212,7 @@ export const getResumenEscala = (strike, accion, sancion) => {
 
   if (a === "aviso") partes.push("Aviso");
   if (/^jail\b/.test(a)) partes.push(accion);
-
-  if (a && /ban\s*perm/.test(a) && !esPerma(sancion)) {
-    partes.push("Ban perm.");
-  }
-
-  if (a && /^ban\b/.test(a) && !/ban\s*perm/.test(a) && !esPerma(sancion)) {
-    partes.push(accion);
-  }
+  if (/^ban\b/.test(a)) partes.push(accion);
 
   return partes.join(" · ");
 };

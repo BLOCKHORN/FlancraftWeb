@@ -13,6 +13,7 @@ const logrosEstadisticasRoutes = require("./routes/logros_estadisticas.routes");
 const misionesRoutes = require("./routes/misiones.routes");
 const vincularRoutes = require("./routes/vincular.routes");
 const sancionesRoutes = require("./routes/sanciones.routes");
+const multicuentasRoutes = require("./routes/multicuentas.routes");
 const permisosAdminRoutes = require("./routes/permisos.admin.routes");
 const statsRoutes = require("./routes/stats.routes");
 const perfilRoutes = require("./routes/perfil.routes");
@@ -70,7 +71,7 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.options("*", cors(corsOptions));
 
-app.use(express.json({ 
+app.use(express.json({
   limit: "5mb",
   verify: (req, res, buf) => {
     req.rawBody = buf;
@@ -96,6 +97,7 @@ app.use("/api/web-logros", webLogrosRoutes);
 
 app.use("/api/monedas", monedasRoutes);
 app.use("/api/sanciones", sancionesRoutes);
+app.use("/api/multicuentas", multicuentasRoutes);
 app.use("/api/permisos-admin", permisosAdminRoutes);
 app.use("/api/stats", statsRoutes);
 app.use("/api/perfil", perfilRoutes);

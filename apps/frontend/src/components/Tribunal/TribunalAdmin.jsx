@@ -29,6 +29,7 @@ import {
   debeMostrarFechaFin,
   esPerma,
   esSancionActiva,
+  normalizarMotivo,
 } from "./tribunalUtils";
 import "../../styles/components/Tribunal/_tribunaladmin.scss";
 import { getAuthToken } from "../../lib/auth/storage";
@@ -37,7 +38,6 @@ import Seo from "../SEO/Seo";
 
 const MOTIVOS = [
   "hacks",
-  "fly",
   "minar survival",
   "insultos",
   "tpakill",
@@ -45,6 +45,7 @@ const MOTIVOS = [
   "grif",
   "spam",
   "flood",
+  "multicuenta",
   "usar bugs",
   "estafas",
   "otros",
@@ -57,9 +58,17 @@ const SITUACIONES = [
   { key: "perma", label: "Permaban" },
 ];
 
+const MULTI_ESTADOS = [
+  { key: "todos", label: "Todos" },
+  { key: "pendiente", label: "Pendientes" },
+  { key: "revisado", label: "Revisadas" },
+  { key: "descartado", label: "Descartadas" },
+];
+
 const normalizar = (v) => (v || "").toString().trim().toLowerCase();
 const normalizarRol = (v) => String(v || "").trim().toLowerCase().replace(/[\s_-]+/g, "");
 const buildSancionesUrl = (path = "") => apiUrl(`/api/sanciones${path}`);
+const buildMulticuentasUrl = (path = "") => apiUrl(`/api/multicuentas${path}`);
 
 const buildAdminHeaders = (withJson = false) => {
   const headers = {
@@ -83,29 +92,96 @@ const pickArray = (payload) => {
 };
 
 const iconoSituacion = (situacion) => {
-  const props = { size: 18, weight: "duotone" };
+  const props = { size: 18, weight: "bold" };
   if (situacion === "perma") return <Skull {...props} />;
   if (situacion === "activa") return <HourglassMedium {...props} />;
   return <CheckCircle {...props} />;
+};
+
+const parseRelatedAccounts = (value) => {
+  if (Array.isArray(value)) return value;
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+};
+
+const getRelatedName = (item) => {
+  if (!item) return "";
+  if (typeof item === "string") return item;
+  return String(
+    item.name ||
+      item.nombre ||
+      item.nombre_jugador ||
+      item.playerName ||
+      item.player ||
+      item.uuid ||
+      ""
+  ).trim();
+};
+
+const getRelatedAccountsText = (value, max = 5) => {
+  const items = parseRelatedAccounts(value)
+    .map(getRelatedName)
+    .filter(Boolean);
+
+  if (!items.length) return "Sin coincidencias visibles";
+
+  const preview = items.slice(0, max).join(", ");
+  const remaining = items.length - max;
+
+  if (remaining > 0) return `${preview} +${remaining}`;
+  return preview;
+};
+
+const getMultiEstadoKey = (value) => {
+  const raw = normalizar(value);
+  if (raw === "revisada" || raw === "revisado") return "revisado";
+  if (raw === "descartada" || raw === "descartado") return "descartado";
+  return "pendiente";
+};
+
+const getMultiEstadoLabel = (value) => {
+  const key = getMultiEstadoKey(value);
+  if (key === "revisado") return "REVISADA";
+  if (key === "descartado") return "DESCARTADA";
+  return "PENDIENTE";
 };
 
 export default function TribunalAdminPanel() {
   const { user } = useContext(UserContext);
   const navigate = useNavigate();
 
+  const [activeTab, setActiveTab] = useState("sanciones");
+
   const [sanciones, setSanciones] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [multicuentas, setMulticuentas] = useState([]);
+
+  const [loadingSanciones, setLoadingSanciones] = useState(false);
+  const [loadingMulticuentas, setLoadingMulticuentas] = useState(false);
+
   const [busyId, setBusyId] = useState(null);
-  const [errorMsg, setErrorMsg] = useState("");
+  const [errorSanciones, setErrorSanciones] = useState("");
+  const [errorMulticuentas, setErrorMulticuentas] = useState("");
   const [notice, setNotice] = useState(null);
 
   const [editingId, setEditingId] = useState(null);
   const [observacion, setObservacion] = useState("");
   const [motivoEditado, setMotivoEditado] = useState("otros");
 
+  const [editingMultiId, setEditingMultiId] = useState(null);
+  const [multiObservacion, setMultiObservacion] = useState("");
+  const [multiEstadoEditado, setMultiEstadoEditado] = useState("pendiente");
+
   const [q, setQ] = useState("");
   const [fSituacion, setFSituacion] = useState("todas");
   const [fMotivo, setFMotivo] = useState("todos");
+  const [fMultiEstado, setFMultiEstado] = useState("todos");
   const [nowMs, setNowMs] = useState(() => Date.now());
 
   const currentRole = useMemo(
@@ -128,8 +204,8 @@ export default function TribunalAdminPanel() {
   }, [notice]);
 
   const cargarSanciones = useCallback(async (withNotice = false) => {
-    setLoading(true);
-    setErrorMsg("");
+    setLoadingSanciones(true);
+    setErrorSanciones("");
 
     try {
       const res = await fetch(buildSancionesUrl(""), {
@@ -156,20 +232,62 @@ export default function TribunalAdminPanel() {
       if (withNotice) {
         setNotice({
           type: "success",
-          message: `Panel actualizado. ${arr.length} registros cargados.`,
+          message: `Tribunal actualizado. ${arr.length} registros cargados.`,
         });
       }
     } catch (err) {
       setSanciones([]);
-      setErrorMsg(err?.message || "No se pudieron cargar las sanciones.");
+      setErrorSanciones(err?.message || "No se pudieron cargar las sanciones.");
     } finally {
-      setLoading(false);
+      setLoadingSanciones(false);
+    }
+  }, []);
+
+  const cargarMulticuentas = useCallback(async (withNotice = false) => {
+    setLoadingMulticuentas(true);
+    setErrorMulticuentas("");
+
+    try {
+      const res = await fetch(buildMulticuentasUrl("/detecciones"), {
+        headers: buildAdminHeaders(false),
+      });
+
+      const text = await res.text();
+      let json = null;
+
+      try {
+        json = text ? JSON.parse(text) : null;
+      } catch {
+        json = null;
+      }
+
+      if (!res.ok) {
+        const msg = (json && (json.error || json.message)) || `HTTP ${res.status}`;
+        throw new Error(msg);
+      }
+
+      const arr = pickArray(json);
+      setMulticuentas(arr);
+
+      if (withNotice) {
+        setNotice({
+          type: "success",
+          message: `Multicuentas actualizadas. ${arr.length} registros cargados.`,
+        });
+      }
+    } catch (err) {
+      setMulticuentas([]);
+      setErrorMulticuentas(err?.message || "No se pudieron cargar las multicuentas.");
+    } finally {
+      setLoadingMulticuentas(false);
     }
   }, []);
 
   useEffect(() => {
-    if (!denied) cargarSanciones();
-  }, [denied, cargarSanciones]);
+    if (denied) return;
+    cargarSanciones();
+    cargarMulticuentas();
+  }, [denied, cargarSanciones, cargarMulticuentas]);
 
   const cerrarEdicion = () => {
     setEditingId(null);
@@ -177,10 +295,16 @@ export default function TribunalAdminPanel() {
     setMotivoEditado("otros");
   };
 
+  const cerrarEdicionMulti = () => {
+    setEditingMultiId(null);
+    setMultiObservacion("");
+    setMultiEstadoEditado("pendiente");
+  };
+
   const guardarCambios = async (sancion) => {
     try {
       setBusyId(sancion.id);
-      setErrorMsg("");
+      setErrorSanciones("");
 
       const res = await fetch(buildSancionesUrl(`/${sancion.id}`), {
         method: "PATCH",
@@ -213,7 +337,49 @@ export default function TribunalAdminPanel() {
         message: `Registro de ${sancion.name} actualizado.`,
       });
     } catch (err) {
-      setErrorMsg(err?.message || "No se pudieron guardar los cambios.");
+      setErrorSanciones(err?.message || "No se pudieron guardar los cambios.");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const guardarCambiosMulti = async (item) => {
+    try {
+      setBusyId(item.id);
+      setErrorMulticuentas("");
+
+      const res = await fetch(buildMulticuentasUrl(`/detecciones/${item.id}`), {
+        method: "PATCH",
+        headers: buildAdminHeaders(true),
+        body: JSON.stringify({
+          observacion: multiObservacion,
+          estado: multiEstadoEditado,
+          revisado_por: user?.uid || null,
+        }),
+      });
+
+      const text = await res.text();
+      let json = null;
+
+      try {
+        json = text ? JSON.parse(text) : null;
+      } catch {
+        json = null;
+      }
+
+      if (!res.ok) {
+        const msg = (json && (json.error || json.message)) || `HTTP ${res.status}`;
+        throw new Error(msg);
+      }
+
+      await cargarMulticuentas();
+      cerrarEdicionMulti();
+      setNotice({
+        type: "success",
+        message: `Detección de ${item.nombre_jugador} actualizada.`,
+      });
+    } catch (err) {
+      setErrorMulticuentas(err?.message || "No se pudieron guardar los cambios.");
     } finally {
       setBusyId(null);
     }
@@ -224,7 +390,7 @@ export default function TribunalAdminPanel() {
 
     try {
       setBusyId(id);
-      setErrorMsg("");
+      setErrorSanciones("");
 
       const res = await fetch(buildSancionesUrl(`/${id}`), {
         method: "DELETE",
@@ -251,7 +417,7 @@ export default function TribunalAdminPanel() {
         message: `Registro de ${nombre} eliminado.`,
       });
     } catch (err) {
-      setErrorMsg(err?.message || "No se pudo eliminar la sanción.");
+      setErrorSanciones(err?.message || "No se pudo eliminar la sanción.");
     } finally {
       setBusyId(null);
     }
@@ -267,7 +433,7 @@ export default function TribunalAdminPanel() {
     [sancionesConMeta]
   );
 
-  const stats = useMemo(() => {
+  const sancionesStats = useMemo(() => {
     const total = sancionesConMeta.length;
     let activas = 0;
     let finalizadas = 0;
@@ -286,11 +452,11 @@ export default function TribunalAdminPanel() {
   const sancionesFiltradas = useMemo(() => {
     const qq = normalizar(q);
     const situacionFiltro = normalizar(fSituacion);
-    const motivoFiltro = normalizar(fMotivo);
+    const motivoFiltro = normalizarMotivo(fMotivo);
 
     const list = sancionesConMeta.filter((s) => {
       const name = normalizar(s.name);
-      const type = normalizar(s.type);
+      const type = normalizarMotivo(s.type);
       const moderator = normalizar(s.moderator);
       const obs = normalizar(s.observacion);
       const situacion = calcularSituacion(s, nowMs);
@@ -298,7 +464,7 @@ export default function TribunalAdminPanel() {
       const matchQ =
         !qq ||
         name.includes(qq) ||
-        type.includes(qq) ||
+        type.includes(normalizarMotivo(qq)) ||
         moderator.includes(qq) ||
         obs.includes(qq);
 
@@ -312,21 +478,73 @@ export default function TribunalAdminPanel() {
     return list;
   }, [sancionesConMeta, q, fSituacion, fMotivo, nowMs]);
 
+  const multicuentasStats = useMemo(() => {
+    const total = multicuentas.length;
+    let pendientes = 0;
+    let revisadas = 0;
+    let descartadas = 0;
+
+    for (const item of multicuentas) {
+      const estado = getMultiEstadoKey(item.estado);
+      if (estado === "pendiente") pendientes++;
+      if (estado === "revisado") revisadas++;
+      if (estado === "descartado") descartadas++;
+    }
+
+    return { total, pendientes, revisadas, descartadas };
+  }, [multicuentas]);
+
+  const multicuentasFiltradas = useMemo(() => {
+    const qq = normalizar(q);
+    const estadoFiltro = normalizar(fMultiEstado);
+
+    const list = multicuentas.filter((item) => {
+      const nombre = normalizar(item.nombre_jugador);
+      const servidor = normalizar(item.servidor);
+      const estado = getMultiEstadoKey(item.estado);
+      const obs = normalizar(item.observacion);
+      const related = normalizar(getRelatedAccountsText(item.related_accounts, 50));
+      const ipHash = normalizar(item.ip_hash);
+
+      const matchQ =
+        !qq ||
+        nombre.includes(qq) ||
+        servidor.includes(qq) ||
+        estado.includes(qq) ||
+        obs.includes(qq) ||
+        related.includes(qq) ||
+        ipHash.includes(qq);
+
+      const matchEstado = estadoFiltro === "todos" ? true : estado === estadoFiltro;
+
+      return matchQ && matchEstado;
+    });
+
+    list.sort((a, b) => (parseTimestamp(b.timestamp) || 0) - (parseTimestamp(a.timestamp) || 0));
+    return list;
+  }, [multicuentas, q, fMultiEstado]);
+
+  const loadingActual = activeTab === "sanciones" ? loadingSanciones : loadingMulticuentas;
+  const errorActual = activeTab === "sanciones" ? errorSanciones : errorMulticuentas;
+  const endpointActual =
+    activeTab === "sanciones" ? buildSancionesUrl("") : buildMulticuentasUrl("/detecciones");
+
   if (denied) {
     return (
-      <section className="tribAdmin">
+      <section className="tribAdmin no-tap-highlight">
+        <div className="tribAdmin__backgroundWrap" />
         <div className="tribAdmin__wrap tribAdmin__wrap--denied">
-          <div className="tribAdmin__deniedCard">
+          <div className="tribAdmin__deniedCard mc-block">
             <img
               src="/assets/gandalf_minecraft.webp"
               alt="Acceso denegado"
-              className="tribAdmin__deniedImg"
+              className="tribAdmin__deniedImg mc-pixelated"
             />
-            <h2 className="tribAdmin__deniedTitle">Acceso denegado</h2>
+            <h2 className="tribAdmin__deniedTitle">ACCESO DENEGADO</h2>
             <p className="tribAdmin__deniedDesc">No tienes permisos para entrar al panel.</p>
-            <button className="tribBtn tribBtn--primary" onClick={() => navigate("/tribunal")}>
+            <button className="mc-btn mc-btn--green" onClick={() => navigate("/tribunal")}>
               <ArrowLeft size={18} weight="bold" />
-              Volver al Tribunal
+              VOLVER AL TRIBUNAL
             </button>
           </div>
         </div>
@@ -337,348 +555,623 @@ export default function TribunalAdminPanel() {
   return (
     <>
       <Seo title="Panel interno | FlanCraft" noindex />
-      <section className="tribAdmin">
+      <section className="tribAdmin no-tap-highlight">
+        <div className="tribAdmin__backgroundWrap" />
+
         <div className="tribAdmin__wrap">
           <div className="tribAdmin__topbar">
-            <button className="tribBtn tribBtn--ghost" onClick={() => navigate("/tribunal")}>
+            <button className="mc-btn mc-btn--ghost" onClick={() => navigate("/tribunal")}>
               <ArrowLeft size={18} weight="bold" />
-              Volver al Tribunal
+              VOLVER AL TRIBUNAL
             </button>
 
-            <div className="tribAdmin__session">
-              <span className="tribAdmin__sessionTag">Sesión</span>
+            <div className="tribAdmin__session mc-element">
+              <span className="tribAdmin__sessionTag">SESIÓN:</span>
               <span className={`tribAdmin__role tribAdmin__role--${currentRole || "none"}`}>
                 {(user?.rango_staff || user?.rol_admin || "").toString().toUpperCase()}
               </span>
             </div>
           </div>
 
-          <header className="tribAdmin__header">
-            <div className="tribAdmin__titleWrap">
-              <h1 className="tribAdmin__title">Panel de Tribunal</h1>
-              <p className="tribAdmin__subtitle">
-                Survival · Este panel sirve para auditar registros, añadir notas internas,
-                corregir motivos mal clasificados y eliminar entradas erróneas.
-              </p>
-
-              <div className="tribAdmin__explain">
-                La sanción ya ha sido aplicada por el sistema. Aquí no se decide el castigo: aquí se revisa el registro.
-              </div>
-            </div>
-
-            <div className="tribAdmin__chips">
-              <div className="statChip statChip--pending">
-                <HourglassMedium size={18} weight="duotone" />
-                <div>
-                  <div className="statChip__value">{stats.activas}</div>
-                  <div className="statChip__label">Activas</div>
-                </div>
-              </div>
-
-              <div className="statChip statChip--reviewed">
-                <CheckCircle size={18} weight="duotone" />
-                <div>
-                  <div className="statChip__value">{stats.finalizadas}</div>
-                  <div className="statChip__label">Finalizadas</div>
-                </div>
-              </div>
-
-              <div className="statChip statChip--banned">
-                <Skull size={18} weight="duotone" />
-                <div>
-                  <div className="statChip__value">{stats.permabans}</div>
-                  <div className="statChip__label">Permaban</div>
-                </div>
-              </div>
-
-              <div className="statChip statChip--total">
-                <Funnel size={18} weight="duotone" />
-                <div>
-                  <div className="statChip__value">{stats.total}</div>
-                  <div className="statChip__label">Total</div>
-                </div>
-              </div>
-            </div>
-          </header>
-
-          <div className="tribAdmin__controls">
-            <div className="tribAdmin__search">
-              <MagnifyingGlass size={18} weight="bold" />
-              <input
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                placeholder="Buscar por jugador, moderador, motivo o nota…"
-              />
-              {q?.trim() && (
-                <button className="iconBtn" onClick={() => setQ("")} aria-label="Limpiar búsqueda">
-                  <XCircle size={18} weight="fill" />
-                </button>
-              )}
-            </div>
-
-            <div className="tribAdmin__filters">
-              <div className="selectWrap">
-                <span className="selectWrap__label">Situación</span>
-                <select value={fSituacion} onChange={(e) => setFSituacion(e.target.value)}>
-                  {SITUACIONES.map((item) => (
-                    <option key={item.key} value={item.key}>
-                      {item.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="selectWrap">
-                <span className="selectWrap__label">Motivo</span>
-                <select value={fMotivo} onChange={(e) => setFMotivo(e.target.value)}>
-                  <option value="todos">Todos</option>
-                  {MOTIVOS.map((m) => (
-                    <option key={m} value={m}>
-                      {m}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <button
-                className="tribBtn tribBtn--primary"
-                onClick={() => cargarSanciones(true)}
-                disabled={loading}
-              >
-                <ArrowsClockwise size={18} weight="bold" />
-                {loading ? "Cargando…" : "Actualizar"}
-              </button>
-            </div>
+          {/* PESTAÑAS DE INVENTARIO */}
+          <div className="folder-tabs">
+            <button
+              className={`folder-tab ${activeTab === "sanciones" ? "is-active" : ""}`}
+              onClick={() => setActiveTab("sanciones")}
+              type="button"
+            >
+              SANCIONES
+            </button>
+            <button
+              className={`folder-tab ${activeTab === "multicuentas" ? "is-active" : ""}`}
+              onClick={() => setActiveTab("multicuentas")}
+              type="button"
+            >
+              MULTICUENTAS
+            </button>
           </div>
 
-          {notice && (
-            <div className={`tribAdmin__notice tribAdmin__notice--${notice.type}`}>
-              <div className="tribAdmin__noticeTitle">Hecho</div>
-              <div className="tribAdmin__noticeDesc">{notice.message}</div>
-            </div>
-          )}
+          {/* ÁREA DE TRABAJO PRINCIPAL (CONECTADA A LAS PESTAÑAS) */}
+          <div className="tribAdmin__workspace mc-block">
+            <header className="tribAdmin__header">
+              <div className="tribAdmin__titleWrap">
+                <h1 className="tribAdmin__title">PANEL DE TRIBUNAL</h1>
+                <p className="tribAdmin__subtitle">
+                  SURVIVAL ·{" "}
+                  {activeTab === "sanciones"
+                    ? "Audita sanciones, añade notas internas y corrige motivos."
+                    : "Revisa detecciones de multicuentas por coincidencia de IP."}
+                </p>
 
-          {errorMsg && (
-            <div className="tribAdmin__error">
-              <div className="tribAdmin__errorTitle">Ha ocurrido un problema</div>
-              <div className="tribAdmin__errorDesc">{errorMsg}</div>
-              <div className="tribAdmin__errorHint">
-                Endpoint: <span className="mono">{buildSancionesUrl("")}</span>
+                <div className="tribAdmin__explain">
+                  {activeTab === "sanciones"
+                    ? "La sanción ya ha sido aplicada por el sistema. Aquí se revisa el registro."
+                    : "Aquí no se sanciona automáticamente. Se revisan coincidencias y se decide cómo proceder."}
+                </div>
+              </div>
+
+              <div className="tribAdmin__chips">
+                {activeTab === "sanciones" ? (
+                  <>
+                    <div className="statChip statChip--pending">
+                      <HourglassMedium size={24} weight="bold" />
+                      <div>
+                        <div className="statChip__value">{sancionesStats.activas}</div>
+                        <div className="statChip__label">ACTIVAS</div>
+                      </div>
+                    </div>
+
+                    <div className="statChip statChip--reviewed">
+                      <CheckCircle size={24} weight="bold" />
+                      <div>
+                        <div className="statChip__value">{sancionesStats.finalizadas}</div>
+                        <div className="statChip__label">FINALIZADAS</div>
+                      </div>
+                    </div>
+
+                    <div className="statChip statChip--banned">
+                      <Skull size={24} weight="bold" />
+                      <div>
+                        <div className="statChip__value">{sancionesStats.permabans}</div>
+                        <div className="statChip__label">PERMABAN</div>
+                      </div>
+                    </div>
+
+                    <div className="statChip statChip--total">
+                      <Funnel size={24} weight="bold" />
+                      <div>
+                        <div className="statChip__value">{sancionesStats.total}</div>
+                        <div className="statChip__label">TOTAL</div>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="statChip statChip--pending">
+                      <WarningCircle size={24} weight="bold" />
+                      <div>
+                        <div className="statChip__value">{multicuentasStats.pendientes}</div>
+                        <div className="statChip__label">PENDIENTES</div>
+                      </div>
+                    </div>
+
+                    <div className="statChip statChip--reviewed">
+                      <CheckCircle size={24} weight="bold" />
+                      <div>
+                        <div className="statChip__value">{multicuentasStats.revisadas}</div>
+                        <div className="statChip__label">REVISADAS</div>
+                      </div>
+                    </div>
+
+                    <div className="statChip statChip--banned">
+                      <XCircle size={24} weight="bold" />
+                      <div>
+                        <div className="statChip__value">{multicuentasStats.descartadas}</div>
+                        <div className="statChip__label">DESCARTADAS</div>
+                      </div>
+                    </div>
+
+                    <div className="statChip statChip--total">
+                      <Funnel size={24} weight="bold" />
+                      <div>
+                        <div className="statChip__value">{multicuentasStats.total}</div>
+                        <div className="statChip__label">TOTAL</div>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            </header>
+
+            <div className="tribAdmin__controls mc-element">
+              <div className="tribAdmin__search">
+                <MagnifyingGlass size={20} weight="bold" className="search-icon" />
+                <input
+                  className="mc-input"
+                  value={q}
+                  onChange={(e) => setQ(e.target.value)}
+                  placeholder={
+                    activeTab === "sanciones"
+                      ? "Buscar por jugador, moderador, motivo o nota…"
+                      : "Buscar por jugador, relacionadas, hash, servidor o nota…"
+                  }
+                />
+                {q?.trim() && (
+                  <button className="clearBtn" onClick={() => setQ("")} aria-label="Limpiar búsqueda">
+                    <XCircle size={20} weight="fill" />
+                  </button>
+                )}
+              </div>
+
+              <div className="tribAdmin__filters">
+                {activeTab === "sanciones" ? (
+                  <>
+                    <div className="selectWrap">
+                      <span className="selectWrap__label">SITUACIÓN</span>
+                      <select
+                        className="mc-input"
+                        value={fSituacion}
+                        onChange={(e) => setFSituacion(e.target.value)}
+                      >
+                        {SITUACIONES.map((item) => (
+                          <option key={item.key} value={item.key}>
+                            {item.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="selectWrap">
+                      <span className="selectWrap__label">MOTIVO</span>
+                      <select className="mc-input" value={fMotivo} onChange={(e) => setFMotivo(e.target.value)}>
+                        <option value="todos">Todos</option>
+                        {MOTIVOS.map((m) => (
+                          <option key={m} value={m}>
+                            {m}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </>
+                ) : (
+                  <div className="selectWrap">
+                    <span className="selectWrap__label">ESTADO</span>
+                    <select
+                      className="mc-input"
+                      value={fMultiEstado}
+                      onChange={(e) => setFMultiEstado(e.target.value)}
+                    >
+                      {MULTI_ESTADOS.map((item) => (
+                        <option key={item.key} value={item.key}>
+                          {item.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                <button
+                  className="mc-btn mc-btn--green"
+                  onClick={() =>
+                    activeTab === "sanciones" ? cargarSanciones(true) : cargarMulticuentas(true)
+                  }
+                  disabled={loadingActual}
+                >
+                  <ArrowsClockwise size={18} weight="bold" className={loadingActual ? "spin" : ""} />
+                  {loadingActual ? "CARGANDO…" : "ACTUALIZAR"}
+                </button>
               </div>
             </div>
-          )}
 
-          <div className="tribAdmin__tableWrap">
-            <table className="tribAdmin__table">
-              <thead>
-                <tr>
-                  <th className="colJugador">Jugador</th>
-                  <th className="colModerador">Moderador</th>
-                  <th className="colMotivo">Motivo</th>
-                  <th className="colEscala">Escala</th>
-                  <th className="colDuracion">Duración</th>
-                  <th className="colSituacion">Situación</th>
-                  <th className="colNota">Nota interna</th>
-                  <th className="colAccion">Acción</th>
-                </tr>
-              </thead>
+            {notice && (
+              <div className={`tribAdmin__notice tribAdmin__notice--${notice.type} mc-element`}>
+                <CheckCircle size={20} weight="bold" />
+                <div>
+                  <div className="tribAdmin__noticeTitle">HECHO</div>
+                  <div className="tribAdmin__noticeDesc">{notice.message}</div>
+                </div>
+              </div>
+            )}
 
-              <tbody>
-                {sancionesFiltradas.length === 0 ? (
-                  <tr>
-                    <td colSpan={8} className="tribAdmin__empty">
-                      <div className="tribAdmin__emptyInner">
-                        <Funnel size={22} weight="duotone" />
-                        <div>
-                          <div className="tribAdmin__emptyTitle">
-                            {loading ? "Cargando…" : "No hay resultados"}
-                          </div>
-                          <div className="tribAdmin__emptyDesc">
-                            {loading
-                              ? "Obteniendo registros del backend."
-                              : "Prueba otra búsqueda o ajusta los filtros."}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                ) : (
-                  sancionesFiltradas.map((s) => {
-                    const strike = getStrikeFromMap(strikesMap, s.__rowIndex);
-                    const strikeFeedback = getStrikeFeedback(s.type, strike, s);
-                    const resumenEscala = getResumenEscala(strike, strikeFeedback.accion, s);
-                    const duracionVisible = getDuracionVisible(s.duration, strikeFeedback.accion, s);
-                    const fechaFin = debeMostrarFechaFin(s.duration, strikeFeedback.accion, s)
-                      ? obtenerFechaFin(s.timestamp, s.duration)
-                      : null;
-                    const situacion = calcularSituacion(s, nowMs);
-                    const fechaMs = parseTimestamp(s.timestamp);
-                    const fechaTexto = fechaMs ? new Date(fechaMs).toLocaleString("es-ES") : "-";
-                    const motivoRow = (s.type || "otros").toString().trim();
-                    const motivoKey = normalizar(motivoRow).replace(/\s+/g, "-") || "otros";
-                    const isBusy = busyId === s.id;
-                    const isEditing = editingId === s.id;
-                    const perma = esPerma(s);
-                    const activa = esSancionActiva(s, nowMs);
+            {errorActual && (
+              <div className="tribAdmin__error mc-element">
+                <WarningCircle size={20} weight="bold" />
+                <div>
+                  <div className="tribAdmin__errorTitle">HA OCURRIDO UN PROBLEMA</div>
+                  <div className="tribAdmin__errorDesc">{errorActual}</div>
+                  <div className="tribAdmin__errorHint">
+                    Endpoint: <span className="mono">{endpointActual}</span>
+                  </div>
+                </div>
+              </div>
+            )}
 
-                    return (
-                      <tr key={s.id} className={`row row--${situacion}`}>
-                        <td data-label="Jugador">
-                          <Link to={`/perfil/${s.name}`} className="playerLink">
-                            <div className="playerCell">
-                              <div className="avatarFrame">
-                                <img
-                                  src={avatarUrl(s.name, 32)}
-                                  alt={s.name}
-                                  className="avatar"
-                                  loading="lazy"
-                                  decoding="async"
-                                />
-                              </div>
-                              <div className="playerMeta">
-                                <div className="playerName">{s.name}</div>
-                                <div className="playerSub" title={s.id}>
-                                  ID <span className="muted">{String(s.id || "").slice(0, 8)}…</span>
+            <div className="tribAdmin__tableWrap">
+              {activeTab === "sanciones" ? (
+                <>
+                  <table className="tribAdmin__table">
+                    <thead>
+                      <tr>
+                        <th className="colJugador">JUGADOR</th>
+                        <th className="colModerador">MODERADOR</th>
+                        <th className="colMotivo">MOTIVO</th>
+                        <th className="colEscala">ESCALA</th>
+                        <th className="colDuracion">DURACIÓN</th>
+                        <th className="colSituacion">SITUACIÓN</th>
+                        <th className="colNota">NOTA INTERNA</th>
+                        <th className="colAccion">ACCIÓN</th>
+                      </tr>
+                    </thead>
+
+                    <tbody>
+                      {sancionesFiltradas.length === 0 ? (
+                        <tr>
+                          <td colSpan={8} className="tribAdmin__empty">
+                            <div className="tribAdmin__emptyInner mc-element">
+                              <Funnel size={32} weight="bold" />
+                              <div>
+                                <div className="tribAdmin__emptyTitle">
+                                  {loadingSanciones ? "CARGANDO…" : "NO HAY RESULTADOS"}
+                                </div>
+                                <div className="tribAdmin__emptyDesc">
+                                  {loadingSanciones
+                                    ? "Obteniendo registros del backend."
+                                    : "Prueba otra búsqueda o ajusta los filtros."}
                                 </div>
                               </div>
                             </div>
-                          </Link>
-                        </td>
+                          </td>
+                        </tr>
+                      ) : (
+                        sancionesFiltradas.map((s) => {
+                          const strike = getStrikeFromMap(strikesMap, s.__rowIndex);
+                          const strikeFeedback = getStrikeFeedback(s.type, strike, s);
+                          const resumenEscala = getResumenEscala(strike, strikeFeedback.accion, s);
+                          const duracionVisible = getDuracionVisible(s.duration, strikeFeedback.accion, s);
+                          const fechaFin = debeMostrarFechaFin(s.duration, strikeFeedback.accion, s)
+                            ? obtenerFechaFin(s.timestamp, s.duration)
+                            : null;
+                          const situacion = calcularSituacion(s, nowMs);
+                          const fechaMs = parseTimestamp(s.timestamp);
+                          const fechaTexto = fechaMs ? new Date(fechaMs).toLocaleString("es-ES") : "-";
+                          const motivoRow = (s.type || "otros").toString().trim();
+                          const motivoKey = normalizarMotivo(motivoRow) || "otros";
+                          const isBusy = busyId === s.id;
+                          const isEditing = editingId === s.id;
+                          const perma = esPerma(s);
+                          const activa = esSancionActiva(s, nowMs);
 
-                        <td data-label="Moderador">
-                          <div className="moderatorCell">
-                            <div className="moderatorCell__name">{s.moderator || "Sistema"}</div>
-                            <div className="moderatorCell__date">{fechaTexto}</div>
-                          </div>
-                        </td>
+                          return (
+                            <tr key={s.id} className={`row row--${situacion} mc-element-tr`}>
+                              <td data-label="JUGADOR">
+                                <Link to={`/perfil/${s.name}`} className="playerLink">
+                                  <div className="playerCell">
+                                    <div className="avatarFrame">
+                                      <img
+                                        src={avatarUrl(s.name, 32)}
+                                        alt={s.name}
+                                        className="avatar mc-pixelated"
+                                        loading="lazy"
+                                        decoding="async"
+                                      />
+                                    </div>
+                                    <div className="playerMeta">
+                                      <div className="playerName">{s.name}</div>
+                                      <div className="playerSub" title={s.id}>
+                                        ID: <span className="muted">{String(s.id || "").slice(0, 8)}…</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </Link>
+                              </td>
 
-                        <td data-label="Motivo">
-                          {isEditing ? (
-                            <select
-                              className="inlineSelect"
-                              value={motivoEditado}
-                              onChange={(e) => setMotivoEditado(e.target.value)}
-                            >
-                              {MOTIVOS.map((m) => (
-                                <option key={m} value={m}>
-                                  {m}
-                                </option>
-                              ))}
-                            </select>
-                          ) : (
-                            <span className={`badge badge--motivo badge--${motivoKey}`} title={motivoRow}>
-                              {motivoRow || "otros"}
-                            </span>
-                          )}
-                        </td>
+                              <td data-label="MODERADOR">
+                                <div className="moderatorCell">
+                                  <div className="moderatorCell__name">{s.moderator || "Sistema"}</div>
+                                  <div className="moderatorCell__date">{fechaTexto}</div>
+                                </div>
+                              </td>
 
-                        <td data-label="Escala">
-                          {resumenEscala ? (
-                            <div className={`strikeBadge ${/ban\s*perm/i.test(resumenEscala) ? "permaban" : ""}`}>
-                              <WarningCircle size={14} weight="duotone" />
-                              <span>{resumenEscala}</span>
-                            </div>
-                          ) : (
-                            <span className="muted">Sin escala detectada</span>
-                          )}
-                        </td>
+                              <td data-label="MOTIVO">
+                                {isEditing ? (
+                                  <select
+                                    className="inlineSelect mc-input"
+                                    value={motivoEditado}
+                                    onChange={(e) => setMotivoEditado(e.target.value)}
+                                  >
+                                    {MOTIVOS.map((m) => (
+                                      <option key={m} value={m}>
+                                        {m.toUpperCase()}
+                                      </option>
+                                    ))}
+                                  </select>
+                                ) : (
+                                  <span className={`badge badge--motivo badge--${motivoKey}`} title={motivoRow}>
+                                    {motivoRow.toUpperCase() || "OTROS"}
+                                  </span>
+                                )}
+                              </td>
 
-                        <td data-label="Duración">
-                          <div className="duration">
-                            <div className="duration__main">{duracionVisible}</div>
-                            {fechaFin && <div className="duration__sub">Finaliza: {fechaFin}</div>}
-                            {!fechaFin && perma && <div className="duration__sub">Sin caducidad</div>}
-                            {!fechaFin && !perma && !activa && <div className="duration__sub">Ya cumplida</div>}
-                          </div>
-                        </td>
+                              <td data-label="ESCALA">
+                                {resumenEscala ? (
+                                  <div className={`strikeBadge ${/^ban\b/i.test(resumenEscala) ? "permaban" : ""}`}>
+                                    <WarningCircle size={16} weight="bold" />
+                                    <span>{resumenEscala}</span>
+                                  </div>
+                                ) : (
+                                  <span className="muted">SIN ESCALA</span>
+                                )}
+                              </td>
 
-                        <td data-label="Situación">
-                          <span className={`badge badge--estado badge--${situacion}`}>
-                            <span className="badge__icon">{iconoSituacion(situacion)}</span>
-                            {situacionLabel(situacion)}
-                          </span>
-                        </td>
+                              <td data-label="DURACIÓN">
+                                <div className="duration">
+                                  <div className="duration__main">{duracionVisible}</div>
+                                  {fechaFin && <div className="duration__sub">FIN: {fechaFin}</div>}
+                                  {!fechaFin && perma && <div className="duration__sub">SIN CADUCIDAD</div>}
+                                  {!fechaFin && !perma && !activa && <div className="duration__sub">YA CUMPLIDA</div>}
+                                </div>
+                              </td>
 
-                        <td data-label="Nota interna">
-                          {isEditing ? (
-                            <textarea
-                              className="inlineTextarea"
-                              value={observacion}
-                              onChange={(e) => setObservacion(e.target.value)}
-                              placeholder="Añade contexto interno o corrige detalles del registro…"
-                            />
-                          ) : (
-                            <div className={`obs ${s.observacion ? "" : "obs--empty"}`}>
-                              {s.observacion || "Sin nota interna"}
-                            </div>
-                          )}
-                        </td>
+                              <td data-label="SITUACIÓN">
+                                <span className={`badge badge--estado badge--${situacion}`}>
+                                  <span className="badge__icon">{iconoSituacion(situacion)}</span>
+                                  {situacionLabel(situacion)}
+                                </span>
+                              </td>
 
-                        <td data-label="Acción">
-                          {isEditing ? (
-                            <div className="actions actions--edit">
-                              <button
-                                className="tribBtn tribBtn--save"
-                                onClick={() => guardarCambios(s)}
-                                disabled={isBusy}
-                              >
-                                <FloppyDisk size={18} weight="bold" />
-                                {isBusy ? "Guardando…" : "Guardar"}
-                              </button>
+                              <td data-label="NOTA INTERNA">
+                                {isEditing ? (
+                                  <textarea
+                                    className="inlineTextarea mc-input"
+                                    value={observacion}
+                                    onChange={(e) => setObservacion(e.target.value)}
+                                    placeholder="Añade contexto interno..."
+                                  />
+                                ) : (
+                                  <div className={`obs ${s.observacion ? "" : "obs--empty"}`}>
+                                    {s.observacion || "Sin nota interna"}
+                                  </div>
+                                )}
+                              </td>
 
-                              <button
-                                className="tribBtn tribBtn--ghost"
-                                onClick={cerrarEdicion}
-                                disabled={isBusy}
-                              >
-                                Cancelar
-                              </button>
-                            </div>
-                          ) : (
-                            <div className="actions">
-                              <button
-                                className="tribBtn tribBtn--ghost"
-                                onClick={() => {
-                                  setEditingId(s.id);
-                                  setObservacion(s.observacion || "");
-                                  setMotivoEditado(s.type || "otros");
-                                }}
-                                disabled={isBusy}
-                              >
-                                <NotePencil size={18} weight="bold" />
-                                Anotar
-                              </button>
+                              <td data-label="ACCIÓN">
+                                {isEditing ? (
+                                  <div className="actions actions--edit">
+                                    <button
+                                      className="mc-btn mc-btn--green"
+                                      onClick={() => guardarCambios(s)}
+                                      disabled={isBusy}
+                                    >
+                                      <FloppyDisk size={18} weight="bold" />
+                                      {isBusy ? "GUARDANDO…" : "GUARDAR"}
+                                    </button>
 
-                              {canDelete && (
-                                <button
-                                  className="tribBtn tribBtn--danger"
-                                  onClick={() => eliminarSancion(s.id, s.name)}
-                                  disabled={isBusy}
-                                >
-                                  <Trash size={18} weight="bold" />
-                                  {isBusy ? "Eliminando…" : "Eliminar"}
-                                </button>
-                              )}
-                            </div>
-                          )}
-                        </td>
+                                    <button
+                                      className="mc-btn mc-btn--ghost"
+                                      onClick={cerrarEdicion}
+                                      disabled={isBusy}
+                                    >
+                                      CANCELAR
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <div className="actions">
+                                    <button
+                                      className="mc-btn mc-btn--ghost"
+                                      onClick={() => {
+                                        setEditingId(s.id);
+                                        setObservacion(s.observacion || "");
+                                        setMotivoEditado(normalizarMotivo(s.type) || "otros");
+                                      }}
+                                      disabled={isBusy}
+                                    >
+                                      <NotePencil size={18} weight="bold" />
+                                      ANOTAR
+                                    </button>
+
+                                    {canDelete && (
+                                      <button
+                                        className="mc-btn mc-btn--red"
+                                        onClick={() => eliminarSancion(s.id, s.name)}
+                                        disabled={isBusy}
+                                      >
+                                        <Trash size={18} weight="bold" />
+                                        {isBusy ? "ELIMINANDO…" : "ELIMINAR"}
+                                      </button>
+                                    )}
+                                  </div>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </>
+              ) : (
+                <>
+                  <table className="tribAdmin__table">
+                    <thead>
+                      <tr>
+                        <th className="colJugador">JUGADOR</th>
+                        <th>RELACIONADAS</th>
+                        <th>SERVIDOR</th>
+                        <th>FECHA</th>
+                        <th>ESTADO</th>
+                        <th>NOTA INTERNA</th>
+                        <th>ACCIÓN</th>
                       </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
+                    </thead>
 
-            <div className="tribAdmin__foot">
+                    <tbody>
+                      {multicuentasFiltradas.length === 0 ? (
+                        <tr>
+                          <td colSpan={7} className="tribAdmin__empty">
+                            <div className="tribAdmin__emptyInner mc-element">
+                              <Funnel size={32} weight="bold" />
+                              <div>
+                                <div className="tribAdmin__emptyTitle">
+                                  {loadingMulticuentas ? "CARGANDO…" : "NO HAY RESULTADOS"}
+                                </div>
+                                <div className="tribAdmin__emptyDesc">
+                                  {loadingMulticuentas
+                                    ? "Obteniendo detecciones del backend."
+                                    : "Todavía no hay coincidencias registradas o los filtros no devuelven resultados."}
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      ) : (
+                        multicuentasFiltradas.map((item) => {
+                          const isBusy = busyId === item.id;
+                          const isEditing = editingMultiId === item.id;
+                          const fechaMs = parseTimestamp(item.timestamp);
+                          const fechaTexto = fechaMs ? new Date(fechaMs).toLocaleString("es-ES") : "-";
+                          const estadoKey = getMultiEstadoKey(item.estado);
+                          const relatedText = getRelatedAccountsText(item.related_accounts);
+                          const ipHashShort = String(item.ip_hash || "").slice(0, 12);
+
+                          return (
+                            <tr key={item.id} className={`row row--multi-${estadoKey} mc-element-tr`}>
+                              <td data-label="JUGADOR">
+                                <Link to={`/perfil/${item.nombre_jugador}`} className="playerLink">
+                                  <div className="playerCell">
+                                    <div className="avatarFrame">
+                                      <img
+                                        src={avatarUrl(item.nombre_jugador, 32)}
+                                        alt={item.nombre_jugador}
+                                        className="avatar mc-pixelated"
+                                        loading="lazy"
+                                        decoding="async"
+                                      />
+                                    </div>
+                                    <div className="playerMeta">
+                                      <div className="playerName">{item.nombre_jugador}</div>
+                                      <div className="playerSub">
+                                        Hash: <span className="muted">{ipHashShort}…</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </Link>
+                              </td>
+
+                              <td data-label="RELACIONADAS">
+                                <div className="duration">
+                                  <div className="duration__main">{relatedText}</div>
+                                  <div className="duration__sub">
+                                    COINCIDENCIAS: {Number(item.related_count || 0)}
+                                  </div>
+                                </div>
+                              </td>
+
+                              <td data-label="SERVIDOR">
+                                <span className="badge badge--motivo badge--otros">
+                                  {(item.servidor || "desconocido").toString().toUpperCase()}
+                                </span>
+                              </td>
+
+                              <td data-label="FECHA">{fechaTexto}</td>
+
+                              <td data-label="ESTADO">
+                                {isEditing ? (
+                                  <select
+                                    className="inlineSelect mc-input"
+                                    value={multiEstadoEditado}
+                                    onChange={(e) => setMultiEstadoEditado(e.target.value)}
+                                  >
+                                    <option value="pendiente">PENDIENTE</option>
+                                    <option value="revisado">REVISADA</option>
+                                    <option value="descartado">DESCARTADA</option>
+                                  </select>
+                                ) : (
+                                  <span className={`badge badge--estado badge--multi-${estadoKey}`}>
+                                    <span className="badge__icon">
+                                      {estadoKey === "pendiente" && <WarningCircle size={18} weight="bold" />}
+                                      {estadoKey === "revisado" && <CheckCircle size={18} weight="bold" />}
+                                      {estadoKey === "descartado" && <XCircle size={18} weight="bold" />}
+                                    </span>
+                                    {getMultiEstadoLabel(item.estado)}
+                                  </span>
+                                )}
+                              </td>
+
+                              <td data-label="NOTA INTERNA">
+                                {isEditing ? (
+                                  <textarea
+                                    className="inlineTextarea mc-input"
+                                    value={multiObservacion}
+                                    onChange={(e) => setMultiObservacion(e.target.value)}
+                                    placeholder="Añade contexto interno sobre esta coincidencia…"
+                                  />
+                                ) : (
+                                  <div className={`obs ${item.observacion ? "" : "obs--empty"}`}>
+                                    {item.observacion || "Sin nota interna"}
+                                  </div>
+                                )}
+                              </td>
+
+                              <td data-label="ACCIÓN">
+                                {isEditing ? (
+                                  <div className="actions actions--edit">
+                                    <button
+                                      className="mc-btn mc-btn--green"
+                                      onClick={() => guardarCambiosMulti(item)}
+                                      disabled={isBusy}
+                                    >
+                                      <FloppyDisk size={18} weight="bold" />
+                                      {isBusy ? "GUARDANDO…" : "GUARDAR"}
+                                    </button>
+
+                                    <button
+                                      className="mc-btn mc-btn--ghost"
+                                      onClick={cerrarEdicionMulti}
+                                      disabled={isBusy}
+                                    >
+                                      CANCELAR
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <div className="actions">
+                                    <button
+                                      className="mc-btn mc-btn--ghost"
+                                      onClick={() => {
+                                        setEditingMultiId(item.id);
+                                        setMultiObservacion(item.observacion || "");
+                                        setMultiEstadoEditado(getMultiEstadoKey(item.estado));
+                                      }}
+                                      disabled={isBusy}
+                                    >
+                                      <NotePencil size={18} weight="bold" />
+                                      REVISAR
+                                    </button>
+                                  </div>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </>
+              )}
+            </div>
+            
+            <div className="tribAdmin__foot mc-element">
               <div className="tribAdmin__footLeft">
-                Mostrando <b>{sancionesFiltradas.length}</b> de <b>{sanciones.length}</b>
+                MOSTRANDO <strong style={{color: '#fbbf24'}}>{activeTab === "sanciones" ? sancionesFiltradas.length : multicuentasFiltradas.length}</strong> DE <strong style={{color: '#fbbf24'}}>{activeTab === "sanciones" ? sanciones.length : multicuentas.length}</strong>
               </div>
               <div className="tribAdmin__footRight">
                 <span className="hint">
-                  Uso recomendado: corregir motivo, añadir nota interna o borrar registros erróneos.
+                  {activeTab === "sanciones"
+                    ? "Uso recomendado: corregir motivo, añadir nota interna o borrar registros erróneos."
+                    : "Uso recomendado: revisar coincidencias, añadir contexto y marcar como revisada o descartada."}
                 </span>
               </div>
             </div>
+
           </div>
         </div>
       </section>

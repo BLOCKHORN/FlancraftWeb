@@ -13,6 +13,13 @@ const normalizeRole = (value) => {
   return role || null;
 };
 
+const normalizeMotivo = (value) => {
+  const motivo = normalizeLower(value).replace(/[\s_-]+/g, " ").trim();
+  if (motivo === "fly") return "hacks";
+  if (motivo === "grief") return "grif";
+  return motivo || null;
+};
+
 const toInt = (v, fallback) => {
   const n = Number.parseInt(String(v ?? ""), 10);
   return Number.isFinite(n) ? n : fallback;
@@ -94,7 +101,7 @@ const pickDir = (raw) => (normalizeLower(raw) === "asc" ? "asc" : "desc");
 const buildFilters = (query, q) => {
   const server = normalizeLower(query.server);
   const estado = normalizeLower(query.estado);
-  const type = normalizeLower(query.type);
+  const type = normalizeMotivo(query.type);
   const bantype = normalizeLower(query.bantype);
   const name = normalizeText(query.name);
   const moderator = normalizeText(query.moderator);
@@ -119,7 +126,7 @@ exports.registrarSancion = async (req, res) => {
     const moderator = normalizeText(req.body.moderator);
     const duration = normalizeText(req.body.duration) || null;
     const server = normalizeLower(req.body.server) || null;
-    const type = normalizeLower(req.body.type) || null;
+    const type = normalizeMotivo(req.body.type);
     const bantype = normalizeLower(req.body.banType ?? req.body.bantype);
     const timestamp = safeBigint(req.body.timestamp) ?? Date.now();
 
@@ -223,7 +230,7 @@ exports.actualizarSancion = async (req, res) => {
     if (req.body.estado != null) patch.estado = normalizeLower(req.body.estado) || null;
     if (req.body.observacion != null) patch.observacion = normalizeText(req.body.observacion) || null;
     if (req.body.revisado_por != null) patch.revisado_por = normalizeText(req.body.revisado_por) || null;
-    if (req.body.type != null) patch.type = normalizeLower(req.body.type) || null;
+    if (req.body.type != null) patch.type = normalizeMotivo(req.body.type);
     if (req.body.duration != null) patch.duration = normalizeText(req.body.duration) || null;
     if (req.body.bantype != null) patch.bantype = normalizeLower(req.body.bantype) || null;
 
