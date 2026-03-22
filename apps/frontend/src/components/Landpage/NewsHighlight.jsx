@@ -36,17 +36,16 @@ const containerVariants = {
   hidden: { opacity: 0 },
   visible: { 
     opacity: 1, 
-    transition: { staggerChildren: 0.15, delayChildren: 0.2 } 
+    transition: { staggerChildren: 0.1, delayChildren: 0.1 } 
   }
 };
 
 const itemVariants = {
-  hidden: { y: 30, opacity: 0, scale: 0.98 },
+  hidden: { y: 20, opacity: 0 },
   visible: { 
     y: 0, 
     opacity: 1, 
-    scale: 1,
-    transition: { type: "spring", stiffness: 120, damping: 20 } 
+    transition: { type: "tween", ease: "easeOut", duration: 0.5 } 
   }
 };
 
@@ -107,7 +106,7 @@ const NewsHighlight = () => {
             <motion.article variants={itemVariants} className="highlight-featured">
               <Link to={`/news/${ensureSlug(highlight)}`} className="highlight-featured__link">
                 <div className="featured-bg">
-                  <img src={highlight.portada || highlight.imagen || "/assets/placeholder.png"} alt={highlight.titulo} />
+                  <img src={highlight.portada || highlight.imagen || "/assets/placeholder.png"} alt={highlight.titulo} loading="lazy" />
                   <div className="gradient-overlay"></div>
                 </div>
                 <div className="featured-content">
@@ -130,7 +129,7 @@ const NewsHighlight = () => {
                   <Link to={`/news/${ensureSlug(news)}`} className="highlight-row-link">
                     <article className="highlight-row">
                       <div className="row-thumb">
-                        <img src={news.portada || news.imagen || "/assets/placeholder.png"} alt={news.titulo} />
+                        <img src={news.portada || news.imagen || "/assets/placeholder.png"} alt={news.titulo} loading="lazy" />
                         <div className="thumb-overlay"></div>
                       </div>
                       <div className="row-body">
