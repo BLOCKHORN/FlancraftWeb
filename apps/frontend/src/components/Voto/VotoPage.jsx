@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion as Motion } from "framer-motion";
-import "../../styles/components/Voto/voto-page.scss";
 
 import { apiUrl } from "../../lib/env";
 import Seo from "../SEO/Seo";

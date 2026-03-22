@@ -1,5 +1,17 @@
 @use '../base/variables' as *;
 
+@font-face {
+  font-family: 'MinecraftBold';
+  src: url('/fonts/MinecraftBold.otf') format('opentype');
+  font-weight: bold;
+  font-style: normal;
+}
+
+$mc-font: 'MinecraftBold', sans-serif;
+$color-brand: #5EE034;
+$color-bg-dark: #171615;
+$color-surface: #151923;
+
 * {
   margin: 0;
   padding: 0;
@@ -7,87 +19,85 @@
 }
 
 body {
-  font-family: 'IM Fell English SC', serif;
-  background:
-    linear-gradient(rgba(0, 0, 0, 0.50), rgba(0, 0, 0, 0.65)),
-    #2b1e15 url('/textures/body.webp') repeat;
-  background-size:
-    auto,
-    512px;
-  color: $color-texto;
+  font-family: $mc-font;
+  background-color: $color-bg-dark;
+  color: #ffffff;
+  -webkit-font-smoothing: none;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
 }
-
-
-/* ===========================
-   ENLACES / BOTONES
-   =========================== */
 
 a {
   text-decoration: none;
   color: inherit;
+  transition: color 150ms ease;
 }
 
 button {
-  font-family: inherit;
+  font-family: $mc-font;
   cursor: pointer;
   border: none;
+  outline: none;
+  background: none;
 }
 
-/* ===========================
-   SCROLLBAR GLOBAL FLANCRAFT
-   =========================== */
-
-/* Firefox */
 html {
-  /* grosor fino */
   scrollbar-width: thin;
-  /* thumb | track */
-  scrollbar-color: #f0c870 #1a120b;
+  scrollbar-color: $color-brand $color-surface;
 }
 
-/* WebKit (Chrome, Edge, Safari) */
 ::-webkit-scrollbar {
-  width: 11px;          /* grosor del scroll vertical */
-  height: 11px;         /* por si aparece horizontal */
+  width: 14px;
+  height: 14px;
 }
 
-/* fondo de la pista */
 ::-webkit-scrollbar-track {
-  background: radial-gradient(circle at 30% 0, #3a2414 0, #1a120b 60%);
-  border-left: 1px solid rgba(0, 0, 0, 0.4);
+  background: $color-surface;
+  border-left: 4px solid #000;
 }
 
-/* “thumb” (la parte que se mueve) */
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(
-    180deg,
-    #ffe1a4 0%,
-    #f0b95c 35%,
-    #e38a33 70%,
-    #b5631f 100%
-  );
-  border-radius: 999px;
-  border: 2px solid #22120a;
-  box-shadow:
-    0 0 6px rgba(0, 0, 0, 0.9),
-    0 0 10px rgba(255, 210, 130, 0.7);
+  background-color: $color-brand;
+  border: 4px solid #000;
+  box-shadow: 
+    inset -3px -3px 0 rgba(0, 0, 0, 0.2), 
+    inset 3px 3px 0 rgba(255, 255, 255, 0.3);
 }
 
-/* hover del thumb */
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(
-    180deg,
-    #ffe8b7 0%,
-    #f6c76c 35%,
-    #f0933a 70%,
-    #c76e25 100%
-  );
-  box-shadow:
-    0 0 8px rgba(0, 0, 0, 0.95),
-    0 0 14px rgba(255, 220, 150, 0.9);
+  background-color: #7cf056;
 }
 
-/* esquina cuando hay scroll horizontal + vertical */
 ::-webkit-scrollbar-corner {
-  background: #1a120b;
+  background: #000;
+}
+
+.app-reveal-wrapper {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.8s ease;
+
+  nav, .navbar, header {
+    transform: translateY(-100%);
+    transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+    transition-delay: 0.2s;
+  }
+
+  & > *:not(nav):not(.navbar):not(header) {
+    clip-path: inset(0 50% 0 50%);
+    transition: clip-path 2s cubic-bezier(0.25, 1, 0.3, 1);
+  }
+
+  &.is-revealed {
+    opacity: 1;
+    pointer-events: auto;
+
+    nav, .navbar, header {
+      transform: translateY(0);
+    }
+
+    & > *:not(nav):not(.navbar):not(header) {
+      clip-path: inset(0 0 0 0);
+    }
+  }
 }

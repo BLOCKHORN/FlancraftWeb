@@ -9,6 +9,11 @@ const DEFAULT_QUERY = {
   asc: false,
 };
 
+const parseNullableNumber = (value) => {
+  const num = Number(value);
+  return Number.isFinite(num) ? num : null;
+};
+
 const normalizeRows = (rows) => {
   const map = new Map();
 
@@ -20,6 +25,20 @@ const normalizeRows = (rows) => {
     const id = String(uuid || nombre.toLowerCase()).trim();
 
     if (!id) continue;
+
+    const rankChange24h = parseNullableNumber(
+      row?.rank_change_24h ?? row?.rankDelta24h ?? null
+    );
+
+    const pointsGain24h = parseNullableNumber(
+      row?.points_gain_24h ?? row?.pointsGain24h ?? null
+    );
+
+    const hasMovementData =
+      rankChange24h !== null ||
+      pointsGain24h !== null ||
+      row?.is_new_24h !== undefined ||
+      row?.isNew24h !== undefined;
 
     map.set(id, {
       ...row,
@@ -34,6 +53,10 @@ const normalizeRows = (rows) => {
           0
       ),
       tiempo_jugado: safeNum(row?.tiempo_jugado),
+      rank_change_24h: rankChange24h,
+      points_gain_24h: pointsGain24h,
+      is_new_24h: hasMovementData ? Boolean(row?.is_new_24h ?? row?.isNew24h) : false,
+      has_movement_24h: hasMovementData,
     });
   }
 

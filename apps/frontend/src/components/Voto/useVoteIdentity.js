@@ -1,3 +1,4 @@
+
 import { useMemo, useState } from "react";
 import { cleanNick, ensureDeviceId, resolveVoteSession } from "./vote.shared";
 

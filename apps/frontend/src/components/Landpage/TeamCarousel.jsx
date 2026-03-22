@@ -1,190 +1,218 @@
 import React, { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import "../../styles/components/Landpage/_teamcarousel.scss";
-import {
-  FaCode,
-  FaUserTie,
-  FaPencilRuler,
-  FaServer,
-  FaShieldAlt,
-} from "react-icons/fa";
-
-// Si no usas fallbacks, puedes borrar estas dos constantes y los onError.
-const FALLBACK_HEAD = "/assets/skins/default-head.png";
-const FALLBACK_SKIN = "/assets/skins/default-skin.png";
+import { FaCode, FaCrown, FaPalette, FaCogs } from "react-icons/fa";
 
 const teamMembers = [
   {
+    id: "crystal",
     name: "Crystalchemist",
     role: "INGENIERO ARCANO",
-    badgeColor: "#c16aff",
+    badgeColor: "#5ee034",
     skinImage: "/assets/skins/crystalchemist.webp",
     headImage: "/assets/skins/crystalhead.webp",
-    description:
-      "Fundador de Flancraft y Desarrollador fullstack con enfoque en backend y arquitectura de plugins. Diseña y mantiene sistemas personalizados en Java para Bukkit y Spigot, incluyendo economías virtuales, comandos avanzados y estructuras automatizadas. También colabora en diseño frontend con React y SCSS, asegurando una experiencia de usuario fluida y coherente. Especialista en optimización de rendimiento.",
+    description: "Es el cerebro detrás del código. Se encarga de programar los plugins personalizados que no verás en ningún otro sitio y de que la web funcione como un reloj.",
     icon: <FaCode />,
   },
   {
+    id: "paxino",
     name: "Paxino",
-    role: "GRAN MAESTRO DEL REINO",
-    badgeColor: "#f4cc62",
+    role: "GRAN MAESTRO",
+    badgeColor: "#38bdf8",
     skinImage: "/assets/skins/paxino.webp",
     headImage: "/assets/skins/paxinohead.webp",
-    description:
-      "Fundador de Flancraft y estratega principal. Supervisa la visión global del servidor, la cohesión del equipo y la toma de decisiones clave. Experto en diseño de experiencias multijugador, gestión de proyectos con metodologías ágiles y resolución de conflictos en comunidades online. Coordina todas las áreas del proyecto para asegurar estabilidad, innovación y crecimiento sostenible.",
-    icon: <FaUserTie />,
+    description: "El alma y la visión de FlanCraft. Supervisa que el reino sea un lugar justo, divertido y estable para todos. Se encarga de coordinar al equipo.",
+    icon: <FaCrown />,
   },
   {
+    id: "janito",
     name: "JanitoVP",
-    role: "ARQUITECTO DE REALIDADES",
+    role: "ARQUITECTO",
     badgeColor: "#ff9248",
     skinImage: "/assets/skins/janitovp.webp",
     headImage: "/assets/skins/janitovphead.webp",
-    description:
-      "Especialista en diseño visual, construcción estructural y producción multimedia. Domina herramientas como WorldEdit, VoxelSniper, Blender y ReplayMod para crear mundos inmersivos y material promocional de alto impacto. Responsable del estilo visual del servidor, animaciones y cinemáticas. Colabora con desarrollo para alinear estética con funcionalidades jugables.",
-    icon: <FaPencilRuler />,
+    description: "El responsable de que todo lo que veas te deje con la boca abierta. Desde las construcciones épicas del spawn hasta las cinemáticas de nuestras redes.",
+    icon: <FaPalette />,
   },
-
   {
+    id: "golden",
     name: "GoldenPunch101",
-    role: "MAESTRO DE LOS ENGRANAJES",
-    badgeColor: "#ffd15b",
+    role: "MAESTRO TÉCNICO",
+    badgeColor: "#fbbf24",
     skinImage: "/assets/skins/golden.webp",
     headImage: "/assets/skins/goldenhead.webp",
-    description:
-      "Especialista en plugins y sistemas internos del servidor. Domina la configuración avanzada de Paper, Bungee y plugins de terceros, así como el diagnóstico de errores y conflictos. Trabaja codo con codo con el equipo de desarrollo para integrar nuevas mecánicas, optimizar el rendimiento y garantizar que cada engranaje técnico del reino funcione como un reloj.",
-    icon: <FaServer />,
+    description: "El guardián de los engranajes. Experto en optimización y en mantener los sistemas internos a pleno rendimiento. Si no hay lag, es gracias a Golden.",
+    icon: <FaCogs />,
   },
 ];
 
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1, delayChildren: 0.2 },
+  },
+  exit: {
+    opacity: 0,
+    transition: { staggerChildren: 0.05, staggerDirection: -1 },
+  },
+};
+
+const itemVariants = {
+  hidden: { y: 20, opacity: 0, scale: 0.95 },
+  visible: { 
+    y: 0, 
+    opacity: 1, 
+    scale: 1,
+    transition: { type: "spring", stiffness: 300, damping: 25 }
+  },
+  exit: { y: -20, opacity: 0, scale: 0.95, transition: { duration: 0.2 } }
+};
+
+const skinVariants = {
+  hidden: { y: 40, opacity: 0, scale: 0.8 },
+  visible: { 
+    y: 0, 
+    opacity: 1, 
+    scale: 1, 
+    transition: { type: "spring", stiffness: 200, damping: 20, delay: 0.3 } 
+  },
+  exit: { y: 20, opacity: 0, scale: 0.9, transition: { duration: 0.3 } }
+};
+
 export default function TeamCarousel() {
   const [index, setIndex] = useState(0);
-  const [animate, setAnimate] = useState(false);
   const [progress, setProgress] = useState(0);
-
+  const [isPaused, setIsPaused] = useState(false);
+  
   const lastInteractionRef = useRef(Date.now());
-  const timerRef = useRef(null);
-
+  const lastFrameTimeRef = useRef(Date.now());
+  
   const DELAY_BEFORE_START = 2000;
   const TRANSITION_DURATION = 8000;
 
   const current = teamMembers[index];
 
   const next = () => {
-    setAnimate(true);
-    setTimeout(() => setAnimate(false), 500);
     setIndex((prev) => (prev + 1) % teamMembers.length);
     lastInteractionRef.current = Date.now();
     setProgress(0);
   };
 
-  const resetTimer = () => {
+  const manualSelect = (i) => {
+    setIndex(i);
     lastInteractionRef.current = Date.now();
     setProgress(0);
-    if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => {
-      lastInteractionRef.current = Date.now();
-    }, DELAY_BEFORE_START);
-  };
-
-  const manualSelect = (i) => {
-    setAnimate(true);
-    setTimeout(() => setAnimate(false), 500);
-    setIndex(i);
-    resetTimer();
-  };
-
-  const handleHover = () => {
-    resetTimer();
   };
 
   useEffect(() => {
     let frame;
     const loop = () => {
       const now = Date.now();
+      const delta = now - lastFrameTimeRef.current;
+      lastFrameTimeRef.current = now;
+      if (isPaused) { lastInteractionRef.current += delta; }
       const elapsed = now - lastInteractionRef.current;
 
       if (elapsed < DELAY_BEFORE_START) {
         setProgress(0);
       } else {
-        const prog =
-          ((elapsed - DELAY_BEFORE_START) / TRANSITION_DURATION) * 100;
+        const prog = ((elapsed - DELAY_BEFORE_START) / TRANSITION_DURATION) * 100;
         setProgress(Math.min(prog, 100));
-        if (prog >= 100) {
-          next();
-        }
+        if (prog >= 100) next();
       }
-
       frame = requestAnimationFrame(loop);
     };
-
     frame = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(frame);
-  }, []);
+  }, [isPaused, index]);
+
+  const RenderSelectionGrid = () => (
+    <div className="selection-grid">
+      {teamMembers.map((member, i) => (
+        <button 
+          key={member.id} 
+          className={`select-slot ${i === index ? "is-active" : ""}`}
+          onClick={() => manualSelect(i)}
+          style={{ "--slot-accent": member.badgeColor }}
+        >
+          <div className="slot-inner">
+            <img src={member.headImage} alt={member.name} />
+            {i === index && (
+              <svg className="slot-ring" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="48" />
+              </svg>
+            )}
+          </div>
+        </button>
+      ))}
+    </div>
+  );
 
   return (
-    <section className="team-carousel-wrapper">
-      <div
-        className="team-carousel"
-        onMouseEnter={handleHover}
-        onMouseLeave={handleHover}
-      >
-        <div className="team-content">
-          <div className="team-text">
-            <h2 className="title">Conoce a los Maestros de Flancraft</h2>
-            <h3 className="name">
-              {current.icon}
-              {current.name}
-              <span
-                className="badge"
-                style={{
-                  backgroundColor: current.badgeColor,
-                  color: current.badgeColor === "#f4cc62" ? "#222" : "#fff",
-                }}
-              >
-                {current.role}
-              </span>
-            </h3>
-            <p className="description">{current.description}</p>
-          </div>
+    <section className="team-carousel-wrapper" style={{ "--member-accent": current.badgeColor }}>
+      <div className="ambient-light" />
+      <div className="team-header">
+        <h2 className="main-title">MAESTROS DEL REINO</h2>
+      </div>
 
-          <div className="team-avatar">
-            <img
-              src={current.skinImage}
-              alt={`${current.name} skin`}
-              className={`skin-pose ${animate ? "animate-in" : ""}`}
-              onError={(e) => {
-                if (FALLBACK_SKIN && e.currentTarget.src !== FALLBACK_SKIN) {
-                  e.currentTarget.src = FALLBACK_SKIN;
-                }
-              }}
-            />
-          </div>
+      <div className="team-container">
+        <div className="selection-grid-mobile">
+          <RenderSelectionGrid />
         </div>
 
-        <div className="progress-bar-wrapper">
-          <div
-            key={index}
-            className="progress-inner"
-            style={{ transform: `scaleX(${1 - progress / 100})` }}
-          />
+        <div className="team-card">
+          <AnimatePresence mode="wait">
+            <motion.div 
+              key={current.id}
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              className="card-inner"
+            >
+              <div className="info-side">
+                <motion.div variants={itemVariants} className="role-tag">
+                  <span>RANK:</span> {current.role}
+                </motion.div>
+                
+                <motion.h3 variants={itemVariants} className="member-name">
+                  <span className="icon">{current.icon}</span>
+                  <span className="name-text">{current.name}</span>
+                </motion.h3>
+                
+                <motion.div variants={itemVariants} className="bio-container">
+                  <p className="bio-text">{current.description}</p>
+                </motion.div>
+
+                <motion.div variants={itemVariants} className="status-bars">
+                  <div className="stat-row">
+                    <span className="stat-label">{isPaused ? "PAUSED" : "AUTO"}</span>
+                    <div className="stat-track">
+                      <div className="stat-fill" style={{ transform: `scaleX(${progress / 100})` }} />
+                    </div>
+                  </div>
+                </motion.div>
+              </div>
+
+              <div className="visual-side">
+                <div className="character-display">
+                  <motion.img
+                    variants={skinVariants}
+                    src={current.skinImage}
+                    alt={current.name}
+                    className="character-skin"
+                    onMouseEnter={() => setIsPaused(true)}
+                    onMouseLeave={() => setIsPaused(false)}
+                  />
+                </div>
+              </div>
+            </motion.div>
+          </AnimatePresence>
         </div>
 
-        <div className="carousel-heads">
-          {teamMembers.map((member, i) => (
-            <img
-              key={i}
-              src={member.headImage}
-              alt={member.name}
-              className={`head-icon ${i === index ? "active" : ""}`}
-              onClick={() => manualSelect(i)}
-              onMouseEnter={handleHover}
-              onError={(e) => {
-                if (FALLBACK_HEAD && e.currentTarget.src !== FALLBACK_HEAD) {
-                  e.currentTarget.src = FALLBACK_HEAD;
-                }
-              }}
-            />
-          ))}
+        <div className="selection-grid-desktop">
+          <RenderSelectionGrid />
         </div>
       </div>
     </section>

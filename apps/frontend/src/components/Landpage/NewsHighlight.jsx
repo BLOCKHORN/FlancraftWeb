@@ -1,222 +1,164 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
+import { motion, useInView } from "framer-motion";
 import { apiUrl } from "../../lib/env";
 import "../../styles/components/Landpage/_newshighlight.scss";
 
-// ==============================
-// Helpers de contenido / fechas
-// ==============================
 const formatDaysAgo = (dateStr) => {
   if (!dateStr) return "";
   const today = new Date();
   const newsDate = new Date(dateStr);
   const diff = Math.floor((today - newsDate) / (1000 * 60 * 60 * 24));
-  if (diff <= 0) return "hoy";
-  if (diff === 1) return "hace 1 día";
-  if (diff < 7) return `hace ${diff} días`;
-  return newsDate.toLocaleDateString("es-ES", {
-    day: "2-digit",
-    month: "short",
-  });
-};
-
-const tiptapNodeToText = (node) => {
-  if (!node) return "";
-  if (node.type === "text") return node.text || "";
-  if (Array.isArray(node.content)) {
-    return node.content.map(tiptapNodeToText).join(" ");
-  }
-  return "";
+  if (diff <= 0) return "HOY";
+  if (diff === 1) return "HACE 1 DÍA";
+  if (diff < 7) return `HACE ${diff} DÍAS`;
+  return newsDate.toLocaleDateString("es-ES", { day: "2-digit", month: "short" }).toUpperCase();
 };
 
 const normalizeContentToText = (contenido) => {
   if (!contenido) return "";
-  if (typeof contenido === "string") {
-    return contenido.replace(/<[^>]+>/g, "").trim();
-  }
-  if (typeof contenido === "object") {
-    if (Array.isArray(contenido)) {
-      return contenido.map(tiptapNodeToText).join(" ");
-    }
-    if (contenido.type === "doc" && Array.isArray(contenido.content)) {
-      return contenido.content.map(tiptapNodeToText).join(" ");
-    }
-    return JSON.stringify(contenido);
+  if (typeof contenido === "string") return contenido.replace(/<[^>]+>/g, "").trim();
+  if (typeof contenido === "object" && contenido.content) {
+    const extract = (node) => node.type === "text" ? node.text : (node.content?.map(extract).join(" ") || "");
+    return Array.isArray(contenido.content) ? contenido.content.map(extract).join(" ") : "";
   }
   return "";
 };
 
-const getExcerpt = (rawContent, length = 230) => {
-  const text = normalizeContentToText(rawContent);
-  if (!text) return "";
-  if (text.length <= length) return text;
-  const sliced = text.slice(0, length);
-  const lastSpace = sliced.lastIndexOf(" ");
-  return sliced.slice(0, lastSpace > 0 ? lastSpace : length) + "…";
+const getExcerpt = (raw, length = 180) => {
+  const text = normalizeContentToText(raw);
+  return text.length > length ? text.slice(0, length).split(' ').slice(0, -1).join(' ') + "…" : text;
 };
 
-const ensureSlug = (n) =>
-  n.slug ||
-  (n.titulo || "")
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9 ]/g, "")
-    .replace(/\s+/g, "-");
+const ensureSlug = (n) => n.slug || (n.titulo || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9 ]/g, "").replace(/\s+/g, "-");
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: { 
+    opacity: 1, 
+    transition: { staggerChildren: 0.15, delayChildren: 0.2 } 
+  }
+};
+
+const itemVariants = {
+  hidden: { y: 30, opacity: 0, scale: 0.98 },
+  visible: { 
+    y: 0, 
+    opacity: 1, 
+    scale: 1,
+    transition: { type: "spring", stiffness: 120, damping: 20 } 
+  }
+};
 
 const NewsHighlight = () => {
   const [newsData, setNewsData] = useState([]);
-  const [status, setStatus] = useState("idle");
+  const [status, setStatus] = useState("loading");
+  const sectionRef = useRef(null);
+  const isInView = useInView(sectionRef, { once: true, amount: 0.1 });
 
   useEffect(() => {
     const fetchNews = async () => {
-      setStatus("loading");
       try {
         const res = await fetch(apiUrl(`/api/noticias`));
         const data = await res.json();
-        const sorted = (data || []).sort(
-          (a, b) => new Date(b.fecha) - new Date(a.fecha)
-        );
-        setNewsData(sorted);
+        setNewsData((data || []).sort((a, b) => new Date(b.fecha) - new Date(a.fecha)));
         setStatus("idle");
       } catch (error) {
-        console.error("Error al obtener noticias:", error);
         setStatus("error");
       }
     };
-
     fetchNews();
   }, []);
 
-  const latest = newsData[0];
-  const previous = newsData.slice(1, 5);
-  const highlight = useMemo(() => latest, [latest]);
+  const highlight = newsData[0];
+  const previous = newsData.slice(1, 4);
 
   return (
-    <section className="news-highlight">
-      <div className="news-inner">
-        {/* CABECERA */}
-        <header className="news-header">
-          <p className="news-kicker">ACTUALIZACIONES DEL REINO</p>
-          <h2 className="news-title">NOTICIAS DE FLANCRAFT</h2>
-        </header>
+    <motion.section 
+      ref={sectionRef}
+      className="news-highlight"
+      initial="hidden"
+      animate={isInView ? "visible" : "hidden"}
+      variants={containerVariants}
+    >
+      <div className="news-environment">
+        <div className="env-vignette"></div>
+        <div className="env-texture"></div>
+      </div>
 
-        {/* ESTADOS */}
-        {status === "loading" && (
-          <div className="news-skeleton">
-            <div className="skeleton-featured" />
-            <div className="skeleton-list">
-              <div className="skeleton-row" />
-              <div className="skeleton-row" />
-              <div className="skeleton-row" />
+      <div className="news-transition-container">
+        <div className="news-transition-cube tc-1"></div>
+        <div className="news-transition-cube tc-2"></div>
+        <div className="news-transition-cube tc-3"></div>
+        <div className="news-transition-cube tc-4"></div>
+        <div className="news-transition-cube tc-5"></div>
+      </div>
+
+      <div className="news-inner">
+        <motion.header variants={itemVariants} className="news-header">
+          <h2 className="news-title">ACTUALIZACIONES DEL REINO</h2>
+        </motion.header>
+
+        {status === "loading" && <div className="news-loading">INICIANDO ENLACE...</div>}
+        {status === "error" && <div className="news-error">ERROR EN EL ENLACE DE DATOS.</div>}
+
+        {status === "idle" && highlight && (
+          <div className="news-main">
+            <motion.article variants={itemVariants} className="highlight-featured">
+              <Link to={`/news/${ensureSlug(highlight)}`} className="highlight-featured__link">
+                <div className="featured-bg">
+                  <img src={highlight.portada || highlight.imagen || "/assets/placeholder.png"} alt={highlight.titulo} />
+                  <div className="gradient-overlay"></div>
+                </div>
+                <div className="featured-content">
+                  <div className="featured-meta">
+                    <span className="featured-tag">NUEVO</span>
+                    <span className="featured-date">{formatDaysAgo(highlight.fecha)}</span>
+                  </div>
+                  <h3 className="featured-title">{highlight.titulo}</h3>
+                  <div className="featured-action">
+                    <span>ACCEDER AL REPORTE</span>
+                    <div className="action-arrow"></div>
+                  </div>
+                </div>
+              </Link>
+            </motion.article>
+
+            <div className="highlight-list">
+              {previous.map((news) => (
+                <motion.div key={news.id} variants={itemVariants}>
+                  <Link to={`/news/${ensureSlug(news)}`} className="highlight-row-link">
+                    <article className="highlight-row">
+                      <div className="row-thumb">
+                        <img src={news.portada || news.imagen || "/assets/placeholder.png"} alt={news.titulo} />
+                        <div className="thumb-overlay"></div>
+                      </div>
+                      <div className="row-body">
+                        <div className="row-meta">
+                          <span className="row-date">{formatDaysAgo(news.fecha)}</span>
+                        </div>
+                        <h4 className="row-title">{news.titulo}</h4>
+                        <p className="row-excerpt">{getExcerpt(news.contenido, 100)}</p>
+                        <div className="row-footer">
+                          <span>VER MÁS</span>
+                          <span className="plus-icon">+</span>
+                        </div>
+                      </div>
+                    </article>
+                  </Link>
+                </motion.div>
+              ))}
             </div>
           </div>
         )}
 
-        {status === "error" && (
-          <p className="news-error">
-            No se pudieron cargar las noticias ahora mismo.
-          </p>
-        )}
-
-        {status === "idle" && highlight && (
-          <div className="news-main">
-            {/* NOTICIA PRINCIPAL */}
-            <article className="highlight-featured">
-              <Link
-                to={`/news/${ensureSlug(highlight)}`}
-                className="highlight-featured__link"
-              >
-                <div className="featured-media">
-                  <img
-                    src={
-                      highlight.portada ||
-                      highlight.imagen ||
-                      "/assets/placeholder.png"
-                    }
-                    alt={highlight.titulo}
-                    loading="lazy"
-                  />
-                  <span className="featured-tag">
-                    Última noticia &middot; {formatDaysAgo(highlight.fecha)}
-                  </span>
-                </div>
-
-                <div className="featured-overlay">
-                  <h3 className="featured-title">{highlight.titulo}</h3>
-                  <p className="featured-excerpt">
-                    {getExcerpt(highlight.contenido)}
-                  </p>
-
-                  <span className="featured-readmore">
-                    Leer la noticia completa
-                    <img
-                      src="/assets/flecha.webp"
-                      alt=""
-                      className="readmore-arrow"
-                    />
-                  </span>
-                </div>
-              </Link>
-            </article>
-
-            {/* LISTA SECUNDARIA */}
-            {previous.length > 0 && (
-              <div className="highlight-list-wrapper">
-                <p className="highlight-list-kicker">
-                  OTRAS NOTICIAS RECIENTES
-                </p>
-
-                <div className="highlight-list">
-                  {previous.map((news) => (
-                    <Link
-                      to={`/news/${ensureSlug(news)}`}
-                      key={news.id}
-                      className="highlight-row-link"
-                    >
-                      <article className="highlight-row">
-                        <div className="row-thumb">
-                          <img
-                            src={
-                              news.portada ||
-                              news.imagen ||
-                              "/assets/placeholder.png"
-                            }
-                            alt={news.titulo}
-                            loading="lazy"
-                          />
-                        </div>
-
-                        <div className="row-body">
-                          <div className="row-meta">
-                            <span className="row-date">
-                              {formatDaysAgo(news.fecha)}
-                            </span>
-                          </div>
-                          <h4 className="row-title">{news.titulo}</h4>
-                          <p className="row-excerpt">
-                            {getExcerpt(news.contenido, 160)}
-                          </p>
-                        </div>
-                      </article>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* CTA FINAL */}
         {status === "idle" && newsData.length > 0 && (
-          <div className="news-cta">
-            <Link to="/news" className="cta-button">
-              Ver todas las noticias
-            </Link>
-          </div>
+          <motion.div variants={itemVariants} className="news-cta">
+            <Link to="/news" className="cta-button">EXPLORAR HISTORIAL</Link>
+          </motion.div>
         )}
       </div>
-    </section>
+    </motion.section>
   );
 };
 

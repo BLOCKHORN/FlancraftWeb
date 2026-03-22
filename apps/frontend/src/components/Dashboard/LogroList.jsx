@@ -1,28 +1,59 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Filter, Clock, TriangleAlert } from "lucide-react";
+import { Filter, Clock, TriangleAlert, Search, CheckCircle } from "lucide-react";
 import { apiUrl } from "../../lib/env";
 import { getAuthToken } from "../../lib/auth/storage";
 import "../../styles/components/Dashboard/_logrolist.scss";
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 12;
 const LOGROS_PROXIMAMENTE = false;
 const NF = new Intl.NumberFormat("es-ES");
 const MISIONES_MODO_PRUEBAS = String(import.meta.env.VITE_MISIONES_MODO_PRUEBAS || "false").toLowerCase() === "true";
 
 const TABS_MISION = [
-  { id: "permanente", label: "Logros permanentes", imagen: "/assets/logros/tab-permanentes.webp" },
-  { id: "diaria", label: "Misiones diarias", imagen: "/assets/logros/tab-diarias.webp" },
-  { id: "semanal", label: "Retos semanales", imagen: "/assets/logros/tab-semanales.webp" },
+  { id: "permanente", label: "Permanentes", imagen: "/assets/logros/tab-permanentes.webp" },
+  { id: "diaria", label: "Diarias", imagen: "/assets/logros/tab-diarias.webp" },
+  { id: "semanal", label: "Semanales", imagen: "/assets/logros/tab-semanales.webp" }
 ];
 
 const CRITERIOS = [
-  { nombre: "Listas para reclamar", valor: "claimable" },
+  { nombre: "Sugerido para ti", valor: "smart" },
   { nombre: "Completadas primero", valor: "completado" },
   { nombre: "XP descendente", valor: "xp-desc" },
   { nombre: "XP ascendente", valor: "xp-asc" },
   { nombre: "Progreso descendente", valor: "progreso-desc" },
   { nombre: "Progreso ascendente", valor: "progreso-asc" },
 ];
+
+const CRITERIOS_WEB = [
+  { nombre: "Sugerido para ti", valor: "smart" },
+  { nombre: "Recompensa descendente", valor: "reward-desc" },
+  { nombre: "Recompensa ascendente", valor: "reward-asc" },
+];
+
+const CATEGORY_ICONS = {
+  mineria: "/assets/icons/mining.png",
+  combate: "/assets/icons/combat.png",
+  agricultura: "/assets/icons/farming.png",
+  exploracion: "/assets/icons/exploration.png",
+  construccion: "/assets/icons/building.png",
+  crafteo: "/assets/icons/crafting.png",
+  social: "/assets/icons/social.png",
+  eventos: "/assets/icons/event.png",
+  default: "/tienda/assets/coin.png",
+};
+
+function getCategoryIcon(categoria, familia, tipo) {
+  const check = String(categoria || familia || tipo || "").toLowerCase();
+  if (check.includes("min") || check.includes("pic") || check.includes("mena") || check.includes("ore")) return CATEGORY_ICONS.mineria;
+  if (check.includes("comb") || check.includes("matar") || check.includes("kill") || check.includes("espada") || check.includes("hostil")) return CATEGORY_ICONS.combate;
+  if (check.includes("agri") || check.includes("granja") || check.includes("cultiv") || check.includes("semilla") || check.includes("animal") || check.includes("oveja") || check.includes("trigo")) return CATEGORY_ICONS.agricultura;
+  if (check.includes("expl") || check.includes("viaj") || check.includes("visit") || check.includes("camin") || check.includes("nether") || check.includes("end")) return CATEGORY_ICONS.exploracion;
+  if (check.includes("const") || check.includes("coloc") || check.includes("pon")) return CATEGORY_ICONS.construccion;
+  if (check.includes("craft") || check.includes("mes") || check.includes("horn") || check.includes("fund") || check.includes("cocin") || check.includes("prepar") || check.includes("pocion") || check.includes("tabla")) return CATEGORY_ICONS.crafteo;
+  if (check.includes("soc") || check.includes("vot") || check.includes("amig") || check.includes("party")) return CATEGORY_ICONS.social;
+  if (check.includes("eve") || check.includes("boss") || check.includes("jefe") || check.includes("dragon") || check.includes("wither")) return CATEGORY_ICONS.eventos;
+  return CATEGORY_ICONS.default;
+}
 
 function clampNumber(value, fallback = 0) {
   const n = Number(value);
@@ -35,28 +66,21 @@ function formatNumber(value) {
 
 function formatDurationFromMinutes(minutes) {
   const total = clampNumber(minutes);
-
   if (total % 1440 === 0) {
     const dias = total / 1440;
-    return `${formatNumber(dias)} ${dias === 1 ? "día" : "días"}`;
+    return `${formatNumber(dias)} ${dias === 1 ? "d" : "d"}`;
   }
-
   if (total >= 60) {
     const horas = Math.floor(total / 60);
     const mins = total % 60;
-    if (!mins) {
-      return `${formatNumber(horas)} ${horas === 1 ? "hora" : "horas"}`;
-    }
-    return `${formatNumber(horas)} h ${formatNumber(mins)} min`;
+    if (!mins) return `${formatNumber(horas)} h`;
+    return `${formatNumber(horas)}h ${formatNumber(mins)}m`;
   }
-
-  return `${formatNumber(total)} min`;
+  return `${formatNumber(total)} m`;
 }
 
 function formatGoalValue(tipo, value) {
-  if (["minutos_jugados", "minutos_bajo_y32"].includes(tipo)) {
-    return formatDurationFromMinutes(value);
-  }
+  if (["minutos_jugados", "minutos_bajo_y32"].includes(tipo)) return formatDurationFromMinutes(value);
   return formatNumber(value);
 }
 
@@ -68,161 +92,95 @@ function normalizeRoleValue(value) {
   return String(value || "").trim().toLowerCase();
 }
 
+function normalizeText(value) {
+  return String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
+}
+
 function isOwnerUser(user) {
   const rolAdmin = normalizeRoleValue(user?.rol_admin);
   const rangoStaff = normalizeRoleValue(user?.rango_staff);
-
   if (rolAdmin) return rolAdmin === "owner";
   return rangoStaff === "owner";
 }
 
 function buildObjectiveText(tipo, objetivo) {
   const amount = clampNumber(objetivo);
-
   switch (tipo) {
-    case "troncos_talados":
-      return `Tala ${formatNumber(amount)} ${plural("tronco", amount, "troncos")}.`;
-    case "tablas_crafteadas":
-      return `Craftea ${formatNumber(amount)} ${plural("tabla", amount, "tablas")}.`;
-    case "pan_crafteado":
-      return `Hornea ${formatNumber(amount)} ${plural("pan", amount, "panes")}.`;
-    case "camas_crafteadas":
-      return `Craftea ${formatNumber(amount)} ${plural("cama", amount, "camas")}.`;
-    case "hornos_crafteados":
-      return `Craftea ${formatNumber(amount)} ${plural("horno", amount, "hornos")}.`;
-    case "cubo_crafteado":
-      return `Craftea ${formatNumber(amount)} ${plural("cubo", amount, "cubos")}.`;
-    case "pico_hierro_crafteado":
-      return `Craftea ${formatNumber(amount)} ${plural("pico de hierro", amount, "picos de hierro")}.`;
-    case "semillas_plantadas":
-      return `Planta ${formatNumber(amount)} ${plural("semilla", amount, "semillas")}.`;
-    case "cultivos_recolectados":
-      return `Recolecta ${formatNumber(amount)} ${plural("cultivo", amount, "cultivos")}.`;
-    case "trigo_recolectado":
-      return `Recolecta ${formatNumber(amount)} ${plural("unidad de trigo", amount, "unidades de trigo")}.`;
-    case "zanahorias_patatas_recolectadas":
-      return `Recolecta ${formatNumber(amount)} zanahorias o patatas.`;
-    case "nether_wart_recolectada":
-      return `Recolecta ${formatNumber(amount)} nether wart.`;
-    case "ovejas_esquiladas":
-      return `Esquila ${formatNumber(amount)} ${plural("oveja", amount, "ovejas")}.`;
-    case "animales_criados":
-      return `Cría ${formatNumber(amount)} ${plural("animal", amount, "animales")}.`;
-    case "alimentos_cocinados":
-      return `Cocina ${formatNumber(amount)} ${plural("alimento", amount, "alimentos")}.`;
-    case "veces_pescadas":
-      return `Lanza la caña ${formatNumber(amount)} ${plural("vez", amount, "veces")}.`;
-    case "peces_pescados":
-      return `Pesca ${formatNumber(amount)} ${plural("pez", amount, "peces")}.`;
-    case "bloques_colocados_total":
-      return `Coloca ${formatNumber(amount)} ${plural("bloque", amount, "bloques")}.`;
-    case "madera_colocada":
-      return `Coloca ${formatNumber(amount)} bloques de madera.`;
-    case "piedra_procesada_colocada":
-      return `Coloca ${formatNumber(amount)} bloques de piedra procesada.`;
-    case "cofres_colocados":
-      return `Coloca ${formatNumber(amount)} ${plural("cofre", amount, "cofres")}.`;
-    case "antorchas_colocadas":
-      return `Coloca ${formatNumber(amount)} ${plural("antorcha", amount, "antorchas")}.`;
-    case "fuentes_luz_colocadas":
-      return `Coloca ${formatNumber(amount)} fuentes de luz potentes.`;
-    case "mesa_encantamientos_colocada":
-      return `Coloca ${formatNumber(amount)} ${plural("mesa de encantamientos", amount, "mesas de encantamientos")}.`;
-    case "bloques_rotos_total":
-      return `Rompe ${formatNumber(amount)} ${plural("bloque", amount, "bloques")}.`;
-    case "bloques_bajo_y32_minados":
-      return `Mina ${formatNumber(amount)} bloques por debajo de Y32.`;
-    case "tierra_rotas":
-      return `Rompe ${formatNumber(amount)} bloques de tierra o césped.`;
-    case "arena_recogida":
-      return `Recoge ${formatNumber(amount)} bloques de arena.`;
-    case "grava_recogida":
-      return `Recoge ${formatNumber(amount)} bloques de grava.`;
-    case "menas_extraidas_total":
-      return `Extrae ${formatNumber(amount)} menas.`;
-    case "carbon_mena_extraida":
-      return `Extrae ${formatNumber(amount)} menas de carbón.`;
-    case "cobre_mena_extraida":
-      return `Extrae ${formatNumber(amount)} menas de cobre.`;
-    case "hierro_mena_extraida":
-      return `Extrae ${formatNumber(amount)} menas de hierro.`;
-    case "redstone_mena_extraida":
-      return `Extrae ${formatNumber(amount)} menas de redstone.`;
-    case "lapis_mena_extraida":
-      return `Extrae ${formatNumber(amount)} menas de lapislázuli.`;
-    case "oro_mena_extraida":
-      return `Extrae ${formatNumber(amount)} menas de oro.`;
-    case "esmeralda_mena_extraida":
-      return `Extrae ${formatNumber(amount)} menas de esmeralda.`;
-    case "diamantes_extraidos":
-      return `Extrae ${formatNumber(amount)} ${plural("diamante", amount, "diamantes")}.`;
-    case "cuarzo_nether_extraido":
-      return `Extrae ${formatNumber(amount)} menas de cuarzo del Nether.`;
-    case "hierro_lingotes_fundidos":
-      return `Funde ${formatNumber(amount)} ${plural("lingote de hierro", amount, "lingotes de hierro")}.`;
-    case "hostiles_matados":
-      return `Derrota ${formatNumber(amount)} criaturas hostiles.`;
-    case "zombis_matados":
-      return `Derrota ${formatNumber(amount)} ${plural("zombi", amount, "zombis")}.`;
-    case "esqueletos_matados":
-      return `Derrota ${formatNumber(amount)} ${plural("esqueleto", amount, "esqueletos")}.`;
-    case "creepers_matados":
-      return `Derrota ${formatNumber(amount)} ${plural("creeper", amount, "creepers")}.`;
-    case "aranas_matadas":
-      return `Derrota ${formatNumber(amount)} ${plural("araña", amount, "arañas")}.`;
-    case "endermen_matados":
-      return `Derrota ${formatNumber(amount)} endermen.`;
-    case "blazes_matados":
-      return `Derrota ${formatNumber(amount)} blazes.`;
-    case "ghasts_matados":
-      return `Derrota ${formatNumber(amount)} ghasts.`;
-    case "shulkers_matados":
-      return `Derrota ${formatNumber(amount)} shulkers.`;
-    case "mobs_nether_matados":
-      return `Derrota ${formatNumber(amount)} criaturas hostiles en el Nether.`;
-    case "mobs_end_matados":
-      return `Derrota ${formatNumber(amount)} criaturas hostiles en el End.`;
-    case "kills_con_arco":
-      return `Consigue ${formatNumber(amount)} bajas con arco.`;
-    case "minutos_jugados":
-      return `Juega ${formatDurationFromMinutes(amount)} en Survival.`;
-    case "bloques_recorridos_total":
-      return `Recorre ${formatNumber(amount)} bloques.`;
-    case "visitas_bajo_y0":
-      return `Desciende por debajo de Y0 ${formatNumber(amount)} ${plural("vez", amount, "veces")}.`;
-    case "minutos_bajo_y32":
-      return `Pasa ${formatDurationFromMinutes(amount)} por debajo de Y32.`;
-    case "entradas_nether":
-      return `Entra al Nether ${formatNumber(amount)} ${plural("vez", amount, "veces")}.`;
-    case "entradas_end":
-      return `Entra al End ${formatNumber(amount)} ${plural("vez", amount, "veces")}.`;
-    case "bloques_recorridos_nether":
-      return `Recorre ${formatNumber(amount)} bloques en el Nether.`;
-    case "bloques_recorridos_end":
-      return `Recorre ${formatNumber(amount)} bloques en el End.`;
-    case "usos_portal":
-      return `Usa portales ${formatNumber(amount)} ${plural("vez", amount, "veces")}.`;
-    case "visito_tres_dimensiones":
-      return "Visita Overworld, Nether y End con el mismo personaje durante el ciclo activo.";
-    case "withers_derrotados":
-      return `Derrota ${formatNumber(amount)} ${plural("Wither", amount, "Withers")}.`;
-    case "dragones_derrotados":
-      return `Derrota ${formatNumber(amount)} ${plural("Dragón del End", amount, "Dragones del End")}.`;
-    case "objetos_encantados":
-      return `Encanta ${formatNumber(amount)} ${plural("objeto", amount, "objetos")}.`;
-    case "pociones_preparadas":
-      return `Prepara ${formatNumber(amount)} ${plural("poción", amount, "pociones")}.`;
-    case "usos_cama":
-      return `Usa una cama ${formatNumber(amount)} ${plural("vez", amount, "veces")}.`;
-    default:
-      return `Completa ${formatGoalValue(tipo, amount)} de progreso en este encargo.`;
+    case "troncos_talados": return `¡Arrasa con ${formatNumber(amount)} ${plural("tronco", amount, "troncos")} a puro hachazo!`;
+    case "tablas_crafteadas": return `Procesa ${formatNumber(amount)} ${plural("tabla", amount, "tablas")} y asegura material.`;
+    case "pan_crafteado": return `Hornea ${formatNumber(amount)} ${plural("pan", amount, "panes")} para el viaje.`;
+    case "camas_crafteadas": return `Fabrica ${formatNumber(amount)} ${plural("cama", amount, "camas")} para tu base.`;
+    case "hornos_crafteados": return `Craftea ${formatNumber(amount)} ${plural("horno", amount, "hornos")} operativos.`;
+    case "cubo_crafteado": return `Fabrica ${formatNumber(amount)} ${plural("cubo", amount, "cubos")} de hierro.`;
+    case "pico_hierro_crafteado": return `Forja ${formatNumber(amount)} ${plural("pico de hierro", amount, "picos de hierro")}.`;
+    case "semillas_plantadas": return `Entierra ${formatNumber(amount)} ${plural("semilla", amount, "semillas")} en suelo fértil.`;
+    case "cultivos_recolectados": return `Cosecha ${formatNumber(amount)} ${plural("cultivo", amount, "cultivos")} y llena la despensa.`;
+    case "trigo_recolectado": return `Segar ${formatNumber(amount)} gavillas de trigo listas.`;
+    case "zanahorias_patatas_recolectadas": return `Desentierra ${formatNumber(amount)} raíces (zanahorias/patatas).`;
+    case "nether_wart_recolectada": return `Recolecta ${formatNumber(amount)} verrugas del inframundo.`;
+    case "ovejas_esquiladas": return `Quítale la lana a ${formatNumber(amount)} ${plural("oveja", amount, "ovejas")}.`;
+    case "animales_criados": return `Multiplica tu rebaño criando ${formatNumber(amount)} ${plural("animal", amount, "animales")}.`;
+    case "alimentos_cocinados": return `Cocina ${formatNumber(amount)} ${plural("ración", amount, "raciones")} de comida en el horno.`;
+    case "veces_pescadas": return `Echa la caña ${formatNumber(amount)} ${plural("vez", amount, "veces")} al agua.`;
+    case "peces_pescados": return `Atrapa ${formatNumber(amount)} ${plural("pez", amount, "peces")} de las profundidades.`;
+    case "bloques_colocados_total": return `Construye usando ${formatNumber(amount)} ${plural("bloque", amount, "bloques")}.`;
+    case "madera_colocada": return `Coloca ${formatNumber(amount)} bloques de madera sólida.`;
+    case "piedra_procesada_colocada": return `Levanta muros con ${formatNumber(amount)} bloques de piedra tratada.`;
+    case "cofres_colocados": return `Planta ${formatNumber(amount)} ${plural("cofre", amount, "cofres")} para tu botín.`;
+    case "antorchas_colocadas": return `Ilumina la oscuridad con ${formatNumber(amount)} ${plural("antorcha", amount, "antorchas")}.`;
+    case "fuentes_luz_colocadas": return `Instala ${formatNumber(amount)} faroles o luz potente.`;
+    case "mesa_encantamientos_colocada": return `Coloca ${formatNumber(amount)} ${plural("mesa arcana", amount, "mesas arcanas")}.`;
+    case "bloques_rotos_total": return `Pulveriza ${formatNumber(amount)} ${plural("bloque", amount, "bloques")} del mundo.`;
+    case "bloques_bajo_y32_minados": return `Pica ${formatNumber(amount)} bloques en las profundidades (Y < 32).`;
+    case "tierra_rotas": return `Excava ${formatNumber(amount)} bloques de tierra o césped.`;
+    case "arena_recogida": return `Palea ${formatNumber(amount)} bloques de arena del desierto o costa.`;
+    case "grava_recogida": return `Despeja ${formatNumber(amount)} bloques de grava buscando pedernal.`;
+    case "menas_extraidas_total": return `Pica y extrae ${formatNumber(amount)} minerales valiosos.`;
+    case "carbon_mena_extraida": return `Extrae ${formatNumber(amount)} vetas de carbón.`;
+    case "cobre_mena_extraida": return `Extrae ${formatNumber(amount)} vetas de cobre brillante.`;
+    case "hierro_mena_extraida": return `Arranca ${formatNumber(amount)} vetas de hierro puro.`;
+    case "redstone_mena_extraida": return `Extrae ${formatNumber(amount)} vetas de redstone chispeante.`;
+    case "lapis_mena_extraida": return `Consigue ${formatNumber(amount)} vetas de lapislázuli.`;
+    case "oro_mena_extraida": return `Pica ${formatNumber(amount)} vetas de oro resplandeciente.`;
+    case "esmeralda_mena_extraida": return `Encuentra y extrae ${formatNumber(amount)} vetas de esmeralda.`;
+    case "diamantes_extraidos": return `¡Extrae ${formatNumber(amount)} ${plural("diamante", amount, "diamantes")} de las profundidades!`;
+    case "cuarzo_nether_extraido": return `Pica ${formatNumber(amount)} vetas de cuarzo en el infierno.`;
+    case "hierro_lingotes_fundidos": return `Funde a fuego vivo ${formatNumber(amount)} ${plural("lingote de hierro", amount, "lingotes de hierro")}.`;
+    case "hostiles_matados": return `¡Manda al otro barrio a ${formatNumber(amount)} monstruos hostiles!`;
+    case "zombis_matados": return `¡Acaba con la vida de ${formatNumber(amount)} ${plural("zombi", amount, "zombis")}!`;
+    case "esqueletos_matados": return `¡Haz añicos a ${formatNumber(amount)} ${plural("esqueleto", amount, "esqueletos")}!`;
+    case "creepers_matados": return `¡Caza a ${formatNumber(amount)} ${plural("creeper", amount, "creepers")} antes de que exploten!`;
+    case "aranas_matadas": return `¡Aplasta a ${formatNumber(amount)} ${plural("araña", amount, "arañas")} en su nido!`;
+    case "endermen_matados": return `¡Aniquila a ${formatNumber(amount)} endermen y róbales las perlas!`;
+    case "blazes_matados": return `¡Apaga a golpes a ${formatNumber(amount)} blazes!`;
+    case "ghasts_matados": return `¡Derriba a ${formatNumber(amount)} ghasts del cielo infernal!`;
+    case "shulkers_matados": return `¡Revienta a ${formatNumber(amount)} shulkers en sus ciudades!`;
+    case "mobs_nether_matados": return `¡Despeja el Nether eliminando a ${formatNumber(amount)} aberraciones!`;
+    case "mobs_end_matados": return `¡Sobrevive al vacío matando a ${formatNumber(amount)} criaturas del End!`;
+    case "kills_con_arco": return `Acierta y abate a ${formatNumber(amount)} objetivos con el arco.`;
+    case "minutos_jugados": return `Sobrevive ${formatDurationFromMinutes(amount)} activo en el reino.`;
+    case "bloques_recorridos_total": return `Patea el mapa recorriendo ${formatNumber(amount)} bloques.`;
+    case "visitas_bajo_y0": return `Adéntrate por debajo de Y0 ${formatNumber(amount)} ${plural("vez", amount, "veces")}.`;
+    case "minutos_bajo_y32": return `Resiste ${formatDurationFromMinutes(amount)} trabajando bajo la cota Y32.`;
+    case "entradas_nether": return `Cruza el portal del Nether ${formatNumber(amount)} ${plural("vez", amount, "veces")}.`;
+    case "entradas_end": return `Lánzate al vacío del End ${formatNumber(amount)} ${plural("vez", amount, "veces")}.`;
+    case "bloques_recorridos_nether": return `Avanza ${formatNumber(amount)} bloques sobre lava y basalto en el Nether.`;
+    case "bloques_recorridos_end": return `Explora ${formatNumber(amount)} bloques entre islas de vacío en el End.`;
+    case "usos_portal": return `Teletranspórtate por portales ${formatNumber(amount)} ${plural("vez", amount, "veces")}.`;
+    case "visito_tres_dimensiones": return "Viaja por el Overworld, Nether y el End con un mismo personaje.";
+    case "withers_derrotados": return `¡Invoca y destruye a ${formatNumber(amount)} ${plural("Wither", amount, "Withers")} sin piedad!`;
+    case "dragones_derrotados": return `¡Derrota a ${formatNumber(amount)} ${plural("Dragón del End", amount, "Dragones del End")}!`;
+    case "objetos_encantados": return `Imbuye con magia ${formatNumber(amount)} ${plural("objeto", amount, "objetos")}.`;
+    case "pociones_preparadas": return `Destila ${formatNumber(amount)} ${plural("poción", amount, "pociones")} en la destilería.`;
+    case "usos_cama": return `Descansa en una cama ${formatNumber(amount)} ${plural("vez", amount, "veces")} para fijar tu reaparición.`;
+    default: return `Completa ${formatGoalValue(tipo, amount)} de progreso en este encargo.`;
   }
 }
 
-function getDifficulty(logro) {
+function getDifficulty(logro, tipoInyectado) {
   const xp = clampNumber(logro?.xp_otorgada);
   const objetivo = clampNumber(logro?.objetivo);
-  const tipoMision = String(logro?.tipo_mision || "permanente").toLowerCase();
+  const tipoMision = String(logro?.tipo_mision || tipoInyectado || "permanente").toLowerCase();
   const categoria = String(logro?.categoria || "").toLowerCase();
 
   if (tipoMision === "semanal") {
@@ -230,48 +188,33 @@ function getDifficulty(logro) {
     if (xp >= 190 || objetivo >= 800) return { label: "Dura", tone: "dura" };
     return { label: "Seria", tone: "seria" };
   }
-
   if (tipoMision === "diaria") {
     if (xp >= 70 || objetivo >= 500) return { label: "Alta", tone: "alta" };
     if (xp >= 45 || objetivo >= 80) return { label: "Media", tone: "media" };
     return { label: "Ágil", tone: "agil" };
   }
-
-  if (categoria === "jefes" || categoria === "endgame" || xp >= 420 || objetivo >= 4000) {
-    return { label: "Legendaria", tone: "legendaria" };
-  }
-
+  if (categoria === "jefes" || categoria === "endgame" || xp >= 420 || objetivo >= 4000) return { label: "Mítica", tone: "legendaria" };
   if (xp >= 220 || objetivo >= 1000) return { label: "Épica", tone: "epica" };
   if (xp >= 100 || objetivo >= 200) return { label: "Veterana", tone: "veterana" };
   return { label: "Base", tone: "base" };
 }
 
-function getStateLabel(logro, claimable) {
-  if (logro?.reclamado) return { label: "Reclamada", tone: "reclamada" };
-  if (claimable) return { label: "Lista", tone: "lista" };
-  if (logro?.completado) return { label: "Completa", tone: "completa" };
-  return { label: "En progreso", tone: "progreso" };
-}
-
 function getCycleLabel(tipoMision) {
   if (tipoMision === "diaria") return "Diaria";
   if (tipoMision === "semanal") return "Semanal";
+  if (tipoMision === "web") return "Web";
   return "Permanente";
 }
 
 function calcularTargetDesdeFecha(fechaISO) {
   if (!fechaISO) return null;
-  return new Date(`${fechaISO}T23:59:59.999`);
+  return new Date(`${fechaISO}T23:59:59.999Z`);
 }
 
 function desglosarDiferencia(target) {
   const ahora = new Date();
   const totalMs = target - ahora;
-
-  if (totalMs <= 0) {
-    return { totalMs, dias: 0, horas: 0, minutos: 0, segundos: 0 };
-  }
-
+  if (totalMs <= 0) return { totalMs, dias: 0, horas: 0, minutos: 0, segundos: 0 };
   let resto = Math.floor(totalMs / 1000);
   const dias = Math.floor(resto / 86400);
   resto %= 86400;
@@ -279,37 +222,93 @@ function desglosarDiferencia(target) {
   resto %= 3600;
   const minutos = Math.floor(resto / 60);
   const segundos = resto % 60;
-
   return { totalMs, dias, horas, minutos, segundos };
 }
 
-function buildMetaLine(logro) {
-  return [getCycleLabel(logro?.tipo_mision), logro?.categoria, logro?.familia].filter(Boolean).join(" · ");
+function getWebMetaNumber(logro, key) {
+  const a = Number(logro?.meta_definicion?.[key]);
+  if (Number.isFinite(a)) return a;
+  const b = Number(logro?.meta_otorgado?.[key]);
+  if (Number.isFinite(b)) return b;
+  return null;
 }
 
-function LogroList({ user, onXpClaimed }) {
+function buildWebObjectiveText(logro) {
+  const codigo = String(logro?.codigo || "").toLowerCase();
+  const tipo = String(logro?.tipo || "").toLowerCase();
+  if (codigo.startsWith("primero_nivel_")) {
+    const level = getWebMetaNumber(logro, "level_target");
+    return `Sé el primer jugador en alcanzar el nivel ${formatNumber(level || 0)} de la cuenta web.`;
+  }
+  if (tipo === "top_rank") {
+    const maxRank = getWebMetaNumber(logro, "max_rank");
+    if (maxRank === 1) return "¡Domina la cima! Entra por primera vez en el puesto #1 global por SVPoints.";
+    return `¡Hazte hueco! Entra por primera vez en el Top ${formatNumber(maxRank || 10)} global por SVPoints.`;
+  }
+  if (tipo === "daily_claim_count") return `Reclama tu recompensa diaria ${formatNumber(getWebMetaNumber(logro, "claims_required") || 0)} veces.`;
+  if (tipo === "vote_count") return `Vota por FlanCraft ${formatNumber(getWebMetaNumber(logro, "votes_required") || 0)} veces y apoya la red.`;
+  if (tipo === "vote_streak") return `Mantén viva la racha: Vota al menos una vez durante ${formatNumber(getWebMetaNumber(logro, "streak_required") || 0)} días seguidos.`;
+  if (tipo === "account_age_days") return `Mantén tu perfil web vivo durante ${formatNumber(getWebMetaNumber(logro, "days_required") || 0)} días.`;
+  return logro?.descripcion || "Cumple la condición secreta de esta insignia web.";
+}
+
+function getWebDifficulty(logro) {
+  const codigo = String(logro?.codigo || "").toLowerCase();
+  const tipo = String(logro?.tipo || "").toLowerCase();
+  if (codigo.startsWith("primero_nivel_")) return { label: "Mítica", tone: "legendaria" };
+  if (tipo === "top_rank") return { label: "Élite", tone: "elite" };
+  if (tipo === "vote_streak") {
+    const streak = getWebMetaNumber(logro, "streak_required");
+    if (streak >= 100) return { label: "Élite", tone: "elite" };
+    if (streak >= 30) return { label: "Épica", tone: "epica" };
+    return { label: "Honor", tone: "veterana" };
+  }
+  if (tipo === "account_age_days") return { label: "Veterana", tone: "veterana" };
+  if (tipo === "vote_count") return { label: "Honor", tone: "epica" };
+  return { label: "Especial", tone: "base" };
+}
+
+function formatWebReward(logro) {
+  const amount = clampNumber(logro?.recompensa_wallet);
+  if (amount > 0) return `${formatNumber(amount)} WC`;
+  return "Visual";
+}
+
+const getProgresoSeguro = (item) => {
+  const objetivo = clampNumber(item?.objetivo);
+  if (objetivo <= 0) return 0;
+  return clampNumber(item?.progreso_actual) / objetivo;
+};
+
+export default function LogroList({ user, onXpClaimed }) {
   const [logros, setLogros] = useState([]);
   const [error, setError] = useState(null);
   const [reclamadoId, setReclamadoId] = useState(null);
   const [cargandoId, setCargandoId] = useState(null);
   const [tipoMision, setTipoMision] = useState("permanente");
-  const [servidorActivo, setServidorActivo] = useState("survival");
-  const [criterio, setCriterio] = useState("claimable");
+  const [criterio, setCriterio] = useState("smart");
+  const [filtroTipo, setFiltroTipo] = useState("todos");
+  const [filtroRareza, setFiltroRareza] = useState("todas");
+  const [busqueda, setBusqueda] = useState("");
   const [cargando, setCargando] = useState(true);
   const [tiempoRestante, setTiempoRestante] = useState(null);
   const [resetAt, setResetAt] = useState(null);
   const [pagina, setPagina] = useState(1);
 
-  const buttonRefs = useRef({});
   const listaTopRef = useRef(null);
 
   const esOwner = useMemo(() => isOwnerUser(user), [user]);
 
+  const criteriosDisponibles = useMemo(() => (tipoMision === "web" ? CRITERIOS_WEB : CRITERIOS), [tipoMision]);
+
   const manejarCambioTipoMision = (nuevoTipo) => {
-    if (LOGROS_PROXIMAMENTE) return;
-    if (nuevoTipo === tipoMision) return;
+    if (LOGROS_PROXIMAMENTE || nuevoTipo === tipoMision) return;
     setTipoMision(nuevoTipo);
     setPagina(1);
+    setFiltroTipo("todos");
+    setFiltroRareza("todas");
+    setBusqueda("");
+    setCriterio("smart");
   };
 
   useEffect(() => {
@@ -321,36 +320,53 @@ function LogroList({ user, onXpClaimed }) {
         setCargando(false);
         return;
       }
-
       try {
         setCargando(true);
         setError(null);
 
-        if (tipoMision === "permanente") {
-          const params = new URLSearchParams();
-          if (servidorActivo) params.append("servidor", servidorActivo);
-          const res = await fetch(apiUrl(`/api/logros/${user.uuid}?${params.toString()}`));
+        if (tipoMision === "web") {
+          const res = await fetch(apiUrl(`/api/web-logros/${user.uuid}`), {
+            headers: { ...(getAuthToken() ? { Authorization: `Bearer ${getAuthToken()}` } : {}) },
+          });
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
           const data = await res.json();
-          setLogros(Array.isArray(data) ? data : []);
+          const items = Array.isArray(data) ? data : [];
+          setLogros(items.map(m => ({ ...m, tipo_mision: "web" })));
+          setResetAt(null);
+          return;
+        }
+
+        if (tipoMision === "permanente") {
+          const res = await fetch(apiUrl(`/api/logros/${user.uuid}?servidor=survival`));
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const data = await res.json();
+          const items = Array.isArray(data) ? data : [];
+          setLogros(items.map(m => ({ ...m, tipo_mision: "permanente" })));
           setResetAt(null);
           return;
         }
 
         const endpoint = tipoMision === "diaria" ? "diarias" : "semanales";
-        const params = new URLSearchParams();
-        params.append("servidor", servidorActivo || "survival");
-
-        const res = await fetch(apiUrl(`/api/misiones/${endpoint}/${user.uuid}?${params.toString()}`));
+        const res = await fetch(apiUrl(`/api/misiones/${endpoint}/${user.uuid}?servidor=survival`));
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
         const data = await res.json();
-        const misiones = Array.isArray(data) ? data : Array.isArray(data.misiones) ? data.misiones : [];
+        
+        let misionesBruto = Array.isArray(data) ? data : Array.isArray(data.misiones) ? data.misiones : [];
+        
+        const misionesInyectadas = misionesBruto.map(m => ({
+          ...m,
+          tipo_mision: tipoMision 
+        }));
 
-        setLogros(misiones);
-        setResetAt(calcularTargetDesdeFecha(data?.meta?.fecha_fin));
+        setLogros(misionesInyectadas);
+        
+        const fechaFinRaw = data?.meta?.fecha_fin;
+        if (fechaFinRaw) {
+          setResetAt(calcularTargetDesdeFecha(fechaFinRaw));
+        } else {
+          setResetAt(null);
+        }
       } catch (err) {
-        console.error("[MISIONES FETCH ERROR]", err);
         setError(err.message || "Error al cargar misiones.");
         setLogros([]);
         setResetAt(null);
@@ -365,21 +381,15 @@ function LogroList({ user, onXpClaimed }) {
       setCargando(false);
       return;
     }
-
     fetchLogros();
-  }, [user?.uuid, esOwner, tipoMision, servidorActivo]);
+  }, [user?.uuid, esOwner, tipoMision]);
 
   useEffect(() => {
-    if (!resetAt || tipoMision === "permanente" || !esOwner) {
+    if (!resetAt || tipoMision === "permanente" || tipoMision === "web" || !esOwner) {
       setTiempoRestante(null);
       return;
     }
-
-    const actualizar = () => {
-      const diff = desglosarDiferencia(resetAt);
-      setTiempoRestante(diff);
-    };
-
+    const actualizar = () => setTiempoRestante(desglosarDiferencia(resetAt));
     actualizar();
     const id = setInterval(actualizar, 1000);
     return () => clearInterval(id);
@@ -388,9 +398,10 @@ function LogroList({ user, onXpClaimed }) {
   const reclamarMision = async (logro) => {
     try {
       const claimId = logro.claim_scope_id || logro.id;
+      const tMision = logro.tipo_mision || tipoMision;
       setCargandoId(claimId);
 
-      const res = await fetch(apiUrl(`/api/misiones/reclamar/${logro.tipo_mision}/${claimId}`), {
+      const res = await fetch(apiUrl(`/api/misiones/reclamar/${tMision}/${claimId}`), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -411,8 +422,9 @@ function LogroList({ user, onXpClaimed }) {
         xpSound.play();
       } catch {}
 
-      const sourceButton = buttonRefs.current[claimId];
-      if (onXpClaimed) onXpClaimed(data.xp_otorgada || logro.xp_otorgada || 0, sourceButton);
+      if (onXpClaimed) {
+        onXpClaimed(data?.xp_otorgada || logro?.xp_otorgada || 0);
+      }
     } catch (err) {
       alert(err.message || "No se pudo reclamar la misión");
     } finally {
@@ -421,41 +433,54 @@ function LogroList({ user, onXpClaimed }) {
   };
 
   const esClaimable = (logro) => {
-    if (!logro) return false;
+    if (!logro || tipoMision === "web") return false;
     const claimId = logro.claim_scope_id || logro.id;
     const reclamado = !!logro.reclamado || String(claimId) === String(reclamadoId);
     return !!logro.completado && !reclamado;
   };
 
   const ordenarLogros = (lista) => {
-    const progresoSeguro = (item) => {
-      const objetivo = clampNumber(item?.objetivo);
-      const progreso = clampNumber(item?.progreso_actual);
-      if (objetivo <= 0) return 0;
-      return progreso / objetivo;
-    };
+    if (tipoMision === "web") {
+      switch (criterio) {
+        case "reward-desc": return [...lista].sort((a, b) => clampNumber(b.recompensa_wallet) - clampNumber(a.recompensa_wallet));
+        case "reward-asc": return [...lista].sort((a, b) => clampNumber(a.recompensa_wallet) - clampNumber(b.recompensa_wallet));
+        case "orden": return [...lista].sort((a, b) => clampNumber(a.orden, 9999) - clampNumber(b.orden, 9999));
+        case "smart":
+        case "unlocked":
+        default:
+          return [...lista].sort((a, b) => {
+            if (!!a.desbloqueado !== !!b.desbloqueado) return a.desbloqueado ? -1 : 1;
+            if (!!a.actual_en_ranking !== !!b.actual_en_ranking) return a.actual_en_ranking ? -1 : 1;
+            return clampNumber(a.orden, 9999) - clampNumber(b.orden, 9999);
+          });
+      }
+    }
 
     switch (criterio) {
-      case "xp-desc":
-        return [...lista].sort((a, b) => clampNumber(b.xp_otorgada) - clampNumber(a.xp_otorgada));
-      case "xp-asc":
-        return [...lista].sort((a, b) => clampNumber(a.xp_otorgada) - clampNumber(b.xp_otorgada));
-      case "progreso-desc":
-        return [...lista].sort((a, b) => progresoSeguro(b) - progresoSeguro(a));
-      case "progreso-asc":
-        return [...lista].sort((a, b) => progresoSeguro(a) - progresoSeguro(b));
-      case "completado":
-        return [...lista].sort((a, b) => {
-          if (!!a.completado === !!b.completado) return 0;
-          return a.completado ? -1 : 1;
-        });
-      case "claimable":
+      case "xp-desc": return [...lista].sort((a, b) => clampNumber(b.xp_otorgada) - clampNumber(a.xp_otorgada));
+      case "xp-asc": return [...lista].sort((a, b) => clampNumber(a.xp_otorgada) - clampNumber(b.xp_otorgada));
+      case "progreso-desc": return [...lista].sort((a, b) => getProgresoSeguro(b) - getProgresoSeguro(a));
+      case "progreso-asc": return [...lista].sort((a, b) => getProgresoSeguro(a) - getProgresoSeguro(b));
+      case "completado": return [...lista].sort((a, b) => { if (!!a.completado === !!b.completado) return 0; return a.completado ? -1 : 1; });
+      case "smart":
       default:
         return [...lista].sort((a, b) => {
           const aClaim = esClaimable(a);
           const bClaim = esClaimable(b);
           if (aClaim !== bClaim) return aClaim ? -1 : 1;
-          if (!!a.completado !== !!b.completado) return a.completado ? -1 : 1;
+
+          const aRec = !!a.reclamado;
+          const bRec = !!b.reclamado;
+          if (aRec !== bRec) return aRec ? 1 : -1;
+
+          const aComp = !!a.completado;
+          const bComp = !!b.completado;
+          if (aComp !== bComp) return aComp ? 1 : -1;
+
+          const aProg = getProgresoSeguro(a);
+          const bProg = getProgresoSeguro(b);
+          if (Math.abs(aProg - bProg) > 0.01) return bProg - aProg;
+
           return clampNumber(b.xp_otorgada) - clampNumber(a.xp_otorgada);
         });
     }
@@ -463,33 +488,39 @@ function LogroList({ user, onXpClaimed }) {
 
   const logrosFiltrados = useMemo(() => {
     const base = Array.isArray(logros) ? [...logros] : [];
-    if (tipoMision === "permanente" && servidorActivo) {
-      return base.filter((item) => item.servidor === servidorActivo || item.servidor === "global");
-    }
-    return base;
-  }, [logros, tipoMision, servidorActivo]);
+    const busquedaNormalizada = normalizeText(busqueda);
 
-  const logrosOrdenados = useMemo(() => ordenarLogros(logrosFiltrados), [logrosFiltrados, criterio]);
+    return base.filter((item) => {
+      const difficulty = tipoMision === "web" ? getWebDifficulty(item) : getDifficulty(item, tipoMision);
+      const tipoNormalizado = normalizeText(item?.categoria || item?.familia || item?.tipo || item?.tipo_evento || "sin tipo");
+      const rarezaNormalizada = normalizeText(difficulty.label);
+
+      const coincideTipo = filtroTipo === "todos" ? true : tipoNormalizado === normalizeText(filtroTipo);
+      const coincideRareza = filtroRareza === "todas" ? true : rarezaNormalizada === normalizeText(filtroRareza);
+      
+      const searchable = normalizeText([item?.nombre, item?.descripcion_lore, item?.descripcion, item?.categoria, item?.familia, item?.tipo, item?.tipo_evento, item?.descripcion_objetivo, item?.codigo].filter(Boolean).join(" "));
+      const coincideBusqueda = !busquedaNormalizada || searchable.includes(busquedaNormalizada);
+
+      return coincideTipo && coincideRareza && coincideBusqueda;
+    });
+  }, [logros, tipoMision, filtroTipo, filtroRareza, busqueda]);
+
+  const opcionesTipo = useMemo(() => {
+    const base = Array.isArray(logros) ? [...logros] : [];
+    return Array.from(new Set(base.map((item) => String(item?.categoria || item?.familia || item?.tipo || item?.tipo_evento || "").trim()).filter(Boolean))).sort((a, b) => a.localeCompare(b, "es"));
+  }, [logros]);
+
+  const opcionesRareza = useMemo(() => {
+    const base = Array.isArray(logros) ? [...logros] : [];
+    return Array.from(new Set(base.map((item) => (tipoMision === "web" ? getWebDifficulty(item).label : getDifficulty(item, tipoMision).label)).filter(Boolean))).sort((a, b) => a.localeCompare(b, "es"));
+  }, [logros, tipoMision]);
+
+  const logrosOrdenados = useMemo(() => ordenarLogros(logrosFiltrados), [logrosFiltrados, criterio, tipoMision]);
   const hayLogros = logrosOrdenados.length > 0;
-  const hayClaimables = logrosOrdenados.some((item) => esClaimable(item));
-
-  const subtituloTab = !esOwner
-    ? "Sección disponible solo para owners durante las pruebas"
-    : tipoMision === "permanente"
-    ? "Haz historia con metas que no caducan"
-    : tipoMision === "diaria"
-    ? "Encargos del día con objetivo claro y botín inmediato"
-    : "Retos largos para una semana que deje huella";
-
   const totalPaginas = Math.max(1, Math.ceil(logrosOrdenados.length / PAGE_SIZE));
 
-  useEffect(() => {
-    setPagina(1);
-  }, [tipoMision, servidorActivo, criterio, user?.uuid]);
-
-  useEffect(() => {
-    setPagina((valor) => Math.min(valor, totalPaginas));
-  }, [totalPaginas]);
+  useEffect(() => { setPagina(1); }, [tipoMision, criterio, filtroTipo, filtroRareza, busqueda, user?.uuid]);
+  useEffect(() => { setPagina((valor) => Math.min(valor, totalPaginas)); }, [totalPaginas]);
 
   const inicio = (pagina - 1) * PAGE_SIZE;
   const logrosPagina = logrosOrdenados.slice(inicio, inicio + PAGE_SIZE);
@@ -506,15 +537,13 @@ function LogroList({ user, onXpClaimed }) {
     const siguiente = Math.min(totalPaginas, Math.max(1, destino));
     if (siguiente === pagina) return;
     setPagina(siguiente);
-    requestAnimationFrame(() => {
-      listaTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    });
+    requestAnimationFrame(() => { listaTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }); });
   };
 
   return (
     <section className={["logros-epic", LOGROS_PROXIMAMENTE ? "logros-proximamente-mode" : "", MISIONES_MODO_PRUEBAS ? "logros-modo-pruebas" : ""].filter(Boolean).join(" ")}>
       <header className="logros-header">
-        <h2 className="logros-titulo">Misiones y logros de FlanCraft</h2>
+        <h2 className="logros-titulo">TABLÓN DE AVENTURAS</h2>
 
         <div className="logros-tabs-tipo">
           {TABS_MISION.map((tab) => (
@@ -526,266 +555,198 @@ function LogroList({ user, onXpClaimed }) {
               onClick={() => manejarCambioTipoMision(tab.id)}
             >
               <div className="logros-tab-icon-wrap">
-                <img src={tab.imagen} alt={tab.label} className="logros-tab-icon" />
+                <img src={tab.imagen} alt={tab.label} className="logros-tab-icon mc-pixelated" />
               </div>
               <span className="logros-tab-label">{tab.label}</span>
             </button>
           ))}
         </div>
 
-        <p className="logros-subtitulo-secundario">{LOGROS_PROXIMAMENTE ? "Sistema en preparación" : subtituloTab}</p>
-
         {MISIONES_MODO_PRUEBAS && esOwner && (
           <div className="logros-dev-banner" role="status" aria-live="polite">
-            <div className="logros-dev-banner__icon">
-              <TriangleAlert size={18} />
-            </div>
-
+            <TriangleAlert size={18} className="logros-dev-banner__icon" />
             <div className="logros-dev-banner__copy">
-              <span className="logros-dev-banner__eyebrow">Versión de desarrollo y pruebas</span>
-              <p className="logros-dev-banner__text">
-                Temporalmente esta sección es visual. Los valores, reinicios, progresos y reclamaciones pueden no reflejar el sistema definitivo mientras terminamos las pruebas.
-              </p>
+              <span className="logros-dev-banner__eyebrow">Versión de pruebas</span>
+              <p className="logros-dev-banner__text">Los valores pueden no reflejar el sistema definitivo.</p>
             </div>
           </div>
         )}
 
-        {!LOGROS_PROXIMAMENTE && esOwner && tipoMision !== "permanente" && tiempoRestante && (
+        {!LOGROS_PROXIMAMENTE && esOwner && tipoMision !== "permanente" && tipoMision !== "web" && tiempoRestante && (
           <div className={`logros-countdown logros-countdown-${tipoMision}`}>
-            <span className="countdown-label">{tipoMision === "diaria" ? "La rotación diaria termina en" : "Este ciclo semanal termina en"}</span>
-
+            <span className="countdown-label">{tipoMision === "diaria" ? "ROTACIÓN DIARIA EN" : "CICLO SEMANAL EN"}</span>
             <div className="countdown-digits">
               {tipoMision === "semanal" && (
-                <>
-                  <div className="countdown-block">
-                    <span className="countdown-number">{tiempoRestante.dias}</span>
-                    <span className="countdown-unit">{tiempoRestante.dias === 1 ? "día" : "días"}</span>
-                  </div>
-                  <span className="countdown-sep">•</span>
-                </>
+                <><div className="countdown-block"><span className="countdown-number">{tiempoRestante.dias}</span><span className="countdown-unit">{tiempoRestante.dias === 1 ? "DÍA" : "DÍAS"}</span></div><span className="countdown-sep">•</span></>
               )}
-
-              <div className="countdown-block">
-                <span className="countdown-number">{String(tiempoRestante.horas).padStart(2, "0")}</span>
-                <span className="countdown-unit">horas</span>
-              </div>
+              <div className="countdown-block"><span className="countdown-number">{String(tiempoRestante.horas).padStart(2, "0")}</span><span className="countdown-unit">HORAS</span></div>
               <span className="countdown-sep">:</span>
-              <div className="countdown-block">
-                <span className="countdown-number">{String(tiempoRestante.minutos).padStart(2, "0")}</span>
-                <span className="countdown-unit">min</span>
-              </div>
+              <div className="countdown-block"><span className="countdown-number">{String(tiempoRestante.minutos).padStart(2, "0")}</span><span className="countdown-unit">MIN</span></div>
               <span className="countdown-sep">:</span>
-              <div className="countdown-block">
-                <span className="countdown-number">{String(tiempoRestante.segundos).padStart(2, "0")}</span>
-                <span className="countdown-unit">seg</span>
-              </div>
+              <div className="countdown-block"><span className="countdown-number">{String(tiempoRestante.segundos).padStart(2, "0")}</span><span className="countdown-unit">SEG</span></div>
             </div>
           </div>
         )}
       </header>
 
       {LOGROS_PROXIMAMENTE ? (
-        <div className="logros-soon-wrap">
-          <div className="logros-soon-card">
-            <div className="logros-soon-icon">
-              <Clock size={22} className="logros-soon-clock" />
-            </div>
-            <div className="logros-soon-text">
-              <h3 className="logros-soon-title">En mantenimiento</h3>
-              <p className="logros-soon-desc">Estamos puliendo el tablero de desafíos.</p>
-              <p className="logros-soon-desc2">Vuelve en breve para seguir progresando.</p>
-            </div>
-          </div>
-        </div>
+        <div className="logros-soon-wrap"><div className="logros-soon-card mc-block"><Clock size={22} className="logros-soon-clock" /><div className="logros-soon-text"><h3 className="logros-soon-title">En mantenimiento</h3><p className="logros-soon-desc2">Vuelve en breve para seguir progresando.</p></div></div></div>
       ) : !esOwner ? (
-        <div className="logros-soon-wrap">
-          <div className="logros-soon-card">
-            <div className="logros-soon-icon">
-              <TriangleAlert size={22} className="logros-soon-clock" />
-            </div>
-            <div className="logros-soon-text">
-              <h3 className="logros-soon-title">Acceso restringido</h3>
-              <p className="logros-soon-desc2">Cuando terminemos las pruebas se abrirán al resto de usuarios.</p>
-            </div>
-          </div>
-        </div>
+        <div className="logros-soon-wrap"><div className="logros-soon-card mc-block"><TriangleAlert size={22} className="logros-soon-clock" /><div className="logros-soon-text"><h3 className="logros-soon-title">Acceso restringido</h3><p className="logros-soon-desc2">Pronto se abrirán al resto de usuarios.</p></div></div></div>
       ) : (
         <>
-          <div className="logros-toolbar">
-            {tipoMision === "permanente" && (
-              <div className="logros-reinos-wrapper">
-                <button type="button" className={["reino-card", servidorActivo === "survival" ? "activo" : ""].filter(Boolean).join(" ")} onClick={() => setServidorActivo("survival")}>
-                  <div className="reino-img-wrap">
-                    <img src="/assets/reinos/survival-clasico.webp" alt="Survival" className="reino-img" />
-                  </div>
-                  <span className="reino-nombre">Survival</span>
-                </button>
-              </div>
-            )}
-
+          <div className="logros-toolbar logros-toolbar-secundario mc-block">
             <div className="logros-filtros-orden">
-              <span className="orden-label">
-                <Filter size={15} /> Ordenar por
-              </span>
-              <select className="orden-select" value={criterio} onChange={(e) => setCriterio(e.target.value)}>
-                {CRITERIOS.map((item) => (
-                  <option key={item.valor} value={item.valor}>
-                    {item.nombre}
-                  </option>
-                ))}
+              <span className="orden-label"><Filter size={15} /> ORDENAR POR</span>
+              <select className="orden-select mc-input" value={criterio} onChange={(e) => setCriterio(e.target.value)}>
+                {criteriosDisponibles.map((item) => <option key={item.valor} value={item.valor}>{item.nombre}</option>)}
               </select>
             </div>
+            <div className="logros-filtros-orden">
+              <span className="orden-label">TIPO</span>
+              <select className="orden-select mc-input" value={filtroTipo} onChange={(e) => setFiltroTipo(e.target.value)}>
+                <option value="todos">Todos</option>
+                {opcionesTipo.map((tipo) => <option key={tipo} value={tipo}>{tipo}</option>)}
+              </select>
+            </div>
+            <div className="logros-filtros-orden">
+              <span className="orden-label">RAREZA</span>
+              <select className="orden-select mc-input" value={filtroRareza} onChange={(e) => setFiltroRareza(e.target.value)}>
+                <option value="todas">Todas</option>
+                {opcionesRareza.map((rareza) => <option key={rareza} value={rareza}>{rareza}</option>)}
+              </select>
+            </div>
+            <div className="logros-searchbox">
+              <span className="logros-searchbox__icon"><Search size={16} /></span>
+              <input type="text" className="logros-searchbox__input mc-input" placeholder="Buscar misión..." value={busqueda} onChange={(e) => setBusqueda(e.target.value)} />
+            </div>
           </div>
-
-          {error && <p className="logros-estado logros-estado-error">Error al cargar misiones: {error}</p>}
-
-          {!error && !cargando && !hayLogros && (
-            <p className="logros-estado">
-              {tipoMision === "permanente"
-                ? "Aún no hay logros visibles en esta modalidad."
-                : tipoMision === "diaria"
-                ? "No hay misiones diarias activas ahora mismo."
-                : "No hay retos semanales activos ahora mismo."}
-            </p>
-          )}
 
           <div className="logros-list-wrapper">
             <div ref={listaTopRef} />
 
             {!error && hayLogros && (
               <>
-                <ul className={["logros-lista", cargando ? "logros-lista-saliente" : "logros-lista-entrante"].filter(Boolean).join(" ")}>
+                <div className={["logros-grid", cargando ? "logros-lista-saliente" : "logros-lista-entrante"].filter(Boolean).join(" ")}>
                   {logrosPagina.map((logro, index) => {
+                    const webMode = tipoMision === "web";
                     const objetivo = clampNumber(logro.objetivo);
                     const progreso = clampNumber(logro.progreso_actual);
                     const progresoPercent = objetivo > 0 ? Math.min(100, (progreso / objetivo) * 100) : 0;
                     const claimable = esClaimable(logro);
-                    const state = getStateLabel(logro, claimable);
-                    const difficulty = getDifficulty(logro);
-                    const claimId = logro.claim_scope_id || logro.id;
-                    const objectiveText = logro.descripcion_objetivo || buildObjectiveText(logro.tipo, objetivo);
+                    const difficulty = webMode ? getWebDifficulty(logro) : getDifficulty(logro, tipoMision);
+                    const claimId = logro.claim_scope_id || logro.id || logro.codigo;
+                    const objectiveText = webMode ? buildWebObjectiveText(logro) : logro.descripcion_objetivo || buildObjectiveText(logro.tipo, objetivo);
+                    const rewardText = webMode ? formatWebReward(logro) : `${formatNumber(logro.xp_otorgada)} XP`;
+                    const iconSrc = getCategoryIcon(logro?.categoria, logro?.familia, logro?.tipo);
+                    
+                    const isAlmostDone = !claimable && !logro.reclamado && progresoPercent >= 80 && progresoPercent < 100;
 
                     return (
-                      <li
-                        key={`${logro.tipo_mision}-${claimId}`}
+                      <div
+                        key={`${tipoMision}-${claimId}`}
                         className={[
-                          "logro-row",
-                          `logro-row--${difficulty.tone}`,
-                          claimable ? "logro-claimable" : "",
-                          logro.completado ? "logro-completado" : "",
-                          logro.reclamado ? "logro-reclamado" : "",
-                        ]
-                          .filter(Boolean)
-                          .join(" ")}
+                          "gacha-card",
+                          `rarity-${difficulty.tone}`,
+                          claimable ? "state-claimable" : "",
+                          logro.reclamado ? "state-claimed" : "",
+                          !claimable && !logro.reclamado && !logro.completado ? "state-progress" : "",
+                          isAlmostDone ? "state-hype" : ""
+                        ].filter(Boolean).join(" ")}
                         style={{ "--delay": `${index * 45}ms` }}
                       >
-                        <span className="logro-acento" />
+                        {claimable && <div className="gacha-shine-layer" />}
+                        
+                        <div className="gacha-card__header">
+                          <div className="gacha-icon-slot">
+                            <img src={iconSrc} alt="Icono" className="mc-pixelated" />
+                          </div>
+                          <div className="gacha-card__title-area">
+                            <span className="gacha-category">{logro?.categoria || getCycleLabel(logro?.tipo_mision || tipoMision)}</span>
+                            <h3 className="gacha-title">{logro.nombre || logro.tipo || "Misión"}</h3>
+                            <span className={`gacha-rarity-badge badge-${difficulty.tone}`}>{difficulty.label}</span>
+                          </div>
+                        </div>
 
-                        <div className="logro-main">
-                          <div className="logro-top">
-                            <div className="logro-copy">
-                              <p className="logro-meta-line">{buildMetaLine(logro)}</p>
-                              <h3 className="logro-nombre">{logro.nombre || logro.tipo || "Misión"}</h3>
-                              <div className="logro-submeta">
-                                <span className="logro-rareza-text">{difficulty.label}</span>
-                                <span className="logro-submeta-dot">•</span>
-                                <span className={`logro-state-text logro-state-text--${state.tone}`}>{state.label}</span>
+                        <div className="gacha-card__body">
+                          <div className="gacha-objective-scroll">
+                            {logro.descripcion_lore && <p className="gacha-lore">"{logro.descripcion_lore}"</p>}
+                            <p className="gacha-desc">{objectiveText}</p>
+                          </div>
+                        </div>
+
+                        <div className="gacha-card__footer">
+                          {!webMode && !logro.reclamado && (
+                            <div className="gacha-progress-wrap">
+                              <div className="gacha-progress-text">
+                                <span>PROGRESO</span>
+                                <span>{formatGoalValue(logro.tipo, progreso)} / {formatGoalValue(logro.tipo, objetivo)}</span>
                               </div>
-                              <p className="logro-descripcion">{logro.descripcion || "Sigue el objetivo exacto y reclama la experiencia al completarlo."}</p>
+                              <div className="gacha-progress-bar">
+                                <div className="gacha-progress-fill" style={{ width: `${progresoPercent}%` }} />
+                              </div>
+                            </div>
+                          )}
+
+                          <div className="gacha-reward-row">
+                            <div className="gacha-reward-tag">
+                              {webMode ? <img src="/tienda/assets/coin.png" alt="WC" className="mc-pixelated" /> : <span className="xp-icon">XP</span>}
+                              {rewardText}
                             </div>
 
-                            <div className="logro-side">
-                              <span className="logro-xp-chip">{formatNumber(logro.xp_otorgada)} XP</span>
-                            </div>
-                          </div>
-
-                          <div className="logro-objective-box">
-                            <span className="logro-block-label">Encargo</span>
-                            <p className="logro-objetivo-texto">{objectiveText}</p>
-                          </div>
-
-                          <div className="logro-progress">
-                            <div className="logro-progress-head">
-                              <span className="logro-progress-label">Progreso</span>
-                              <span className="logro-progress-percentage">{Math.round(progresoPercent)}%</span>
-                            </div>
-
-                            <div className="logro-progress-track">
-                              <div className="logro-progress-fill" style={{ width: `${progresoPercent}%` }} />
-                            </div>
-
-                            <div className="logro-progress-meta">
-                              <span className="logro-progress-current">{formatGoalValue(logro.tipo, progreso)}</span>
-                              <span className="logro-progress-divider">/</span>
-                              <span className="logro-progress-target">{formatGoalValue(logro.tipo, objetivo)}</span>
-                            </div>
-                          </div>
-
-                          {claimable && (
-                            <div className="logro-footer">
+                            {claimable && !webMode && (
                               <button
-                                ref={(el) => {
-                                  buttonRefs.current[claimId] = el;
-                                }}
                                 type="button"
-                                className="tsf-btn"
+                                className="mc-btn mc-btn--gold gacha-claim-btn"
                                 onClick={() => reclamarMision(logro)}
                                 disabled={cargandoId === claimId}
                               >
-                                <span className="tsf-btnDepth" aria-hidden="true" />
-                                <span className="tsf-btnFace">
-                                  <span className="tsf-btnLabel">{cargandoId === claimId ? "Reclamando..." : "Reclamar XP"}</span>
-                                </span>
+                                {cargandoId === claimId ? "..." : "COBRAR"}
                               </button>
-                            </div>
-                          )}
+                            )}
+                          </div>
                         </div>
-                      </li>
+
+                        {logro.reclamado && <div className="gacha-stamp stamp-claimed">RECLAMADA</div>}
+                        {webMode && logro.desbloqueado && <div className="gacha-stamp stamp-claimed">DESBLOQUEADO</div>}
+                      </div>
                     );
                   })}
-                </ul>
+                </div>
 
                 {!cargando && totalPaginas > 1 && (
-                  <nav className="logros-paginacion" aria-label="Paginación de misiones">
-                    <button type="button" className="logros-pag-btn" onClick={() => irPagina(pagina - 1)} disabled={pagina === 1}>
-                      Anterior
-                    </button>
-
+                  <nav className="logros-paginacion mc-block" aria-label="Paginación">
+                    <button type="button" className="mc-btn mc-btn--ghost" onClick={() => irPagina(pagina - 1)} disabled={pagina === 1}>ANTERIOR</button>
                     <div className="logros-pag-numeros">
                       {paginasVisibles.map((n) => (
-                        <button key={n} type="button" className={["logros-pag-num", n === pagina ? "activo" : ""].filter(Boolean).join(" ")} onClick={() => irPagina(n)}>
-                          {n}
-                        </button>
+                        <button key={n} type="button" className={["mc-btn mc-btn--ghost", n === pagina ? "activo" : ""].filter(Boolean).join(" ")} onClick={() => irPagina(n)}>{n}</button>
                       ))}
                     </div>
-
-                    <button type="button" className="logros-pag-btn" onClick={() => irPagina(pagina + 1)} disabled={pagina === totalPaginas}>
-                      Siguiente
-                    </button>
-
-                    <span className="logros-pag-info">
-                      Página {pagina} / {totalPaginas}
-                    </span>
+                    <button type="button" className="mc-btn mc-btn--ghost" onClick={() => irPagina(pagina + 1)} disabled={pagina === totalPaginas}>SIGUIENTE</button>
                   </nav>
                 )}
               </>
             )}
 
+            {!error && !cargando && !hayLogros && (
+              <div className="logros-empty-state">
+                <CheckCircle size={48} className="logros-empty-icon" />
+                <h3 className="logros-empty-title">Todo completado o sin asignar</h3>
+                <p className="logros-empty-desc">No hay misiones disponibles en esta categoría en este momento. Vuelve más tarde.</p>
+              </div>
+            )}
+
             {cargando && (
               <div className="logros-loading-overlay">
                 <div className="logros-loading-inner">
-                  <img src="/assets/eco.webp" alt="Cargando misiones" className="logros-loading-gem" />
-                  <p className="logros-loading-text">Invocando nuevos desafíos...</p>
+                  <img src="/assets/eco.webp" alt="Cargando" className="logros-loading-gem mc-pixelated" />
+                  <p className="logros-loading-text">{tipoMision === "web" ? "INVOCANDO INSIGNIAS..." : "INVOCANDO DESAFÍOS..."}</p>
                 </div>
               </div>
             )}
           </div>
-
-          {!cargando && hayClaimables && tipoMision === "permanente" && <p className="logros-estado">Tienes recompensas listas para reclamar en esta modalidad.</p>}
         </>
       )}
     </section>
   );
 }
-
-export default LogroList;

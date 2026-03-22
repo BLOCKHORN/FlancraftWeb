@@ -1,12 +1,14 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import LoginModal from "./LoginModal";
+import { useAuthModal } from "../../context/AuthModalContext";
 import Seo from "../SEO/Seo";
 
 export default function VincularPage() {
   const location = useLocation();
   const navigate = useNavigate();
-  const [open, setOpen] = useState(true);
+  
+  // Usamos el modal global en lugar de renderizar uno duplicado localmente
+  const { openAuthModal } = useAuthModal();
 
   const token = useMemo(() => {
     const sp = new URLSearchParams(location.search || "");
@@ -14,26 +16,14 @@ export default function VincularPage() {
   }, [location.search]);
 
   useEffect(() => {
-    if (!token) return;
-    localStorage.setItem("prefill_vincular_token", token);
-  }, [token]);
-
-  useEffect(() => {
-    if (open) return;
+    if (token) {
+      localStorage.setItem("prefill_vincular_token", token);
+    }
+    
+    // Abre el modal centralizado y saca al usuario de esta ruta fantasma
+    openAuthModal();
     navigate("/", { replace: true });
-  }, [open, navigate]);
+  }, [token, navigate, openAuthModal]);
 
-  return (
-    <>
-      <Seo title="Vincular cuenta | FlanCraft" noindex />
-      {open && (
-        <LoginModal
-          onClose={() => setOpen(false)}
-          initialStep="token"
-          initialToken={token}
-          autoValidateToken={true}
-        />
-      )}
-    </>
-  );
+  return <Seo title="Vincular cuenta | FlanCraft" noindex />;
 }

@@ -1,265 +1,250 @@
 @use "../../base/_variables" as *;
-@use "sass:color";
 
-.server-status-minimal {
-  margin: 1.6rem auto 0;
-  max-width: 640px;
-  width: 100%;
-  position: relative;
-  text-align: center;
-  color: #fdf0d0;
-  font-family: "IM Fell English SC", system-ui, -apple-system,
-    BlinkMacSystemFont, "Segoe UI", sans-serif;
+@font-face {
+  font-family: 'MinecraftBold';
+  src: url('../../assets/fonts/MinecraftBold.otf') format('opentype');
+  font-weight: bold;
+  font-style: normal;
+}
 
-  /* Glow muy amplio y suave, sin cortes */
-  &::before {
-    content: "";
-    position: absolute;
-    left: -25%;
-    right: -25%;
-    top: -0.8rem;
-    height: 6rem;
-    margin: 0 auto;
-    background: radial-gradient(
-      circle at 50% 50%,
-      rgba(255, 214, 150, 0.32) 0%,
-      rgba(255, 214, 150, 0.2) 35%,
-      rgba(255, 214, 150, 0.08) 65%,
-      transparent 100%
-    );
-    opacity: 0.9;
-    filter: blur(3px);
-    pointer-events: none;
-    z-index: -1;
+$mc-font: 'MinecraftBold', sans-serif;
+$color-green: #5EE034;
+$color-yellow: #fbbf24;
+$color-red: #ef4444;
+
+.no-tap-highlight {
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+.hud-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  font-family: $mc-font;
+  image-rendering: pixelated;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  z-index: 10;
+
+  &:hover {
+    transform: translateY(-4px);
+  }
+
+  &__main {
+    display: flex;
+    align-items: center;
+    background: rgba(10, 12, 18, 0.65);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-bottom: 3px solid rgba(0, 0, 0, 0.6);
+    border-radius: 6px;
+    padding: 6px 12px;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1);
   }
 }
 
-/* ============================
- * Línea difuminada superior
- * ========================== */
-
-.ss-line {
+.hud-ip-btn {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 0.55rem;
-  margin-bottom: 0.3rem;
-}
-
-.ss-line-segment {
-  flex: 1;
-  height: 1px;
-  max-width: 260px;
-  background: linear-gradient(
-    to right,
-    transparent,
-    rgba(255, 220, 170, 0.8),
-    transparent
-  );
-}
-
-/* ============================
- * Fila principal
- * ========================== */
-
-.ss-row {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.75rem;
-  flex-wrap: wrap; // si no cabe, se apila sin cortar nada
-}
-
-/* IP minimal – solo texto con subrayado animado + levitación */
-
-.ss-ip-trigger {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
+  gap: 12px;
+  background: transparent;
   border: none;
-  background: none;
-  padding: 0;
   cursor: pointer;
-  color: #e9ffe7;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
-  font-size: 0.9rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  transform: translateY(0) scale(1);
-  transition:
-    transform 0.22s ease-out,
-    color 0.22s ease-out;
+  padding: 6px 8px;
+  border-radius: 4px;
+  transition: background 0.2s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+    .hud-copy-icon { color: $color-yellow; transform: scale(1.1); }
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
 }
 
-.ss-ip-text {
+.hud-dot-wrap {
   position: relative;
-  font-weight: 600;
-  font-size: 0.92rem;
+  width: 12px;
+  height: 12px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-/* Subrayado center-out */
-.ss-ip-text::after {
-  content: "";
+.hud-dot {
+  width: 10px;
+  height: 10px;
+  background-color: $color-red;
+  border: 2px solid #000;
+  position: relative;
+  z-index: 2;
+}
+
+.hud-ping {
   position: absolute;
-  left: 0;
-  right: 0;
-  bottom: -0.15rem;
-  height: 2px;
-  margin: 0 auto;
-  background: linear-gradient(
-    to right,
-    transparent,
-    #9effb0,
-    transparent
-  );
-  transform-origin: center;
-  transform: scaleX(0);
-  opacity: 0;
-  transition:
-    transform 0.22s ease-out,
-    opacity 0.22s ease-out;
-}
-
-.ss-ip-icon {
-  opacity: 0.9;
-  transform: translateY(0);
-  transition: transform 0.16s ease-out, opacity 0.16s ease-out;
-}
-
-/* Hover elegante: levita un pelín + subrayado + icono */
-.ss-ip-trigger:hover {
-  transform: translateY(-1px) scale(1.03);
-}
-
-.ss-ip-trigger:hover .ss-ip-text::after {
-  transform: scaleX(1);
-  opacity: 1;
-}
-
-.ss-ip-trigger:hover .ss-ip-icon {
-  transform: translateY(-1px);
-  opacity: 1;
-}
-
-/* Bolita de estado como separador central */
-
-.ss-status-dot {
-  width: 0.6rem;
-  height: 0.6rem;
+  width: 100%;
+  height: 100%;
   border-radius: 50%;
-  background: #8b8b8b;
-  box-shadow: 0 0 5px rgba(0, 0, 0, 0.8);
+  background: rgba(239, 68, 68, 0.6);
+  animation: none;
 }
 
-/* Pulso sutil cuando el servidor está online */
-@keyframes ss-dot-pulse {
-  0% {
-    transform: scale(1);
-    box-shadow:
-      0 0 6px rgba(123, 255, 145, 0.6),
-      0 0 12px rgba(123, 255, 145, 0.4);
-  }
-  50% {
-    transform: scale(1.15);
-    box-shadow:
-      0 0 10px rgba(123, 255, 145, 0.95),
-      0 0 20px rgba(123, 255, 145, 0.7);
-  }
-  100% {
-    transform: scale(1);
-    box-shadow:
-      0 0 6px rgba(123, 255, 145, 0.6),
-      0 0 12px rgba(123, 255, 145, 0.4);
+.hud-ip-text {
+  font-size: 1.2rem;
+  color: $color-yellow;
+  text-shadow: 2px 2px 0 rgba(0,0,0,0.9);
+  letter-spacing: 0.5px;
+}
+
+.hud-copy-icon {
+  color: rgba(255, 255, 255, 0.5);
+  transition: all 0.2s ease;
+  filter: drop-shadow(2px 2px 0 rgba(0,0,0,0.8));
+
+  &.copied {
+    color: $color-green;
+    transform: scale(1.2);
   }
 }
 
-.server-status-minimal.online .ss-status-dot {
-  background: #7bff91;
-  animation: ss-dot-pulse 1.6s ease-in-out infinite;
+.hud-divider {
+  width: 2px;
+  height: 28px;
+  background: rgba(255, 255, 255, 0.1);
+  margin: 0 8px;
+  box-shadow: 1px 0 0 rgba(0,0,0,0.5);
 }
 
-.server-status-minimal.offline .ss-status-dot {
-  background: #ff7f7f;
-  box-shadow:
-    0 0 6px rgba(255, 127, 127, 0.95),
-    0 0 14px rgba(255, 127, 127, 0.7);
+.hud-players {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  position: relative;
+
+  .hud-count {
+    font-size: 1.4rem;
+    color: #fff;
+    text-shadow: 2px 2px 0 rgba(0,0,0,0.9);
+  }
+
+  .hud-lbl {
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.6);
+    text-shadow: 1px 1px 0 rgba(0,0,0,0.9);
+  }
 }
 
-/* Players a la derecha */
-
-.ss-players-label {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 0.3rem;
-  font-size: 0.84rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-
-.ss-players-count {
-  font-weight: 700;
-  font-size: 0.92rem;
-  color: #9effb0; // verde positivo
-  text-shadow:
-    0 0 6px rgba(0, 0, 0, 0.9),
-    0 0 10px rgba(138, 255, 169, 0.8);
-}
-
-.ss-players-text {
-  font-size: 0.82rem;
-  color: #ffeac1;
-}
-
-/* Mensaje de copia */
-
-.ss-copy-hint {
-  display: block;
-  margin-top: 0.4rem;
-  font-size: 0.78rem;
-  color: #ffeec6;
+.hud-delta {
+  position: absolute;
+  top: -15px;
+  right: 0;
+  font-family: "Nunito", sans-serif;
+  font-weight: 900;
+  font-size: 0.75rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.5);
   opacity: 0;
-  transform: translateY(6px);
-  transition:
-    opacity 0.22s ease-out,
-    transform 0.22s ease-out;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
+  transform: translateY(5px) scale(0.8);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  pointer-events: none;
 
-  &.visible {
+  &.is-visible {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
+  }
+
+  &.is-up { color: $color-green; text-shadow: 0 0 5px rgba(94, 224, 52, 0.5); }
+  &.is-down { color: $color-red; }
+}
+
+.hud-bedrock-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(10, 12, 18, 0.4);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 2px solid rgba(0, 0, 0, 0.5);
+  border-radius: 4px;
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.3);
+    .b-port { color: #fff; }
+    .b-copy-icon { color: $color-yellow; }
+  }
+
+  &:active {
+    transform: scale(0.97);
+  }
+
+  .b-label {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.5);
+    text-shadow: 1px 1px 0 #000;
+  }
+
+  .b-port {
+    font-size: 0.9rem;
+    color: $color-yellow;
+    text-shadow: 1px 1px 0 #000;
+    transition: color 0.2s;
+  }
+
+  .b-copy-icon {
+    color: rgba(255, 255, 255, 0.4);
+    transition: all 0.2s;
+    &.copied { color: $color-green; transform: scale(1.2); }
   }
 }
 
-/* ============================
- * RESPONSIVE
- * ========================== */
-
-@media (max-width: 640px) {
-  .server-status-minimal {
-    &::before {
-      left: -10%;
-      right: -10%;
-      height: 5.5rem;
-    }
+.hud-status.is-online {
+  .hud-dot { 
+    background-color: $color-green; 
+    box-shadow: inset 2px 2px 0 rgba(255,255,255,0.4); 
   }
-
-  .ss-row {
-    gap: 0.45rem;
+  .hud-ping {
+    background: rgba(94, 224, 52, 0.5);
+    animation: hudPulse 2s infinite cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .hud-count {
+    color: $color-green;
+    text-shadow: 2px 2px 0 rgba(0,0,0,0.9), 0 0 10px rgba(94, 224, 52, 0.3);
   }
 }
 
-@media (max-width: 420px) {
-  .server-status-minimal {
-    margin-top: 1.3rem;
-  }
+@keyframes hudPulse {
+  0% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(3); opacity: 0; }
+}
 
-  .ss-row {
+@media (max-width: 768px) {
+  .hud-status__main {
     flex-direction: column;
+    padding: 10px;
+    gap: 4px;
   }
 
-  .ss-players-label {
-    white-space: normal;
+  .hud-divider {
+    width: 80%;
+    height: 2px;
+    margin: 4px 0;
+    box-shadow: 0 1px 0 rgba(0,0,0,0.5);
+  }
+
+  .hud-ip-btn {
+    padding: 8px;
   }
 }

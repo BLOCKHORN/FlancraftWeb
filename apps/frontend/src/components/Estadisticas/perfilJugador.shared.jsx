@@ -15,12 +15,26 @@ export const RANK_ASSETS = {
   nova: "https://dunb17ur4ymx4.cloudfront.net/wysiwyg/1447273/2de18b63a83cb0b8df9197a4eab9ca575906152d.png",
   alpha: "https://dunb17ur4ymx4.cloudfront.net/wysiwyg/1447273/9c1a0dd33eb6327f1ceb179080f232bc842e8225.png",
   inmortal: "https://dunb17ur4ymx4.cloudfront.net/wysiwyg/1447273/1aaaa34593db3f2dea9d09a7bd4d985500d69de6.png",
+  builder: null,
+  helper: null,
+  srhelper: null,
+  mod: null,
+  srmod: null,
+  admin: null,
+  owner: null,
 };
 
 export const RANK_STYLES = {
   nova: { className: "is-rank-nova" },
   alpha: { className: "is-rank-alpha" },
   inmortal: { className: "is-rank-inmortal" },
+  builder: { className: "is-rank-builder" },
+  helper: { className: "is-rank-helper" },
+  srhelper: { className: "is-rank-srhelper" },
+  mod: { className: "is-rank-mod" },
+  srmod: { className: "is-rank-srmod" },
+  admin: { className: "is-rank-admin" },
+  owner: { className: "is-rank-owner" },
 };
 
 export const AVATAR_BACKS = {
@@ -28,6 +42,13 @@ export const AVATAR_BACKS = {
   nova: "/assets/profilenova.webp",
   alpha: "/assets/profilealpha.webp",
   inmortal: "/assets/profileinmortal.webp",
+  builder: "/assets/profileunrank.webp",
+  helper: "/assets/profileunrank.webp",
+  srhelper: "/assets/profileunrank.webp",
+  mod: "/assets/profileunrank.webp",
+  srmod: "/assets/profileunrank.webp",
+  admin: "/assets/profileunrank.webp",
+  owner: "/assets/profileunrank.webp",
 };
 
 export const ICONS = {
@@ -38,6 +59,7 @@ export const ICONS = {
   kills: "/assets/statsperfil/pvp.webp",
   dmg: "/assets/statsperfil/dmg.png",
   puntos: "/assets/statsperfil/puntos.png",
+  trabajos: "/assets/statsperfil/puntos.png",
   bloques_minados: "/assets/statsperfil/mining.webp",
   bloques_colocados: "/assets/statsperfil/build.webp",
   mobs: "/assets/statsperfil/mobs.webp",
@@ -101,6 +123,36 @@ export const guessPlatform = (platformValue, playerName) => {
   return "other";
 };
 
+export const normalizeRankKey = (value) => {
+  const raw = String(value || "").trim().toLowerCase();
+  if (!raw) return "";
+
+  if (raw.includes("inmortal") || raw.includes("immortal")) return "inmortal";
+  if (raw.includes("alpha")) return "alpha";
+  if (raw.includes("nova")) return "nova";
+  if (raw.includes("srhelper")) return "srhelper";
+  if (raw.includes("helper")) return "helper";
+  if (raw.includes("builder")) return "builder";
+  if (raw.includes("srmod")) return "srmod";
+  if (raw.includes("mod")) return "mod";
+  if (raw.includes("admin")) return "admin";
+  if (raw.includes("owner")) return "owner";
+
+  return "";
+};
+
+export const getProfileRank = (jugador) => {
+  const value =
+    jugador?.rango_real ||
+    jugador?.rol_admin ||
+    jugador?.rango_staff ||
+    jugador?.rango_usuario ||
+    jugador?.rank ||
+    "";
+
+  return String(value || "").toLowerCase().trim();
+};
+
 export const toNumClean = (v) => {
   if (v === null || v === undefined || v === "") return NaN;
   if (typeof v === "number") return v;
@@ -125,6 +177,47 @@ export const toNumClean = (v) => {
   }
 
   return Number(s);
+};
+
+export const toInt = (v) => {
+  const n = Number(v);
+  return Number.isFinite(n) ? Math.max(0, Math.floor(n)) : 0;
+};
+
+export const deriveXpStateFromTotal = (xpTotal, niveles) => {
+  const total = toInt(xpTotal);
+  const rows = Array.isArray(niveles) ? [...niveles].sort((a, b) => Number(a?.nivel) - Number(b?.nivel)) : [];
+
+  if (!rows.length) {
+    return {
+      nivel: 1,
+      xpActualNivel: 0,
+      xpRequeridaNivel: 1,
+      xpTotalActual: total,
+      porcentaje: 0,
+    };
+  }
+
+  let current = rows[0];
+
+  for (const row of rows) {
+    const threshold = toInt(row?.xp_total_acumulada);
+    if (total >= threshold) current = row;
+    else break;
+  }
+
+  const currentThreshold = toInt(current?.xp_total_acumulada);
+  const xpRequired = Math.max(1, toInt(current?.xp_requerida || 1));
+  const xpInLevel = Math.min(Math.max(0, total - currentThreshold), xpRequired);
+  const porcentaje = Math.min(100, (xpInLevel / xpRequired) * 100);
+
+  return {
+    nivel: Math.max(1, toInt(current?.nivel || 1)),
+    xpActualNivel: xpInLevel,
+    xpRequeridaNivel: xpRequired,
+    xpTotalActual: total,
+    porcentaje,
+  };
 };
 
 export const fmtMoney = (v, suffix = " $") => {
@@ -198,6 +291,7 @@ export const sectionIconKey = (k) => {
   if (k === "combate") return "kills";
   if (k === "recursos") return "diamante";
   if (k === "economia") return "dinero";
+  if (k === "jobs") return "trabajos";
   return "coins";
 };
 
@@ -253,26 +347,15 @@ export const buildSkinSources = ({ variant, displayName, remoteSkinUrl, platform
   const cleanName = cleanPlayerName(displayName);
   const sources = [];
 
-  if (remoteSkinUrl) {
-    sources.push(remoteSkinUrl);
-  }
-
-  if (cleanName) {
-    sources.push(
-      variant === "body"
-        ? `https://mc-heads.net/body/${encodeURIComponent(cleanName)}/260`
-        : `https://mc-heads.net/avatar/${encodeURIComponent(cleanName)}/160`
-    );
-  }
-
-  if (platformKey === "bedrock") {
-    sources.push("/assets/skins/bedrock-default.webp");
-  }
-
   if (variant === "body") {
+    if (cleanName) sources.push(`https://mc-heads.net/body/${encodeURIComponent(cleanName)}/260`);
+    if (remoteSkinUrl) sources.push(remoteSkinUrl);
     sources.push("/assets/skins/default-steve.webp");
     sources.push("https://mc-heads.net/body/Steve/260");
   } else {
+    if (remoteSkinUrl) sources.push(remoteSkinUrl);
+    if (cleanName) sources.push(`https://mc-heads.net/avatar/${encodeURIComponent(cleanName)}/160`);
+    if (platformKey === "bedrock") sources.push("/assets/skins/bedrock-default.webp");
     sources.push("https://mc-heads.net/avatar/Steve/160");
   }
 
@@ -671,4 +754,161 @@ export const renderToneIcon = (tone, size = 16) => {
   if (tone === "active") return <HourglassMedium size={size} weight="bold" />;
   if (tone === "clean") return <CheckCircle size={size} weight="bold" />;
   return <WarningCircle size={size} weight="bold" />;
+};
+
+export const getWebAchievementMetaNumber = (logro, keys) => {
+  const sourceA = logro?.meta_definicion && typeof logro.meta_definicion === "object" ? logro.meta_definicion : {};
+  const sourceB = logro?.meta_otorgado && typeof logro.meta_otorgado === "object" ? logro.meta_otorgado : {};
+  const list = Array.isArray(keys) ? keys : [keys];
+
+  for (const key of list) {
+    const a = toNumClean(sourceA?.[key]);
+    if (Number.isFinite(a)) return a;
+
+    const b = toNumClean(sourceB?.[key]);
+    if (Number.isFinite(b)) return b;
+  }
+
+  return null;
+};
+
+export const getWebAchievementVisual = (logro) => {
+  const code = String(logro?.codigo || "").trim().toLowerCase();
+  const type = String(logro?.tipo || "").trim().toLowerCase();
+
+  if (code.startsWith("primero_nivel_")) {
+    const levelTarget = getWebAchievementMetaNumber(logro, "level_target");
+    return {
+      accent: "legendary",
+      icon: "crown",
+      eyebrow: "Primero del reino",
+      chip: levelTarget ? `Nivel ${fmtNum(levelTarget)}` : "Hito único",
+      kind: "unique",
+    };
+  }
+
+  if (code === "top_1_nivel") {
+    return {
+      accent: "gold",
+      icon: "trophy",
+      eyebrow: "Ranking histórico",
+      chip: "Top 1",
+      kind: "historic_rank",
+    };
+  }
+
+  if (code === "top_10_nivel") {
+    return {
+      accent: "violet",
+      icon: "medal",
+      eyebrow: "Ranking histórico",
+      chip: "Top 10",
+      kind: "historic_rank",
+    };
+  }
+
+  if (type === "account_age_days") {
+    const daysRequired = getWebAchievementMetaNumber(logro, "days_required");
+    return {
+      accent: "emerald",
+      icon: "clock",
+      eyebrow: "Veterano",
+      chip: daysRequired ? `${fmtNum(daysRequired)} días` : "Trayectoria",
+      kind: "veteran",
+    };
+  }
+
+  if (type === "daily_claim_count") {
+    const claimsRequired = getWebAchievementMetaNumber(logro, "claims_required");
+    return {
+      accent: "cyan",
+      icon: "lightning",
+      eyebrow: "Constancia",
+      chip: claimsRequired ? `${fmtNum(claimsRequired)} claims` : "Actividad",
+      kind: "activity",
+    };
+  }
+
+  if (type === "reward_claim_count") {
+    const rewardsRequired = getWebAchievementMetaNumber(logro, "rewards_required");
+    return {
+      accent: "amber",
+      icon: "gift",
+      eyebrow: "Coleccionista",
+      chip: rewardsRequired ? `${fmtNum(rewardsRequired)} recompensas` : "Actividad",
+      kind: "activity",
+    };
+  }
+
+  if (type === "vote_count") {
+    const votesRequired = getWebAchievementMetaNumber(logro, "votes_required");
+    return {
+      accent: "rose",
+      icon: "check",
+      eyebrow: "Apoyo al reino",
+      chip: votesRequired ? `${fmtNum(votesRequired)} votos` : "Actividad",
+      kind: "activity",
+    };
+  }
+
+  return {
+    accent: "quiet",
+    icon: "check",
+    eyebrow: "Insignia web",
+    chip: "Permanente",
+    kind: "default",
+  };
+};
+
+export const getRankingSpotlight = (rankingActual) => {
+  const position = toNumClean(rankingActual?.posicion_top_10);
+
+  if (rankingActual?.es_top_1_actual) {
+    return {
+      tone: "gold",
+      icon: "trophy",
+      title: "Actualmente Rey del Reino",
+      subtitle: "Ocupa ahora mismo el puesto #1 global del ranking del reino por SVPoints.",
+      badge: "#1 ACTUAL",
+    };
+  }
+
+  if (rankingActual?.es_top_10_actual && Number.isFinite(position)) {
+    return {
+      tone: "violet",
+      icon: "medal",
+      title: "Actualmente dentro del Top 10",
+      subtitle: `Mantiene el puesto #${fmtNum(position)} del ranking global del reino por SVPoints en este momento.`,
+      badge: `#${fmtNum(position)} ACTUAL`,
+    };
+  }
+
+  return {
+    tone: "quiet",
+    icon: "medal",
+    title: "Sin puesto destacado ahora mismo",
+    subtitle: "Todavía no aparece en el Top 10 actual del ranking global del reino por SVPoints.",
+    badge: "FUERA DEL TOP 10",
+  };
+};
+
+export const JOB_ICONS = {
+  miner: ICONS.bloques_minados,
+  digger: ICONS.bloques_minados,
+  woodcutter: ICONS.bloques_colocados,
+  builder: ICONS.bloques_colocados,
+  hunter: ICONS.mobs,
+  fisherman: ICONS.pesca,
+  fisher: ICONS.pesca,
+  farmer: ICONS.cosecha,
+  brewer: ICONS.dinero,
+  crafter: ICONS.puntos,
+  enchanter: ICONS.puntos,
+  weaponsmith: ICONS.puntos,
+  explorer: ICONS.caminar,
+};
+
+export const getJobIcon = (jobId) => {
+  const key = String(jobId || "").trim().toLowerCase();
+  return JOB_ICONS[key] || ICONS.trabajos;
 };

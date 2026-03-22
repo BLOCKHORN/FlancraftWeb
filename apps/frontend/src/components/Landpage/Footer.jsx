@@ -3,36 +3,61 @@ import "../../styles/components/Landpage/_footer.scss";
 import { FaXTwitter, FaYoutube, FaInstagram, FaDiscord, FaTiktok } from "react-icons/fa6";
 import { FaWhatsapp } from "react-icons/fa";
 
+const socialNetworks = [
+  { name: "Discord", url: "https://discord.gg/uTJCqn4GsC", icon: <FaDiscord />, color: "#5865F2" },
+  { name: "WhatsApp", url: "https://whatsapp.com/channel/0029Vb6zjCrIXnljntqxva3v", icon: <FaWhatsapp />, color: "#25D366" },
+  { name: "YouTube", url: "https://youtube.com/@flancraft", icon: <FaYoutube />, color: "#FF0000" },
+  { name: "TikTok", url: "https://www.tiktok.com/@flancraftserver", icon: <FaTiktok />, color: "#fe2c55" },
+  { name: "Instagram", url: "https://instagram.com/flancraftserver", icon: <FaInstagram />, color: "#E1306C" },
+  { name: "X", url: "https://x.com/flancraftserver", icon: <FaXTwitter />, color: "#ffffff" }
+];
+
 export default function Footer() {
   return (
     <footer className="footer-flancraft">
+      <div className="footer-divider" />
+
       <div className="follow-section">
-        <h2>SIGUENOS EN NUESTRAS REDES</h2>
-        <div className="social-icons">
-          <a href="https://discord.gg/uTJCqn4GsC" target="_blank" rel="noopener noreferrer" aria-label="Discord">
-            <FaDiscord />
-          </a>
-          <a href="https://whatsapp.com/channel/0029Vb6zjCrIXnljntqxva3v" target="_blank" rel="noopener noreferrer" aria-label="Whatsapp">
-            <FaWhatsapp />
-          </a>
-          <a href="https://youtube.com/@flancraft" target="_blank" rel="noopener noreferrer" aria-label="YouTube">
-            <FaYoutube />
-          </a>
-          <a href="https://www.tiktok.com/@flancraftserver" target="_blank" rel="noopener noreferrer" aria-label="TikTok">
-            <FaTiktok />
-          </a>
-          <a href="https://instagram.com/flancraftserver" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
-            <FaInstagram />
-          </a>
-          <a href="https://x.com/flancraftserver" target="_blank" rel="noopener noreferrer" aria-label="X (Twitter)">
-            <FaXTwitter />
-          </a>
+        <div className="header-box">
+          <h2>ÚNETE A LA COMUNIDAD</h2>
+          <p>Forma parte de los miles de jugadores que ya forjan su historia en FlanCraft.</p>
+        </div>
+
+        <div className="footer-social-grid">
+          {socialNetworks.map((social) => (
+            <a 
+              key={social.name}
+              href={social.url} 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="social-card"
+              style={{ "--card-color": social.color }}
+            >
+              <div className="sheen" />
+              <div className="icon-wrap">{social.icon}</div>
+              <div className="card-info">
+                <span className="card-title">{social.name}</span>
+              </div>
+            </a>
+          ))}
         </div>
       </div>
 
       <div className="footer-bottom">
-        <img src="/assets/logofooter2.webp" alt="Flancraft" className="footer-logo" />
-        <p>©2025 Blockhorn Studios. Todos los derechos reservados.</p>
+        <div className="bottom-inner">
+          <div className="brand">
+            <img src="/assets/logofooter2.webp" alt="Blockhorn Studios" className="footer-logo" />
+          </div>
+
+          <div className="disclaimer">
+            <p>No es un producto de Minecraft oficial.</p>
+            <p>No aprobado ni asociado con Mojang o Microsoft.</p>
+          </div>
+
+          <div className="legal">
+            <p>©2026 Todos los derechos reservados.</p>
+          </div>
+        </div>
       </div>
     </footer>
   );

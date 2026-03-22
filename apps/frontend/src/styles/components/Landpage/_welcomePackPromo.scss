@@ -1,0 +1,429 @@
+@use "../../base/_variables" as *;
+
+$mc-font: "MinecraftBold", "MinecraftSeven", sans-serif;
+$color-bg-section: #151923;
+$color-bg-card: #151923; 
+$color-bg-visual: #0f131a;
+$color-yellow: #fbbf24;
+$color-green: #4ade80;
+$color-purple: #c084fc;
+$color-text: #94a3b8;
+$color-btn-green: #5ee034;
+$color-daily: #3b82f6;
+
+.no-tap-highlight {
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+.wp-promo-section {
+  position: relative;
+  background-color: $color-bg-section;
+  padding: 130px 20px 100px 20px;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: $mc-font;
+  border-top: 4px solid #000;
+  border-bottom: 4px solid #000;
+  box-shadow: inset 0 4px 0px #2a3143;
+}
+
+.wp-top-transition-container {
+  position: absolute;
+  top: -4px; 
+  left: 0;
+  width: 100%;
+  height: 0;
+  z-index: 10;
+  pointer-events: none;
+  filter: drop-shadow(0 -10px 15px rgba(0,0,0,0.3));
+}
+
+.wp-top-cube {
+  position: absolute;
+  background-color: #151923;
+  border: 4px solid #000;
+  border-bottom: none;
+  box-shadow: inset 4px 4px 0px #2a3143, inset -4px 0 0px #0a0c14;
+
+  &.tc-up-1 { left: 2%; width: 140px; height: 80px; top: -80px; z-index: 2; }
+  &.tc-up-2 { 
+    left: calc(2% + 140px - 4px); 
+    width: 80px; 
+    height: 40px; 
+    top: -40px; 
+    border-left: none; 
+    z-index: 3; 
+    box-shadow: inset 0 4px 0px #2a3143, inset -4px 0 0px #0a0c14; 
+  }
+  &.tc-up-3 { left: 22%; width: 60px; height: 50px; top: -50px; z-index: 2; }
+  &.tc-up-4 { right: 5%; width: 160px; height: 90px; top: -90px; z-index: 2; }
+  &.tc-up-5 { 
+    right: calc(5% + 160px - 4px); 
+    width: 90px; 
+    height: 60px; 
+    top: -60px; 
+    border-right: none; 
+    z-index: 3; 
+    box-shadow: inset 4px 4px 0px #2a3143; 
+  }
+  &.tc-up-6 { right: 28%; width: 50px; height: 40px; top: -40px; z-index: 2; }
+
+  @media (max-width: 1024px) {
+    &.tc-up-3, &.tc-up-6 { display: none; }
+  }
+  
+  @media (max-width: 768px) {
+    &.tc-up-1 { left: -4px; width: 60px; height: 40px; top: -40px; border-left: none; }
+    &.tc-up-2 { left: calc(60px - 8px); width: 40px; height: 20px; top: -20px; }
+    &.tc-up-4 { right: -4px; width: 70px; height: 50px; top: -50px; border-right: none; }
+    &.tc-up-5 { right: calc(70px - 8px); width: 30px; height: 25px; top: -25px; }
+  }
+}
+
+.wp-promo-container {
+  max-width: 1100px;
+  width: 100%;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 60px;
+  z-index: 2;
+
+  @media (max-width: 960px) {
+    flex-direction: column;
+    text-align: center;
+    gap: 80px;
+  }
+}
+
+.wp-promo-content {
+  flex: 1;
+  max-width: 500px;
+  @media (max-width: 960px) {
+    max-width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+}
+
+.wp-promo-title {
+  font-size: 4rem;
+  color: #fff;
+  margin: 0 0 20px 0;
+  line-height: 1.1;
+  text-transform: uppercase;
+  text-shadow: 4px 4px 0px rgba(0, 0, 0, 0.8), -1px -1px 0px rgba(0,0,0,0.8);
+
+  @media (max-width: 600px) { font-size: 2.8rem; }
+}
+
+.wp-promo-desc {
+  font-family: "Nunito", sans-serif;
+  color: $color-text;
+  font-size: 1.2rem;
+  line-height: 1.6;
+  margin-bottom: 40px;
+  strong { color: #fff; font-weight: 900; }
+}
+
+.wp-pixel-btn {
+  width: 100%;
+  padding: 16px 24px;
+  font-family: $mc-font;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: transform 0.1s, filter 0.1s;
+  
+  &--green {
+    background-color: $color-btn-green;
+    color: #fff;
+    border: 4px solid #000;
+    box-shadow: inset -4px -4px 0px rgba(0,0,0,0.25), inset 4px 4px 0px rgba(255,255,255,0.4), 0 10px 20px rgba(0,0,0,0.5);
+    
+    .btn-texts {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      text-align: left;
+      @media (max-width: 960px) { align-items: center; text-align: center; width: 100%; }
+    }
+
+    .btn-main-text {
+      font-size: 1.4rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      text-shadow: 2px 2px 0 #18b84b, -1px -1px 0 #18b84b;
+    }
+
+    .btn-sub-text {
+      font-family: "Nunito", sans-serif;
+      font-size: 0.85rem;
+      font-weight: 800;
+      color: #111;
+      text-transform: uppercase;
+      margin-top: 4px;
+    }
+
+    .btn-arrow {
+      font-size: 2rem;
+      text-shadow: 2px 2px 0 #18b84b;
+      font-weight: bold;
+      @media (max-width: 960px) { display: none; }
+    }
+
+    &:hover { filter: brightness(1.15); transform: translateY(-2px) scale(1.02); }
+    &:active { transform: translateY(2px) scale(0.98); box-shadow: inset 4px 4px 0px rgba(0,0,0,0.25), inset -4px -4px 0px rgba(255,255,255,0.4); }
+  }
+}
+
+.wp-promo-showcase {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  cursor: pointer;
+  
+  &:hover .wp-showcase-card {
+    transform: translateY(-8px);
+    border-color: $color-btn-green;
+    box-shadow: inset -4px -4px 0px #0a0c14, inset 4px 4px 0px #2a3143, 0 30px 60px rgba(94, 224, 52, 0.2);
+  }
+
+  &:hover .wp-chest-img { transform: scale(1.1) translateY(-10px); }
+  &:hover .wp-daily-badge { transform: translateY(-5px) rotate(-2deg) scale(1.05); }
+}
+
+.wp-glow-bg {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 140%; height: 140%;
+  background: radial-gradient(circle, rgba(94, 224, 52, 0.15) 0%, transparent 60%);
+  z-index: 0;
+  pointer-events: none;
+  animation: pulseGlow 3s infinite alternate;
+}
+
+.wp-showcase-card {
+  position: relative;
+  z-index: 2;
+  width: 380px;
+  background: $color-bg-card;
+  border: 4px solid #000;
+  border-radius: 2px;
+  box-shadow: inset -4px -4px 0px #0a0c14, inset 4px 4px 0px #2a3143, 0 20px 50px rgba(0,0,0,0.8);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.wp-card-tag {
+  position: absolute;
+  top: 15px; left: -12px;
+  background: #ef4444;
+  color: #fff;
+  padding: 6px 12px;
+  font-weight: 800;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  border: 2px solid #000;
+  box-shadow: inset -2px -2px 0px rgba(0,0,0,0.2), inset 2px 2px 0px rgba(255,255,255,0.4), 4px 4px 0 rgba(0,0,0,0.5);
+  z-index: 10;
+  text-shadow: 1px 1px 0 #000;
+}
+
+.wp-tag-daily { background: $color-daily; }
+
+.wp-chest-wrapper {
+  width: 100%;
+  height: 240px;
+  background: $color-bg-visual;
+  border-bottom: 4px solid #000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: "";
+    position: absolute;
+    width: 250px; height: 250px;
+    background: radial-gradient(circle, rgba(251, 191, 36, 0.2) 0%, transparent 70%);
+  }
+
+  .wp-chest-img {
+    width: 200px;
+    image-rendering: pixelated;
+    filter: drop-shadow(0 15px 10px rgba(0,0,0,0.6));
+    animation: chestFloat 3s ease-in-out infinite;
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    z-index: 2;
+  }
+}
+
+.daily-wrapper::before { background: radial-gradient(circle, rgba(59, 130, 246, 0.3) 0%, transparent 70%); }
+
+.daily-rays {
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 400px; height: 400px;
+  background: repeating-conic-gradient(from 0deg, rgba(59, 130, 246, 0.2) 0deg 15deg, transparent 15deg 30deg);
+  mask-image: radial-gradient(circle at center, black 10%, transparent 60%);
+  -webkit-mask-image: radial-gradient(circle at center, black 10%, transparent 60%);
+  animation: raySpin 15s linear infinite;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.daily-img { width: 150px !important; animation: dailyFloat 3s ease-in-out infinite; }
+
+.wp-card-info {
+  padding: 24px;
+  .wp-pixel-title-mini {
+    color: #ffffff;
+    font-size: 1.5rem;
+    margin: 0 0 20px 0;
+    line-height: 1.1;
+    text-shadow: 2px 2px 0 #000;
+    letter-spacing: 1px;
+    text-align: center;
+  }
+}
+
+.daily-title-color { color: #60a5fa !important; }
+
+.daily-subtext {
+  font-family: "Nunito", sans-serif;
+  color: #cbd5e1;
+  font-size: 1rem;
+  line-height: 1.5;
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.daily-action-box {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #0f131a;
+  padding: 16px;
+  border: 2px solid #1f2937;
+  border-radius: 4px;
+  span { color: #64748b; font-size: 0.8rem; font-family: "Nunito", sans-serif; font-weight: 900; }
+  strong { color: $color-btn-green; font-size: 2.5rem; text-shadow: 2px 2px 0 #000; line-height: 1; }
+}
+
+.wp-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 25px; }
+
+.wp-item {
+  display: flex;
+  align-items: center;
+  background: #11151d;
+  padding: 8px 12px;
+  border: 1px solid #1f2937;
+  border-radius: 4px;
+  gap: 12px;
+
+  .wp-item-icon { width: 28px; height: 28px; img { width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; } }
+  .wp-item-text {
+    display: flex; flex-direction: column;
+    .name { font-family: "Nunito", sans-serif; font-weight: 900; font-size: 0.8rem; text-transform: uppercase; }
+    .desc { font-family: "Nunito", sans-serif; font-size: 0.75rem; color: #94a3b8; font-weight: 700; margin-top: 2px;}
+    .yellow { color: $color-yellow; }
+    .green { color: $color-green; }
+    .purple { color: $color-purple; }
+  }
+}
+
+.wp-price-box {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #0f131a;
+  padding: 12px 16px;
+  border: 2px solid #1f2937;
+  border-radius: 4px;
+
+  .wp-price-old {
+    display: flex; flex-direction: column;
+    span { color: #64748b; font-size: 0.7rem; font-family: "Nunito", sans-serif; font-weight: 900; }
+    strike { color: #ef4444; font-size: 1.2rem; text-shadow: 1px 1px 0 #000; }
+  }
+
+  .wp-price-new {
+    display: flex; flex-direction: column; align-items: flex-end;
+    span { color: $color-yellow; font-size: 0.7rem; font-family: "Nunito", sans-serif; font-weight: 900; }
+    strong { color: $color-btn-green; font-size: 2.5rem; text-shadow: 2px 2px 0 #000; line-height: 1; }
+  }
+}
+
+.wp-daily-badge {
+  position: absolute;
+  bottom: -20px;
+  right: -40px;
+  background: #222533;
+  border: 3px solid #ffc800;
+  border-radius: 4px;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: inset 2px 2px 0 rgba(255,255,255,0.2), inset -2px -2px 0 rgba(0,0,0,0.4), 0 15px 30px rgba(0,0,0,0.9);
+  z-index: 20; 
+  animation: floatBadge 4s ease-in-out infinite;
+  transition: transform 0.2s, top 0.3s, right 0.3s;
+
+  @media (max-width: 600px) {
+    bottom: auto;
+    right: -10px;
+    top: -20px; // Se posiciona arriba a la derecha para no tapar nada
+    animation: floatBadge 4s ease-in-out infinite; // Mantiene la animación
+    transform: scale(0.9);
+  }
+
+  .wp-daily-icon {
+    width: 36px; height: 36px;
+    background: radial-gradient(circle, rgba(255,200,0,0.4) 0%, transparent 70%);
+    display: flex; justify-content: center; align-items: center;
+    img { width: 100%; image-rendering: pixelated; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.5)); animation: coinSpin 2s linear infinite; }
+  }
+
+  .wp-daily-texts {
+    display: flex; flex-direction: column;
+    .daily-title { color: #fff; font-size: 1rem; text-shadow: 1px 1px 0 #000; }
+    .daily-status { color: $color-btn-green; font-family: "Nunito", sans-serif; font-weight: 900; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; animation: blinkText 1s infinite alternate; }
+  }
+}
+
+.sparkle {
+  position: absolute; width: 8px; height: 8px; background: #fff; box-shadow: 0 0 10px #fff; opacity: 0; z-index: 1;
+  &.sp-1 { top: 20%; left: 20%; animation: popSparkle 2s infinite 0.1s; }
+  &.sp-2 { top: 60%; right: 15%; animation: popSparkle 2.5s infinite 1s; width: 12px; height: 12px; background: $color-btn-green; box-shadow: 0 0 15px $color-btn-green; }
+  &.sp-3 { bottom: 20%; left: 30%; animation: popSparkle 1.8s infinite 0.5s; background: $color-yellow; box-shadow: 0 0 10px $color-yellow; }
+}
+
+@keyframes pulseGlow {
+  0% { opacity: 0.6; transform: translate(-50%, -50%) scale(0.95); }
+  100% { opacity: 1; transform: translate(-50%, -50%) scale(1.05); }
+}
+
+@keyframes chestFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
+@keyframes dailyFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+@keyframes floatBadge { 0%, 100% { transform: translateY(0) rotate(-3deg); } 50% { transform: translateY(-8px) rotate(2deg); } }
+
+@keyframes popSparkle {
+  0% { transform: scale(0) translateY(0); opacity: 0; }
+  50% { transform: scale(1) translateY(-20px); opacity: 1; }
+  100% { transform: scale(0) translateY(-40px); opacity: 0; }
+}
+
+@keyframes blinkText { 0% { opacity: 0.7; } 100% { opacity: 1; text-shadow: 0 0 10px rgba(94, 224, 52, 0.8); } }
+@keyframes coinSpin { 0% { transform: scaleX(1); } 50% { transform: scaleX(-1); } 100% { transform: scaleX(1); } }
+@keyframes raySpin { 0% { transform: translate(-50%, -50%) rotate(0deg); } 100% { transform: translate(-50%, -50%) rotate(360deg); } }

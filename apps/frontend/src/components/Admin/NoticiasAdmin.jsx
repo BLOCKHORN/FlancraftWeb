@@ -72,23 +72,9 @@ const normalizeStaffRole = (value) =>
     .replace(/[\s_-]+/g, "");
 
 const normalizeCategoria = (value) => {
-  const v = String(value || "")
-    .trim()
-    .toLowerCase();
-
+  const v = String(value || "").trim().toLowerCase();
   if (CATEGORIA_LABELS[v]) return v;
-
-  if (
-    v === "survival" ||
-    v === "lobby" ||
-    v === "oneblock" ||
-    v === "gens" ||
-    v === "anarquico" ||
-    v === "parkour"
-  ) {
-    return "global";
-  }
-
+  if (["survival", "lobby", "oneblock", "gens", "anarquico", "parkour"].includes(v)) return "global";
   return "global";
 };
 
@@ -105,14 +91,11 @@ const buildEmbedUrl = (url) => {
         : new URL(raw).searchParams.get("v");
       return videoId ? `https://www.youtube.com/embed/${videoId}` : "";
     }
-
     if (raw.includes("tiktok.com")) return raw.replace("/video/", "/embed/video/");
-
     if (raw.includes("instagram.com")) {
       const id = raw.split("/p/")[1]?.split("/")[0];
       return id ? `https://www.instagram.com/p/${id}/embed` : "";
     }
-
     return raw;
   } catch {
     return raw;
@@ -162,18 +145,11 @@ const MenuBar = ({ editor }) => {
     const prev = editor.getAttributes("link").href;
     const url = window.prompt("URL del enlace:", prev || "https://");
     if (url === null) return;
-
     if (!String(url).trim()) {
       editor.chain().focus().unsetLink().run();
       return;
     }
-
-    editor
-      .chain()
-      .focus()
-      .extendMarkRange("link")
-      .setLink({ href: String(url).trim() })
-      .run();
+    editor.chain().focus().extendMarkRange("link").setLink({ href: String(url).trim() }).run();
   };
 
   const addImageByUrl = () => {
@@ -209,7 +185,7 @@ const MenuBar = ({ editor }) => {
 
     const embed = buildEmbedUrl(url);
     if (!embed) {
-      toast.error("No se pudo generar el embed. Revisa la URL.");
+      toast.error("No se pudo generar el embed.");
       return;
     }
 
@@ -218,235 +194,89 @@ const MenuBar = ({ editor }) => {
       .focus()
       .insertContent({
         type: "iframe",
-        attrs: {
-          src: embed,
-          width: "100%",
-          height: "400",
-          frameborder: "0",
-          allowfullscreen: "true",
-        },
+        attrs: { src: embed, width: "100%", height: "400", frameborder: "0", allowfullscreen: "true" },
       })
       .run();
   };
 
   const setTextColor = (color) => editor.chain().focus().setColor(color).run();
-
   const clearFormatting = () => editor.chain().focus().unsetAllMarks().clearNodes().run();
 
   return (
-    <div className="na-toolbar" role="toolbar" aria-label="Editor">
-      <div className="na-toolbar__group">
-        <button
-          type="button"
-          className={`na-toolbar__btn ${editor.isActive("bold") ? "is-active" : ""}`}
-          onClick={() => editor.chain().focus().toggleBold().run()}
-          title="Negrita"
-          aria-label="Negrita"
-        >
-          <i className="fa-solid fa-bold" aria-hidden="true" />
+    <div className="mc-na-toolbar">
+      {/* FORMATO DE TEXTO */}
+      <div className="mc-na-toolgroup">
+        <button type="button" className={`mc-tool-btn ${editor.isActive("bold") ? "active" : ""}`} onClick={() => editor.chain().focus().toggleBold().run()} title="Negrita">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"></path><path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"></path></svg>
         </button>
-
-        <button
-          type="button"
-          className={`na-toolbar__btn ${editor.isActive("italic") ? "is-active" : ""}`}
-          onClick={() => editor.chain().focus().toggleItalic().run()}
-          title="Cursiva"
-          aria-label="Cursiva"
-        >
-          <i className="fa-solid fa-italic" aria-hidden="true" />
+        <button type="button" className={`mc-tool-btn ${editor.isActive("italic") ? "active" : ""}`} onClick={() => editor.chain().focus().toggleItalic().run()} title="Cursiva">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="4" x2="10" y2="4"></line><line x1="14" y1="20" x2="5" y2="20"></line><line x1="15" y1="4" x2="9" y2="20"></line></svg>
         </button>
-
-        <button
-          type="button"
-          className={`na-toolbar__btn ${editor.isActive("strike") ? "is-active" : ""}`}
-          onClick={() => editor.chain().focus().toggleStrike().run()}
-          title="Tachado"
-          aria-label="Tachado"
-        >
-          <i className="fa-solid fa-strikethrough" aria-hidden="true" />
+        <button type="button" className={`mc-tool-btn ${editor.isActive("strike") ? "active" : ""}`} onClick={() => editor.chain().focus().toggleStrike().run()} title="Tachado">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M16 4H9a3 3 0 0 0-2.83 4"></path><path d="M14 12a4 4 0 0 1 0 8H6"></path><line x1="4" y1="12" x2="20" y2="12"></line></svg>
         </button>
-
-        <span className="na-toolbar__sep" />
-
-        <button
-          type="button"
-          className={`na-toolbar__btn ${editor.isActive("bulletList") ? "is-active" : ""}`}
-          onClick={() => editor.chain().focus().toggleBulletList().run()}
-          title="Lista"
-          aria-label="Lista"
-        >
-          <i className="fa-solid fa-list-ul" aria-hidden="true" />
+        <button type="button" className={`mc-tool-btn ${editor.isActive("bulletList") ? "active" : ""}`} onClick={() => editor.chain().focus().toggleBulletList().run()} title="Lista de Puntos">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
         </button>
-
-        <button
-          type="button"
-          className={`na-toolbar__btn ${editor.isActive("orderedList") ? "is-active" : ""}`}
-          onClick={() => editor.chain().focus().toggleOrderedList().run()}
-          title="Lista numerada"
-          aria-label="Lista numerada"
-        >
-          <i className="fa-solid fa-list-ol" aria-hidden="true" />
+        <button type="button" className={`mc-tool-btn ${editor.isActive("orderedList") ? "active" : ""}`} onClick={() => editor.chain().focus().toggleOrderedList().run()} title="Lista Numerada">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="10" y1="6" x2="21" y2="6"></line><line x1="10" y1="12" x2="21" y2="12"></line><line x1="10" y1="18" x2="21" y2="18"></line><path d="M4 6h1v4"></path><path d="M4 10h2"></path><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"></path></svg>
         </button>
       </div>
 
-      <div className="na-toolbar__group">
-        <button
-          type="button"
-          className={`na-toolbar__btn ${editor.isActive("heading", { level: 2 }) ? "is-active" : ""}`}
-          onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-          title="H2"
-          aria-label="H2"
-        >
-          H2
-        </button>
-
-        <button
-          type="button"
-          className={`na-toolbar__btn ${editor.isActive("heading", { level: 3 }) ? "is-active" : ""}`}
-          onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
-          title="H3"
-          aria-label="H3"
-        >
-          H3
-        </button>
-
-        <button
-          type="button"
-          className={`na-toolbar__btn ${editor.isActive("blockquote") ? "is-active" : ""}`}
-          onClick={() => editor.chain().focus().toggleBlockquote().run()}
-          title="Cita"
-          aria-label="Cita"
-        >
-          <i className="fa-solid fa-quote-left" aria-hidden="true" />
+      {/* CABECERAS Y CITAS */}
+      <div className="mc-na-toolgroup">
+        <button type="button" className={`mc-tool-btn ${editor.isActive("heading", { level: 2 }) ? "active" : ""}`} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}>H2</button>
+        <button type="button" className={`mc-tool-btn ${editor.isActive("heading", { level: 3 }) ? "active" : ""}`} onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}>H3</button>
+        <button type="button" className={`mc-tool-btn ${editor.isActive("blockquote") ? "active" : ""}`} onClick={() => editor.chain().focus().toggleBlockquote().run()} title="Cita">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"></path><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"></path></svg>
         </button>
       </div>
 
-      <div className="na-toolbar__group">
-        <button
-          type="button"
-          className={`na-toolbar__btn ${editor.isActive({ textAlign: "left" }) ? "is-active" : ""}`}
-          onClick={() => editor.chain().focus().setTextAlign("left").run()}
-          title="Alinear izquierda"
-          aria-label="Alinear izquierda"
-        >
-          <i className="fa-solid fa-align-left" aria-hidden="true" />
+      {/* ALINEACIÓN */}
+      <div className="mc-na-toolgroup">
+        <button type="button" className={`mc-tool-btn ${editor.isActive({ textAlign: "left" }) ? "active" : ""}`} onClick={() => editor.chain().focus().setTextAlign("left").run()} title="Alinear Izquierda">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="21" y1="6" x2="3" y2="6"></line><line x1="15" y1="12" x2="3" y2="12"></line><line x1="17" y1="18" x2="3" y2="18"></line></svg>
         </button>
-
-        <button
-          type="button"
-          className={`na-toolbar__btn ${editor.isActive({ textAlign: "center" }) ? "is-active" : ""}`}
-          onClick={() => editor.chain().focus().setTextAlign("center").run()}
-          title="Centrar"
-          aria-label="Centrar"
-        >
-          <i className="fa-solid fa-align-center" aria-hidden="true" />
+        <button type="button" className={`mc-tool-btn ${editor.isActive({ textAlign: "center" }) ? "active" : ""}`} onClick={() => editor.chain().focus().setTextAlign("center").run()} title="Alinear Centro">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="21" y1="6" x2="3" y2="6"></line><line x1="19" y1="12" x2="5" y2="12"></line><line x1="21" y1="18" x2="3" y2="18"></line></svg>
         </button>
-
-        <button
-          type="button"
-          className={`na-toolbar__btn ${editor.isActive({ textAlign: "right" }) ? "is-active" : ""}`}
-          onClick={() => editor.chain().focus().setTextAlign("right").run()}
-          title="Alinear derecha"
-          aria-label="Alinear derecha"
-        >
-          <i className="fa-solid fa-align-right" aria-hidden="true" />
+        <button type="button" className={`mc-tool-btn ${editor.isActive({ textAlign: "right" }) ? "active" : ""}`} onClick={() => editor.chain().focus().setTextAlign("right").run()} title="Alinear Derecha">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="21" y1="6" x2="3" y2="6"></line><line x1="21" y1="12" x2="9" y2="12"></line><line x1="21" y1="18" x2="7" y2="18"></line></svg>
         </button>
       </div>
 
-      <div className="na-toolbar__group">
-        <button
-          type="button"
-          className={`na-toolbar__btn ${editor.isActive("link") ? "is-active" : ""}`}
-          onClick={setLink}
-          title="Enlace"
-          aria-label="Enlace"
-        >
-          <i className="fa-solid fa-link" aria-hidden="true" />
+      {/* MEDIA Y ENLACES */}
+      <div className="mc-na-toolgroup">
+        <button type="button" className={`mc-tool-btn ${editor.isActive("link") ? "active" : ""}`} onClick={setLink} title="Enlace">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
         </button>
-
-        <button
-          type="button"
-          className="na-toolbar__btn"
-          onClick={addImageByUrl}
-          title="Imagen por URL"
-          aria-label="Imagen por URL"
-        >
-          <i className="fa-regular fa-image" aria-hidden="true" />
+        <button type="button" className="mc-tool-btn" onClick={addImageByUrl} title="Añadir Imagen (URL)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
         </button>
-
-        <button
-          type="button"
-          className="na-toolbar__btn"
-          onClick={onPickLocalImage}
-          title="Imagen local"
-          aria-label="Imagen local"
-        >
-          <i className="fa-solid fa-upload" aria-hidden="true" />
+        <button type="button" className="mc-tool-btn" onClick={onPickLocalImage} title="Subir Imagen Local">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
         </button>
-
-        <button
-          type="button"
-          className="na-toolbar__btn"
-          onClick={addVideo}
-          title="Insertar vídeo"
-          aria-label="Insertar vídeo"
-        >
-          <i className="fa-solid fa-video" aria-hidden="true" />
+        <button type="button" className="mc-tool-btn" onClick={addVideo} title="Añadir Vídeo">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
         </button>
-
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          onChange={onLocalImageSelected}
-          style={{ display: "none" }}
-        />
+        <input ref={fileInputRef} type="file" accept="image/*" onChange={onLocalImageSelected} style={{ display: "none" }} />
       </div>
 
-      <div className="na-toolbar__group na-toolbar__group--color">
-        <span className="na-toolbar__label">Color</span>
-        <input
-          type="color"
-          className="na-toolbar__color"
-          defaultValue="#F5F8FF"
-          onChange={(e) => setTextColor(e.target.value)}
-          aria-label="Color de texto"
-        />
+      {/* COLOR */}
+      <div className="mc-na-toolgroup color-group">
+        <input type="color" className="mc-color-picker" defaultValue="#F5F8FF" onChange={(e) => setTextColor(e.target.value)} title="Color del Texto" />
       </div>
 
-      <div className="na-toolbar__group">
-        <button
-          type="button"
-          className="na-toolbar__btn"
-          onClick={() => editor.chain().focus().undo().run()}
-          disabled={!editor.can().undo()}
-          title="Deshacer"
-          aria-label="Deshacer"
-        >
-          <i className="fa-solid fa-rotate-left" aria-hidden="true" />
+      {/* HISTORIAL */}
+      <div className="mc-na-toolgroup">
+        <button type="button" className="mc-tool-btn" onClick={() => editor.chain().focus().undo().run()} disabled={!editor.can().undo()} title="Deshacer">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7v6h6"></path><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"></path></svg>
         </button>
-
-        <button
-          type="button"
-          className="na-toolbar__btn"
-          onClick={() => editor.chain().focus().redo().run()}
-          disabled={!editor.can().redo()}
-          title="Rehacer"
-          aria-label="Rehacer"
-        >
-          <i className="fa-solid fa-rotate-right" aria-hidden="true" />
+        <button type="button" className="mc-tool-btn" onClick={() => editor.chain().focus().redo().run()} disabled={!editor.can().redo()} title="Rehacer">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 7v6h-6"></path><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"></path></svg>
         </button>
-
-        <span className="na-toolbar__sep" />
-
-        <button
-          type="button"
-          className="na-toolbar__btn"
-          onClick={clearFormatting}
-          title="Limpiar formato"
-          aria-label="Limpiar formato"
-        >
-          <i className="fa-solid fa-eraser" aria-hidden="true" />
+        <button type="button" className="mc-tool-btn" onClick={clearFormatting} title="Limpiar Formato">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 21 18-18"></path><path d="M20 16v5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-5"></path><path d="m14 8 3 3"></path><path d="m9 13 3 3"></path></svg>
         </button>
       </div>
     </div>
@@ -471,7 +301,6 @@ const NoticiasAdmin = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [contenidoPendiente, setContenidoPendiente] = useState(null);
   const [filtroServidor, setFiltroServidor] = useState("todos");
-  const [verGuardadas, setVerGuardadas] = useState(true);
   const [slugTouched, setSlugTouched] = useState(false);
   const [dirty, setDirty] = useState(false);
 
@@ -497,14 +326,12 @@ const NoticiasAdmin = () => {
     content: "",
     editorProps: {
       attributes: {
-        class: "na-tiptap",
+        class: "mc-na-tiptap",
         spellcheck: "false",
         style: `color: ${DEFAULT_EDITOR_COLOR}; caret-color: ${DEFAULT_EDITOR_COLOR};`,
       },
     },
-    onCreate: ({ editor }) => {
-      ensureEditorDefaults(editor);
-    },
+    onCreate: ({ editor }) => ensureEditorDefaults(editor),
     onUpdate: () => setDirty(true),
   });
 
@@ -512,12 +339,6 @@ const NoticiasAdmin = () => {
     const role = normalizeStaffRole(user?.rango_staff || user?.rol_admin);
     return Boolean(user?.loggedIn && role === "owner");
   }, [user]);
-
-  const heroStyle = useMemo(() => {
-    const src = String(form.portada || "").trim();
-    if (!src) return undefined;
-    return { "--na-hero": `url("${src}")` };
-  }, [form.portada]);
 
   const request = useCallback(async (path, options = {}) => {
     const token = getAuthToken();
@@ -531,7 +352,6 @@ const NoticiasAdmin = () => {
   const fetchNoticias = useCallback(async () => {
     try {
       const res = await request("/api/noticias/todas");
-
       if (res.status === 401 || res.status === 403) throw new Error("NO_AUTH");
       if (!res.ok) throw new Error("FETCH_FAIL");
 
@@ -551,13 +371,7 @@ const NoticiasAdmin = () => {
 
   useEffect(() => {
     if (!dirty) return;
-
-    const onBeforeUnload = (e) => {
-      e.preventDefault();
-      e.returnValue = "";
-      return "";
-    };
-
+    const onBeforeUnload = (e) => { e.preventDefault(); e.returnValue = ""; return ""; };
     window.addEventListener("beforeunload", onBeforeUnload);
     return () => window.removeEventListener("beforeunload", onBeforeUnload);
   }, [dirty]);
@@ -574,7 +388,6 @@ const NoticiasAdmin = () => {
 
   useEffect(() => {
     if (!editor || contenidoPendiente === null || contenidoPendiente === undefined) return;
-
     try {
       if (typeof contenidoPendiente === "string") {
         if (isProbablyHtml(contenidoPendiente)) {
@@ -621,11 +434,7 @@ const NoticiasAdmin = () => {
   }, [editor]);
 
   const handleChangeTitulo = (titulo) => {
-    setForm((prev) => ({
-      ...prev,
-      titulo,
-      slug: slugTouched ? prev.slug : slugify(titulo),
-    }));
+    setForm((prev) => ({ ...prev, titulo, slug: slugTouched ? prev.slug : slugify(titulo) }));
     setDirty(true);
   };
 
@@ -639,7 +448,6 @@ const NoticiasAdmin = () => {
       usarFechaManual: true,
       id: noticia.id,
     });
-
     setSlugTouched(Boolean(noticia.slug));
     setContenidoPendiente(noticia.contenido_html || noticia.contenido || "");
     setDirty(false);
@@ -673,15 +481,12 @@ const NoticiasAdmin = () => {
       contenidoHtml,
       contenido_html: contenidoHtml,
       publicada: true,
-      fecha: form.usarFechaManual
-        ? form.fecha || new Date().toISOString()
-        : new Date().toISOString(),
+      fecha: form.usarFechaManual ? form.fecha || new Date().toISOString() : new Date().toISOString(),
     };
 
     try {
       const path = form.id ? `/api/noticias/${form.id}` : "/api/noticias";
       const method = form.id ? "PUT" : "POST";
-
       const res = await request(path, {
         method,
         headers: { "Content-Type": "application/json" },
@@ -708,7 +513,6 @@ const NoticiasAdmin = () => {
 
     try {
       const res = await request(`/api/noticias/${id}`, { method: "DELETE" });
-
       if (res.status === 401 || res.status === 403) throw new Error("NO_AUTH");
       if (!res.ok) throw new Error("DEL_FAIL");
 
@@ -723,22 +527,14 @@ const NoticiasAdmin = () => {
 
   const handlePasteHtml = () => {
     if (!htmlInput || !editor) return;
-
     try {
       const parser = new DOMParser();
       const doc = parser.parseFromString(htmlInput, "text/html");
 
-      const titulo =
-        doc.querySelector("h1")?.textContent?.trim() ||
-        doc.querySelector("title")?.textContent?.trim() ||
-        "";
-
+      const titulo = doc.querySelector("h1")?.textContent?.trim() || doc.querySelector("title")?.textContent?.trim() || "";
       const primeraImagen = doc.querySelector("img")?.getAttribute("src") || "";
 
-      if (titulo) {
-        handleChangeTitulo(titulo);
-      }
-
+      if (titulo) handleChangeTitulo(titulo);
       if (primeraImagen) {
         setForm((prev) => ({ ...prev, portada: primeraImagen }));
         setDirty(true);
@@ -754,16 +550,13 @@ const NoticiasAdmin = () => {
       }
 
       setHtmlInput("");
-      toast.success("HTML aplicado");
+      toast.success("HTML aplicado al editor");
     } catch {
       toast.error("No se pudo procesar el HTML");
     }
   };
 
-  const noticiasFiltradas =
-    filtroServidor === "todos"
-      ? noticias
-      : noticias.filter((n) => normalizeCategoria(n?.servidor || "global") === filtroServidor);
+  const noticiasFiltradas = filtroServidor === "todos" ? noticias : noticias.filter((n) => normalizeCategoria(n?.servidor || "global") === filtroServidor);
 
   const onCancelEdit = () => {
     if (dirty) {
@@ -775,15 +568,11 @@ const NoticiasAdmin = () => {
 
   if (!isOwner) {
     return (
-      <div className="na-denied">
-        <div className="na-denied__card">
-          <img
-            src="/assets/gandalf_minecraft.webp"
-            alt="Acceso denegado"
-            className="na-denied__img"
-          />
-          <h2 className="na-denied__title">¡No tienes poder aquí!</h2>
-          <p className="na-denied__text">Acceso denegado al panel de gestión de noticias.</p>
+      <div className="mc-na-denied">
+        <div className="mc-na-denied-card mc-stone-modal">
+          <img src="/assets/gandalf_minecraft.webp" alt="Acceso denegado" />
+          <h2>¡No tienes poder aquí!</h2>
+          <p>Acceso denegado al panel de gestión de noticias.</p>
         </div>
       </div>
     );
@@ -791,392 +580,140 @@ const NoticiasAdmin = () => {
 
   return (
     <>
-      <Seo title="Panel interno | FlanCraft" noindex />
-      <div className="noticias-admin-page">
-        <section className="na-hero" style={heroStyle}>
-          <div className="na-hero__wrap">
-            <div className="na-hero__top">
-              <div className="na-hero__titleblock">
-                <div className="na-hero__kicker">Panel Admin</div>
-                <h1 className="na-hero__title">{form.id ? "Editar noticia" : "Crear noticia"}</h1>
-                <div className="na-hero__sub">
-                  {form.id ? (
-                    <>
-                      Estás editando: <strong>{form.titulo || "Sin título"}</strong>
-                    </>
-                  ) : (
-                    <>Publica noticias con portada tipo banner y organízalas por categoría.</>
-                  )}
-                </div>
-              </div>
+      <Seo title="Panel Admin Noticias | FlanCraft" noindex />
+      <div className="mc-na-container">
+        
+        <div className="mc-title-plate mc-na-header">
+          <h2>GESTIÓN DE NOTICIAS</h2>
+          {dirty && <span className="mc-na-dirty-tag">CAMBIOS SIN GUARDAR</span>}
+        </div>
 
-              <div className="na-hero__actions">
-                <span className={`na-pill ${dirty ? "is-dirty" : "is-clean"}`}>
-                  {dirty ? "Cambios sin guardar" : "Todo guardado"}
-                </span>
-
-                <button
-                  type="button"
-                  className="na-btn na-btn--ghost"
-                  onClick={onCancelEdit}
-                  disabled={isSubmitting}
-                >
-                  <span className="na-btn__icon" aria-hidden="true">
-                    <i className="fa-solid fa-xmark" />
-                  </span>
-                  <span>Cancelar</span>
-                </button>
-
-                <button
-                  type="submit"
-                  form="na-form"
-                  className="na-btn na-btn--solid"
-                  disabled={isSubmitting}
-                >
-                  <span className="na-btn__icon" aria-hidden="true">
-                    <i
-                      className={`fa-solid ${
-                        isSubmitting ? "fa-spinner fa-spin" : "fa-floppy-disk"
-                      }`}
-                    />
-                  </span>
-                  <span>{isSubmitting ? "Guardando..." : form.id ? "Guardar" : "Publicar"}</span>
-                </button>
+        <div className="mc-na-layout">
+          
+          <div className="mc-na-main">
+            <div className="mc-stone-panel">
+              <h3 className="mc-panel-title">1. NOTICIA HTML</h3>
+              <p className="mc-panel-desc">Pega aquí el HTML crudo para convertirlo visualmente.</p>
+              <textarea
+                className="mc-na-textarea"
+                value={htmlInput}
+                onChange={(e) => setHtmlInput(e.target.value)}
+                placeholder="<h1>Noticia Épica</h1><p>Contenido...</p>"
+              />
+              <div className="mc-na-actions">
+                <button type="button" className="pixel-btn-gray" onClick={() => setHtmlInput("")} disabled={!htmlInput}>LIMPIAR</button>
+                <button type="button" className="pixel-btn-gold" onClick={handlePasteHtml} disabled={!htmlInput}>CARGAR EN EDITOR</button>
               </div>
             </div>
 
-            <div className="na-hero__media">
-              {form.portada ? (
-                <img className="na-hero__img" src={form.portada} alt="Portada" loading="eager" />
-              ) : (
-                <div className="na-hero__placeholder">
-                  <div className="na-hero__placeholderTitle">Sin portada</div>
-                  <div className="na-hero__placeholderHint">
-                    Pega una URL de portada para ver el banner completo aquí.
+            <div className="mc-stone-panel">
+              <h3 className="mc-panel-title">2. EDITOR VISUAL</h3>
+              <p className="mc-panel-desc">Modifica el texto, añade imágenes y dale formato.</p>
+              <div className="mc-na-editor-wrapper">
+                <MenuBar editor={editor} />
+                <div className="mc-na-editor-canvas">
+                  {editor ? <EditorContent editor={editor} /> : <p>Cargando...</p>}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <aside className="mc-na-sidebar">
+            <div className="mc-stone-panel">
+              <h3 className="mc-panel-title">3. PUBLICACIÓN</h3>
+              
+              {/* BOTONES PUBLICAR AHORA ARRIBA */}
+              <div className="mc-na-publish-actions top-actions">
+                {form.id && (
+                  <button type="button" className="pixel-btn-red full-width" onClick={onCancelEdit} disabled={isSubmitting}>
+                    CANCELAR EDICIÓN
+                  </button>
+                )}
+                <button type="submit" className="pixel-btn-green full-width" onClick={handleSubmit} disabled={isSubmitting}>
+                  {isSubmitting ? "GUARDANDO..." : form.id ? "GUARDAR CAMBIOS" : "PUBLICAR NOTICIA"}
+                </button>
+              </div>
+              
+              <div className="mc-na-field">
+                <label>Título</label>
+                <input className="mc-na-input" type="text" value={form.titulo} onChange={(e) => handleChangeTitulo(e.target.value)} placeholder="Ej: Nueva Temporada" />
+              </div>
+
+              <div className="mc-na-field">
+                <label>Slug (URL)</label>
+                <input className="mc-na-input" type="text" value={form.slug} onChange={(e) => { setSlugTouched(true); setForm((p) => ({ ...p, slug: e.target.value })); setDirty(true); }} placeholder="nueva-temporada" />
+              </div>
+
+              <div className="mc-na-field">
+                <label>Categoría</label>
+                <select className="mc-na-select" value={form.servidor} onChange={(e) => { setForm((p) => ({ ...p, servidor: normalizeCategoria(e.target.value) })); setDirty(true); }}>
+                  {CATEGORIAS.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
+                </select>
+              </div>
+
+              <div className="mc-na-field">
+                <label>Portada (URL Imagen)</label>
+                <input className="mc-na-input" type="text" value={form.portada} onChange={(e) => { setForm((p) => ({ ...p, portada: e.target.value })); setDirty(true); }} placeholder="https://..." />
+                {form.portada && (
+                  <div className="mc-na-cover-preview">
+                    <img src={form.portada} alt="Preview" />
                   </div>
+                )}
+              </div>
+
+              <div className="mc-na-field checkbox-field">
+                <label>
+                  <input type="checkbox" checked={form.usarFechaManual} onChange={(e) => { setForm((p) => ({ ...p, usarFechaManual: e.target.checked })); setDirty(true); }} />
+                  Usar fecha manual
+                </label>
+              </div>
+
+              {form.usarFechaManual && (
+                <div className="mc-na-field">
+                  <input className="mc-na-input" type="datetime-local" value={form.fecha || ""} onChange={(e) => { setForm((p) => ({ ...p, fecha: e.target.value })); setDirty(true); }} />
                 </div>
               )}
             </div>
+          </aside>
+
+        </div>
+
+        <div className="mc-title-plate mc-na-header list-header">
+          <h2>NOTICIAS PUBLICADAS ({noticiasFiltradas.length})</h2>
+        </div>
+
+        <div className="mc-stone-panel mc-na-list-container">
+          <div className="mc-na-filters">
+            <button className={`pixel-btn-gray ${filtroServidor === "todos" ? "active" : ""}`} onClick={() => setFiltroServidor("todos")}>Todos</button>
+            {CATEGORIAS.map((c) => (
+              <button key={c.id} className={`pixel-btn-gray ${filtroServidor === c.id ? "active" : ""}`} onClick={() => setFiltroServidor(c.id)}>{c.label}</button>
+            ))}
           </div>
-        </section>
 
-        <main className="na-shell">
-          <section className="na-card na-card--form">
-            <form id="na-form" onSubmit={handleSubmit} className="na-form">
-              <div className="na-grid">
-                <aside className="na-meta">
-                  <div className="na-sectionTitle">
-                    <span className="na-marker" />
-                    Datos generales
+          {noticiasFiltradas.length === 0 ? (
+            <div className="mc-na-empty">No hay noticias.</div>
+          ) : (
+            <div className="mc-na-grid">
+              {noticiasFiltradas.map((n) => (
+                <div key={n.id} className={`mc-na-card ${n.id === form.id ? "is-editing" : ""}`}>
+                  <div className="mc-na-card-img">
+                    {n.portada ? <img src={n.portada} alt="" /> : <div className="no-img">Sin imagen</div>}
+                    <span className="mc-na-card-tag">{getCategoriaLabel(n.servidor)}</span>
                   </div>
-
-                  <div className="na-field">
-                    <label className="na-label">Título</label>
-                    <input
-                      className="na-input"
-                      type="text"
-                      placeholder="Título de la noticia"
-                      value={form.titulo}
-                      onChange={(e) => handleChangeTitulo(e.target.value)}
-                    />
-                    <div className="na-hint">Se mostrará en el listado y en el hero.</div>
+                  <div className="mc-na-card-body">
+                    <h4>{n.titulo}</h4>
+                    <span className="date">{new Date(n.fecha).toLocaleDateString()}</span>
                   </div>
-
-                  <div className="na-field">
-                    <label className="na-label">Slug</label>
-                    <input
-                      className="na-input"
-                      type="text"
-                      placeholder="mi-noticia-epica"
-                      value={form.slug}
-                      onChange={(e) => {
-                        setSlugTouched(true);
-                        setForm((prev) => ({ ...prev, slug: e.target.value }));
-                        setDirty(true);
-                      }}
-                    />
-                    <div className="na-hint">Se genera desde el título si no lo editas.</div>
-
-                    <div className="na-previewUrl">
-                      <span className="na-previewUrl__label">Preview:</span>
-                      <span className="na-previewUrl__value">
-                        /news/{slugify(form.slug || form.titulo) || "..."}
-                      </span>
-                    </div>
+                  <div className="mc-na-card-actions">
+                    <button className="pixel-btn-gold" onClick={() => handleEdit(n)}>EDITAR</button>
+                    <button className="pixel-btn-red" onClick={() => handleDelete(n.id)}>X</button>
                   </div>
-
-                  <div className="na-field">
-                    <label className="na-label">Portada (URL)</label>
-                    <input
-                      className="na-input"
-                      type="text"
-                      placeholder="https://..."
-                      value={form.portada}
-                      onChange={(e) => {
-                        setForm((prev) => ({ ...prev, portada: e.target.value }));
-                        setDirty(true);
-                      }}
-                    />
-                    <div className="na-hint">Recomendado: imagen panorámica (banner apaisado).</div>
-                  </div>
-
-                  <div className="na-sectionTitle">
-                    <span className="na-marker" />
-                    Publicación
-                  </div>
-
-                  <div className="na-field">
-                    <label className="na-label">Categoría</label>
-                    <select
-                      className="na-select"
-                      value={form.servidor}
-                      onChange={(e) => {
-                        setForm((prev) => ({
-                          ...prev,
-                          servidor: normalizeCategoria(e.target.value),
-                        }));
-                        setDirty(true);
-                      }}
-                    >
-                      {CATEGORIAS.map((categoria) => (
-                        <option key={categoria.id} value={categoria.id}>
-                          {categoria.label}
-                        </option>
-                      ))}
-                    </select>
-                    <div className="na-hint">
-                      Global para anuncios generales. El resto separa tienda, web y sorteos.
-                    </div>
-                  </div>
-
-                  <div className="na-field">
-                    <label className="na-check">
-                      <input
-                        type="checkbox"
-                        checked={form.usarFechaManual}
-                        onChange={(e) => {
-                          setForm((prev) => ({ ...prev, usarFechaManual: e.target.checked }));
-                          setDirty(true);
-                        }}
-                      />
-                      <span>Usar fecha manual</span>
-                    </label>
-
-                    {form.usarFechaManual && (
-                      <div className="na-inline">
-                        <label className="na-label">Fecha</label>
-                        <input
-                          className="na-input"
-                          type="datetime-local"
-                          value={form.fecha || ""}
-                          onChange={(e) => {
-                            setForm((prev) => ({ ...prev, fecha: e.target.value }));
-                            setDirty(true);
-                          }}
-                        />
-                      </div>
-                    )}
-                  </div>
-
-                  {form.id && (
-                    <div className="na-metaFooter">
-                      <button
-                        type="button"
-                        className="na-btn na-btn--danger"
-                        onClick={onCancelEdit}
-                        disabled={isSubmitting}
-                      >
-                        <span className="na-btn__icon" aria-hidden="true">
-                          <i className="fa-solid fa-arrow-left" />
-                        </span>
-                        <span>Salir edición</span>
-                      </button>
-                    </div>
-                  )}
-                </aside>
-
-                <section className="na-editor">
-                  <div className="na-sectionTitle">
-                    <span className="na-marker" />
-                    Contenido
-                  </div>
-
-                  <div className="na-editorBox">
-                    <MenuBar editor={editor} />
-                    <div className="na-editorContent">
-                      {editor ? (
-                        <EditorContent editor={editor} />
-                      ) : (
-                        <p className="na-loading">Cargando editor...</p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="na-htmlBox">
-                    <div className="na-htmlBox__head">
-                      <i className="fa-solid fa-code" aria-hidden="true" />
-                      <span>Pegar HTML (opcional)</span>
-                    </div>
-                    <textarea
-                      className="na-textarea"
-                      value={htmlInput}
-                      onChange={(e) => setHtmlInput(e.target.value)}
-                      placeholder="Pega aquí HTML de noticias antiguas o contenido externo para convertirlo."
-                    />
-                    <div className="na-htmlBox__actions">
-                      <button
-                        type="button"
-                        className="na-btn na-btn--ghost"
-                        onClick={() => setHtmlInput("")}
-                        disabled={!htmlInput}
-                      >
-                        <span className="na-btn__icon" aria-hidden="true">
-                          <i className="fa-solid fa-broom" />
-                        </span>
-                        <span>Limpiar</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        className="na-btn na-btn--solid"
-                        onClick={handlePasteHtml}
-                        disabled={!htmlInput}
-                      >
-                        <span className="na-btn__icon" aria-hidden="true">
-                          <i className="fa-solid fa-wand-magic-sparkles" />
-                        </span>
-                        <span>Aplicar HTML</span>
-                      </button>
-                    </div>
-                  </div>
-                </section>
-              </div>
-            </form>
-          </section>
-
-          <section className="na-card na-card--list">
-            <div className="na-listHead">
-              <button
-                type="button"
-                className={verGuardadas ? "na-toggle is-open" : "na-toggle"}
-                onClick={() => setVerGuardadas((v) => !v)}
-              >
-                <span>Noticias publicadas</span>
-                <span className="na-toggle__count">({noticias.length})</span>
-                <span className="na-caret" aria-hidden="true" />
-              </button>
-
-              <div className="na-filter">
-                <span className="na-filter__label">Filtrar:</span>
-                <div className="na-tabs">
-                  <button
-                    type="button"
-                    className={filtroServidor === "todos" ? "na-tab is-active" : "na-tab"}
-                    onClick={() => setFiltroServidor("todos")}
-                  >
-                    Todos
-                  </button>
-
-                  {CATEGORIAS.map((categoria) => (
-                    <button
-                      key={categoria.id}
-                      type="button"
-                      className={filtroServidor === categoria.id ? "na-tab is-active" : "na-tab"}
-                      onClick={() => setFiltroServidor(categoria.id)}
-                    >
-                      {categoria.label}
-                    </button>
-                  ))}
                 </div>
-              </div>
+              ))}
             </div>
+          )}
+        </div>
 
-            {verGuardadas && (
-              <>
-                {noticiasFiltradas.length === 0 ? (
-                  <div className="na-empty">No hay noticias para este filtro.</div>
-                ) : (
-                  <div className="na-list">
-                    {noticiasFiltradas.map((n) => {
-                      const categoria = normalizeCategoria(n?.servidor || "global");
-                      const categoriaLabel = getCategoriaLabel(categoria);
-                      const isActive = n?.id === form.id;
-
-                      return (
-                        <div
-                          key={n.id}
-                          className={isActive ? "na-item is-active" : "na-item"}
-                          onClick={() => handleEdit(n)}
-                          role="button"
-                          tabIndex={0}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" || e.key === " ") {
-                              e.preventDefault();
-                              handleEdit(n);
-                            }
-                          }}
-                        >
-                          <div className="na-item__thumb">
-                            {n.portada ? (
-                              <img src={n.portada} alt="Portada" loading="lazy" />
-                            ) : (
-                              <div className="na-item__thumbEmpty">
-                                <i className="fa-regular fa-image" aria-hidden="true" />
-                              </div>
-                            )}
-                          </div>
-
-                          <div className="na-item__body">
-                            <div className="na-item__title">{n.titulo}</div>
-                            <div className="na-item__meta">
-                              <span className="na-item__date">
-                                {new Date(n.fecha).toLocaleDateString("es-ES", {
-                                  day: "numeric",
-                                  month: "short",
-                                  year: "numeric",
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                })}
-                              </span>
-
-                              <span className={`na-badge na-badge--${categoria}`}>
-                                {categoriaLabel}
-                              </span>
-                            </div>
-                          </div>
-
-                          <div className="na-item__actions">
-                            <button
-                              type="button"
-                              className="na-miniBtn"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleEdit(n);
-                              }}
-                            >
-                              Editar
-                            </button>
-
-                            <button
-                              type="button"
-                              className="na-miniBtn na-miniBtn--danger"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDelete(n.id);
-                              }}
-                            >
-                              Eliminar
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </>
-            )}
-          </section>
-        </main>
       </div>
     </>
   );

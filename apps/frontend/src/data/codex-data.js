@@ -4,77 +4,63 @@ const codexData = [
     badgeColor: "#7fd9ff",
     bg: "/assets/comic/panel1.webp",
     video: "/assets/comic/panel1.mp4",
-    thumb: "/assets/comic/panel1.webp",
     description:
-      "FlanCraft no nació de un generador automático de servidores. Nació de noches sin dormir, de darle mil vueltas a cada bloque y de una obsesión casi enfermiza por los detalles.\n" +
-      "Desde el minuto uno tuvimos algo claro: no queríamos ser otro servidor de usar y tirar. Queríamos un sitio con alma, de esos que cuidas como si fuera tu casa.\n" +
-      "Si nos ves ir un poco más despacio que el resto, es porque preferimos hacerlo bien antes que hacerlo rápido.",
+      "FlanCraft no nació de un tutorial de YouTube de 5 minutos. Nació de quemarnos las pestañas programando y de una obsesión enfermiza por los detalles.\n" +
+      "No queríamos un frankenstein lleno de bugs. Queríamos un servidor con alma.",
   },
   {
-    title: "Aquí no cerramos el mes que viene",
+    title: "Aquí no cerramos mañana",
     badgeColor: "#7ae582",
     bg: "/assets/comic/panel2.webp",
     video: "/assets/comic/panel2.mp4",
-    thumb: "/assets/comic/panel2.webp",
     description:
-      "Seguro que te ha pasado: te vicias a un server, construyes algo épico y, de repente, desaparece. Qué rabia, ¿verdad?\n" +
-      "Nosotros buscamos justo lo contrario. Queremos una base sólida, una dirección que no cambie según el humor con el que nos levantemos y la seguridad de que tu progreso está a salvo.\n" +
-      "Para nosotros, la continuidad no es una promesa vacía; es nuestra prioridad absoluta.",
+      "¿Cansado de servers que cierran a la semana? FlanCraft corre sobre infraestructura seria y una dirección clara.\n" +
+      "Tu progreso está en buenas manos. Si farmeas y construyes, tu esfuerzo se queda aquí.",
   },
   {
-    title: "Survival, pero del que engancha",
+    title: "Survival que engancha",
     badgeColor: "#fbc531",
     bg: "/assets/comic/panel3.webp",
     video: "/assets/comic/panel3.mp4",
-    thumb: "/assets/comic/panel3.webp",
     description:
-      "En FlanCraft todo gira en torno al Survival, pero no queríamos el típico mundo vacío donde no hay nada que hacer tras dos horas.\n" +
-      "La economía, los rangos y los retos no están puestos por rellenar. Todo está conectado para que cada diamante que piques y cada reto que superes de verdad valga la pena.\n" +
-      "Queremos que jugar aquí se sienta consistente. Que cada paso que des en el servidor tenga su recompensa.",
+      "Diseñamos una economía y retos con propósito. Cada bloque que piques y cada boss que tumbes tiene un impacto real.\n" +
+      "Siempre tendrás una meta en el horizonte y motivos para conectar mañana.",
   },
   {
-    title: "Una web que sirve para algo",
+    title: "Web sincronizada 1:1",
     badgeColor: "#a29bfe",
     bg: "/assets/comic/panel4.webp",
     video: "/assets/comic/panel4.mp4",
-    thumb: "/assets/comic/panel4.webp",
     description:
-      "Odiamos las webs que solo sirven para poner cuatro fotos bonitas. Nuestra web es, literalmente, una extensión de tu inventario.\n" +
-      "Tu perfil, tus logros y las recompensas están enlazados en tiempo real. No es decoración; es una herramienta para que gestiones tu progreso cómodamente.\n" +
-      "Si algo existe fuera de Minecraft, es porque va a darte una ventaja real dentro de él.",
+      "Esta web es el 'F3' de tu cuenta. Tus stats, logros y dinero están en tiempo real con el servidor.\n" +
+      "No es decoración. Es tu panel de control personal. Lo que reclamas aquí, aparece allí.",
   },
   {
     title: "La comunidad manda",
     badgeColor: "#ff8bd1",
     bg: "/assets/comic/panel5.webp",
     video: "/assets/comic/panel5.mp4",
-    thumb: "/assets/comic/panel5.webp",
     description:
-      "Un servidor sin una comunidad con ganas es solo un puñado de código frío. Por eso, aquí no mandamos nosotros solos.\n" +
-      "Escuchamos lo que nos dices, ajustamos lo que no termina de encajar y potenciamos lo que de verdad os divierte.\n" +
-      "FlanCraft tiene que estar vivo, tiene que evolucionar contigo y no ser simplemente un sitio que está 'abierto'.",
+      "FlanCraft es un bicho vivo que evoluciona con vosotros. Leemos Discord y ajustamos el rumbo según lo que os divierte.\n" +
+      "Sin gente jugando, esto es solo ruido en un rack. Aquí tú tienes la última palabra.",
   },
   {
     title: "Calidad por encima de humo",
     badgeColor: "#ffb86b",
     bg: "/assets/comic/panel6.webp",
     video: "/assets/comic/panel6.mp4",
-    thumb: "/assets/comic/panel6.webp",
     description:
-      "No esperes que te prometamos veinte funciones locas para luego dejar la mitad a medias. No somos así.\n" +
-      "Nos compensa mucho más sacar pocas cosas, pero que funcionen perfecto y tengan sentido dentro del juego.\n" +
-      "Si algo no está a la altura, se revisa. Y si hay que tirarlo y empezar de cero para que sea excelente, lo hacemos sin que nos tiemble el pulso.",
+      "No vendemos 50 minijuegos rotos. Preferimos meter tres novedades pulidas y balanceadas que se sientan parte del juego.\n" +
+      "Si algo no da la talla, no entra. Las cosas se hacen bien o no se hacen.",
   },
   {
-    title: "Hacer de esto algo grande",
+    title: "Construyendo un hogar",
     badgeColor: "#00d2ff",
     bg: "/assets/comic/panel7.webp",
     video: "/assets/comic/panel7.mp4",
-    thumb: "/assets/comic/panel7.webp",
     description:
-      "Nuestro objetivo es ridículamente sencillo: que entres hoy a jugar y mañana sigas teniendo las mismas ganas de volver.\n" +
-      "Queremos crecer con cabeza, con criterio y manteniendo siempre esa esencia que nos hace diferentes.\n" +
-      "Si decides quedarte por aquí, prepárate, porque FlanCraft solo acaba de empezar.",
+      "Nuestra meta es que FlanCraft sea el servidor al que siempre vuelves. Comunidad sana y crecimiento con cabeza.\n" +
+      "Busca un buen sitio para tu cama y dale caña. Esto acaba de empezar.",
   },
 ];
 

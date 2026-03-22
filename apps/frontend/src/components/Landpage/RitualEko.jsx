@@ -2,6 +2,7 @@ import React, { useContext, useEffect, useMemo, useRef, useState, memo } from "r
 import { motion, AnimatePresence } from "framer-motion";
 import {
   HiChevronLeft,
+  HiStop,
   HiChevronRight,
   HiLockClosed,
   HiRocketLaunch,
@@ -24,7 +25,32 @@ function resolveVideo(item) {
   return "";
 }
 
-const ChroniclePanelMedia = memo(function ChroniclePanelMedia({ item, onPlaybackChange, compact }) {
+const useScrambleText = (text, isVisible) => {
+  const [displayText, setDisplayText] = useState("");
+  const chars = "ABCDEFGHIJKLMNPQRSTUVWYZ0123456789#%&@+"; 
+  
+  useEffect(() => {
+    if (!isVisible) return;
+
+    let iteration = 0;
+    const interval = setInterval(() => {
+      setDisplayText(text.split("").map((char, index) => {
+        if (index < iteration) return text[index];
+        if (char === " ") return " ";
+        return chars[Math.floor(Math.random() * chars.length)];
+      }).join(""));
+
+      if (iteration >= text.length) clearInterval(interval);
+      iteration += 1 / 2;
+    }, 25);
+
+    return () => clearInterval(interval);
+  }, [text, isVisible]);
+
+  return displayText;
+};
+
+const ChroniclePanelMedia = memo(function ChroniclePanelMedia({ item, onPlaybackChange }) {
   const poster = resolvePoster(item);
   const video = resolveVideo(item);
   const videoRef = useRef(null);
@@ -82,10 +108,7 @@ const ChroniclePanelMedia = memo(function ChroniclePanelMedia({ item, onPlayback
     setLoading(false);
     setVideoMounted(false);
     onPlaybackChange(false);
-
-    return () => {
-      clearResetTimer();
-    };
+    return () => clearResetTimer();
   }, [item, onPlaybackChange]);
 
   useEffect(() => {
@@ -115,7 +138,6 @@ const ChroniclePanelMedia = memo(function ChroniclePanelMedia({ item, onPlayback
       tabIndex={!playing && !loading ? 0 : -1}
       onClick={!playing && !loading ? reproducir : undefined}
       onKeyDown={!playing && !loading ? handleKeyDown : undefined}
-      aria-label={!playing && !loading ? `Reproducir escena de ${item?.title || "FlanCraft"}` : undefined}
     >
       <img
         src={poster}
@@ -159,40 +181,23 @@ const ChroniclePanelMedia = memo(function ChroniclePanelMedia({ item, onPlayback
           event.stopPropagation();
           togglePlayback();
         }}
-        aria-label={playing ? `Volver al panel de ${item?.title || "FlanCraft"}` : `Ver escena de ${item?.title || "FlanCraft"}`}
       >
         <span className="panel-inline-action-icon">
-          {playing ? <HiChevronLeft /> : <HiPlay />}
+          {playing ? <HiStop /> : <HiPlay />}
         </span>
-        <span>{playing ? "VOLVER" : "VER ESCENA"}</span>
+        <span>{playing ? "PARAR" : "REPRODUCIR"}</span>
       </button>
-
-      {!compact && !playing && !loading && (
-        <button
-          type="button"
-          className="panel-play-trigger"
-          onClick={(event) => {
-            event.stopPropagation();
-            reproducir();
-          }}
-          aria-label={`Reproducir escena de ${item?.title || "FlanCraft"}`}
-        >
-          <span className="panel-play-trigger-ring" />
-          <span className="panel-play-trigger-core">
-            <HiPlay />
-          </span>
-        </button>
-      )}
 
       {!playing && !loading && (
         <div className="panel-tap-hint" aria-hidden="true">
-          Toca la imagen para ver la escena
+          [ SCANNING DATA ]
         </div>
       )}
 
       {loading && (
         <div className="panel-loading-state" aria-hidden="true">
           <span className="panel-loading-spinner" />
+          <span className="loading-text-glitch">DECRYPTING...</span>
         </div>
       )}
     </div>
@@ -204,9 +209,6 @@ export default function RitualEko() {
   const [direction, setDirection] = useState(0);
   const [viewed, setViewed] = useState(() => Array(codexData.length).fill(false));
   const [panelPlaying, setPanelPlaying] = useState(false);
-  const [isCompact, setIsCompact] = useState(() =>
-    typeof window !== "undefined" ? window.matchMedia("(max-width: 768px)").matches : false
-  );
 
   const navigate = useNavigate();
   const { user } = useContext(UserContext);
@@ -214,26 +216,10 @@ export default function RitualEko() {
   const current = codexData[index] || {};
   const allViewed = useMemo(() => viewed.every(Boolean), [viewed]);
   const isLoggedIn = Boolean(user?.uuid || user?.id || user?.nombre_minecraft);
+  const progressPercent = ((index + 1) / codexData.length) * 100;
 
   useEffect(() => {
     setViewed((prev) => codexData.map((_, i) => prev[i] ?? false));
-  }, []);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const media = window.matchMedia("(max-width: 768px)");
-    const handleChange = (event) => setIsCompact(event.matches);
-
-    setIsCompact(media.matches);
-
-    if (media.addEventListener) {
-      media.addEventListener("change", handleChange);
-      return () => media.removeEventListener("change", handleChange);
-    }
-
-    media.addListener(handleChange);
-    return () => media.removeListener(handleChange);
   }, []);
 
   useEffect(() => {
@@ -256,103 +242,120 @@ export default function RitualEko() {
     goToIndex(index + step);
   };
 
-  const panelVariants = useMemo(
-    () => ({
-      enter: (dir) => ({
-        x: isCompact ? (dir > 0 ? 22 : -22) : dir > 0 ? 72 : -72,
-        opacity: 0,
-        scale: isCompact ? 0.996 : 0.985,
-      }),
-      center: {
-        x: 0,
-        opacity: 1,
-        scale: 1,
-        transition: {
-          duration: isCompact ? 0.24 : 0.34,
-          ease: [0.22, 1, 0.36, 1],
-        },
-      },
-      exit: (dir) => ({
-        x: isCompact ? (dir < 0 ? 22 : -22) : dir < 0 ? 72 : -72,
-        opacity: 0,
-        scale: isCompact ? 0.996 : 0.985,
-        transition: {
-          duration: isCompact ? 0.18 : 0.24,
-          ease: [0.55, 0, 0.1, 1],
-        },
-      }),
+  const imageVariants = {
+    enter: (dir) => ({
+      scale: 1.02,
+      opacity: 0,
+      x: dir > 0 ? 30 : -30,
     }),
-    [isCompact]
-  );
+    center: {
+      scale: 1,
+      opacity: 1,
+      x: 0,
+      transition: { duration: 0.4, ease: [0.25, 1, 0.5, 1] }
+    },
+    exit: (dir) => ({
+      scale: 0.98,
+      opacity: 0,
+      x: dir < 0 ? 30 : -30,
+      transition: { duration: 0.3, ease: [0.25, 1, 0.5, 1] }
+    })
+  };
+
+  const textVariants = {
+    enter: (dir) => ({
+      opacity: 0,
+      y: 15,
+      x: dir > 0 ? 20 : -20,
+    }),
+    center: {
+      opacity: 1,
+      y: 0,
+      x: 0,
+      transition: { duration: 0.4, delay: 0.15, ease: [0.25, 1, 0.5, 1] }
+    },
+    exit: (dir) => ({
+      opacity: 0,
+      y: -15,
+      x: dir < 0 ? 20 : -20,
+      transition: { duration: 0.25, ease: [0.25, 1, 0.5, 1] }
+    })
+  };
+
+  const scrambledTitle = useScrambleText(current?.title || "", true);
 
   return (
     <section
       className="flancraft-chronicles"
-      style={{ "--panel-color": current?.badgeColor || "#7fd9ff" }}
+      style={{ "--panel-color": current?.badgeColor || "#5ee034" }}
     >
-      <div
-        className="chronicle-scene-bg"
-        style={{ backgroundImage: `url(${resolvePoster(current)})` }}
-      />
-
-      <div className="chronicle-bg-effects">
-        <div className="scene-dim" />
-        <div className="scene-vignette" />
-        <div className="scene-top-glow" />
-        <div
-          className="floating-glow"
-          style={{ backgroundColor: current?.badgeColor || "#7fd9ff" }}
-        />
+      <div className="chronicle-scene-bg-wrapper">
+        <div className="chronicle-scene-bg-clipped">
+          <div
+            className="chronicle-scene-bg"
+            style={{ backgroundImage: `url(${resolvePoster(current)})` }}
+          />
+          <div className="chronicle-bg-effects">
+            <div className="scene-dim" />
+            <div className="scene-grid" />
+          </div>
+        </div>
       </div>
 
       <div className="chronicle-container">
         <header className="chronicle-header">
-          <motion.span
-            key={`cap-${index}`}
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.22 }}
-            className="chapter-count"
-          >
-            REGISTRO #{String(index + 1).padStart(2, "0")}
-          </motion.span>
-
-          <h2 className="main-title">Crónicas de FlanCraft</h2>
-
+          <motion.h2 className="main-title">
+            ARCHIVOS CONFIDENCIALES
+          </motion.h2>
           <p className="main-subtitle">
-            Una pequeña ruta por la visión detrás del proyecto, contada como si
-            cada capítulo fuese una viñeta viva del mundo que estamos levantando.
+            Accediendo a la base de datos central. Analizando registros del backend del proyecto.
           </p>
         </header>
 
         <main className="chronicle-stage">
           <div className="stage-center">
-            <AnimatePresence initial={false} custom={direction} mode="wait">
-              <motion.article
-                key={index}
-                custom={direction}
-                variants={panelVariants}
-                initial="enter"
-                animate="center"
-                exit="exit"
-                className="comic-panel-wrapper"
-              >
-                <div className="comic-frame">
-                  <div className="comic-media-shell">
-                    <ChroniclePanelMedia
-                      item={current}
-                      onPlaybackChange={setPanelPlaying}
-                      compact={isCompact}
-                    />
-                    <div className="frame-shade" />
-                  </div>
+            <article className="comic-panel-wrapper">
+              <div className="comic-frame">
+                
+                <div className="comic-media-shell">
+                  <AnimatePresence initial={false} custom={direction} mode="sync">
+                    <motion.div
+                      key={`media-${index}`}
+                      custom={direction}
+                      variants={imageVariants}
+                      initial="enter"
+                      animate="center"
+                      exit="exit"
+                      className="animated-media-layer"
+                    >
+                      <ChroniclePanelMedia
+                        item={current}
+                        onPlaybackChange={setPanelPlaying}
+                      />
+                    </motion.div>
+                  </AnimatePresence>
+                </div>
 
-                  <div className={`narrative-box ${panelPlaying ? "is-hidden" : ""}`}>
+                <AnimatePresence initial={false} custom={direction} mode="sync">
+                  <motion.div 
+                    key={`text-${index}`}
+                    custom={direction}
+                    variants={textVariants}
+                    initial="enter"
+                    animate="center"
+                    exit="exit"
+                    className={`narrative-box ${panelPlaying ? "is-hidden" : ""}`}
+                  >
                     <span
                       className="narrative-accent"
-                      style={{ backgroundColor: current?.badgeColor || "#7fd9ff" }}
+                      style={{ backgroundColor: current?.badgeColor || "#fbbf24" }}
                     />
-                    <h3 className="panel-title">{current?.title}</h3>
+                    <div className="title-row">
+                      <span className="chapter-badge">
+                        LOG #{String(index + 1).padStart(2, "0")}
+                      </span>
+                      <h3 className="panel-title">{scrambledTitle}</h3>
+                    </div>
 
                     <div className="panel-text">
                       {String(current?.description || "")
@@ -361,10 +364,11 @@ export default function RitualEko() {
                           <p key={i}>{line}</p>
                         ))}
                     </div>
-                  </div>
-                </div>
-              </motion.article>
-            </AnimatePresence>
+                  </motion.div>
+                </AnimatePresence>
+
+              </div>
+            </article>
           </div>
         </main>
 
@@ -375,23 +379,18 @@ export default function RitualEko() {
               className="nav-btn"
               onClick={() => paginate(-1)}
               disabled={index === 0}
-              aria-label="Viñeta anterior"
             >
               <HiChevronLeft />
             </button>
 
-            <div className="timeline-stepper">
-              {codexData.map((item, i) => (
-                <motion.button
-                  type="button"
-                  key={item.id || item.title || i}
-                  className={`step-dot ${i === index ? "active" : ""} ${viewed[i] ? "viewed" : ""}`}
-                  onClick={() => goToIndex(i)}
-                  whileHover={{ scale: 1.08 }}
-                  whileTap={{ scale: 0.92 }}
-                  aria-label={`Ir a ${item.title}`}
-                />
-              ))}
+            <div className="data-download-progress">
+              <div className="download-header">
+                <span className="hide-on-mobile">EXTRAYENDO DATOS...</span>
+                <span>{Math.round(progressPercent)}%</span>
+              </div>
+              <div className="download-track">
+                <div className="download-fill" style={{ width: `${progressPercent}%`, backgroundColor: current?.badgeColor || "#5ee034" }} />
+              </div>
             </div>
 
             <button
@@ -399,7 +398,6 @@ export default function RitualEko() {
               className="nav-btn"
               onClick={() => paginate(1)}
               disabled={index === codexData.length - 1}
-              aria-label="Siguiente viñeta"
             >
               <HiChevronRight />
             </button>
@@ -416,7 +414,7 @@ export default function RitualEko() {
               if (isLoggedIn) {
                 navigate("/dashboard");
               } else {
-                alert("¡Vincula tu cuenta para entrar al mundo!");
+                alert("Vincula tu cuenta para entrar al mundo");
               }
             }}
           >
@@ -428,7 +426,7 @@ export default function RitualEko() {
             ) : (
               <>
                 <HiLockClosed />
-                SIGUE EXPLORANDO
+                DESENCRIPTAR TODOS LOS LOGS
               </>
             )}
           </motion.button>

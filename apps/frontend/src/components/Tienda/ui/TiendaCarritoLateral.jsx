@@ -4,7 +4,6 @@ import TiendaCheckoutModal from "../modals/TiendaCheckoutModal";
 import { apiUrl } from "../../../lib/env";
 import "../../../styles/components/Tienda/tienda-carrito.scss";
 
-// Helpers
 function formatCurrency(amount) {
   const n = Number(amount);
   if (!Number.isFinite(n)) return "—";
@@ -66,6 +65,15 @@ export default function TiendaCarritoLateral({
     return carrito.reduce((acc, it) => acc + (Number(it.price) || 0) * pickQty(it), 0);
   }, [carrito, totalFromHook]);
 
+  const handleSwitchAccount = useCallback(() => {
+    localStorage.removeItem("fc_tienda_nombre");
+    localStorage.removeItem("fc_tienda_uuid");
+    
+    if (typeof onCambiarCuenta === "function") {
+      onCambiarCuenta();
+    }
+  }, [onCambiarCuenta]);
+
   const handleRemove = useCallback((item) => {
     if (!item?.id) return;
     if (typeof eliminarItem === "function") return eliminarItem(item.id);
@@ -104,7 +112,6 @@ export default function TiendaCarritoLateral({
       <aside className={`pixel-cart-sidebar ${mode === "mobileDrawer" ? "is-drawer" : ""}`}>
         <div className={`cart-container ${basketPulse ? "is-pulse" : ""}`}>
           
-          {/* SECCIÓN USUARIO: ESTRUCTURA GRID PARA EVITAR SOLAPAMIENTOS */}
           <section className="cart-user-block">
             <div className="user-grid">
               <div className="grid-avatar">
@@ -123,16 +130,16 @@ export default function TiendaCarritoLateral({
                 </div>
               </div>
               <div className="grid-button">
-                <button className="pixel-btn-gray action-btn" onClick={() => nombreConfirmado ? onCambiarCuenta?.() : onAbrirLogin?.()}>
+                <button 
+                  className="pixel-btn-gray action-btn" 
+                  onClick={() => nombreConfirmado ? handleSwitchAccount() : onAbrirLogin?.()}
+                >
                   {nombreConfirmado ? "CAMBIAR" : "CONECTAR"}
                 </button>
               </div>
             </div>
-            
-
           </section>
 
-          {/* CUERPO: LISTA DE PRODUCTOS */}
           <section className="cart-body-block">
             <h3 className="cart-title">TU CARRITO</h3>
             <div className="cart-scroll-area">
@@ -164,7 +171,6 @@ export default function TiendaCarritoLateral({
             </div>
           </section>
 
-          {/* FOOTER: TOTAL Y PAGO */}
           <section className="cart-footer-block">
             <div className="total-row">
               <span className="label">TOTAL:</span>
@@ -178,7 +184,6 @@ export default function TiendaCarritoLateral({
               {loadingCheckout ? "..." : nombreConfirmado ? "IR A PAGAR" : "CONECTA TU CUENTA"}
             </button>
           </section>
-
         </div>
       </aside>
 

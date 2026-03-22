@@ -1,38 +1,30 @@
 (function () {
-  let hookApplied = false;
+  const patchLucide = (instance) => {
+    if (!instance || instance.isPatched) return;
 
-  function applyPatch() {
-    if (!window.lucide || typeof window.lucide.attachIcon !== "function") return;
-    if (hookApplied) return;
-    hookApplied = true;
+    const originalAttach = instance.attachIcon;
+    if (typeof originalAttach === "function") {
+      instance.attachIcon = (...args) => {
+        try {
+          return originalAttach.apply(instance, args);
+        } catch (e) {
+          console.warn("🛡️ FlanCraft Shield:", e.message);
+          return null;
+        }
+      };
+      instance.isPatched = true;
+    }
+  };
 
-    const original = window.lucide.attachIcon;
-    window.lucide.attachIcon = function (...args) {
-      try {
-        return original(...args);
-      } catch (e) {
-        console.warn("⚠️ attachIcon bloqueado:", e.message);
-        return null;
-      }
-    };
-  }
-
-  if (window.lucide) {
-    applyPatch();
-  }
+  let _lucide = window.lucide;
+  patchLucide(_lucide);
 
   Object.defineProperty(window, "lucide", {
-    configurable: true,
-    set(val) {
-      this._lucide = val;
-      applyPatch();
+    get: () => _lucide,
+    set: (val) => {
+      _lucide = val;
+      patchLucide(_lucide);
     },
-    get() {
-      return this._lucide;
-    },
-  });
-
-  window.addEventListener("DOMContentLoaded", () => {
-    applyPatch();
+    configurable: true
   });
 })();

@@ -3,25 +3,38 @@ import { Copy } from "lucide-react";
 import "../../styles/components/Landpage/_serverstatus.scss";
 
 const IP = "play.flancraft.com";
+const BEDROCK_PORT = "19132";
 
 const ServerStatus = () => {
-  const [copied, setCopied] = useState(false);
+  const [copiedIP, setCopiedIP] = useState(false);
+  const [copiedPort, setCopiedPort] = useState(false);
   const [serverStatus, setServerStatus] = useState("offline");
   const [playersOnline, setPlayersOnline] = useState(0);
+  const [playerDelta, setPlayerDelta] = useState(0);
+  const [showDelta, setShowDelta] = useState(false);
 
-  const copyIP = () => {
-    navigator.clipboard.writeText(IP);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1800);
+  const copyText = (text, setCopiedState) => {
+    navigator.clipboard.writeText(text);
+    setCopiedState(true);
+    setTimeout(() => setCopiedState(false), 1800);
   };
 
   const fetchServerStatus = async () => {
     try {
       const res = await fetch(`https://api.mcsrvstat.us/2/${IP}`);
       const data = await res.json();
+      const newPlayersCount = data.players?.online || 0;
 
       setServerStatus(data.online ? "online" : "offline");
-      setPlayersOnline(data.players?.online || 0);
+
+      setPlayersOnline((prevCount) => {
+        if (prevCount > 0 && newPlayersCount !== prevCount) {
+          setPlayerDelta(newPlayersCount - prevCount);
+          setShowDelta(true);
+          setTimeout(() => setShowDelta(false), 8000);
+        }
+        return newPlayersCount;
+      });
     } catch {
       setServerStatus("offline");
       setPlayersOnline(0);
@@ -35,42 +48,43 @@ const ServerStatus = () => {
   }, []);
 
   const isOnline = serverStatus === "online";
-  const playersLabel = isOnline ? "jugadores conectados" : "servidor en mantenimiento";
 
   return (
-    <div className={`server-status-minimal ${isOnline ? "online" : "offline"}`}>
-      {/* Línea difuminada superior (sin bolita) */}
-
-
-      {/* IP · bolita estado · players */}
-      <div className="ss-row">
-        <button
-          type="button"
-          className="ss-ip-trigger"
-          onClick={copyIP}
-          title="Copiar IP del servidor"
+    <div className={`hud-status ${isOnline ? "is-online" : "is-offline"} no-tap-highlight`}>
+      <div className="hud-status__main">
+        <button 
+          className="hud-ip-btn" 
+          onClick={() => copyText(IP, setCopiedIP)}
+          title="Copiar IP Java"
         >
-          <span className="ss-ip-text">{IP}</span>
-          <Copy size={15} className="ss-ip-icon" />
+          <div className="hud-dot-wrap">
+            <div className="hud-ping"></div>
+            <div className="hud-dot"></div>
+          </div>
+          <span className="hud-ip-text">{copiedIP ? "¡IP COPIADA!" : IP}</span>
+          <Copy size={16} className={`hud-copy-icon ${copiedIP ? "copied" : ""}`} />
         </button>
 
-        <span className="ss-status-dot" aria-hidden="true" />
+        <div className="hud-divider"></div>
 
-        <span className="ss-players-label">
-          <span className="ss-players-count">
-            {isOnline ? playersOnline : "--"}
+        <div className="hud-players">
+          <span className="hud-count">{isOnline ? playersOnline : "--"}</span>
+          <span className="hud-lbl">{isOnline ? "ONLINE" : "OFFLINE"}</span>
+          <span className={`hud-delta ${showDelta ? 'is-visible' : ''} ${playerDelta > 0 ? 'is-up' : 'is-down'}`}>
+            {playerDelta > 0 ? `+${playerDelta}` : playerDelta}
           </span>
-          <span className="ss-players-text">{playersLabel}</span>
-        </span>
+        </div>
       </div>
 
-      <span className={`ss-copy-hint ${copied ? "visible" : ""}`}>
-        {copied ? "¡IP copiada al portapapeles!" : "Haz clic en la IP para copiarla"}
-      </span>
-            <div className="ss-line">
-        <span className="ss-line-segment ss-line-segment--left" />
-        <span className="ss-line-segment ss-line-segment--right" />
-      </div>
+      <button 
+        className="hud-bedrock-btn" 
+        onClick={() => copyText(BEDROCK_PORT, setCopiedPort)}
+        title="Copiar Puerto Bedrock"
+      >
+        <span className="b-label">¿BEDROCK? PUERTO:</span>
+        <span className="b-port">{copiedPort ? "¡COPIADO!" : BEDROCK_PORT}</span>
+        <Copy size={12} className={`b-copy-icon ${copiedPort ? "copied" : ""}`} />
+      </button>
     </div>
   );
 };

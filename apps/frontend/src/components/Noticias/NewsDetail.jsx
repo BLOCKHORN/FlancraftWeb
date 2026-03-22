@@ -26,22 +26,17 @@ const renderMarks = (text, marks = []) =>
   (marks || []).reduce((acc, mark) => {
     if (!mark) return acc;
     switch (mark.type) {
-      case "bold":
-        return `<strong>${acc}</strong>`;
-      case "italic":
-        return `<em>${acc}</em>`;
-      case "strike":
-        return `<s>${acc}</s>`;
-      case "code":
-        return `<code>${acc}</code>`;
+      case "bold": return `<strong>${acc}</strong>`;
+      case "italic": return `<em>${acc}</em>`;
+      case "strike": return `<s>${acc}</s>`;
+      case "code": return `<code>${acc}</code>`;
       case "link":
         if (mark.attrs?.href) {
           const href = escapeHtml(mark.attrs.href);
           return `<a href="${href}" target="_blank" rel="noopener noreferrer">${acc}</a>`;
         }
         return acc;
-      default:
-        return acc;
+      default: return acc;
     }
   }, text);
 
@@ -61,23 +56,17 @@ const renderBlockNode = (node) => {
   const content = node.content || [];
 
   switch (node.type) {
-    case "paragraph":
-      return `<p>${renderInlineNodes(content)}</p>`;
+    case "paragraph": return `<p>${renderInlineNodes(content)}</p>`;
     case "heading": {
       const level = node.attrs?.level || 2;
       const text = renderInlineNodes(content);
       return `<h${level}>${text}</h${level}>`;
     }
-    case "bulletList":
-      return `<ul>${(content || []).map((child) => renderBlockNode(child)).join("")}</ul>`;
-    case "orderedList":
-      return `<ol>${(content || []).map((child) => renderBlockNode(child)).join("")}</ol>`;
-    case "listItem":
-      return `<li>${(content || []).map((child) => renderBlockNode(child)).join("")}</li>`;
-    case "horizontalRule":
-      return "<hr />";
-    case "blockquote":
-      return `<blockquote>${(content || []).map((child) => renderBlockNode(child)).join("")}</blockquote>`;
+    case "bulletList": return `<ul>${(content || []).map((child) => renderBlockNode(child)).join("")}</ul>`;
+    case "orderedList": return `<ol>${(content || []).map((child) => renderBlockNode(child)).join("")}</ol>`;
+    case "listItem": return `<li>${(content || []).map((child) => renderBlockNode(child)).join("")}</li>`;
+    case "horizontalRule": return "<hr />";
+    case "blockquote": return `<blockquote>${(content || []).map((child) => renderBlockNode(child)).join("")}</blockquote>`;
     case "image": {
       const src = escapeHtml(node.attrs?.src || "");
       const alt = escapeHtml(node.attrs?.alt || "");
@@ -89,14 +78,10 @@ const renderBlockNode = (node) => {
       const width = node.attrs?.width || "100%";
       const height = node.attrs?.height || "400";
       const frameborder = node.attrs?.frameborder || "0";
-      const allowfullscreen =
-        node.attrs?.allowfullscreen === "true" || node.attrs?.allowfullscreen === true
-          ? " allowfullscreen"
-          : "";
+      const allowfullscreen = node.attrs?.allowfullscreen === "true" || node.attrs?.allowfullscreen === true ? " allowfullscreen" : "";
       return `<div class="nd-embed"><iframe src="${src}" width="${width}" height="${height}" frameborder="${frameborder}"${allowfullscreen}></iframe></div>`;
     }
-    default:
-      return (content || []).map((child) => renderBlockNode(child)).join("");
+    default: return (content || []).map((child) => renderBlockNode(child)).join("");
   }
 };
 
@@ -106,12 +91,7 @@ const tiptapJsonToHtml = (doc) => {
 };
 
 const stripHtml = (html = "") =>
-  String(html)
-    .replace(/<style[\s\S]*?<\/style>/gi, " ")
-    .replace(/<script[\s\S]*?<\/script>/gi, " ")
-    .replace(/<\/?[^>]+>/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
+  String(html).replace(/<style[\s\S]*?<\/style>/gi, " ").replace(/<script[\s\S]*?<\/script>/gi, " ").replace(/<\/?[^>]+>/g, " ").replace(/\s+/g, " ").trim();
 
 const extractTextFromTiptap = (node) => {
   if (!node) return "";
@@ -128,7 +108,6 @@ const calcReadingMinutes = (noticia) => {
   else if (typeof noticia?.contenido === "object" && noticia?.contenido?.type === "doc") {
     text = extractTextFromTiptap(noticia.contenido);
   }
-
   const words = text ? text.split(/\s+/).filter(Boolean).length : 0;
   return Math.max(1, Math.round(words / 220));
 };
@@ -147,11 +126,7 @@ const NewsDetail = () => {
   const shareRef = useRef(null);
   const { user } = useContext(UserContext);
 
-  const effectiveRole = useMemo(
-    () => normalizeRole(user?.rango_staff || user?.rol_admin),
-    [user]
-  );
-
+  const effectiveRole = useMemo(() => normalizeRole(user?.rango_staff || user?.rol_admin), [user]);
   const canEdit = useMemo(() => {
     if (!user?.loggedIn) return false;
     return hasMinRole(effectiveRole, "owner");
@@ -163,7 +138,6 @@ const NewsDetail = () => {
 
   useEffect(() => {
     if (!slug) return;
-
     const fetchNoticia = async () => {
       setStatus("loading");
       try {
@@ -207,7 +181,6 @@ const NewsDetail = () => {
       const max = Math.max(1, scrollHeight - clientHeight);
       setProgress(Math.min(1, Math.max(0, scrollTop / max)));
     };
-
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
@@ -215,19 +188,13 @@ const NewsDetail = () => {
 
   useEffect(() => {
     if (!shareOpen) return;
-
     const onDown = (e) => {
       if (!shareRef.current) return;
       if (!shareRef.current.contains(e.target)) setShareOpen(false);
     };
-
-    const onKey = (e) => {
-      if (e.key === "Escape") setShareOpen(false);
-    };
-
+    const onKey = (e) => { if (e.key === "Escape") setShareOpen(false); };
     window.addEventListener("mousedown", onDown);
     window.addEventListener("keydown", onKey);
-
     return () => {
       window.removeEventListener("mousedown", onDown);
       window.removeEventListener("keydown", onKey);
@@ -236,7 +203,6 @@ const NewsDetail = () => {
 
   const handleCopy = () => {
     const url = window.location.href;
-
     if (navigator?.clipboard?.writeText) {
       navigator.clipboard.writeText(url).then(() => {
         setCopiado(true);
@@ -244,7 +210,6 @@ const NewsDetail = () => {
       });
       return;
     }
-
     const input = document.createElement("input");
     input.value = url;
     document.body.appendChild(input);
@@ -262,81 +227,36 @@ const NewsDetail = () => {
 
   const handleShare = (platform) => {
     if (!noticia) return;
-
     const url = encodeURIComponent(window.location.href);
     const title = encodeURIComponent(noticia.titulo || "FlanCraft");
-
     switch (platform) {
-      case "x":
-        window.open(
-          `https://twitter.com/intent/tweet?url=${url}&text=${title}`,
-          "_blank",
-          "noopener,noreferrer"
-        );
-        break;
-      case "telegram":
-        window.open(
-          `https://t.me/share/url?url=${url}&text=${title}`,
-          "_blank",
-          "noopener,noreferrer"
-        );
-        break;
-      case "whatsapp":
-        window.open(
-          `https://api.whatsapp.com/send?text=${title}%20-%20${url}`,
-          "_blank",
-          "noopener,noreferrer"
-        );
-        break;
-      case "discord":
-        handleCopy();
-        window.open("https://discord.com/app", "_blank", "noopener,noreferrer");
-        break;
-      case "copy":
-      default:
-        handleCopy();
-        break;
+      case "x": window.open(`https://twitter.com/intent/tweet?url=${url}&text=${title}`, "_blank", "noopener,noreferrer"); break;
+      case "telegram": window.open(`https://t.me/share/url?url=${url}&text=${title}`, "_blank", "noopener,noreferrer"); break;
+      case "whatsapp": window.open(`https://api.whatsapp.com/send?text=${title}%20-%20${url}`, "_blank", "noopener,noreferrer"); break;
+      case "discord": handleCopy(); window.open("https://discord.com/app", "_blank", "noopener,noreferrer"); break;
+      case "copy": default: handleCopy(); break;
     }
-
     setShareOpen(false);
   };
 
   const contentHtml = useMemo(() => {
     if (!noticia) return "";
-
     let html = "";
     if (noticia.contenido_html) html = noticia.contenido_html;
     else if (typeof noticia.contenido === "string") html = noticia.contenido;
     else if (typeof noticia.contenido === "object" && noticia.contenido?.type === "doc") {
       html = tiptapJsonToHtml(noticia.contenido);
     }
-
     return sanitizeHtml(html);
   }, [noticia]);
 
-  const heroSrc = useMemo(
-    () => (noticia?.portada || noticia?.imagen || "").trim(),
-    [noticia]
-  );
-
-  const heroStyle = useMemo(
-    () => (heroSrc ? { "--nd-hero": `url("${heroSrc}")` } : undefined),
-    [heroSrc]
-  );
-
-  const authorDisplay = useMemo(
-    () => noticia?.autor_nombre || noticia?.usuarios?.uid || noticia?.autor || "",
-    [noticia]
-  );
-
+  const heroSrc = useMemo(() => (noticia?.portada || noticia?.imagen || "").trim(), [noticia]);
+  const heroStyle = useMemo(() => (heroSrc ? { "--nd-hero": `url("${heroSrc}")` } : undefined), [heroSrc]);
+  const authorDisplay = useMemo(() => noticia?.autor_nombre || noticia?.usuarios?.uid || noticia?.autor || "", [noticia]);
   const dateDisplay = useMemo(() => {
     if (!noticia?.fecha) return "";
     try {
-      return new Date(noticia.fecha).toLocaleDateString("es-ES", {
-        day: "2-digit",
-        month: "long",
-        year: "numeric",
-      });
+      return new Date(noticia.fecha).toLocaleDateString("es-ES", { day: "2-digit", month: "long", year: "numeric" });
     } catch {
       return "";
     }
@@ -346,7 +266,7 @@ const NewsDetail = () => {
 
   if (status === "loading") {
     return (
-      <div className="news-detail nd-loading">
+      <div className="news-detail nd-loading no-tap-highlight">
         <div className="nd-progress" style={{ transform: `scaleX(${progress})` }} />
         <section className="nd-hero nd-hero--placeholder">
           <div className="nd-hero__wrap">
@@ -368,14 +288,12 @@ const NewsDetail = () => {
 
   if (status === "notfound") {
     return (
-      <div className="news-detail nd-state">
+      <div className="news-detail nd-state no-tap-highlight">
         <main className="nd-shell">
           <article className="nd-article nd-state__card">
             <h1 className="nd-title">Noticia no encontrada</h1>
             <p className="nd-state__text">No existe o ha sido eliminada.</p>
-            <button className="nd-btn nd-btn--solid" onClick={() => navigate("/news")}>
-              Volver a noticias
-            </button>
+            <button className="nd-btn nd-btn--solid" onClick={() => navigate("/news")}>Volver a noticias</button>
           </article>
         </main>
       </div>
@@ -384,14 +302,12 @@ const NewsDetail = () => {
 
   if (status === "error") {
     return (
-      <div className="news-detail nd-state">
+      <div className="news-detail nd-state no-tap-highlight">
         <main className="nd-shell">
           <article className="nd-article nd-state__card">
             <h1 className="nd-title">Error al cargar</h1>
             <p className="nd-state__text">Ha ocurrido un problema cargando la noticia.</p>
-            <button className="nd-btn nd-btn--solid" onClick={() => navigate("/news")}>
-              Volver a noticias
-            </button>
+            <button className="nd-btn nd-btn--solid" onClick={() => navigate("/news")}>Volver a noticias</button>
           </article>
         </main>
       </div>
@@ -399,13 +315,10 @@ const NewsDetail = () => {
   }
 
   if (!noticia) return null;
-
-  const descriptionText = String(
-    noticia.descripcion || noticia.resumen || stripHtml(contentHtml || "")
-  ).slice(0, 155);
+  const descriptionText = String(noticia.descripcion || noticia.resumen || stripHtml(contentHtml || "")).slice(0, 155);
 
   return (
-    <div className="news-detail nd-loaded">
+    <div className="news-detail nd-loaded no-tap-highlight">
       <Seo
         title={`${noticia.titulo || "Noticia"} | FlanCraft`}
         description={descriptionText}
@@ -425,14 +338,8 @@ const NewsDetail = () => {
             image: heroSrc || undefined,
             url: `https://www.flancraft.com/news/${noticia.slug || slug}`,
             datePublished: noticia.fecha || noticia.created_at || undefined,
-            author: {
-              "@type": "Organization",
-              name: "FlanCraft",
-            },
-            publisher: {
-              "@type": "Organization",
-              name: "FlanCraft",
-            },
+            author: { "@type": "Organization", name: "FlanCraft" },
+            publisher: { "@type": "Organization", name: "FlanCraft" },
           },
         ]}
       />
@@ -445,13 +352,10 @@ const NewsDetail = () => {
             <button className="nd-backchip" onClick={() => navigate("/news")} type="button">
               <span className="nd-backchip__icon" aria-hidden="true">
                 <svg viewBox="0 0 20 20" width="14" height="14" focusable="false">
-                  <path
-                    d="M12.8 4.5a1 1 0 0 1 0 1.4L9.7 9l3.1 3.1a1 1 0 1 1-1.4 1.4l-3.8-3.8a1 1 0 0 1 0-1.4l3.8-3.8a1 1 0 0 1 1.4 0Z"
-                    fill="currentColor"
-                  />
+                  <path d="M12.8 4.5a1 1 0 0 1 0 1.4L9.7 9l3.1 3.1a1 1 0 1 1-1.4 1.4l-3.8-3.8a1 1 0 0 1 0-1.4l3.8-3.8a1 1 0 0 1 1.4 0Z" fill="currentColor" />
                 </svg>
               </span>
-              <span>Noticias</span>
+              <span>VOLVER A NOTICIAS</span>
             </button>
           </div>
 
@@ -481,14 +385,11 @@ const NewsDetail = () => {
                 <button className="nd-btn nd-btn--ghost" type="button" onClick={irAEditar}>
                   <span className="nd-btn__icon" aria-hidden="true">
                     <svg viewBox="0 0 16 16" width="14" height="14" focusable="false">
-                      <path
-                        d="M11.3 1.5a1.4 1.4 0 0 1 2 2L7 9.8 4 10.5l.7-3L11.3 1.5Z"
-                        fill="currentColor"
-                      />
+                      <path d="M11.3 1.5a1.4 1.4 0 0 1 2 2L7 9.8 4 10.5l.7-3L11.3 1.5Z" fill="currentColor" />
                       <path d="M3 13.5h9v1H3z" fill="currentColor" />
                     </svg>
                   </span>
-                  <span>Editar</span>
+                  <span>EDITAR</span>
                 </button>
               )}
 
@@ -502,49 +403,32 @@ const NewsDetail = () => {
                 >
                   <span className="nd-btn__icon" aria-hidden="true">
                     <svg viewBox="0 0 20 20" width="14" height="14" focusable="false">
-                      <path
-                        d="M13.8 4a2 2 0 1 1-1.58 3.23L8.7 9a2 2 0 0 1-.02 2l3.52 1.77a2 2 0 1 1-.44 1.04L8.2 12a2 2 0 1 1 0-4l3.56-1.8A2 2 0 0 1 13.8 4Z"
-                        fill="currentColor"
-                      />
+                      <path d="M13.8 4a2 2 0 1 1-1.58 3.23L8.7 9a2 2 0 0 1-.02 2l3.52 1.77a2 2 0 1 1-.44 1.04L8.2 12a2 2 0 1 1 0-4l3.56-1.8A2 2 0 0 1 13.8 4Z" fill="currentColor" />
                     </svg>
                   </span>
-                  <span>Compartir</span>
+                  <span>COMPARTIR</span>
                 </button>
 
                 {shareOpen && (
                   <div className="nd-shareMenu" role="menu">
                     <button type="button" className="nd-shareItem" onClick={() => handleShare("x")} role="menuitem">
-                      <span className="nd-shareItem__icon x">
-                        <i className="fa-brands fa-x-twitter" aria-hidden="true" />
-                      </span>
-                      <span>X</span>
+                      <span className="nd-shareItem__icon x"><i className="fa-brands fa-x-twitter" aria-hidden="true" /></span>
+                      <span>X (Twitter)</span>
                     </button>
-
                     <button type="button" className="nd-shareItem" onClick={() => handleShare("discord")} role="menuitem">
-                      <span className="nd-shareItem__icon discord">
-                        <i className="fa-brands fa-discord" aria-hidden="true" />
-                      </span>
+                      <span className="nd-shareItem__icon discord"><i className="fa-brands fa-discord" aria-hidden="true" /></span>
                       <span>Discord</span>
                     </button>
-
                     <button type="button" className="nd-shareItem" onClick={() => handleShare("telegram")} role="menuitem">
-                      <span className="nd-shareItem__icon telegram">
-                        <i className="fa-brands fa-telegram" aria-hidden="true" />
-                      </span>
+                      <span className="nd-shareItem__icon telegram"><i className="fa-brands fa-telegram" aria-hidden="true" /></span>
                       <span>Telegram</span>
                     </button>
-
                     <button type="button" className="nd-shareItem" onClick={() => handleShare("whatsapp")} role="menuitem">
-                      <span className="nd-shareItem__icon whatsapp">
-                        <i className="fa-brands fa-whatsapp" aria-hidden="true" />
-                      </span>
+                      <span className="nd-shareItem__icon whatsapp"><i className="fa-brands fa-whatsapp" aria-hidden="true" /></span>
                       <span>WhatsApp</span>
                     </button>
-
                     <button type="button" className="nd-shareItem" onClick={() => handleShare("copy")} role="menuitem">
-                      <span className="nd-shareItem__icon link">
-                        <i className="fa-solid fa-link" aria-hidden="true" />
-                      </span>
+                      <span className="nd-shareItem__icon link"><i className="fa-solid fa-link" aria-hidden="true" /></span>
                       <span>Copiar enlace</span>
                     </button>
                   </div>
@@ -554,14 +438,12 @@ const NewsDetail = () => {
           </div>
 
           <h1 className="nd-title">{noticia.titulo}</h1>
-
           <div className="nd-divider" />
-
           <div className="nd-content" dangerouslySetInnerHTML={{ __html: contentHtml }} />
 
           <div className="nd-footer">
-            <button className="nd-backlink" onClick={() => navigate("/news")} type="button">
-              Volver a noticias
+            <button className="nd-btn nd-btn--solid" onClick={() => navigate("/news")} type="button">
+              VOLVER A NOTICIAS
             </button>
           </div>
         </article>
@@ -569,10 +451,8 @@ const NewsDetail = () => {
         {relacionadas.length > 0 && (
           <section className="nd-related">
             <div className="nd-related__head">
-              <h3 className="nd-related__title">Más noticias</h3>
-              <button className="nd-related__all" onClick={() => navigate("/news")} type="button">
-                Ver todas
-              </button>
+              <h3 className="nd-related__title">MÁS NOTICIAS</h3>
+              <button className="nd-related__all" onClick={() => navigate("/news")} type="button">VER TODAS</button>
             </div>
 
             <div className="nd-related__grid">
@@ -584,21 +464,12 @@ const NewsDetail = () => {
                   onClick={() => navigate(`/news/${n.slug || n.id}`)}
                 >
                   <div className="nd-card__media">
-                    <img
-                      src={n.portada || n.imagen || "/assets/placeholder.png"}
-                      alt={n.titulo}
-                      loading="lazy"
-                    />
+                    <img src={n.portada || n.imagen || "/assets/placeholder.png"} alt={n.titulo} loading="lazy" />
                   </div>
                   <div className="nd-card__body">
                     <div className="nd-card__title">{n.titulo}</div>
                     <div className="nd-card__meta">
-                      {n.fecha
-                        ? new Date(n.fecha).toLocaleDateString("es-ES", {
-                            day: "2-digit",
-                            month: "short",
-                          })
-                        : ""}
+                      {n.fecha ? new Date(n.fecha).toLocaleDateString("es-ES", { day: "2-digit", month: "short" }) : ""}
                     </div>
                   </div>
                 </button>
@@ -612,13 +483,10 @@ const NewsDetail = () => {
         <div className="nd-toast" role="status" aria-live="polite">
           <span className="nd-toast__icon" aria-hidden="true">
             <svg viewBox="0 0 20 20" width="16" height="16" focusable="false">
-              <path
-                d="M8.2 13.2 4.8 9.8a1 1 0 1 0-1.4 1.4l4.1 4.1a1 1 0 0 0 1.4 0l8-8a1 1 0 1 0-1.4-1.4l-7.3 7.2Z"
-                fill="currentColor"
-              />
+              <path d="M8.2 13.2 4.8 9.8a1 1 0 1 0-1.4 1.4l4.1 4.1a1 1 0 0 0 1.4 0l8-8a1 1 0 1 0-1.4-1.4l-7.3 7.2Z" fill="currentColor" />
             </svg>
           </span>
-          <span>Enlace copiado</span>
+          <span>¡ENLACE COPIADO!</span>
         </div>
       )}
     </div>

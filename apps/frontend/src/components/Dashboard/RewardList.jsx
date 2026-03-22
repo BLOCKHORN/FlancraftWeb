@@ -105,7 +105,7 @@ export default function RewardList({
 
   useLayoutEffect(() => {
     recalcularBarra();
-  }, [recalcularBarra, reclamadas]);
+  }, [recalcularBarra, reclamadas, xpData]);
 
   useEffect(() => {
     const onResize = () => recalcularBarra();
@@ -157,7 +157,6 @@ export default function RewardList({
       } finally {
         if (!cancelled) {
           setLoading(false);
-          requestAnimationFrame(() => recalcularBarra());
         }
       }
     })();
@@ -165,7 +164,7 @@ export default function RewardList({
     return () => {
       cancelled = true;
     };
-  }, [user?.uuid, recalcularBarra]);
+  }, [user?.uuid]);
 
   const readNumberFromRef = (ref) => {
     if (!ref?.current) return 0;
@@ -196,7 +195,7 @@ export default function RewardList({
     for (let i = 0; i < maxMonedas; i++) {
       const moneda = document.createElement("img");
       moneda.src = COIN_ICON;
-      moneda.className = "eco-fly";
+      moneda.className = "eco-fly mc-pixelated";
       document.body.appendChild(moneda);
 
       const startX = startRect.left + startRect.width / 2;
@@ -321,11 +320,11 @@ export default function RewardList({
   };
 
   return (
-    <section className="reward-pass">
+    <section className="reward-pass no-tap-highlight">
       <div className="reward-passHeader">
-        <h2 className="titulo-reward">Camino al Prestigio</h2>
+        <h2 className="titulo-reward">CAMINO AL PRESTIGIO</h2>
         <div className="recompensas-subtitulo">
-          Completa aventuras, sube de nivel y consigue COINS en tu camino al Prestigio.
+          COMPLETA AVENTURAS, SUBE DE NIVEL Y CONSIGUE COINS.
         </div>
       </div>
 
@@ -335,13 +334,17 @@ export default function RewardList({
           className="scroll-button scroll-left"
           onClick={() => scrollBy(-1)}
           aria-label="Recompensas anteriores"
-        />
+        >
+          {"<"}
+        </button>
         <button
           type="button"
           className="scroll-button scroll-right"
           onClick={() => scrollBy(1)}
           aria-label="Recompensas siguientes"
-        />
+        >
+          {">"}
+        </button>
 
         <div className="fade-left" />
         <div className="fade-right" />
@@ -380,31 +383,30 @@ export default function RewardList({
                       .join(" ")}
                   >
                     <div className="reward-icon">
-                      {estadoNodo !== "pendiente" ? <img src={COIN_ICON} alt="COIN" /> : <Lock size={20} />}
+                      {estadoNodo !== "pendiente" ? (
+                        <img src={COIN_ICON} alt="COIN" className="mc-pixelated drop-coin" />
+                      ) : (
+                        <Lock size={24} />
+                      )}
                     </div>
 
                     <div className="reward-desc">{r.descripcion}</div>
-                    <div className="reward-nivel">Nivel {r.nivel}</div>
+                    <div className="reward-nivel">NIVEL {r.nivel}</div>
 
                     {puedeReclamar && (
                       <button
                         type="button"
                         onClick={() => handleReclamar(r.nivel)}
-                        className="tsf-btn tsf-btn--gold reclamar-btn"
+                        className="mc-btn mc-btn--gold reclamar-btn"
                         disabled={!!claimingNivel}
                       >
-                        <span className="tsf-btnFace">
-                          <span className="tsf-btnLabel">
-                            {isClaimingThis ? "Reclamando..." : "Reclamar"}
-                          </span>
-                        </span>
-                        <span className="tsf-btnDepth" />
+                        {isClaimingThis ? "..." : "RECLAMAR"}
                       </button>
                     )}
 
                     {yaReclamada && (
                       <div className="claimed-status">
-                        <CheckCircle size={14} /> Reclamada
+                        <CheckCircle size={16} /> RECLAMADA
                       </div>
                     )}
                   </div>

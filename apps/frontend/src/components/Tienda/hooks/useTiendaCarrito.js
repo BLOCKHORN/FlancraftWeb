@@ -1,6 +1,6 @@
-// apps/frontend/src/components/Tienda/hooks/useTiendaCarrito.js
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { normalizeProductForCart } from "../utils/tiendaHelpers";
+import { apiUrl } from "../../../lib/env";
 
 function clampInt(n, min, max) {
   const x = Math.trunc(Number(n));
@@ -40,20 +40,9 @@ function normalizeToCartRow(input, qty = 1) {
   const priceNum = Number(normalized.price);
   const price = Number.isFinite(priceNum) ? priceNum : 0;
 
-  const q =
-    normalized.quantity ??
-    normalized.cantidad ??
-    normalized.qty ??
-    normalized.cant ??
-    qty;
+  const q = normalized.quantity ?? normalized.cantidad ?? normalized.qty ?? normalized.cant ?? qty;
 
-  const image =
-    normalized.image ??
-    normalized.image_url ??
-    normalized.imageUrl ??
-    normalized.img ??
-    normalized.icon ??
-    null;
+  const image = normalized.image ?? normalized.image_url ?? normalized.imageUrl ?? normalized.img ?? normalized.icon ?? null;
 
   return {
     id: idNum,
@@ -66,17 +55,14 @@ function normalizeToCartRow(input, qty = 1) {
 
 function mergeCarts(base = [], extra = []) {
   const map = new Map();
-
   for (const it of base) {
     const row = normalizeToCartRow(it, it?.quantity ?? it?.cantidad ?? 1);
     if (!row) continue;
     map.set(String(row.id), row);
   }
-
   for (const it of extra) {
     const row = normalizeToCartRow(it, it?.quantity ?? it?.cantidad ?? 1);
     if (!row) continue;
-
     const key = String(row.id);
     if (!map.has(key)) {
       map.set(key, row);
@@ -88,7 +74,6 @@ function mergeCarts(base = [], extra = []) {
       });
     }
   }
-
   return Array.from(map.values());
 }
 
@@ -99,19 +84,16 @@ export default function useTiendaCarrito(nombreJugador) {
   }, [nombreJugador]);
 
   const prevKeyRef = useRef(storageKey);
-
   const [carrito, setCarrito] = useState([]);
   const [hidratado, setHidratado] = useState(false);
 
   useEffect(() => {
     setHidratado(false);
-
     const prevKey = prevKeyRef.current;
     const nextKey = storageKey;
     prevKeyRef.current = nextKey;
 
     const nextCart = readCart(nextKey);
-
     const prevWasAnon = String(prevKey).includes("carrito-anonimo");
     const nextIsAnon = String(nextKey).includes("carrito-anonimo");
 
@@ -121,14 +103,11 @@ export default function useTiendaCarrito(nombreJugador) {
         const merged = mergeCarts(nextCart, anonCart);
         setCarrito(merged);
         writeCart(nextKey, merged);
-        try {
-          localStorage.removeItem(prevKey);
-        } catch {}
+        try { localStorage.removeItem(prevKey); } catch {}
         setHidratado(true);
         return;
       }
     }
-
     setCarrito(mergeCarts(nextCart, []));
     setHidratado(true);
   }, [storageKey]);
@@ -138,7 +117,8 @@ export default function useTiendaCarrito(nombreJugador) {
     writeCart(storageKey, carrito);
   }, [carrito, storageKey, hidratado]);
 
-  const agregar = (producto, qty = 1) => {
+  // OPTIMIZACIÓN: Usar useCallback para que las funciones no cambien en cada render
+  const agregar = useCallback((producto, qty = 1) => {
     const add = clampInt(qty, 1, 999);
     const row = normalizeToCartRow(producto, add);
     if (!row?.id) return;
@@ -153,54 +133,47 @@ export default function useTiendaCarrito(nombreJugador) {
       }
       return [...prev, { ...row, quantity: add }];
     });
-  };
+  }, []);
 
-  const toggleProducto = (producto) => {
+  const toggleProducto = useCallback((producto) => {
     const row = normalizeToCartRow(producto, 1);
     if (!row?.id) return;
-
     setCarrito((prev) => {
       const idx = prev.findIndex((p) => String(p?.id) === String(row.id));
       if (idx >= 0) return prev.filter((p) => String(p?.id) !== String(row.id));
       return [...prev, { ...row, quantity: 1 }];
     });
-  };
+  }, []);
 
-  const eliminar = (id) => {
+  const eliminar = useCallback((id) => {
     setCarrito((prev) => prev.filter((p) => String(p?.id) !== String(id)));
-  };
+  }, []);
 
-  const vaciar = () => setCarrito([]);
+  const vaciar = useCallback(() => setCarrito([]), []);
 
-  const setCantidad = (id, qty, itemOptional) => {
+  const setCantidad = useCallback((id, qty, itemOptional) => {
     const q = clampInt(qty, 0, 999);
-
     setCarrito((prev) => {
       const idx = prev.findIndex((p) => String(p?.id) === String(id));
-
       if (q <= 0) {
         if (idx < 0) return prev;
         return prev.filter((p) => String(p?.id) !== String(id));
       }
-
       if (idx < 0) {
         const row = normalizeToCartRow(itemOptional, q);
         if (!row?.id) return prev;
         return [...prev, { ...row, quantity: clampInt(q, 1, 999) }];
       }
-
       const next = [...prev];
       next[idx] = { ...next[idx], quantity: clampInt(q, 1, 999) };
       return next;
     });
-  };
+  }, []);
 
-  const cambiarCantidad = (id, delta, itemOptional) => {
+  const cambiarCantidad = useCallback((id, delta, itemOptional) => {
     const d = clampInt(delta, -999, 999);
-
     setCarrito((prev) => {
       const idx = prev.findIndex((p) => String(p?.id) === String(id));
-
       if (idx < 0) {
         if (d > 0) {
           const row = normalizeToCartRow(itemOptional, d);
@@ -209,19 +182,14 @@ export default function useTiendaCarrito(nombreJugador) {
         }
         return prev;
       }
-
       const cur = clampInt(prev[idx]?.quantity || 1, 1, 999);
       const nextQty = clampInt(cur + d, 0, 999);
-
-      if (nextQty <= 0) {
-        return prev.filter((p) => String(p?.id) !== String(id));
-      }
-
+      if (nextQty <= 0) return prev.filter((p) => String(p?.id) !== String(id));
       const next = [...prev];
       next[idx] = { ...next[idx], quantity: clampInt(nextQty, 1, 999) };
       return next;
     });
-  };
+  }, []);
 
   const total = useMemo(() => {
     return carrito.reduce((acc, it) => {
@@ -230,6 +198,26 @@ export default function useTiendaCarrito(nombreJugador) {
       return acc + price * qty;
     }, 0);
   }, [carrito]);
+
+  // EFECTO WELCOME PACK: Ahora es 100% estable gracias a useCallback
+  useEffect(() => {
+    const playerName = String(nombreJugador || "").trim();
+    if (!hidratado || !playerName || playerName.toLowerCase() === "anonimo") return;
+
+    const pending = localStorage.getItem("fc_pending_welcome_pack");
+    if (pending === "true") {
+      localStorage.removeItem("fc_pending_welcome_pack");
+
+      fetch(apiUrl(`/api/tebex/bienvenida/status?jugador=${encodeURIComponent(playerName)}`))
+        .then((res) => res.json())
+        .then((data) => {
+          if (data?.shouldShow && data?.pack) {
+            agregar(data.pack, 1);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [hidratado, nombreJugador, agregar]);
 
   return {
     carrito,

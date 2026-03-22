@@ -1,59 +1,54 @@
-// _variables.scss ✅ limpio
-$color-bg: #fdf6dd;
-$color-acento: #bda871;
-$color-texto: #3a2d18;
-$color-pixel-border: #5e471b;
-$font-minecraft: 'VT323', monospace;
-$font-epic: 'IM Fell English SC', serif;
-$font-epic1: 'Cinzel Decorative', serif;
+/* ==========================================================================
+   FLANCRAFT NEW BRANDING - MINECRAFT UI VARIABLES
+   ========================================================================== */
 
-// Flancraft navbar vars
-$color-oro: #ffd44d;
-$color-oro-brillo: #ffec94;
-$color-hover-glow: rgba(255, 215, 85, 0.5);
-$color-shadow: rgba(0, 0, 0, 0.4);
-$color-borde-oro: #f7c14d;
-$color-bg-marron: #2b241d;
-$color-bg-marron-claro: #403025;
-$blur-bg: rgba(27, 24, 21, 0.92);
-$glow-gold: 0 0 12px rgba(255, 215, 85, 0.4);
-$hover-gold: linear-gradient(to bottom, #6b4a2e, #3e2a1a);
-$radius: 6px;
+// 🧾 Tipografías
+$mc-font: 'MinecraftBold', 'MinecraftSeven', 'Montserrat', sans-serif;
 
+// 🎨 Paleta Principal
+$color-brand: #5EE034;       // Verde principal (botones, estados activos, barras de progreso)
+$color-brand-hover: #7cf056; // Verde claro (hover)
+$color-oro: #fbbf24;         // Dorado (Tienda, rango básico, acentos)
+$color-oro-hover: #f59e0b;   // Dorado oscuro (hover de tienda)
+$color-danger: #ef4444;      // Rojo (Cerrar sesión, servidor offline)
 
-// 🎨 Colores
-$golden-border: #c4a651;
-$gold-deep: #a67c00;
-$gold-light: #f5e9c1;
+// 🎨 Colores de Fondo / Interfaz Oscura
+$color-bg-dark: #0a0c14;     // Fondo base de la web
+$color-surface: #151923;     // Paneles principales (dropdown, contenedor general)
+$color-surface-light: #2b2e42; // Botones y elementos interactivos
+$color-surface-hover: #3b3e4f; // Hover de elementos interactivos
+$color-wallet-bg: #11151d;   // Fondo del monedero
 
-$text-light: #f0eada;
-$dark-bg: #1e1206;
+// 🎨 Textos
+$color-text-main: #ffffff;     // Texto principal
+$color-text-muted: #94a3b8;    // Texto secundario (etiquetas, descripciones, offline)
+$color-text-disabled: #64748b; // Texto inactivo / Tags
 
-// 🧾 Tipografía
-$font-main: 'IM Fell English SC', serif;
+// 🎨 Rangos
+$color-rango-basic: $color-oro;
+$color-rango-nova: #8fe3ff;
+$color-rango-alpha: #c8a6ff;
+$color-rango-inmortal: #ff5555;
 
-// 📐 Medidas y espacio (puedes ir sumando según usas)
-$section-padding: 4rem;
-$border-radius-default: 4px;
+// 📐 Medidas, Espacios y Bordes
+$border-thickness: 4px;      // Grosor estándar de los bordes "bloque"
+$border-color: #000000;      // Color de los bordes
+$section-padding: 4rem;      // Espaciado estándar de secciones
 
-// ✨ Sombras
-$shadow-golden: 0 0 20px rgba(255, 215, 0, 0.2);
-$shadow-hover-eko: 0 0 20px rgba(255, 230, 130, 0.8);
-// 🎨 COLORES COMPLEMENTARIOS QUE SE USAN PERO NO ESTÁN DECLARADOS
-$color-disabled-bg: #444;       // Para botones inactivos
-$color-disabled-text: #bbb;     // Texto de botones desactivados
-$color-ritual-progress: #d8c288; // Color del contador de viñeta
-$color-description: #fefae0;    // Texto principal del lore
-$color-subtitle: #eee;          // Subtítulos debajo del título principal
-$color-badge-text: #111;        // Texto interior de la badge
+// ✨ Sombras (Efecto Inset 3D Minecraft)
+// Sombras para botones y bloques base
+$shadow-pixel-inset: inset -3px -3px 0 rgba(0, 0, 0, 0.25), inset 3px 3px 0 rgba(255, 255, 255, 0.4);
+$shadow-pixel-active: inset 3px 3px 0 rgba(0, 0, 0, 0.25), inset -3px -3px 0 rgba(255, 255, 255, 0.4);
 
-// 🔮 ANIMACIONES / LUCES (ya implícitos, pero no declarados)
-$glow-eko-light: #00f0ff;       // Color de energía EKO
-$glow-eko-soft: #66f0ff;        // Alternativa para degradado suave
+// Sombras para contenedores oscuros (Dropdown, Stats)
+$shadow-panel-inset: inset -4px -4px 0 #0a0c14, inset 4px 4px 0 #2a3143;
 
-// 🎨 BORDES / DECORACIONES
-$thumbnail-border: rgba(255, 230, 120, 0.3); // Para ítem centrado en el carrusel
-$thumbnail-shadow: rgba(255, 255, 200, 0.4); // Glow badge
+// Sombras de texto pixelado
+$shadow-text-pixel: 2px 2px 0 #000;
+$shadow-text-pixel-soft: 1px 1px 0 #000;
 
+// 📱 Breakpoints
+$break-mobile-max: 600px;
 $break-tablet-min: 601px;
 $break-tablet-max: 1024px;
+$break-desktop-min: 1025px;

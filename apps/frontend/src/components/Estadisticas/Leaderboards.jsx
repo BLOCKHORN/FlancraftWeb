@@ -3,11 +3,9 @@ import { useNavigate } from "react-router-dom";
 import "./Leaderboards.scss";
 import Seo from "../SEO/Seo";
 import { buildBreadcrumbJsonLd, buildCanonical } from "../../lib/seo/siteSeo";
-
 import useUsuariosVinculados from "../../components/Estadisticas/hooks/useUsuariosVinculados";
 import { getLeaderboards } from "../../components/Estadisticas/api/getLeaderboards";
-
-import { isNombreValido, safeNum, getPlatform, formatearTiempo, formatInt } from "../../components/Estadisticas/leaderboards.utils";
+import { formatInt } from "../../components/Estadisticas/leaderboards.utils";
 import {
   SERVER_ID,
   LIMIT,
@@ -18,25 +16,15 @@ import {
   ICON_POINTS,
   ICON_TIME,
   ICON_WALLET,
-  PLATFORM_ICON,
   RANGO_LOCAL,
-  RANGO_REMOTE,
   POINTS_GUIDE,
   hideImg,
   fallbackRankImg,
-  cleanPlayerName,
-  looksLikeBedrockName,
-  pickWallet,
-  normalizePlatform,
-  normalizeRango,
-  getMetaRango,
-  fetchPlayerSkinUrl,
-  buildHeadSources,
   buildFxPayload,
   normalizeLeaderboardItem,
   decoratePlayer,
-PlayerIdentity,
-HeadLabel,
+  PlayerIdentity,
+  HeadLabel,
 } from "./leaderboards.shared";
 
 export default function Leaderboards() {
@@ -83,9 +71,10 @@ export default function Leaderboards() {
       setExitFx(fx);
       setIsLeaving(true);
 
+      // Una transición rápida y directa
       leaveTimerRef.current = setTimeout(() => {
         navigate(`/perfil/${player.nombre_minecraft}`, { state: { fx } });
-      }, EXIT_DELAY_MS);
+      }, EXIT_DELAY_MS - 100); 
     },
     [isLeaving, navigate, usuariosVinculados]
   );
@@ -190,6 +179,8 @@ export default function Leaderboards() {
       if (isLeaving) return;
       const safePage = Math.max(1, Math.min(paginasTotales, Number(nextPage || 1)));
       setPage(safePage);
+      // Feedback inmediato: volver arriba al cambiar de página
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     },
     [isLeaving, paginasTotales]
   );
@@ -198,7 +189,7 @@ export default function Leaderboards() {
     setShowGuide((prev) => !prev);
   }, []);
 
-  const wrapClass = `lb-page${isLeaving ? " lb-is-leaving" : ""}`;
+  const wrapClass = `lb-page no-tap-highlight ${isLeaving ? "lb-is-leaving" : ""}`;
 
   return (
     <>
@@ -211,354 +202,326 @@ export default function Leaderboards() {
           { name: "Leaderboards", item: buildCanonical("/leaderboards") },
         ])}
       />
-    <section className={wrapClass}>
-      {isLeaving && exitFx ? (
-        <div className="lb-exitOverlay" aria-hidden="true">
-          <div className="lb-exitFog" />
-          <div className="lb-exitCard">
-            <div className="lb-exitTop">
-              <img
-                className="lb-exitSkin"
-                src={exitFx.skin}
-                alt=""
-                draggable="false"
-                onError={hideImg}
-                style={{ objectFit: "cover", objectPosition: "center top" }}
-              />
-              <div className="lb-exitInfo">
-                <div className="lb-exitName">{exitFx.nombre}</div>
-                <div className="lb-exitBadges">
-                  {exitFx.platKey === "java" || exitFx.platKey === "bedrock" ? (
-                    <span
-                      className={`lb-platformPill lb-platformPill--${exitFx.platKey}`}
-                    >
-                      {exitFx.platKey === "bedrock" ? "BEDROCK" : "JAVA"}
-                    </span>
-                  ) : null}
 
-                  {exitFx.rangoKey ? (
-                    <span className={`lb-exitRango lb-exitRango--${exitFx.rangoKey}`}>
-                      <img
-                        className="lb-rangoIcon"
-                        src={RANGO_LOCAL[exitFx.rangoKey]}
-                        alt=""
-                        loading="eager"
-                        onError={fallbackRankImg(exitFx.rangoKey)}
-                      />
-                    </span>
-                  ) : null}
-                </div>
-              </div>
-            </div>
+      <section className={wrapClass}>
+        <div className="lb-backgroundWrap" aria-hidden="true" />
 
-            <div className="lb-exitBar">
-              <div className="lb-exitBarFill" />
-              <div className="lb-exitBarSheen" />
-            </div>
+        {isLeaving && exitFx ? (
+          <div className="lb-exitOverlay" aria-hidden="true">
+            <div className="lb-exitFog" />
+            <div className="lb-exitCard">
+              <div className="lb-exitTop">
+                <img
+                  className="lb-exitSkin"
+                  src={exitFx.skin}
+                  alt=""
+                  draggable="false"
+                  onError={hideImg}
+                  style={{ objectFit: "cover", objectPosition: "center top" }}
+                />
+                <div className="lb-exitInfo">
+                  <div className="lb-exitName">{exitFx.nombre}</div>
+                  <div className="lb-exitBadges">
+                    {exitFx.platKey === "java" || exitFx.platKey === "bedrock" ? (
+                      <span className={`lb-platformPill lb-platformPill--${exitFx.platKey}`}>
+                        {exitFx.platKey === "bedrock" ? "BEDROCK" : "JAVA"}
+                      </span>
+                    ) : null}
 
-            <div className="lb-exitHint">Abriendo perfil…</div>
-          </div>
-        </div>
-      ) : null}
-
-      <div className="lb-shell">
-        <div className="lb-frame">
-          <section className="lb-content">
-            <div className={`lb-tableCard ${isLeaving ? "is-leaving" : ""}`}>
-              <div className="lb-cardHero">
-                <div className="lb-cardHeroTitle">RANKINGS</div>
-                <div className="lb-cardHeroSub">
-                  Ranking global de Survival por puntos. Pulsa un jugador para ver su perfil.
-                </div>
-              </div>
-
-              <div className="lb-toolbar">
-                <div className="lb-search">
-                  <input
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    placeholder="Buscar jugador..."
-                    autoComplete="off"
-                    disabled={isLeaving}
-                  />
-                </div>
-
-                <div className="lb-toolbarRight">
-                  <button
-                    type="button"
-                    className={`lb-helpToggle ${showGuide ? "is-open" : ""}`}
-                    onClick={toggleGuide}
-                    aria-expanded={showGuide}
-                    disabled={isLeaving}
-                  >
-                    {showGuide ? "Ocultar cómo subir puntos" : "¿Cómo se suben los puntos?"}
-                  </button>
-
-                  <button
-                    type="button"
-                    className={`lb-toggle ${soloVinculados ? "is-on" : ""}`}
-                    onClick={() => setSoloVinculados((prev) => !prev)}
-                    disabled={isLeaving}
-                  >
-                    Solo vinculados
-                  </button>
-                </div>
-              </div>
-
-              <div className={`lb-guide ${showGuide ? "is-open" : ""}`}>
-                <div className="lb-guideInner">
-                  <div className="lb-guideBox">
-                    <div className="lb-guideHeader">
-                      <div className="lb-guideTitle">Cómo subir en el ranking</div>
-                      <div className="lb-guideSub">
-                        Haz más de una cosa bien. El top no es para el que farmea una sola estadística.
-                      </div>
-                    </div>
-
-                    <div className="lb-guideGrid">
-                      {POINTS_GUIDE.map((item) => (
-                        <div key={item.step} className="lb-guideItem">
-                          <span className="lb-guideStep">{item.step}</span>
-                          <div className="lb-guideItemTitle">{item.title}</div>
-                          <div className="lb-guideItemText">{item.text}</div>
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="lb-guideFooter">
-                      Cuanto más completo seas como jugador, más fácil será acercarte al top.
-                    </div>
+                    {exitFx.rangoKey ? (
+                      <span className={`lb-exitRango lb-exitRango--${exitFx.rangoKey}`}>
+                        <img
+                          className="lb-rangoIcon"
+                          src={RANGO_LOCAL[exitFx.rangoKey]}
+                          alt=""
+                          loading="eager"
+                          onError={fallbackRankImg(exitFx.rangoKey)}
+                        />
+                      </span>
+                    ) : null}
                   </div>
                 </div>
               </div>
 
-              {errorTabla ? <div className="lb-error">{errorTabla}</div> : null}
+              <div className="lb-exitBar">
+                <div className="lb-exitBarFill" />
+                <div className="lb-exitBarSheen" />
+              </div>
 
-              <div className="lb-tableWrap">
-                <table className="lb-table">
-                  <colgroup>
-                    <col style={{ width: 76 }} />
-                    <col />
-                    <col style={{ width: 170 }} />
-                    <col style={{ width: 170 }} />
-                    <col style={{ width: 150 }} />
-                  </colgroup>
+              <div className="lb-exitHint">ENTRANDO AL PERFIL...</div>
+            </div>
+          </div>
+        ) : null}
 
-                  <thead>
-                    <tr>
-                      <th className="lb-colRank lb-center">#TOP</th>
-                      <th>Jugador</th>
-                      <th className="lb-center">
-                        <HeadLabel icon={ICON_POINTS}>Points</HeadLabel>
-                      </th>
-                      <th className="lb-center">
-                        <HeadLabel icon={ICON_TIME}>Horas</HeadLabel>
-                      </th>
-                      <th className="lb-center">
-                        <HeadLabel icon={ICON_WALLET}>Wallet</HeadLabel>
-                      </th>
-                    </tr>
-                  </thead>
+        <div className="lb-shell">
+          <div className="lb-frame">
+            <section className="lb-content">
+              <div className={`lb-tableCard ${isLeaving ? "is-leaving" : ""}`}>
+                
+                <div className="lb-cardHero">
+                  <div className="lb-cardHeroTitle">RANKING GLOBAL</div>
+                  <div className="lb-cardHeroSub">
+                    DOMINA EL SURVIVAL. TOCA UN JUGADOR PARA VER SUS STATS.
+                  </div>
+                </div>
 
-                  <tbody>
-                    {loading ? (
-                      SKELETON_ITEMS.map((_, i) => (
-                        <tr key={`sk-${i}`}>
-                          <td className="lb-rankCell lb-center">
-                            <span className="lb-rankBadge">—</span>
-                          </td>
-                          <td className="lb-playerCell">Cargando...</td>
-                          <td className="lb-center">—</td>
-                          <td className="lb-center">—</td>
-                          <td className="lb-center">—</td>
-                        </tr>
-                      ))
-                    ) : pageRows.length ? (
-                      pageRows.map((player) => {
-                        const rank = Number(player?.global_rank || 0) || 0;
-                        const topClass =
-                          rank === 1
-                            ? "lb-rowTop1"
-                            : rank === 2
-                            ? "lb-rowTop2"
-                            : rank === 3
-                            ? "lb-rowTop3"
+                <div className="lb-toolbar-sticky-wrapper">
+                  <div className="lb-toolbar">
+                    <div className="lb-search">
+                      <input
+                        value={query}
+                        onChange={(e) => setQuery(e.target.value)}
+                        placeholder="Buscar jugador..."
+                        autoComplete="off"
+                        disabled={isLeaving}
+                        className="no-tap-highlight"
+                      />
+                    </div>
+
+                    <div className="lb-toolbarRight">
+                      <button
+                        type="button"
+                        className={`lb-helpToggle no-tap-highlight ${showGuide ? "is-open" : ""}`}
+                        onClick={toggleGuide}
+                        aria-expanded={showGuide}
+                        disabled={isLeaving}
+                      >
+                        {showGuide ? "▲ Ocultar info" : "▼ ¿Cómo subo?"}
+                      </button>
+
+                      <button
+                        type="button"
+                        className={`lb-toggle no-tap-highlight ${soloVinculados ? "is-on" : ""}`}
+                        onClick={() => setSoloVinculados((prev) => !prev)}
+                        disabled={isLeaving}
+                      >
+                        {soloVinculados ? "★ Solo Vinculados" : "☆ Todos"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className={`lb-guide ${showGuide ? "is-open" : ""}`}>
+                  <div className="lb-guideInner">
+                    <div className="lb-guideBox">
+                      <div className="lb-guideHeader">
+                        <div className="lb-guideTitle">LA FÓRMULA DEL ÉXITO</div>
+                        <div className="lb-guideSub">
+                          Fijate bien: el top no es para el que solo farmea. Tienes que ser completo.
+                        </div>
+                      </div>
+
+                      <div className="lb-guideGrid">
+                        {POINTS_GUIDE.map((item) => (
+                          <div key={item.step} className="lb-guideItem">
+                            <span className="lb-guideStep">{item.step}</span>
+                            <div className="lb-guideItemContent">
+                              <div className="lb-guideItemTitle">{item.title}</div>
+                              <div className="lb-guideItemText">{item.text}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {errorTabla ? <div className="lb-error">{errorTabla}</div> : null}
+
+                {/* DESKTOP TABLE */}
+                <div className="lb-tableWrap">
+                  <div className="lb-gridTable">
+                    <div className="lb-gridHeader">
+                      <div className="lb-headCell lb-center">#TOP</div>
+                      <div className="lb-headCell">JUGADOR</div>
+                      <div className="lb-headCell lb-center">
+                        <HeadLabel icon={ICON_POINTS}>POINTS</HeadLabel>
+                      </div>
+                      <div className="lb-headCell lb-center">
+                        <HeadLabel icon={ICON_TIME}>HORAS</HeadLabel>
+                      </div>
+                      <div className="lb-headCell lb-center">
+                        <HeadLabel icon={ICON_WALLET}>WALLET</HeadLabel>
+                      </div>
+                    </div>
+
+                    <div className="lb-gridBody">
+                      {loading ? (
+                        SKELETON_ITEMS.map((_, i) => (
+                          <div key={`sk-${i}`} className="lb-row" style={{ "--stagger": i }}>
+                            <div className="lb-cell lb-center">
+                              <span className="lb-rankBadge">—</span>
+                            </div>
+                            <div className="lb-cell">
+                              <div className="lb-skelPlayer">
+                                <div className="lb-skelSkin" />
+                                <div className="lb-skelName" />
+                              </div>
+                            </div>
+                            <div className="lb-cell lb-center lb-skelTxt">—</div>
+                            <div className="lb-cell lb-center lb-skelTxt">—</div>
+                            <div className="lb-cell lb-center lb-skelTxt">—</div>
+                          </div>
+                        ))
+                      ) : pageRows.length ? (
+                        pageRows.map((player, i) => {
+                          const rank = Number(player?.global_rank || 0) || 0;
+                          
+                          const topClass = rank === 1 ? "lb-rowTop1"
+                            : rank === 2 ? "lb-rowTop2"
+                            : rank === 3 ? "lb-rowTop3"
                             : "";
 
-                        return (
-                          <tr
-                            key={player?.uuid || player?.nombre_minecraft}
-                            className={`is-clickable ${topClass}`}
-                            onClick={() => onOpenPerfil(player)}
-                            data-rango={player?.rangoKey || ""}
-                          >
-                            <td className="lb-rankCell lb-center">
-                              <span className="lb-rankBadge">#{rank || "—"}</span>
-                            </td>
+                          const moveClass = player?.isNew24h ? "lb-rowNew"
+                            : player?.rankDelta24h > 0 ? "lb-rowClimbing"
+                            : player?.rankDelta24h < 0 ? "lb-rowFalling"
+                            : player?.pointsDelta24h > 0 ? "lb-rowHot"
+                            : "";
 
-                            <td className="lb-playerCell">
-                              <PlayerIdentity player={player} />
-                            </td>
-
-                            <td className="lb-center lb-pointsCell">
-                              <span className="lb-pointsValue">
-                                {formatInt(player?.total_points || 0)}
-                              </span>
-                            </td>
-
-                            <td className="lb-center">
-                              <span className="lb-num">{player?.tiempoTxt}</span>
-                            </td>
-
-                            <td className="lb-center">
-                              {player?.walletTxt === "—" ? (
-                                <span className="lb-num">—</span>
-                              ) : (
-                                <span className="lb-walletValue">
-                                  <img
-                                    className="lb-coin"
-                                    src={COIN_SRC}
-                                    alt=""
-                                    loading="lazy"
-                                    onError={hideImg}
-                                  />
-                                  <span className="lb-num">{player?.walletTxt}</span>
+                          return (
+                            <div
+                              key={player?.uuid || player?.nombre_minecraft}
+                              className={`lb-row is-clickable no-tap-highlight animate-pop ${topClass} ${moveClass}`.trim()}
+                              onClick={() => onOpenPerfil(player)}
+                              data-rango={player?.rangoKey || ""}
+                              style={{ "--stagger": i }}
+                            >
+                              <div className="lb-cell lb-center">
+                                <span className={`lb-rankBadge ${rank <= 3 ? `lb-rankBadge--top${rank}` : ""}`}>
+                                  #{rank || "—"}
                                 </span>
-                              )}
-                            </td>
-                          </tr>
-                        );
-                      })
-                    ) : (
-                      <tr>
-                        <td colSpan={5} className="lb-empty">
-                          No hay resultados.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                              </div>
 
-              <div className="lb-cards">
-                {loading ? (
-                  SKELETON_ITEMS.map((_, i) => (
-                    <div key={`csk-${i}`} className="lb-card">
-                      <div className="lb-cardTop">
-                        <span className="lb-rankBadge">—</span>
-                        <div className="lb-skelTxt">Cargando...</div>
-                      </div>
+                              <div className="lb-cell lb-colPlayer">
+                                <PlayerIdentity player={player} />
+                              </div>
+
+                              <div className="lb-cell lb-center lb-pointsCell">
+                                <span className="lb-pointsValue">
+                                  {formatInt(player?.total_points || 0)}
+                                </span>
+                              </div>
+
+                              <div className="lb-cell lb-center">
+                                <span className="lb-num">{player?.tiempoTxt}</span>
+                              </div>
+
+                              <div className="lb-cell lb-center">
+                                {player?.walletTxt === "—" ? (
+                                  <span className="lb-num">—</span>
+                                ) : (
+                                  <span className="lb-walletValue">
+                                    <img
+                                      className="lb-coin"
+                                      src={COIN_SRC}
+                                      alt=""
+                                      loading="lazy"
+                                      onError={hideImg}
+                                    />
+                                    <span className="lb-num">{player?.walletTxt}</span>
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })
+                      ) : (
+                        <div className="lb-empty">Nadie por aquí... 🦗</div>
+                      )}
                     </div>
-                  ))
-                ) : (
-                  pageRows.map((player) => {
-                    const rank = Number(player?.global_rank || 0) || 0;
-
-                    return (
-                      <div
-                        key={player?.uuid || player?.nombre_minecraft}
-                        className="lb-card"
-                        onClick={() => onOpenPerfil(player)}
-                        data-rango={player?.rangoKey || ""}
-                      >
-                        <div className="lb-cardTop">
-                          <span className="lb-rankBadge">#{rank || "—"}</span>
-                          <PlayerIdentity player={player} mobile />
-                        </div>
-
-                        <div className="lb-cardMain">
-                          <div className="lb-cardRow">
-                            <span className="lb-cardLabel">
-                              <img
-                                className="lb-rowIcon"
-                                src={ICON_POINTS}
-                                alt=""
-                                loading="lazy"
-                                onError={hideImg}
-                              />
-                              <span>Points</span>
-                            </span>
-                            <strong>{formatInt(player?.total_points || 0)}</strong>
-                          </div>
-
-                          <div className="lb-cardRow">
-                            <span className="lb-cardLabel">
-                              <img
-                                className="lb-rowIcon"
-                                src={ICON_TIME}
-                                alt=""
-                                loading="lazy"
-                                onError={hideImg}
-                              />
-                              <span>Horas</span>
-                            </span>
-                            <strong>{player?.tiempoTxt}</strong>
-                          </div>
-
-                          <div className="lb-cardRow">
-                            <span className="lb-cardLabel">
-                              <img
-                                className="lb-rowIcon"
-                                src={ICON_WALLET}
-                                alt=""
-                                loading="lazy"
-                                onError={hideImg}
-                              />
-                              <span>Wallet</span>
-                            </span>
-
-                            {player?.walletTxt === "—" ? (
-                              <strong>—</strong>
-                            ) : (
-                              <strong className="lb-walletInline">
-                                <img
-                                  className="lb-coin"
-                                  src={COIN_SRC}
-                                  alt=""
-                                  loading="lazy"
-                                  onError={hideImg}
-                                />
-                                {player?.walletTxt}
-                              </strong>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-
-              <div className="lb-pagination">
-                <div className="lb-pager">
-                  <button
-                    type="button"
-                    onClick={() => goPage(currentPage - 1)}
-                    disabled={currentPage <= 1 || isLeaving}
-                  >
-                    ‹
-                  </button>
-
-                  <div className="lb-pageInfo">
-                    {currentPage} / {paginasTotales}
                   </div>
-
-                  <button
-                    type="button"
-                    onClick={() => goPage(currentPage + 1)}
-                    disabled={currentPage >= paginasTotales || isLeaving}
-                  >
-                    ›
-                  </button>
                 </div>
-              </div>
 
-              <div className="lb-leaveBlocker" aria-hidden="true" />
-            </div>
-          </section>
+                {/* MOBILE LIST (Hyper-optimized vertical format) */}
+                <div className="lb-mobCards">
+                  {loading ? (
+                    SKELETON_ITEMS.map((_, i) => (
+                      <div key={`csk-${i}`} className="lb-mobRow-skel" style={{ "--stagger": i }}>
+                        <div className="lb-skelSkin" />
+                        <div className="lb-skelName" />
+                      </div>
+                    ))
+                  ) : (
+                    pageRows.map((player, i) => {
+                      const rank = Number(player?.global_rank || 0) || 0;
+                      
+                      const topClass = rank === 1 ? "lb-rowTop1"
+                            : rank === 2 ? "lb-rowTop2"
+                            : rank === 3 ? "lb-rowTop3"
+                            : "";
+
+                      return (
+                        <div
+                          key={player?.uuid || player?.nombre_minecraft}
+                          className={`lb-mobRow no-tap-highlight animate-pop ${topClass}`.trim()}
+                          onClick={() => onOpenPerfil(player)}
+                          data-rango={player?.rangoKey || ""}
+                          style={{ "--stagger": i }}
+                        >
+                          <div className="lb-mobRow-main">
+                             <div className="lb-mobRow-left">
+                               <span className={`lb-rankBadge ${rank <= 3 ? `lb-rankBadge--top${rank}` : ""}`}>
+                                  #{rank || "—"}
+                                </span>
+                             </div>
+                             <div className="lb-mobRow-center">
+                                <PlayerIdentity player={player} mobile />
+                             </div>
+                             <div className="lb-mobRow-right">
+                               <div className="lb-mobRow-points">
+                                 <img className="lb-rowIcon" src={ICON_POINTS} alt="" />
+                                 <span>{formatInt(player?.total_points || 0)}</span>
+                               </div>
+                             </div>
+                          </div>
+
+                          <div className="lb-mobRow-footer">
+                            <span className="lb-mobRow-stat">
+                              <img src={ICON_TIME} alt="" /> {player?.tiempoTxt}
+                            </span>
+                            <span className="lb-mobRow-divider" />
+                            <span className="lb-mobRow-stat">
+                              <img src={COIN_SRC} alt="" /> {player?.walletTxt}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+
+                <div className="lb-pagination">
+                  <div className="lb-pager">
+                    <button
+                      type="button"
+                      className="no-tap-highlight"
+                      onClick={() => goPage(currentPage - 1)}
+                      disabled={currentPage <= 1 || isLeaving}
+                    >
+                      ◀
+                    </button>
+
+                    <div className="lb-pageInfo">
+                      {currentPage} <span style={{opacity: 0.5}}>/</span> {paginasTotales}
+                    </div>
+
+                    <button
+                      type="button"
+                      className="no-tap-highlight"
+                      onClick={() => goPage(currentPage + 1)}
+                      disabled={currentPage >= paginasTotales || isLeaving}
+                    >
+                      ▶
+                    </button>
+                  </div>
+                </div>
+
+                <div className="lb-leaveBlocker" aria-hidden="true" />
+              </div>
+            </section>
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
     </>
   );
 }

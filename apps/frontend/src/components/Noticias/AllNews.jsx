@@ -8,19 +8,9 @@ import { apiUrl } from "../../lib/env";
 import "../../styles/components/Noticias/_allnews.scss";
 
 const MONTHS_ES = {
-  enero: 0,
-  febrero: 1,
-  marzo: 2,
-  abril: 3,
-  mayo: 4,
-  junio: 5,
-  julio: 6,
-  agosto: 7,
-  septiembre: 8,
-  setiembre: 8,
-  octubre: 9,
-  noviembre: 10,
-  diciembre: 11,
+  enero: 0, febrero: 1, marzo: 2, abril: 3, mayo: 4, junio: 5,
+  julio: 6, agosto: 7, septiembre: 8, setiembre: 8, octubre: 9,
+  noviembre: 10, diciembre: 11,
 };
 
 const normalizeRole = (value) => {
@@ -49,10 +39,7 @@ function parseAnyDate(value) {
     return new Date(yy, mm, dd, hh, mi, 0).getTime();
   }
 
-  const normalized = s
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
+  const normalized = s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
   const m2 = normalized.match(/^(\d{1,2})\s+de\s+([a-z]+)\s+de\s+(\d{4})$/);
   if (m2) {
     const dd = Number(m2[1]);
@@ -66,13 +53,7 @@ function parseAnyDate(value) {
 }
 
 function getSortKey(n) {
-  const created =
-    n?.created_at ||
-    n?.createdAt ||
-    n?.fecha_creacion ||
-    n?.fechaCreacion ||
-    null;
-
+  const created = n?.created_at || n?.createdAt || n?.fecha_creacion || n?.fechaCreacion || null;
   const tCreated = created ? parseAnyDate(created) : NaN;
   if (!Number.isNaN(tCreated)) return tCreated;
 
@@ -86,22 +67,14 @@ function getSortKey(n) {
 }
 
 const generarSlug = (titulo) =>
-  String(titulo || "")
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9 ]/g, "")
-    .replace(/\s+/g, "-")
-    .trim();
+  String(titulo || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9 ]/g, "").replace(/\s+/g, "-").trim();
 
 const preloadImages = (urls, onDone) => {
   let loaded = 0;
-
   if (!urls.length) {
     onDone();
     return;
   }
-
   urls.forEach((url) => {
     const img = new Image();
     img.src = url;
@@ -116,11 +89,7 @@ const formatDate = (dateStr) => {
   const ts = parseAnyDate(dateStr);
   if (Number.isNaN(ts)) return "";
   const d = new Date(ts);
-  return d.toLocaleDateString("es-ES", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  });
+  return d.toLocaleDateString("es-ES", { day: "2-digit", month: "long", year: "numeric" });
 };
 
 const truncate = (text, limit = 160) => {
@@ -142,24 +111,14 @@ const extractSubtitleAndDescription = (contenido) => {
       };
     }
 
-    if (
-      typeof contenido === "object" &&
-      contenido !== null &&
-      Array.isArray(contenido?.content)
-    ) {
+    if (typeof contenido === "object" && contenido !== null && Array.isArray(contenido?.content)) {
       let subtitulo = "";
       let descripcion = "";
 
       for (const block of contenido.content) {
         if (!block?.content) continue;
 
-        const textoPlano = block.content
-          .filter((c) => c.type === "text")
-          .map((c) => c.text)
-          .join(" ")
-          .replace(/\s+/g, " ")
-          .trim();
-
+        const textoPlano = block.content.filter((c) => c.type === "text").map((c) => c.text).join(" ").replace(/\s+/g, " ").trim();
         if (!textoPlano) continue;
 
         if (!subtitulo && (block.type === "heading" || block.type === "paragraph")) {
@@ -195,19 +154,13 @@ const AllNews = () => {
   const listRef = useRef(null);
   const { user } = useContext(UserContext);
 
-  const effectiveRole = useMemo(
-    () => normalizeRole(user?.rango_staff || user?.rol_admin),
-    [user]
-  );
-
+  const effectiveRole = useMemo(() => normalizeRole(user?.rango_staff || user?.rol_admin), [user]);
   const isOwner = user?.loggedIn && effectiveRole === "owner";
 
   const itemVariants = {
     hidden: { opacity: 0, y: 12 },
     visible: (i) => ({
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.32, delay: i * 0.05 },
+      opacity: 1, y: 0, transition: { duration: 0.32, delay: i * 0.05 },
     }),
   };
 
@@ -238,7 +191,7 @@ const AllNews = () => {
       } catch (error) {
         console.error("Error al obtener noticias:", error);
         setImagesLoaded(true);
-        setLoading(false);
+        setTimeout(() => setLoading(false), 180);
       }
     };
 
@@ -256,9 +209,7 @@ const AllNews = () => {
 
   const dataFiltrada = useMemo(() => {
     if (serverFilter === "all") return newsData;
-    return newsData.filter(
-      (n) => String(n?.servidor || "").trim().toLowerCase() === serverFilter
-    );
+    return newsData.filter((n) => String(n?.servidor || "").trim().toLowerCase() === serverFilter);
   }, [newsData, serverFilter]);
 
   const mainFeatured = dataFiltrada[0] || null;
@@ -294,7 +245,7 @@ const AllNews = () => {
         ])}
       />
 
-      <section className="allNews">
+      <section className="allNews no-tap-highlight">
         <header className="allNews__hero">
           <div className="allNews__heroBg" aria-hidden="true" />
           <div className="allNews__heroFade" aria-hidden="true" />
@@ -302,8 +253,8 @@ const AllNews = () => {
           <div className="allNews__heroInner">
             <div className="allNews__topRow">
               {isOwner && (
-                <Link to="/admin/noticias" className="allNews__adminBtn">
-                  Crear noticia
+                <Link to="/admin/noticias" className="allNews__adminBtn no-tap-highlight">
+                  CREAR NOTICIA
                 </Link>
               )}
             </div>
@@ -314,7 +265,7 @@ const AllNews = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.35 }}
             >
-              Noticias
+              NOTICIAS
             </Motion.h1>
 
             <div className="allNews__featuredSolo">
@@ -333,26 +284,20 @@ const AllNews = () => {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.35, delay: 0.05 }}
+                    className="full-w-motion"
                   >
-                    <Link to={`/news/${mainFeatured.slug}`} className="allNews__featuredCardSolo">
+                    <Link to={`/news/${mainFeatured.slug}`} className="allNews__featuredCardSolo no-tap-highlight">
                       <div className="heroMedia heroMedia--contain">
-                        <img
-                          src={mainFeatured.portada || "/assets/placeholder.png"}
-                          alt={mainFeatured.titulo}
-                          loading="eager"
-                        />
-                        <div className="heroOverlay" />
+                        <img src={mainFeatured.portada || "/assets/placeholder.png"} alt={mainFeatured.titulo} loading="eager" />
                       </div>
 
                       <div className="heroInfo">
                         <div className="meta">
+                          <span className="badgeLatest">ÚLTIMA</span>
                           <span className="date">{formatDate(dateOf(mainFeatured))}</span>
                           {mainFeatured?.servidor && (
-                            <span className="tag">
-                              {String(mainFeatured.servidor).toUpperCase()}
-                            </span>
+                            <span className="tag">{String(mainFeatured.servidor).toUpperCase()}</span>
                           )}
-                          <span className="badgeLatest">ÚLTIMA</span>
                         </div>
 
                         <h3 className="heroTitle">{mainFeatured.titulo}</h3>
@@ -368,8 +313,8 @@ const AllNews = () => {
             </div>
 
             <div className="allNews__ctaRow">
-              <button className="allNews__ctaBtn" onClick={scrollToList} type="button">
-                Ver todas
+              <button className="allNews__ctaBtn no-tap-highlight" onClick={scrollToList} type="button">
+                VER TODAS
               </button>
             </div>
           </div>
@@ -378,23 +323,23 @@ const AllNews = () => {
         <main className="allNews__body" ref={listRef}>
           <div className="allNews__bodyInner">
             <div className="allNews__sectionHead">
-              <h2 className="allNews__sectionTitle">Últimos artículos</h2>
+              <h2 className="allNews__sectionTitle">ÚLTIMOS ARTÍCULOS</h2>
 
               {servidoresDisponibles.length > 0 && (
                 <div className="allNews__filters">
                   <button
                     type="button"
-                    className={`pill ${serverFilter === "all" ? "is-active" : ""}`}
+                    className={`pill no-tap-highlight ${serverFilter === "all" ? "is-active" : ""}`}
                     onClick={() => setServerFilter("all")}
                   >
-                    Todos
+                    TODOS
                   </button>
 
                   {servidoresDisponibles.slice(0, 6).map((s) => (
                     <button
                       key={s}
                       type="button"
-                      className={`pill ${serverFilter === s ? "is-active" : ""}`}
+                      className={`pill no-tap-highlight ${serverFilter === s ? "is-active" : ""}`}
                       onClick={() => setServerFilter(s)}
                     >
                       {s.toUpperCase()}
@@ -422,29 +367,17 @@ const AllNews = () => {
                   const { subtitulo } = extractSubtitleAndDescription(item.contenido);
 
                   return (
-                    <Motion.div
-                      key={item.id}
-                      custom={index}
-                      variants={itemVariants}
-                      initial="hidden"
-                      animate="visible"
-                    >
-                      <Link to={`/news/${item.slug}`} className="allNews__listCard">
+                    <Motion.div key={item.id} custom={index} variants={itemVariants} initial="hidden" animate="visible">
+                      <Link to={`/news/${item.slug}`} className="allNews__listCard no-tap-highlight">
                         <div className="thumb">
-                          <img
-                            src={item.portada || "/assets/placeholder.png"}
-                            alt={item.titulo}
-                            loading="lazy"
-                          />
+                          <img src={item.portada || "/assets/placeholder.png"} alt={item.titulo} loading="lazy" />
                         </div>
 
                         <div className="text">
                           <div className="meta">
                             <span className="date">{formatDate(dateOf(item))}</span>
                             {item?.servidor && (
-                              <span className="tag">
-                                {String(item.servidor).toUpperCase()}
-                              </span>
+                              <span className="tag">{String(item.servidor).toUpperCase()}</span>
                             )}
                           </div>
 
@@ -460,8 +393,8 @@ const AllNews = () => {
 
             {!loading && dataFiltrada.length > 1 + visibleCount && (
               <div className="allNews__more">
-                <button className="allNews__moreBtn" onClick={showMore} type="button">
-                  Mostrar más
+                <button className="allNews__moreBtn no-tap-highlight" onClick={showMore} type="button">
+                  MOSTRAR MÁS
                 </button>
               </div>
             )}

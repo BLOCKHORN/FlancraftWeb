@@ -1,5 +1,5 @@
 import React, { useState, useContext, useRef, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { UserContext } from "../../context/UserContext";
 import { apiGet, apiPost } from "../../lib/api/client";
 import { buildUserSession } from "../../lib/auth/session";
@@ -7,6 +7,7 @@ import { persistSession } from "../../lib/auth/storage";
 import "../../styles/components/Auth/_loginmodal.scss";
 
 const CODE_RE = /^[0-9]{6}$/;
+const RESET_TOKEN_RE = /^[a-f0-9]{32}$/i;
 
 const AuthInput = React.forwardRef(
   ({ type = "text", placeholder, value, onChange, disabled, className = "" }, ref) => (
@@ -17,18 +18,19 @@ const AuthInput = React.forwardRef(
       onChange={(e) => onChange(e.target.value)}
       disabled={disabled}
       ref={ref}
-      className={className}
+      className={`mc-modal-input ${className}`}
       autoComplete="off"
       aria-label={placeholder}
     />
   )
 );
 
-const AuthButton = ({ children, onClick, disabled }) => (
+const AuthButton = ({ children, onClick, disabled, variant = "primary" }) => (
   <button
     type={onClick ? "button" : "submit"}
     onClick={onClick}
     disabled={disabled}
+    className={`mc-modal-btn ${variant === "secondary" ? "mc-modal-btn--secondary" : ""}`}
     aria-label={typeof children === "string" ? children : "Acción"}
   >
     {disabled ? "Procesando..." : children}
@@ -42,24 +44,29 @@ const getErrorMessage = (context, status, backendError) => {
     case "login":
       if (status === 400) return "Debes introducir usuario y contraseña.";
       if (status === 401) return "La contraseña no es correcta. Revisa mayúsculas y minúsculas.";
-      if (status === 404)
-        return "No hemos encontrado ninguna cuenta con esos datos. Vincula tu cuenta en el servidor con /vincular.";
-      if (status === 429) return "Has hecho demasiados intentos seguidos. Espera unos segundos antes de volver a probar.";
+      if (status === 404) return "No hemos encontrado ninguna cuenta con esos datos. Vincula tu cuenta con /vincular.";
+      if (status === 429) return "Has hecho demasiados intentos seguidos. Espera unos segundos.";
       return "No se ha podido iniciar sesión ahora mismo. Inténtalo de nuevo en unos segundos.";
+
     case "vincular-validate":
       if (status === 404) return "Ese token/código no existe o ya se ha usado.";
       if (status === 410) return "Ese token/código ha caducado. Genera uno nuevo con /vincular en el servidor.";
       if (status === 409) return "Este usuario ya está registrado. Inicia sesión.";
       return "El token/código no es válido. Prueba a generarlo otra vez con /vincular.";
+
     case "register":
       if (status === 409) return "Ya existe una cuenta web asociada a este jugador.";
       return "No se ha podido crear tu cuenta web. Inténtalo de nuevo en unos segundos.";
+
     case "reset-validate":
-      if (status === 404) return "Ese token de reseteo no existe o ya se ha usado.";
-      if (status === 410) return "Ese token de reseteo ha caducado. Genera uno nuevo con /resetweb en el servidor.";
-      return "El token de reseteo no es válido. Prueba a generar uno nuevo con /resetweb.";
+      if (status === 404) return "Ese token/código de recuperación no existe.";
+      if (status === 410) return "Ese token/código ha caducado o ya se ha usado. Genera uno nuevo con /resetweb.";
+      return "No se ha podido validar tu recuperación. Genera un nuevo /resetweb e inténtalo otra vez.";
+
     case "reset-change":
+      if (status === 410) return "Tu recuperación ha caducado. Genera un nuevo /resetweb.";
       return "No se ha podido cambiar la contraseña. Inténtalo de nuevo en unos segundos.";
+
     default:
       return "Ha ocurrido un error inesperado. Inténtalo de nuevo.";
   }
@@ -71,7 +78,7 @@ export default function LoginModal({ onClose, initialStep, initialToken, autoVal
     username: "",
     password: "",
     confirm: "",
-    token: initialToken || "",
+    token: "",
     uuid: null,
     codigo: "",
   });
@@ -80,13 +87,10 @@ export default function LoginModal({ onClose, initialStep, initialToken, autoVal
   const [error, setError] = useState(null);
   const [showError, setShowError] = useState(false);
   const [success, setSuccess] = useState(null);
-  const [modalVisible, setModalVisible] = useState(false);
   const [closing, setClosing] = useState(false);
-  const [showToast, setShowToast] = useState(false);
 
   const { setUser } = useContext(UserContext);
   const navigate = useNavigate();
-  const location = useLocation();
 
   const usernameRef = useRef(null);
   const tokenRef = useRef(null);
@@ -100,14 +104,14 @@ export default function LoginModal({ onClose, initialStep, initialToken, autoVal
   };
 
   const cerrarModal = () => {
+    if (closing) return;
     setClosing(true);
     setTimeout(() => {
-      setClosing(false);
       onClose?.();
-    }, 600);
+    }, 300);
   };
 
-  const goToDashboard = (uuid, username, rol_admin, extras = {}) => {
+  const finalizeLogin = (uuid, username, rol_admin, extras = {}) => {
     const userData = buildUserSession({
       uuid,
       username,
@@ -119,28 +123,26 @@ export default function LoginModal({ onClose, initialStep, initialToken, autoVal
     persistSession(userData, extras.token);
     setUser(userData, extras.token);
 
-    const isStore = location.pathname.startsWith("/tienda") || location.pathname.startsWith("/store");
+    const pendingWelcomePack = localStorage.getItem("fc_pending_welcome_pack") === "true";
 
-    if (!isStore) {
-      navigate("/dashboard");
-    }
-    
     cerrarModal();
+
+    setTimeout(() => {
+      if (pendingWelcomePack) {
+        navigate("/tienda");
+      }
+    }, 300);
   };
 
   const validarPasswordsIguales = () => form.password === form.confirm;
-
-  useEffect(() => {
-    const timer = setTimeout(() => setModalVisible(true), 50);
-    return () => clearTimeout(timer);
-  }, []);
 
   useEffect(() => {
     if (step === "login" && usernameRef.current) {
       const t = setTimeout(() => usernameRef.current.focus(), 100);
       return () => clearTimeout(t);
     }
-    if (step === "token" && tokenRef.current) {
+
+    if ((step === "token" || step === "reset-password") && tokenRef.current) {
       const t = setTimeout(() => tokenRef.current.focus(), 120);
       return () => clearTimeout(t);
     }
@@ -157,47 +159,79 @@ export default function LoginModal({ onClose, initialStep, initialToken, autoVal
   }, [error]);
 
   useEffect(() => {
-    if (initialToken && String(initialToken).trim()) {
-      setForm((p) => ({ ...p, token: String(initialToken).trim() }));
+    const incomingInitial = String(initialToken || "").trim();
+    const resetTokenPrefill = String(localStorage.getItem("prefill_reset_token") || "").trim();
+    const resetCodigoPrefill = String(localStorage.getItem("prefill_reset_codigo") || "").trim();
+    const vincularPrefill = String(localStorage.getItem("prefill_vincular_token") || "").trim();
+
+    if (incomingInitial) {
+      setForm((prev) => ({ ...prev, token: incomingInitial }));
       setStep(initialStep || "token");
       return;
     }
 
-    const prefill = String(localStorage.getItem("prefill_vincular_token") || "").trim();
-    if (prefill) {
-      setForm((p) => ({ ...p, token: prefill }));
-      if (initialStep) setStep(initialStep);
+    if (resetTokenPrefill || resetCodigoPrefill) {
+      const raw = resetTokenPrefill || resetCodigoPrefill;
+      setForm((prev) => ({
+        ...prev,
+        token: raw,
+        codigo: CODE_RE.test(raw) ? raw : "",
+      }));
+      setStep("reset-password");
+      return;
+    }
+
+    if (vincularPrefill) {
+      setForm((prev) => ({ ...prev, token: vincularPrefill }));
+      setStep("token");
     }
   }, [initialToken, initialStep]);
 
   useEffect(() => {
-    if (!autoValidateToken) return;
     const tok = String(initialToken || form.token || "").trim();
-    if (!tok) return;
-    if (step !== "token") return;
+    if (!tok || step !== "token") return;
 
-    const t = setTimeout(() => {
-      handleTokenValidate(tok);
-    }, 250);
+    const prefill = String(localStorage.getItem("prefill_vincular_token") || "").trim();
+    if (autoValidateToken || prefill === tok) {
+      const t = setTimeout(() => {
+        handleTokenValidate(tok);
+      }, 300);
+      return () => clearTimeout(t);
+    }
+  }, [autoValidateToken, initialToken, step, form.token]);
 
-    return () => clearTimeout(t);
-  }, [autoValidateToken, initialToken, step]);
+  useEffect(() => {
+    if (step !== "reset-password") return;
+
+    const tokenPrefill = String(localStorage.getItem("prefill_reset_token") || "").trim();
+    const codigoPrefill = String(localStorage.getItem("prefill_reset_codigo") || "").trim();
+    const raw = String(form.token || tokenPrefill || codigoPrefill).trim();
+
+    if (!raw) return;
+
+    if (tokenPrefill === raw || codigoPrefill === raw) {
+      const t = setTimeout(() => {
+        handleResetValidateToken(raw);
+      }, 300);
+      return () => clearTimeout(t);
+    }
+  }, [step, form.token]);
 
   const handleLogin = async () => {
     setError(null);
     setLoading(true);
+
     try {
       let data;
       try {
         data = await apiPost("/api/vincular/login", { uid: form.username, password: form.password });
       } catch (err) {
-        const message = getErrorMessage("login", err?.status, err?.data?.error || err?.message);
-        throw new Error(message);
+        throw new Error(getErrorMessage("login", err?.status, err?.data?.error || err?.message));
       }
 
       const usuarioData = await apiGet(`/api/usuarios/${data.uuid}`);
 
-      goToDashboard(data.uuid, data.uid || data.username || form.username, usuarioData?.rol_admin || null, {
+      finalizeLogin(data.uuid, data.uid || data.username || form.username, usuarioData?.rol_admin || null, {
         token: data.token,
         rango_usuario: usuarioData?.rango_usuario,
         userLevel: usuarioData?.nivel,
@@ -207,8 +241,6 @@ export default function LoginModal({ onClose, initialStep, initialToken, autoVal
       });
     } catch (err) {
       setError(err?.message || "Error");
-      setShowToast(true);
-      setTimeout(() => setShowToast(false), 5000);
     } finally {
       setLoading(false);
     }
@@ -220,24 +252,26 @@ export default function LoginModal({ onClose, initialStep, initialToken, autoVal
 
     setError(null);
     setLoading(true);
+
     try {
       let data;
       try {
         data = await apiPost("/api/vincular/validate", isCode ? { codigo: raw } : { token: raw });
       } catch (err) {
-        const message = getErrorMessage("vincular-validate", err?.status, err?.data?.error || err?.message);
-        throw new Error(message);
+        throw new Error(getErrorMessage("vincular-validate", err?.status, err?.data?.error || err?.message));
       }
+
+      localStorage.removeItem("prefill_vincular_token");
 
       if (isCode) updateForm("codigo", raw);
       else updateForm("token", raw);
 
       updateForm("uuid", data.uuid_jugador);
       updateForm("username", data.username);
-
       setStep("set-password");
     } catch (err) {
       setError(err?.message || "Error");
+      localStorage.removeItem("prefill_vincular_token");
     } finally {
       setLoading(false);
     }
@@ -245,9 +279,14 @@ export default function LoginModal({ onClose, initialStep, initialToken, autoVal
 
   const handleRegister = async () => {
     setError(null);
-    if (!validarPasswordsIguales()) return setError("Las contraseñas no coinciden");
+
+    if (!validarPasswordsIguales()) {
+      setError("Las contraseñas no coinciden");
+      return;
+    }
 
     setLoading(true);
+
     try {
       const payload = {
         uuid: form.uuid,
@@ -261,16 +300,19 @@ export default function LoginModal({ onClose, initialStep, initialToken, autoVal
       try {
         await apiPost("/api/vincular/registrar", payload);
       } catch (err) {
-        const message = getErrorMessage("register", err?.status, err?.data?.error || err?.message);
-        throw new Error(message);
+        throw new Error(getErrorMessage("register", err?.status, err?.data?.error || err?.message));
       }
 
       localStorage.removeItem("prefill_vincular_token");
 
-      const loginData = await apiPost("/api/vincular/login", { uid: form.username, password: form.password });
+      const loginData = await apiPost("/api/vincular/login", {
+        uid: form.username,
+        password: form.password,
+      });
+
       const usuarioData = await apiGet(`/api/usuarios/${form.uuid}`);
 
-      goToDashboard(form.uuid, form.username, usuarioData?.rol_admin || null, {
+      finalizeLogin(form.uuid, form.username, usuarioData?.rol_admin || null, {
         token: loginData?.token,
         rango_usuario: usuarioData?.rango_usuario,
         userLevel: usuarioData?.nivel,
@@ -285,22 +327,32 @@ export default function LoginModal({ onClose, initialStep, initialToken, autoVal
     }
   };
 
-  const handleResetValidateToken = async () => {
+  const handleResetValidateToken = async (valueOverride) => {
+    const raw = String(valueOverride ?? form.token ?? "").trim();
+    const isCode = CODE_RE.test(raw);
+
     setError(null);
     setLoading(true);
+
     try {
       let data;
       try {
-        data = await apiPost("/api/reset/validate", { token: form.token });
+        data = await apiPost("/api/reset/validate", isCode ? { codigo: raw } : { token: raw });
       } catch (err) {
-        const message = getErrorMessage("reset-validate", err?.status, err?.data?.error || err?.message);
-        throw new Error(message);
+        throw new Error(getErrorMessage("reset-validate", err?.status, err?.data?.error || err?.message));
       }
 
+      localStorage.removeItem("prefill_reset_token");
+      localStorage.removeItem("prefill_reset_codigo");
+
       updateForm("uuid", data.uuid);
+      updateForm("token", String(data.token || raw).trim());
+      updateForm("codigo", String(data.codigo || (isCode ? raw : "")).trim());
       setStep("reset-set-password");
     } catch (err) {
       setError(err?.message || "Error");
+      localStorage.removeItem("prefill_reset_token");
+      localStorage.removeItem("prefill_reset_codigo");
     } finally {
       setLoading(false);
     }
@@ -309,20 +361,27 @@ export default function LoginModal({ onClose, initialStep, initialToken, autoVal
   const handleResetChangePassword = async () => {
     setError(null);
     setSuccess(null);
-    if (!validarPasswordsIguales()) return setError("Las contraseñas no coinciden");
+
+    if (!validarPasswordsIguales()) {
+      setError("Las contraseñas no coinciden");
+      return;
+    }
 
     setLoading(true);
+
     try {
+      const payload = { nuevaPassword: form.password };
+      if (String(form.token || "").trim()) payload.token = String(form.token).trim();
+      if (!payload.token && String(form.codigo || "").trim()) payload.codigo = String(form.codigo).trim();
+
       try {
-        await apiPost("/api/reset/set-password", {
-          token: form.token,
-          nuevaPassword: form.password,
-        });
+        await apiPost("/api/reset/set-password", payload);
       } catch (err) {
-        const message = getErrorMessage("reset-change", err?.status, err?.data?.error || err?.message);
-        throw new Error(message);
+        throw new Error(getErrorMessage("reset-change", err?.status, err?.data?.error || err?.message));
       }
 
+      localStorage.removeItem("prefill_reset_token");
+      localStorage.removeItem("prefill_reset_codigo");
       setSuccess("Contraseña actualizada correctamente. Ya puedes iniciar sesión.");
       setStep("reset-done");
     } catch (err) {
@@ -338,67 +397,53 @@ export default function LoginModal({ onClose, initialStep, initialToken, autoVal
         e.preventDefault();
         handleLogin();
       }}
-      style={{ width: "100%" }}
     >
       <AuthInput
         placeholder="Usuario o email"
         value={form.username}
         onChange={(val) => updateForm("username", val)}
         ref={usernameRef}
-        className={error && step === "login" ? "error-input" : ""}
+        className={error && step === "login" ? "is-error" : ""}
       />
       <AuthInput
         type="password"
         placeholder="Contraseña"
         value={form.password}
         onChange={(val) => updateForm("password", val)}
-        className={error && step === "login" ? "error-input" : ""}
+        className={error && step === "login" ? "is-error" : ""}
       />
       <AuthButton disabled={loading}>Iniciar sesión</AuthButton>
-
-      <div className="auth-options">
-        <div className="auth-buttons-row">
-          <button type="button" onClick={() => setStep("token")}>
-            Regístrate aquí
-          </button>
-          <button type="button" onClick={() => setStep("reset-password")}>
-            Restablecer
-          </button>
-        </div>
+      <div className="mc-modal-options">
+        <button type="button" onClick={() => setStep("token")}>Regístrate aquí</button>
+        <button type="button" onClick={() => setStep("reset-password")}>Restablecer contraseña</button>
       </div>
     </form>
   );
 
   const renderTokenStep = () => (
     <>
-      <button className="back-button" onClick={() => setStep("login")} disabled={loading}>
-          Volver
-      </button>
-      <p>
-        Entra al servidor y escribe <code>/vincular</code>. En Java puedes abrir el enlace. Si no, introduce aquí el
-        token o el código de 6 dígitos:
+      <p className="mc-modal-text">
+        Entra al servidor y escribe <code>/vincular</code>. Introduce aquí el token o el código de 6 dígitos:
       </p>
       <AuthInput
         placeholder="Token o código"
         value={form.token}
         onChange={(val) => updateForm("token", val)}
         disabled={loading}
-        className={error ? "error-input" : ""}
+        className={error ? "is-error" : ""}
         ref={tokenRef}
       />
-      <AuthButton onClick={() => handleTokenValidate()} disabled={loading}>
-        Validar
-      </AuthButton>
+      <AuthButton onClick={() => handleTokenValidate()} disabled={loading}>Validar</AuthButton>
+      <AuthButton onClick={() => setStep("login")} disabled={loading} variant="secondary">Volver</AuthButton>
     </>
   );
 
   const renderSetPasswordStep = () => (
     <>
-      <button className="back-button" onClick={() => setStep("login")} disabled={loading}>
-        Volver
-      </button>
-      <p>
-        <strong>Nombre detectado:</strong> {form.username}
+      <p className="mc-modal-text">
+        Cuenta detectada:
+        <br />
+        <strong style={{ color: "#fff" }}>{form.username}</strong>
       </p>
       <AuthInput
         type="password"
@@ -406,7 +451,7 @@ export default function LoginModal({ onClose, initialStep, initialToken, autoVal
         value={form.password}
         onChange={(val) => updateForm("password", val)}
         disabled={loading}
-        className={error ? "error-input" : ""}
+        className={error ? "is-error" : ""}
       />
       <AuthInput
         type="password"
@@ -414,42 +459,35 @@ export default function LoginModal({ onClose, initialStep, initialToken, autoVal
         value={form.confirm}
         onChange={(val) => updateForm("confirm", val)}
         disabled={loading}
-        className={error ? "error-input" : ""}
+        className={error ? "is-error" : ""}
       />
-      <AuthButton onClick={handleRegister} disabled={loading}>
-        Crear cuenta
-      </AuthButton>
+      <AuthButton onClick={handleRegister} disabled={loading}>Crear cuenta</AuthButton>
+      <AuthButton onClick={() => setStep("login")} disabled={loading} variant="secondary">Volver</AuthButton>
     </>
   );
 
   const renderResetPasswordStep = () => (
     <>
-      <button className="back-button" onClick={() => setStep("login")} disabled={loading}>
-         Volver
-      </button>
-      <p>
-        Pega aquí el token generado con <code>/resetweb</code> en el servidor para recuperar tu acceso:
+      <p className="mc-modal-text">
+        Introduce el token o el código generado con <code>/resetweb</code>. En Java puedes abrir directamente el enlace que te da el servidor. En Bedrock entra en <code>flancraft.com/reset</code> y escribe tu código.
       </p>
       <AuthInput
-        placeholder="Token de reseteo"
+        placeholder="Token o código de recuperación"
         value={form.token}
         onChange={(val) => updateForm("token", val)}
         disabled={loading}
-        className={error ? "error-input" : ""}
+        className={error ? "is-error" : ""}
+        ref={tokenRef}
       />
-      <AuthButton onClick={handleResetValidateToken} disabled={loading}>
-        Validar token de reseteo
-      </AuthButton>
+      <AuthButton onClick={() => handleResetValidateToken()} disabled={loading}>Validar recuperación</AuthButton>
+      <AuthButton onClick={() => setStep("login")} disabled={loading} variant="secondary">Volver</AuthButton>
     </>
   );
 
   const renderResetSetPasswordStep = () => (
     <>
-      <button className="back-button" onClick={() => setStep("login")} disabled={loading}>
-        ← Volver
-      </button>
-      <p>
-        <strong>UUID detectado:</strong> {form.uuid}
+      <p className="mc-modal-text">
+        Recuperación validada correctamente. Ya puedes elegir una nueva contraseña.
       </p>
       <AuthInput
         type="password"
@@ -457,7 +495,7 @@ export default function LoginModal({ onClose, initialStep, initialToken, autoVal
         value={form.password}
         onChange={(val) => updateForm("password", val)}
         disabled={loading}
-        className={error ? "error-input" : ""}
+        className={error ? "is-error" : ""}
       />
       <AuthInput
         type="password"
@@ -465,70 +503,51 @@ export default function LoginModal({ onClose, initialStep, initialToken, autoVal
         value={form.confirm}
         onChange={(val) => updateForm("confirm", val)}
         disabled={loading}
-        className={error ? "error-input" : ""}
+        className={error ? "is-error" : ""}
       />
-      <AuthButton onClick={handleResetChangePassword} disabled={loading}>
-        Cambiar contraseña
-      </AuthButton>
+      <AuthButton onClick={handleResetChangePassword} disabled={loading}>Guardar contraseña</AuthButton>
+      <AuthButton onClick={() => setStep("login")} disabled={loading} variant="secondary">Volver</AuthButton>
     </>
   );
 
   return (
-    <div className={`login-modal ${closing ? "fade-out-up" : ""}`}>
-      <div className="overlay" onClick={cerrarModal} />
-      {modalVisible && (
-        <div className="hanging-login">
-          <div className="frame-wrapper">
-            <img src="/assets/hanging-frame.webp" alt="Marco colgante" className="hanging-frame" />
-            <div className="login-inside">
-              <div
-                className={`login-box
-                ${step === "set-password" ? "registro" : ""}
-                ${step.startsWith("reset") ? "reset" : ""}
-              `}
-              >
-                <h2>
-                  {step === "login" && "Inicia sesión en Flancraft"}
-                  {step === "token" && "Vincula tu cuenta Minecraft"}
-                  {step === "set-password" && "Elige tu contraseña"}
-                  {step === "reset-password" && "Restablecer contraseña"}
-                  {step === "reset-set-password" && "Nueva contraseña"}
-                  {step === "reset-done" && "Hecho"}
-                </h2>
+    <div className={`login-modal-root ${closing ? "is-closing" : "is-open"}`}>
+      <div className="login-modal-overlay" onClick={cerrarModal} />
+      <div className="mc-modal-box">
+        <button className="mc-modal-close" onClick={cerrarModal} aria-label="Cerrar">X</button>
 
-                {(step === "token" || step.startsWith("reset")) && (
-                  <div className={`step-tag ${step === "token" ? "step-tag--register" : "step-tag--reset"}`}>
-                    {step === "token"
-                      ? "Nuevo registro web: vincula tu cuenta de Minecraft."
-                      : "Recuperar acceso: estás cambiando tu contraseña web."}
-                  </div>
-                )}
+        <h2 className="mc-modal-title">
+          {step === "login" && "INICIAR SESIÓN"}
+          {step === "token" && "VINCULAR CUENTA"}
+          {step === "set-password" && "ESTABLECER CONTRASEÑA"}
+          {step === "reset-password" && "RECUPERAR ACCESO"}
+          {step === "reset-set-password" && "NUEVA CONTRASEÑA"}
+          {step === "reset-done" && "¡LISTO!"}
+        </h2>
 
-                {step === "login" && renderLoginStep()}
-                {step === "token" && renderTokenStep()}
-                {step === "set-password" && renderSetPasswordStep()}
-                {step === "reset-password" && renderResetPasswordStep()}
-                {step === "reset-set-password" && renderResetSetPasswordStep()}
-                {step === "reset-done" && success && <p className="success">{success}</p>}
-
-                {showError && error && step !== "login" && (
-                  <div className="login-error">
-                    <span className="login-error__title">Ha ocurrido un problema</span>
-                    <span className="login-error__text">{error}</span>
-                  </div>
-                )}
-              </div>
-            </div>
+        {(step === "token" || step.startsWith("reset")) && step !== "reset-done" && (
+          <div className="mc-modal-tag">
+            {step === "token" ? "Vincula tu cuenta de Minecraft al sistema web." : "Estás restableciendo tu contraseña web."}
           </div>
+        )}
 
-          {showToast && step === "login" && (
-            <div className="toast-error">
-              <span className="toast-error__icon">!</span>
-              <span className="toast-error__text">{error}</span>
-            </div>
-          )}
-        </div>
-      )}
+        {step === "login" && renderLoginStep()}
+        {step === "token" && renderTokenStep()}
+        {step === "set-password" && renderSetPasswordStep()}
+        {step === "reset-password" && renderResetPasswordStep()}
+        {step === "reset-set-password" && renderResetSetPasswordStep()}
+
+        {step === "reset-done" && success && (
+          <>
+            <p className="mc-modal-success">{success}</p>
+            <AuthButton onClick={() => setStep("login")}>Ir a iniciar sesión</AuthButton>
+          </>
+        )}
+
+        {showError && error && step !== "login" && (
+          <div className="mc-modal-error">{error}</div>
+        )}
+      </div>
     </div>
   );
 }

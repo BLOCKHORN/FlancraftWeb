@@ -1,16 +1,27 @@
 @use "./navbarDesktop";
 @use "./navbarMobile";
 
-/* fallback: el JS lo pisa con la altura real */
 :root{
-  --nav-h: 68px;
+  --nav-h: 72px; /* Ligeramente más alto para el diseño cuadriculado */
 }
 
-/* útil para anchors/scrollIntoView */
 html{
   scroll-padding-top: calc(var(--nav-h) + 10px);
 }
 
+@font-face {
+  font-family: 'MinecraftSeven';
+  src: url('/fonts/MinecraftBold.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+$mc-font: 'MinecraftSeven', 'Montserrat', sans-serif;
+
+/* ELIMINADO: Todo el Glassmorphism y degradados suaves.
+  NUEVO: Estilo "Piedra Oscura" de la Tienda.
+*/
 .navbar-flancraft{
   position: sticky;
   top: 0;
@@ -18,51 +29,13 @@ html{
   width: 100%;
   isolation: isolate;
 
-  /* Fondo “barra completa” tipo la 2ª imagen, pero sin comerse el background */
-  background: linear-gradient(
-    180deg,
-    rgba(64, 47, 32, 0.86) 0%,
-    rgba(42, 31, 22, 0.82) 55%,
-    rgba(24, 18, 14, 0.88) 100%
-  );
+  background-color: #151923;
+  border-bottom: 4px solid #000;
+  box-shadow: 
+    inset 0 -4px 0 #0a0c14, /* Sombra inferior interna */
+    0 10px 20px rgba(0,0,0,0.6); /* Sombra exterior dura */
 
-  backdrop-filter: blur(10px) saturate(125%);
-  -webkit-backdrop-filter: blur(10px) saturate(125%);
-
-  border-bottom: 1px solid rgba(255, 220, 170, 0.14);
-  box-shadow: 0 14px 34px rgba(0,0,0,0.45);
-
-  /* brillo superior sutil */
-  &::before{
-    content:"";
-    position:absolute;
-    inset: 0;
-    pointer-events:none;
-    background: linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.00) 45%);
-    opacity: .55;
-  }
-
-  /* “borde abajo bonito” como la 2ª */
-  &::after{
-    content:"";
-    position:absolute;
-    left: 0;
-    right: 0;
-    bottom: -1px;
-    height: 3px;
-    pointer-events:none;
-
-    background: linear-gradient(
-      90deg,
-      rgba(255, 200, 120, 0.00) 0%,
-      rgba(255, 200, 120, 0.30) 18%,
-      rgba(255, 230, 185, 0.55) 50%,
-      rgba(255, 200, 120, 0.30) 82%,
-      rgba(255, 200, 120, 0.00) 100%
-    );
-
-    filter: drop-shadow(0 6px 10px rgba(0,0,0,0.35));
-  }
+  font-family: $mc-font;
 }
 
 .navbar-flancraft.menu-open{
