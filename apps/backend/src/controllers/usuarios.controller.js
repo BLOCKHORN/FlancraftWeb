@@ -310,22 +310,20 @@ exports.obtenerSkinUsuario = async (req, res) => {
     if (!usuario) return res.status(404).json({ error: "Usuario no encontrado." });
 
     const rawUid = cleanText(usuario.uid);
-    const gamertag = stripBedrockPrefix(rawUid);
-    const bedrockByName = rawUid.startsWith(".");
     const bedrockByUuid = isFloodgateUuid(usuario.uuid);
-    const isBedrock = bedrockByName || bedrockByUuid;
+    const isBedrock = rawUid.startsWith(".") || bedrockByUuid;
 
-    const identifier = isBedrock ? usuario.uuid : gamertag;
+    let skinUrl = "";
 
-    if (!identifier) {
-      return res.status(200).json({
-        skin_url: null,
-        source: "empty",
-      });
+    if (isBedrock) {
+      skinUrl = `https://crafthead.net/avatar/${usuario.uuid}`;
+    } else {
+      const gamertag = rawUid.replace(/^\.+/, "");
+      skinUrl = `https://mc-heads.net/avatar/${encodeURIComponent(gamertag)}/160.png`;
     }
 
     return res.status(200).json({
-      skin_url: `https://mc-heads.net/player/${encodeURIComponent(identifier)}/160.png`,
+      skin_url: skinUrl,
       source: isBedrock ? "bedrock" : "java",
     });
   } catch (err) {

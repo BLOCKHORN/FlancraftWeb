@@ -48,7 +48,7 @@ exports.transferToServer = async (req, res) => {
       return res.status(500).json({ error: "Error interno al transferir coins." });
     }
 
-    const commandId = data?.command_id || null;
+    const commandId = data?.command_id || data?.id || null;
     const serverKey = String(data?.servidor || servidor).trim().toLowerCase();
 
     if (commandId) {

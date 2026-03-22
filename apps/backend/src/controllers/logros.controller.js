@@ -5,23 +5,30 @@ const { evaluateWebAchievementsForUser } = require("../services/webLogros.servic
 const DAILY_MISSIONS_PER_SERVER = 5;
 const WEEKLY_MISSIONS_PER_SERVER = 8;
 
-function hoyISO() {
-  return new Date().toISOString().slice(0, 10);
+function inicioDiaISO() {
+  const d = new Date();
+  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 0, 0, 0, 0)).toISOString();
+}
+
+function finDiaISO() {
+  const d = new Date();
+  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 23, 59, 59, 999)).toISOString();
 }
 
 function inicioDeSemanaISO() {
   const ahora = new Date();
   const dia = ahora.getUTCDay();
   const ajuste = dia === 0 ? -6 : 1 - dia;
-  const inicio = new Date(Date.UTC(ahora.getUTCFullYear(), ahora.getUTCMonth(), ahora.getUTCDate()));
+  const inicio = new Date(Date.UTC(ahora.getUTCFullYear(), ahora.getUTCMonth(), ahora.getUTCDate(), 0, 0, 0, 0));
   inicio.setUTCDate(inicio.getUTCDate() + ajuste);
-  return inicio.toISOString().slice(0, 10);
+  return inicio.toISOString();
 }
 
 function finDeSemanaISO(inicioISO) {
-  const inicio = new Date(`${inicioISO}T00:00:00.000Z`);
+  const inicio = new Date(inicioISO);
   inicio.setUTCDate(inicio.getUTCDate() + 6);
-  return inicio.toISOString().slice(0, 10);
+  inicio.setUTCHours(23, 59, 59, 999);
+  return inicio.toISOString();
 }
 
 function generarUuid() {
@@ -48,142 +55,74 @@ function descripcionObjetivoFallback(tipoEvento, objetivo) {
   const n = clampInt(objetivo);
 
   switch (tipoEvento) {
-    case "troncos_talados":
-      return `Tala ${n} troncos.`;
-    case "tablas_crafteadas":
-      return `Craftea ${n} tablas.`;
-    case "pan_crafteado":
-      return `Hornea ${n} ${n === 1 ? "pan" : "panes"}.`;
-    case "camas_crafteadas":
-      return `Craftea ${n} ${n === 1 ? "cama" : "camas"}.`;
-    case "hornos_crafteados":
-      return `Craftea ${n} ${n === 1 ? "horno" : "hornos"}.`;
-    case "cubo_crafteado":
-      return `Craftea ${n} ${n === 1 ? "cubo" : "cubos"}.`;
-    case "pico_hierro_crafteado":
-      return `Craftea ${n} ${n === 1 ? "pico de hierro" : "picos de hierro"}.`;
-    case "semillas_plantadas":
-      return `Planta ${n} ${n === 1 ? "semilla" : "semillas"}.`;
-    case "cultivos_recolectados":
-      return `Recolecta ${n} ${n === 1 ? "cultivo" : "cultivos"}.`;
-    case "trigo_recolectado":
-      return `Recolecta ${n} unidades de trigo.`;
-    case "zanahorias_patatas_recolectadas":
-      return `Recolecta ${n} zanahorias o patatas.`;
-    case "nether_wart_recolectada":
-      return `Recolecta ${n} nether wart.`;
-    case "ovejas_esquiladas":
-      return `Esquila ${n} ${n === 1 ? "oveja" : "ovejas"}.`;
-    case "animales_criados":
-      return `Cría ${n} ${n === 1 ? "animal" : "animales"}.`;
-    case "alimentos_cocinados":
-      return `Cocina ${n} ${n === 1 ? "alimento" : "alimentos"}.`;
-    case "veces_pescadas":
-      return `Lanza la caña ${n} ${n === 1 ? "vez" : "veces"}.`;
-    case "peces_pescados":
-      return `Pesca ${n} ${n === 1 ? "pez" : "peces"}.`;
-    case "bloques_colocados_total":
-      return `Coloca ${n} ${n === 1 ? "bloque" : "bloques"}.`;
-    case "madera_colocada":
-      return `Coloca ${n} bloques de madera.`;
-    case "piedra_procesada_colocada":
-      return `Coloca ${n} bloques de piedra procesada.`;
-    case "cofres_colocados":
-      return `Coloca ${n} ${n === 1 ? "cofre" : "cofres"}.`;
-    case "antorchas_colocadas":
-      return `Coloca ${n} ${n === 1 ? "antorcha" : "antorchas"}.`;
-    case "fuentes_luz_colocadas":
-      return `Coloca ${n} fuentes de luz potentes.`;
-    case "mesa_encantamientos_colocada":
-      return `Coloca ${n} ${n === 1 ? "mesa de encantamientos" : "mesas de encantamientos"}.`;
-    case "bloques_rotos_total":
-      return `Rompe ${n} ${n === 1 ? "bloque" : "bloques"}.`;
-    case "bloques_bajo_y32_minados":
-      return `Mina ${n} bloques por debajo de Y32.`;
-    case "tierra_rotas":
-      return `Rompe ${n} bloques de tierra o césped.`;
-    case "arena_recogida":
-      return `Recoge ${n} bloques de arena.`;
-    case "grava_recogida":
-      return `Recoge ${n} bloques de grava.`;
-    case "menas_extraidas_total":
-      return `Extrae ${n} menas.`;
-    case "carbon_mena_extraida":
-      return `Extrae ${n} menas de carbón.`;
-    case "cobre_mena_extraida":
-      return `Extrae ${n} menas de cobre.`;
-    case "hierro_mena_extraida":
-      return `Extrae ${n} menas de hierro.`;
-    case "redstone_mena_extraida":
-      return `Extrae ${n} menas de redstone.`;
-    case "lapis_mena_extraida":
-      return `Extrae ${n} menas de lapislázuli.`;
-    case "oro_mena_extraida":
-      return `Extrae ${n} menas de oro.`;
-    case "esmeralda_mena_extraida":
-      return `Extrae ${n} menas de esmeralda.`;
-    case "diamantes_extraidos":
-      return `Extrae ${n} ${n === 1 ? "diamante" : "diamantes"}.`;
-    case "cuarzo_nether_extraido":
-      return `Extrae ${n} menas de cuarzo del Nether.`;
-    case "hierro_lingotes_fundidos":
-      return `Funde ${n} ${n === 1 ? "lingote de hierro" : "lingotes de hierro"}.`;
-    case "hostiles_matados":
-      return `Derrota ${n} criaturas hostiles.`;
-    case "zombis_matados":
-      return `Derrota ${n} ${n === 1 ? "zombi" : "zombis"}.`;
-    case "esqueletos_matados":
-      return `Derrota ${n} ${n === 1 ? "esqueleto" : "esqueletos"}.`;
-    case "creepers_matados":
-      return `Derrota ${n} ${n === 1 ? "creeper" : "creepers"}.`;
-    case "aranas_matadas":
-      return `Derrota ${n} ${n === 1 ? "araña" : "arañas"}.`;
-    case "endermen_matados":
-      return `Derrota ${n} ${n === 1 ? "enderman" : "endermen"}.`;
-    case "blazes_matados":
-      return `Derrota ${n} ${n === 1 ? "blaze" : "blazes"}.`;
-    case "ghasts_matados":
-      return `Derrota ${n} ${n === 1 ? "ghast" : "ghasts"}.`;
-    case "shulkers_matados":
-      return `Derrota ${n} ${n === 1 ? "shulker" : "shulkers"}.`;
-    case "mobs_nether_matados":
-      return `Derrota ${n} criaturas hostiles en el Nether.`;
-    case "mobs_end_matados":
-      return `Derrota ${n} criaturas hostiles en el End.`;
-    case "kills_con_arco":
-      return `Consigue ${n} bajas con arco.`;
-    case "minutos_jugados":
-      return `Juega ${n} minutos en Survival.`;
-    case "bloques_recorridos_total":
-      return `Recorre ${n} bloques.`;
-    case "visitas_bajo_y0":
-      return `Desciende por debajo de Y0 ${n} ${n === 1 ? "vez" : "veces"}.`;
-    case "minutos_bajo_y32":
-      return `Pasa ${n} minutos por debajo de Y32.`;
-    case "entradas_nether":
-      return `Entra al Nether ${n} ${n === 1 ? "vez" : "veces"}.`;
-    case "entradas_end":
-      return `Entra al End ${n} ${n === 1 ? "vez" : "veces"}.`;
-    case "bloques_recorridos_nether":
-      return `Recorre ${n} bloques en el Nether.`;
-    case "bloques_recorridos_end":
-      return `Recorre ${n} bloques en el End.`;
-    case "usos_portal":
-      return `Usa portales ${n} ${n === 1 ? "vez" : "veces"}.`;
-    case "visito_tres_dimensiones":
-      return "Visita Overworld, Nether y End con el mismo personaje durante el ciclo activo.";
-    case "withers_derrotados":
-      return `Derrota ${n} ${n === 1 ? "Wither" : "Withers"}.`;
-    case "dragones_derrotados":
-      return `Derrota ${n} ${n === 1 ? "Dragón del End" : "Dragones del End"}.`;
-    case "objetos_encantados":
-      return `Encanta ${n} ${n === 1 ? "objeto" : "objetos"}.`;
-    case "pociones_preparadas":
-      return `Prepara ${n} ${n === 1 ? "poción" : "pociones"}.`;
-    case "usos_cama":
-      return `Usa una cama ${n} ${n === 1 ? "vez" : "veces"}.`;
-    default:
-      return `Completa ${n} de progreso en este encargo.`;
+    case "troncos_talados": return `¡Arrasa con ${n} troncos a puro hachazo!`;
+    case "tablas_crafteadas": return `Procesa ${n} tablas y prepara material.`;
+    case "pan_crafteado": return `Hornea ${n} panes para sobrevivir al viaje.`;
+    case "camas_crafteadas": return `Fabrica ${n} camas para el campamento.`;
+    case "hornos_crafteados": return `Craftea ${n} hornos operativos.`;
+    case "cubo_crafteado": return `Craftea ${n} cubos de hierro sólido.`;
+    case "pico_hierro_crafteado": return `Forja ${n} picos de hierro de verdad.`;
+    case "semillas_plantadas": return `Planta ${n} semillas en tierra fértil.`;
+    case "cultivos_recolectados": return `Cosecha ${n} cultivos y llena los cofres.`;
+    case "trigo_recolectado": return `Recolecta ${n} gavillas de trigo maduro.`;
+    case "zanahorias_patatas_recolectadas": return `Desentierra ${n} raíces (zanahorias o patatas).`;
+    case "nether_wart_recolectada": return `Recolecta ${n} verrugas del infierno.`;
+    case "ovejas_esquiladas": return `Quítale la lana a ${n} ovejas.`;
+    case "animales_criados": return `Multiplica el rebaño criando a ${n} animales.`;
+    case "alimentos_cocinados": return `Cocina ${n} raciones de comida en el horno.`;
+    case "veces_pescadas": return `Lanza la caña al agua ${n} veces.`;
+    case "peces_pescados": return `Atrapa a ${n} peces del río.`;
+    case "bloques_colocados_total": return `Construye con al menos ${n} bloques.`;
+    case "madera_colocada": return `Coloca ${n} bloques de madera.`;
+    case "piedra_procesada_colocada": return `Levanta muros con ${n} bloques de piedra tratada.`;
+    case "cofres_colocados": return `Coloca ${n} cofres para organizar el botín.`;
+    case "antorchas_colocadas": return `Ilumina el mundo con ${n} antorchas.`;
+    case "fuentes_luz_colocadas": return `Coloca ${n} fuentes de luz potentes (faroles, glowstone).`;
+    case "mesa_encantamientos_colocada": return `Instala ${n} mesas arcanas.`;
+    case "bloques_rotos_total": return `Pulveriza ${n} bloques del mundo.`;
+    case "bloques_bajo_y32_minados": return `Pica ${n} bloques en la profunda oscuridad (Y < 32).`;
+    case "tierra_rotas": return `Rompe ${n} bloques de tierra o césped a palazos.`;
+    case "arena_recogida": return `Palea ${n} bloques de arena.`;
+    case "grava_recogida": return `Busca pedernal despejando ${n} bloques de grava.`;
+    case "menas_extraidas_total": return `Extrae a pico ${n} minerales de valor.`;
+    case "carbon_mena_extraida": return `Extrae ${n} vetas de carbón puro.`;
+    case "cobre_mena_extraida": return `Arranca ${n} vetas de cobre de la roca.`;
+    case "hierro_mena_extraida": return `Extrae ${n} vetas de hierro.`;
+    case "redstone_mena_extraida": return `Saca a la luz ${n} vetas de redstone.`;
+    case "lapis_mena_extraida": return `Desentierra ${n} vetas de lapislázuli azul.`;
+    case "oro_mena_extraida": return `Encuentra y pica ${n} vetas de oro brillante.`;
+    case "esmeralda_mena_extraida": return `Consigue el hallazgo de ${n} vetas de esmeralda.`;
+    case "diamantes_extraidos": return `¡Extrae ${n} diamantes y hazte de oro!`;
+    case "cuarzo_nether_extraido": return `Pica ${n} vetas de cuarzo infernal.`;
+    case "hierro_lingotes_fundidos": return `Funde ${n} lingotes de hierro al rojo vivo.`;
+    case "hostiles_matados": return `¡Manda a ${n} monstruos hostiles al otro barrio!`;
+    case "zombis_matados": return `¡Elimina a ${n} zombis sin piedad!`;
+    case "esqueletos_matados": return `¡Haz añicos a ${n} esqueletos tiradores!`;
+    case "creepers_matados": return `¡Intercepta a ${n} creepers antes de que estallen!`;
+    case "aranas_matadas": return `¡Acaba con ${n} arañas de las cavernas!`;
+    case "endermen_matados": return `¡Aniquila a ${n} endermen y arrebátales las perlas!`;
+    case "blazes_matados": return `¡Apaga a golpes a ${n} blazes infernales!`;
+    case "ghasts_matados": return `¡Derriba a ${n} ghasts del cielo del Nether!`;
+    case "shulkers_matados": return `¡Caza a ${n} shulkers entre las islas del End!`;
+    case "mobs_nether_matados": return `¡Sobrevive abatiendo a ${n} criaturas en el Nether!`;
+    case "mobs_end_matados": return `¡Sobrevive liquidando a ${n} criaturas del vacío!`;
+    case "kills_con_arco": return `Acierta a ${n} objetivos letales usando tu arco.`;
+    case "minutos_jugados": return `Mantente firme y juega ${n} minutos en el servidor.`;
+    case "bloques_recorridos_total": return `Patea el mapa recorriendo ${n} bloques de distancia.`;
+    case "visitas_bajo_y0": return `Adéntrate bajo la cota Y0 un total de ${n} veces.`;
+    case "minutos_bajo_y32": return `Resiste ${n} minutos en lo más profundo de la mina.`;
+    case "entradas_nether": return `Cruza al infierno a través del portal ${n} veces.`;
+    case "entradas_end": return `Atrévete a entrar a la dimensión del End ${n} veces.`;
+    case "bloques_recorridos_nether": return `Avanza ${n} bloques sobre el peligroso suelo del Nether.`;
+    case "bloques_recorridos_end": return `Camina ${n} bloques de distancia entre islas del End.`;
+    case "usos_portal": return `Teletranspórtate por la red de portales ${n} veces.`;
+    case "visito_tres_dimensiones": return "Viaja por el Overworld, el Nether y el End con un único personaje activo.";
+    case "withers_derrotados": return `¡Invoca y destroza a ${n} Withers!`;
+    case "dragones_derrotados": return `¡Haz caer del cielo a ${n} Dragones del End!`;
+    case "objetos_encantados": return `Mejora mágicamente ${n} objetos en tu altar.`;
+    case "pociones_preparadas": return `Destila con éxito ${n} pociones para el combate.`;
+    case "usos_cama": return `Descansa en una cama ${n} veces para asegurar tu respawn.`;
+    default: return `Avanza ${n} de progreso en esta hazaña.`;
   }
 }
 
@@ -228,7 +167,9 @@ function normalizarMisionBase(mision) {
 }
 
 function normalizarMisionRotada(row, tablaRelacion, progreso, tipoMision) {
-  const definicion = row?.[tablaRelacion] || {};
+  const definicionRaw = row?.[tablaRelacion];
+  const definicion = Array.isArray(definicionRaw) ? definicionRaw[0] : (definicionRaw || {});
+  
   const textos = normalizarTextos(definicion);
   const objetivo = clampInt(progreso?.objetivo_snapshot ?? definicion.objetivo);
   const progresoActual = clampInt(progreso?.progreso_actual);
@@ -249,7 +190,7 @@ function normalizarMisionRotada(row, tablaRelacion, progreso, tipoMision) {
     orden: clampInt(definicion.orden),
     activa: !!row.activa,
     progreso_actual: progresoActual,
-    completado: !!progreso?.completado || progresoActual >= objetivo,
+    completado: !!progreso?.completado || (objetivo > 0 && progresoActual >= objetivo),
     reclamado: !!progreso?.reclamado,
     tipo_mision: tipoMision,
     fecha_inicio: row.fecha_inicio,
@@ -357,7 +298,9 @@ async function cargarLogrosActivos(servidor) {
   return data || [];
 }
 
-async function cargarRotacionActivaDiaria(servidor, hoy) {
+async function cargarRotacionActivaDiaria(servidor) {
+  const hoyStr = new Date().toISOString().slice(0, 10);
+  
   const { data, error } = await db
     .from("misiones_diarias_rotacion")
     .select(`
@@ -389,15 +332,17 @@ async function cargarRotacionActivaDiaria(servidor, hoy) {
     `)
     .eq("servidor", servidor)
     .eq("activa", true)
-    .lte("fecha_inicio", hoy)
-    .gte("fecha_fin", hoy)
+    .lte("fecha_inicio", hoyStr + "T23:59:59.999Z")
+    .gte("fecha_fin", hoyStr)
     .order("orden_rotacion", { ascending: true });
 
   if (error) throw error;
   return data || [];
 }
 
-async function cargarRotacionActivaSemanal(servidor, hoy) {
+async function cargarRotacionActivaSemanal(servidor) {
+  const hoyStr = new Date().toISOString().slice(0, 10);
+
   const { data, error } = await db
     .from("misiones_semanales_rotacion")
     .select(`
@@ -429,8 +374,8 @@ async function cargarRotacionActivaSemanal(servidor, hoy) {
     `)
     .eq("servidor", servidor)
     .eq("activa", true)
-    .lte("fecha_inicio", hoy)
-    .gte("fecha_fin", hoy)
+    .lte("fecha_inicio", hoyStr + "T23:59:59.999Z")
+    .gte("fecha_fin", hoyStr)
     .order("orden_rotacion", { ascending: true });
 
   if (error) throw error;
@@ -591,7 +536,6 @@ async function aplicarProgresoLogros(uuid, servidor, progresos) {
 }
 
 async function aplicarProgresoRotado(uuid, servidor, progresos, tipoMision) {
-  const hoy = hoyISO();
   const config =
     tipoMision === "diaria"
       ? {
@@ -609,12 +553,14 @@ async function aplicarProgresoRotado(uuid, servidor, progresos, tipoMision) {
 
   const rotaciones =
     tipoMision === "diaria"
-      ? await cargarRotacionActivaDiaria(servidor, hoy)
-      : await cargarRotacionActivaSemanal(servidor, hoy);
+      ? await cargarRotacionActivaDiaria(servidor)
+      : await cargarRotacionActivaSemanal(servidor);
 
   const eventos = Object.keys(progresos);
+  
   const activas = rotaciones.filter((item) => {
-    const definicion = item[config.relacion];
+    const defRaw = item[config.relacion];
+    const definicion = Array.isArray(defRaw) ? defRaw[0] : (defRaw || {});
     return definicion && eventos.includes(definicion.tipo_evento);
   });
 
@@ -630,7 +576,9 @@ async function aplicarProgresoRotado(uuid, servidor, progresos, tipoMision) {
   const completadosAhora = [];
 
   for (const row of activas) {
-    const definicion = row[config.relacion];
+    const defRaw = row[config.relacion];
+    const definicion = Array.isArray(defRaw) ? defRaw[0] : (defRaw || {});
+    
     const cantidad = clampInt(progresos[definicion.tipo_evento]);
     if (cantidad <= 0) continue;
 
@@ -802,10 +750,9 @@ async function obtenerLogrosJugador(req, res) {
 async function obtenerMisionesDiariasJugador(req, res) {
   const uuid = req.params.uuid;
   const servidor = req.query.servidor || "survival";
-  const hoy = hoyISO();
 
   try {
-    const rotacion = await cargarRotacionActivaDiaria(servidor, hoy);
+    const rotacion = await cargarRotacionActivaDiaria(servidor);
     const mapa = await cargarProgresoRotaciones(
       uuid,
       "misiones_diarias_progreso",
@@ -837,10 +784,9 @@ async function obtenerMisionesDiariasJugador(req, res) {
 async function obtenerMisionesSemanalesJugador(req, res) {
   const uuid = req.params.uuid;
   const servidor = req.query.servidor || "survival";
-  const hoy = hoyISO();
 
   try {
-    const rotacion = await cargarRotacionActivaSemanal(servidor, hoy);
+    const rotacion = await cargarRotacionActivaSemanal(servidor);
     const mapa = await cargarProgresoRotaciones(
       uuid,
       "misiones_semanales_progreso",
@@ -929,7 +875,9 @@ async function reclamarMision(req, res) {
         .maybeSingle();
 
       if (rotacionError) throw rotacionError;
-      xp = clampInt(rotacion?.misiones_diarias?.xp_otorgada);
+      
+      const defRot = Array.isArray(rotacion?.misiones_diarias) ? rotacion.misiones_diarias[0] : rotacion?.misiones_diarias;
+      xp = clampInt(defRot?.xp_otorgada);
     }
 
     if (tipoMision === "semanal") {
@@ -953,7 +901,9 @@ async function reclamarMision(req, res) {
         .maybeSingle();
 
       if (rotacionError) throw rotacionError;
-      xp = clampInt(rotacion?.misiones_semanales?.xp_otorgada);
+      
+      const defRot = Array.isArray(rotacion?.misiones_semanales) ? rotacion.misiones_semanales[0] : rotacion?.misiones_semanales;
+      xp = clampInt(defRot?.xp_otorgada);
     }
 
     const objetivo = clampInt(progreso?.objetivo_snapshot);
@@ -1172,8 +1122,8 @@ async function rotarTabla(config, fechaInicio, fechaFin, cantidadObjetivo) {
 
 async function rotarMisionesDiarias(req, res) {
   try {
-    const inicio = hoyISO();
-    const fin = inicio;
+    const inicio = inicioDiaISO();
+    const fin = finDiaISO();
 
     await rotarTabla(
       {

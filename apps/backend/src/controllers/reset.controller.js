@@ -1,70 +1,135 @@
 const db = require("../models/db");
 const bcrypt = require("bcrypt");
+const crypto = require("crypto");
 
-// POST /api/reset/validate
+const HEX32_RE = /^[a-f0-9]{32}$/i;
+const CODE_RE = /^[0-9]{6}$/;
+
+function isValidResetToken(value) {
+  return HEX32_RE.test(String(value || "").trim());
+}
+
+function isValidResetCode(value) {
+  return CODE_RE.test(String(value || "").trim());
+}
+
+function makeCode6() {
+  return String(crypto.randomInt(0, 1000000)).padStart(6, "0");
+}
+
+function buildResetUrl(token, codigo) {
+  const webBase = String(process.env.RESET_WEB_URL || "https://www.flancraft.com/reset").trim();
+  const params = [];
+
+  if (token) params.push(`token=${encodeURIComponent(token)}`);
+  if (codigo) params.push(`codigo=${encodeURIComponent(codigo)}`);
+
+  if (!params.length) return webBase;
+
+  const sep = webBase.includes("?") ? "&" : "?";
+  return `${webBase}${sep}${params.join("&")}`;
+}
+
+async function findResetRow({ token, codigo }) {
+  let query = db
+    .from("reset_password")
+    .select("uuid, token, codigo, expiracion, utilizado")
+    .limit(1);
+
+  if (token) query = query.eq("token", token);
+  else query = query.eq("codigo", codigo);
+
+  const { data, error } = await query.maybeSingle();
+  if (error) throw error;
+  return data || null;
+}
+
+async function findActiveCodeCollision(codigo, nowIso) {
+  const { data, error } = await db
+    .from("reset_password")
+    .select("codigo")
+    .eq("codigo", codigo)
+    .eq("utilizado", false)
+    .gt("expiracion", nowIso)
+    .maybeSingle();
+
+  if (error) throw error;
+  return !!data;
+}
+
 exports.validarResetToken = async (req, res) => {
-  const { token } = req.body;
+  const rawToken = String(req.body?.token || "").trim();
+  const rawCodigo = String(req.body?.codigo || "").trim();
 
-  if (!token || typeof token !== "string" || !/^[a-f0-9]{32}$/.test(token)) {
-    return res.status(400).json({ error: "Token inválido." });
+  if (!isValidResetToken(rawToken) && !isValidResetCode(rawCodigo)) {
+    return res.status(400).json({ error: "Token o código inválido." });
   }
 
   try {
-    const now = new Date().toISOString();
+    const row = await findResetRow({
+      token: isValidResetToken(rawToken) ? rawToken : null,
+      codigo: isValidResetCode(rawCodigo) ? rawCodigo : null,
+    });
 
-    const { data, error } = await db
-      .from("reset_password")
-      .select("uuid")
-      .eq("token", token)
-      .eq("utilizado", false)
-      .gt("expiracion", now)
-      .maybeSingle();
+    if (!row) {
+      return res.status(404).json({ error: "Token o código no válido." });
+    }
 
-    if (error) throw error;
-    if (!data) return res.status(404).json({ error: "Token no válido o expirado." });
+    const expiracionMs = new Date(row.expiracion).getTime();
+    if (row.utilizado || !expiracionMs || expiracionMs <= Date.now()) {
+      return res.status(410).json({ error: "Token o código expirado o ya utilizado." });
+    }
 
-    return res.status(200).json({ uuid: data.uuid });
+    return res.status(200).json({
+      uuid: row.uuid,
+      token: row.token,
+      codigo: row.codigo || null,
+      expiracion: row.expiracion,
+      url: buildResetUrl(row.token, row.codigo),
+    });
   } catch (err) {
     console.error("[RESET VALIDATE ERROR]", err);
     return res.status(500).json({ error: "Error validando token." });
   }
 };
 
-// POST /api/reset/set-password
 exports.cambiarPassword = async (req, res) => {
-  const { token, nuevaPassword } = req.body;
+  const rawToken = String(req.body?.token || "").trim();
+  const rawCodigo = String(req.body?.codigo || "").trim();
+  const nuevaPassword = String(req.body?.nuevaPassword || "");
 
-  if (!token || !nuevaPassword) {
+  if ((!isValidResetToken(rawToken) && !isValidResetCode(rawCodigo)) || !nuevaPassword) {
     return res.status(400).json({ error: "Faltan datos." });
   }
 
   try {
-    const now = new Date().toISOString();
+    const row = await findResetRow({
+      token: isValidResetToken(rawToken) ? rawToken : null,
+      codigo: isValidResetCode(rawCodigo) ? rawCodigo : null,
+    });
 
-    const { data: tokenData, error: tokenError } = await db
-      .from("reset_password")
-      .select("uuid")
-      .eq("token", token)
-      .eq("utilizado", false)
-      .gt("expiracion", now)
-      .maybeSingle();
+    if (!row) {
+      return res.status(404).json({ error: "Token o código no válido." });
+    }
 
-    if (tokenError) throw tokenError;
-    if (!tokenData) return res.status(404).json({ error: "Token no válido o expirado." });
+    const expiracionMs = new Date(row.expiracion).getTime();
+    if (row.utilizado || !expiracionMs || expiracionMs <= Date.now()) {
+      return res.status(410).json({ error: "Token o código expirado o ya utilizado." });
+    }
 
     const hashedPassword = await bcrypt.hash(nuevaPassword, 10);
 
     const { error: updateError } = await db
       .from("usuarios")
       .update({ password: hashedPassword })
-      .eq("uuid", tokenData.uuid);
+      .eq("uuid", row.uuid);
 
     if (updateError) throw updateError;
 
     const { error: marcarError } = await db
       .from("reset_password")
       .update({ utilizado: true })
-      .eq("token", token);
+      .eq("token", row.token);
 
     if (marcarError) throw marcarError;
 
@@ -74,27 +139,69 @@ exports.cambiarPassword = async (req, res) => {
     return res.status(500).json({ error: "Error actualizando la contraseña." });
   }
 };
-const crypto = require("crypto");
 
 exports.generarResetToken = async (req, res) => {
-  const { uuid } = req.body;
+  const uuid = String(req.body?.uuid || "").trim();
 
-  if (!uuid) return res.status(400).json({ error: "Falta UUID." });
+  if (!uuid) {
+    return res.status(400).json({ error: "Falta UUID." });
+  }
 
   try {
-    const token = crypto.randomBytes(16).toString("hex"); // 32 chars
-    const expiracion = new Date(Date.now() + 15 * 60 * 1000).toISOString(); // 15 min
+    const { data: user, error: userError } = await db
+      .from("usuarios")
+      .select("uuid")
+      .eq("uuid", uuid)
+      .maybeSingle();
 
-    const { error } = await db.from("reset_password").insert({
-      uuid,
+    if (userError) throw userError;
+    if (!user) {
+      return res.status(404).json({ error: "Ese jugador no está vinculado con la web." });
+    }
+
+    const nowIso = new Date().toISOString();
+    const expiracion = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+    const token = crypto.randomBytes(16).toString("hex");
+
+    let codigo = null;
+    for (let i = 0; i < 10; i++) {
+      const candidate = makeCode6();
+      const exists = await findActiveCodeCollision(candidate, nowIso);
+      if (!exists) {
+        codigo = candidate;
+        break;
+      }
+    }
+
+    if (!codigo) {
+      return res.status(500).json({ error: "No se ha podido generar un código temporal." });
+    }
+
+    const { error: deleteError } = await db
+      .from("reset_password")
+      .delete()
+      .eq("uuid", uuid);
+
+    if (deleteError) throw deleteError;
+
+    const { error: insertError } = await db
+      .from("reset_password")
+      .insert({
+        uuid,
+        token,
+        codigo,
+        expiracion,
+        utilizado: false,
+      });
+
+    if (insertError) throw insertError;
+
+    return res.status(201).json({
       token,
+      codigo,
       expiracion,
-      utilizado: false
+      url: buildResetUrl(token, codigo),
     });
-
-    if (error) throw error;
-
-    return res.status(201).json({ token });
   } catch (err) {
     console.error("[GENERAR RESET TOKEN ERROR]", err);
     return res.status(500).json({ error: "Error generando token." });

@@ -1,5 +1,27 @@
 const db = require("../models/db");
 
+const FLOODGATE_PREFIX_HEX = "0000000000000000";
+
+const applyBedrockPrefix = (comando, uuid_jugador, nombre_jugador) => {
+  let cmd = String(comando || "");
+  
+  if (uuid_jugador && nombre_jugador) {
+    const compactUuid = String(uuid_jugador).trim().replace(/-/g, "").toLowerCase();
+    
+    if (compactUuid.length === 32 && compactUuid.startsWith(FLOODGATE_PREFIX_HEX)) {
+      const nombre = String(nombre_jugador).trim();
+      
+      if (nombre && !nombre.startsWith(".")) {
+        const safeName = nombre.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regex = new RegExp(`(^|\\s)${safeName}(\\s|$)`, "g");
+        cmd = cmd.replace(regex, `$1.${nombre}$2`);
+      }
+    }
+  }
+  
+  return cmd;
+};
+
 exports.obtenerComandosPendientes = async (req, res) => {
   try {
     const { servidor } = req.query;
@@ -15,8 +37,13 @@ exports.obtenerComandosPendientes = async (req, res) => {
 
     if (error) throw error;
 
+    const fixedData = (data || []).map((row) => ({
+      ...row,
+      comando: applyBedrockPrefix(row.comando, row.uuid_jugador, row.nombre_jugador)
+    }));
+
     res.setHeader("Content-Type", "application/json");
-    return res.status(200).json(data || []);
+    return res.status(200).json(fixedData);
   } catch (err) {
     console.error("[COMANDOS_JSON_ERROR]", err);
     return res.status(500).json({ error: "Error al obtener comandos pendientes." });
@@ -27,14 +54,18 @@ exports.obtenerComandosPendientesTextoPlano = async (req, res) => {
   try {
     const { data, error } = await db
       .from("comandos_pendientes")
-      .select("id, comando, servidor")
+      .select("id, comando, servidor, uuid_jugador, nombre_jugador")
       .eq("ejecutado", false)
       .order("id", { ascending: true })
       .limit(10);
 
     if (error) throw error;
 
-    const comandos = (data || []).map((row) => `${row.comando} || ${row.id} || ${row.servidor}`).join("\n");
+    const comandos = (data || []).map((row) => {
+      const cmd = applyBedrockPrefix(row.comando, row.uuid_jugador, row.nombre_jugador);
+      return `${cmd} || ${row.id} || ${row.servidor}`;
+    }).join("\n");
+    
     res.type("text/plain").send(comandos);
   } catch (err) {
     console.error("[COMANDOS_LEGACY_ERROR]", err);

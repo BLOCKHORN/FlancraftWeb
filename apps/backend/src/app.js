@@ -3,6 +3,8 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 
+const { iniciarCronJobs, ejecutarRotacionInicial } = require("../cron");
+
 const pingRoute = require("./routes/ping");
 const resetRoutes = require("./routes/reset.routes");
 const usuariosRoutes = require("./routes/usuarios.routes");
@@ -49,7 +51,6 @@ function isAllowedOrigin(origin) {
 const corsOptions = {
   origin(origin, callback) {
     if (!isAllowedOrigin(origin)) {
-      console.log("[CORS] Bloqueado origin:", origin);
       return callback(new Error("Not allowed by CORS"));
     }
     return callback(null, true);
@@ -79,8 +80,10 @@ app.use(express.json({
 }));
 app.use(express.urlencoded({ extended: true, limit: "5mb" }));
 
-app.use("/ping", pingRoute);
+iniciarCronJobs();
+ejecutarRotacionInicial();
 
+app.use("/ping", pingRoute);
 app.use("/api/reset", resetRoutes);
 app.use("/api/vincular", vincularRoutes);
 app.use("/api/usuarios", usuariosRoutes);
@@ -88,13 +91,10 @@ app.use("/api/recompensas", recompensasRoutes);
 app.use("/api/daily-claim", dailyClaimRoutes);
 app.use("/api/comandos-pendientes", comandosRoutes);
 app.use("/api/wallet", walletRoutes);
-
 app.use("/api/logros", logrosRoutes);
-app.use("/api/logros", logrosEstadisticasRoutes);
-
+app.use("/api/estadisticas-logros", logrosEstadisticasRoutes);
 app.use("/api/misiones", misionesRoutes);
 app.use("/api/web-logros", webLogrosRoutes);
-
 app.use("/api/monedas", monedasRoutes);
 app.use("/api/sanciones", sancionesRoutes);
 app.use("/api/multicuentas", multicuentasRoutes);
@@ -112,7 +112,6 @@ app.use((req, res) => {
 });
 
 app.use((err, _req, res, _next) => {
-  console.error("Error no controlado:", err);
   res.status(500).json({ error: "Error interno del servidor" });
 });
 
