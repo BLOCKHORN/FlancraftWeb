@@ -43,7 +43,7 @@ $mc-font: "MinecraftSeven", "Montserrat", system-ui, sans-serif;
   &:disabled { background-color: #4b5563; box-shadow: inset -3px -3px 0 #1f2937, inset 3px 3px 0 #6b7280; color: #9ca3af; cursor: not-allowed; text-shadow: none; }
 }
 
-.skin-jugador, .server-icon, .coin-mini, .coin-in-input, .wallet-pillCoin, .badge-premium, .avatar-bg {
+.skin-jugador, .badge-premium, .avatar-bg {
   image-rendering: pixelated;
 }
 
@@ -218,244 +218,99 @@ $mc-font: "MinecraftSeven", "Montserrat", system-ui, sans-serif;
   filter: drop-shadow(0 2px 0 #000);
 }
 
-.dash-wallet-row {
-  display: flex;
-  align-items: center;
-}
-
-.wallet-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
+/* ---------------------------------------------------- */
+/* NUEVA TARJETA DEL NEXO */
+/* ---------------------------------------------------- */
+.nexo-premium-card {
   position: relative;
-}
-
-.wallet-pillLabel {
-  font-family: $mc-font;
-  font-size: 0.9rem;
-  color: #94a3b8;
-  text-shadow: 1px 1px 0 #000;
-}
-
-.wallet-pillInfo {
-  width: 24px;
-  height: 24px;
-  @include mc-btn-shadow(#2b2e42);
-  padding: 0;
-  font-size: 0.9rem;
-  line-height: 1;
-}
-
-.wallet-pillAmount {
-  font-family: $mc-font;
-  font-size: 1.5rem;
-  color: #fbbf24;
-  text-shadow: 2px 2px 0 #000;
-  margin-left: 8px;
-}
-
-.wallet-pillCoin {
-  width: 20px;
-  height: 20px;
-  filter: drop-shadow(0 2px 0 #000);
-}
-
-.wallet-transfer-panel {
-  margin-top: 8px;
-  background-color: #11151d; 
+  background-color: #11151d;
   border: 3px solid #000;
   box-shadow: inset 3px 3px 0 #1e202f, inset -3px -3px 0 #0a0c14;
   padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+  overflow: hidden;
+  margin-top: 8px;
+
+  .nexo-bg {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background: radial-gradient(circle at 10% 50%, rgba(249, 115, 22, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 90% 50%, rgba(192, 132, 252, 0.1) 0%, transparent 50%);
+  }
+
+  .nexo-content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .nexo-crystal-wrap {
+    width: 64px;
+    height: 64px;
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    animation: crystalFloat 4s ease-in-out infinite;
+
+    .nexo-crystal {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      image-rendering: pixelated;
+      filter: drop-shadow(0 4px 6px rgba(0,0,0,0.8));
+    }
+  }
+
+  .nexo-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+
+    h3 {
+      font-family: $mc-font;
+      font-size: 1rem;
+      color: #94a3b8;
+      margin: 0 0 4px 0;
+      letter-spacing: 2px;
+    }
+
+    .nexo-balance {
+      font-family: $mc-font;
+      color: #f97316;
+      font-size: 1.2rem;
+      text-shadow: 2px 2px 0 #000;
+      
+      span {
+        font-size: 2.2rem;
+        color: #fff;
+      }
+    }
+  }
+
+  .mc-btn--nexo {
+    @include mc-btn-shadow(#8b5cf6);
+    min-height: 52px;
+    font-size: 1.2rem;
+    white-space: nowrap;
+    animation: nexoPulse 2s infinite;
+    
+    &:hover { animation: none; background-color: #a855f7; }
+  }
 }
 
-.transfer-head {
-  border-bottom: 2px dashed #2b2e42;
-  padding-bottom: 12px;
+@keyframes crystalFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
 }
 
-.transfer-title {
-  font-family: $mc-font;
-  font-size: 1.2rem;
-  color: #fff;
-  text-shadow: 2px 2px 0 #000;
-  margin-bottom: 4px;
+@keyframes nexoPulse {
+  0%, 100% { box-shadow: inset -3px -3px 0 rgba(0,0,0,0.25), inset 3px 3px 0 rgba(255,255,255,0.4), 0 0 0 rgba(168, 85, 247, 0.4); }
+  50% { box-shadow: inset -3px -3px 0 rgba(0,0,0,0.25), inset 3px 3px 0 rgba(255,255,255,0.4), 0 0 15px rgba(168, 85, 247, 0.6); }
 }
 
-.transfer-visual-flow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: #0a0c14;
-  border: 3px solid #000;
-  box-shadow: inset 3px 3px 0 rgba(255,255,255,0.05), inset -3px -3px 0 rgba(0,0,0,0.8);
-  padding: 16px;
-  margin-bottom: 8px;
-}
-
-.flow-node {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex: 1;
-}
-
-.flow-node.dest {
-  flex-direction: row-reverse;
-  text-align: right;
-}
-
-.flow-icon-wrap {
-  width: 48px;
-  height: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #1a1e29;
-  border: 2px solid #000;
-  border-radius: 4px;
-}
-
-.flow-icon-wrap img {
-  width: 28px;
-  height: 28px;
-  filter: drop-shadow(0 2px 0 #000);
-}
-
-.flow-info {
-  display: flex;
-  flex-direction: column;
-}
-
-.flow-label {
-  font-size: 0.8rem;
-  color: #94a3b8;
-  font-weight: bold;
-  text-transform: uppercase;
-}
-
-.flow-val {
-  font-family: $mc-font;
-  font-size: 1.4rem;
-  color: #fbbf24;
-  text-shadow: 2px 2px 0 #000;
-}
-
-.flow-divider {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 16px;
-}
-
-.flow-arrow {
-  width: 0;
-  height: 0;
-  border-top: 14px solid transparent;
-  border-bottom: 14px solid transparent;
-  border-left: 20px solid #5EE034;
-  filter: drop-shadow(2px 2px 0 #000);
-  animation: flowPulse 1.5s ease-in-out infinite;
-}
-
-@keyframes flowPulse {
-  0% { transform: translateX(-2px); opacity: 0.6; }
-  50% { transform: translateX(2px); opacity: 1; }
-  100% { transform: translateX(-2px); opacity: 0.6; }
-}
-
-.transfer-input-section {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.amount-wrap {
-  position: relative;
-  width: 100%;
-}
-
-.coin-in-input {
-  position: absolute;
-  left: 20px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 24px;
-  height: 24px;
-  z-index: 2;
-  filter: drop-shadow(0 2px 0 #000);
-}
-
-.massive-input {
-  width: 100%;
-  height: 72px;
-  background-color: #0a0c14;
-  border: 4px solid #000;
-  box-shadow: inset 4px 4px 0 rgba(0,0,0,0.8), inset -4px -4px 0 rgba(255,255,255,0.05);
-  color: #fff;
-  padding: 0 20px 0 60px;
-  outline: none;
-  font-family: $mc-font;
-  font-size: 2.2rem;
-  text-align: center;
-}
-
-.massive-input::placeholder { color: #334155; text-shadow: none; }
-.massive-input:focus { border-color: #fbbf24; }
-
-.quick-add-buttons {
-  display: flex;
-  gap: 8px;
-}
-
-.quick-add-buttons button {
-  flex: 1;
-  height: 48px;
-  background: #2b2e42;
-  border: 2px solid #000;
-  box-shadow: inset -2px -2px 0 rgba(0,0,0,0.4), inset 2px 2px 0 rgba(255,255,255,0.1);
-  color: #fff;
-  font-family: $mc-font;
-  font-size: 1rem;
-  cursor: pointer;
-  text-shadow: 1px 1px 0 #000;
-  transition: all 0.1s;
-}
-
-.quick-add-buttons button:hover { background: #3B51B3; }
-.quick-add-buttons button:active { transform: translateY(2px); box-shadow: none; }
-
-.quick-add-buttons button.is-max { background: #fbbf24; color: #000; text-shadow: none; }
-.quick-add-buttons button.is-max:hover { background: #f59e0b; }
-
-.massive-send-btn {
-  width: 100%;
-  height: 64px;
-  font-size: 1.4rem;
-  background: #5EE034;
-  color: #fff;
-  border: 4px solid #000;
-  box-shadow: inset -4px -4px 0 rgba(0,0,0,0.3), inset 4px 4px 0 rgba(255,255,255,0.4);
-  text-shadow: 2px 2px 0 #000;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: $mc-font;
-  animation: pulse-btn 2s infinite;
-  transition: all 0.1s;
-}
-
-@keyframes pulse-btn {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.02); }
-  100% { transform: scale(1); }
-}
-
-.massive-send-btn:hover { animation: none; transform: scale(1.02); filter: brightness(1.1); }
-.massive-send-btn:active { transform: scale(0.98); box-shadow: inset 4px 4px 0 rgba(0,0,0,0.3), inset -4px -4px 0 rgba(255,255,255,0.4); }
+/* ---------------------------------------------------- */
 
 .mc-btn { height: 48px; }
 .mc-btn--shop { @include mc-btn-shadow(#5EE034); } 
@@ -464,45 +319,6 @@ $mc-font: "MinecraftSeven", "Montserrat", system-ui, sans-serif;
 .mc-btn--pink { @include mc-btn-shadow(#d946ef); }  
 .mc-btn--green { @include mc-btn-shadow(#10b981); } 
 .mc-btn--blue { @include mc-btn-shadow(#3B51B3); }  
-
-.mc-element {
-  background-color: #11151d;
-  @include mc-element-shadow;
-  padding: 16px;
-}
-
-.wallet-tooltip {
-  position: absolute;
-  left: 0;
-  top: calc(100% + 12px);
-  width: 320px;
-  z-index: 30;
-}
-
-.wallet-tooltip-title {
-  font-family: $mc-font;
-  color: #fbbf24;
-  margin-bottom: 8px;
-  text-shadow: 2px 2px 0 #000;
-}
-
-.wallet-tooltip-text { font-size: 0.85rem; color: #cbd5e1; line-height: 1.5; font-weight: bold; }
-.wallet-tooltip-note { margin-top: 8px; font-size: 0.8rem; color: #94a3b8; font-weight: bold; }
-
-.transfer-status, .transfer-msg {
-  background-color: #1a1e29;
-  @include mc-element-shadow;
-  padding: 12px 16px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-.transfer-status.is-loading { border-color: #3B51B3; }
-.transfer-status.is-success { border-color: #5EE034; }
-.transfer-msg.is-error { border-color: #ef4444; color: #ef4444; font-family: $mc-font; text-shadow: 1px 1px 0 #000; }
-
-.transfer-statusTitle { font-family: $mc-font; color: #fff; text-shadow: 2px 2px 0 #000; }
-.transfer-statusText { font-size: 0.85rem; color: #cbd5e1; font-weight: bold; margin-top: 4px; }
 
 .dash-level {
   padding: 24px;
@@ -598,35 +414,6 @@ $mc-font: "MinecraftSeven", "Montserrat", system-ui, sans-serif;
   gap: 16px;
 }
 
-.modal-backdrop {
-  position: fixed; inset: 0; z-index: 9999; display: grid; place-items: center; padding: 24px;
-  background: rgba(0,0,0,0.85); backdrop-filter: blur(8px);
-}
-
-.modal-card {
-  width: min(500px, 100%);
-  background-color: #1a1e29;
-  @include mc-block-shadow;
-  padding: 24px;
-}
-
-.modal-title {
-  font-family: $mc-font;
-  font-size: 1.5rem;
-  color: #fbbf24;
-  text-shadow: 2px 2px 0 #000;
-  margin-bottom: 16px;
-}
-
-.modal-line { font-family: $mc-font; color: #fff; text-shadow: 1px 1px 0 #000; margin-bottom: 8px;}
-.modal-sub { font-size: 0.9rem; color: #94a3b8; font-weight: bold; margin-bottom: 24px;}
-
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-}
-
 .loading-overlay {
   position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: grid; place-items: center; z-index: 999;
 }
@@ -634,12 +421,6 @@ $mc-font: "MinecraftSeven", "Montserrat", system-ui, sans-serif;
 .loading-gem { width: 48px; height: 48px; image-rendering: pixelated; animation: pulse 1s infinite alternate; }
 
 @keyframes pulse { from { transform: scale(1); } to { transform: scale(1.1); } }
-
-.btn-spinner {
-  width: 16px; height: 16px; border: 2px solid #fff; border-top-color: transparent; border-radius: 50%;
-  animation: spin 1s linear infinite; margin-right: 8px;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
 
 @media (max-width: 980px) {
   .dash-grid { grid-template-columns: 1fr; }
@@ -650,13 +431,7 @@ $mc-font: "MinecraftSeven", "Montserrat", system-ui, sans-serif;
 }
 
 @media (max-width: 560px) {
-  .transfer-head, .admin-head { flex-direction: column; gap: 4px; }
-  .transfer-visual-flow { flex-direction: column; gap: 16px; padding: 24px 16px; }
-  .flow-node { width: 100%; justify-content: center; }
-  .flow-node.dest { flex-direction: row; text-align: left; }
-  .flow-divider { transform: rotate(90deg); }
-  .quick-add-buttons { flex-wrap: wrap; }
-  .quick-add-buttons button { flex: 1 1 40%; }
-  .modal-actions { flex-direction: column; }
-  .mc-btn { width: 100%; }
+  .admin-head { flex-direction: column; gap: 4px; }
+  .nexo-content { flex-direction: column; text-align: center; }
+  .mc-btn--nexo { width: 100%; }
 }

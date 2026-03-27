@@ -11,7 +11,7 @@
 $mc-font: 'MinecraftSeven', 'Montserrat', sans-serif;
 
 .tsf-rcModal {
-  --rc-r: 2px; /* Reducido a 2px para que parezca un bloque */
+  --rc-r: 2px;
   --rc-pad: clamp(12px, 1.8vw, 18px);
   --rc-cols: minmax(270px, 1.52fr) repeat(3, minmax(120px, 1fr));
   
@@ -38,7 +38,6 @@ $mc-font: 'MinecraftSeven', 'Montserrat', sans-serif;
   color: #ffffff;
 }
 
-/* Efecto Overlay estilo Minecraft */
 .tsf-rcBackdrop {
   position: absolute;
   inset: 0;
@@ -85,7 +84,7 @@ $mc-font: 'MinecraftSeven', 'Montserrat', sans-serif;
   --rc-square-ty: 0px;
   --rc-square-scaleY: 1;
 
-  --rc-cta-h: 34px;
+  --rc-cta-h: 44px; /* Un poco más alto para que imponga */
   --rc-cta-mt: -10px;
   --rc-cta-radius: 0 0 var(--rc-r) var(--rc-r);
 
@@ -108,7 +107,7 @@ $mc-font: 'MinecraftSeven', 'Montserrat', sans-serif;
   --rc-square-ty: -10px;
   --rc-square-scaleY: .86;
 
-  --rc-cta-h: 40px;
+  --rc-cta-h: 44px;
   --rc-cta-mt: 0px;
   --rc-cta-radius: var(--rc-r);
 }
@@ -117,7 +116,7 @@ $mc-font: 'MinecraftSeven', 'Montserrat', sans-serif;
   position: absolute;
   top: 12px;
   right: 16px;
-  left: auto; /* Anula el left del anterior CSS por si acaso */
+  left: auto;
   background: none;
   border: none;
   color: #6b7280;
@@ -202,7 +201,7 @@ $mc-font: 'MinecraftSeven', 'Montserrat', sans-serif;
   width: calc(100% + 28%);
   height: calc(100% + 28%);
   object-fit: contain;
-  opacity: .5; /* Reducido para que no sature el fondo oscuro */
+  opacity: .5;
   pointer-events: none;
   user-select: none;
   z-index: 0;
@@ -280,7 +279,7 @@ $mc-font: 'MinecraftSeven', 'Montserrat', sans-serif;
   border: 2px dashed #374151;
 }
 
-/* Botones Divididos (EUR / Coins) */
+/* Único Botón de Pago */
 .tsf-rcRankTopCta {
   position: relative;
   width: 100%;
@@ -291,9 +290,12 @@ $mc-font: 'MinecraftSeven', 'Montserrat', sans-serif;
   user-select: none;
   overflow: hidden;
   margin-top: var(--rc-cta-mt);
-  background: #374151; /* Fondo base del botón */
+  background: #5EE034;
+  box-shadow: inset -4px -4px 0px rgba(0,0,0,0.25), inset 4px 4px 0px rgba(255,255,255,0.4);
   transition: filter 0.1s, transform 0.1s, margin-top 260ms, height 260ms;
-  box-shadow: inset -4px -4px 0px rgba(0,0,0,0.25), inset 4px 4px 0px rgba(255,255,255,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   
   &:hover:not(:disabled) { 
     filter: brightness(1.15); 
@@ -301,73 +303,24 @@ $mc-font: 'MinecraftSeven', 'Montserrat', sans-serif;
   
   &:active:not(:disabled) { 
     transform: translateY(2px); 
-    box-shadow: inset -2px -2px 0px rgba(0,0,0,0.25), inset 2px 2px 0px rgba(255,255,255,0.2); 
+    box-shadow: inset -2px -2px 0px rgba(0,0,0,0.25), inset 2px 2px 0px rgba(255,255,255,0.4); 
   }
   
   &:disabled { 
-    background: #1f2937; 
-    box-shadow: inset -4px -4px 0px #0a0c14, inset 4px 4px 0px #374151;
+    background: #374151; 
+    box-shadow: inset -4px -4px 0px #1f2937, inset 4px 4px 0px #4b5563;
     cursor: not-allowed;
     opacity: 0.8;
+    .tsf-rcRankTopCtaVal { color: #9ca3af; text-shadow: none; }
   }
-}
-
-.tsf-rcRankTopCtaSide {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 50%;
-  z-index: 2;
-  display: grid;
-  place-items: center;
-  padding: 0 10px;
-}
-
-.tsf-rcRankTopCtaSide--eur {
-  left: 0;
-  background: #5EE034; /* Verde Minecraft */
-}
-
-.tsf-rcRankTopCtaSide--coins {
-  right: 0;
-  background: #fbbf24; /* Amarillo oro Minecraft */
 }
 
 .tsf-rcRankTopCtaVal {
   font-family: $mc-font;
-  font-size: 1rem;
+  font-size: 1.2rem;
   color: #fff;
   text-shadow: 2px 2px 0 #000;
 }
-
-.tsf-rcRankTopCtaCoins {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 6px;
-}
-
-.tsf-rcRankTopCoinIcon {
-  width: 18px;
-  height: 18px;
-  object-fit: contain;
-  image-rendering: pixelated;
-  filter: drop-shadow(2px 2px 0 rgba(0,0,0,0.5));
-}
-
-.tsf-rcRankTopCtaDivider {
-  position: absolute;
-  left: 50%;
-  top: 0;
-  bottom: 0;
-  width: 4px;
-  transform: translateX(-2px);
-  background: #000;
-  z-index: 5;
-}
-
-.tsf-rcRankTopCtaShine { display: none; } /* Ocultamos el brillo suave para el look rústico */
 
 /* Tablas y Paneles */
 .tsf-rcPanel {
@@ -457,7 +410,7 @@ $mc-font: 'MinecraftSeven', 'Montserrat', sans-serif;
 }
 
 .tsf-rcSectionBody {
-  margin-top: -4px; /* Para solapar el borde */
+  margin-top: -4px; 
   transition: max-height 320ms, opacity 220ms, transform 320ms;
   transform-origin: top;
 }
@@ -544,7 +497,6 @@ $mc-font: 'MinecraftSeven', 'Montserrat', sans-serif;
   border-left: 4px solid #000;
 }
 
-/* Colores de fondo tenues por rango para las celdas */
 .tsf-rcCell.is-nova { background: rgba(83, 255, 178, 0.05); }
 .tsf-rcCell.is-alpha { background: rgba(89, 184, 255, 0.05); }
 .tsf-rcCell.is-inmortal { background: rgba(255, 122, 61, 0.05); }
@@ -662,7 +614,7 @@ $mc-font: 'MinecraftSeven', 'Montserrat', sans-serif;
   text-shadow: 2px 2px 0 #000;
 }
 
-.tsf-rcTip__arrow { display: none; } /* En pixel art las flechitas de tooltips suelen sobrar */
+.tsf-rcTip__arrow { display: none; }
 
 /* Modal de Imagen Ampliada */
 .tsf-rcImgModal {

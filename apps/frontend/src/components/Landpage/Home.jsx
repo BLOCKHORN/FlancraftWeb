@@ -31,7 +31,6 @@ const Home = () => {
   const isLoggedIn = Boolean(user?.loggedIn);
 
   useEffect(() => {
-    // Detectamos si es móvil para precargar la imagen correcta
     const isMobile = window.innerWidth <= 768;
     const imgSrc = isMobile ? "/assets/heromobile.webp" : "/assets/hero.webp";
 
@@ -45,7 +44,6 @@ const Home = () => {
 
     img.onload = handleLoad;
     img.onerror = () => {
-      // Fallback por si la imagen falla
       img.src = isMobile ? "/assets/hero.jpg" : "/assets/hero.jpg";
       handleLoad();
     };
@@ -84,7 +82,6 @@ const Home = () => {
 
       <div className={`home-mojang ${isLoaded ? "is-visible" : "is-loading"}`}>
         <header className="hero-mojang">
-          {/* Etiqueta Picture para manejar la imagen responsive nativamente */}
           <picture>
             <source media="(max-width: 768px)" srcSet="/assets/heromobile.webp" />
             <img 

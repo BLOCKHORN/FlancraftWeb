@@ -1,0 +1,228 @@
+@use "../../base/_variables" as *;
+
+.console-modal-root {
+  position: fixed;
+  inset: 0;
+  z-index: 999999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  overflow-y: auto;
+  pointer-events: none;
+
+  &.is-open {
+    pointer-events: auto;
+    .console-modal-overlay { opacity: 1; }
+    .console-modal-box { opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  &.is-closing {
+    pointer-events: none;
+    .console-modal-overlay { opacity: 0; }
+    .console-modal-box { opacity: 0; transform: scale(0.95) translateY(10px); }
+  }
+}
+
+.console-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 7, 12, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.console-modal-box {
+  position: relative;
+  width: 100%;
+  max-width: 580px;
+  margin: auto;
+  background: #151923;
+  border: 2px solid #2a3143;
+  border-radius: 8px;
+  padding: 2.5rem;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+  opacity: 0;
+  transform: scale(0.95) translateY(10px);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  z-index: 2;
+}
+
+.console-modal-close {
+  position: absolute;
+  top: 1rem;
+  right: 1.2rem;
+  background: transparent;
+  border: none;
+  color: #888899;
+  font-family: 'MinecraftBold', sans-serif;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: color 0.2s ease;
+
+  &:hover { color: #ef4444; }
+}
+
+.console-modal-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.console-modal-title {
+  font-family: 'MinecraftBold', sans-serif;
+  font-size: 1.5rem;
+  color: #fff;
+  margin-bottom: 0.5rem;
+  text-shadow: 2px 2px 0 rgba(0,0,0,0.8);
+}
+
+.console-modal-subtitle {
+  font-family: "Nunito", sans-serif;
+  font-size: 0.95rem;
+  color: #a0a0b0;
+  line-height: 1.5;
+  max-width: 90%;
+  margin: 0 auto;
+}
+
+.console-steps-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.console-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.2rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 1.2rem;
+  border-radius: 6px;
+  transition: background 0.2s ease;
+
+  &:hover { background: rgba(255, 255, 255, 0.06); }
+}
+
+.step-icon-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 50px;
+  height: 50px;
+  background: #2a3143;
+  border-radius: 8px;
+  color: #38bdf8;
+  flex-shrink: 0;
+}
+
+.step-number {
+  position: absolute;
+  bottom: -6px;
+  right: -6px;
+  width: 20px;
+  height: 20px;
+  background: #38bdf8;
+  color: #000;
+  font-family: 'MinecraftBold', sans-serif;
+  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 2px solid #151923;
+}
+
+.step-content {
+  h3 {
+    font-family: "Nunito", sans-serif;
+    font-weight: 800;
+    font-size: 1.1rem;
+    color: #fff;
+    margin: 0 0 0.3rem 0;
+  }
+  
+  p {
+    font-family: "Nunito", sans-serif;
+    font-size: 0.9rem;
+    color: #a0a0b0;
+    margin: 0;
+    line-height: 1.5;
+
+    strong { color: #e0e0e0; }
+  }
+}
+
+@media (max-width: 768px) {
+  .console-modal-box {
+    padding: 1.5rem;
+    width: 90%;
+  }
+
+  .console-modal-title { font-size: 1.2rem; }
+  
+  .console-step {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 0.8rem;
+  }
+}
+.app-links-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.store-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-family: "Nunito", sans-serif;
+  font-weight: 800;
+  font-size: 0.85rem;
+  text-decoration: none;
+  color: #fff;
+  transition: transform 0.2s ease, filter 0.2s ease;
+
+  &.android-btn {
+    background: #151923;
+    border: 2px solid #3DDC84;
+    box-shadow: inset 0 0 10px rgba(61, 220, 132, 0.15);
+    
+    &:hover {
+      box-shadow: inset 0 0 15px rgba(61, 220, 132, 0.3);
+    }
+  }
+
+  &.ios-btn {
+    background: #151923;
+    border: 2px solid #ffffff;
+    box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.15);
+
+    &:hover {
+      box-shadow: inset 0 0 15px rgba(255, 255, 255, 0.3);
+    }
+  }
+
+  &:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.15);
+  }
+
+  &:active {
+    transform: translateY(1px);
+  }
+}
+
+@media (max-width: 768px) {
+  .app-links-group {
+    justify-content: center;
+  }
+}

@@ -21,7 +21,6 @@ $mc-font: 'MinecraftSeven', 'Montserrat', sans-serif;
   @media (max-width: 1024px) { display: none !important; }
 }
 
-/* UTILIDAD ANTI-RECUADRO AZUL EN MÓVILES */
 .no-tap-highlight, .no-tap-highlight * {
   -webkit-tap-highlight-color: transparent;
   user-select: none;
@@ -30,7 +29,7 @@ $mc-font: 'MinecraftSeven', 'Montserrat', sans-serif;
 .navbar-inner.mobile-only {
   position: sticky;
   top: 0;
-  z-index: 1200;
+  z-index: 100;
 
   min-height: var(--mobile-nav-h);
   padding: calc(0.5rem + env(safe-area-inset-top)) 16px 0.5rem;
@@ -40,7 +39,6 @@ $mc-font: 'MinecraftSeven', 'Montserrat', sans-serif;
   justify-content: space-between;
   gap: 10px;
 
-  /* Estilo Bloque */
   background-color: #151923;
   border-bottom: 4px solid #000;
   box-shadow: inset 0 -4px 0 #0a0c14, 0 10px 20px rgba(0,0,0,0.6);
@@ -78,7 +76,6 @@ $mc-font: 'MinecraftSeven', 'Montserrat', sans-serif;
     justify-content: center;
     gap: 6px;
 
-    /* Bloque Piedra Oscura */
     background-color: #2b2e42;
     border: 3px solid #000;
     box-shadow: inset -3px -3px 0 #1e202f, inset 3px 3px 0 #4f556b;
@@ -111,7 +108,6 @@ $mc-font: 'MinecraftSeven', 'Montserrat', sans-serif;
 
   padding: 6px 12px;
   
-  /* Bloque Piedra Oscura */
   background-color: #2b2e42;
   border: 3px solid #000;
   box-shadow: inset -3px -3px 0 #1e202f, inset 3px 3px 0 #4f556b;
@@ -187,13 +183,12 @@ $mc-font: 'MinecraftSeven', 'Montserrat', sans-serif;
 .tone--alpha { color: #c8a6ff; }
 .tone--inmortal { color: #ff5555; }
 
-/* DROPDOWN PERFIL MÓVIL */
 .user-dropdown-wrapper.mobile-only {
   position: fixed;
   top: calc(var(--mobile-nav-h) + env(safe-area-inset-top) + 12px);
   left: 12px;
   right: 12px;
-  z-index: 1300;
+  z-index: 120;
 
   background-color: #151923;
   border: 4px solid #000;
@@ -243,7 +238,6 @@ $mc-font: 'MinecraftSeven', 'Montserrat', sans-serif;
       .user-level-value { font-size: 0.9rem; color: #fff; text-shadow: 1px 1px 0 #000; }
     }
 
-    /* BARRA XP CUADRADA */
     .xp-navbar-block { margin-top: 10px; }
     .xp-bar-profile {
       height: 12px;
@@ -309,16 +303,17 @@ $mc-font: 'MinecraftSeven', 'Montserrat', sans-serif;
   }
 }
 
-/* OVERLAY Y MENÚ LATERAL */
 .mobile-menu-overlay {
-  position: fixed; inset: 0; z-index: 1190;
+  position: fixed; inset: 0; 
+  z-index: 105;
   background: rgba(0,0,0,0.75); backdrop-filter: blur(4px);
   opacity: 0; pointer-events: none; transition: opacity 200ms ease;
   &.open { opacity: 1; pointer-events: auto; }
 }
 
 .mobile-menu {
-  position: fixed; top: 0; left: 0; height: 100vh; width: min(290px, 86vw); z-index: 1250;
+  position: fixed; top: 0; left: 0; height: 100vh; width: min(290px, 86vw); 
+  z-index: 110;
   background-color: #151923;
   border-right: 4px solid #000;
   box-shadow: 10px 0 30px rgba(0,0,0,0.8);
@@ -394,7 +389,6 @@ $mc-font: 'MinecraftSeven', 'Montserrat', sans-serif;
 
     .logo-divider { width: 100%; height: 4px; background: #000; margin: 12px 0; }
 
-    /* REDES SOCIALES */
     .mobile-social-links {
       display: grid; 
       grid-template-columns: repeat(3, 1fr); 
@@ -425,7 +419,6 @@ $mc-font: 'MinecraftSeven', 'Montserrat', sans-serif;
       }
     }
 
-    /* Espaciador final para asegurar que se pueda hacer scroll hasta el final en móviles sin marco */
     .mobile-bottom-spacer {
       height: 60px;
       width: 100%;

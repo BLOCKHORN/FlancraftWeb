@@ -277,16 +277,10 @@ function formatNumber(n) {
   return new Intl.NumberFormat("es-ES").format(Number(n));
 }
 
-function formatEur(amount) {
+function formatPrice(amount) {
   const n = Number(amount);
   if (!Number.isFinite(n)) return "—";
-  return new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR", maximumFractionDigits: 2 }).format(n);
-}
-
-function fmtInt(n) {
-  const v = Number(n);
-  if (!Number.isFinite(v)) return "—";
-  return new Intl.NumberFormat("es-ES", { maximumFractionDigits: 0 }).format(Math.round(v));
+  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 2 }).format(n);
 }
 
 function Cell({ kind, value, rankKey, rowKey, onZoom }) {
@@ -379,28 +373,12 @@ function Cell({ kind, value, rankKey, rowKey, onZoom }) {
   );
 }
 
-function RankCardTop({ rk, pkg, bust, isActive, onPickRank, onBuyEur, onBuyCoins, walletCoinsPrice, pricesLoaded }) {
+function RankCardTop({ rk, pkg, bust, isActive, onPickRank, onBuyEur }) {
   const rm = RANK_META[rk] || { label: String(rk || "").toUpperCase(), cls: "" };
 
   const price = pkg ? getPackagePrice(pkg) : null;
-  const coinsPrice = Number.isFinite(Number(walletCoinsPrice)) && Number(walletCoinsPrice) > 0 ? Number(walletCoinsPrice) : null;
-
   const imgRaw = pkg ? getPackageImage(pkg) : null;
   const img = imgRaw ? withCacheBust(imgRaw, bust) : null;
-
-  const onSplitClick = (ev) => {
-    ev.stopPropagation();
-    if (!pkg) return;
-
-    const btn = ev.currentTarget;
-    const rect = btn?.getBoundingClientRect?.();
-    const x = (ev.clientX ?? 0) - (rect?.left ?? 0);
-    const w = rect?.width ?? 0;
-    const isLeft = w > 0 ? x <= w / 2 : true;
-
-    if (isLeft) return onBuyEur?.(pkg, ev, rk);
-    return onBuyCoins?.(pkg, ev, rk);
-  };
 
   return (
     <article className={`tsf-rcRankCardTop ${rm.cls} ${isActive ? "is-active" : ""}`} data-rank={rk}>
@@ -416,25 +394,14 @@ function RankCardTop({ rk, pkg, bust, isActive, onPickRank, onBuyEur, onBuyCoins
       <button
         type="button"
         className="tsf-rcRankTopCta"
-        onClick={onSplitClick}
+        onClick={(e) => {
+          e.stopPropagation();
+          if (pkg) onBuyEur?.(pkg, e, rk);
+        }}
         disabled={!pkg}
-        aria-label={`Comprar ${rm.label} (EUR o Coins)`}
-        title="Izquierda: EUR · Derecha: Wallet Coins"
-        data-rk={rm.label}
+        aria-label={`Comprar ${rm.label}`}
       >
-        <span className="tsf-rcRankTopCtaSide tsf-rcRankTopCtaSide--eur">
-          <span className="tsf-rcRankTopCtaVal">{price != null ? formatEur(price) : "—"}</span>
-        </span>
-
-        <span className="tsf-rcRankTopCtaSide tsf-rcRankTopCtaSide--coins">
-          <span className="tsf-rcRankTopCtaCoins">
-            <span className="tsf-rcRankTopCtaVal">{coinsPrice != null ? fmtInt(coinsPrice) : pricesLoaded ? "—" : "…"}</span>
-            <img className="tsf-rcRankTopCoinIcon" src="/tienda/assets/coin.png" alt="" draggable="false" />
-          </span>
-        </span>
-
-        <span className="tsf-rcRankTopCtaDivider" aria-hidden="true" />
-        <span className="tsf-rcRankTopCtaShine" aria-hidden="true" />
+        <span className="tsf-rcRankTopCtaVal">{price != null ? formatPrice(price) : "—"}</span>
       </button>
     </article>
   );
@@ -446,10 +413,7 @@ export default function RangosComparativaPanel({
   onPickRank,
   rankCards = [],
   bust = null,
-  onBuyEur,
-  onBuyCoins,
-  rankWalletPrices = null,
-  pricesLoaded = true,
+  onBuyEur
 }) {
   const { servers, matrix } = useMemo(() => buildMatrixFromRangos(RANGOS_BENEFICIOS), []);
   const [openSections, setOpenSections] = useState(() => new Set(servers || []));
@@ -649,9 +613,6 @@ export default function RangosComparativaPanel({
                 isActive={rankKey === rk}
                 onPickRank={onPickRank}
                 onBuyEur={onBuyEur}
-                onBuyCoins={onBuyCoins}
-                walletCoinsPrice={rankWalletPrices?.[rk] ?? null}
-                pricesLoaded={pricesLoaded}
               />
             ))}
           </div>

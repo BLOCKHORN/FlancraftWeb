@@ -11,7 +11,7 @@ const teamMembers = [
     badgeColor: "#5ee034",
     skinImage: "/assets/skins/crystalchemist.webp",
     headImage: "/assets/skins/crystalhead.webp",
-    description: "Es el cerebro detrás del código. Se encarga de programar los plugins personalizados que no verás en ningún otro sitio y de que la web funcione como un reloj.",
+    description: "Garantiza que el servidor cuente con mecánicas exclusivas y fluidas, asegurando que tu experiencia de juego sea irrepetible y esté perfectamente conectada con la web.",
     icon: <FaCode />,
   },
   {
@@ -21,7 +21,7 @@ const teamMembers = [
     badgeColor: "#38bdf8",
     skinImage: "/assets/skins/paxino.webp",
     headImage: "/assets/skins/paxinohead.webp",
-    description: "El alma y la visión de FlanCraft. Supervisa que el reino sea un lugar justo, divertido y estable para todos. Se encarga de coordinar al equipo.",
+    description: "Mantiene el equilibrio en la comunidad. Se asegura de que el servidor sea un entorno justo, libre de toxicidad y completamente centrado en tu diversión.",
     icon: <FaCrown />,
   },
   {
@@ -31,7 +31,7 @@ const teamMembers = [
     badgeColor: "#ff9248",
     skinImage: "/assets/skins/janitovp.webp",
     headImage: "/assets/skins/janitovphead.webp",
-    description: "El responsable de que todo lo que veas te deje con la boca abierta. Desde las construcciones épicas del spawn hasta las cinemáticas de nuestras redes.",
+    description: "Diseña los escenarios épicos donde vivirás tus aventuras. Es el creador de los mapas, zonas de combate y refugios seguros que explorarás cada día.",
     icon: <FaPalette />,
   },
   {
@@ -41,7 +41,7 @@ const teamMembers = [
     badgeColor: "#fbbf24",
     skinImage: "/assets/skins/golden.webp",
     headImage: "/assets/skins/goldenhead.webp",
-    description: "El guardián de los engranajes. Experto en optimización y en mantener los sistemas internos a pleno rendimiento. Si no hay lag, es gracias a Golden.",
+    description: "El responsable de que tus combates y construcciones ocurran en tiempo real y sin tirones. Si puedes jugar sin lag, es gracias a su mantenimiento constante.",
     icon: <FaCogs />,
   },
 ];

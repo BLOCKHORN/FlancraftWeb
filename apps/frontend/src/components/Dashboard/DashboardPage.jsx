@@ -10,7 +10,6 @@ import "../../styles/components/Dashboard/_dashboardpage.scss";
 
 const SERVER_KEY = "survival";
 const SERVER_LABEL = "SURVIVAL";
-const SERVER_ICON = "/assets/reinos/survival-clasico.webp";
 
 const DISPLAY_RANK_ORDER = ["usuario", "nova", "alpha", "inmortal", "builder", "helper", "srhelper", "mod", "srmod", "admin", "owner"];
 const USER_RANKS = new Set(["nova", "alpha", "inmortal"]);
@@ -85,39 +84,6 @@ const safeJson = async (res, fallback = null) => {
   }
 };
 
-const parseCoinsPayload = (m) => {
-  if (m?.byServer && typeof m.byServer === "object") {
-    const out = {};
-    for (const [k, v] of Object.entries(m.byServer)) out[String(k)] = toInt(v);
-    return out;
-  }
-
-  if (Array.isArray(m?.balances)) {
-    const out = {};
-    for (const row of m.balances) {
-      const key = String(row?.servidor || row?.server || "").trim().toLowerCase();
-      if (!key) continue;
-      out[key] = toInt(row?.coins);
-    }
-    return out;
-  }
-
-  if (Array.isArray(m)) {
-    const out = {};
-    for (const row of m) {
-      const key = String(row?.servidor || row?.server || "").trim().toLowerCase();
-      if (!key) continue;
-      out[key] = toInt(row?.coins);
-    }
-    return out;
-  }
-
-  if (m?.coins != null) return { global: toInt(m.coins) };
-  if (m?.ecos != null) return { global: toInt(m.ecos) };
-
-  return {};
-};
-
 const deriveXpStateFromTotal = (xpTotal, niveles) => {
   const total = toInt(xpTotal);
   const rows = Array.isArray(niveles) ? [...niveles].sort((a, b) => Number(a?.nivel) - Number(b?.nivel)) : [];
@@ -173,133 +139,24 @@ const animateNumber = (from, to, onUpdate, onDone, duration = 900) => {
   requestAnimationFrame(tick);
 };
 
-let sharedAudioCtx = null;
-
-const playLevelUpSound = async (levelsGained = 1) => {
-  try {
-    if (!sharedAudioCtx) {
-      const AudioCtx = window.AudioContext || window.webkitAudioContext;
-      if (!AudioCtx) return;
-      sharedAudioCtx = new AudioCtx();
-    }
-
-    if (sharedAudioCtx.state === "suspended") {
-      await sharedAudioCtx.resume();
-    }
-
-    const now = sharedAudioCtx.currentTime;
-    const master = sharedAudioCtx.createGain();
-    master.gain.value = 0.12;
-    master.connect(sharedAudioCtx.destination);
-
-    const notes = levelsGained > 1
-      ? [523.25, 659.25, 783.99, 1046.5, 1318.51]
-      : [523.25, 659.25, 783.99, 1046.5];
-
-    notes.forEach((freq, i) => {
-      const osc = sharedAudioCtx.createOscillator();
-      const gain = sharedAudioCtx.createGain();
-      const filter = sharedAudioCtx.createBiquadFilter();
-
-      osc.type = i >= notes.length - 1 ? "triangle" : "sine";
-      osc.frequency.setValueAtTime(freq, now + i * 0.085);
-      osc.frequency.exponentialRampToValueAtTime(freq * 1.012, now + i * 0.085 + 0.18);
-
-      filter.type = "lowpass";
-      filter.frequency.setValueAtTime(2400, now + i * 0.085);
-
-      gain.gain.setValueAtTime(0.0001, now + i * 0.085);
-      gain.gain.exponentialRampToValueAtTime(i >= notes.length - 1 ? 0.32 : 0.18, now + i * 0.085 + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.0001, now + i * 0.085 + 0.28);
-
-      osc.connect(filter);
-      filter.connect(gain);
-      gain.connect(master);
-
-      osc.start(now + i * 0.085);
-      osc.stop(now + i * 0.085 + 0.32);
-    });
-
-    for (let i = 0; i < 10; i++) {
-      const osc = sharedAudioCtx.createOscillator();
-      const gain = sharedAudioCtx.createGain();
-      const hp = sharedAudioCtx.createBiquadFilter();
-
-      hp.type = "highpass";
-      hp.frequency.value = 1800 + i * 120;
-
-      osc.type = "square";
-      osc.frequency.setValueAtTime(1400 + Math.random() * 900, now + 0.12 + i * 0.018);
-
-      gain.gain.setValueAtTime(0.0001, now + 0.12 + i * 0.018);
-      gain.gain.exponentialRampToValueAtTime(0.03, now + 0.125 + i * 0.018);
-      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.19 + i * 0.018);
-
-      osc.connect(hp);
-      hp.connect(gain);
-      gain.connect(master);
-
-      osc.start(now + 0.12 + i * 0.018);
-      osc.stop(now + 0.21 + i * 0.018);
-    }
-  } catch {}
-};
-
 export default function DashboardPage() {
   const { user: sessionUser, setUser: setSessionUser, logout } = useContext(UserContext);
   const [user, setUser] = useState(null);
   const [xpData, setXpData] = useState(null);
-  const [walletBalance, setWalletBalance] = useState(0);
   const [skinUrl, setSkinUrl] = useState(null);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  const [transferAmount, setTransferAmount] = useState("");
-  const [transferLoading, setTransferLoading] = useState(false);
-  const [transferError, setTransferError] = useState(null);
-  const [transferPhase, setTransferPhase] = useState("idle");
-  const [transferSuccess, setTransferSuccess] = useState(null);
-
-  const [walletInfoOpen, setWalletInfoOpen] = useState(false);
-  const walletInfoRef = useRef(null);
-
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [pendingTransfer, setPendingTransfer] = useState(null);
 
   const [avatarErrorIndex, setAvatarErrorIndex] = useState(0);
 
   const [displayXpTotal, setDisplayXpTotal] = useState(0);
   const lastDisplayXpRef = useRef(0);
 
-  const walletRef = useRef(null);
   const navigate = useNavigate();
 
   const sessionUuid = sessionUser?.uuid;
   const sessionLoggedIn = sessionUser?.loggedIn;
-
-  const emitBalances = (detail) => {
-    try {
-      window.dispatchEvent(new CustomEvent("fc:balances", { detail: detail || {} }));
-    } catch {}
-  };
-
-  useEffect(() => {
-    const onDocDown = (e) => {
-      if (!walletInfoRef.current) return;
-      if (!walletInfoRef.current.contains(e.target)) setWalletInfoOpen(false);
-    };
-    document.addEventListener("mousedown", onDocDown);
-    return () => document.removeEventListener("mousedown", onDocDown);
-  }, []);
-
-  useEffect(() => {
-    if (!transferSuccess) return;
-    const timer = window.setTimeout(() => {
-      setTransferSuccess(null);
-    }, 4200);
-    return () => window.clearTimeout(timer);
-  }, [transferSuccess]);
 
   useEffect(() => {
     if (!sessionUuid || !sessionLoggedIn) {
@@ -316,22 +173,11 @@ export default function DashboardPage() {
 
         const reqs = [
           fetch(apiUrl(`/api/usuarios/${sessionUuid}`)),
-          fetch(apiUrl(`/api/monedas/${sessionUuid}`)),
           fetch(apiUrl(`/api/usuarios/${sessionUuid}/xp`)),
           fetch(apiUrl(`/api/usuarios/${sessionUuid}/skin`)),
         ];
 
-        if (token) {
-          reqs.push(
-            fetch(apiUrl(`/api/daily-claim/status`), {
-              headers: { Authorization: `Bearer ${token}` },
-            })
-          );
-        } else {
-          reqs.push(Promise.resolve(null));
-        }
-
-        const [usuarioRes, monedasRes, xpRes, skinRes, walletRes] = await Promise.all(reqs);
+        const [usuarioRes, xpRes, skinRes] = await Promise.all(reqs);
 
         if (!usuarioRes?.ok) {
           const body = await safeJson(usuarioRes, null);
@@ -339,15 +185,6 @@ export default function DashboardPage() {
         }
 
         const usuario = await safeJson(usuarioRes, {});
-
-        let monedasRaw = { balances: [], byServer: {} };
-        if (monedasRes?.ok) {
-          monedasRaw =
-            (await safeJson(monedasRes, { balances: [], byServer: {} })) || {
-              balances: [],
-              byServer: {},
-            };
-        }
 
         let xp = null;
         if (xpRes?.ok) {
@@ -376,8 +213,6 @@ export default function DashboardPage() {
           skin = await safeJson(skinRes, null);
         }
 
-        const coinsByServerParsed = parseCoinsPayload(monedasRaw);
-
         const rol_admin = normalizeRank(usuario?.rol_admin);
         const rango_usuario = normalizeRank(usuario?.rango_usuario);
         const rango_staff = normalizeRank(usuario?.rango_staff);
@@ -389,36 +224,17 @@ export default function DashboardPage() {
         });
         const es_premium = usuario?.es_premium === true;
 
-        let wallet = toInt(usuario?.wallet_coins ?? 0);
-
-        if (walletRes) {
-          if (walletRes.status === 401) {
-            clearSessionStorage();
-            logout();
-            return;
-          }
-
-          if (walletRes.ok) {
-            const w = await safeJson(walletRes, null);
-            wallet = toInt(w?.walletBalance ?? w?.wallet_balance ?? wallet);
-          }
-        }
-
         setSkinUrl(skin?.skin_url || null);
-        setWalletBalance(wallet);
         setDisplayXpTotal(xpDerived.xpTotalActual);
         lastDisplayXpRef.current = xpDerived.xpTotalActual;
 
         const hydratedUser = {
           ...usuario,
           rol_admin,
-          monedas: monedasRaw,
-          coinsByServer: coinsByServerParsed,
           rango_usuario,
           rango_staff,
           rango_real,
           es_premium,
-          wallet_coins: wallet,
           nivel: xpDerived.nivel,
           xp_actual: xpDerived.xpActualNivel,
         };
@@ -426,14 +242,11 @@ export default function DashboardPage() {
         setUser(hydratedUser);
         setXpData(xp);
 
-        emitBalances({ walletCoins: wallet, coinsByServer: coinsByServerParsed });
-
         setSessionUser(
           {
             loggedIn: true,
             uuid: sessionUuid,
             uid: usuario?.uid,
-            wallet_coins: wallet,
             rol_admin,
             rango_usuario,
             rango_staff,
@@ -477,81 +290,6 @@ export default function DashboardPage() {
     );
   }, [xpData?.xp_total_actual]);
 
-  const actualizarMonedas = useCallback(async () => {
-    if (!user) return false;
-
-    try {
-      const token = getAuthToken();
-
-      const reqs = [
-        fetch(apiUrl(`/api/monedas/${user.uuid}`)),
-        token
-          ? fetch(apiUrl(`/api/daily-claim/status`), {
-              headers: { Authorization: `Bearer ${token}` },
-            })
-          : Promise.resolve(null),
-      ];
-
-      const [monedasRes, walletRes] = await Promise.all(reqs);
-
-      let monedasActualizadas = { balances: [], byServer: {} };
-
-      if (monedasRes?.ok) {
-        monedasActualizadas =
-          (await safeJson(monedasRes, { balances: [], byServer: {} })) || {
-            balances: [],
-            byServer: {},
-          };
-      }
-
-      const coinsByServerParsed = parseCoinsPayload(monedasActualizadas);
-
-      let wallet = toInt(user?.wallet_coins ?? walletBalance ?? 0);
-
-      if (walletRes) {
-        if (walletRes.status === 401) {
-          clearSessionStorage();
-          logout();
-          return false;
-        } else if (walletRes.ok) {
-          const w = await safeJson(walletRes, null);
-          wallet = toInt(w?.walletBalance ?? w?.wallet_balance ?? wallet);
-        }
-      }
-
-      setWalletBalance(wallet);
-      setUser((prev) => ({
-        ...prev,
-        monedas: monedasActualizadas,
-        coinsByServer: coinsByServerParsed,
-        wallet_coins: wallet,
-      }));
-
-      emitBalances({ walletCoins: wallet, coinsByServer: coinsByServerParsed });
-
-      setSessionUser(
-        {
-          loggedIn: true,
-          uuid: user.uuid,
-          uid: user?.uid,
-          wallet_coins: wallet,
-          rol_admin: user?.rol_admin ?? null,
-          rango_usuario: user?.rango_usuario ?? null,
-          rango_staff: user?.rango_staff ?? null,
-          rango_real: user?.rango_real ?? null,
-          nivel: user?.nivel ?? 1,
-          xp_actual: user?.xp_actual ?? 0,
-          es_premium: !!user?.es_premium,
-        },
-        token
-      );
-
-      return true;
-    } catch (err) {
-      return false;
-    }
-  }, [user, walletBalance, logout, setSessionUser]);
-
   const handleXpClaimed = useCallback(
     (xpGained) => {
       const gained = toInt(xpGained);
@@ -566,7 +304,6 @@ export default function DashboardPage() {
 
         const prevDerived = deriveXpStateFromTotal(prevTotal, niveles);
         const nextDerived = deriveXpStateFromTotal(nextTotal, niveles);
-        const levelsGained = Math.max(0, nextDerived.nivel - prevDerived.nivel);
         const token = getAuthToken();
 
         setUser((prevUser) => {
@@ -583,7 +320,6 @@ export default function DashboardPage() {
               loggedIn: true,
               uuid: updatedUser.uuid,
               uid: updatedUser?.uid,
-              wallet_coins: updatedUser?.wallet_coins ?? 0,
               rol_admin: updatedUser?.rol_admin ?? null,
               rango_usuario: updatedUser?.rango_usuario ?? null,
               rango_staff: updatedUser?.rango_staff ?? null,
@@ -597,10 +333,6 @@ export default function DashboardPage() {
 
           return updatedUser;
         });
-
-        if (levelsGained > 0) {
-          playLevelUpSound(levelsGained);
-        }
 
         return {
           ...prevXp,
@@ -668,114 +400,6 @@ export default function DashboardPage() {
     }
   }, [rangoKey]);
 
-  const coinsByServer = useMemo(() => {
-    if (user?.coinsByServer && typeof user.coinsByServer === "object") return user.coinsByServer;
-    return parseCoinsPayload(user?.monedas);
-  }, [user?.coinsByServer, user?.monedas]);
-
-  const totalCoins = useMemo(() => {
-    if (user?.wallet_coins != null) return toInt(user.wallet_coins);
-    return toInt(walletBalance);
-  }, [user?.wallet_coins, walletBalance]);
-
-  const serverCoins = useMemo(() => {
-    const by = coinsByServer || {};
-    if (SERVER_KEY in by) return toInt(by[SERVER_KEY]);
-    if ("global" in by) return toInt(by.global);
-    return 0;
-  }, [coinsByServer]);
-
-  const transferLoadingTitle = transferPhase === "syncing" ? "Confirmando envío" : "Procesando envío";
-  const transferLoadingText =
-    transferPhase === "syncing"
-      ? "Esperando la confirmación del servidor y actualizando tus saldos."
-      : "Estamos enviando tu solicitud al servidor.";
-
-  const addAmount = (val) => {
-    setTransferError(null);
-    setTransferSuccess(null);
-    const current = toInt(transferAmount);
-    const next = current + val;
-    setTransferAmount(String(next > totalCoins ? totalCoins : next));
-  };
-
-  const openConfirm = () => {
-    setTransferError(null);
-    setTransferSuccess(null);
-
-    const amt = toInt(transferAmount);
-    if (amt <= 0) return setTransferError("Introduce una cantidad válida.");
-    if (amt > totalCoins) return setTransferError("No tienes suficiente saldo en la wallet.");
-
-    setPendingTransfer({ amt, server: SERVER_KEY });
-    setConfirmOpen(true);
-  };
-
-  const doTransfer = async () => {
-    if (!user?.uuid || !pendingTransfer || transferLoading) return;
-
-    const requestedAmount = pendingTransfer.amt;
-
-    setTransferError(null);
-    setTransferSuccess(null);
-    setTransferLoading(true);
-    setTransferPhase("sending");
-
-    try {
-      const token = getAuthToken();
-
-      const res = await fetch(apiUrl(`/api/wallet/transfer`), {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          uuid: user.uuid,
-          servidor: SERVER_KEY,
-          amount: requestedAmount,
-        }),
-      });
-
-      const data = await safeJson(res, null);
-
-      if (!res.ok) {
-        throw new Error(data?.error || "Error al transferir coins");
-      }
-
-      const newWallet = toInt(data?.wallet_balance);
-
-      setWalletBalance(newWallet);
-      setUser((prev) => ({ ...prev, wallet_coins: newWallet }));
-
-      if (walletRef?.current) {
-        walletRef.current.textContent = String(newWallet);
-      }
-
-      emitBalances({ walletCoins: newWallet });
-
-      setTransferPhase("syncing");
-
-      const synced = await actualizarMonedas();
-
-      setTransferAmount("");
-      setConfirmOpen(false);
-      setPendingTransfer(null);
-
-      setTransferSuccess({
-        amount: requestedAmount,
-        synced,
-      });
-    } catch (e) {
-      setTransferError(e.message || "Error");
-      setConfirmOpen(false);
-      setPendingTransfer(null);
-    } finally {
-      setTransferLoading(false);
-      setTransferPhase("idle");
-    }
-  };
-
   return (
     <section className="dashboard-epic no-tap-highlight">
       <div className="dash-backgroundWrap" />
@@ -839,138 +463,30 @@ export default function DashboardPage() {
                     </a>
                   </div>
 
-                  <div className="dash-wallet-row">
-                    <div className="wallet-pill" ref={walletInfoRef}>
-                      <span className="wallet-pillLabel">WALLET COINS</span>
+                  {/* NUEVO PANEL DE FLANITE (EL NEXO) */}
+<div className="nexo-premium-card">
+  <div className="nexo-bg" />
+  <div className="nexo-content">
+    <div className="nexo-crystal-wrap">
+      <img src="/tienda/assets/flanite.webp" className="nexo-crystal" alt="Flanite" draggable="false" />
+    </div>
+    <div className="nexo-info">
+      <h3>EL NEXO</h3>
+      <div className="nexo-balance">
+        <span>{user.flanpoints || 0}</span> FLT
+      </div>
+    </div>
+    {/* Botón deshabilitado con estética de progreso */}
+    <button 
+      className="mc-btn mc-btn--nexo is-locked" 
+      disabled 
+      style={{ cursor: 'not-allowed', opacity: 0.8 }}
+    >
+      FORJANDO ACCESO...
+    </button>
+  </div>
+</div>
 
-                      <button
-                        type="button"
-                        className="wallet-pillInfo"
-                        onClick={() => setWalletInfoOpen((v) => !v)}
-                        aria-label="Información sobre Wallet COINS"
-                        aria-expanded={walletInfoOpen}
-                      >
-                        i
-                      </button>
-
-                      <span className="wallet-pillAmount" ref={walletRef} id="contador-coins">
-                        {totalCoins}
-                      </span>
-
-                      <img
-                        src="/tienda/assets/coin.png"
-                        alt="Coins"
-                        className="wallet-pillCoin"
-                        loading="eager"
-                        decoding="async"
-                        draggable="false"
-                      />
-
-                      {walletInfoOpen && (
-                        <div className="wallet-tooltip mc-element" role="dialog" aria-label="Wallet COINS">
-                          <div className="wallet-tooltip-title">¿Qué son las Wallet COINS?</div>
-                          <div className="wallet-tooltip-text">
-                            Son COINS que consigues en la web: claim diario, voto y logros. Puedes enviarlas al servidor y la cantidad que decidas.
-                          </div>
-                          <div className="wallet-tooltip-note">Pon cantidad y confirma.</div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="wallet-transfer-panel">
-                    <div className="transfer-head">
-                      <div className="transfer-title">TRANSFERENCIA DE COINS</div>
-                    </div>
-
-                    <div className="transfer-visual-flow">
-                      <div className="flow-node origin">
-                        <div className="flow-icon-wrap">
-                          <img src="/tienda/assets/coin.png" alt="Wallet" draggable="false" />
-                        </div>
-                        <div className="flow-info">
-                          <span className="flow-label">TU WALLET</span>
-                          <span className="flow-val">{totalCoins}</span>
-                        </div>
-                      </div>
-
-                      <div className="flow-divider">
-                        <div className="flow-arrow" />
-                      </div>
-
-                      <div className="flow-node dest">
-                        <div className="flow-icon-wrap">
-                          <img src={SERVER_ICON} alt="Survival" draggable="false" />
-                        </div>
-                        <div className="flow-info">
-                          <span className="flow-label">{SERVER_LABEL}</span>
-                          <span className="flow-val">{serverCoins}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="transfer-input-section">
-                      <div className="amount-wrap">
-                        <img src="/tienda/assets/coin.png" alt="" className="coin-in-input" draggable="false" />
-                        <input
-                          type="number"
-                          min="0"
-                          inputMode="numeric"
-                          placeholder="0"
-                          className="mc-input massive-input"
-                          value={transferAmount}
-                          onChange={(e) => {
-                            setTransferError(null);
-                            setTransferSuccess(null);
-                            setTransferAmount(e.target.value);
-                          }}
-                          disabled={transferLoading}
-                        />
-                      </div>
-
-                      <div className="quick-add-buttons">
-                        <button type="button" onClick={() => addAmount(50)} disabled={transferLoading}>+50</button>
-                        <button type="button" onClick={() => addAmount(100)} disabled={transferLoading}>+100</button>
-                        <button type="button" onClick={() => addAmount(500)} disabled={transferLoading}>+500</button>
-                        <button type="button" className="is-max" onClick={() => setTransferAmount(String(totalCoins))} disabled={transferLoading}>MAX</button>
-                      </div>
-                    </div>
-
-                    <button
-                      type="button"
-                      className={`mc-btn mc-btn--send massive-send-btn ${transferLoading ? "is-loading" : ""}`}
-                      onClick={openConfirm}
-                      disabled={transferLoading}
-                    >
-                      {transferLoading && <span className="btn-spinner" aria-hidden="true" />}
-                      {transferLoading ? "PROCESANDO..." : "¡ENVIAR AL SERVIDOR!"}
-                    </button>
-
-                    {transferLoading && (
-                      <div className="transfer-status is-loading" aria-live="polite">
-                        <span className="transfer-statusSpinner" aria-hidden="true" />
-                        <div className="transfer-statusCopy">
-                          <div className="transfer-statusTitle">{transferLoadingTitle}</div>
-                          <div className="transfer-statusText">{transferLoadingText}</div>
-                        </div>
-                      </div>
-                    )}
-
-                    {!transferLoading && transferSuccess && (
-                      <div className="transfer-status is-success" aria-live="polite">
-                        <span className="transfer-statusIcon" aria-hidden="true">✓</span>
-                        <div className="transfer-statusCopy">
-                          <div className="transfer-statusTitle">Coins enviadas correctamente</div>
-                          <div className="transfer-statusText">
-                            Se han enviado {transferSuccess.amount} COINS a {SERVER_LABEL}
-                            {transferSuccess.synced ? "." : ". El saldo puede tardar un instante en reflejarse."}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {transferError && <div className="transfer-msg is-error">{transferError}</div>}
-                  </div>
                 </main>
               </div>
 
@@ -1023,58 +539,11 @@ export default function DashboardPage() {
 
           <div className="dashboard-epic-body">
             <div className="dashboard-secciones">
-              <RewardList user={user} xpData={xpData} ecosRef={walletRef} onActualizarMonedas={actualizarMonedas} />
+              {/* Le quitamos todo lo de la wallet al RewardList */}
+              <RewardList user={user} xpData={xpData} />
               <LogroList user={user} onXpClaimed={handleXpClaimed} />
             </div>
           </div>
-
-          {confirmOpen && pendingTransfer && (
-            <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label="Confirmar envío">
-              <div className={`modal-card mc-block ${transferLoading ? "is-loading" : ""}`}>
-                <div className="modal-title">CONFIRMAR ENVÍO</div>
-
-                <div className="modal-line">
-                  Vas a enviar <strong style={{color: '#fbbf24'}}>{pendingTransfer.amt}</strong> COINS a <strong style={{color: '#fbbf24'}}>{SERVER_LABEL}</strong>.
-                </div>
-
-                <div className="modal-sub">Se descontarán de tu wallet y se sumarán al saldo del servidor.</div>
-
-                {transferLoading && (
-                  <div className="modal-progress" aria-live="polite">
-                    <span className="modal-progressSpinner" aria-hidden="true" />
-                    <div className="modal-progressCopy">
-                      <div className="modal-progressTitle">{transferLoadingTitle}</div>
-                      <div className="modal-progressText">{transferLoadingText}</div>
-                    </div>
-                  </div>
-                )}
-
-                <div className="modal-actions">
-                  <button
-                    className="mc-btn mc-btn--ghost"
-                    type="button"
-                    onClick={() => {
-                      setConfirmOpen(false);
-                      setPendingTransfer(null);
-                    }}
-                    disabled={transferLoading}
-                  >
-                    CANCELAR
-                  </button>
-
-                  <button
-                    className={`mc-btn mc-btn--send ${transferLoading ? "is-loading" : ""}`}
-                    type="button"
-                    onClick={doTransfer}
-                    disabled={transferLoading}
-                  >
-                    {transferLoading && <span className="btn-spinner" aria-hidden="true" />}
-                    {transferLoading ? "..." : "SÍ, ENVIAR"}
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       )}
 

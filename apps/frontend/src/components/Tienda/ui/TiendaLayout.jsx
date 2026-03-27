@@ -5,7 +5,6 @@ import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import "../../../styles/components/Tienda/tienda-layout.scss";
 
 import { UserContext } from "../../../context/UserContext";
-import { apiUrl } from "../../../lib/env";
 import { getStoredUser } from "../../../lib/auth/storage";
 import TiendaStorefront from "./TiendaStorefront";
 import TiendaCarritoLateral from "./TiendaCarritoLateral";
@@ -18,31 +17,19 @@ import { buildBreadcrumbJsonLd, buildCanonical } from "../../../lib/seo/siteSeo"
 
 const readWebUser = () => getStoredUser();
 
-function pickFxRate(fxData, currencyUpper) {
-  const base = String(fxData?.base || "EUR").toUpperCase();
-  const c = String(currencyUpper || base).toUpperCase();
-  if (c === base) return 1;
-
-  const r = fxData?.rates?.[c] ?? fxData?.rates?.[c.toLowerCase?.()] ?? fxData?.[c] ?? fxData?.[c.toLowerCase?.()];
-  const n = Number(r);
-  return Number.isFinite(n) && n > 0 ? n : 1;
-}
-
-function formatCurrency(amount, currency) {
+function formatUSD(amount) {
   const n = Number(amount);
-  const cur = String(currency || "EUR").toUpperCase();
   if (!Number.isFinite(n)) return "—";
-
-  const locale = cur === "USD" ? "en-US" : cur === "GBP" ? "en-GB" : "es-ES";
   try {
-    return new Intl.NumberFormat(locale, {
+    return new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: cur,
+      currency: "USD",
+      minimumFractionDigits: 2,
       maximumFractionDigits: 2,
       currencyDisplay: "symbol",
     }).format(n);
   } catch {
-    return `${n.toFixed(2)} ${cur}`;
+    return `$${n.toFixed(2)}`;
   }
 }
 
@@ -60,7 +47,6 @@ const TiendaLayout = () => {
   const [mostrarLogin, setMostrarLogin] = useState(false);
   const [nombreConfirmado, setNombreConfirmado] = useState(() => localStorage.getItem("nombreJugador") || "");
   const [uuidConfirmado, setUuidConfirmado] = useState(() => localStorage.getItem("uuidJugador") || "");
-  const [moneda, setMoneda] = useState(() => localStorage.getItem("monedaSeleccionada") || "EUR");
 
   const { carrito, toggleProducto, agregar, eliminar, vaciar, total, cambiarCantidad, setCantidad } = useTiendaCarrito(nombreConfirmado);
 
@@ -126,12 +112,6 @@ const TiendaLayout = () => {
     setMostrarLogin(false);
   };
 
-  const handleMonedaChange = (e) => {
-    const nuevaMoneda = e.target.value;
-    setMoneda(nuevaMoneda);
-    localStorage.setItem("monedaSeleccionada", nuevaMoneda);
-  };
-
   const abrirModalCuenta = () => setMostrarLogin(true);
   const cambiarCuenta = () => {
     if (isWebLoggedIn) {
@@ -158,41 +138,7 @@ const TiendaLayout = () => {
   useEffect(() => { setCartOpenMobile(false); }, [location.pathname]);
 
   const totalQty = useMemo(() => (carrito || []).reduce((acc, it) => acc + (Number(it.quantity) || 1), 0), [carrito]);
-
-  const [fx, setFx] = useState(null);
-  useEffect(() => {
-    let cancelled = false;
-    const ctrl = new AbortController();
-    const load = async () => {
-      try {
-        const r = await fetch(apiUrl(`/api/tebex/fx`), { signal: ctrl.signal });
-        const data = await r.json().catch(() => null);
-        if (!r.ok) throw new Error(data?.error || "fx");
-        if (!cancelled) setFx(data);
-      } catch {
-        if (!cancelled) setFx(null);
-      }
-    };
-    load();
-    const t = window.setInterval(load, 10 * 60 * 1000);
-    return () => {
-      cancelled = true;
-      window.clearInterval(t);
-      ctrl.abort();
-    };
-  }, []);
-
-  const baseCurrency = useMemo(() => String(fx?.base || "EUR").toUpperCase(), [fx]);
-  const currencyUpper = useMemo(() => String(moneda || baseCurrency).toUpperCase(), [moneda, baseCurrency]);
-  const fxRate = useMemo(() => pickFxRate(fx, currencyUpper), [fx, currencyUpper]);
-
-  const totalDisplay = useMemo(() => {
-    const base = Number(total) || 0;
-    const out = base * (Number.isFinite(fxRate) ? fxRate : 1);
-    return Number.isFinite(out) ? out : base;
-  }, [total, fxRate]);
-
-  const totalFormatted = useMemo(() => formatCurrency(totalDisplay, currencyUpper), [totalDisplay, currencyUpper]);
+  const totalFormatted = useMemo(() => formatUSD(total), [total]);
 
   return (
     <>
@@ -210,7 +156,6 @@ const TiendaLayout = () => {
         {mostrarLogin && <TiendaModalJugador onConfirmar={confirmarNombre} onCerrar={() => setMostrarLogin(false)} />}
         
         <main className="pixel-layout-grid">
-          {/* Zona Principal (Storefront) */}
           <section className="pixel-content-area">
             <Routes>
               <Route
@@ -224,8 +169,6 @@ const TiendaLayout = () => {
                     onSetCantidad={setCantidad}
                     nombreConfirmado={nombreConfirmado}
                     uuidConfirmado={uuidConfirmado}
-                    monedaSeleccionada={currencyUpper}
-                    fx={fx}
                   />
                 }
               />
@@ -238,7 +181,6 @@ const TiendaLayout = () => {
             </Routes>
           </section>
 
-          {/* Zona Lateral (Carrito Desktop + Top Donators Desktop) */}
           {!isMobile && (
             <aside className="pixel-sidebar-area">
               <div className="pixel-cart-box">
@@ -252,14 +194,11 @@ const TiendaLayout = () => {
                   onSetCantidad={setCantidad}
                   nombreConfirmado={nombreConfirmado}
                   uuidConfirmado={uuidConfirmado}
-                  monedaSeleccionada={currencyUpper}
-                  onMonedaChange={handleMonedaChange}
                   onAbrirLogin={abrirModalCuenta}
                   onCambiarCuenta={cambiarCuenta}
                   isWebLoggedIn={isWebLoggedIn}
                   server={serverFromPath}
                   mode="desktop"
-                  fx={fx}
                 />
               </div>
               <TiendaTopDonatorPip server={serverFromPath} />
@@ -267,14 +206,12 @@ const TiendaLayout = () => {
           )}
         </main>
 
-        {/* Zona Inferior (Top Donators Mobile) -> Fuera del main para que ocupe bien el espacio */}
         {isMobile && (
           <div className="pixel-mobile-top-donators-area">
             <TiendaTopDonatorPip server={serverFromPath} />
           </div>
         )}
 
-        {/* Botón Flotante y Drawer (Carrito Mobile) */}
         {isMobile && (
           <>
             <button
@@ -310,15 +247,12 @@ const TiendaLayout = () => {
                         onSetCantidad={setCantidad}
                         nombreConfirmado={nombreConfirmado}
                         uuidConfirmado={uuidConfirmado}
-                        monedaSeleccionada={currencyUpper}
-                        onMonedaChange={handleMonedaChange}
                         onAbrirLogin={abrirModalCuenta}
                         onCambiarCuenta={cambiarCuenta}
                         isWebLoggedIn={isWebLoggedIn}
                         server={serverFromPath}
                         mode="mobileDrawer"
                         onRequestClose={() => setCartOpenMobile(false)}
-                        fx={fx}
                       />
                     </div>
                   </div>

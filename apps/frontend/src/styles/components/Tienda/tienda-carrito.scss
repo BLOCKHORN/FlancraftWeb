@@ -7,33 +7,27 @@ $ui-font: "MinecraftSeven", sans-serif;
   width: 100%;
   height: 100%;
   display: flex;
-  padding: 12px;
   box-sizing: border-box;
 
   .cart-container {
     width: 100%;
     height: 100%;
-    background: #1a1d25; // Fondo oscuro para armonizar
-    border: 2px solid #000;
+    background: transparent;
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
   }
 }
 
-/* 1. BLOQUE DE USUARIO CON GRID (Solución al solapamiento) */
 .cart-user-block {
-  padding: 12px;
-  background: #232835;
-  border-bottom: 2px solid #000;
+  padding: 0 0 16px 0;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.05);
   display: flex;
   flex-direction: column;
   gap: 12px;
 
   .user-grid {
     display: grid;
-    // Definimos 3 columnas: Avatar (fijo), Info (flexible), Botón (fijo al contenido)
     grid-template-columns: 44px 1fr auto;
     align-items: center;
     gap: 12px;
@@ -50,7 +44,7 @@ $ui-font: "MinecraftSeven", sans-serif;
     }
 
     .grid-info {
-      min-width: 0; // Importante para que el nombre se corte si no cabe
+      min-width: 0;
       display: flex;
       flex-direction: column;
       gap: 2px;
@@ -62,7 +56,7 @@ $ui-font: "MinecraftSeven", sans-serif;
         text-transform: uppercase;
         white-space: nowrap;
         overflow: hidden;
-        text-overflow: ellipsis; // Si el nombre es muy largo, pone "..."
+        text-overflow: ellipsis;
       }
       .user-status {
         font-family: $ui-font;
@@ -76,7 +70,7 @@ $ui-font: "MinecraftSeven", sans-serif;
       .action-btn {
         padding: 6px 10px;
         font-size: 0.7rem;
-        white-space: nowrap; // El botón no se rompe en dos líneas
+        white-space: nowrap;
       }
     }
   }
@@ -93,17 +87,16 @@ $ui-font: "MinecraftSeven", sans-serif;
   }
 }
 
-/* 2. CUERPO DEL CARRITO */
 .cart-body-block {
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding: 12px;
+  padding: 16px 0;
   min-height: 0;
 
   .cart-title {
     font-family: $mc-font; color: #9ca3af; font-size: 0.8rem;
-    text-align: center; margin-bottom: 12px; letter-spacing: 2px;
+    text-align: left; margin-bottom: 12px; letter-spacing: 2px;
   }
 
   .cart-scroll-area {
@@ -153,7 +146,6 @@ $ui-font: "MinecraftSeven", sans-serif;
   }
 }
 
-/* CONTROLES STEPPER */
 .stepper {
   display: flex; align-items: center; background: #000; padding: 2px; border: 1px solid #374151;
   button {
@@ -169,11 +161,9 @@ $ui-font: "MinecraftSeven", sans-serif;
   &:hover { filter: brightness(1.2); }
 }
 
-/* 3. FOOTER */
 .cart-footer-block {
-  padding: 16px;
-  background: #232835;
-  border-top: 2px solid #000;
+  padding: 16px 0 0 0;
+  border-top: 2px solid rgba(255, 255, 255, 0.05);
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -184,17 +174,76 @@ $ui-font: "MinecraftSeven", sans-serif;
     .value { font-family: $mc-font; color: #fff; font-size: 1.4rem; text-shadow: 2px 2px 0 #000; }
   }
 
+  .cart-points-reward {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: -8px;
+    margin-bottom: 12px;
+
+    .flanite-icon {
+      width: 20px;
+      height: 20px;
+      object-fit: contain;
+      image-rendering: pixelated;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.6));
+    }
+    
+    .flanite-text {
+      font-family: $mc-font;
+      font-size: 0.85rem;
+      color: #d8b4fe;
+      text-shadow: 1px 1px 0 #000;
+
+      strong {
+        color: #f97316;
+        font-size: 1.1rem;
+        text-shadow: 1px 1px 0 #000, 0 0 10px rgba(249, 115, 22, 0.5);
+      }
+    }
+  }
+
   .btn-pay {
     width: 100%; height: 52px; font-size: 1.1rem;
   }
 }
 
 .cart-empty {
-  font-family: $mc-font; color: #4b5563; text-align: center; padding: 30px 10px; font-size: 0.75rem;
+  font-family: $mc-font; color: #4b5563; text-align: left; padding: 30px 0; font-size: 0.75rem;
 }
 
 .is-pulse { animation: basketPulse 0.3s ease-in-out; }
+
 @keyframes basketPulse {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.02); }
+}
+.guest-warning-box {
+  background-color: #450a0a;
+  border: 2px solid #ef4444;
+  padding: 8px 12px;
+  margin-top: 4px;
+  margin-bottom: 8px;
+  
+  strong {
+    display: block;
+    font-family: $mc-font;
+    color: #fca5a5;
+    font-size: 0.8rem;
+    margin-bottom: 4px;
+  }
+  
+  p {
+    font-size: 0.75rem;
+    color: #fecaca;
+    margin: 0;
+    line-height: 1.4;
+    
+    code {
+      background: #000;
+      padding: 2px 4px;
+      color: #fff;
+    }
+  }
 }

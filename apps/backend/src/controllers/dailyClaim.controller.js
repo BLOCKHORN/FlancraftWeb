@@ -1,4 +1,3 @@
-// src/controllers/dailyClaim.controller.js
 const db = require("../models/db");
 const { evaluateWebAchievementsForUser } = require("../services/webLogros.service");
 
@@ -7,7 +6,6 @@ const DEBUG =
   String(process.env.DAILY_CLAIM_DEBUG || "").trim() === "1" ||
   process.env.NODE_ENV !== "production";
 
-// Objetivo mensual TOTAL (Wallet)
 const MONTH_TARGET_WALLET = 600;
 
 function num(v, def) {
@@ -15,10 +13,6 @@ function num(v, def) {
   return Number.isFinite(n) ? n : def;
 }
 
-/**
- * CAP diario duro.
- * - DAILY_CLAIM_HARD_CAP=50  -> nunca más de 50
- */
 function getHardCap(lastDay) {
   const forced = num(process.env.DAILY_CLAIM_HARD_CAP, 0);
   if (forced > 0) return Math.max(1, Math.floor(forced));
@@ -32,7 +26,6 @@ function getHardCap(lastDay) {
   return Math.max(1, Math.max(minCap, Math.min(maxCap, cap)));
 }
 
-// ---- Fechas Madrid seguras ----
 function fmtMadridParts(date = new Date()) {
   const parts = new Intl.DateTimeFormat("en-GB", {
     timeZone: TZ,
@@ -46,8 +39,8 @@ function fmtMadridParts(date = new Date()) {
 
   return {
     y: Number(map.year),
-    m: Number(map.month), // 1..12
-    d: Number(map.day), // 1..31
+    m: Number(map.month),
+    d: Number(map.day),
   };
 }
 
@@ -57,8 +50,8 @@ function madridDayKey(date = new Date()) {
 }
 
 function monthMetaMadrid(date = new Date()) {
-  const { y, m, d } = fmtMadridParts(date); // m 1..12
-  const lastDay = new Date(Date.UTC(y, m, 0)).getUTCDate(); // último día del mes m
+  const { y, m, d } = fmtMadridParts(date);
+  const lastDay = new Date(Date.UTC(y, m, 0)).getUTCDate();
   const firstISO = `${String(y).padStart(4, "0")}-${String(m).padStart(2, "0")}-01`;
 
   const nextY = m === 12 ? y + 1 : y;
@@ -75,14 +68,10 @@ function nextMidnightMadridISO() {
   return baseUTC.toISOString();
 }
 
-// ---- Helpers ----
 function clamp(n, a, b) {
   return Math.max(a, Math.min(b, n));
 }
 
-/**
- * Random sesgado alrededor de un centro, sin salir de [lo, hi]
- */
 function pickBiased(lo, hi, center, spreadRatio = 0.35) {
   if (lo >= hi) return lo;
 
@@ -93,7 +82,7 @@ function pickBiased(lo, hi, center, spreadRatio = 0.35) {
   const a = Math.max(lo, c - span);
   const b = Math.min(hi, c + span);
 
-  const r = (Math.random() + Math.random()) / 2; // triangular
+  const r = (Math.random() + Math.random()) / 2;
   const val = Math.round(a + r * (b - a));
   return Math.max(lo, Math.min(hi, val));
 }
@@ -113,9 +102,6 @@ async function getMonthSum(uuid, firstISO, nextISO) {
   return { total, daysClaimed };
 }
 
-/**
- * Exacto si se puede (sin dump final), con CAP.
- */
 function computeTodayAmountExactIfPossible({ totalSoFar, dayOfMonth, lastDay, target, cap }) {
   const daysLeft = lastDay - dayOfMonth + 1;
   const remaining = Math.max(0, target - totalSoFar);
@@ -174,10 +160,6 @@ function computeTodayAmountExactIfPossible({ totalSoFar, dayOfMonth, lastDay, ta
   };
 }
 
-/**
- * Sumar a wallet (atómico) + ledger
- * Requiere la función SQL public.wallet_add(...)
- */
 async function addToWallet({ uuid, amount, meta }) {
   const { data, error } = await db.rpc("wallet_add", {
     p_uuid: uuid,
@@ -188,11 +170,9 @@ async function addToWallet({ uuid, amount, meta }) {
   });
 
   if (error) throw error;
-  // Supabase RPC devuelve `data` como el return (balance bigint)
   return Number(data) || 0;
 }
 
-// POST /api/daily-claim
 exports.claimDaily = async (req, res) => {
   let step = "start";
   try {
@@ -281,7 +261,6 @@ exports.claimDaily = async (req, res) => {
       throw errInsert;
     }
 
-    // ✅ WALLET: sumar coins (atómico) + movimiento
     step = "wallet_add";
     let walletBalance = 0;
     try {
@@ -295,9 +274,39 @@ exports.claimDaily = async (req, res) => {
         },
       });
     } catch (e) {
-      // rollback: si falla wallet, deshacemos el log del claim para no bloquear al user
       await db.from("daily_claims_log").delete().eq("uuid_jugador", uuid).eq("claim_date", today);
       throw e;
+    }
+
+    step = "transfer_to_server";
+    try {
+      const { data: transferData, error: transferError } = await db.rpc("wallet_transfer_to_server", {
+        p_uuid: uuid,
+        p_servidor: "survival",
+        p_amount: amount,
+      });
+
+      if (transferError) throw transferError;
+
+      if (transferData && transferData.code === "OK") {
+        const commandId = transferData.command_id || transferData.id || null;
+        walletBalance = Number(transferData.wallet_balance) || 0; 
+
+        if (commandId) {
+          const feedbackTitle = "Regalo Diario";
+          const feedbackSubtitle = `+${amount} COINS`;
+          const feedbackChat = `¡Has reclamado tu regalo diario! +${amount} COINS.`;
+
+          await db.from("comandos_pendientes").update({
+            tipo: "coins",
+            feedback_title: feedbackTitle,
+            feedback_subtitle: feedbackSubtitle,
+            feedback_chat: feedbackChat,
+          }).eq("id", commandId);
+        }
+      }
+    } catch (e) {
+      console.error("[DAILY CLAIM] Error en auto-transferencia al servidor:", e);
     }
 
     step = "upsert_daily_claims";
@@ -319,19 +328,19 @@ exports.claimDaily = async (req, res) => {
 
     if (errUpsert) throw errUpsert;
 
-try {
-  await evaluateWebAchievementsForUser(uuid, {
-    types: ["daily_claim_count", "account_age_days"],
-  });
-} catch (webAchievementError) {
-  console.error("[WEB LOGROS DAILY CLAIM EVAL ERROR]", {
-    uuid,
-    message: webAchievementError?.message || String(webAchievementError),
-  });
-}
+    try {
+      await evaluateWebAchievementsForUser(uuid, {
+        types: ["daily_claim_count", "account_age_days"],
+      });
+    } catch (webAchievementError) {
+      console.error("[WEB LOGROS DAILY CLAIM EVAL ERROR]", {
+        uuid,
+        message: webAchievementError?.message || String(webAchievementError),
+      });
+    }
 
-return res.status(200).json({
-      message: "Recompensa diaria añadida a tu Wallet.",
+    return res.status(200).json({
+      message: "Recompensa diaria enviada directamente a Survival.",
       amount,
       walletBalance,
       nextClaimAt: nextMidnightMadridISO(),
@@ -356,7 +365,6 @@ return res.status(200).json({
   }
 };
 
-// GET /api/daily-claim/status
 exports.getDailyStatus = async (req, res) => {
   let step = "start";
   try {

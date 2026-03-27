@@ -321,6 +321,31 @@ async function persistPaymentFromWebhook(evt) {
 
     if (error) throw error;
 
+    if (record.uuid) {
+      const { data: userData } = await db
+        .from("usuarios")
+        .select("flanpoints")
+        .eq("uuid", record.uuid)
+        .maybeSingle();
+
+      if (userData) {
+        const pointsToDeduct = Math.floor(record.amount * 50);
+        
+        await db
+          .from("usuarios")
+          .update({ flanpoints: userData.flanpoints - pointsToDeduct })
+          .eq("uuid", record.uuid);
+
+        await db.from("flanpoints_movimientos").insert({
+          uuid_jugador: record.uuid,
+          amount: -pointsToDeduct,
+          motivo: "refund_tebex",
+          fuente: "tebex",
+          meta: { payment_id: record.payment_id }
+        });
+      }
+    }
+
     invalidateTopCaches();
     return { ok: true, removed: true, payment_id: record.payment_id };
   }
@@ -344,11 +369,41 @@ async function persistPaymentFromWebhook(evt) {
     raw: record.raw,
   };
 
+  const { data: existingPayment } = await db
+    .from("tebex_payments")
+    .select("id")
+    .eq("payment_id", record.payment_id)
+    .maybeSingle();
+
   const { error } = await db
     .from("tebex_payments")
     .upsert(payload, { onConflict: "payment_id" });
 
   if (error) throw error;
+
+  if (!existingPayment && record.uuid) {
+    const pointsToAdd = Math.floor(record.amount * 50);
+    const { data: userData } = await db
+      .from("usuarios")
+      .select("flanpoints")
+      .eq("uuid", record.uuid)
+      .maybeSingle();
+
+    if (userData) {
+      await db
+        .from("usuarios")
+        .update({ flanpoints: userData.flanpoints + pointsToAdd })
+        .eq("uuid", record.uuid);
+
+      await db.from("flanpoints_movimientos").insert({
+        uuid_jugador: record.uuid,
+        amount: pointsToAdd,
+        motivo: "compra_tebex",
+        fuente: "tebex",
+        meta: { payment_id: record.payment_id, amount_paid: record.amount }
+      });
+    }
+  }
 
   invalidateTopCaches();
 

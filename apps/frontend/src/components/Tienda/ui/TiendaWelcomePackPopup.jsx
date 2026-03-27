@@ -1,9 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { apiUrl } from "../../../lib/env";
 import { normalizeProductForCart } from "../utils/tiendaHelpers";
+import { FlaniteIcon } from "./TiendaStorefront";
 import "../../../styles/components/Tienda/welcome-pack-popup.scss";
 
-const VALOR_ESTIMADO = 20; // Valor original para tachar
+const VALOR_ESTIMADO = 20;
 
 const ICON_COIN = "/tienda/assets/coin.png";
 const ICON_MONEY = "/assets/statsperfil/dinero.png";
@@ -71,12 +72,10 @@ export default function TiendaWelcomePackPopup({
         return;
       }
 
-      // Si la API dice que hay que mostrarlo, lo mostramos (ya no hay "dismiss" local)
       if (data?.shouldShow) {
         setStatus(data);
         setVisible(true);
         
-        // Comprobamos si el usuario lo minimizó en esta sesión/navegador
         const isMinimized = localStorage.getItem(`minimized:${jugador}`) === "true";
         setMinimized(isMinimized);
       }
@@ -104,13 +103,11 @@ export default function TiendaWelcomePackPopup({
   const handleAdd = () => {
     if (!pack || inCart) return;
     onAgregar(normalizeProductForCart(pack, 1), 1);
-    setMinimized(true); // Lo dejamos minimizado en background para cuando lo quite del carrito
+    setMinimized(true);
   };
 
-  // Si no es visible, no hay pack, O ESTÁ EN EL CARRITO, devolvemos null.
   if (!visible || !pack || inCart) return null;
 
-  // VERSIÓN MINI (SIEMPRE visible, sin botón de cerrar)
   if (minimized) {
     return (
       <div className="wp-mini-badge" onClick={handleMaximize}>
@@ -135,7 +132,6 @@ export default function TiendaWelcomePackPopup({
     );
   }
 
-  // VERSIÓN COMPLETA (Modal)
   return (
     <div className="wp-overlay" onClick={handleMinimize}>
       <div className="wp-pixel-modal" onClick={(e) => e.stopPropagation()}>
@@ -169,6 +165,14 @@ export default function TiendaWelcomePackPopup({
             </div>
 
             <div className="wp-footer">
+              {pack?.price && (
+                <div className="wp-flanite-promo">
+                  <FlaniteIcon />
+                  <div className="flanite-text">
+                    LLÉVATE <strong>+{Math.floor(pack.price * 50)} FLANITE</strong>
+                  </div>
+                </div>
+              )}
               <button className="wp-pixel-btn-green" onClick={handleAdd} disabled={loading}>
                 <span className="old-price">~{oldPriceLabel}</span>
                 <span className="new-price">{priceLabel}</span>

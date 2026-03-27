@@ -6,7 +6,7 @@ const mode = {
   id: "survival",
   name: "SURVIVAL",
   description:
-    "El corazón de FlanCraft. Protege tu base fácilmente con piedras de protección y forja tu propio camino. Sube de nivel tus habilidades RPG, elige una profesión para ganar dinero, comercia en la casa de subastas y forma un equipo para dominar eventos como KoTH y Envoys.",
+    "El corazón de FlanCraft. Empieza desde cero y construye tu imperio con la tranquilidad de que tu base es inviolable. Sube de nivel, domina la economía de subastas y forma alianzas para conquistar eventos globales. Juegues para ser el más rico o el más letal, aquí forjas tu propio legado.",
   image: "/assets/modes/survival.webp",
   icon: "/assets/reinos/survival-clasico.webp",
   accent: "#38bdf8",
@@ -96,9 +96,9 @@ const GameModes = () => {
 
               <div className="gm-data-footer">
                 {[
-                  { label: "SISTEMA RPG & SKILLS", delay: 0.6 },
-                  { label: "ECONOMÍA & SUBASTAS", delay: 0.8 },
-                  { label: "PROTECCIONES & EQUIPOS", delay: 1.0 }
+                  { label: "PROGRESIÓN Y HABILIDADES", delay: 0.6 },
+                  { label: "ECONOMÍA DINÁMICA", delay: 0.8 },
+                  { label: "ALIANZAS Y CONQUISTA", delay: 1.0 }
                 ].map((stat, i) => (
                   <div className="data-bar" key={i}>
                     <span>{stat.label}</span>

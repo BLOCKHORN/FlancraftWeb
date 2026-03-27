@@ -9,6 +9,133 @@
 
 $mc-font: "MinecraftBold", "MinecraftSeven", sans-serif;
 
+@mixin rank-text-effect($color-top, $color-bottom, $stroke, $shadow) {
+  font-family: $mc-font;
+  font-size: clamp(2.2rem, 3.5vw, 2.8rem);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  background: linear-gradient(180deg, $color-top 0%, $color-bottom 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 1.5px $stroke;
+  filter: drop-shadow(0px 4px 0px $shadow) drop-shadow(0px 6px 0px rgba(0,0,0,0.8));
+  display: inline-block;
+  text-align: center;
+}
+
+@mixin rank-hollow-card($border-color, $bg-base, $glow-color) {
+  background-color: $bg-base;
+  border: 2px solid #000;
+  box-shadow: inset 0 0 0 2px $border-color, 0 8px 15px rgba(0, 0, 0, 0.6);
+  position: relative;
+  overflow: visible;
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.2s;
+  border-radius: 4px;
+
+.card-bg-glow {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    border-radius: inherit;
+    z-index: 0;
+    pointer-events: none;
+    // Mantenemos las estrellas de fondo
+    background-image: radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,0.8), transparent),
+                      radial-gradient(1.5px 1.5px at 40% 60%, rgba(255,255,255,0.6), transparent),
+                      radial-gradient(2px 2px at 80% 30%, rgba(255,255,255,0.9), transparent),
+                      radial-gradient(1px 1px at 90% 80%, rgba(255,255,255,0.4), transparent);
+    background-size: 150px 150px;
+
+    &::after {
+      content: "";
+      position: absolute;
+      width: 200%;
+      height: 200%;
+      top: -50%;
+      left: -50%;
+      // AUMENTAMOS LA OPACIDAD DEL COLOR AL 0.65 Y LA EXTENSIÓN AL 70%
+      background: radial-gradient(circle at 50% 50%, rgba($glow-color, 0.65) 0%, transparent 40%);
+      opacity: 1; // Quitamos el 0.7 para que brille al máximo
+      animation: gpuAuraRotate 8s linear infinite;
+      will-change: transform;
+    }
+  }
+
+  &:hover, &.active {
+    transform: translateY(-6px);
+    box-shadow: inset 0 0 0 2px $border-color, 0 12px 25px rgba(0, 0, 0, 0.9);
+    
+    .card-bg-glow::after {
+      animation: gpuAuraRotate 4s linear infinite;
+      filter: brightness(1.3); // Le damos un subidón de luz al pasar el ratón
+    }
+  } }
+
+@mixin hollow-card($border-color, $glow-color) {
+  background-color: #151923;
+  border: 4px solid #000;
+  box-shadow: 
+    inset 0 0 0 2px $border-color,
+    0 8px 0 rgba(0, 0, 0, 0.8);
+  position: relative;
+  overflow: visible;
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.2s;
+
+  .card-bg-glow {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background: radial-gradient(circle at 50% 50%, rgba($glow-color, 0.45) 0%, transparent 75%);
+    pointer-events: none;
+    transition: background 0.2s;
+  }
+
+  &:hover, &.active, &.in-cart {
+    transform: translateY(-4px);
+    box-shadow: 
+      inset 0 0 0 2px $border-color,
+      0 12px 0 rgba(0, 0, 0, 0.9);
+    .card-bg-glow {
+      background: radial-gradient(circle at 50% 50%, rgba($glow-color, 0.65) 0%, transparent 80%);
+    }
+  }
+}
+
+@keyframes epicPulse {
+  0% { opacity: 0.6; transform: scale(0.95); }
+  100% { opacity: 1; transform: scale(1.05); }
+}
+
+@keyframes gpuAuraRotate {
+  0% { transform: rotate(0deg) scale(1); }
+  50% { transform: rotate(180deg) scale(1.1); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+
+@keyframes floatRuneItem {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes floatItem {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes miniBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+@keyframes mcModalPopIn {
+  0% { transform: scale(0.8) translateY(20px); opacity: 0; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+
 .pixel-storefront {
   width: 100%;
   height: 100%;
@@ -34,10 +161,10 @@ $mc-font: "MinecraftBold", "MinecraftSeven", sans-serif;
   font-size: 20px;
   color: #fff;
   text-shadow: -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000, 4px 4px 0 #000;
+}
 
-  &.error {
-    color: #f87171;
-  }
+.pixel-state-box.error {
+  color: #f87171;
 }
 
 .pixel-spinner {
@@ -49,14 +176,10 @@ $mc-font: "MinecraftBold", "MinecraftSeven", sans-serif;
   animation: spin 1s linear infinite;
 }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
 .pixel-section {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
 }
 
 .pixel-section-header {
@@ -65,6 +188,15 @@ $mc-font: "MinecraftBold", "MinecraftSeven", sans-serif;
   align-items: center;
   flex-wrap: wrap;
   gap: 16px;
+  margin-bottom: 0px;
+
+  .header-text-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+    min-width: 280px;
+  }
 }
 
 .pixel-section-title {
@@ -74,32 +206,50 @@ $mc-font: "MinecraftBold", "MinecraftSeven", sans-serif;
   margin: 0;
   line-height: 1.1;
   letter-spacing: 2px;
+  text-align: left;
   text-shadow: -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000, 6px 6px 0 #000;
 }
 
-.pixel-card {
-  background: #151923;
-  border: 4px solid #000;
-  box-shadow: inset -4px -4px 0 #0a0c14, inset 4px 4px 0 #2a3143;
-  position: relative;
+.pixel-section-desc {
+  font-family: $mc-font;
+  color: #a0a4b8;
+  font-size: 0.95rem;
+  margin: 0;
+  line-height: 1.4;
+  text-align: left;
+  text-shadow: 1px 1px 0 #000;
+  
+  strong {
+    color: #fbbf24;
+  }
+}
+
+.pixel-daily-wrapper {
+  width: 100%;
+  margin-bottom: 8px; 
+}
+
+.pixel-ranks-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.rank-card-wrapper {
   display: flex;
   flex-direction: column;
   align-items: center;
-  border-radius: 2px;
-  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease;
-  height: 100%;
-  overflow: visible;
-  z-index: 1;
+  gap: 8px;
+}
 
-  .card-bg-glow {
-    position: absolute;
-    inset: 0;
-    z-index: 0;
-    opacity: 0.8;
-    pointer-events: none;
-    border-radius: inherit;
-    overflow: hidden;
-  }
+.rank-card {
+  padding: 24px 16px;
+  cursor: pointer;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border-radius: 4px;
 
   .card-content-wrapper {
     display: flex;
@@ -109,123 +259,179 @@ $mc-font: "MinecraftBold", "MinecraftSeven", sans-serif;
     position: relative;
     z-index: 2;
   }
+
+  .card-image-wrapper {
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 160px;
+    height: 160px;
+    animation: floatRuneItem 4s ease-in-out infinite;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      image-rendering: pixelated;
+    }
+  }
 }
 
 .rank-card.nova {
-  box-shadow: inset -4px -4px 0 #0a0c14, inset 4px 4px 0 rgba(94, 224, 52, 0.25);
-  .card-bg-glow { background: radial-gradient(circle at top center, rgba(94, 224, 52, 0.2) 0%, transparent 70%); }
+  @include rank-hollow-card(#2e7d32, #08140c, #4caf50);
+  .rank-name { @include rank-text-effect(#5ee034, #22c55e, #000, #064e3b); }
+  .card-image-wrapper img { filter: drop-shadow(0 0 20px rgba(76, 175, 80, 0.4)); }
 }
 
 .rank-card.alpha {
-  box-shadow: inset -4px -4px 0 #0a0c14, inset 4px 4px 0 rgba(59, 130, 246, 0.25);
-  .card-bg-glow { background: radial-gradient(circle at top center, rgba(59, 130, 246, 0.2) 0%, transparent 70%); }
+  @include rank-hollow-card(#1565c0, #08101a, #2196f3);
+  .rank-name { @include rank-text-effect(#3b82f6, #1d4ed8, #000, #1e3a8a); }
+  .card-image-wrapper img { filter: drop-shadow(0 0 20px rgba(33, 150, 243, 0.4)); }
 }
 
 .rank-card.inmortal {
-  box-shadow: inset -4px -4px 0 #0a0c14, inset 4px 4px 0 rgba(239, 68, 68, 0.25);
-  .card-bg-glow { background: radial-gradient(circle at top center, rgba(239, 68, 68, 0.2) 0%, rgba(251, 146, 60, 0.1) 60%, transparent 80%); }
+  @include rank-hollow-card(#c62828, #1a0808, #f44336);
+  .rank-name { @include rank-text-effect(#ef4444, #b91c1c, #000, #7f1d1d); }
+  .card-image-wrapper img { filter: drop-shadow(0 0 20px rgba(244, 67, 54, 0.4)); }
+}
+
+.rank-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.rank-actions {
+  display: flex;
+  width: 100%;
+  gap: 12px;
+  margin-top: auto;
+  position: relative;
+  z-index: 2;
+}
+
+.rank-info-text {
+  font-family: $mc-font;
+  font-size: 0.75rem;
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+
+  .info-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    background: #374151;
+    color: #9ca3af;
+    border-radius: 50%;
+    font-size: 0.6rem;
+    line-height: 1;
+  }
+}
+
+.pixel-coins-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px;
 }
 
 .coin-card {
-  background: linear-gradient(135deg, #0055ff 0%, #0088ff 100%);
-  border: 4px solid #002244;
-  box-shadow: 
-    inset 4px 4px 0 rgba(255, 255, 255, 0.2), 
-    inset -4px -4px 0 rgba(0, 0, 0, 0.2);
-  position: relative;
-  overflow: visible; // Crucial para que el badge no se corte
-  transition: transform 0.2s, border-color 0.2s;
-
-  .card-bg-glow {
-    position: absolute;
-    inset: 0;
-    overflow: hidden; // El brillo se queda dentro
-    background-image: 
-      linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
-    background-size: 16px 16px;
-
-    &::before {
-      content: '';
-      position: absolute;
-      top: -50%;
-      left: -50%;
-      width: 200%;
-      height: 200%;
-      background: linear-gradient(
-        45deg, 
-        transparent 45%, 
-        rgba(255, 255, 255, 0.1) 50%, 
-        transparent 55%
-      );
-      animation: crystalShine 6s infinite;
-    }
-  }
-
-  .coin-amount-wrapper .coin-amount {
-    color: #ffea00;
-    font-size: 1.8rem;
-    text-shadow: 2px 2px 0 #000;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border-radius: 2px;
+  
+  .card-content-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
     position: relative;
-    z-index: 5;
+    z-index: 2;
   }
 
-  // Por defecto la imagen no flota
-  .card-image-wrapper img {
-    animation: none;
-    filter: drop-shadow(0 10px 5px rgba(0,0,0,0.3));
-  }
-
-  // ESTADO: HOVER
-  &:hover {
-    transform: translateY(-4px);
-    border-color: #5ee034;
-    .card-image-wrapper img {
-      animation: floatItem 3.5s ease-in-out infinite;
-    }
-  }
-
-  // ESTADO: EN CARRITO (Se queda fijo)
-  &.in-cart {
-    border-color: #5ee034 !important; // Forzamos el color verde
-    transform: translateY(-4px); // Se queda elevado
-    background: linear-gradient(135deg, #0044cc 0%, #0066ee 100%);
-    
-    .card-image-wrapper img {
-      animation: floatItem 3.5s ease-in-out infinite; // Sigue flotando
-    }
-  }
-
-  // EL BADGE (Contador x1, x2...)
-  .cart-tag {
-    position: absolute;
-    top: -16px;
-    left: -16px;
-    background: #5ee034 !important;
-    color: #fff !important;
-    border: 4px solid #000 !important;
-    padding: 6px 10px;
-    font-family: $mc-font;
-    font-size: 1.1rem;
-    text-shadow: 2px 2px 0 #000;
-    z-index: 100;
-    box-shadow: 
-      inset -2px -2px 0 rgba(0, 0, 0, 0.3), 
-      inset 2px 2px 0 rgba(255, 255, 255, 0.4), 
-      0 6px 0 #000;
-    display: block;
-    white-space: nowrap;
+  &.in-cart, &:hover {
+    .card-image-wrapper img { animation: floatItem 3.5s ease-in-out infinite; }
   }
 }
 
-@keyframes crystalShine {
-  0% { transform: translateX(-100%) translateY(-100%); }
-  15%, 100% { transform: translateX(100%) translateY(100%); }
+.coin-card.bronce { 
+  @include hollow-card(#5d4037, #8d6e63); 
+  .coin-amount-sub { color: #d7ccc8; } 
+}
+.coin-card.plata { 
+  @include hollow-card(#546e7a, #90a4ae); 
+  .coin-amount-sub { color: #cfd8dc; } 
+}
+.coin-card.oro { 
+  @include hollow-card(#ff8f00, #ffb300); 
+  .coin-amount-sub { color: #ffe082; } 
+}
+.coin-card.diamante { 
+  @include hollow-card(#00838f, #00acc1); 
+  .coin-amount-sub { color: #b2ebf2; } 
+}
+.coin-card.esmeralda { 
+  @include hollow-card(#2e7d32, #4caf50); 
+  .coin-amount-sub { color: #c8e6c9; } 
+}
+.coin-card.mitico { 
+  @include hollow-card(#6a1b9a, #ab47bc); 
+  .coin-amount-sub { color: #e1bee7; } 
 }
 
-@keyframes floatItem {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
+.coin-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 12px;
+  min-height: 60px;
+}
+
+.coin-tier-name {
+  font-family: $mc-font;
+  color: #fff;
+  font-size: clamp(1.2rem, 2vw, 1.4rem);
+  text-shadow: -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000, 3px 3px 0 #000;
+  margin-bottom: 4px;
+  text-align: center;
+}
+
+.coin-amount-sub {
+  font-family: $mc-font;
+  font-size: 1.1rem;
+  text-shadow: 1px 1px 0 #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.inline-coin {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  image-rendering: pixelated;
+  vertical-align: middle;
+  transform: translateY(-1px);
+}
+
+.coin-actions {
+  width: 100%;
+  margin-top: auto;
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .card-image-wrapper {
@@ -242,7 +448,6 @@ $mc-font: "MinecraftBold", "MinecraftSeven", sans-serif;
     object-fit: contain;
     image-rendering: pixelated;
     filter: drop-shadow(0 15px 10px rgba(0, 0, 0, 0.6));
-    animation: floatItem 3.5s ease-in-out infinite;
   }
 }
 
@@ -250,6 +455,35 @@ $mc-font: "MinecraftBold", "MinecraftSeven", sans-serif;
   width: 110px;
   height: 110px;
   margin-bottom: 16px;
+}
+
+.flanite-reward {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px; 
+  margin-top: 8px;
+  margin-bottom: 8px;
+  position: relative;
+  z-index: 10;
+  background: rgba(0, 0, 0, 0.4); 
+  padding: 4px 12px;
+  border-radius: 20px;
+  border: 1px solid rgba(249, 115, 22, 0.3);
+
+  .flanite-img {
+    width: 28px;
+    height: 28px;
+    image-rendering: pixelated;
+    filter: drop-shadow(0 2px 4px #000);
+  }
+
+  .flanite-val {
+    font-family: $mc-font;
+    font-size: 1.1rem; 
+    color: #f97316;
+    text-shadow: 1px 1px 0 #000, 0 0 8px rgba(249, 115, 22, 0.6);
+  }
 }
 
 .pixel-tag {
@@ -264,127 +498,47 @@ $mc-font: "MinecraftBold", "MinecraftSeven", sans-serif;
 }
 
 .best-tag {
+  position: absolute;
   top: -16px;
   right: -16px;
   background: #fbbf24;
   color: #fff;
+  padding: 6px 12px;
+  font-family: $mc-font;
+  font-size: 1rem;
+  text-transform: uppercase;
+  border: 4px solid #000;
+  z-index: 10;
+  letter-spacing: 1px;
   text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 2px 2px 0 #000;
   box-shadow: inset -2px -2px 0 rgba(0, 0, 0, 0.3), inset 2px 2px 0 rgba(255, 255, 255, 0.6), 0 6px 0 #000;
+}
+
+.mas-valor-badge {
+  position: absolute;
+  top: -12px;
+  right: -10px;
+  background: #ef4444;
+  color: #fff;
+  border: 3px solid #000;
+  padding: 4px 10px;
+  font-family: $mc-font;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  text-shadow: 2px 2px 0 #000;
+  box-shadow: inset -2px -2px 0 rgba(0,0,0,0.3), inset 2px 2px 0 rgba(255,255,255,0.4), 0 6px 0 #000;
+  transform: rotate(8deg);
+  z-index: 20;
+  white-space: nowrap;
 }
 
 .cart-tag {
   top: -16px;
   left: -16px;
-  background: #3b82f6;
+  background: #5ee034;
   color: #fff;
-  text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 2px 2px 0 #000;
+  text-shadow: 2px 2px 0 #000;
   box-shadow: inset -2px -2px 0 rgba(0, 0, 0, 0.3), inset 2px 2px 0 rgba(255, 255, 255, 0.4), 0 6px 0 #000;
-}
-
-.pixel-ranks-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 20px;
-}
-
-.rank-card {
-  padding: 24px 16px;
-  cursor: pointer;
-
-  &:hover {
-    transform: translateY(-6px);
-    box-shadow: inset -4px -4px 0 #0a0c14, inset 4px 4px 0 #2a3143, 0 15px 0 #000;
-  }
-
-  &.active {
-    border-color: #fbbf24;
-    box-shadow: inset -4px -4px 0 #0a0c14, inset 4px 4px 0 #fbbf24, 0 15px 0 #000;
-    transform: translateY(-6px);
-  }
-}
-
-.rank-header {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-bottom: 16px;
-
-  .rank-sub {
-    font-family: $mc-font;
-    color: #9ca3af;
-    font-size: 1.2rem;
-    text-shadow: 1px 1px 0 #000;
-  }
-
-  .rank-name {
-    font-family: $mc-font;
-    font-size: clamp(2.2rem, 3.5vw, 2.8rem);
-    letter-spacing: 2px;
-    text-shadow: -3px -3px 0 #000, 3px -3px 0 #000, -3px 3px 0 #000, 3px 3px 0 #000, 6px 6px 0 #000;
-    text-align: center;
-  }
-}
-
-.rank-card.nova .rank-name { color: #5ee034; }
-.rank-card.alpha .rank-name { color: #3b82f6; }
-.rank-card.inmortal .rank-name { color: #ef4444; }
-
-.rank-actions {
-  display: flex;
-  width: 100%;
-  gap: 12px;
-  margin-top: auto;
-  position: relative;
-  z-index: 2;
-}
-
-.pixel-daily-wrapper {
-  width: 100%;
-  margin-bottom: 16px;
-}
-
-.pixel-coins-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 16px;
-}
-
-.coin-card {
-  padding: 16px;
-
-  &.in-cart { border-color: #3b82f6; }
-
-  &:hover {
-    transform: translateY(-4px);
-    box-shadow: inset -4px -4px 0 #0a0c14, inset 4px 4px 0 #2a3143, 0 10px 0 #000;
-  }
-}
-
-.coin-amount-wrapper {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-end;
-  margin-bottom: 12px;
-  min-height: 70px;
-
-  .coin-amount {
-    font-family: $mc-font;
-    font-size: clamp(1.6rem, 2.5vw, 1.8rem);
-    color: #fbbf24;
-    letter-spacing: 1px;
-    text-shadow: -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000, 4px 4px 0 #000;
-  }
-}
-
-.coin-actions {
-  width: 100%;
-  margin-top: auto;
-  position: relative;
-  z-index: 2;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
 }
 
 .clean-bonus {
@@ -401,11 +555,6 @@ $mc-font: "MinecraftBold", "MinecraftSeven", sans-serif;
   z-index: 5;
   font-family: $mc-font;
   font-size: 0.82rem;
-  line-height: 1;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  box-shadow: none;
 
   .base { color: #cbd5e1; text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.9); }
   .plus { color: #86efac; text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.9); }
@@ -426,14 +575,7 @@ $mc-font: "MinecraftBold", "MinecraftSeven", sans-serif;
   }
 }
 
-@keyframes miniBounce {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-4px); }
-}
-
-.btn-container-query {
-  min-width: 0;
-}
+.btn-container-query { min-width: 0; }
 
 .pixel-btn-green,
 .pixel-btn-gold,
@@ -451,6 +593,7 @@ $mc-font: "MinecraftBold", "MinecraftSeven", sans-serif;
   width: 100%;
   padding: 10px 6px;
   height: 100%;
+  flex-shrink: 0;
 
   .old-price {
     font-size: 0.76rem;
@@ -473,9 +616,6 @@ $mc-font: "MinecraftBold", "MinecraftSeven", sans-serif;
     box-sizing: border-box;
     white-space: nowrap;
     line-height: 1;
-    overflow: visible;
-    text-overflow: unset;
-    letter-spacing: 0;
     text-shadow: -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000, 3px 3px 0 #000;
   }
 
@@ -487,16 +627,13 @@ $mc-font: "MinecraftBold", "MinecraftSeven", sans-serif;
     cursor: not-allowed;
     .new-price { color: #9ca3af; text-shadow: none; }
     .old-price { display: none; }
-    img { filter: grayscale(1); opacity: 0.5; }
   }
 }
 
 .pixel-btn-green {
   background: #5ee034;
   box-shadow: inset -4px -4px 0 rgba(0, 0, 0, 0.25), inset 4px 4px 0 rgba(255, 255, 255, 0.4);
-
   .new-price { font-size: clamp(1.04rem, 0.82vw + 0.72rem, 1.38rem); }
-
   &:active:not(:disabled) {
     box-shadow: inset -2px -2px 0 rgba(0, 0, 0, 0.25), inset 2px 2px 0 rgba(255, 255, 255, 0.4);
     transform: translateY(2px);
@@ -507,20 +644,7 @@ $mc-font: "MinecraftBold", "MinecraftSeven", sans-serif;
   background: #fbbf24;
   box-shadow: inset -4px -4px 0 rgba(0, 0, 0, 0.25), inset 4px 4px 0 rgba(255, 255, 255, 0.6);
   flex-direction: row;
-  color: #fff;
-
-  .new-price {
-    font-size: clamp(0.88rem, 0.45vw + 0.7rem, 1.05rem);
-    gap: 3px;
-    padding: 2px 4px 3px;
-  }
-
-  .price-text {
-    font-size: inherit;
-    line-height: 1;
-    display: block;
-  }
-
+  .new-price { font-size: clamp(0.88rem, 0.45vw + 0.7rem, 1.05rem); gap: 3px; }
   &:active:not(:disabled) {
     box-shadow: inset -2px -2px 0 rgba(0, 0, 0, 0.25), inset 2px 2px 0 rgba(255, 255, 255, 0.6);
     transform: translateY(2px);
@@ -532,20 +656,10 @@ $mc-font: "MinecraftBold", "MinecraftSeven", sans-serif;
   box-shadow: inset -4px -4px 0 rgba(0, 0, 0, 0.3), inset 4px 4px 0 rgba(255, 255, 255, 0.2);
   font-size: 1.2rem;
   text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 2px 2px 0 #000;
-
   &:active:not(:disabled) {
     box-shadow: inset -2px -2px 0 rgba(0, 0, 0, 0.3), inset 2px 2px 0 rgba(255, 255, 255, 0.2);
     transform: translateY(2px);
   }
-}
-
-.inline-coin {
-  width: 14px;
-  height: 14px;
-  flex-shrink: 0;
-  image-rendering: pixelated;
-  filter: drop-shadow(0 1px 0 #000);
-  margin-left: 0;
 }
 
 .open-shop-btn {
@@ -559,6 +673,7 @@ $mc-font: "MinecraftBold", "MinecraftSeven", sans-serif;
   gap: 12px;
   padding: 10px 20px;
   transition: transform 0.2s, filter 0.2s;
+  align-self: flex-end;
 
   img {
     height: 32px;
@@ -598,11 +713,6 @@ $mc-font: "MinecraftBold", "MinecraftSeven", sans-serif;
     font-family: $mc-font;
     color: #fff;
   }
-}
-
-@keyframes mcModalPopIn {
-  0% { transform: scale(0.8) translateY(20px); opacity: 0; }
-  100% { transform: scale(1) translateY(0); opacity: 1; }
 }
 
 .mc-parents-bar {

@@ -28,21 +28,6 @@ function formatInt(n) {
   return new Intl.NumberFormat("es-ES", { maximumFractionDigits: 0 }).format(Math.round(v));
 }
 
-function buildParticles(count = 24) {
-  const arr = [];
-  for (let i = 0; i < count; i++) {
-    const angle = Math.random() * Math.PI * 2;
-    const dist = 60 + Math.random() * 80;
-    const dx = Math.cos(angle) * dist;
-    const dy = Math.sin(angle) * dist * 0.85;
-    const s = 0.8 + Math.random() * 1.5;
-    const d = 500 + Math.random() * 600;
-    const delay = Math.random() * 100;
-    arr.push({ id: `${Date.now()}_${i}_${Math.random()}`, dx, dy, s, d, delay });
-  }
-  return arr;
-}
-
 function useCountUp(active, target, duration = 1200) {
   const [val, setVal] = useState(0);
   const rafRef = useRef(null);
@@ -82,6 +67,10 @@ export default function DailyFreeClaimCard() {
   const { user, logout } = useContext(UserContext);
   const { openAuthModal } = useAuthModal();
   const [token, setToken] = useState(() => getAuthToken());
+
+  useEffect(() => {
+    setToken(getAuthToken());
+  }, [user]);
   
   const isLocked = !user?.loggedIn || !token;
 
@@ -98,11 +87,6 @@ export default function DailyFreeClaimCard() {
 
   const showCount = !!(modal && !modal.error && modal.phase === "reveal");
   const countVal = useCountUp(showCount, modal?.amount ?? 0, 1200);
-
-  const particles = useMemo(() => {
-    if (!modal || modal.error) return [];
-    return buildParticles(modal.phase === "done" ? 30 : 24);
-  }, [modal?.particlesKey, modal?.phase]);
 
   useEffect(() => {
     let alive = true;
@@ -161,16 +145,13 @@ export default function DailyFreeClaimCard() {
     };
   }, [modal, claiming]);
 
-  // Al hacer clic en "REVELAR", disparamos la vibración + la API
   const handleClaimClick = async () => {
     if (claiming) return;
     setClaiming(true);
     
-    // Pasamos a fase de vibración inmediatamente
     setModal((m) => ({ ...m, phase: "vibrating" }));
 
     try {
-      // Usamos Promise.all para obligar a que dure al menos el 1.5s de la animación
       const [res] = await Promise.all([
         fetch(apiUrl(`/api/daily-claim`), {
           method: "POST",
@@ -182,14 +163,11 @@ export default function DailyFreeClaimCard() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Error al reclamar");
 
-      // Transición exitosa a la explosión final
       setModal((m) => ({
         ...m,
         phase: "reveal",
         amount: data.amount,
-        walletBalance: data.walletBalance,
         nextClaimAt: data.nextClaimAt,
-        particlesKey: `${Date.now()}_${Math.random()}`,
       }));
 
       setStatus((s) => ({
@@ -197,10 +175,9 @@ export default function DailyFreeClaimCard() {
         claimedToday: true,
         nextClaimAt: data.nextClaimAt,
         lastAmount: data.amount,
-        walletBalance: data.walletBalance,
       }));
 
-      emitBalances({ walletCoins: data.walletBalance });
+      emitBalances({ refresh: true });
     } catch (e) {
       setModal((m) => ({ ...m, error: e.message }));
     } finally {
@@ -209,131 +186,89 @@ export default function DailyFreeClaimCard() {
   };
 
   const handleContinue = () => {
-    setModal((m) => ({ ...m, phase: "done", particlesKey: `${Date.now()}_${Math.random()}` }));
-  };
-
-  const handleCloseModal = () => {
-    if (claiming) return; // Evitar que se cierre en mitad de la vibración/petición
     setModal(null);
   };
 
-  const disabled = !!(status?.claimedToday || claiming);
-  // Modificado: El CTA text solo debe decir "RECLAMANDO..." si el botón inicial del banner es el que carga, 
-  // pero como ahora la carga es en el modal, se quedará como "GRATIS" hasta que se vuelva "RECLAMADO".
+  const handleCloseModal = () => {
+    if (claiming) return;
+    setModal(null);
+  };
+
   const ctaText = status?.claimedToday ? "RECLAMADO" : "GRATIS";
   const timerText = status?.claimedToday ? `Vuelve en ${msToShort(nextMs)}` : isLocked ? "Requiere iniciar sesión" : "¡Recompensa disponible!";
 
   if (loading) return null;
 
   const modalNode = modal && createPortal(
-    <div className="mc-modal-overlay is-open no-tap-highlight" onClick={handleCloseModal}>
-      <div className="mc-modal-backdrop" />
-      
-      <div className={`mc-stone-modal ${modal.phase === "reveal" ? "is-bursting mc-burst-reveal" : ""}`} onClick={(e) => e.stopPropagation()}>
-        <button className="mc-close-btn no-tap-highlight" onClick={handleCloseModal}>X</button>
+    <div className="fc-daily-overlay" onClick={handleCloseModal}>
+      <div className={`fc-daily-modal ${modal.phase === "reveal" ? "is-bursting" : ""}`} onClick={(e) => e.stopPropagation()}>
+        <button className="fc-daily-close" onClick={handleCloseModal}>✖</button>
         
-        <div className="mc-reward-content">
+        <div className="fc-daily-content">
           {!modal.error ? (
             <>
               {modal.phase === "auth" && (
                 <>
-                  <div className="mc-title-plate">
-                    <h2>INICIA SESIÓN</h2>
-                  </div>
-                  <p className="mc-reward-text">Para reclamar el regalo diario, vincula tu cuenta en el servidor con <b>/vincular</b> y luego inicia sesión.</p>
-                  <button className="pixel-btn-green split-btn mt-16 no-tap-highlight" onClick={() => { setModal(null); openAuthModal(); }}>
-                    <span className="new-price">INICIAR SESIÓN</span>
+                  <h2 className="fc-daily-title">INICIA SESIÓN</h2>
+                  <p className="fc-daily-text">Para reclamar el regalo diario, vincula tu cuenta en el servidor con <b>/vincular</b> y luego inicia sesión.</p>
+                  <button className="fc-daily-btn-green mt-16" onClick={() => { setModal(null); openAuthModal(); }}>
+                    <span>INICIAR SESIÓN</span>
                   </button>
                 </>
               )}
 
               {(modal.phase === "intro" || modal.phase === "vibrating") && (
                 <>
-                  <h2 className="mc-mystery-title">¡REGALO MISTERIOSO!</h2>
-                  <p className="mc-mystery-subtitle">¿Qué contendrá tu recompensa de hoy?</p>
+                  <h2 className="fc-daily-title yellow">¡REGALO MISTERIOSO!</h2>
+                  <p className="fc-daily-text">¿Qué contendrá tu recompensa de hoy?</p>
                   
                   <div 
-                    className="mc-mystery-chest-wrapper no-tap-highlight" 
+                    className="fc-daily-visual" 
                     onClick={modal.phase === "intro" ? handleClaimClick : undefined}
                     style={{ cursor: modal.phase === "vibrating" ? "default" : "pointer" }}
                   >
-                    <div className="mc-mystery-glow"></div>
                     <img 
                       src="/tienda/assets/rankskin.png" 
                       alt="Recompensa" 
-                      className={`mc-chest-img ${modal.phase === "vibrating" ? "is-vibrating" : ""}`} 
+                      className={`fc-daily-chest ${modal.phase === "vibrating" ? "is-vibrating" : ""}`} 
                       draggable="false"
                     />
                   </div>
                   
                   <button 
-                    className="pixel-btn-green split-btn mt-16 no-tap-highlight" 
+                    className="fc-daily-btn-green mt-16" 
                     onClick={modal.phase === "intro" ? handleClaimClick : undefined}
                     disabled={modal.phase === "vibrating"}
                   >
-                    <span className="new-price">
-                      {modal.phase === "vibrating" ? "ABRIENDO..." : "REVELAR"}
-                    </span>
+                    <span>{modal.phase === "vibrating" ? "ABRIENDO..." : "REVELAR"}</span>
                   </button>
                 </>
               )}
 
               {modal.phase === "reveal" && (
-                <div className="mc-reveal-wrapper">
-                  <h2 className="mc-reveal-title">¡HAS GANADO!</h2>
+                <div className="fc-daily-reveal-wrapper">
+                  <h2 className="fc-daily-title green">¡ENVIADO AL SERVIDOR!</h2>
                   
-                  <div className="mc-reward-big-amount mc-contained-dopamine">
-                    
-                    <div className="mc-contained-burst-layer">
-                      <div className="mc-contained-spin-rays"></div>
-                      <div className="mc-particles-contained">
-                        {particles.map((p) => (
-                          <i
-                            key={p.id}
-                            className="mc-particle"
-                            style={{
-                              "--dx": `${p.dx.toFixed(1)}px`,
-                              "--dy": `${p.dy.toFixed(1)}px`,
-                              "--ps": p.s.toFixed(2),
-                              "--pd": `${p.d.toFixed(0)}ms`,
-                              "--pdelay": `${p.delay.toFixed(0)}ms`,
-                            }}
-                          />
-                        ))}
-                      </div>
-                    </div>
-
-                    <span className="amount">+{formatInt(countVal)}</span>
-                    <img src="/tienda/assets/coin.png" alt="Coins" />
+                  <div className="fc-daily-reward-box">
+                    <span className="fc-daily-amount">+{formatInt(countVal)}</span>
+                    <img src="/tienda/assets/coin.png" alt="Coins" className="fc-daily-coin" />
                   </div>
                   
-                  <p className="mc-reward-text">Se han añadido a tu Wallet. Úsalas en la tienda o envíalas al servidor.</p>
+                  <p className="fc-daily-text">
+                    Tus monedas se han ingresado de forma inmediata en tu cuenta de Survival. ¡Entra y usa <strong>/coinshop</strong> para gastarlas!
+                  </p>
                   
-                  <button className="pixel-btn-green split-btn mt-16 w-full no-tap-highlight" onClick={handleContinue}>
-                    <span className="new-price">CONTINUAR</span>
+                  <button className="fc-daily-btn-green mt-16 w-full" onClick={handleContinue}>
+                    <span>CONTINUAR</span>
                   </button>
                 </div>
-              )}
-
-              {modal.phase === "done" && (
-                <>
-                  <div className="mc-title-plate">
-                    <h2 style={{color: "#4ade80"}}>¡COMPLETADO!</h2>
-                  </div>
-                  <p className="mc-reward-text">Vuelve mañana para tu próxima recompensa diaria.</p>
-                  <button className="pixel-btn-gray mt-16 w-full no-tap-highlight" onClick={() => setModal(null)}>
-                    CERRAR
-                  </button>
-                </>
               )}
             </>
           ) : (
             <>
-              <div className="mc-title-plate">
-                <h2 style={{color: "#f87171"}}>ERROR</h2>
-              </div>
-              <p className="mc-reward-text" style={{color: "#fca5a5"}}>{modal.error}</p>
-              <button className="pixel-btn-gray mt-16 w-full no-tap-highlight" onClick={() => setModal(null)}>
+              <h2 className="fc-daily-title red">ERROR</h2>
+              <p className="fc-daily-text red">{modal.error}</p>
+              <button className="fc-daily-btn-gray mt-16 w-full" onClick={() => setModal(null)}>
                 CERRAR
               </button>
             </>
@@ -346,33 +281,31 @@ export default function DailyFreeClaimCard() {
 
   return (
     <>
-      <div className={`mc-stone-banner ${status?.claimedToday ? "is-cooldown" : ""} ${isLocked ? "is-locked" : ""} no-tap-highlight`}>
-        <div className="mc-banner-icon-stack">
-          <div className="mc-banner-art" aria-hidden="true">
-            <img className="mc-banner-coin coin--back" src="/tienda/assets/coin.png" alt="" draggable="false" />
-            <img className="mc-banner-coin coin--front" src="/tienda/assets/coin.png" alt="" draggable="false" />
+      <div className={`fc-daily-banner ${status?.claimedToday ? "is-cooldown" : ""} ${isLocked ? "is-locked" : ""} no-tap-highlight`}>
+        <div className="fc-banner-icon-stack">
+          <div className="fc-banner-art" aria-hidden="true">
+            <img className="fc-banner-coin coin--back" src="/tienda/assets/coin.png" alt="" draggable="false" />
+            <img className="fc-banner-coin coin--front" src="/tienda/assets/coin.png" alt="" draggable="false" />
           </div>
         </div>
         
-        <div className="mc-banner-info">
-          <div className="mc-banner-title">REGALO DIARIO</div>
-          <p className={`mc-banner-timer ${!status?.claimedToday && !isLocked ? 'is-ready' : ''}`}>{timerText}</p>
+        <div className="fc-banner-info">
+          <div className="fc-banner-title">REGALO DIARIO</div>
+          <p className={`fc-banner-timer ${!status?.claimedToday && !isLocked ? 'is-ready' : ''}`}>{timerText}</p>
         </div>
 
-        <div className="mc-banner-action">
+        <div className="fc-banner-action">
           <button 
             type="button"
-            className="mc-banner-cta no-tap-highlight"
+            className="fc-banner-cta no-tap-highlight"
             disabled={status?.claimedToday}
             onClick={() => {
               if (status?.claimedToday) return;
               if (isLocked) return openAuthModal();
-              
-              // Aquí en el banner exterior, ahora SOLO abrimos el modal en fase intro.
               setModal({ phase: "intro" });
             }}
           >
-            <span className="mc-banner-ctaLabel">{ctaText}</span>
+            <span>{ctaText}</span>
           </button>
         </div>
       </div>

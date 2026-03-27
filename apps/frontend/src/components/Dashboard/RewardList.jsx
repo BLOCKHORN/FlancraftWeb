@@ -29,15 +29,7 @@ const safeJson = async (res, fallback = null) => {
   }
 };
 
-export default function RewardList({
-  user,
-  xpData,
-  coinsRef,
-  ecosRef,
-  onActualizarMonedas,
-}) {
-  const saldoRef = coinsRef || ecosRef;
-
+export default function RewardList({ user, xpData }) {
   const [reclamadas, setReclamadas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -166,60 +158,6 @@ export default function RewardList({
     };
   }, [user?.uuid]);
 
-  const readNumberFromRef = (ref) => {
-    if (!ref?.current) return 0;
-    const raw = String(ref.current.textContent || "");
-    const digits = raw.replace(/[^\d]/g, "");
-    return parseInt(digits || "0", 10) || 0;
-  };
-
-  const animateCounter = (start, end, duration, updateFn) => {
-    const startTime = performance.now();
-
-    const step = (currentTime) => {
-      const elapsed = currentTime - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      const current = Math.floor(start + (end - start) * progress);
-      updateFn(current);
-      if (progress < 1) requestAnimationFrame(step);
-    };
-
-    requestAnimationFrame(step);
-  };
-
-  const lanzarMonedasAnimadas = (origen, destino, cantidad) => {
-    const startRect = origen.getBoundingClientRect();
-    const endRect = destino.getBoundingClientRect();
-    const maxMonedas = Math.min(cantidad, 40);
-
-    for (let i = 0; i < maxMonedas; i++) {
-      const moneda = document.createElement("img");
-      moneda.src = COIN_ICON;
-      moneda.className = "eco-fly mc-pixelated";
-      document.body.appendChild(moneda);
-
-      const startX = startRect.left + startRect.width / 2;
-      const startY = startRect.top + startRect.height / 2;
-      const endX = endRect.left + endRect.width / 2;
-      const endY = endRect.top + endRect.height / 2;
-
-      moneda.style.position = "fixed";
-      moneda.style.left = `${startX}px`;
-      moneda.style.top = `${startY}px`;
-      moneda.style.width = "24px";
-      moneda.style.pointerEvents = "none";
-      moneda.style.zIndex = "9999";
-      moneda.style.transition = "transform 0.6s ease-in-out, opacity 0.6s ease-in-out";
-
-      moneda.getBoundingClientRect();
-
-      moneda.style.transform = `translate(${endX - startX + (Math.random() * 30 - 15)}px, ${endY - startY + (Math.random() * 30 - 15)}px) scale(0.5)`;
-      moneda.style.opacity = "0";
-
-      setTimeout(() => moneda.remove(), 700 + Math.random() * 300);
-    }
-  };
-
   const handleReclamar = async (nivel) => {
     if (!user?.uuid || claimingNivel) return;
 
@@ -231,9 +169,6 @@ export default function RewardList({
 
     setClaimingNivel(nivel);
     setError(null);
-
-    const recompensa = RECOMPENSAS.find((r) => r.nivel === nivel);
-    const cantidadUI = parseInt(recompensa?.descripcion || "0", 10) || 0;
 
     try {
       const res = await fetch(apiUrl(`/api/recompensas/reclamar`), {
@@ -254,37 +189,8 @@ export default function RewardList({
         throw new Error(data?.error || "Error reclamando recompensa");
       }
 
-      const coinsAñadidos = Number(data?.coinsAñadidos) || cantidadUI;
-      const nuevoSaldoCoins =
-        Number.isFinite(Number(data?.nuevoSaldoCoins)) ? Number(data?.nuevoSaldoCoins) : null;
-
-      const nodo = document.querySelector(`.reward-slot[data-nivel="${nivel}"] .reward-icon`);
-      const destino = saldoRef?.current;
-
-      if (nodo && destino && coinsAñadidos > 0) {
-        lanzarMonedasAnimadas(nodo, destino, coinsAñadidos);
-      }
-
-      if (saldoRef?.current && coinsAñadidos > 0) {
-        const prev = readNumberFromRef(saldoRef);
-
-        if (nuevoSaldoCoins !== null) {
-          animateCounter(prev, nuevoSaldoCoins, 900, (val) => {
-            if (saldoRef.current) saldoRef.current.textContent = String(val);
-          });
-        } else {
-          const nuevoTotal = prev + coinsAñadidos;
-          animateCounter(prev, nuevoTotal, 900, (val) => {
-            if (saldoRef.current) saldoRef.current.textContent = String(val);
-          });
-        }
-      }
-
       setReclamadas((prev) => (prev.includes(nivel) ? prev : [...prev, nivel]));
 
-      if (typeof onActualizarMonedas === "function") {
-        await onActualizarMonedas();
-      }
     } catch (err) {
       console.error("[REWARDLIST reclamar]", err);
       setError(err.message || "Error reclamando recompensa");
@@ -400,7 +306,7 @@ export default function RewardList({
                         className="mc-btn mc-btn--gold reclamar-btn"
                         disabled={!!claimingNivel}
                       >
-                        {isClaimingThis ? "..." : "RECLAMAR"}
+                        {isClaimingThis ? "..." : "ENVIAR AL SERVIDOR"}
                       </button>
                     )}
 

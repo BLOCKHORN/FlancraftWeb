@@ -1,0 +1,457 @@
+@use "../../base/_variables" as *;
+
+$mc-font: "MinecraftSeven", "Montserrat", sans-serif;
+$nexo-purple: #9333ea;
+$nexo-purple-dark: #3b0764;
+$nexo-orange: #f97316;
+$nexo-bg: #090b10;
+$nexo-panel: #11151d;
+
+.sc-nexo-wrapper {
+  position: relative;
+  width: 100%;
+  min-height: calc(100vh - 80px);
+  background-color: $nexo-bg;
+  color: #fff;
+  font-family: $mc-font;
+  display: flex;
+  justify-content: center;
+  padding: 40px 20px;
+  overflow-x: hidden;
+}
+
+.sc-ambient-bg {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 20% 0%, rgba($nexo-purple, 0.1) 0%, transparent 50%),
+              radial-gradient(circle at 80% 100%, rgba($nexo-orange, 0.05) 0%, transparent 40%);
+  z-index: 0;
+  pointer-events: none;
+}
+
+.sc-nexo-container {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 1200px;
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  gap: 32px;
+  align-items: start;
+}
+
+/* --- SIDEBAR --- */
+.sc-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sc-back-btn {
+  background: $nexo-panel;
+  border: 4px solid #000;
+  box-shadow: inset -3px -3px 0 rgba(0,0,0,0.5), inset 3px 3px 0 rgba(255,255,255,0.05);
+  color: #94a3b8;
+  font-family: $mc-font;
+  font-size: 1rem;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: filter 0.1s, transform 0.1s;
+  
+  .txt { text-shadow: 2px 2px 0 #000; }
+  &:hover { filter: brightness(1.2); color: #fff; }
+  &:active { transform: translateY(2px); box-shadow: inset 3px 3px 0 rgba(0,0,0,0.5), inset -3px -3px 0 rgba(255,255,255,0.05); }
+}
+
+.sc-identity-card {
+  background: $nexo-panel;
+  border: 4px solid #000;
+  box-shadow: inset -4px -4px 0 rgba(0,0,0,0.4), inset 4px 4px 0 rgba(255,255,255,0.05);
+  display: flex;
+  flex-direction: column;
+}
+
+.sc-id-top {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 24px 20px;
+  border-bottom: 4px solid #000;
+  background: linear-gradient(135deg, rgba($nexo-purple-dark, 0.4) 0%, transparent 100%);
+}
+
+.sc-crystal-float {
+  animation: scFloat 4s ease-in-out infinite;
+  .flanite-img { filter: drop-shadow(0 8px 6px rgba(0,0,0,0.8)); }
+}
+
+.sc-brand-group {
+  display: flex;
+  flex-direction: column;
+  
+  .sc-brand-title {
+    margin: 0 0 4px;
+    font-size: 1.8rem;
+    color: #fff;
+    text-shadow: 3px 3px 0 #000;
+    letter-spacing: 1px;
+  }
+  
+  .sc-brand-user {
+    margin: 0;
+    color: #c084fc;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    text-shadow: 1px 1px 0 #000;
+  }
+}
+
+.sc-wallet-box {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #000;
+
+  .sc-wallet-lbl {
+    color: #6b7280;
+    font-size: 0.8rem;
+    margin-bottom: 8px;
+    letter-spacing: 1px;
+  }
+  
+  .sc-wallet-val {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    
+    .num {
+      font-size: 2.8rem;
+      color: $nexo-orange;
+      text-shadow: 3px 3px 0 #000;
+    }
+    .iso {
+      font-size: 1.2rem;
+      color: #d8b4fe;
+    }
+  }
+}
+
+.sc-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  .sc-menu-btn {
+    background: $nexo-panel;
+    border: 4px solid #000;
+    box-shadow: inset -3px -3px 0 rgba(0,0,0,0.5), inset 3px 3px 0 rgba(255,255,255,0.05);
+    color: #94a3b8;
+    font-family: $mc-font;
+    font-size: 1.1rem;
+    padding: 16px;
+    text-align: center;
+    cursor: pointer;
+    text-transform: uppercase;
+    text-shadow: 2px 2px 0 #000;
+    transition: filter 0.1s;
+
+    &:hover { filter: brightness(1.2); color: #fff; }
+    
+    &.is-active {
+      background: $nexo-purple-dark;
+      color: #fff;
+      border-color: $nexo-purple;
+      box-shadow: inset -4px -4px 0 rgba(0,0,0,0.5), inset 4px 4px 0 rgba(255,255,255,0.2);
+    }
+  }
+}
+
+/* --- variables adicionales para el nuevo estilo --- */
+$card-bg: #1a1c23; // Un gris oscuro un poco más suave que el fondo panel
+$card-border-radius: 12px;
+$btn-grey: #374151; // Gris para el botón de precio
+
+/* --- MAIN PANEL --- */
+.sc-main-panel {
+  background: $nexo-panel;
+  border: 4px solid #000;
+  box-shadow: inset -4px -4px 0 rgba(0,0,0,0.4), inset 4px 4px 0 rgba(255,255,255,0.05), 0 20px 40px rgba(0,0,0,0.5);
+  min-height: 600px;
+  padding: 32px;
+}
+
+.sc-view-header {
+  margin-bottom: 32px;
+  border-bottom: 4px solid #000;
+  padding-bottom: 16px;
+
+  h2 {
+    margin: 0 0 8px;
+    font-size: 1.8rem;
+    color: #fff;
+    text-shadow: 3px 3px 0 #000;
+  }
+
+  p {
+    margin: 0;
+    color: #94a3b8;
+    font-size: 0.95rem;
+  }
+}
+
+/* Nueva Grid para las nuevas cards */
+.sc-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); // Cards ligeramente más estrechas
+  gap: 24px;
+}
+
+/* ========================================= */
+/* --- NUEVA TARJETA ESTILO SUPERCELL --- */
+/* ========================================= */
+
+.sc-new-card {
+  background: $card-bg;
+  border: 4px solid #000;
+  border-radius: $card-border-radius;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; // Para que el header respete el border-radius
+  transition: transform 0.1s, box-shadow 0.1s;
+  position: relative;
+
+  // Sombra base suave
+  box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+
+  &:hover:not(.is-locked) {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 15px rgba($nexo-purple, 0.2);
+    border-color: $nexo-purple; // Mantenemos tu toque morado
+  }
+
+  &.is-locked {
+    filter: grayscale(0.9) brightness(0.7);
+    .sc-card-header { background: #2d3748; } // Header gris si está bloqueado
+  }
+}
+
+/* 1. Header de la Card */
+.sc-card-header {
+  background: #2a2d3a; // Gris oscuro plano
+  padding: 10px 14px;
+  border-bottom: 3px solid #000;
+  text-align: left;
+
+  .sc-item-name {
+    margin: 0;
+    font-size: 0.95rem; // Más pequeña, como la referencia
+    color: #fff;
+    text-transform: uppercase;
+    font-family: $mc-font;
+    letter-spacing: 0.5px;
+    // Quitamos text-shadow para un look más limpio arriba
+  }
+}
+
+/* 2. Body con el Icono Centrado */
+.sc-card-body {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 30px 20px;
+  position: relative;
+}
+
+.sc-item-visual-container {
+  width: 110px; // Más grande el contenedor del icono
+  height: 110px;
+  background: #252833; // Fondo del cuadrado un poco más claro
+  border: 3px solid #000;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  position: relative;
+  overflow: hidden;
+  box-shadow: inset 0 0 15px rgba(0,0,0,0.5);
+}
+
+// Degradado de fondo suave detrás del icono
+.sc-item-glow-bg {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 50%, rgba($nexo-purple, 0.15) 0%, transparent 70%);
+  z-index: 1;
+}
+
+.sc-item-icon {
+  font-size: 3.5rem; // Emoji grande
+  position: relative;
+  z-index: 2;
+  // drop-shadow para el icono
+  filter: drop-shadow(0 4px 4px rgba(0,0,0,0.5));
+}
+
+/* 3. Footer con el Botón de Precio */
+.sc-card-footer {
+  padding: 0 20px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+/* El nuevo botón rectangular gris de precio */
+.sc-btn-price-tag {
+  width: 100%;
+  max-width: 160px;
+  background: $btn-grey; // Gris plano
+  border: 3px solid #000;
+  border-radius: 6px; // Ligeramente redondeado
+  color: #fff;
+  font-family: $mc-font;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: background 0.1s, transform 0.05s;
+
+  // Sombra interior sutil
+  box-shadow: inset 0 -3px 0 rgba(0,0,0,0.3);
+
+  .price {
+    font-size: 1.1rem;
+    color: #e5e7eb; // Gris muy claro/blanco
+  }
+
+  .flanite-icon-btn {
+    // Aseguramos que el icono de Flanite se vea bien aquí
+    image-rendering: pixelated;
+  }
+
+  &:hover:not(:disabled) {
+    background: lighten($btn-grey, 5%);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(1px);
+    box-shadow: inset 0 2px 0 rgba(0,0,0,0.3);
+  }
+  
+  &:disabled {
+    background: #1f2937;
+    border-color: #111;
+    color: #6b7280;
+    cursor: not-allowed;
+    box-shadow: none;
+    .flanite-icon-btn { filter: grayscale(1) opacity(0.5); }
+  }
+}
+
+// Textos de estado inferiores
+.sc-stock-txt {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  font-weight: normal;
+}
+
+.sc-locked-txt-new {
+  font-size: 0.75rem;
+  color: #ef4444; // Rojo error
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+
+/* --- TABLA --- */
+.sc-table-wrap { overflow-x: auto; }
+.sc-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+
+  th {
+    text-align: left;
+    color: #94a3b8;
+    padding: 12px 16px;
+    border-bottom: 4px solid #000;
+    text-transform: uppercase;
+    background: #000;
+  }
+
+  td {
+    padding: 16px;
+    border-bottom: 2px solid #000;
+    color: #e2e8f0;
+    background: #151a24;
+  }
+
+  tr:hover td { background: #1a202c; }
+
+  .align-right { text-align: right; }
+  .sc-td-date { color: #94a3b8; }
+  .sc-td-concept { font-weight: bold; text-transform: uppercase; }
+  .is-income { color: #4ade80; text-shadow: 2px 2px 0 #000; font-size: 1.1rem; }
+  .is-expense { color: #f87171; text-shadow: 2px 2px 0 #000; font-size: 1.1rem; }
+}
+
+/* --- ESTADOS --- */
+.sc-state-box, .sc-empty-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  color: #94a3b8;
+  text-align: center;
+  gap: 16px;
+  font-size: 1.2rem;
+}
+
+.sc-state-box.is-error { color: #ef4444; }
+
+.sc-btn-retry {
+  background: transparent;
+  border: 4px solid #374151;
+  color: #fff;
+  padding: 12px 24px;
+  font-family: $mc-font;
+  cursor: pointer;
+  text-shadow: 2px 2px 0 #000;
+  &:hover { border-color: #fff; }
+}
+
+.sc-spinner {
+  width: 48px;
+  height: 48px;
+  border: 6px solid #1f2937;
+  border-top-color: $nexo-orange;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes scFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* --- RESPONSIVE --- */
+@media (max-width: 980px) {
+  .sc-nexo-container {
+    grid-template-columns: 1fr;
+  }
+  .sc-sidebar { gap: 12px; }
+  .sc-menu {
+    flex-direction: row;
+    .sc-menu-btn { flex: 1; padding: 12px; font-size: 1rem; }
+  }
+  .sc-main-panel { padding: 20px; }
+}

@@ -22,14 +22,17 @@ const normalizeCategoria = (value) => {
 const getCategoriaLabel = (value) =>
   CATEGORIA_LABELS[normalizeCategoria(value)] || "Global";
 
-const mapNoticiaConAutor = (n) => ({
-  ...n,
-  servidor: normalizeCategoria(n?.servidor),
-  servidor_label: getCategoriaLabel(n?.servidor),
-  autor_nombre: n?.usuarios?.uid || null,
-});
+// Generador de extractos en el backend (Elimina la sobrecarga del frontend)
+const generarExtracto = (htmlStr, length = 140) => {
+  if (!htmlStr) return "";
+  const text = htmlStr.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+  if (text.length <= length) return text;
+  return text.substring(0, length).split(" ").slice(0, -1).join(" ") + "…";
+};
 
-const NOTICIA_SELECT = `
+// SELECTS SEPARADOS PARA EFICIENCIA
+// Full para la lectura individual de la noticia
+const NOTICIA_FULL_SELECT = `
   id,
   titulo,
   subtitulo,
@@ -44,19 +47,74 @@ const NOTICIA_SELECT = `
   usuarios ( uid )
 `;
 
-const obtenerNoticias = async (_req, res) => {
+// Preview para listados (evita mandar megabytes de JSON innecesarios)
+const NOTICIA_PREVIEW_SELECT = `
+  id,
+  titulo,
+  subtitulo,
+  slug,
+  portada,
+  fecha,
+  publicada,
+  servidor,
+  contenido_html,
+  usuarios ( uid )
+`;
+
+const mapNoticiaFull = (n) => ({
+  ...n,
+  servidor: normalizeCategoria(n?.servidor),
+  servidor_label: getCategoriaLabel(n?.servidor),
+  autor_nombre: n?.usuarios?.uid || null,
+});
+
+const mapNoticiaPreview = (n) => ({
+  id: n.id,
+  titulo: n.titulo,
+  subtitulo: n.subtitulo,
+  slug: n.slug,
+  portada: n.portada,
+  fecha: n.fecha,
+  publicada: n.publicada,
+  servidor: normalizeCategoria(n.servidor),
+  servidor_label: getCategoriaLabel(n.servidor),
+  autor_nombre: n.usuarios?.uid || null,
+  extracto: generarExtracto(n.contenido_html)
+});
+
+const obtenerNoticias = async (req, res) => {
+  // Paginación y límite integrado
+  const limit = parseInt(req.query.limit, 10) || 50;
+  const page = parseInt(req.query.page, 10) || 1;
+  const offset = (page - 1) * limit;
+
   const { data, error } = await supabase
     .from("noticias")
-    .select(NOTICIA_SELECT)
+    .select(NOTICIA_PREVIEW_SELECT)
     .eq("publicada", true)
     .lte("fecha", new Date().toISOString())
+    .order("fecha", { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  if (error) {
+    return res.status(500).json({ error: error.message });
+  }
+
+  return res.json((data || []).map(mapNoticiaPreview));
+};
+
+const obtenerTodasLasNoticias = async (_req, res) => {
+  // Usamos el Preview Select para que la tabla del panel Admin cargue al instante
+  const { data, error } = await supabase
+    .from("noticias")
+    .select(NOTICIA_PREVIEW_SELECT)
     .order("fecha", { ascending: false });
 
   if (error) {
     return res.status(500).json({ error: error.message });
   }
 
-  return res.json((data || []).map(mapNoticiaConAutor));
+  return res.json((data || []).map(mapNoticiaPreview));
 };
 
 const obtenerNoticiaPorSlug = async (req, res) => {
@@ -64,7 +122,7 @@ const obtenerNoticiaPorSlug = async (req, res) => {
 
   const { data, error } = await supabase
     .from("noticias")
-    .select(NOTICIA_SELECT)
+    .select(NOTICIA_FULL_SELECT)
     .eq("slug", slug)
     .eq("publicada", true)
     .lte("fecha", new Date().toISOString())
@@ -74,7 +132,7 @@ const obtenerNoticiaPorSlug = async (req, res) => {
     return res.status(404).json({ error: "Noticia no encontrada" });
   }
 
-  return res.json(mapNoticiaConAutor(data));
+  return res.json(mapNoticiaFull(data));
 };
 
 const obtenerNoticiaPorId = async (req, res) => {
@@ -82,7 +140,7 @@ const obtenerNoticiaPorId = async (req, res) => {
 
   const { data, error } = await supabase
     .from("noticias")
-    .select(NOTICIA_SELECT)
+    .select(NOTICIA_FULL_SELECT)
     .eq("id", id)
     .maybeSingle();
 
@@ -90,7 +148,7 @@ const obtenerNoticiaPorId = async (req, res) => {
     return res.status(404).json({ error: "Noticia no encontrada" });
   }
 
-  return res.json(mapNoticiaConAutor(data));
+  return res.json(mapNoticiaFull(data));
 };
 
 const generarVistaPrevia = async (req, res) => {
@@ -269,19 +327,6 @@ const eliminarNoticia = async (req, res) => {
   }
 
   return res.json({ mensaje: "Noticia eliminada" });
-};
-
-const obtenerTodasLasNoticias = async (_req, res) => {
-  const { data, error } = await supabase
-    .from("noticias")
-    .select(NOTICIA_SELECT)
-    .order("fecha", { ascending: false });
-
-  if (error) {
-    return res.status(500).json({ error: error.message });
-  }
-
-  return res.json((data || []).map(mapNoticiaConAutor));
 };
 
 module.exports = {

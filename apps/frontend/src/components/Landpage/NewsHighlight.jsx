@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { motion, useInView } from "framer-motion";
 import { apiUrl } from "../../lib/env";
@@ -25,7 +25,7 @@ const normalizeContentToText = (contenido) => {
   return "";
 };
 
-const getExcerpt = (raw, length = 180) => {
+const getExcerpt = (raw, length = 140) => {
   const text = normalizeContentToText(raw);
   return text.length > length ? text.slice(0, length).split(' ').slice(0, -1).join(' ') + "…" : text;
 };
@@ -36,16 +36,16 @@ const containerVariants = {
   hidden: { opacity: 0 },
   visible: { 
     opacity: 1, 
-    transition: { staggerChildren: 0.1, delayChildren: 0.1 } 
+    transition: { staggerChildren: 0.08, delayChildren: 0.05 } 
   }
 };
 
 const itemVariants = {
-  hidden: { y: 20, opacity: 0 },
+  hidden: { y: 15, opacity: 0 },
   visible: { 
     y: 0, 
     opacity: 1, 
-    transition: { type: "tween", ease: "easeOut", duration: 0.5 } 
+    transition: { type: "tween", ease: "circOut", duration: 0.35 } 
   }
 };
 
@@ -58,31 +58,32 @@ const NewsHighlight = () => {
   useEffect(() => {
     const fetchNews = async () => {
       try {
-        const res = await fetch(apiUrl(`/api/noticias`));
+        const res = await fetch(apiUrl(`/api/noticias?limit=4`));
         const data = await res.json();
         setNewsData((data || []).sort((a, b) => new Date(b.fecha) - new Date(a.fecha)));
         setStatus("idle");
-      } catch (error) {
+      } catch {
         setStatus("error");
       }
     };
     fetchNews();
   }, []);
 
-  const highlight = newsData[0];
-  const previous = newsData.slice(1, 4);
+  const { highlight, previous } = useMemo(() => ({
+    highlight: newsData[0] || null,
+    previous: newsData.slice(1, 4)
+  }), [newsData]);
 
   return (
     <motion.section 
       ref={sectionRef}
-      className="news-highlight"
+      className="news-highlight no-tap-highlight"
       initial="hidden"
       animate={isInView ? "visible" : "hidden"}
       variants={containerVariants}
     >
       <div className="news-environment">
         <div className="env-vignette"></div>
-        <div className="env-texture"></div>
       </div>
 
       <div className="news-transition-container">
@@ -125,20 +126,18 @@ const NewsHighlight = () => {
 
             <div className="highlight-list">
               {previous.map((news) => (
-                <motion.div key={news.id} variants={itemVariants}>
+                <motion.div key={news.id} variants={itemVariants} className="highlight-row-wrapper">
                   <Link to={`/news/${ensureSlug(news)}`} className="highlight-row-link">
                     <article className="highlight-row">
                       <div className="row-thumb">
                         <img src={news.portada || news.imagen || "/assets/placeholder.png"} alt={news.titulo} loading="lazy" />
-                        <div className="thumb-overlay"></div>
                       </div>
                       <div className="row-body">
                         <div className="row-meta">
                           <span className="row-date">{formatDaysAgo(news.fecha)}</span>
                         </div>
                         <h4 className="row-title">{news.titulo}</h4>
-                        <p className="row-excerpt">{getExcerpt(news.contenido, 100)}</p>
-                        <div className="row-footer">
+<p className="row-excerpt">{news.extracto}</p>                        <div className="row-footer">
                           <span>VER MÁS</span>
                           <span className="plus-icon">+</span>
                         </div>

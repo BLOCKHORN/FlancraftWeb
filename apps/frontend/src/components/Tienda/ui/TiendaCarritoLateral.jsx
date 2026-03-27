@@ -4,14 +4,24 @@ import TiendaCheckoutModal from "../modals/TiendaCheckoutModal";
 import { apiUrl } from "../../../lib/env";
 import "../../../styles/components/Tienda/tienda-carrito.scss";
 
-function formatCurrency(amount) {
+export const FlaniteIcon = ({ className = "flanite-img", size = 20 }) => (
+  <img src="/tienda/assets/flanite.webp" alt="Flanite" className={className} style={{ width: size, height: size, imageRendering: 'pixelated' }} />
+);
+
+function formatUSD(amount) {
   const n = Number(amount);
   if (!Number.isFinite(n)) return "—";
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 2,
-  }).format(n);
+  try {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+      currencyDisplay: "symbol",
+    }).format(n);
+  } catch {
+    return `$${n.toFixed(2)}`;
+  }
 }
 
 function clampInt(n, min, max) {
@@ -105,7 +115,7 @@ export default function TiendaCarritoLateral({
     } finally {
       setLoadingCheckout(false);
     }
-  }, [carrito, nombreConfirmado, uuidConfirmado, isEmpty, loadingCheckout]);
+  }, [carrito, nombreConfirmado, uuidConfirmado, isEmpty, loadingCheckout, server]);
 
   return (
     <>
@@ -154,7 +164,7 @@ export default function TiendaCarritoLateral({
                       </div>
                       <div className="item-details">
                         <div className="name">{it.name}</div>
-                        <div className="price">{formatCurrency(it.price)}</div>
+                        <div className="price">{formatUSD(it.price)}</div>
                       </div>
                     </div>
                     <div className="item-controls">
@@ -174,8 +184,25 @@ export default function TiendaCarritoLateral({
           <section className="cart-footer-block">
             <div className="total-row">
               <span className="label">TOTAL:</span>
-              <span className="value">{formatCurrency(totalBase)}</span>
+              <span className="value">{formatUSD(totalBase)}</span>
             </div>
+
+            {totalBase > 0 && (
+              <div className="cart-points-reward">
+                <FlaniteIcon size={20} />
+                <div className="fp-text">
+                  +<strong>{Math.floor(totalBase * 50)}</strong> FLT
+                </div>
+              </div>
+            )}
+
+            {!isWebLoggedIn && totalBase > 0 && (
+              <div className="guest-warning-box">
+                <strong>⚠️ ESTÁS COMO INVITADO</strong>
+                <p>Usa <code>/vincular</code> en el servidor e inicia sesión en la web antes de pagar para no perder tu Flanite.</p>
+              </div>
+            )}
+
             <button 
               className="pixel-btn-green btn-pay" 
               disabled={isEmpty || !nombreConfirmado || loadingCheckout}

@@ -151,6 +151,12 @@ export function getPackageImage(pkg) {
   return pkg?.image_url || pkg?.image || pkg?.imageUrl || pkg?.img || "/assets/tienda/producto-placeholder.png";
 }
 
+export function getPackageFlanpoints(pkg) {
+  const price = getPackagePrice(pkg);
+  if (price === null || price <= 0) return 0;
+  return Math.floor(price * 50);
+}
+
 export function normalizeProductForCart(pkg, cantidad = 1) {
   const id = getPackageId(pkg);
   return {

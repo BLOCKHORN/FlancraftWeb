@@ -1,23 +1,14 @@
 @font-face {
-  font-family: "MinecraftBold";
-  src: url("/fonts/MinecraftBold.otf") format("opentype");
-  font-weight: bold;
-  font-style: normal;
-}
-
-@font-face {
   font-family: 'MinecraftSeven';
-  src: url('/fonts/minecraftseven.otf') format('opentype');
+  src: url('/fonts/MinecraftBold.otf') format('opentype');
   font-weight: normal;
   font-style: normal;
   font-display: swap;
 }
 
-$mc-font: "MinecraftBold", "MinecraftSeven", sans-serif;
+$mc-font: 'MinecraftSeven', 'Montserrat', sans-serif;
+$sans-font: "Nunito", sans-serif;
 
-@import url("https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Nunito:wght@800;900;1000&display=swap");
-
-/* PREVENIR EL CUADRO GRIS/AZUL EN MÓVILES AL TAPEAR */
 .no-tap-highlight, .no-tap-highlight * {
   -webkit-tap-highlight-color: transparent;
   user-select: none;
@@ -26,531 +17,365 @@ $mc-font: "MinecraftBold", "MinecraftSeven", sans-serif;
 .mt-16 { margin-top: 16px; }
 .w-full { width: 100%; }
 
-.mc-stone-banner {
+/* --- BANNER EXTERIOR --- */
+.fc-daily-banner {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background-color: #2b2e42;
-  border: 4px solid #11121c;
-  box-shadow: inset 4px 4px 0 #4f556b, inset -4px -4px 0 #1e202f, 0 8px 15px rgba(0,0,0,0.4);
-  padding: 16px 24px;
-  border-radius: 4px;
+  background-color: #11151d;
+  border: 4px solid #000;
+  box-shadow: inset 4px 4px 0 #2a3143, inset -4px -4px 0 #0a0c14, 0 10px 20px rgba(0,0,0,0.5);
+  padding: 12px;
   margin-bottom: 24px;
-  gap: 20px;
   position: relative;
-  font-family: $mc-font;
-  overflow: visible;
-
-  &.is-cooldown, &.is-locked {
-    background-color: #1e202f;
-    box-shadow: inset 4px 4px 0 #2b2e42, inset -4px -4px 0 #11121c;
-    opacity: 0.9;
-    .mc-banner-title { filter: grayscale(1); opacity: 0.7; }
-    .mc-banner-coin { filter: grayscale(1) brightness(0.7) !important; animation: none; }
-    .mc-banner-art::after, .mc-banner-art::before { opacity: 0; }
-  }
-}
-
-.mc-banner-icon-stack {
-  width: 90px;
-  height: 80px;
-  position: relative;
-  flex-shrink: 0;
-}
-
-.mc-banner-art {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  display: grid;
-  place-items: center;
-  overflow: visible;
+  overflow: hidden;
 
   &::before {
     content: "";
     position: absolute;
-    inset: -30px;
+    inset: 0;
+    background-image: 
+      linear-gradient(rgba(255,255,255,0.03) 2px, transparent 2px),
+      linear-gradient(90deg, rgba(255,255,255,0.03) 2px, transparent 2px);
+    background-size: 16px 16px;
     pointer-events: none;
-    background: radial-gradient(closest-side at 50% 50%, rgba(255,255,255,0.25), transparent 70%);
-    mix-blend-mode: screen;
-    z-index: 0;
+  }
+
+  &.is-cooldown {
+    filter: grayscale(0.6) brightness(0.8);
+    .fc-banner-title { color: #9ca3af; }
+    .fc-banner-timer { color: #fbbf24; }
+  }
+
+  &.is-locked {
+    .fc-banner-timer { color: #ef4444; }
+  }
+
+  @media (max-width: 640px) {
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
   }
 }
 
-.mc-banner-coin {
-  position: absolute;
-  object-fit: contain;
-  image-rendering: pixelated;
-  left: 50%;
-  top: 50%;
-  transform-origin: center;
-  z-index: 2;
-  filter: drop-shadow(0 8px 10px rgba(0,0,0,0.6));
-
-  &.coin--back {
-    width: 60px;
-    z-index: 1;
-    transform: translate(-70%, -40%) rotate(-15deg);
-    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5)) brightness(0.85);
-    animation: mcCoinFloatBack 3s ease-in-out infinite;
-  }
-
-  &.coin--front {
-    width: 75px;
-    z-index: 2;
-    transform: translate(-30%, -60%);
-    animation: mcCoinFloatFront 2.5s ease-in-out infinite;
-  }
-}
-
-@keyframes mcCoinFloatFront {
-  0%, 100% { transform: translate(-30%, -60%); }
-  50% { transform: translate(-30%, -65%) scale(1.05); }
-}
-
-@keyframes mcCoinFloatBack {
-  0%, 100% { transform: translate(-70%, -40%) rotate(-15deg); }
-  50% { transform: translate(-70%, -45%) rotate(-15deg) scale(1.02); }
-}
-
-.mc-banner-info {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 6px;
-}
-
-.mc-banner-title {
-  color: #ffc800;
-  font-size: 1.5rem;
-  font-weight: bold;
-  text-shadow: 2px 2px 0px #000;
-  letter-spacing: 1px;
-}
-
-.mc-banner-timer {
-  color: #9ea3bc;
-  font-size: 0.95rem;
-  margin: 0;
-  text-shadow: 1px 1px 0 #000;
-
-  &.is-ready {
-    color: #5ee034;
-  }
-}
-
-.mc-banner-action {
+.fc-banner-icon-stack {
+  position: relative;
+  width: 60px;
+  height: 60px;
   flex-shrink: 0;
-  width: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.mc-banner-cta {
+.fc-banner-art {
+  position: relative;
   width: 100%;
-  padding: 14px 0;
-  background-color: #5ee034;
-  border: 4px solid #111;
-  box-shadow: inset 4px 4px 0 rgba(255,255,255,0.4), inset -4px -4px 0 rgba(0,0,0,0.3), 0 6px 12px rgba(0,0,0,0.5);
+  height: 100%;
+  
+  .fc-banner-coin {
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    image-rendering: pixelated;
+    
+    &.coin--back {
+      top: 0; right: 0;
+      transform: scale(0.8);
+      filter: brightness(0.6);
+    }
+    
+    &.coin--front {
+      bottom: 0; left: 0;
+      filter: drop-shadow(2px 2px 0 rgba(0,0,0,0.8));
+    }
+  }
+}
+
+.fc-daily-banner:not(.is-cooldown):not(.is-locked) .coin--front {
+  animation: floatItem 3s infinite ease-in-out;
+}
+
+.fc-banner-info {
+  flex: 1;
+  padding: 0 16px;
+  
+  .fc-banner-title {
+    font-family: $mc-font;
+    font-size: 1.2rem;
+    color: #fff;
+    text-shadow: 2px 2px 0 #000;
+    margin: 0 0 4px 0;
+  }
+
+  .fc-banner-timer {
+    font-family: $sans-font;
+    font-weight: 800;
+    font-size: 0.85rem;
+    color: #94a3b8;
+    margin: 0;
+    text-shadow: 1px 1px 0 #000;
+
+    &.is-ready {
+      color: #5EE034;
+      animation: textPulse 1.5s infinite;
+    }
+  }
+}
+
+.fc-banner-action {
+  flex-shrink: 0;
+}
+
+.fc-banner-cta {
+  background-color: #5EE034;
+  border: 3px solid #000;
+  box-shadow: inset -3px -3px 0 rgba(0,0,0,0.25), inset 3px 3px 0 rgba(255,255,255,0.4);
+  padding: 10px 24px;
+  font-family: $mc-font;
+  font-size: 1rem;
+  color: #fff;
+  text-shadow: 2px 2px 0 #000;
   cursor: pointer;
   transition: transform 0.1s, filter 0.1s;
-  font-family: inherit;
-
-  .mc-banner-ctaLabel {
-    color: #fff;
-    font-size: 1.2rem;
-    font-weight: bold;
-    text-shadow: 2px 2px 0 #18b84b, -1px -1px 0 #18b84b;
-    letter-spacing: 1px;
-  }
 
   &:hover:not(:disabled) {
     filter: brightness(1.15);
-    transform: translateY(-2px) scale(1.02);
+    transform: translateY(-2px);
   }
 
   &:active:not(:disabled) {
-    transform: translateY(2px) scale(0.98);
-    box-shadow: inset -4px -4px 0 rgba(255,255,255,0.4), inset 4px 4px 0 rgba(0,0,0,0.3);
+    transform: translateY(2px);
+    box-shadow: inset 3px 3px 0 rgba(0,0,0,0.25), inset -3px -3px 0 rgba(255,255,255,0.4);
   }
 
   &:disabled {
-    background-color: #3b3e4f;
-    box-shadow: inset 4px 4px 0 #5a6278, inset -4px -4px 0 #1e202f;
+    background-color: #4b5563;
+    color: #9ca3af;
     cursor: not-allowed;
-    .mc-banner-ctaLabel {
-      color: #9ea3bc;
-      text-shadow: 1px 1px 0 #111;
-    }
+    text-shadow: none;
+    box-shadow: inset -3px -3px 0 #374151, inset 3px 3px 0 #6b7280;
   }
 }
 
-.mc-modal-overlay {
+/* --- MODAL ESTILO INVENTARIO --- */
+.fc-daily-overlay {
   position: fixed;
   inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
   display: flex;
-  justify-content: center;
   align-items: center;
-  z-index: 999;
+  justify-content: center;
+  z-index: 100000;
   font-family: $mc-font;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.2s ease;
-
-  &.is-open {
-    opacity: 1;
-    pointer-events: auto;
-  }
+  animation: overlayFadeIn 0.3s ease-out forwards;
 }
 
-.mc-modal-backdrop {
-  position: absolute;
-  inset: 0;
-  background-color: rgba(10, 12, 20, 0.85);
-  backdrop-filter: blur(6px);
-  z-index: 0;
-}
-
-.mc-stone-modal {
-  background-color: #222533;
-  border: 4px solid #11121c;
-  box-shadow: inset 4px 4px 0 #4f556b, inset -4px -4px 0 #151622, 0 20px 50px rgba(0,0,0,0.9);
-  width: 90vw;
-  max-width: 480px;
+.fc-daily-modal {
+  background: #151923;
+  border: 4px solid #000;
+  box-shadow: inset -4px -4px 0px #0a0c14, inset 4px 4px 0px #2a3143, 0 20px 50px rgba(0,0,0,0.8);
+  width: 100%;
+  max-width: 420px;
   position: relative;
   border-radius: 2px;
-  padding: 32px 24px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  z-index: 10;
-  animation: mcModalPopIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  overflow: hidden; 
-
-  &.mc-burst-reveal {
-    border-color: #ffc800;
-    box-shadow: inset 4px 4px 0 #4f556b, inset -4px -4px 0 #151622, 0 0 40px rgba(255, 200, 0, 0.5);
+  padding: 30px;
+  text-align: center;
+  animation: modalPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  
+  &.is-bursting {
+    animation: modalBurstPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
   }
 }
 
-@keyframes mcModalPopIn {
-  0% { transform: scale(0.7) translateY(40px); opacity: 0; }
-  100% { transform: scale(1) translateY(0); opacity: 1; }
-}
-
-.mc-close-btn {
+.fc-daily-close {
   position: absolute;
   top: 12px;
-  right: 12px;
-  width: 32px;
-  height: 32px;
-  background-color: #ef4444;
-  color: white;
-  border: 3px solid #111;
-  font-weight: bold;
-  font-size: 1.2rem;
+  right: 16px;
+  background: none;
+  border: none;
+  color: #6b7280;
+  font-size: 20px;
   cursor: pointer;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-family: inherit;
-  box-shadow: inset 2px 2px 0 rgba(255,255,255,0.4);
-  transition: transform 0.1s, filter 0.1s;
-  z-index: 20;
-
-  &:hover {
-    filter: brightness(1.15);
-    transform: scale(1.1);
-  }
-  &:active {
-    transform: scale(0.9);
-    box-shadow: inset -2px -2px 0 rgba(0,0,0,0.3);
-  }
+  z-index: 10;
+  transition: color 0.2s;
+  font-family: $mc-font;
+  
+  &:hover { color: #f87171; }
 }
 
-.mc-reward-content {
-  width: 100%;
+.fc-daily-content {
   display: flex;
   flex-direction: column;
   align-items: center;
-  text-align: center;
-  gap: 8px;
-  position: relative;
-  z-index: 5;
 }
 
-.mc-reward-text {
-  color: #a0a4b8;
-  font-size: 1rem;
-  line-height: 1.5;
-  margin: 0;
-  text-shadow: 1px 1px 0 #000;
+.fc-daily-title {
   font-family: $mc-font;
-}
-
-.mc-mystery-title {
-  color: #ffc800;
-  font-size: 2.2rem;
-  margin: 0;
-  text-shadow: 3px 3px 0 #000, -1px -1px 0 #000;
+  font-size: 1.6rem;
+  color: #ffffff;
+  margin: 0 0 12px 0;
+  text-shadow: 3px 3px 0 #000;
   letter-spacing: 1px;
-  font-family: $mc-font;
+
+  &.yellow { color: #fbbf24; }
+  &.green { color: #5EE034; }
+  &.red { color: #f87171; }
 }
 
-.mc-mystery-subtitle {
-  color: #cbd5e1;
-  font-size: 1.1rem;
-  text-shadow: 1px 1px 0 #000;
-  margin-bottom: 16px;
-  font-family: $mc-font;
+.fc-daily-text {
+  font-family: $sans-font;
+  font-size: 0.9rem;
+  color: #94a3b8;
+  margin: 0 0 24px 0;
+  line-height: 1.5;
+
+  b, strong { color: #fff; }
+  &.red { color: #fca5a5; }
 }
 
-.mc-mystery-chest-wrapper {
-  position: relative;
-  width: 220px;
-  height: 260px;
+.fc-daily-visual {
+  width: 140px;
+  height: 140px;
+  margin: 0 auto;
   display: flex;
-  justify-content: center;
   align-items: center;
-  cursor: pointer;
-  transition: transform 0.2s;
-
-  &:hover {
-    transform: scale(1.05);
-    // Solo aplica el shake del hover si no está ya vibrando a punto de explotar
-    .mc-chest-img:not(.is-vibrating) { 
-      animation: mcChestShakeHover 0.5s ease-in-out infinite; 
-    }
-  }
-
-  .mc-mystery-glow {
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(circle at center, rgba(59, 130, 246, 0.8) 0%, rgba(37, 99, 235, 0.4) 40%, transparent 70%);
-    animation: mcMysteryPulse 2s infinite alternate;
-    z-index: 1;
-    pointer-events: none;
-  }
-
-  .mc-chest-img {
-    position: relative;
-    z-index: 2;
-    width: 180px;
-    height: 180px;
+  justify-content: center;
+  
+  .fc-daily-chest {
+    width: 100%;
+    height: 100%;
     object-fit: contain;
     image-rendering: pixelated;
-    filter: drop-shadow(0 15px 15px rgba(0,0,0,0.8));
-    animation: mcChestFloat 3s ease-in-out infinite;
-    
-    // ANIMACIÓN DOPAMÍNICA AL HACER CLICK
+    filter: drop-shadow(0 10px 10px rgba(0,0,0,0.5));
+    animation: floatItem 3s ease-in-out infinite;
+
     &.is-vibrating {
-      animation: mcChestVibrateExplode 1.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) forwards !important;
+      animation: chestShake 0.1s infinite;
     }
   }
 }
 
-// === NUEVA ANIMACIÓN EFECTO EXPLOSIÓN LENTA A RÁPIDA ===
-@keyframes mcChestVibrateExplode {
-  0%   { transform: translate(0, 0) scale(1) rotate(0deg); filter: brightness(1); }
-  10%  { transform: translate(-2px, 2px) scale(1.02) rotate(-2deg); }
-  20%  { transform: translate(2px, -2px) scale(1.02) rotate(2deg); }
-  30%  { transform: translate(-4px, 4px) scale(1.05) rotate(-4deg); }
-  40%  { transform: translate(4px, -4px) scale(1.05) rotate(4deg); }
-  50%  { transform: translate(-6px, 6px) scale(1.08) rotate(-6deg); filter: brightness(1.2); }
-  60%  { transform: translate(6px, -6px) scale(1.08) rotate(6deg); filter: brightness(1.2); }
-  70%  { transform: translate(-8px, 8px) scale(1.12) rotate(-8deg); filter: brightness(1.4); }
-  80%  { transform: translate(8px, -8px) scale(1.12) rotate(8deg); filter: brightness(1.6); }
-  90%  { transform: translate(-10px, 10px) scale(1.15) rotate(-10deg); filter: brightness(2) drop-shadow(0 0 20px #fff); }
-  100% { transform: translate(0, 0) scale(1.5) rotate(0deg); filter: brightness(3); opacity: 0; }
-}
-// ========================================================
-
-@keyframes mcMysteryPulse {
-  0% { transform: scale(0.9); opacity: 0.6; }
-  100% { transform: scale(1.1); opacity: 1; }
+.fc-daily-visual:hover .fc-daily-chest:not(.is-vibrating) {
+  transform: scale(1.1);
+  filter: drop-shadow(0 15px 15px rgba(0,0,0,0.6));
 }
 
-@keyframes mcChestFloat {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
-}
-
-@keyframes mcChestShakeHover {
-  0%, 100% { transform: rotate(0deg); }
-  25% { transform: rotate(-5deg); }
-  75% { transform: rotate(5deg); }
-}
-
-.mc-reveal-wrapper {
+.fc-daily-reveal-wrapper {
   display: flex;
   flex-direction: column;
   align-items: center;
   width: 100%;
-  animation: mcRevealPop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-@keyframes mcRevealPop {
-  0% { transform: scale(0.5); opacity: 0; }
-  100% { transform: scale(1); opacity: 1; }
-}
-
-.mc-reveal-title {
-  color: #5ee034;
-  font-size: 2.2rem;
-  margin: 0 0 16px 0;
-  text-shadow: 3px 3px 0 #18b84b, -1px -1px 0 #18b84b;
-  letter-spacing: 1px;
-  font-family: $mc-font;
-}
-
-// ==========================================
-// Contained Dopamine & Burst
-// ==========================================
-.mc-contained-spin-rays {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 600px;
-  height: 600px;
-  border-radius: 50%;
-  background: repeating-conic-gradient(
-    from 0deg,
-    rgba(255, 200, 0, 0.25) 0deg 15deg,
-    transparent 15deg 30deg
-  );
-  mask-image: radial-gradient(circle at center, black 10%, transparent 60%);
-  -webkit-mask-image: radial-gradient(circle at center, black 10%, transparent 60%);
-  z-index: 1;
-  pointer-events: none;
-  animation: mcInternalSpinRays 15s linear infinite;
-}
-
-@keyframes mcInternalSpinRays {
-  0% { transform: translate(-50%, -50%) rotate(0deg); }
-  100% { transform: translate(-50%, -50%) rotate(360deg); }
-}
-
-.mc-reward-big-amount {
+/* El nuevo bloque de recompensa estilo inventario */
+.fc-daily-reward-box {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  margin: 24px 0;
-  padding: 32px 64px;
-  background-color: rgba(0,0,0,0.6);
-  border: 3px solid #3b3e4f;
-  border-radius: 8px;
-  box-shadow: inset 0 0 30px rgba(0,0,0,0.9), 0 10px 20px rgba(0,0,0,0.5);
-  position: relative;
-  overflow: hidden;
-  will-change: transform;
-  animation: mcAmountDopaminePulse 2.5s infinite alternate;
+  gap: 16px;
+  background: #0f131a;
+  border: 4px solid #000;
+  box-shadow: inset -4px -4px 0 #0a0c14, inset 4px 4px 0 #1e202f;
+  padding: 24px;
+  width: 100%;
+  margin-bottom: 24px;
 
-  .amount {
-    font-size: 5rem;
-    color: #ffc800;
-    text-shadow: 4px 4px 0 #806600, -2px -2px 0 #806600, 0 0 20px rgba(255,200,0,0.5);
+  .fc-daily-amount {
     font-family: $mc-font;
-    position: relative;
-    z-index: 10;
-    animation: mcNumberContainedPop 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    font-size: 3.5rem;
+    color: #5EE034;
+    text-shadow: 4px 4px 0 #000;
+    line-height: 1;
   }
 
-  img {
-    width: 72px;
-    height: 72px;
+  .fc-daily-coin {
+    width: 48px;
+    height: 48px;
     image-rendering: pixelated;
-    filter: drop-shadow(4px 4px 0 #000);
-    position: relative;
-    z-index: 10;
-    animation: mcCoinContainedJump 1s ease-out;
+    filter: drop-shadow(2px 2px 0 #000);
+    animation: floatItem 3s infinite ease-in-out;
   }
 }
 
-@keyframes mcAmountDopaminePulse {
-  0% { transform: scale(1); box-shadow: inset 0 0 30px rgba(0,0,0,0.9), 0 10px 20px rgba(0,0,0,0.5); }
-  100% { transform: scale(1.02); box-shadow: inset 0 0 50px rgba(0,0,0,0.9), 0 15px 30px rgba(255, 200, 0, 0.2); }
+/* BOTONES */
+.fc-daily-btn-green, .fc-daily-btn-gray {
+  width: 100%;
+  padding: 12px;
+  border: 4px solid #000;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: filter 0.1s, transform 0.1s;
+  font-family: $mc-font;
+  font-size: 1.2rem;
+  text-shadow: 2px 2px 0 #000;
+  
+  &:hover:not(:disabled) { filter: brightness(1.15); }
+  &:active:not(:disabled) { transform: translateY(2px); }
+  &:disabled { cursor: not-allowed; }
 }
 
-@keyframes mcNumberContainedPop {
-  0% { transform: scale(0.6); opacity: 0; }
-  60% { transform: scale(1.15); opacity: 1; }
+.fc-daily-btn-green {
+  background: #5EE034;
+  box-shadow: inset -4px -4px 0px rgba(0,0,0,0.25), inset 4px 4px 0px rgba(255,255,255,0.4);
+  
+  &:active:not(:disabled) { box-shadow: inset -2px -2px 0px rgba(0,0,0,0.25), inset 2px 2px 0px rgba(255,255,255,0.4); }
+  
+  &:disabled { 
+    background: #374151; 
+    box-shadow: inset -4px -4px 0px #1f2937, inset 4px 4px 0px #4b5563;
+    color: #9ca3af; text-shadow: none; 
+  }
+}
+
+.fc-daily-btn-gray {
+  background: #4b5563;
+  box-shadow: inset -4px -4px 0px #1f2937, inset 4px 4px 0px #6b7280;
+  
+  &:active:not(:disabled) { box-shadow: inset -2px -2px 0px #1f2937, inset 2px 2px 0px #6b7280; }
+}
+
+/* ANIMACIONES */
+@keyframes overlayFadeIn {
+  from { opacity: 0; backdrop-filter: blur(0px); }
+  to { opacity: 1; backdrop-filter: blur(4px); }
+}
+
+@keyframes modalPop {
+  from { opacity: 0; transform: scale(0.8) translateY(20px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes modalBurstPop {
+  0% { transform: scale(0.9); }
+  50% { transform: scale(1.05); }
   100% { transform: scale(1); }
 }
 
-@keyframes mcCoinContainedJump {
-  0% { transform: translateY(30px) scale(0.5); opacity: 0; }
-  50% { transform: translateY(-20px) scale(1.2); opacity: 1; }
-  100% { transform: translateY(0) scale(1); }
+@keyframes floatItem {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
 }
 
-.mc-particles-contained {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 0;
-  height: 0;
-  z-index: 20;
-  pointer-events: none;
+@keyframes textPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
 }
 
-.mc-particle {
-  position: absolute;
-  width: 14px;
-  height: 14px;
-  background-color: #ffc800;
-  border: 2px solid #fff;
-  border-radius: 50%;
-  box-shadow: 0 0 15px #ffc800, 0 0 30px #ffaa00;
-  opacity: 0;
-  animation: mcContainedParticleShoot var(--pd, 700ms) ease-out var(--pdelay, 0ms) forwards;
-}
-
-@keyframes mcContainedParticleShoot {
-  0% { transform: translate(0,0) scale(var(--ps, 1)); opacity: 1; }
-  100% { transform: translate(var(--dx), var(--dy)) scale(0); opacity: 0; }
-}
-
-.mc-title-plate {
-  background-color: #35384b;
-  border: 2px solid #111;
-  padding: 8px 32px;
-  box-shadow: inset 2px 2px 0 #545873, inset -2px -2px 0 #222430;
-  clip-path: polygon(10px 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 10px 100%, 0 50%);
-  margin-bottom: 12px;
-  position: relative;
-  z-index: 10;
-  
-  h2 {
-    font-size: 1.4rem;
-    margin: 0;
-    text-shadow: 2px 2px 0px #000;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    font-family: $mc-font;
-  }
-}
-
-@media (max-width: 768px) {
-  .mc-stone-banner {
-    flex-direction: column;
-    text-align: center;
-    padding-top: 32px;
-  }
-  .mc-banner-action {
-    width: 100%;
-  }
-  .mc-reward-big-amount {
-    padding: 24px 32px;
-  }
-  .mc-reward-big-amount .amount {
-    font-size: 3.5rem;
-  }
-  .mc-mystery-chest-wrapper {
-    width: 180px;
-    height: 200px;
-  }
-  .mc-mystery-chest-wrapper .mc-chest-img {
-    width: 130px;
-    height: 130px;
-  }
+@keyframes chestShake {
+  0% { transform: translate(1px, 1px) rotate(0deg); }
+  10% { transform: translate(-1px, -2px) rotate(-1deg); }
+  20% { transform: translate(-3px, 0px) rotate(1deg); }
+  30% { transform: translate(3px, 2px) rotate(0deg); }
+  40% { transform: translate(1px, -1px) rotate(1deg); }
+  50% { transform: translate(-1px, 2px) rotate(-1deg); }
+  60% { transform: translate(-3px, 1px) rotate(0deg); }
+  70% { transform: translate(3px, 1px) rotate(-1deg); }
+  80% { transform: translate(-1px, -1px) rotate(1deg); }
+  90% { transform: translate(1px, 2px) rotate(0deg); }
+  100% { transform: translate(1px, -2px) rotate(-1deg); }
 }

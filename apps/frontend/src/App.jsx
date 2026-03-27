@@ -1,5 +1,5 @@
 import React, { Suspense, lazy, useEffect, useState } from "react";
-import { Routes, Route, useLocation } from "react-router-dom";
+import { Routes, Route, useLocation, Navigate } from "react-router-dom"; // Añadido Navigate
 import { Toaster } from "react-hot-toast";
 import Navbar from "./components/Navbar/Navbar";
 import ProtectedRoute from "./components/Routing/ProtectedRoute";
@@ -9,12 +9,16 @@ import FlanLoader from "./components/ui/FlanLoader";
 import ScrollToTop from "./components/ScrollToTop";
 import GlobalLoader from "./components/ui/GlobalLoader";
 
+// Bandera de control para El Nexo
+const ENABLE_NEXO = false; 
+
 const Home = lazy(() => import("./components/Landpage/Home"));
 const VincularPage = lazy(() => import("./components/Auth/VincularPage"));
 const ResetPage = lazy(() => import("./components/Auth/ResetPage"));
 const AllNews = lazy(() => import("./components/Noticias/AllNews"));
 const NewsDetail = lazy(() => import("./components/Noticias/NewsDetail"));
 const DashboardPage = lazy(() => import("./components/Dashboard/DashboardPage"));
+const NexoLayout = lazy(() => import("./components/Nexo/NexoLayout"));
 const PerfilJugador = lazy(() => import("./components/Estadisticas/PerfilJugador"));
 const Leaderboards = lazy(() => import("./components/Estadisticas/Leaderboards"));
 const TribunalMain = lazy(() => import("./components/Tribunal/TribunalMain"));
@@ -94,6 +98,7 @@ const App = () => {
             <Route path="/voto" element={<VotoPage />} />
             <Route path="/vote" element={<VotoPage />} />
             <Route path="/servidor-minecraft-espanol" element={<ServerMinecraftLanding />} />
+            
             <Route
               path="/dashboard"
               element={
@@ -102,8 +107,23 @@ const App = () => {
                 </ProtectedRoute>
               }
             />
+            
+            <Route
+              path="/nexo"
+              element={
+                ENABLE_NEXO ? (
+                  <ProtectedRoute>
+                    <NexoLayout />
+                  </ProtectedRoute>
+                ) : (
+                  <Navigate to="/dashboard" replace />
+                )
+              }
+            />
+
             <Route path="/leaderboards" element={<Leaderboards />} />
             <Route path="/perfil/:nombre" element={<PerfilJugador />} />
+            
             <Route
               path="/admin"
               element={

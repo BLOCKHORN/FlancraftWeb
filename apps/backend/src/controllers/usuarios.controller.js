@@ -80,6 +80,7 @@ const mapUsuarioResponse = (usuario, rolAdminRaw = null) => {
     rol_admin,
     rango_real: resolveDisplayRank(rango_usuario, rango_staff, rol_admin),
     es_premium: usuario?.es_premium === true,
+    flanpoints: Number(usuario?.flanpoints || 0),
   };
 };
 
@@ -138,7 +139,7 @@ const buscarUsuarioParaSync = async ({ uuid, username }) => {
   if (uuidClean) {
     const { data, error } = await db
       .from("usuarios")
-      .select("uuid, uid, xp_actual, nivel, rango_usuario, rango_staff, wallet_coins, es_premium")
+      .select("uuid, uid, xp_actual, nivel, rango_usuario, rango_staff, flanpoints, es_premium")
       .eq("uuid", uuidClean)
       .maybeSingle();
 
@@ -149,7 +150,7 @@ const buscarUsuarioParaSync = async ({ uuid, username }) => {
   if (userClean) {
     const { data, error } = await db
       .from("usuarios")
-      .select("uuid, uid, xp_actual, nivel, rango_usuario, rango_staff, wallet_coins, es_premium")
+      .select("uuid, uid, xp_actual, nivel, rango_usuario, rango_staff, flanpoints, es_premium")
       .ilike("uid", userClean)
       .maybeSingle();
 
@@ -165,7 +166,7 @@ const actualizarRangosUsuario = async (uuid, patch) => {
 
   const { data: existente, error: errorBusqueda } = await db
     .from("usuarios")
-    .select("uuid, uid, xp_actual, nivel, rango_usuario, rango_staff, wallet_coins, es_premium")
+    .select("uuid, uid, xp_actual, nivel, rango_usuario, rango_staff, flanpoints, es_premium")
     .eq("uuid", uuidClean)
     .maybeSingle();
 
@@ -190,7 +191,7 @@ const actualizarRangosUsuario = async (uuid, patch) => {
     .from("usuarios")
     .update(update)
     .eq("uuid", uuidClean)
-    .select("uuid, uid, xp_actual, nivel, rango_usuario, rango_staff, wallet_coins, es_premium")
+    .select("uuid, uid, xp_actual, nivel, rango_usuario, rango_staff, flanpoints, es_premium")
     .maybeSingle();
 
   if (errorUpdate) throw errorUpdate;
@@ -202,7 +203,7 @@ exports.obtenerUsuarios = async (req, res) => {
   try {
     const { data: usuarios, error: errorUsuarios } = await db
       .from("usuarios")
-      .select("uuid, uid, nivel, xp_actual, rango_usuario, rango_staff, wallet_coins, es_premium")
+      .select("uuid, uid, nivel, xp_actual, rango_usuario, rango_staff, flanpoints, es_premium")
       .order("uid", { ascending: true });
 
     if (errorUsuarios) throw errorUsuarios;
@@ -228,7 +229,7 @@ exports.obtenerUsuario = async (req, res) => {
   try {
     const { data: usuario, error: errorUsuario } = await db
       .from("usuarios")
-      .select("uuid, uid, xp_actual, nivel, rango_usuario, rango_staff, wallet_coins, es_premium")
+      .select("uuid, uid, xp_actual, nivel, rango_usuario, rango_staff, flanpoints, es_premium")
       .eq("uuid", uuid)
       .maybeSingle();
 
