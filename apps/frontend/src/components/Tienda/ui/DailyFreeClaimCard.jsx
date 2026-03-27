@@ -6,6 +6,9 @@ import { apiUrl } from "../../../lib/env";
 import { clearSessionStorage, getAuthToken } from "../../../lib/auth/storage";
 import "../../../styles/components/Tienda/daily-free-claim-card.scss";
 
+const FLANITE_SRC = "/tienda/assets/flanite.webp";
+const COIN_SRC = "/tienda/assets/coin.png";
+
 function msToShort(ms) {
   const s = Math.max(0, Math.floor(ms / 1000));
   const h = Math.floor(s / 3600);
@@ -64,7 +67,7 @@ export default function DailyFreeClaimCard() {
   const [claiming, setClaiming] = useState(false);
   const [modal, setModal] = useState(null);
   
-  const { user, logout } = useContext(UserContext);
+  const { user, logout, setUser } = useContext(UserContext);
   const { openAuthModal } = useAuthModal();
   const [token, setToken] = useState(() => getAuthToken());
 
@@ -75,9 +78,7 @@ export default function DailyFreeClaimCard() {
   const isLocked = !user?.loggedIn || !token;
 
   const emitBalances = (detail) => {
-    try {
-      window.dispatchEvent(new CustomEvent("fc:balances", { detail: detail || {} }));
-    } catch {}
+    try { window.dispatchEvent(new CustomEvent("fc:balances", { detail: detail || {} })); } catch {}
   };
 
   const nextMs = useMemo(() => {
@@ -86,7 +87,8 @@ export default function DailyFreeClaimCard() {
   }, [status?.nextClaimAt]);
 
   const showCount = !!(modal && !modal.error && modal.phase === "reveal");
-  const countVal = useCountUp(showCount, modal?.amount ?? 0, 1200);
+  const countCoins = useCountUp(showCount, modal?.coinsAmount ?? 0, 1200);
+  const countFlanites = useCountUp(showCount, modal?.flanitesAmount ?? 0, 1200);
 
   useEffect(() => {
     let alive = true;
@@ -166,7 +168,8 @@ export default function DailyFreeClaimCard() {
       setModal((m) => ({
         ...m,
         phase: "reveal",
-        amount: data.amount,
+        coinsAmount: data.coinsAmount,
+        flanitesAmount: data.flanitesAmount,
         nextClaimAt: data.nextClaimAt,
       }));
 
@@ -174,8 +177,11 @@ export default function DailyFreeClaimCard() {
         ...(s || {}),
         claimedToday: true,
         nextClaimAt: data.nextClaimAt,
-        lastAmount: data.amount,
       }));
+      
+      if (data.flanitesAmount > 0) {
+        setUser({ ...user, flanpoints: (user.flanpoints || 0) + data.flanitesAmount }, token);
+      }
 
       emitBalances({ refresh: true });
     } catch (e) {
@@ -185,14 +191,8 @@ export default function DailyFreeClaimCard() {
     }
   };
 
-  const handleContinue = () => {
-    setModal(null);
-  };
-
-  const handleCloseModal = () => {
-    if (claiming) return;
-    setModal(null);
-  };
+  const handleContinue = () => setModal(null);
+  const handleCloseModal = () => { if (!claiming) setModal(null); };
 
   const ctaText = status?.claimedToday ? "RECLAMADO" : "GRATIS";
   const timerText = status?.claimedToday ? `Vuelve en ${msToShort(nextMs)}` : isLocked ? "Requiere iniciar sesión" : "¡Recompensa disponible!";
@@ -219,46 +219,49 @@ export default function DailyFreeClaimCard() {
 
               {(modal.phase === "intro" || modal.phase === "vibrating") && (
                 <>
-                  <h2 className="fc-daily-title yellow">¡REGALO MISTERIOSO!</h2>
-                  <p className="fc-daily-text">¿Qué contendrá tu recompensa de hoy?</p>
+                  <h2 className="fc-daily-title yellow">¡ENERGIA DETECTADA!</h2>
+                  <p className="fc-daily-text">Toca los núcleos para absorber la recompensa diaria.</p>
                   
-                  <div 
-                    className="fc-daily-visual" 
-                    onClick={modal.phase === "intro" ? handleClaimClick : undefined}
-                    style={{ cursor: modal.phase === "vibrating" ? "default" : "pointer" }}
-                  >
-                    <img 
-                      src="/tienda/assets/rankskin.png" 
-                      alt="Recompensa" 
-                      className={`fc-daily-chest ${modal.phase === "vibrating" ? "is-vibrating" : ""}`} 
-                      draggable="false"
-                    />
+                  <div className="fc-daily-visual" onClick={modal.phase === "intro" ? handleClaimClick : undefined} style={{ cursor: modal.phase === "vibrating" ? "default" : "pointer" }}>
+                    <div className={`fc-daily-orbital-spinner ${modal.phase === "vibrating" ? "speed-up" : "normal-spin"}`}>
+                      <div className={`fc-orbital-item item--flanite ${modal.phase === "vibrating" ? "speed-up" : "normal-spin"}`}>
+                        <img src={FLANITE_SRC} alt="Flanite" className="pixelated" draggable="false" />
+                      </div>
+                      <div className={`fc-orbital-item item--coin ${modal.phase === "vibrating" ? "speed-up" : "normal-spin"}`}>
+                        <img src={COIN_SRC} alt="Coin" draggable="false" />
+                      </div>
+                    </div>
                   </div>
                   
-                  <button 
-                    className="fc-daily-btn-green mt-16" 
-                    onClick={modal.phase === "intro" ? handleClaimClick : undefined}
-                    disabled={modal.phase === "vibrating"}
-                  >
-                    <span>{modal.phase === "vibrating" ? "ABRIENDO..." : "REVELAR"}</span>
+                  <button className="fc-daily-btn-green mt-16" onClick={modal.phase === "intro" ? handleClaimClick : undefined} disabled={modal.phase === "vibrating"}>
+                    <span>{modal.phase === "vibrating" ? "FORJANDO..." : "RECLAMAR"}</span>
                   </button>
                 </>
               )}
 
               {modal.phase === "reveal" && (
                 <div className="fc-daily-reveal-wrapper">
-                  <h2 className="fc-daily-title green">¡ENVIADO AL SERVIDOR!</h2>
+                  <h2 className="fc-daily-title green">¡RECOMPENSA OBTENIDA!</h2>
                   
-                  <div className="fc-daily-reward-box">
-                    <span className="fc-daily-amount">+{formatInt(countVal)}</span>
-                    <img src="/tienda/assets/coin.png" alt="Coins" className="fc-daily-coin" />
+                  <div className="fc-daily-rewards-reveal pf-tileIn">
+                    <div className="fc-daily-reward-line">
+                      <img src={COIN_SRC} alt="Coins" className="fc-daily-coin-icon" />
+                      <span className="fc-daily-amount-reveal">+{formatInt(countCoins)}</span>
+                    </div>
+                    
+                    <div className="fc-daily-divider-reveal" />
+                    
+                    <div className="fc-daily-reward-line line-flanite">
+                      <img src={FLANITE_SRC} alt="Flanite" className="fc-daily-coin-icon pixelated" />
+                      <span className="fc-daily-amount-reveal">+{formatInt(countFlanites)}</span>
+                    </div>
                   </div>
                   
-                  <p className="fc-daily-text">
-                    Tus monedas se han ingresado de forma inmediata en tu cuenta de Survival. ¡Entra y usa <strong>/coinshop</strong> para gastarlas!
+                  <p className="fc-daily-text mt-16">
+                    Tus <strong>Coins</strong> han sido enviadas al Survival y la <strong>Flanite</strong> ya está en El Nexo.
                   </p>
                   
-                  <button className="fc-daily-btn-green mt-16 w-full" onClick={handleContinue}>
+                  <button className="fc-daily-btn-green w-full" onClick={handleContinue}>
                     <span>CONTINUAR</span>
                   </button>
                 </div>
@@ -268,9 +271,7 @@ export default function DailyFreeClaimCard() {
             <>
               <h2 className="fc-daily-title red">ERROR</h2>
               <p className="fc-daily-text red">{modal.error}</p>
-              <button className="fc-daily-btn-gray mt-16 w-full" onClick={() => setModal(null)}>
-                CERRAR
-              </button>
+              <button className="fc-daily-btn-gray mt-16 w-full" onClick={() => setModal(null)}>CERRAR</button>
             </>
           )}
         </div>
@@ -283,9 +284,9 @@ export default function DailyFreeClaimCard() {
     <>
       <div className={`fc-daily-banner ${status?.claimedToday ? "is-cooldown" : ""} ${isLocked ? "is-locked" : ""} no-tap-highlight`}>
         <div className="fc-banner-icon-stack">
-          <div className="fc-banner-art" aria-hidden="true">
-            <img className="fc-banner-coin coin--back" src="/tienda/assets/coin.png" alt="" draggable="false" />
-            <img className="fc-banner-coin coin--front" src="/tienda/assets/coin.png" alt="" draggable="false" />
+          <div className={`fc-banner-orbital ${!status?.claimedToday && !isLocked ? 'is-available' : ''}`} aria-hidden="true">
+            <div className="fc-orbital-item-banner item--flanite"><img src={FLANITE_SRC} alt="" className="pixelated" /></div>
+            <div className="fc-orbital-item-banner item--coin"><img src={COIN_SRC} alt="" /></div>
           </div>
         </div>
         
@@ -296,8 +297,7 @@ export default function DailyFreeClaimCard() {
 
         <div className="fc-banner-action">
           <button 
-            type="button"
-            className="fc-banner-cta no-tap-highlight"
+            type="button" className="fc-banner-cta no-tap-highlight"
             disabled={status?.claimedToday}
             onClick={() => {
               if (status?.claimedToday) return;

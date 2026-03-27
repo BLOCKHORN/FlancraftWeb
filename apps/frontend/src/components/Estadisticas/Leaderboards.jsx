@@ -12,10 +12,8 @@ import {
   FETCH_LIMIT,
   EXIT_DELAY_MS,
   SKELETON_ITEMS,
-  COIN_SRC,
   ICON_POINTS,
   ICON_TIME,
-  ICON_WALLET,
   RANGO_LOCAL,
   POINTS_GUIDE,
   hideImg,
@@ -71,7 +69,6 @@ export default function Leaderboards() {
       setExitFx(fx);
       setIsLeaving(true);
 
-      // Una transición rápida y directa
       leaveTimerRef.current = setTimeout(() => {
         navigate(`/perfil/${player.nombre_minecraft}`, { state: { fx } });
       }, EXIT_DELAY_MS - 100); 
@@ -179,7 +176,6 @@ export default function Leaderboards() {
       if (isLeaving) return;
       const safePage = Math.max(1, Math.min(paginasTotales, Number(nextPage || 1)));
       setPage(safePage);
-      // Feedback inmediato: volver arriba al cambiar de página
       window.scrollTo({ top: 0, behavior: 'smooth' });
     },
     [isLeaving, paginasTotales]
@@ -340,9 +336,6 @@ export default function Leaderboards() {
                       <div className="lb-headCell lb-center">
                         <HeadLabel icon={ICON_TIME}>HORAS</HeadLabel>
                       </div>
-                      <div className="lb-headCell lb-center">
-                        <HeadLabel icon={ICON_WALLET}>WALLET</HeadLabel>
-                      </div>
                     </div>
 
                     <div className="lb-gridBody">
@@ -358,7 +351,6 @@ export default function Leaderboards() {
                                 <div className="lb-skelName" />
                               </div>
                             </div>
-                            <div className="lb-cell lb-center lb-skelTxt">—</div>
                             <div className="lb-cell lb-center lb-skelTxt">—</div>
                             <div className="lb-cell lb-center lb-skelTxt">—</div>
                           </div>
@@ -404,23 +396,6 @@ export default function Leaderboards() {
 
                               <div className="lb-cell lb-center">
                                 <span className="lb-num">{player?.tiempoTxt}</span>
-                              </div>
-
-                              <div className="lb-cell lb-center">
-                                {player?.walletTxt === "—" ? (
-                                  <span className="lb-num">—</span>
-                                ) : (
-                                  <span className="lb-walletValue">
-                                    <img
-                                      className="lb-coin"
-                                      src={COIN_SRC}
-                                      alt=""
-                                      loading="lazy"
-                                      onError={hideImg}
-                                    />
-                                    <span className="lb-num">{player?.walletTxt}</span>
-                                  </span>
-                                )}
                               </div>
                             </div>
                           );
@@ -478,10 +453,6 @@ export default function Leaderboards() {
                           <div className="lb-mobRow-footer">
                             <span className="lb-mobRow-stat">
                               <img src={ICON_TIME} alt="" /> {player?.tiempoTxt}
-                            </span>
-                            <span className="lb-mobRow-divider" />
-                            <span className="lb-mobRow-stat">
-                              <img src={COIN_SRC} alt="" /> {player?.walletTxt}
                             </span>
                           </div>
                         </div>

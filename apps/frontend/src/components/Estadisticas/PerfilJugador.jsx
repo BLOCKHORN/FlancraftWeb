@@ -132,7 +132,7 @@ export default function PerfilJugador() {
               jugador?.rol_admin !== null ||
               jugador?.nivel !== null ||
               jugador?.xp_actual !== null ||
-              jugador?.wallet_coins !== null ||
+              jugador?.flanpoints !== null ||
               jugador?.es_premium !== null)
         );
 
@@ -191,7 +191,7 @@ export default function PerfilJugador() {
         jugador?.rol_admin !== null ||
         jugador?.nivel !== null ||
         jugador?.xp_actual !== null ||
-        jugador?.wallet_coins !== null ||
+        jugador?.flanpoints !== null ||
         jugador?.es_premium !== null
     );
   }, [jugador]);
@@ -272,7 +272,7 @@ export default function PerfilJugador() {
   const xpDelNivelActual = derivedXp ? derivedXp.xpRequeridaNivel : null;
   const xpPct = derivedXp ? derivedXp.porcentaje : 0;
   
-  const webWallet = hasWebAccount ? safe(jugador?.wallet_coins) : null;
+  const flanpoints = hasWebAccount ? safe(jugador?.flanpoints) : null;
 
   const general = serverData?.general || null;
   const combate = serverData?.combate || null;
@@ -328,10 +328,10 @@ export default function PerfilJugador() {
         value: survivalPoints !== null ? fmtNum(survivalPoints) : EMPTY,
       }),
       makeMetric({
-        id: "wallet_coins",
-        label: "Wallet Coins",
-        iconKey: "coins",
-        value: webWallet !== null ? fmtNum(webWallet) : EMPTY,
+        id: "flanpoints",
+        label: "Flanite",
+        iconKey: "flanite",
+        value: flanpoints !== null ? `${fmtNum(flanpoints)} FLT` : EMPTY,
       }),
       makeMetric({
         id: "tiempo_total",
@@ -346,7 +346,7 @@ export default function PerfilJugador() {
         value: totals.kills !== null ? fmtNum(totals.kills) : EMPTY,
       }),
     ];
-  }, [survivalPoints, webWallet, totals.time, totals.kills]);
+  }, [survivalPoints, flanpoints, totals.time, totals.kills]);
 
   const omitIds = useMemo(() => new Set(quickMetrics.map((m) => m.id)), [quickMetrics]);
 
@@ -410,8 +410,9 @@ export default function PerfilJugador() {
       economiaTiles.push(makeMetric({
         id: "dinero_block", label: "Dinero", iconKey: "dinero",
         lines: [
-          { label: "Disponible", value: dineroActual !== null ? fmtMoney(dineroActual) : EMPTY },
-          { label: "Total ganado", value: dineroTotal !== null ? fmtMoney(dineroTotal) : EMPTY },
+          // LAS VARIABLES HAN SIDO INVERTIDAS AQUÍ PARA QUE TENGAN SENTIDO
+          { label: "Disponible", value: dineroTotal !== null ? fmtMoney(dineroTotal) : EMPTY },
+          { label: "Total histórico", value: dineroActual !== null ? fmtMoney(dineroActual) : EMPTY },
         ],
       }));
     }
@@ -419,8 +420,9 @@ export default function PerfilJugador() {
       economiaTiles.push(makeMetric({
         id: "coins_block", label: "Coins", iconKey: "coins",
         lines: [
-          { label: "Disponibles", value: coinsActual !== null ? fmtNum(coinsActual) : EMPTY },
-          { label: "Total ganadas", value: coinsTotal !== null ? fmtNum(coinsTotal) : EMPTY },
+          // LAS VARIABLES HAN SIDO INVERTIDAS AQUÍ PARA QUE TENGAN SENTIDO
+          { label: "Disponibles", value: coinsTotal !== null ? fmtNum(coinsTotal) : EMPTY },
+          { label: "Total históricas", value: coinsActual !== null ? fmtNum(coinsActual) : EMPTY },
         ],
       }));
     }

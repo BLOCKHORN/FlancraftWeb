@@ -1,3 +1,5 @@
+@use "../../base/variables" as vars;
+
 @font-face {
   font-family: 'MinecraftSeven';
   src: url('/fonts/MinecraftBold.otf') format('opentype');
@@ -9,6 +11,8 @@
 $mc-font: 'MinecraftSeven', 'Montserrat', sans-serif;
 $sans-font: "Nunito", sans-serif;
 
+.pixelated { image-rendering: pixelated; }
+
 .no-tap-highlight, .no-tap-highlight * {
   -webkit-tap-highlight-color: transparent;
   user-select: none;
@@ -17,7 +21,6 @@ $sans-font: "Nunito", sans-serif;
 .mt-16 { margin-top: 16px; }
 .w-full { width: 100%; }
 
-/* --- BANNER EXTERIOR --- */
 .fc-daily-banner {
   display: flex;
   align-items: center;
@@ -60,40 +63,38 @@ $sans-font: "Nunito", sans-serif;
 
 .fc-banner-icon-stack {
   position: relative;
-  width: 60px;
-  height: 60px;
+  width: 70px;
+  height: 70px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.fc-banner-art {
+.fc-banner-orbital {
   position: relative;
-  width: 100%;
-  height: 100%;
+  width: 0; height: 0;
   
-  .fc-banner-coin {
+  &.is-available { animation: fc-spin-parent 4s linear infinite; }
+  
+  .fc-orbital-item-banner {
     position: absolute;
-    width: 40px;
-    height: 40px;
-    image-rendering: pixelated;
+    width: 32px; height: 32px;
+    margin-left: -16px; 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    filter: drop-shadow(2px 2px 0 rgba(0,0,0,0.8));
     
-    &.coin--back {
-      top: 0; right: 0;
-      transform: scale(0.8);
-      filter: brightness(0.6);
-    }
-    
-    &.coin--front {
-      bottom: 0; left: 0;
-      filter: drop-shadow(2px 2px 0 rgba(0,0,0,0.8));
-    }
-  }
-}
+    img { width: 100%; height: 100%; object-fit: contain; }
 
-.fc-daily-banner:not(.is-cooldown):not(.is-locked) .coin--front {
-  animation: floatItem 3s infinite ease-in-out;
+    &.item--flanite { top: -26px; }
+    &.item--coin { top: -4px; }
+  }
+
+  &.is-available .fc-orbital-item-banner {
+    animation: fc-spin-child 4s linear infinite;
+  }
 }
 
 .fc-banner-info {
@@ -123,9 +124,7 @@ $sans-font: "Nunito", sans-serif;
   }
 }
 
-.fc-banner-action {
-  flex-shrink: 0;
-}
+.fc-banner-action { flex-shrink: 0; }
 
 .fc-banner-cta {
   background-color: #5EE034;
@@ -158,7 +157,6 @@ $sans-font: "Nunito", sans-serif;
   }
 }
 
-/* --- MODAL ESTILO INVENTARIO --- */
 .fc-daily-overlay {
   position: fixed;
   inset: 0;
@@ -177,16 +175,14 @@ $sans-font: "Nunito", sans-serif;
   border: 4px solid #000;
   box-shadow: inset -4px -4px 0px #0a0c14, inset 4px 4px 0px #2a3143, 0 20px 50px rgba(0,0,0,0.8);
   width: 100%;
-  max-width: 420px;
+  max-width: 460px;
   position: relative;
   border-radius: 2px;
   padding: 30px;
   text-align: center;
   animation: modalPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
   
-  &.is-bursting {
-    animation: modalBurstPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-  }
+  &.is-bursting { animation: modalBurstPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
 }
 
 .fc-daily-close {
@@ -201,7 +197,6 @@ $sans-font: "Nunito", sans-serif;
   z-index: 10;
   transition: color 0.2s;
   font-family: $mc-font;
-  
   &:hover { color: #f87171; }
 }
 
@@ -226,7 +221,7 @@ $sans-font: "Nunito", sans-serif;
 
 .fc-daily-text {
   font-family: $sans-font;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   color: #94a3b8;
   margin: 0 0 24px 0;
   line-height: 1.5;
@@ -242,25 +237,39 @@ $sans-font: "Nunito", sans-serif;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.fc-daily-orbital-spinner {
+  position: relative;
+  width: 0;
+  height: 0;
   
-  .fc-daily-chest {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    image-rendering: pixelated;
-    filter: drop-shadow(0 10px 10px rgba(0,0,0,0.5));
-    animation: floatItem 3s ease-in-out infinite;
-
-    &.is-vibrating {
-      animation: chestShake 0.1s infinite;
-    }
-  }
+  &.normal-spin { animation: fc-spin-parent 4s linear infinite; }
+  &.speed-up { animation: fc-spin-parent 0.35s linear infinite; }
 }
 
-.fc-daily-visual:hover .fc-daily-chest:not(.is-vibrating) {
-  transform: scale(1.1);
-  filter: drop-shadow(0 15px 15px rgba(0,0,0,0.6));
+.fc-orbital-item {
+  position: absolute;
+  width: 56px;
+  height: 56px;
+  margin-left: -28px; 
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 8px 8px rgba(0,0,0,0.6));
+  
+  &.item--flanite { top: -60px; } 
+  &.item--coin { top: 4px; } 
+  
+  img { width: 100%; height: 100%; object-fit: contain; }
+
+  &.normal-spin { animation: fc-spin-child 4s linear infinite; }
+  &.speed-up { animation: fc-spin-child 0.35s linear infinite; }
 }
+
+@keyframes fc-spin-parent { to { transform: rotate(360deg); } }
+@keyframes fc-spin-child { to { transform: rotate(-360deg); } }
+
 
 .fc-daily-reveal-wrapper {
   display: flex;
@@ -269,37 +278,62 @@ $sans-font: "Nunito", sans-serif;
   width: 100%;
 }
 
-/* El nuevo bloque de recompensa estilo inventario */
-.fc-daily-reward-box {
+.fc-daily-rewards-reveal {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: #0f131a;
+  border: 4px solid #000;
+  box-shadow: inset -4px -4px 0 #0a0c14, inset 4px 4px 0 #1e202f, 0 10px 20px rgba(0,0,0,0.5);
+  padding: 24px 40px;
+  border-radius: 2px;
+  width: 100%;
+  max-width: 320px;
+  margin-top: 10px;
+}
+
+.fc-daily-reward-line {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 16px;
-  background: #0f131a;
-  border: 4px solid #000;
-  box-shadow: inset -4px -4px 0 #0a0c14, inset 4px 4px 0 #1e202f;
-  padding: 24px;
   width: 100%;
-  margin-bottom: 24px;
 
-  .fc-daily-amount {
+  .fc-daily-amount-reveal {
     font-family: $mc-font;
-    font-size: 3.5rem;
+    font-size: 2.5rem;
     color: #5EE034;
-    text-shadow: 4px 4px 0 #000;
+    text-shadow: 3px 3px 0 #000;
     line-height: 1;
+    letter-spacing: 1px;
   }
 
-  .fc-daily-coin {
-    width: 48px;
-    height: 48px;
-    image-rendering: pixelated;
-    filter: drop-shadow(2px 2px 0 #000);
-    animation: floatItem 3s infinite ease-in-out;
+  .fc-daily-coin-icon {
+    width: 50px;
+    height: 50px;
+    object-fit: contain;
+    filter: drop-shadow(3px 3px 0 #000);
+    animation: rewardFloat 3s infinite ease-in-out; 
+  }
+
+  &.line-flanite {
+    .fc-daily-amount-reveal { color: #f97316; }
+    .fc-daily-coin-icon { 
+      animation: rewardFloat 3.2s infinite ease-in-out reverse; 
+    }
   }
 }
 
-/* BOTONES */
+.fc-daily-divider-reveal {
+  height: 4px;
+  width: 100%;
+  max-width: 180px;
+  background-color: #000;
+  margin: 16px 0;
+  opacity: 0.5;
+}
+
 .fc-daily-btn-green, .fc-daily-btn-gray {
   width: 100%;
   padding: 12px;
@@ -335,11 +369,9 @@ $sans-font: "Nunito", sans-serif;
 .fc-daily-btn-gray {
   background: #4b5563;
   box-shadow: inset -4px -4px 0px #1f2937, inset 4px 4px 0px #6b7280;
-  
   &:active:not(:disabled) { box-shadow: inset -2px -2px 0px #1f2937, inset 2px 2px 0px #6b7280; }
 }
 
-/* ANIMACIONES */
 @keyframes overlayFadeIn {
   from { opacity: 0; backdrop-filter: blur(0px); }
   to { opacity: 1; backdrop-filter: blur(4px); }
@@ -356,26 +388,12 @@ $sans-font: "Nunito", sans-serif;
   100% { transform: scale(1); }
 }
 
-@keyframes floatItem {
+@keyframes rewardFloat {
   0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-8px); }
+  50% { transform: translateY(-6px); }
 }
 
 @keyframes textPulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.7; }
-}
-
-@keyframes chestShake {
-  0% { transform: translate(1px, 1px) rotate(0deg); }
-  10% { transform: translate(-1px, -2px) rotate(-1deg); }
-  20% { transform: translate(-3px, 0px) rotate(1deg); }
-  30% { transform: translate(3px, 2px) rotate(0deg); }
-  40% { transform: translate(1px, -1px) rotate(1deg); }
-  50% { transform: translate(-1px, 2px) rotate(-1deg); }
-  60% { transform: translate(-3px, 1px) rotate(0deg); }
-  70% { transform: translate(3px, 1px) rotate(-1deg); }
-  80% { transform: translate(-1px, -1px) rotate(1deg); }
-  90% { transform: translate(1px, 2px) rotate(0deg); }
-  100% { transform: translate(1px, -2px) rotate(-1deg); }
 }

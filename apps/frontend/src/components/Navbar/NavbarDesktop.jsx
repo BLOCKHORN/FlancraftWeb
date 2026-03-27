@@ -177,7 +177,9 @@ const NavbarDesktop = ({
   const xpRequeridaNavbar = userData?.userXPMax || 1;
   const xpPercent = userData?.xpPercent ?? 0;
   const nivelNavbar = userData?.userLevel ?? 1;
-  const walletCoins = useMemo(() => formatInt(userData?.walletCoins ?? 0), [userData?.walletCoins]);
+  
+  // AQUI CALCULAMOS LOS FLANITES
+  const flanpointsFormatted = useMemo(() => formatInt(userData?.flanpoints ?? 0), [userData?.flanpoints]);
 
   const handleLogout = () => {
     clearSessionStorage();
@@ -186,7 +188,7 @@ const NavbarDesktop = ({
     window.location.reload();
   };
 
-  const walletTip = "Las Wallet Coins se consiguen con el daily claim y los logros. Puedes enviarlas al servidor en la cantidad que elijas.";
+  const flaniteTip = "La Flanite (FLT) es la moneda premium de Flancraft. Consíguela en la tienda y fórjala en El Nexo.";
   const storeSaleActive = useMemo(() => isSaleValid(saleNav), [saleNav?.active, saleNav?.expire]);
   const storeSalePercent = toInt(saleNav?.percent || 0);
   const storeSaleText = storeSalePercent > 0 ? `-${storeSalePercent}%` : "OFERTA";
@@ -307,15 +309,15 @@ const NavbarDesktop = ({
                   </div>
                 </div>
 
-                <div className="fcacct__wallet" aria-label="Wallet coins">
+                <div className="fcacct__wallet" aria-label="Flanite balance">
                   <div className="fcacct__walletRow" tabIndex={0} aria-describedby="fc-wallet-tip">
-                    <img src="/tienda/assets/coin.png" alt="COINS" className="fcacct__coin" draggable="false" />
-                    <span className="fcacct__walletVal">{walletCoins}</span>
-                    <span className="fcacct__walletTag">Wallet</span>
+                    <img src="/tienda/assets/flanite.webp" alt="FLT" className="fcacct__coin" draggable="false" style={{ imageRendering: 'pixelated' }} />
+                    <span className="fcacct__walletVal" style={{ color: '#f97316' }}>{flanpointsFormatted}</span>
+                    <span className="fcacct__walletTag" style={{ color: '#d8b4fe' }}>FLT</span>
                     <span className="fcacct__walletHint" aria-hidden="true" />
                   </div>
                   <div id="fc-wallet-tip" className="fcacct__walletTip" role="tooltip">
-                    {walletTip}
+                    {flaniteTip}
                   </div>
                 </div>
 

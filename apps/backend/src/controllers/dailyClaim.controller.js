@@ -2,25 +2,22 @@ const db = require("../models/db");
 const { evaluateWebAchievementsForUser } = require("../services/webLogros.service");
 
 const TZ = "Europe/Madrid";
-const DEBUG =
-  String(process.env.DAILY_CLAIM_DEBUG || "").trim() === "1" ||
-  process.env.NODE_ENV !== "production";
+const DEBUG = String(process.env.DAILY_CLAIM_DEBUG || "").trim() === "1" || process.env.NODE_ENV !== "production";
 
 const MONTH_TARGET_WALLET = 600;
+const MONTH_TARGET_FLANITES = 150;
 
 function num(v, def) {
   const n = Number(v);
   return Number.isFinite(n) ? n : def;
 }
 
-function getHardCap(lastDay) {
-  const forced = num(process.env.DAILY_CLAIM_HARD_CAP, 0);
-  if (forced > 0) return Math.max(1, Math.floor(forced));
-
-  const avg = MONTH_TARGET_WALLET / Math.max(1, lastDay);
+function getHardCap(lastDay, target) {
+  const avg = target / Math.max(1, lastDay);
   const mult = num(process.env.DAILY_CLAIM_CAP_MULT, 2.2);
-  const minCap = num(process.env.DAILY_CLAIM_MIN_CAP, 20);
-  const maxCap = num(process.env.DAILY_CLAIM_MAX_CAP, 80);
+  
+  const minCap = target === MONTH_TARGET_FLANITES ? 2 : 20;
+  const maxCap = target === MONTH_TARGET_FLANITES ? 15 : 80;
 
   const cap = Math.round(avg * mult);
   return Math.max(1, Math.max(minCap, Math.min(maxCap, cap)));
@@ -100,6 +97,19 @@ async function getMonthSum(uuid, firstISO, nextISO) {
   const total = (data || []).reduce((acc, r) => acc + (Number(r.amount) || 0), 0);
   const daysClaimed = (data || []).length;
   return { total, daysClaimed };
+}
+
+async function getFlanitesMonthSum(uuid, firstISO, nextISO) {
+  const { data, error } = await db
+    .from("flanpoints_movimientos")
+    .select("amount")
+    .eq("uuid_jugador", uuid)
+    .eq("motivo", "daily_claim")
+    .gte("created_at", firstISO)
+    .lt("created_at", nextISO);
+
+  if (error) throw error;
+  return (data || []).reduce((acc, r) => acc + (Number(r.amount) || 0), 0);
 }
 
 function computeTodayAmountExactIfPossible({ totalSoFar, dayOfMonth, lastDay, target, cap }) {
@@ -185,7 +195,7 @@ exports.claimDaily = async (req, res) => {
     step = "fetch_usuario";
     const { data: jugador, error: errJugador } = await db
       .from("usuarios")
-      .select("uuid, uid, wallet_coins")
+      .select("uuid, uid, wallet_coins, flanpoints")
       .eq("uuid", uuid)
       .maybeSingle();
 
@@ -213,19 +223,26 @@ exports.claimDaily = async (req, res) => {
     step = "month_meta";
     const { firstISO, nextISO, lastDay, dayOfMonth, y, m } = monthMetaMadrid(new Date());
 
-    step = "month_sum";
+    step = "calc_coins";
     const { total: totalSoFar, daysClaimed } = await getMonthSum(uuid, firstISO, nextISO);
-
-    const target = MONTH_TARGET_WALLET;
-    const cap = getHardCap(lastDay);
-
-    step = "compute_amount";
-    const { amount, debug } = computeTodayAmountExactIfPossible({
+    const capCoins = getHardCap(lastDay, MONTH_TARGET_WALLET);
+    const { amount: coinsAmount, debug: debugCoins } = computeTodayAmountExactIfPossible({
       totalSoFar,
       dayOfMonth,
       lastDay,
-      target,
-      cap,
+      target: MONTH_TARGET_WALLET,
+      cap: capCoins,
+    });
+
+    step = "calc_flanites";
+    const totalFlanitesSoFar = await getFlanitesMonthSum(uuid, firstISO, nextISO);
+    const capFlanites = getHardCap(lastDay, MONTH_TARGET_FLANITES);
+    const { amount: flanitesAmount, debug: debugFlanites } = computeTodayAmountExactIfPossible({
+      totalSoFar: totalFlanitesSoFar,
+      dayOfMonth,
+      lastDay,
+      target: MONTH_TARGET_FLANITES,
+      cap: capFlanites,
     });
 
     if (DEBUG) {
@@ -237,10 +254,14 @@ exports.claimDaily = async (req, res) => {
         nextISO,
         dayOfMonth,
         lastDay,
-        targetWallet: target,
-        hardCap: cap,
-        sum: { totalSoFar, daysClaimed },
-        calc: debug,
+        targetWallet: MONTH_TARGET_WALLET,
+        targetFlanites: MONTH_TARGET_FLANITES,
+        hardCapCoins: capCoins,
+        hardCapFlanites: capFlanites,
+        sumCoins: { totalSoFar, daysClaimed },
+        sumFlanites: totalFlanitesSoFar,
+        calcCoins: debugCoins,
+        calcFlanites: debugFlanites,
         playerUid: jugador.uid,
       });
     }
@@ -248,7 +269,7 @@ exports.claimDaily = async (req, res) => {
     step = "insert_daily_claims_log";
     const { error: errInsert } = await db
       .from("daily_claims_log")
-      .insert({ uuid_jugador: uuid, claim_date: today, amount });
+      .insert({ uuid_jugador: uuid, claim_date: today, amount: coinsAmount });
 
     if (errInsert) {
       const msg = String(errInsert.message || "").toLowerCase();
@@ -261,16 +282,28 @@ exports.claimDaily = async (req, res) => {
       throw errInsert;
     }
 
-    step = "wallet_add";
+    step = "insert_flanites";
+    if (flanitesAmount > 0) {
+      await db.from("usuarios").update({ flanpoints: (jugador.flanpoints || 0) + flanitesAmount }).eq("uuid", uuid);
+      await db.from("flanpoints_movimientos").insert({
+        uuid_jugador: uuid,
+        amount: flanitesAmount,
+        motivo: "daily_claim",
+        fuente: "web",
+        meta: { claim_date: today, month: `${y}-${String(m).padStart(2, "0")}` }
+      });
+    }
+
+    step = "wallet_add_coins";
     let walletBalance = 0;
     try {
       walletBalance = await addToWallet({
         uuid,
-        amount,
+        amount: coinsAmount,
         meta: {
           claim_date: today,
           month: `${y}-${String(m).padStart(2, "0")}`,
-          hardCap: cap,
+          hardCap: capCoins,
         },
       });
     } catch (e) {
@@ -283,7 +316,7 @@ exports.claimDaily = async (req, res) => {
       const { data: transferData, error: transferError } = await db.rpc("wallet_transfer_to_server", {
         p_uuid: uuid,
         p_servidor: "survival",
-        p_amount: amount,
+        p_amount: coinsAmount,
       });
 
       if (transferError) throw transferError;
@@ -294,8 +327,8 @@ exports.claimDaily = async (req, res) => {
 
         if (commandId) {
           const feedbackTitle = "Regalo Diario";
-          const feedbackSubtitle = `+${amount} COINS`;
-          const feedbackChat = `¡Has reclamado tu regalo diario! +${amount} COINS.`;
+          const feedbackSubtitle = `+${coinsAmount} COINS`;
+          const feedbackChat = `&a¡Has reclamado tu regalo diario! &e+${coinsAmount} COINS.`;
 
           await db.from("comandos_pendientes").update({
             tipo: "coins",
@@ -319,7 +352,7 @@ exports.claimDaily = async (req, res) => {
         {
           uuid_jugador: uuid,
           last_claim_at: nowISO,
-          last_amount: amount,
+          last_amount: coinsAmount,
           streak: nuevoStreak,
           updated_at: nowISO,
         },
@@ -341,14 +374,16 @@ exports.claimDaily = async (req, res) => {
 
     return res.status(200).json({
       message: "Recompensa diaria enviada directamente a Survival.",
-      amount,
+      amount: coinsAmount,
+      coinsAmount,
+      flanitesAmount,
       walletBalance,
       nextClaimAt: nextMidnightMadridISO(),
-      monthTargetWallet: target,
-      monthSoFarWallet: totalSoFar + amount,
+      monthTargetWallet: MONTH_TARGET_WALLET,
+      monthSoFarWallet: totalSoFar + coinsAmount,
       dayIndex: nuevoStreak,
       debug: DEBUG
-        ? { today, firstISO, nextISO, lastDay, dayOfMonth, totalSoFar, daysClaimed, cap, calc: debug }
+        ? { today, firstISO, nextISO, lastDay, dayOfMonth, totalSoFar, daysClaimed, cap: capCoins, calc: debugCoins }
         : undefined,
     });
   } catch (err) {
@@ -399,7 +434,7 @@ exports.getDailyStatus = async (req, res) => {
     step = "month_sum";
     const { total: monthSoFar, daysClaimed } = await getMonthSum(uuid, firstISO, nextISO);
 
-    const cap = getHardCap(lastDay);
+    const cap = getHardCap(lastDay, MONTH_TARGET_WALLET);
 
     const daysLeft = lastDay - dayOfMonth + 1;
     const remaining = Math.max(0, MONTH_TARGET_WALLET - monthSoFar);

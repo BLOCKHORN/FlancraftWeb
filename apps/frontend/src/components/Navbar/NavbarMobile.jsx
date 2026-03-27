@@ -181,7 +181,9 @@ const NavbarMobile = ({
   const xpRequeridaNavbar = userData?.userXPMax || 1;
   const xpPercent = userData?.xpPercent ?? 0;
   const nivelNavbar = userData?.userLevel ?? 1;
-  const walletCoins = useMemo(() => formatInt(userData?.walletCoins ?? 0), [userData?.walletCoins]);
+  
+  // AQUI CALCULAMOS LOS FLANITES
+  const flanpointsFormatted = useMemo(() => formatInt(userData?.flanpoints ?? 0), [userData?.flanpoints]);
 
   const QuestIcon = () => (
     <span className="quest-qm" aria-hidden="true">
@@ -200,7 +202,7 @@ const NavbarMobile = ({
     </span>
   );
 
-  const walletTip = "Las Wallet Coins se consiguen con el daily claim y los logros. Puedes enviarlas al servidor en la cantidad que elijas.";
+  const flaniteTip = "La Flanite (FLT) es la moneda premium de Flancraft. Consíguela en la tienda y fórjala en El Nexo.";
   const storeSaleActive = useMemo(() => isSaleValid(saleNav), [saleNav?.active, saleNav?.expire]);
   const storeSalePercent = toInt(saleNav?.percent || 0);
   const storeSaleText = storeSalePercent > 0 ? `-${storeSalePercent}%` : "OFERTA";
@@ -292,13 +294,13 @@ const NavbarMobile = ({
               </div>
             </div>
 
-            <div className="balance-wrapper" aria-label="Wallet coins">
+            <div className="balance-wrapper" aria-label="Flanite balance">
               <div className="balance-item" tabIndex={0} aria-describedby="mobile-wallet-tip">
-                <img src="/tienda/assets/coin.png" alt="COINS" className="eco-icon-navbar" draggable="false" />
-                <span className="balance-text">{walletCoins}</span>
-                <span className="balance-tag">Wallet</span>
+                <img src="/tienda/assets/flanite.webp" alt="FLT" className="eco-icon-navbar" draggable="false" style={{ imageRendering: 'pixelated' }} />
+                <span className="balance-text" style={{ color: '#f97316' }}>{flanpointsFormatted}</span>
+                <span className="balance-tag" style={{ color: '#d8b4fe' }}>FLT</span>
               </div>
-              <div id="mobile-wallet-tip" className="balance-tip" role="tooltip">{walletTip}</div>
+              <div id="mobile-wallet-tip" className="balance-tip" role="tooltip">{flaniteTip}</div>
             </div>
 
             <div className="dropdown-links">

@@ -53,6 +53,7 @@ export const AVATAR_BACKS = {
 
 export const ICONS = {
   tiempo: "/assets/statsperfil/playtime.webp",
+  flanite: "/tienda/assets/flanite.webp", // NUEVO ICONO FLANITE
   coins: "/assets/statsperfil/coin.png",
   dinero: "/assets/statsperfil/dinero.png",
   muertes: "/assets/statsperfil/deaths.webp",

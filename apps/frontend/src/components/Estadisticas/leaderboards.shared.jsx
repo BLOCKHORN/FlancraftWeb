@@ -14,10 +14,8 @@ export const FETCH_LIMIT = 700;
 export const EXIT_DELAY_MS = 520;
 export const SKELETON_ITEMS = Array.from({ length: LIMIT });
 
-export const COIN_SRC = "/tienda/assets/coin.png";
 export const ICON_POINTS = "/assets/points.png";
 export const ICON_TIME = "/assets/statsperfil/playtime.webp";
-export const ICON_WALLET = "/assets/wallet.png";
 
 export const PLATFORM_ICON = {
   java: "/assets/platform/java.png",
@@ -71,12 +69,6 @@ export const fallbackRankImg = (key) => (e) => {
 
 export const cleanPlayerName = (value) => String(value || "").trim().replace(/^\.+/, "");
 export const looksLikeBedrockName = (value) => String(value || "").trim().startsWith(".");
-
-export const pickWallet = (source) => {
-  const value = source?.wallet_coins ?? source?.walletCoins ?? source?.coins_wallet ?? source?.coins_web ?? source?.wallet;
-  const num = Number(value);
-  return Number.isFinite(num) ? num : null;
-};
 
 export const normalizePlatform = (platform) => {
   const value = String(platform || "").toLowerCase();
@@ -146,7 +138,7 @@ export const normalizeLeaderboardItem = (player) => {
   const id = String(uuid || nombre.toLowerCase()).trim();
   if (!id) return null;
   return {
-    id, uuid, nombre_minecraft: nombre, platform: getPlatform(player), wallet: pickWallet(player),
+    id, uuid, nombre_minecraft: nombre, platform: getPlatform(player),
     tiempo_total: Math.max(0, safeNum(player?.tiempo_jugado)),
     total_points: safeNum(player?.svpoints ?? player?.points ?? 0),
     rango_real: player?.rango_real ?? null,
@@ -161,10 +153,8 @@ export const decoratePlayer = (player, meta) => {
   const rangoRaw = getMetaRango(meta, player);
   const rangoKey = normalizeRango(rangoRaw);
   const platKey = normalizePlatform(player?.platform);
-  const wallet = player?.wallet ?? pickWallet(meta);
   return {
-    ...player, meta, rangoRaw, rangoKey, platKey, wallet,
-    walletTxt: wallet == null ? "—" : formatInt(wallet),
+    ...player, meta, rangoRaw, rangoKey, platKey,
     tiempoTxt: formatearTiempo(safeNum(player?.tiempo_total)),
     platformIcon: PLATFORM_ICON[platKey] || "",
     rankDelta24h: player?.rank_change_24h ?? null,

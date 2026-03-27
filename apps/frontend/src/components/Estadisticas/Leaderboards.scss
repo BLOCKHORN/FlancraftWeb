@@ -271,7 +271,7 @@ $mc-font: "MinecraftSeven", "Montserrat", system-ui, sans-serif;
 
 .lb-gridHeader, .lb-row {
   display: grid;
-  grid-template-columns: 80px 1fr 180px 150px 150px;
+  grid-template-columns: 80px 1fr 180px 150px;
   gap: 16px;
   align-items: center;
 }

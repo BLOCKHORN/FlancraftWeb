@@ -8,8 +8,6 @@ import { apiUrl } from "../../lib/env";
 import { getAuthToken, clearSessionStorage } from "../../lib/auth/storage";
 import "../../styles/components/Navbar/navbar.scss";
 
-const SERVERS_COINS = [{ key: "survival", label: "SURVIVAL" }];
-
 const NAV_ITEMS = [
   { key: "home", to: "/", label: "Inicio" },
   { key: "news", to: "/news", label: "Noticias" },
@@ -21,40 +19,6 @@ const NAV_ITEMS = [
 const toInt = (v) => {
   const n = Number(v);
   return Number.isFinite(n) ? Math.max(0, Math.floor(n)) : 0;
-};
-
-const parseCoinsPayload = (m) => {
-  if (m?.byServer && typeof m.byServer === "object") {
-    const out = {};
-    for (const [k, v] of Object.entries(m.byServer)) out[String(k)] = toInt(v);
-    return out;
-  }
-  if (Array.isArray(m?.balances)) {
-    const out = {};
-    for (const row of m.balances) {
-      const key = String(row?.servidor || row?.server || "").trim().toLowerCase();
-      if (!key) continue;
-      out[key] = toInt(row?.coins);
-    }
-    return out;
-  }
-  if (Array.isArray(m)) {
-    const out = {};
-    for (const row of m) {
-      const key = String(row?.servidor || row?.server || "").trim().toLowerCase();
-      if (!key) continue;
-      out[key] = toInt(row?.coins);
-    }
-    return out;
-  }
-  if (m?.coins != null) return { global: toInt(m.coins) };
-  if (m?.ecos != null) return { global: toInt(m.ecos) };
-  return {};
-};
-
-const sumTotalCoins = (coinsByServer) => {
-  if ("global" in coinsByServer) return toInt(coinsByServer.global);
-  return toInt(coinsByServer.survival);
 };
 
 const pickSalePercent = (sale) => {
@@ -82,13 +46,7 @@ const deriveXpStateFromTotal = (xpTotal, niveles) => {
   const rows = Array.isArray(niveles) ? [...niveles].sort((a, b) => Number(a?.nivel) - Number(b?.nivel)) : [];
 
   if (!rows.length) {
-    return {
-      nivel: 1,
-      xpActualNivel: 0,
-      xpRequeridaNivel: 1,
-      xpTotalActual: total,
-      porcentaje: 0,
-    };
+    return { nivel: 1, xpActualNivel: 0, xpRequeridaNivel: 1, xpTotalActual: total, porcentaje: 0 };
   }
 
   let current = rows[0];
@@ -138,9 +96,7 @@ const Navbar = ({ onLoginClick }) => {
     userXPMax: 100,
     userLevel: 1,
     xpPercent: 0,
-    walletCoins: 0,
-    coinsByServer: {},
-    coinsServersTotal: 0,
+    flanpoints: 0, // AHORA USAMOS FLANPOINTS
   }));
 
   const [userLoading, setUserLoading] = useState(false);
@@ -210,7 +166,7 @@ const Navbar = ({ onLoginClick }) => {
 
   const refreshUserData = useCallback(async (opts = {}) => {
     if (!user?.uuid) {
-      setUserData({ username: "", uuid: "", userXP: 0, userXPMax: 100, userLevel: 1, xpPercent: 0, walletCoins: 0, coinsByServer: {}, coinsServersTotal: 0 });
+      setUserData({ username: "", uuid: "", userXP: 0, userXPMax: 100, userLevel: 1, xpPercent: 0, flanpoints: 0 });
       setUserLoading(false);
       return;
     }
@@ -220,31 +176,23 @@ const Navbar = ({ onLoginClick }) => {
 
     try {
       const token = getAuthToken();
-      const [userRes, monedasRes, walletRes, xpRes] = await Promise.all([
+      // Hemos limpiado las peticiones a monedas y wallet. 
+      // Hacemos un ping a daily-claim solo para verificar si el token de sesión sigue vivo.
+      const [userRes, xpRes, authCheckRes] = await Promise.all([
         supabase.from("usuarios").select("*").eq("uuid", user.uuid).single(),
-        fetch(apiUrl(`/api/monedas/${user.uuid}`)),
-        token ? fetch(apiUrl(`/api/daily-claim/status`), { headers: { Authorization: `Bearer ${token}` } }) : Promise.resolve(null),
         fetch(apiUrl(`/api/usuarios/${user.uuid}/xp`)),
+        token ? fetch(apiUrl(`/api/daily-claim/status`), { headers: { Authorization: `Bearer ${token}` } }) : Promise.resolve(null),
       ]);
 
-      const userDataDB = userRes.data;
-      const monedas = monedasRes.ok ? await monedasRes.json() : {};
-      const xpData = xpRes.ok ? await xpRes.json() : {};
-      
-      const coinsByServer = parseCoinsPayload(monedas);
-      const coinsServersTotal = sumTotalCoins(coinsByServer);
-      let walletCoins = toInt(userDataDB?.wallet_coins ?? 0);
-
-      if (walletRes) {
-        if (walletRes.status === 401) {
-          clearSessionStorage();
-          logout();
-        } else if (walletRes.ok) {
-          const w = await walletRes.json();
-          walletCoins = toInt(w?.walletBalance ?? w?.wallet_balance ?? walletCoins);
-        }
+      if (authCheckRes && authCheckRes.status === 401) {
+        clearSessionStorage();
+        logout();
+        return;
       }
 
+      const userDataDB = userRes.data;
+      const xpData = xpRes.ok ? await xpRes.json() : {};
+      
       const trueTotalXp = toInt(userDataDB?.xp_actual || 0);
       const xpDerived = deriveXpStateFromTotal(trueTotalXp, xpData?.niveles || []);
 
@@ -255,9 +203,7 @@ const Navbar = ({ onLoginClick }) => {
         userXP: xpDerived.xpActualNivel,
         userXPMax: xpDerived.xpRequeridaNivel,
         xpPercent: xpDerived.porcentaje,
-        walletCoins,
-        coinsByServer,
-        coinsServersTotal,
+        flanpoints: toInt(userDataDB?.flanpoints ?? 0), // LECTURA DIRECTA
         rawRango: userDataDB?.rango_usuario?.toLowerCase() || null,
         esPremium: userDataDB?.es_premium === true
       }));
@@ -275,29 +221,12 @@ const Navbar = ({ onLoginClick }) => {
 
   useEffect(() => {
     if (!user?.uuid) return;
-    const onBalances = (e) => {
-      const d = e?.detail;
-      if (d && (d.walletCoins != null || d.coinsByServer)) {
-        setUserData((prev) => {
-          const next = { ...prev };
-          if (d.walletCoins != null) next.walletCoins = toInt(d.walletCoins);
-          if (d.coinsByServer && typeof d.coinsByServer === "object") {
-            next.coinsByServer = d.coinsByServer;
-            next.coinsServersTotal = sumTotalCoins(d.coinsByServer);
-          }
-          return next;
-        });
-      }
-      refreshUserData({ silent: true });
-    };
     const onFocus = () => refreshUserData({ silent: true });
 
-    window.addEventListener("fc:balances", onBalances);
     window.addEventListener("focus", onFocus);
     const id = setInterval(() => refreshUserData({ silent: true }), 30_000);
 
     return () => {
-      window.removeEventListener("fc:balances", onBalances);
       window.removeEventListener("focus", onFocus);
       clearInterval(id);
     };
@@ -333,7 +262,7 @@ const Navbar = ({ onLoginClick }) => {
   const sharedProps = useMemo(() => ({
     menuOpen, setMenuOpen, activeDropdown, setActiveDropdown, profileOpen, setProfileOpen,
     isLoggedIn, isUserLoading: userLoading && baseLoggedIn, userData, avatarHeadUrlSm, avatarHeadUrlLg,
-    onLoginClick, serversCoins: SERVERS_COINS, navItems: NAV_ITEMS, handleDropdownHover, handleDropdownLeave,
+    onLoginClick, navItems: NAV_ITEMS, handleDropdownHover, handleDropdownLeave,
     handleProfileEnter, handleProfileLeave, toggleDropdown, saleNav,
   }), [
     menuOpen, activeDropdown, profileOpen, setProfileOpen, isLoggedIn, userLoading, baseLoggedIn,
