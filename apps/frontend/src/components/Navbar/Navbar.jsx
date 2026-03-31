@@ -40,7 +40,6 @@ const buildAvatarHeadUrl = (uuid, username, size) => {
   return `https://mc-heads.net/avatar/${encodeURIComponent(identifier)}/${size}`;
 };
 
-// Función centralizada para calcular XP
 const deriveXpStateFromTotal = (xpTotal, niveles) => {
   const total = toInt(xpTotal);
   const rows = Array.isArray(niveles) ? [...niveles].sort((a, b) => Number(a?.nivel) - Number(b?.nivel)) : [];
@@ -96,7 +95,7 @@ const Navbar = ({ onLoginClick }) => {
     userXPMax: 100,
     userLevel: 1,
     xpPercent: 0,
-    flanpoints: 0, // AHORA USAMOS FLANPOINTS
+    flanpoints: 0,
   }));
 
   const [userLoading, setUserLoading] = useState(false);
@@ -176,10 +175,8 @@ const Navbar = ({ onLoginClick }) => {
 
     try {
       const token = getAuthToken();
-      // Hemos limpiado las peticiones a monedas y wallet. 
-      // Hacemos un ping a daily-claim solo para verificar si el token de sesión sigue vivo.
       const [userRes, xpRes, authCheckRes] = await Promise.all([
-        supabase.from("usuarios").select("*").eq("uuid", user.uuid).single(),
+        supabase.from("usuarios").select("uuid, uid, xp_actual, flanpoints, rango_usuario, es_premium").eq("uuid", user.uuid).single(),
         fetch(apiUrl(`/api/usuarios/${user.uuid}/xp`)),
         token ? fetch(apiUrl(`/api/daily-claim/status`), { headers: { Authorization: `Bearer ${token}` } }) : Promise.resolve(null),
       ]);
@@ -203,7 +200,7 @@ const Navbar = ({ onLoginClick }) => {
         userXP: xpDerived.xpActualNivel,
         userXPMax: xpDerived.xpRequeridaNivel,
         xpPercent: xpDerived.porcentaje,
-        flanpoints: toInt(userDataDB?.flanpoints ?? 0), // LECTURA DIRECTA
+        flanpoints: toInt(userDataDB?.flanpoints ?? 0),
         rawRango: userDataDB?.rango_usuario?.toLowerCase() || null,
         esPremium: userDataDB?.es_premium === true
       }));
@@ -224,7 +221,7 @@ const Navbar = ({ onLoginClick }) => {
     const onFocus = () => refreshUserData({ silent: true });
 
     window.addEventListener("focus", onFocus);
-    const id = setInterval(() => refreshUserData({ silent: true }), 30_000);
+    const id = setInterval(() => refreshUserData({ silent: true }), 300_000);
 
     return () => {
       window.removeEventListener("focus", onFocus);

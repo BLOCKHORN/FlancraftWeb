@@ -53,7 +53,7 @@ export const AVATAR_BACKS = {
 
 export const ICONS = {
   tiempo: "/assets/statsperfil/playtime.webp",
-  flanite: "/tienda/assets/flanite.webp", // NUEVO ICONO FLANITE
+  flanite: "/tienda/assets/flanite.webp",
   coins: "/assets/statsperfil/coin.png",
   dinero: "/assets/statsperfil/dinero.png",
   muertes: "/assets/statsperfil/deaths.webp",
@@ -672,7 +672,7 @@ export const fetchPlayerSanctions = async (candidateNames) => {
   for (const candidate of candidateNames) {
     const { data, error } = await supabase
       .from("jails")
-      .select("*")
+      .select("id, name, timestamp, type, moderator, duration, bantype, estado")
       .eq("server", SERVER_ID)
       .ilike("name", candidate)
       .order("timestamp", { ascending: false });

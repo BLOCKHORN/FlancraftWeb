@@ -164,7 +164,7 @@ export default function VoteWidget({ visible = true }) {
     if (!open) return;
     fetchStatus();
     fetchTop(0, topState.limit);
-    const id = setInterval(fetchStatus, 8000);
+    const id = setInterval(fetchStatus, 60000);
     return () => clearInterval(id);
   }, [open, fetchStatus, fetchTop, topState.limit]);
 

@@ -16,14 +16,13 @@ export default function useTribunalSanciones() {
 
         const { data, error } = await supabase
           .from("jails")
-          .select("*")
+          .select("id, uuid, name, moderator, duration, timestamp, server, type, bantype, estado, observacion, revisado_por")
           .eq("server", "survival")
           .order("timestamp", { ascending: false });
 
         if (error) throw error;
         if (!cancel) setSanciones(data || []);
       } catch (e) {
-        console.error(e);
         if (!cancel) setErrorMsg("No se pudo cargar el historial de sanciones.");
       } finally {
         if (!cancel) setLoading(false);

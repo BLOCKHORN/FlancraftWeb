@@ -159,7 +159,7 @@ $mc-font: "MinecraftSeven", "Montserrat", system-ui, sans-serif;
 .folder-tabs {
   display: flex;
   gap: 8px;
-  margin-bottom: -4px; /* Tira hacia abajo para superponerse al bloque principal */
+  margin-bottom: -4px;
   position: relative;
   z-index: 10;
   padding-left: 16px;
@@ -185,11 +185,11 @@ $mc-font: "MinecraftSeven", "Montserrat", system-ui, sans-serif;
   }
 
   &.is-active {
-    background-color: #1a1e29; /* Mismo color que .mc-block */
-    color: #5EE034; /* Verde brillante */
+    background-color: #1a1e29;
+    color: #5EE034;
     text-shadow: 2px 2px 0 #000;
     transform: translateY(0);
-    padding-bottom: 16px; /* Padding extra para que "cruce" el borde */
+    padding-bottom: 16px;
     box-shadow: inset -4px 0 0 #0a0c14, inset 4px 4px 0 #2a3143;
   }
 }
@@ -198,7 +198,7 @@ $mc-font: "MinecraftSeven", "Montserrat", system-ui, sans-serif;
 .tribAdmin__workspace {
   position: relative;
   z-index: 5;
-  border-top-left-radius: 0; /* Para que case bien con la pestaña si es la primera */
+  border-top-left-radius: 0;
 }
 
 /* CABECERA (Stats y Título) */
@@ -270,7 +270,7 @@ $mc-font: "MinecraftSeven", "Montserrat", system-ui, sans-serif;
 }
 
 /* Colores para chips */
-.statChip--pending svg { color: #fbbf24; } /* Ahora las pendientes suelen ser amarillas/naranjas */
+.statChip--pending svg { color: #fbbf24; }
 .statChip--reviewed svg { color: #5EE034; }
 .statChip--banned svg { color: #ef4444; }
 .statChip--total svg { color: #94a3b8; }
@@ -497,6 +497,56 @@ textarea.mc-input {
 .moderatorCell__name { font-family: $mc-font; font-size: 0.9rem; color: #fff; text-shadow: 1px 1px 0 #000; }
 .moderatorCell__date { font-size: 0.75rem; color: #94a3b8; margin-top: 4px; font-weight: bold; }
 
+/* Colisiones (Multicuentas) */
+.colisionCell {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.colisionCell__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.75rem;
+  font-family: $mc-font;
+  color: #94a3b8;
+  border-bottom: 1px dashed #2b2e42;
+  padding-bottom: 4px;
+}
+
+.colisionCell__hash { color: #cbd5e1; }
+.colisionCell__count { color: #fbbf24; text-shadow: 1px 1px 0 #000; }
+
+.colisionCell__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.multi-tag {
+  background-color: #1e202f;
+  border: 2px solid #000;
+  padding: 4px 8px;
+  font-family: $mc-font;
+  font-size: 0.8rem;
+  color: #fff;
+  text-decoration: none;
+  transition: filter 0.1s, transform 0.1s;
+
+  &:hover {
+    filter: brightness(1.2);
+    transform: translateY(-1px);
+  }
+
+  &--more {
+    background-color: #0f131a;
+    color: #94a3b8;
+    cursor: default;
+    &:hover { filter: none; transform: none; }
+  }
+}
+
 /* Motivo y Estado Badges */
 .badge {
   display: inline-flex;
@@ -645,6 +695,8 @@ textarea.mc-input {
   .playerCell { flex-direction: row-reverse; text-align: right; }
   .moderatorCell { text-align: right; }
   .duration { text-align: right; }
+  .colisionCell { align-items: flex-end; }
+  .colisionCell__header { width: 100%; }
   
   .obs { text-align: right; max-width: 60%; }
   .inlineTextarea { margin-top: 8px; }

@@ -214,7 +214,6 @@ exports.obtenerUsuarios = async (req, res) => {
       listaUsuarios.map((row) => mapUsuarioResponse(row))
     );
   } catch (err) {
-    console.error("[OBTENER TODOS LOS USUARIOS]", err);
     return res.status(500).json({ error: "Error al obtener usuarios." });
   }
 };
@@ -236,9 +235,20 @@ exports.obtenerUsuario = async (req, res) => {
     if (errorUsuario) throw errorUsuario;
     if (!usuario) return res.status(404).json({ error: "Usuario no encontrado." });
 
-    return res.status(200).json(mapUsuarioResponse(usuario));
+    const { data: movimientos } = await db
+      .from("flanpoints_movimientos")
+      .select("motivo")
+      .eq("uuid_jugador", uuid);
+
+    const artefactos_nexo = (movimientos || [])
+      .filter(m => m.motivo && m.motivo.startsWith("canje_"))
+      .map(m => m.motivo.replace("canje_", ""));
+
+    const responseData = mapUsuarioResponse(usuario);
+    responseData.artefactos_nexo = artefactos_nexo;
+
+    return res.status(200).json(responseData);
   } catch (err) {
-    console.error("[OBTENER USUARIO]", err);
     return res.status(500).json({ error: "Error interno del servidor." });
   }
 };
@@ -288,7 +298,6 @@ exports.obtenerXPUsuario = async (req, res) => {
       niveles: nivelesSafe,
     });
   } catch (err) {
-    console.error("[OBTENER XP USUARIO]", err);
     return res.status(500).json({ error: "Error interno del servidor." });
   }
 };
@@ -328,7 +337,6 @@ exports.obtenerSkinUsuario = async (req, res) => {
       source: isBedrock ? "bedrock" : "java",
     });
   } catch (err) {
-    console.error("[OBTENER SKIN USUARIO]", err);
     return res.status(500).json({ error: "Error al obtener skin." });
   }
 };
@@ -355,7 +363,6 @@ exports.asignarRangoUsuario = async (req, res) => {
       rol_admin: updated.rol_admin,
     });
   } catch (err) {
-    console.error("[ASIGNAR RANGO USUARIO]", err);
     return res.status(500).json({ error: "Error al asignar rango al usuario." });
   }
 };
@@ -382,7 +389,6 @@ exports.asignarRangoStaff = async (req, res) => {
       rol_admin: updated.rol_admin,
     });
   } catch (err) {
-    console.error("[ASIGNAR RANGO STAFF]", err);
     return res.status(500).json({ error: "Error al asignar rango staff al usuario." });
   }
 };
@@ -414,7 +420,6 @@ exports.actualizarPremiumUsuario = async (req, res) => {
 
     return res.status(200).json({ mensaje: "Premium actualizado correctamente.", es_premium: esPremium });
   } catch (err) {
-    console.error("[ACTUALIZAR PREMIUM USUARIO]", err);
     return res.status(500).json({ error: "Error al actualizar premium." });
   }
 };
@@ -463,7 +468,6 @@ exports.registrarCompraRango = async (req, res) => {
       rol_admin: updated?.rol_admin || null,
     });
   } catch (err) {
-    console.error("[REGISTRAR COMPRA RANGO]", err);
     return res.status(500).json({ error: "Error al registrar el rango." });
   }
 };

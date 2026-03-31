@@ -162,7 +162,7 @@ export default function VotoPage() {
     fetchStatus();
     fetchTop(0, 10);
 
-    const id = setInterval(fetchStatus, 9000);
+    const id = setInterval(fetchStatus, 60000);
     return () => clearInterval(id);
   }, [fetchStatus, fetchTop]);
 

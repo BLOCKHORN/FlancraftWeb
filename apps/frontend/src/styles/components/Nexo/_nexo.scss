@@ -1,457 +1,377 @@
-@use "../../base/_variables" as *;
+@use "../../base/variables" as vars;
 
-$mc-font: "MinecraftSeven", "Montserrat", sans-serif;
-$nexo-purple: #9333ea;
-$nexo-purple-dark: #3b0764;
-$nexo-orange: #f97316;
-$nexo-bg: #090b10;
-$nexo-panel: #11151d;
+@font-face {
+  font-family: 'MinecraftSeven';
+  src: url('/fonts/MinecraftBold.otf') format('opentype');
+  font-display: swap;
+}
 
-.sc-nexo-wrapper {
+$mc-font: 'MinecraftSeven', 'Montserrat', sans-serif;
+$sans-font: "Nunito", sans-serif;
+
+.no-tap-highlight { -webkit-tap-highlight-color: transparent; user-select: none; }
+
+.nx-layout {
   position: relative;
-  width: 100%;
-  min-height: calc(100vh - 80px);
-  background-color: $nexo-bg;
-  color: #fff;
-  font-family: $mc-font;
-  display: flex;
-  justify-content: center;
+  min-height: 100vh;
+  background-color: #0b0e14;
+  color: #e2e8f0;
   padding: 40px 20px;
-  overflow-x: hidden;
 }
 
-.sc-ambient-bg {
+.nx-background-temple {
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at 20% 0%, rgba($nexo-purple, 0.1) 0%, transparent 50%),
-              radial-gradient(circle at 80% 100%, rgba($nexo-orange, 0.05) 0%, transparent 40%);
-  z-index: 0;
+  background: 
+    radial-gradient(circle at 50% 0%, rgba(59, 7, 100, 0.25) 0%, transparent 50%),
+    radial-gradient(circle at 50% 100%, rgba(17, 24, 39, 1) 0%, #0b0e14 100%);
   pointer-events: none;
-}
-
-.sc-nexo-container {
-  position: relative;
-  z-index: 1;
-  width: 100%;
-  max-width: 1200px;
-  display: grid;
-  grid-template-columns: 340px 1fr;
-  gap: 32px;
-  align-items: start;
-}
-
-/* --- SIDEBAR --- */
-.sc-sidebar {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.sc-back-btn {
-  background: $nexo-panel;
-  border: 4px solid #000;
-  box-shadow: inset -3px -3px 0 rgba(0,0,0,0.5), inset 3px 3px 0 rgba(255,255,255,0.05);
-  color: #94a3b8;
-  font-family: $mc-font;
-  font-size: 1rem;
-  padding: 12px 16px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  cursor: pointer;
-  transition: filter 0.1s, transform 0.1s;
-  
-  .txt { text-shadow: 2px 2px 0 #000; }
-  &:hover { filter: brightness(1.2); color: #fff; }
-  &:active { transform: translateY(2px); box-shadow: inset 3px 3px 0 rgba(0,0,0,0.5), inset -3px -3px 0 rgba(255,255,255,0.05); }
-}
-
-.sc-identity-card {
-  background: $nexo-panel;
-  border: 4px solid #000;
-  box-shadow: inset -4px -4px 0 rgba(0,0,0,0.4), inset 4px 4px 0 rgba(255,255,255,0.05);
-  display: flex;
-  flex-direction: column;
-}
-
-.sc-id-top {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 24px 20px;
-  border-bottom: 4px solid #000;
-  background: linear-gradient(135deg, rgba($nexo-purple-dark, 0.4) 0%, transparent 100%);
-}
-
-.sc-crystal-float {
-  animation: scFloat 4s ease-in-out infinite;
-  .flanite-img { filter: drop-shadow(0 8px 6px rgba(0,0,0,0.8)); }
-}
-
-.sc-brand-group {
-  display: flex;
-  flex-direction: column;
-  
-  .sc-brand-title {
-    margin: 0 0 4px;
-    font-size: 1.8rem;
-    color: #fff;
-    text-shadow: 3px 3px 0 #000;
-    letter-spacing: 1px;
-  }
-  
-  .sc-brand-user {
-    margin: 0;
-    color: #c084fc;
-    font-size: 0.9rem;
-    text-transform: uppercase;
-    text-shadow: 1px 1px 0 #000;
+  &::after {
+    content: ""; position: absolute; inset: 0;
+    background-image: url("https://www.transparenttextures.com/patterns/dark-matter.png");
+    opacity: 0.4;
   }
 }
 
-.sc-wallet-box {
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  background: #000;
+.nx-container { max-width: 1200px; margin: 0 auto; position: relative; z-index: 10; }
 
-  .sc-wallet-lbl {
-    color: #6b7280;
-    font-size: 0.8rem;
-    margin-bottom: 8px;
-    letter-spacing: 1px;
-  }
-  
-  .sc-wallet-val {
-    display: flex;
-    align-items: baseline;
-    gap: 8px;
-    
-    .num {
-      font-size: 2.8rem;
-      color: $nexo-orange;
-      text-shadow: 3px 3px 0 #000;
-    }
-    .iso {
-      font-size: 1.2rem;
-      color: #d8b4fe;
-    }
-  }
+.nx-top-bar {
+  display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px;
+  @media (max-width: 640px) { flex-direction: column-reverse; gap: 20px; }
 }
 
-.sc-menu {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-
-  .sc-menu-btn {
-    background: $nexo-panel;
-    border: 4px solid #000;
-    box-shadow: inset -3px -3px 0 rgba(0,0,0,0.5), inset 3px 3px 0 rgba(255,255,255,0.05);
-    color: #94a3b8;
-    font-family: $mc-font;
-    font-size: 1.1rem;
-    padding: 16px;
-    text-align: center;
-    cursor: pointer;
-    text-transform: uppercase;
-    text-shadow: 2px 2px 0 #000;
-    transition: filter 0.1s;
-
-    &:hover { filter: brightness(1.2); color: #fff; }
-    
-    &.is-active {
-      background: $nexo-purple-dark;
-      color: #fff;
-      border-color: $nexo-purple;
-      box-shadow: inset -4px -4px 0 rgba(0,0,0,0.5), inset 4px 4px 0 rgba(255,255,255,0.2);
-    }
-  }
+.nx-back-btn {
+  background: #1a1f29; border: 3px solid #000; color: #94a3b8; font-family: $mc-font; font-size: 0.9rem;
+  padding: 10px 20px; cursor: pointer; box-shadow: inset -3px -3px 0 #000; transition: all 0.2s;
+  &:hover { color: #fff; background: #232a38; transform: translateY(-2px); }
 }
 
-/* --- variables adicionales para el nuevo estilo --- */
-$card-bg: #1a1c23; // Un gris oscuro un poco más suave que el fondo panel
-$card-border-radius: 12px;
-$btn-grey: #374151; // Gris para el botón de precio
-
-/* --- MAIN PANEL --- */
-.sc-main-panel {
-  background: $nexo-panel;
-  border: 4px solid #000;
-  box-shadow: inset -4px -4px 0 rgba(0,0,0,0.4), inset 4px 4px 0 rgba(255,255,255,0.05), 0 20px 40px rgba(0,0,0,0.5);
-  min-height: 600px;
-  padding: 32px;
+.nx-balance-box {
+  display: flex; align-items: center; gap: 16px;
+  background: #11151d; border: 4px solid #000; padding: 6px 24px;
+  box-shadow: inset -4px -4px 0 #0a0c14, inset 4px 4px 0 #2a3143;
 }
 
-.sc-view-header {
-  margin-bottom: 32px;
-  border-bottom: 4px solid #000;
-  padding-bottom: 16px;
-
-  h2 {
-    margin: 0 0 8px;
-    font-size: 1.8rem;
-    color: #fff;
-    text-shadow: 3px 3px 0 #000;
-  }
-
-  p {
-    margin: 0;
-    color: #94a3b8;
-    font-size: 0.95rem;
-  }
-}
-
-/* Nueva Grid para las nuevas cards */
-.sc-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); // Cards ligeramente más estrechas
-  gap: 24px;
-}
-
-/* ========================================= */
-/* --- NUEVA TARJETA ESTILO SUPERCELL --- */
-/* ========================================= */
-
-.sc-new-card {
-  background: $card-bg;
-  border: 4px solid #000;
-  border-radius: $card-border-radius;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden; // Para que el header respete el border-radius
-  transition: transform 0.1s, box-shadow 0.1s;
-  position: relative;
-
-  // Sombra base suave
-  box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-
-  &:hover:not(.is-locked) {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 15px rgba($nexo-purple, 0.2);
-    border-color: $nexo-purple; // Mantenemos tu toque morado
-  }
-
-  &.is-locked {
-    filter: grayscale(0.9) brightness(0.7);
-    .sc-card-header { background: #2d3748; } // Header gris si está bloqueado
-  }
-}
-
-/* 1. Header de la Card */
-.sc-card-header {
-  background: #2a2d3a; // Gris oscuro plano
-  padding: 10px 14px;
-  border-bottom: 3px solid #000;
-  text-align: left;
-
-  .sc-item-name {
-    margin: 0;
-    font-size: 0.95rem; // Más pequeña, como la referencia
-    color: #fff;
-    text-transform: uppercase;
-    font-family: $mc-font;
-    letter-spacing: 0.5px;
-    // Quitamos text-shadow para un look más limpio arriba
-  }
-}
-
-/* 2. Body con el Icono Centrado */
-.sc-card-body {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 30px 20px;
-  position: relative;
-}
-
-.sc-item-visual-container {
-  width: 110px; // Más grande el contenedor del icono
-  height: 110px;
-  background: #252833; // Fondo del cuadrado un poco más claro
-  border: 3px solid #000;
-  border-radius: 8px;
-  display: grid;
-  place-items: center;
-  position: relative;
-  overflow: hidden;
-  box-shadow: inset 0 0 15px rgba(0,0,0,0.5);
-}
-
-// Degradado de fondo suave detrás del icono
-.sc-item-glow-bg {
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(circle at 50% 50%, rgba($nexo-purple, 0.15) 0%, transparent 70%);
-  z-index: 1;
-}
-
-.sc-item-icon {
-  font-size: 3.5rem; // Emoji grande
-  position: relative;
-  z-index: 2;
-  // drop-shadow para el icono
-  filter: drop-shadow(0 4px 4px rgba(0,0,0,0.5));
-}
-
-/* 3. Footer con el Botón de Precio */
-.sc-card-footer {
-  padding: 0 20px 20px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-}
-
-/* El nuevo botón rectangular gris de precio */
-.sc-btn-price-tag {
-  width: 100%;
-  max-width: 160px;
-  background: $btn-grey; // Gris plano
-  border: 3px solid #000;
-  border-radius: 6px; // Ligeramente redondeado
-  color: #fff;
-  font-family: $mc-font;
-  padding: 8px 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  cursor: pointer;
-  transition: background 0.1s, transform 0.05s;
-
-  // Sombra interior sutil
-  box-shadow: inset 0 -3px 0 rgba(0,0,0,0.3);
-
-  .price {
-    font-size: 1.1rem;
-    color: #e5e7eb; // Gris muy claro/blanco
-  }
-
-  .flanite-icon-btn {
-    // Aseguramos que el icono de Flanite se vea bien aquí
-    image-rendering: pixelated;
-  }
-
-  &:hover:not(:disabled) {
-    background: lighten($btn-grey, 5%);
-  }
-
-  &:active:not(:disabled) {
-    transform: translateY(1px);
-    box-shadow: inset 0 2px 0 rgba(0,0,0,0.3);
-  }
-  
-  &:disabled {
-    background: #1f2937;
-    border-color: #111;
-    color: #6b7280;
-    cursor: not-allowed;
-    box-shadow: none;
-    .flanite-icon-btn { filter: grayscale(1) opacity(0.5); }
-  }
-}
-
-// Textos de estado inferiores
-.sc-stock-txt {
-  font-size: 0.75rem;
-  color: #94a3b8;
-  font-weight: normal;
-}
-
-.sc-locked-txt-new {
-  font-size: 0.75rem;
-  color: #ef4444; // Rojo error
-  font-weight: bold;
-  text-transform: uppercase;
-}
-
-
-/* --- TABLA --- */
-.sc-table-wrap { overflow-x: auto; }
-.sc-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.95rem;
-
-  th {
-    text-align: left;
-    color: #94a3b8;
-    padding: 12px 16px;
-    border-bottom: 4px solid #000;
-    text-transform: uppercase;
-    background: #000;
-  }
-
-  td {
-    padding: 16px;
-    border-bottom: 2px solid #000;
-    color: #e2e8f0;
-    background: #151a24;
-  }
-
-  tr:hover td { background: #1a202c; }
-
-  .align-right { text-align: right; }
-  .sc-td-date { color: #94a3b8; }
-  .sc-td-concept { font-weight: bold; text-transform: uppercase; }
-  .is-income { color: #4ade80; text-shadow: 2px 2px 0 #000; font-size: 1.1rem; }
-  .is-expense { color: #f87171; text-shadow: 2px 2px 0 #000; font-size: 1.1rem; }
-}
-
-/* --- ESTADOS --- */
-.sc-state-box, .sc-empty-box {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 80px 20px;
-  color: #94a3b8;
-  text-align: center;
-  gap: 16px;
-  font-size: 1.2rem;
-}
-
-.sc-state-box.is-error { color: #ef4444; }
-
-.sc-btn-retry {
-  background: transparent;
-  border: 4px solid #374151;
-  color: #fff;
-  padding: 12px 24px;
-  font-family: $mc-font;
-  cursor: pointer;
+.nx-balance-label { font-size: 0.7rem; color: #94a3b8; font-family: $mc-font; }
+.nx-balance-amount {
+  display: flex; align-items: center; gap: 8px; font-family: $mc-font; font-size: 1.8rem; color: #f97316;
   text-shadow: 2px 2px 0 #000;
-  &:hover { border-color: #fff; }
+  .nx-balance-icon { width: 28px; height: 28px; image-rendering: pixelated; filter: drop-shadow(2px 2px 0 #000); }
 }
 
-.sc-spinner {
-  width: 48px;
-  height: 48px;
-  border: 6px solid #1f2937;
-  border-top-color: $nexo-orange;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
+.nx-hero { text-align: center; margin-bottom: 50px; }
+.nx-title { font-family: $mc-font; font-size: clamp(3rem, 5vw, 4.5rem); color: #d8b4fe; margin: 0; text-shadow: 4px 4px 0 #000; letter-spacing: 3px; }
+.nx-subtitle { color: #94a3b8; margin: 10px 0 0; font-size: 1.2rem; }
+
+.nx-board {
+  background: #11151d; border: 4px solid #000;
+  box-shadow: inset -4px -4px 0 #0a0c14, inset 4px 4px 0 #2a3143, 0 30px 60px rgba(0,0,0,0.6);
+  margin-bottom: 60px;
 }
 
-@keyframes scFloat {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-8px); }
+.nx-board-tabs {
+  display: flex; background: #090b10; border-bottom: 4px solid #000; overflow-x: auto;
+  &::-webkit-scrollbar { height: 4px; }
+  &::-webkit-scrollbar-thumb { background: #374151; }
 }
 
-@keyframes spin { to { transform: rotate(360deg); } }
+.nx-tab {
+  flex: 1; min-width: 150px; padding: 18px 20px; background: transparent; border: none; border-right: 4px solid #000;
+  color: #64748b; font-family: $mc-font; font-size: 1rem; cursor: pointer; transition: all 0.2s;
+  &:last-child { border-right: none; }
+  &:hover:not(.is-active) { background: #151921; color: #cbd5e1; }
+  &.is-active { background: #3b0764; color: #fff; box-shadow: inset 0 -4px 0 #d8b4fe; text-shadow: 2px 2px 0 #000; }
+}
 
-/* --- RESPONSIVE --- */
-@media (max-width: 980px) {
-  .sc-nexo-container {
-    grid-template-columns: 1fr;
+.nx-board-content {
+  padding: 40px;
+  @media (max-width: 768px) { padding: 24px; }
+}
+
+.nx-section-title { font-family: $mc-font; color: #f97316; margin: 0 0 30px; font-size: 1.6rem; text-shadow: 2px 2px 0 #000; text-align: center; }
+.nx-divider { height: 4px; background: #1f2937; margin: 50px 0; border-radius: 2px; }
+
+.nx-grid {
+  &.is-major {
+    display: flex; justify-content: center; gap: 32px; flex-wrap: wrap;
+    .nx-card { width: 100%; max-width: 380px; } 
   }
-  .sc-sidebar { gap: 12px; }
-  .sc-menu {
-    flex-direction: row;
-    .sc-menu-btn { flex: 1; padding: 12px; font-size: 1rem; }
+  &.is-minor {
+    display: grid; gap: 24px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   }
-  .sc-main-panel { padding: 20px; }
+}
+
+/* --- ESTILO CARTA RPG --- */
+.nx-card {
+  background: #151921; border: 4px solid #000; position: relative; overflow: hidden;
+  display: flex; flex-direction: column; cursor: pointer; transition: transform 0.2s;
+  box-shadow: inset -4px -4px 0 #0a0c14, inset 4px 4px 0 #2a3143, 0 10px 25px rgba(0,0,0,0.5);
+
+  &:hover:not(.is-owned) {
+    transform: translateY(-8px) scale(1.02);
+    
+    .nx-card-aura { 
+      opacity: 0.95; 
+      transform: scale(1.6); 
+      filter: blur(30px); 
+      animation: nxAuraPulse 2s ease-in-out infinite alternate;
+    }
+    
+    .nx-card-img { 
+      /* Activamos la levitación continua en la carta al pasar el ratón */
+      animation: nxHoverLevitate 2.5s ease-in-out infinite; 
+      filter: drop-shadow(0 25px 20px rgba(0,0,0,0.8)); 
+    }
+    
+    .nx-card-forge-btn { 
+      background: #f97316; 
+      filter: brightness(1.1); 
+      box-shadow: inset -3px -3px 0 rgba(0,0,0,0.2), 0 0 20px rgba(249, 115, 22, 0.4);
+    }
+  }
+
+  &.is-legendario { border-color: #7c3aed; .nx-card-aura { background: radial-gradient(circle, #7c3aed 0%, transparent 70%); } }
+  &.is-epico { border-color: #2563eb; .nx-card-aura { background: radial-gradient(circle, #2563eb 0%, transparent 70%); } }
+  &.is-raro { border-color: #059669; .nx-card-aura { background: radial-gradient(circle, #059669 0%, transparent 70%); } }
+  &.is-comun { border-color: #4b5563; .nx-card-aura { background: radial-gradient(circle, #4b5563 0%, transparent 70%); } }
+
+  &.is-owned {
+    filter: grayscale(0.7) brightness(0.6); cursor: default; box-shadow: none;
+    .nx-card-header { opacity: 0.5; }
+  }
+}
+
+.nx-card-header {
+  padding: 12px; text-align: center; background: rgba(0,0,0,0.4); border-bottom: 2px solid #000;
+  .nx-card-rarity-tag { font-size: 0.6rem; letter-spacing: 2px; color: #94a3b8; margin-bottom: 4px; font-family: $sans-font; font-weight: 800;}
+  .nx-card-name { font-family: $mc-font; font-size: 1.1rem; color: #fff; text-shadow: 1px 1px 0 #000; margin: 0; }
+  
+  .nx-card-efecto {
+    font-family: $sans-font; font-size: 0.7rem; font-weight: 900; color: #fbbf24;
+    background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.3);
+    padding: 3px 8px; border-radius: 4px; display: inline-block; margin-top: 8px;
+    text-transform: uppercase; letter-spacing: 0.5px; box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+  }
+}
+
+.nx-card-art {
+  height: 200px; position: relative; display: flex; align-items: center; justify-content: center;
+  background: #000; overflow: hidden;
+  
+  .nx-card-aura { 
+    position: absolute; width: 140px; height: 140px; border-radius: 50%; 
+    opacity: 0.45; filter: blur(35px); transition: all 0.5s ease; 
+  }
+  
+  .nx-card-img { 
+    height: 80%; width: 80%; object-fit: contain; position: relative; z-index: 2; 
+    transition: filter 0.3s ease;
+    filter: drop-shadow(0 10px 10px rgba(0,0,0,0.6));
+  }
+}
+
+.nx-card-price-container {
+  padding: 20px 10px 10px; display: flex; justify-content: center; margin-top: -30px; position: relative; z-index: 5;
+  .nx-card-price-pill {
+    background: #000; border: 2px solid #374151; padding: 6px 18px; border-radius: 20px;
+    display: flex; align-items: center; gap: 8px; font-family: $mc-font; color: #f97316; font-size: 1.2rem;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    .nx-mini-flt { width: 18px; height: 18px; image-rendering: pixelated; }
+    .nx-owned-text { color: #10b981; font-size: 0.9rem; }
+  }
+}
+
+.nx-card-footer {
+  padding: 10px 15px 15px;
+  .nx-card-forge-btn {
+    width: 100%; padding: 12px; background: #1f2937; border: 3px solid #000;
+    color: #fff; font-family: $mc-font; font-size: 1rem; cursor: pointer;
+    box-shadow: inset -3px -3px 0 rgba(0,0,0,0.3); transition: all 0.2s; text-shadow: 2px 2px 0 #000;
+    &:disabled { background: #064e3b; color: #34d399; cursor: default; text-shadow: none; box-shadow: none;}
+  }
+}
+
+.nx-card-owned-badge {
+  position: absolute; top: 12px; right: -25px; background: #059669; color: #fff;
+  font-family: $mc-font; font-size: 0.6rem; padding: 5px 30px; transform: rotate(45deg); z-index: 10; border: 2px solid #000;
+}
+
+.nx-historial-wrap {
+  max-width: 800px; margin: 0 auto;
+}
+
+.nx-historial-empty {
+  text-align: center; padding: 40px; color: #64748b; font-family: $mc-font; font-size: 1.2rem;
+}
+
+.nx-historial-list {
+  display: flex; flex-direction: column; gap: 16px;
+}
+
+.nx-historial-item {
+  display: flex; align-items: center; gap: 20px; background: #151921; border: 2px solid #1f2937;
+  padding: 16px 24px; transition: all 0.2s;
+  &:hover { border-color: #374151; transform: translateX(4px); }
+  @media (max-width: 640px) { flex-direction: column; text-align: center; }
+}
+
+.nx-historial-avatar {
+  width: 48px; height: 48px; border: 2px solid #000; background: #000;
+}
+
+.nx-historial-info {
+  flex: 1;
+}
+
+.nx-historial-action {
+  font-family: $sans-font; font-size: 1.1rem; color: #cbd5e1; margin-bottom: 4px;
+}
+
+.nx-historial-player {
+  font-family: $mc-font; color: #d8b4fe;
+}
+
+.nx-historial-artefact {
+  font-family: $mc-font; color: #f97316;
+}
+
+.nx-historial-date {
+  font-size: 0.85rem; color: #64748b; font-weight: bold;
+}
+
+.nx-historial-cost {
+  display: flex; align-items: center; gap: 8px; font-family: $mc-font; font-size: 1.3rem; color: #ef4444;
+  .nx-mini-flt { width: 20px; height: 20px; image-rendering: pixelated; filter: drop-shadow(1px 1px 0 #000); }
+}
+
+/* --- MODAL --- */
+.nx-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.9); backdrop-filter: blur(10px);
+  display: flex; align-items: center; justify-content: center; z-index: 100000;
+  animation: nxFadeIn 0.3s forwards;
+}
+
+.nx-modal {
+  background: #151921; border: 4px solid #000; width: 95%; max-width: 800px; position: relative;
+  box-shadow: 0 0 60px rgba(0,0,0,0.8); animation: nxPop 0.4s cubic-bezier(0.17, 0.88, 0.32, 1.28);
+  &.is-success { border-color: #10b981; box-shadow: 0 0 50px rgba(16, 185, 129, 0.2); max-width: 500px; }
+}
+
+.nx-close { position: absolute; top: 15px; right: 15px; background: none; border: none; color: #4b5563; font-size: 1.5rem; cursor: pointer; z-index: 20; &:hover { color: #fff; } }
+
+.nx-modal-content { display: flex; @media (max-width: 640px) { flex-direction: column; } }
+
+.nx-modal-left {
+  flex: 0 0 350px; padding: 40px; background: #000; border-right: 2px solid #1f2937;
+  display: flex; align-items: center; justify-content: center;
+  @media (max-width: 640px) { border-right: none; border-bottom: 2px solid #1f2937; }
+}
+
+.nx-item-showcase {
+  position: relative; width: 100%; aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+  
+  .nx-showcase-aura { 
+    position: absolute; width: 100%; height: 100%; border-radius: 50%; filter: blur(50px); opacity: 0.6; 
+    animation: nxAuraPulse 3s ease-in-out infinite alternate;
+  }
+  
+  .nx-showcase-img { 
+    width: 90%; height: 90%; object-fit: contain; position: relative; z-index: 2; 
+    filter: drop-shadow(0 15px 20px rgba(0,0,0,0.8));
+    /* Animación constante de levitación en el modal */
+    animation: nxModalLevitate 4s ease-in-out infinite; 
+  }
+  
+  &.is-legendario .nx-showcase-aura { background: #7c3aed; }
+  &.is-epico .nx-showcase-aura { background: #2563eb; }
+  &.is-raro .nx-showcase-aura { background: #059669; }
+
+  &.is-forging .nx-showcase-img { animation: nxVibrate 0.15s infinite; }
+}
+
+.nx-modal-right { flex: 1; padding: 45px 35px; display: flex; flex-direction: column; }
+.nx-modal-title { font-family: $mc-font; font-size: 2rem; margin: 0 0 5px; color: #fff; text-shadow: 2px 2px 0 #000;}
+.nx-modal-rarity { font-family: $sans-font; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px; font-weight: bold; margin-bottom: 20px; color: #94a3b8; }
+.nx-modal-lore { color: #cbd5e1; font-size: 1rem; line-height: 1.6; margin-bottom: 35px; flex: 1; }
+
+.nx-modal-efecto-badge {
+  font-family: $sans-font; font-size: 0.85rem; font-weight: 900; color: #fbbf24;
+  background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.3);
+  padding: 6px 12px; border-radius: 4px; display: inline-block; margin-bottom: 16px;
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+
+.nx-modal-cost-box {
+  background: #0b0e14; border: 2px solid #1f2937; padding: 20px; margin-bottom: 30px; transition: border-color 0.3s, background 0.3s;
+  &.is-success-box { border-color: #059669; background: rgba(5, 150, 105, 0.05); }
+}
+
+.nx-cost-row {
+  display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;
+  &:last-child { margin-bottom: 0; }
+  &.is-balance { border-top: 1px dashed #1f2937; padding-top: 12px; }
+}
+
+.nx-cost-label { font-size: 0.85rem; color: #94a3b8; text-transform: uppercase; font-family: $sans-font; }
+.nx-cost-value {
+  font-family: $mc-font; color: #fff; display: flex; align-items: center; gap: 8px; font-size: 1.4rem; text-shadow: 1px 1px 0 #000;
+  .nx-inline-flt { width: 20px; height: 20px; image-rendering: pixelated; }
+  &.is-draining { color: #f97316; animation: nxDrainText 0.1s infinite; }
+}
+
+.nx-modal-error {
+  color: #ef4444; font-family: $sans-font; font-size: 0.9rem; text-align: center; margin-bottom: 16px;
+  background: rgba(239, 68, 68, 0.1); padding: 8px; border: 1px solid #ef4444;
+}
+
+.nx-modal-success-view {
+  padding: 50px 30px; display: flex; flex-direction: column; align-items: center; text-align: center; animation: nxFadeIn 0.3s forwards;
+}
+
+.nx-success-title { font-family: $mc-font; font-size: 2.2rem; color: #10b981; margin: 0 0 30px 0; text-shadow: 2px 2px 0 #000; }
+
+.nx-success-art {
+  position: relative; width: 180px; height: 180px; margin: 0 auto 30px; display: flex; align-items: center; justify-content: center;
+  .nx-success-aura { position: absolute; width: 100%; height: 100%; border-radius: 50%; filter: blur(40px); opacity: 0.75; }
+  &.is-legendario .nx-success-aura { background: #7c3aed; }
+  &.is-epico .nx-success-aura { background: #2563eb; }
+  &.is-raro .nx-success-aura { background: #059669; }
+  &.is-comun .nx-success-aura { background: #4b5563; }
+  .nx-success-img { 
+    width: 100%; height: 100%; object-fit: contain; position: relative; z-index: 2; filter: drop-shadow(0 15px 20px rgba(0,0,0,0.8)); 
+    animation: nxPopArt 0.6s cubic-bezier(0.17, 0.88, 0.32, 1.28) forwards, nxModalLevitate 3s ease-in-out 0.6s infinite; 
+  }
+}
+
+.nx-success-text { font-family: $sans-font; font-size: 1.1rem; color: #cbd5e1; margin: 0 0 35px 0; line-height: 1.5; strong { color: #fff; } }
+
+.nx-btn-action {
+  width: 100%; padding: 18px; border: 4px solid #000; font-family: $mc-font; font-size: 1.2rem; cursor: pointer;
+  text-shadow: 2px 2px 0 #000; color: #fff; transition: all 0.1s;
+  &.is-forge { background: #f97316; box-shadow: inset -4px -4px 0 rgba(0,0,0,0.3), inset 4px 4px 0 rgba(255,255,255,0.3); &:hover:not(:disabled) { filter: brightness(1.2); transform: translateY(-2px);} &:disabled { background: #374151; color: #9ca3af; cursor: not-allowed; text-shadow: none; box-shadow: none; } }
+  &.is-forging { background: #d8b4fe; color: #3b0764; text-shadow: none; cursor: wait; animation: nxPulseBg 0.5s infinite alternate; }
+  &.is-continue { background: #10b981; box-shadow: inset -4px -4px 0 rgba(0,0,0,0.3), inset 4px 4px 0 rgba(255,255,255,0.3); &:hover { transform: translateY(-2px); filter: brightness(1.15);} }
+  &.is-owned-btn { background: #064e3b; color: #34d399; cursor: not-allowed; text-shadow: none; box-shadow: inset -4px -4px 0 #064e3b, inset 4px 4px 0 #059669; }
+}
+
+/* --- KEYFRAMES --- */
+@keyframes nxFadeIn { from { opacity: 0; backdrop-filter: blur(0px); } to { opacity: 1; backdrop-filter: blur(10px); } }
+@keyframes nxPop { from { opacity: 0; transform: scale(0.95) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+@keyframes nxVibrate { 0%, 100% { transform: translate(0, 0); } 25% { transform: translate(1px, 1px); } 50% { transform: translate(-1px, -1px); } 75% { transform: translate(1px, -1px); } }
+@keyframes nxPopArt { 0% { transform: scale(0.5); } 60% { transform: scale(1.1); } 100% { transform: scale(1); } }
+@keyframes nxDrainText { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); text-shadow: 0 0 10px #ef4444; } }
+@keyframes nxPulseBg { from { background-color: #d8b4fe; } to { background-color: #c084fc; } }
+
+/* Magia Visual: Levitación y Auras */
+@keyframes nxHoverLevitate { 
+  0%, 100% { transform: translateY(-10px) scale(1.12); } 
+  50% { transform: translateY(-22px) scale(1.12); } 
+}
+@keyframes nxModalLevitate { 
+  0%, 100% { transform: translateY(0) scale(1); } 
+  50% { transform: translateY(-15px) scale(1.03); } 
+}
+@keyframes nxAuraPulse {
+  0% { transform: scale(1.4); opacity: 0.6; }
+  100% { transform: scale(1.7); opacity: 1; }
 }

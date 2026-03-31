@@ -1,20 +1,16 @@
-"use strict";
-
 const db = require("../models/db");
 const flanpointsService = require("./flanpoints.service"); 
 
 exports.getCatalogo = (req, res) => {
   try {
-    const catalogo = flanpointsService.getCatalogo(); //
+    const catalogo = flanpointsService.getCatalogo();
     return res.status(200).json(catalogo);
   } catch (err) {
-    console.error("[NEXO] Error cargando catálogo:", err);
     return res.status(500).json({ error: "Error al cargar los artefactos del Nexo." });
   }
 };
 
 exports.getHistorial = async (req, res) => {
-  // Cambiamos 'req.usuario' por lo que devuelve tu verificaToken
   const uuid = req.usuario?.uuid;
   if (!uuid) return res.status(401).json({ error: "No autorizado." });
 
@@ -24,12 +20,11 @@ exports.getHistorial = async (req, res) => {
       .select("id, amount, motivo, meta, created_at")
       .eq("uuid_jugador", uuid)
       .order("created_at", { ascending: false })
-      .limit(50); //
+      .limit(50);
 
     if (error) throw error;
     return res.status(200).json(data || []);
   } catch (err) {
-    console.error("[NEXO] Error historial:", err);
     return res.status(500).json({ error: "Error al leer el Registro Akáshico." });
   }
 };
@@ -43,7 +38,6 @@ exports.canjearArtefacto = async (req, res) => {
   if (!itemId) return res.status(400).json({ error: "Artefacto no especificado." });
 
   try {
-    //
     await flanpointsService.canjearRecompensa(uuid, uid, "survival", itemId);
     
     const { data, error } = await db
@@ -55,14 +49,15 @@ exports.canjearArtefacto = async (req, res) => {
     if (error) throw error;
 
     return res.status(200).json({ 
-      message: "Artefacto forjado con éxito.",
-      nuevoSaldo: data?.flanpoints || 0
+      message: "Forja completada",
+      nuevoSaldo: data.flanpoints
     });
   } catch (err) {
-    console.error("[NEXO] Error al canjear:", err);
-    let msg = "El Nexo rechazó tu petición.";
+    let msg = "Error al forjar el artefacto.";
     if (err.message === "FLANPOINTS_INSUFICIENTES") msg = "No tienes suficiente Flanite.";
-    if (err.message === "RECOMPENSA_NO_EXISTE") msg = "Este artefacto no existe.";
+    if (err.message === "RECOMPENSA_NO_EXISTE") msg = "El artefacto no existe.";
+    if (err.message === "USUARIO_NO_ENCONTRADO") msg = "No se ha encontrado tu usuario.";
+    if (err.message === "YA_ADQUIRIDO") msg = "Ya posees este artefacto permanente.";
     
     return res.status(400).json({ error: msg });
   }

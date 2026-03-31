@@ -125,20 +125,6 @@ const getRelatedName = (item) => {
   ).trim();
 };
 
-const getRelatedAccountsText = (value, max = 5) => {
-  const items = parseRelatedAccounts(value)
-    .map(getRelatedName)
-    .filter(Boolean);
-
-  if (!items.length) return "Sin coincidencias visibles";
-
-  const preview = items.slice(0, max).join(", ");
-  const remaining = items.length - max;
-
-  if (remaining > 0) return `${preview} +${remaining}`;
-  return preview;
-};
-
 const getMultiEstadoKey = (value) => {
   const raw = normalizar(value);
   if (raw === "revisada" || raw === "revisado") return "revisado";
@@ -478,13 +464,72 @@ export default function TribunalAdminPanel() {
     return list;
   }, [sancionesConMeta, q, fSituacion, fMotivo, nowMs]);
 
+  // UNIFICACIÓN DE MULTICUENTAS (AGRUPAR POR IP_HASH)
+  const multicuentasUnificadas = useMemo(() => {
+    const map = new Map();
+    
+    for (const item of multicuentas) {
+      const hash = item.ip_hash;
+      if (!hash) {
+         map.set(item.id, { 
+             ...item, 
+             _all_accounts: new Set([getRelatedName(item.nombre_jugador), ...parseRelatedAccounts(item.related_accounts).map(getRelatedName).filter(Boolean)]) 
+         });
+         continue;
+      }
+
+      const related = parseRelatedAccounts(item.related_accounts).map(getRelatedName).filter(Boolean);
+      const allAccounts = [getRelatedName(item.nombre_jugador), ...related].filter(Boolean);
+
+      if (!map.has(hash)) {
+        map.set(hash, {
+          ...item,
+          _all_accounts: new Set(allAccounts)
+        });
+      } else {
+        const existing = map.get(hash);
+        allAccounts.forEach(acc => existing._all_accounts.add(acc));
+
+        const existingTs = parseTimestamp(existing.timestamp) || 0;
+        const currentTs = parseTimestamp(item.timestamp) || 0;
+        
+        // Mantener la alerta más reciente como representante de este clúster
+        if (currentTs > existingTs) {
+           existing.id = item.id;
+           existing.timestamp = item.timestamp;
+           existing.servidor = item.servidor;
+           existing.estado = item.estado;
+           existing.observacion = item.observacion;
+           existing.nombre_jugador = item.nombre_jugador;
+        } else if (currentTs === existingTs) {
+           if (item.estado !== 'pendiente' && existing.estado === 'pendiente') {
+              existing.estado = item.estado;
+              existing.observacion = item.observacion;
+           }
+        }
+      }
+    }
+
+    return Array.from(map.values()).map(group => {
+      const uniqueAccounts = Array.from(group._all_accounts);
+      const mainPlayerNorm = normalizar(group.nombre_jugador);
+      const related = uniqueAccounts.filter(acc => normalizar(acc) !== mainPlayerNorm);
+      
+      return {
+        ...group,
+        related_accounts: related,
+        related_count: related.length
+      };
+    });
+  }, [multicuentas]);
+
   const multicuentasStats = useMemo(() => {
-    const total = multicuentas.length;
+    const total = multicuentasUnificadas.length;
     let pendientes = 0;
     let revisadas = 0;
     let descartadas = 0;
 
-    for (const item of multicuentas) {
+    for (const item of multicuentasUnificadas) {
       const estado = getMultiEstadoKey(item.estado);
       if (estado === "pendiente") pendientes++;
       if (estado === "revisado") revisadas++;
@@ -492,19 +537,21 @@ export default function TribunalAdminPanel() {
     }
 
     return { total, pendientes, revisadas, descartadas };
-  }, [multicuentas]);
+  }, [multicuentasUnificadas]);
 
   const multicuentasFiltradas = useMemo(() => {
     const qq = normalizar(q);
     const estadoFiltro = normalizar(fMultiEstado);
 
-    const list = multicuentas.filter((item) => {
+    const list = multicuentasUnificadas.filter((item) => {
       const nombre = normalizar(item.nombre_jugador);
       const servidor = normalizar(item.servidor);
       const estado = getMultiEstadoKey(item.estado);
       const obs = normalizar(item.observacion);
-      const related = normalizar(getRelatedAccountsText(item.related_accounts, 50));
       const ipHash = normalizar(item.ip_hash);
+      
+      const relatedAccountsArray = parseRelatedAccounts(item.related_accounts).map(getRelatedName).filter(Boolean);
+      const relatedString = normalizar(relatedAccountsArray.join(" "));
 
       const matchQ =
         !qq ||
@@ -512,8 +559,8 @@ export default function TribunalAdminPanel() {
         servidor.includes(qq) ||
         estado.includes(qq) ||
         obs.includes(qq) ||
-        related.includes(qq) ||
-        ipHash.includes(qq);
+        ipHash.includes(qq) ||
+        relatedString.includes(qq);
 
       const matchEstado = estadoFiltro === "todos" ? true : estado === estadoFiltro;
 
@@ -522,7 +569,7 @@ export default function TribunalAdminPanel() {
 
     list.sort((a, b) => (parseTimestamp(b.timestamp) || 0) - (parseTimestamp(a.timestamp) || 0));
     return list;
-  }, [multicuentas, q, fMultiEstado]);
+  }, [multicuentasUnificadas, q, fMultiEstado]);
 
   const loadingActual = activeTab === "sanciones" ? loadingSanciones : loadingMulticuentas;
   const errorActual = activeTab === "sanciones" ? errorSanciones : errorMulticuentas;
@@ -573,7 +620,6 @@ export default function TribunalAdminPanel() {
             </div>
           </div>
 
-          {/* PESTAÑAS DE INVENTARIO */}
           <div className="folder-tabs">
             <button
               className={`folder-tab ${activeTab === "sanciones" ? "is-active" : ""}`}
@@ -591,7 +637,6 @@ export default function TribunalAdminPanel() {
             </button>
           </div>
 
-          {/* ÁREA DE TRABAJO PRINCIPAL (CONECTADA A LAS PESTAÑAS) */}
           <div className="tribAdmin__workspace mc-block">
             <header className="tribAdmin__header">
               <div className="tribAdmin__titleWrap">
@@ -606,7 +651,7 @@ export default function TribunalAdminPanel() {
                 <div className="tribAdmin__explain">
                   {activeTab === "sanciones"
                     ? "La sanción ya ha sido aplicada por el sistema. Aquí se revisa el registro."
-                    : "Aquí no se sanciona automáticamente. Se revisan coincidencias y se decide cómo proceder."}
+                    : "Las detecciones se unifican por IP. Aquí no se sanciona automáticamente, se revisan coincidencias y se decide cómo proceder."}
                 </div>
               </div>
 
@@ -675,7 +720,7 @@ export default function TribunalAdminPanel() {
                       <Funnel size={24} weight="bold" />
                       <div>
                         <div className="statChip__value">{multicuentasStats.total}</div>
-                        <div className="statChip__label">TOTAL</div>
+                        <div className="statChip__label">GRUPOS IP</div>
                       </div>
                     </div>
                   </>
@@ -994,10 +1039,8 @@ export default function TribunalAdminPanel() {
                   <table className="tribAdmin__table">
                     <thead>
                       <tr>
-                        <th className="colJugador">JUGADOR</th>
-                        <th>RELACIONADAS</th>
-                        <th>SERVIDOR</th>
-                        <th>FECHA</th>
+                        <th className="colJugador">ÚLTIMA DETECCIÓN</th>
+                        <th className="colColisiones">COLISIONES AGRUPADAS (IP)</th>
                         <th>ESTADO</th>
                         <th>NOTA INTERNA</th>
                         <th>ACCIÓN</th>
@@ -1007,7 +1050,7 @@ export default function TribunalAdminPanel() {
                     <tbody>
                       {multicuentasFiltradas.length === 0 ? (
                         <tr>
-                          <td colSpan={7} className="tribAdmin__empty">
+                          <td colSpan={5} className="tribAdmin__empty">
                             <div className="tribAdmin__emptyInner mc-element">
                               <Funnel size={32} weight="bold" />
                               <div>
@@ -1030,12 +1073,15 @@ export default function TribunalAdminPanel() {
                           const fechaMs = parseTimestamp(item.timestamp);
                           const fechaTexto = fechaMs ? new Date(fechaMs).toLocaleString("es-ES") : "-";
                           const estadoKey = getMultiEstadoKey(item.estado);
-                          const relatedText = getRelatedAccountsText(item.related_accounts);
-                          const ipHashShort = String(item.ip_hash || "").slice(0, 12);
+                          const ipHashShort = String(item.ip_hash || "").slice(0, 16);
+                          
+                          const relatedArray = parseRelatedAccounts(item.related_accounts)
+                            .map(getRelatedName)
+                            .filter(Boolean);
 
                           return (
                             <tr key={item.id} className={`row row--multi-${estadoKey} mc-element-tr`}>
-                              <td data-label="JUGADOR">
+                              <td data-label="ÚLTIMA DETECCIÓN">
                                 <Link to={`/perfil/${item.nombre_jugador}`} className="playerLink">
                                   <div className="playerCell">
                                     <div className="avatarFrame">
@@ -1050,29 +1096,37 @@ export default function TribunalAdminPanel() {
                                     <div className="playerMeta">
                                       <div className="playerName">{item.nombre_jugador}</div>
                                       <div className="playerSub">
-                                        Hash: <span className="muted">{ipHashShort}…</span>
+                                        <span className="badge badge--motivo badge--otros" style={{padding: '2px 4px', fontSize: '0.65rem'}}>
+                                          {(item.servidor || "N/A").toUpperCase()}
+                                        </span> • {fechaTexto}
                                       </div>
                                     </div>
                                   </div>
                                 </Link>
                               </td>
 
-                              <td data-label="RELACIONADAS">
-                                <div className="duration">
-                                  <div className="duration__main">{relatedText}</div>
-                                  <div className="duration__sub">
-                                    COINCIDENCIAS: {Number(item.related_count || 0)}
+                              <td data-label="COLISIONES AGRUPADAS (IP)">
+                                <div className="colisionCell">
+                                  <div className="colisionCell__header">
+                                    <span className="colisionCell__hash">Hash IP: {ipHashShort}…</span>
+                                    <span className="colisionCell__count">{relatedArray.length} RELACIONADAS</span>
+                                  </div>
+                                  <div className="colisionCell__tags">
+                                    {relatedArray.length === 0 ? (
+                                      <span className="muted">Sin coincidencias adicionales</span>
+                                    ) : (
+                                      <>
+                                        {relatedArray.slice(0, 6).map((relName, idx) => (
+                                          <Link key={idx} to={`/perfil/${relName}`} className="multi-tag">{relName}</Link>
+                                        ))}
+                                        {relatedArray.length > 6 && (
+                                          <span className="multi-tag multi-tag--more">+{relatedArray.length - 6} más</span>
+                                        )}
+                                      </>
+                                    )}
                                   </div>
                                 </div>
                               </td>
-
-                              <td data-label="SERVIDOR">
-                                <span className="badge badge--motivo badge--otros">
-                                  {(item.servidor || "desconocido").toString().toUpperCase()}
-                                </span>
-                              </td>
-
-                              <td data-label="FECHA">{fechaTexto}</td>
 
                               <td data-label="ESTADO">
                                 {isEditing ? (
@@ -1103,7 +1157,7 @@ export default function TribunalAdminPanel() {
                                     className="inlineTextarea mc-input"
                                     value={multiObservacion}
                                     onChange={(e) => setMultiObservacion(e.target.value)}
-                                    placeholder="Añade contexto interno sobre esta coincidencia…"
+                                    placeholder="Añade contexto sobre este grupo de multicuentas…"
                                   />
                                 ) : (
                                   <div className={`obs ${item.observacion ? "" : "obs--empty"}`}>
@@ -1144,7 +1198,7 @@ export default function TribunalAdminPanel() {
                                       disabled={isBusy}
                                     >
                                       <NotePencil size={18} weight="bold" />
-                                      REVISAR
+                                      REVISAR GRUPO
                                     </button>
                                   </div>
                                 )}
@@ -1161,13 +1215,13 @@ export default function TribunalAdminPanel() {
             
             <div className="tribAdmin__foot mc-element">
               <div className="tribAdmin__footLeft">
-                MOSTRANDO <strong style={{color: '#fbbf24'}}>{activeTab === "sanciones" ? sancionesFiltradas.length : multicuentasFiltradas.length}</strong> DE <strong style={{color: '#fbbf24'}}>{activeTab === "sanciones" ? sanciones.length : multicuentas.length}</strong>
+                MOSTRANDO <strong style={{color: '#fbbf24'}}>{activeTab === "sanciones" ? sancionesFiltradas.length : multicuentasFiltradas.length}</strong> DE <strong style={{color: '#fbbf24'}}>{activeTab === "sanciones" ? sanciones.length : multicuentasUnificadas.length}</strong>
               </div>
               <div className="tribAdmin__footRight">
                 <span className="hint">
                   {activeTab === "sanciones"
                     ? "Uso recomendado: corregir motivo, añadir nota interna o borrar registros erróneos."
-                    : "Uso recomendado: revisar coincidencias, añadir contexto y marcar como revisada o descartada."}
+                    : "Uso recomendado: revisar coincidencias de IP, añadir contexto y marcar el grupo entero como revisado o descartado."}
                 </span>
               </div>
             </div>

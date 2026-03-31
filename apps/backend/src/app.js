@@ -97,7 +97,7 @@ app.use("/api/estadisticas-logros", logrosEstadisticasRoutes);
 app.use("/api/misiones", misionesRoutes);
 app.use("/api/web-logros", webLogrosRoutes);
 app.use("/api/monedas", monedasRoutes);
-app.use("/api/flanpoints", flanpointsRoutes);
+app.use("/api/nexo", flanpointsRoutes);
 app.use("/api/sanciones", sancionesRoutes);
 app.use("/api/multicuentas", multicuentasRoutes);
 app.use("/api/permisos-admin", permisosAdminRoutes);
