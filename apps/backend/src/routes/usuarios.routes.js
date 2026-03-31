@@ -44,6 +44,7 @@ router.patch("/premium", ...requireRole("admin"), controller.actualizarPremiumUs
 
 router.post("/rango/sync", requirePluginSyncAuth, controller.syncRangoDesdePlugin);
 router.post("/rango/comprado", ...requireRole("admin"), controller.registrarCompraRango);
+router.post("/check-online", controller.comprobarVinculadosOnline);
 
 router.get("/:uuid/skin", controller.obtenerSkinUsuario);
 router.get("/:uuid/xp", controller.obtenerXPUsuario);

@@ -478,3 +478,26 @@ exports.syncRangoDesdePlugin = exports.registrarCompraRango;
 exports.obtenerRangosExpirados = async (req, res) => {
   return res.status(200).json([]);
 };
+
+exports.comprobarVinculadosOnline = async (req, res) => {
+  const uuids = req.body;
+  
+  if (!Array.isArray(uuids) || uuids.length === 0) {
+    return res.json([]);
+  }
+
+  try {
+    const { data, error } = await db
+      .from("usuarios")
+      .select("uuid")
+      .in("uuid", uuids);
+
+    if (error) {
+      return res.status(500).json({ error: "Error BD" });
+    }
+
+    return res.status(200).json(data.map(u => u.uuid));
+  } catch (err) {
+    return res.status(500).json({ error: "Error BD" });
+  }
+};
