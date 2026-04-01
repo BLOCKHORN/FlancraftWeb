@@ -10,7 +10,7 @@ import ScrollToTop from "./components/ScrollToTop";
 import GlobalLoader from "./components/ui/GlobalLoader";
 
 // Bandera de control para El Nexo
-const ENABLE_NEXO = false; 
+const ENABLE_NEXO = true; 
 
 const Home = lazy(() => import("./components/Landpage/Home"));
 const VincularPage = lazy(() => import("./components/Auth/VincularPage"));

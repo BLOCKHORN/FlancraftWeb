@@ -181,7 +181,7 @@ const fetchAllLeaderboardRows = async ({ tipo, ascending }) => {
   if (spec) {
     const { data, count, error } = await db
       .from(spec.view)
-      .select(SURVIVAL_STATS_VIEW_SELECT, { count: "exact" })
+      .select("*", { count: "exact" })
       .eq("servidor", SURVIVAL_SERVER)
       .order(spec.order, { ascending })
       .range(0, MAX_LIMIT - 1);
@@ -198,7 +198,7 @@ const fetchAllLeaderboardRows = async ({ tipo, ascending }) => {
 
   const { data, count, error } = await db
     .from("vista_estadisticas_agrupadas_wallet")
-    .select(SURVIVAL_STATS_VIEW_SELECT, { count: "exact" })
+    .select("*", { count: "exact" })
     .eq("servidor", SURVIVAL_SERVER)
     .order(tipo, { ascending })
     .range(0, MAX_LIMIT - 1);
@@ -237,6 +237,7 @@ exports.importarStat = async (req, res) => {
   );
 
   if (error) {
+    console.error("[FlanSync] Error al importar stat:", error.message);
     return res.status(500).json({ error: "Error al guardar en la base de datos." });
   }
 
@@ -308,6 +309,7 @@ exports.importarStatsAgrupadas = async (req, res) => {
     .maybeSingle();
 
   if (findErr) {
+    console.error("[FlanSync] Error buscando stats existentes:", findErr.message);
     return res.status(500).json({ error: "Error al comprobar estadísticas existentes." });
   }
 
@@ -324,6 +326,7 @@ exports.importarStatsAgrupadas = async (req, res) => {
       .eq("servidor", server);
 
     if (updErr) {
+      console.error("[FlanSync] Error al actualizar stats:", updErr.message);
       return res.status(500).json({ error: "Error al actualizar estadísticas." });
     }
 
@@ -349,6 +352,7 @@ exports.importarStatsAgrupadas = async (req, res) => {
   const { error: insErr } = await db.from("estadisticas_agrupadas").insert([insertPayload]);
 
   if (insErr) {
+    console.error("[FlanSync] Error al insertar stats:", insErr.message);
     return res.status(500).json({ error: "Error al insertar estadísticas." });
   }
 
@@ -372,7 +376,7 @@ exports.obtenerRankingEstadisticas = async (req, res) => {
 
   let query = db
     .from("vista_ranking_estadisticas")
-    .select(SURVIVAL_STATS_VIEW_SELECT, { count: "exact" })
+    .select("*", { count: "exact" })
     .eq("servidor", SURVIVAL_SERVER);
 
   if (tipo) {
@@ -384,6 +388,7 @@ exports.obtenerRankingEstadisticas = async (req, res) => {
   const { data, count, error } = await query;
 
   if (error) {
+    console.error("[FlanSync] Error al obtener ranking (vista):", error.message);
     return res.status(500).json({ error: "Error al obtener ranking." });
   }
 
@@ -426,7 +431,9 @@ exports.obtenerLeaderboards = async (req, res) => {
       servidor: SURVIVAL_SERVER,
       tipo,
       rows: rankedRows,
-    }).catch((error) => {});
+    }).catch((error) => {
+      console.error("[FlanSync] Error guardando snapshot leaderboard:", error.message);
+    });
 
     const paged = enrichedRows.slice(offset, offset + limit);
 
@@ -435,6 +442,7 @@ exports.obtenerLeaderboards = async (req, res) => {
       resultados: paged,
     });
   } catch (error) {
+    console.error("[FlanSync] Error al obtener leaderboard:", error.message);
     return res.status(500).json({ error: "Error al obtener datos." });
   }
 };
@@ -458,6 +466,7 @@ exports.obtenerPerfilJugador = async (req, res) => {
     .eq("servidor", SURVIVAL_SERVER);
 
   if (error) {
+    console.error("[FlanSync] Error al obtener perfil de jugador:", error.message);
     return res.status(500).json({ error: "Error al obtener perfil de estadísticas." });
   }
 
