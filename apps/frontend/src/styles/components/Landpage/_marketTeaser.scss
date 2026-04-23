@@ -139,10 +139,23 @@
 
 @media (max-width: 768px) {
   .mc-market-teaser-widget {
-    bottom: auto;
-    top: 80px;
-    right: 15px;
-    transform: scale(0.85);
-    transform-origin: top right;
+    /* Reseteamos el anclaje superior/derecho */
+    top: auto;
+    right: auto;
+    
+    /* Lo centramos horizontalmente */
+    left: 50%;
+    transform: translateX(-50%) scale(0.85);
+    transform-origin: center bottom;
+    
+    /* Lo subimos un poco para que no pise los botones del panel verde de "ÚNETE AHORA" */
+    bottom: 120px; 
+    
+    /* Aseguramos que no rompa el ancho en pantallas muy pequeñas */
+    width: 90%;
+    max-width: 320px;
+    
+    /* Elevamos el z-index por si acaso choca con el panel inferior */
+    z-index: 100;
   }
 }
