@@ -8,7 +8,10 @@ import { apiUrl } from "../../lib/env";
 import { getAuthToken, clearSessionStorage } from "../../lib/auth/storage";
 import "../../styles/components/Navbar/navbar.scss";
 
-const NAV_ITEMS = [
+const TARGET_DATE = new Date("2026-04-27T18:00:00+02:00").getTime();
+
+// Quitamos Mercado de la lista base, se insertará dinámicamente si es la hora.
+const BASE_NAV_ITEMS = [
   { key: "home", to: "/", label: "Inicio" },
   { key: "news", to: "/news", label: "Noticias" },
   { key: "leaderboards", to: "/leaderboards", label: "Rankings" },
@@ -79,6 +82,9 @@ const Navbar = ({ onLoginClick }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [profileOpen, _setProfileOpen] = useState(false);
+  
+  // Control de visibilidad del botón de mercado
+  const [isMarketOpen, setIsMarketOpen] = useState(Date.now() >= TARGET_DATE);
 
   const setProfileOpen = useCallback((value) => {
     if (typeof value === "function") _setProfileOpen((prev) => value(prev));
@@ -119,6 +125,14 @@ const Navbar = ({ onLoginClick }) => {
       window.removeEventListener("resize", apply);
       if (ro) ro.disconnect();
     };
+  }, []);
+
+  // Intervalo que revisa constantemente si ya es hora de abrir la bolsa
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setIsMarketOpen(Date.now() >= TARGET_DATE);
+    }, 1000);
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -253,17 +267,30 @@ const Navbar = ({ onLoginClick }) => {
     setActiveDropdown((prev) => (prev === key ? null : key));
   }, []);
 
+  // Construcción dinámica de la lista de navegación
+  const navItems = useMemo(() => {
+    if (isMarketOpen) {
+      // Inyecta el botón Mercado entre Rankings y Tienda (posición 3)
+      return [
+        ...BASE_NAV_ITEMS.slice(0, 3),
+        { key: "bolsa", to: "/bolsa", label: "Mercado" },
+        ...BASE_NAV_ITEMS.slice(3)
+      ];
+    }
+    return BASE_NAV_ITEMS;
+  }, [isMarketOpen]);
+
   const avatarHeadUrlSm = useMemo(() => buildAvatarHeadUrl(userData?.uuid, userData?.username, 28), [userData?.uuid, userData?.username]);
   const avatarHeadUrlLg = useMemo(() => buildAvatarHeadUrl(userData?.uuid, userData?.username, 64), [userData?.uuid, userData?.username]);
 
   const sharedProps = useMemo(() => ({
     menuOpen, setMenuOpen, activeDropdown, setActiveDropdown, profileOpen, setProfileOpen,
     isLoggedIn, isUserLoading: userLoading && baseLoggedIn, userData, avatarHeadUrlSm, avatarHeadUrlLg,
-    onLoginClick, navItems: NAV_ITEMS, handleDropdownHover, handleDropdownLeave,
+    onLoginClick, navItems, handleDropdownHover, handleDropdownLeave,
     handleProfileEnter, handleProfileLeave, toggleDropdown, saleNav,
   }), [
     menuOpen, activeDropdown, profileOpen, setProfileOpen, isLoggedIn, userLoading, baseLoggedIn,
-    userData, avatarHeadUrlSm, avatarHeadUrlLg, onLoginClick, handleDropdownHover, handleDropdownLeave,
+    userData, avatarHeadUrlSm, avatarHeadUrlLg, onLoginClick, navItems, handleDropdownHover, handleDropdownLeave,
     handleProfileEnter, handleProfileLeave, toggleDropdown, saleNav,
   ]);
 

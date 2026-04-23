@@ -1,5 +1,5 @@
 import React, { Suspense, lazy, useEffect, useState } from "react";
-import { Routes, Route, useLocation, Navigate } from "react-router-dom"; // Añadido Navigate
+import { Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import Navbar from "./components/Navbar/Navbar";
 import ProtectedRoute from "./components/Routing/ProtectedRoute";
@@ -11,6 +11,9 @@ import GlobalLoader from "./components/ui/GlobalLoader";
 
 // Bandera de control para El Nexo
 const ENABLE_NEXO = true; 
+
+// Fecha exacta de apertura del mercado
+const TARGET_DATE = new Date("2026-04-27T18:00:00+02:00").getTime();
 
 const Home = lazy(() => import("./components/Landpage/Home"));
 const VincularPage = lazy(() => import("./components/Auth/VincularPage"));
@@ -29,6 +32,8 @@ const EditarNoticia = lazy(() => import("./components/Noticias/EditarNoticia"));
 const TiendaLayout = lazy(() => import("@/components/Tienda/ui/TiendaLayout"));
 const VotoPage = lazy(() => import("./components/Voto/VotoPage"));
 const ServerMinecraftLanding = lazy(() => import("./components/Landpage/ServerMinecraftLanding"));
+const BolsaLayout = lazy(() => import("./components/Bolsa/BolsaLayout")); 
+const BlockStreetGuide = lazy(() => import("./components/Bolsa/BlockStreetGuide"));
 
 function RouteEffects() {
   const location = useLocation();
@@ -51,6 +56,17 @@ const App = () => {
   const [showSplash, setShowSplash] = useState(true);
   const [isRevealed, setIsRevealed] = useState(false);
   const [heroIsLoaded, setHeroIsLoaded] = useState(false);
+  
+  // Estado para bloquear la ruta del mercado hasta la fecha indicada
+  const [isMarketOpen, setIsMarketOpen] = useState(Date.now() >= TARGET_DATE);
+
+  useEffect(() => {
+    // Reevaluamos constantemente si el mercado se ha abierto
+    const interval = setInterval(() => {
+      setIsMarketOpen(Date.now() >= TARGET_DATE);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     if (location.pathname !== "/") {
@@ -82,7 +98,19 @@ const App = () => {
 
       <div className={`app-reveal-wrapper ${isRevealed ? 'is-revealed' : ''}`}>
         <Navbar onLoginClick={openAuthModal} />
-        <Toaster position="top-center" reverseOrder={false} />
+        
+        <Toaster 
+          position="bottom-right" 
+          reverseOrder={false}
+          toastOptions={{
+            className: '',
+            style: {
+              background: '#1a1c23',
+              color: '#fff',
+              border: '1px solid #333'
+            },
+          }} 
+        />
 
         <Suspense fallback={<GlobalLoader />}>
           <Routes>
@@ -98,6 +126,20 @@ const App = () => {
             <Route path="/voto" element={<VotoPage />} />
             <Route path="/vote" element={<VotoPage />} />
             <Route path="/servidor-minecraft-espanol" element={<ServerMinecraftLanding />} />
+            
+            {/* Control estricto de rutas del mercado */}
+            {isMarketOpen ? (
+              <>
+                <Route path="/bolsa" element={<BolsaLayout />} />
+                <Route path="/bolsa/guia" element={<BlockStreetGuide />} />
+              </>
+            ) : (
+              <>
+                {/* Si intentan forzar URL antes de tiempo, los echamos al inicio */}
+                <Route path="/bolsa" element={<Navigate to="/" replace />} />
+                <Route path="/bolsa/guia" element={<Navigate to="/" replace />} />
+              </>
+            )}
             
             <Route
               path="/dashboard"

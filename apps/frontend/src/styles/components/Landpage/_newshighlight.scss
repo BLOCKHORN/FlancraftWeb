@@ -15,10 +15,12 @@ $sans-font: "Montserrat", system-ui, sans-serif;
   background-color: #05060a; 
   position: relative;
   isolation: isolate;
-  z-index: 10; 
+  
+  /* CRÍTICO: Solapa el borde y se dibuja por encima de Block Street (z-index 16 > 15) */
   margin-top: -4px; 
   border-top: 4px solid #000;
   border-bottom: 4px solid #000;
+  z-index: 16; 
 
   .news-inner {
     max-width: 1180px;
@@ -44,7 +46,7 @@ $sans-font: "Montserrat", system-ui, sans-serif;
 
 .news-transition-container {
   position: absolute;
-  top: -4px; 
+  top: -4px; /* CRÍTICO: Se sitúa exactamente encima del borde para ocultarlo */
   left: 0;
   width: 100%;
   height: 0;
@@ -55,26 +57,21 @@ $sans-font: "Montserrat", system-ui, sans-serif;
 
 .news-transition-cube {
   position: absolute;
-  background-color: #151923; 
+  /* CRÍTICO: Fondo y cuadrícula idénticos a Block Street */
+  background-color: #06080a; 
+  background-image: 
+    linear-gradient(rgba(0, 230, 118, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 230, 118, 0.05) 1px, transparent 1px);
+  background-size: 30px 30px;
   border: 4px solid #000;
-  border-top: none; 
+  border-top: none; /* CRÍTICO: Borra su propio borde superior */
   top: 0; 
-  box-shadow: inset 0 -4px 0px rgba(0,0,0,0.4);
 
-  &.tc-1 { left: 5%; width: 220px; height: 100px; z-index: 2; }
-  &.tc-2 { left: calc(5% + 220px - 4px); width: 130px; height: 48px; border-left: none; z-index: 3; box-shadow: inset 4px -4px 0px rgba(0,0,0,0.4); }
-  &.tc-3 { left: 48%; width: 110px; height: 64px; z-index: 2; }
-  &.tc-4 { right: 8%; width: 180px; height: 120px; z-index: 2; }
-  &.tc-5 { right: calc(8% + 180px - 4px); width: 100px; height: 72px; border-right: none; z-index: 3; box-shadow: inset -4px -4px 0px rgba(0,0,0,0.4); }
-
-  &::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background-image: linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
-    background-size: 32px 32px, 32px 32px;
-    opacity: 0.5;
-  }
+  &.tc-1 { left: 5%; width: 220px; height: 100px; z-index: 2; box-shadow: inset 0 -4px 0px rgba(0, 230, 118, 0.2); }
+  &.tc-2 { left: calc(5% + 220px - 4px); width: 130px; height: 48px; border-left: none; z-index: 3; box-shadow: inset 4px -4px 0px rgba(0, 230, 118, 0.2); }
+  &.tc-3 { left: 48%; width: 110px; height: 64px; z-index: 2; box-shadow: inset 0 -4px 0px rgba(0, 230, 118, 0.2); }
+  &.tc-4 { right: 8%; width: 180px; height: 120px; z-index: 2; box-shadow: inset 0 -4px 0px rgba(0, 230, 118, 0.2); }
+  &.tc-5 { right: calc(8% + 180px - 4px); width: 100px; height: 72px; border-right: none; z-index: 3; box-shadow: inset -4px -4px 0px rgba(0, 230, 118, 0.2); }
 
   @media (max-width: 1024px) {
     &.tc-1 { width: 140px; height: 80px; }

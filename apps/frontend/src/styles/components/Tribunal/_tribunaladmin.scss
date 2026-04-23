@@ -46,10 +46,6 @@ $mc-font: "MinecraftSeven", "Montserrat", system-ui, sans-serif;
   user-select: none;
 }
 
-/* =========================================================
-   TRIBUNAL ADMIN PANEL — Estilo Bloque Minecraft
-   ========================================================= */
-
 .tribAdmin {
   width: 100%;
   color: #fff;
@@ -120,7 +116,6 @@ $mc-font: "MinecraftSeven", "Montserrat", system-ui, sans-serif;
   margin-bottom: 16px;
 }
 
-/* TOPBAR */
 .tribAdmin__topbar {
   display: flex;
   align-items: center;
@@ -155,7 +150,6 @@ $mc-font: "MinecraftSeven", "Montserrat", system-ui, sans-serif;
   &--srmod, &--mod { color: #d946ef; }
 }
 
-/* PESTAÑAS (TIPO ARCHIVADOR/INVENTARIO) */
 .folder-tabs {
   display: flex;
   gap: 8px;
@@ -194,14 +188,17 @@ $mc-font: "MinecraftSeven", "Montserrat", system-ui, sans-serif;
   }
 }
 
-/* ÁREA DE TRABAJO PRINCIPAL */
 .tribAdmin__workspace {
   position: relative;
   z-index: 5;
   border-top-left-radius: 0;
 }
 
-/* CABECERA (Stats y Título) */
+.workspace--market {
+  border-color: #00E676 !important;
+  box-shadow: inset -4px -4px 0 #0a0c14, inset 4px 4px 0 #2a3143, 0 15px 40px rgba(0, 230, 118, 0.1) !important;
+}
+
 .tribAdmin__header {
   display: flex;
   flex-direction: column;
@@ -269,7 +266,6 @@ $mc-font: "MinecraftSeven", "Montserrat", system-ui, sans-serif;
   svg { filter: drop-shadow(2px 2px 0 rgba(0,0,0,0.5)); }
 }
 
-/* Colores para chips */
 .statChip--pending svg { color: #fbbf24; }
 .statChip--reviewed svg { color: #5EE034; }
 .statChip--banned svg { color: #ef4444; }
@@ -290,7 +286,6 @@ $mc-font: "MinecraftSeven", "Montserrat", system-ui, sans-serif;
   color: #94a3b8;
 }
 
-/* CONTROLES (Buscador y Filtros) */
 .tribAdmin__controls {
   display: flex;
   flex-direction: column;
@@ -357,7 +352,6 @@ $mc-font: "MinecraftSeven", "Montserrat", system-ui, sans-serif;
   color: #94a3b8;
 }
 
-/* ELEMENTOS GENERALES (Botones, Inputs, Bloques) */
 .mc-block {
   background-color: #1a1e29;
   @include mc-block-shadow;
@@ -414,7 +408,6 @@ textarea.mc-input {
 .spin { animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* ALERTAS Y MENSAJES */
 .tribAdmin__notice, .tribAdmin__error {
   display: flex;
   align-items: center;
@@ -432,7 +425,6 @@ textarea.mc-input {
 .tribAdmin__errorHint { font-size: 0.8rem; color: #94a3b8; }
 .mono { font-family: monospace; background: #000; padding: 2px 6px; border: 1px solid #333; }
 
-/* TABLA ESTILO BLOQUE */
 .tribAdmin__tableWrap {
   width: 100%;
   overflow-x: auto;
@@ -456,7 +448,6 @@ textarea.mc-input {
   text-transform: uppercase;
 }
 
-/* Fila base de la tabla como un bloque */
 .mc-element-tr {
   background-color: #1a1e29;
   @include mc-element-shadow;
@@ -473,17 +464,15 @@ textarea.mc-input {
   }
 }
 
-/* Estados de fila SANCIONES */
+/* COLORES FILAS TABLAS ORIGINALES */
 .row--activa { border-color: #38bdf8; background-color: #0c4a6e; }
 .row--perma { border-color: #ef4444; background-color: #7f1d1d; }
 .row--finalizada { opacity: 0.8; }
 
-/* Estados de fila MULTICUENTAS */
 .row--multi-pendiente { border-color: #fbbf24; background-color: #78350f; }
 .row--multi-revisado { border-color: #5EE034; background-color: #064e3b; opacity: 0.9; }
 .row--multi-descartado { border-color: #64748b; background-color: #0f172a; opacity: 0.6; filter: grayscale(0.8); }
 
-/* CELDAS ESPECÍFICAS */
 .playerLink { text-decoration: none; color: inherit; }
 .playerCell { display: flex; align-items: center; gap: 12px; }
 .avatarFrame {
@@ -497,7 +486,6 @@ textarea.mc-input {
 .moderatorCell__name { font-family: $mc-font; font-size: 0.9rem; color: #fff; text-shadow: 1px 1px 0 #000; }
 .moderatorCell__date { font-size: 0.75rem; color: #94a3b8; margin-top: 4px; font-weight: bold; }
 
-/* Colisiones (Multicuentas) */
 .colisionCell {
   display: flex;
   flex-direction: column;
@@ -547,7 +535,6 @@ textarea.mc-input {
   }
 }
 
-/* Motivo y Estado Badges */
 .badge {
   display: inline-flex;
   align-items: center;
@@ -563,7 +550,6 @@ textarea.mc-input {
   white-space: nowrap;
 }
 
-/* Colores Sanciones */
 .badge--motivo { background-color: #1e202f; border-color: #94a3b8; }
 .badge--hacks, .badge--grif, .badge--tpakill { border-color: #ef4444; color: #ef4444; }
 .badge--insultos, .badge--spam, .badge--flood { border-color: #fbbf24; color: #fbbf24; }
@@ -572,7 +558,6 @@ textarea.mc-input {
 .badge--estado.badge--perma { background-color: #7f1d1d; border-color: #ef4444; color: #fca5a5; }
 .badge--estado.badge--finalizada { background-color: #064e3b; border-color: #10b981; color: #a7f3d0; }
 
-/* Colores Multicuentas */
 .badge--estado.badge--multi-pendiente { background-color: #b45309; border-color: #fbbf24; color: #fde68a; }
 .badge--estado.badge--multi-revisado { background-color: #064e3b; border-color: #10b981; color: #a7f3d0; }
 .badge--estado.badge--multi-descartado { background-color: #334155; border-color: #94a3b8; color: #cbd5e1; }
@@ -609,7 +594,6 @@ textarea.mc-input {
 .inlineSelect { min-width: 140px; height: 36px; font-size: 0.85rem; padding: 0 8px;}
 .inlineTextarea { width: 100%; min-width: 200px; }
 
-/* FOOTER */
 .tribAdmin__foot {
   display: flex;
   flex-wrap: wrap;
@@ -632,7 +616,6 @@ textarea.mc-input {
   font-weight: bold;
 }
 
-/* EMPTY STATE */
 .tribAdmin__emptyInner {
   display: flex;
   flex-direction: column;
@@ -656,7 +639,83 @@ textarea.mc-input {
   font-weight: bold;
 }
 
-/* RESPONSIVE */
+
+/* =================================================================*********
+   R A D A R   D E   M E R C A D O
+==================================================================********* */
+
+.market-intelligence-grid {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 30px;
+  align-items: start;
+
+  @media (max-width: 1150px) { grid-template-columns: 1fr; }
+}
+
+.market-section {
+  display: flex; flex-direction: column; gap: 20px;
+  
+  .market-header {
+    display: flex; align-items: center; gap: 16px;
+    h3 { font-family: $mc-font; font-size: 1.4rem; margin: 0; text-shadow: 2px 2px 0 #000; }
+    p { margin: 4px 0 0; font-size: 0.85rem; color: #94a3b8; font-weight: 600; }
+  }
+}
+
+.mc-table-responsive { width: 100%; overflow-x: auto; }
+
+.candidate-row {
+  background: #11151d;
+  @include mc-element-shadow;
+  
+  td { padding: 16px; vertical-align: middle; }
+  .font-bold { font-weight: 800; color: #fff; font-size: 1.05rem; }
+  .muted-text { color: #94a3b8; font-weight: 600; font-size: 0.9rem; }
+  .profit-text { color: #5EE034; font-weight: 800; font-family: $mc-font; font-size: 1rem; }
+}
+
+.whales-stack { display: flex; flex-direction: column; gap: 12px; }
+.whale-card {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 16px; border-left: 4px solid #00E676;
+  
+  .whale-main {
+    display: flex; align-items: center; gap: 16px;
+    .whale-avatar { width: 40px; height: 40px; border: 2px solid #000; background: #000; }
+    .whale-meta {
+      display: flex; flex-direction: column;
+      .whale-name { font-family: $mc-font; color: #fff; font-size: 1.1rem; }
+      .whale-ops { font-size: 0.75rem; color: #64748b; font-weight: 700; }
+    }
+  }
+
+  .whale-benefit {
+    text-align: right;
+    display: flex; flex-direction: column;
+    .label { font-size: 0.65rem; color: #94a3b8; font-weight: 800; }
+    .value { color: #5EE034; font-family: $mc-font; font-size: 1.2rem; text-shadow: 1px 1px 0 #000; }
+  }
+}
+
+.empty-whale {
+  text-align: center;
+  padding: 2rem;
+  color: #94a3b8;
+  font-weight: bold;
+}
+
+.security-notice {
+  display: flex; align-items: center; gap: 12px;
+  background: rgba(239, 68, 68, 0.05); border-color: #ef4444; padding: 12px;
+  p { margin: 0; font-size: 0.8rem; color: #fca5a5; font-weight: 700; line-height: 1.4; }
+}
+
+
+/* =================================================================*********
+   R E S P O N S I V E   ( A P L I C A   A   T O D O S )
+==================================================================********* */
+
 @media (max-width: 1100px) {
   .tribAdmin__table, .tribAdmin__table tbody, .tribAdmin__table tr, .tribAdmin__table td {
     display: block;

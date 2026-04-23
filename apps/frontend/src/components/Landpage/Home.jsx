@@ -9,6 +9,8 @@ import Seo from "../SEO/Seo";
 import ServerStatus from "./ServerStatus";
 import VoteWidget from "./VoteWidget";
 import WelcomePackPromo from "./WelcomePackPromo";
+import BlockStreetPromo from "./BlockStreetPromo";
+import MarketTeaser from "./MarketTeaser";
 
 import "../../styles/components/Landpage/_home.scss";
 
@@ -21,6 +23,11 @@ const Footer = lazy(() => import("./Footer"));
 const pickDisplayName = (source) =>
   source?.uid || source?.username || source?.nombre_minecraft || source?.nick || source?.name || null;
 
+// Lunes 27/04/2026 a las 18:00 (Hora Peninsular Española, UTC+2)
+const TARGET_DATE = new Date("2026-04-27T18:00:00+02:00").getTime();
+// 24 horas después para ocultar el teaser
+const HIDE_TEASER_DATE = TARGET_DATE + (24 * 60 * 60 * 1000);
+
 const Home = () => {
   const { user } = useContext(UserContext);
   const { openAuthModal } = useAuthModal();
@@ -28,6 +35,10 @@ const Home = () => {
 
   const [isLoaded, setIsLoaded] = useState(false);
   const [playerName, setPlayerName] = useState(null);
+  
+  // Fases: "COUNTDOWN" (antes de abrir), "CTA" (primeras 24h abierto), "RELEASED" (>24h abierto)
+  const [marketPhase, setMarketPhase] = useState("COUNTDOWN");
+
   const isLoggedIn = Boolean(user?.loggedIn);
 
   useEffect(() => {
@@ -64,6 +75,24 @@ const Home = () => {
       .catch(() => setPlayerName("Aventurero"));
   }, [isLoggedIn, user]);
 
+  // Controlador de tiempo global
+  useEffect(() => {
+    const checkPhase = () => {
+      const now = new Date().getTime();
+      if (now >= HIDE_TEASER_DATE) {
+        setMarketPhase("RELEASED");
+      } else if (now >= TARGET_DATE) {
+        setMarketPhase("CTA");
+      } else {
+        setMarketPhase("COUNTDOWN");
+      }
+    };
+    
+    checkPhase(); // Check inicial
+    const interval = setInterval(checkPhase, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
   const handleCTA = useCallback(() => {
     if (!isLoggedIn) {
       openAuthModal();
@@ -81,7 +110,7 @@ const Home = () => {
       />
 
       <div className={`home-mojang ${isLoaded ? "is-visible" : "is-loading"}`}>
-        <header className="hero-mojang">
+        <header className="hero-mojang" style={{ position: 'relative' }}>
           <picture>
             <source media="(max-width: 768px)" srcSet="/assets/heromobile.webp" />
             <img 
@@ -147,11 +176,19 @@ const Home = () => {
               </div>
             </div>
           </div>
+
+          {/* El widget del teaser inyectado dentro del header para que flote en la esquina */}
+          {marketPhase !== "RELEASED" && (
+            <MarketTeaser phase={marketPhase} targetDate={TARGET_DATE} />
+          )}
         </header>
 
         <div className="transition-overlay-bottom"></div>
 
         <WelcomePackPromo />
+
+        {/* Solo se renderiza el mercado si ya ha pasado el tiempo de cuenta regresiva */}
+        {marketPhase !== "COUNTDOWN" && <BlockStreetPromo />}
 
         <Suspense fallback={<div style={{ minHeight: "100vh" }}></div>}>
           <NewsHighlight />

@@ -202,7 +202,6 @@ const NavbarMobile = ({
     </span>
   );
 
-  const flaniteTip = "La Flanite (FLT) es la moneda premium de Flancraft. Consíguela en la tienda y fórjala en El Nexo.";
   const storeSaleActive = useMemo(() => isSaleValid(saleNav), [saleNav?.active, saleNav?.expire]);
   const storeSalePercent = toInt(saleNav?.percent || 0);
   const storeSaleText = storeSalePercent > 0 ? `-${storeSalePercent}%` : "OFERTA";
@@ -295,12 +294,11 @@ const NavbarMobile = ({
             </div>
 
             <div className="balance-wrapper" aria-label="Flanite balance">
-              <div className="balance-item" tabIndex={0} aria-describedby="mobile-wallet-tip">
+              <div className="balance-item" tabIndex={0}>
                 <img src="/tienda/assets/flanite.webp" alt="FLT" className="eco-icon-navbar" draggable="false" style={{ imageRendering: 'pixelated' }} />
                 <span className="balance-text" style={{ color: '#f97316' }}>{flanpointsFormatted}</span>
                 <span className="balance-tag" style={{ color: '#d8b4fe' }}>FLT</span>
               </div>
-              <div id="mobile-wallet-tip" className="balance-tip" role="tooltip">{flaniteTip}</div>
             </div>
 
             <div className="dropdown-links">

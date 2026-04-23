@@ -68,6 +68,32 @@ $mc-font: 'MinecraftSeven', 'Montserrat', sans-serif;
 
 .fcbar__linkTxt { display:inline-flex; align-items:center; }
 
+/* NUEVO ENLACE BOLSA */
+.fcbar--desktop .fcbar__link--bolsa {
+  background-color: #06080a;
+  color: #00E676;
+  border: 3px solid #00E676;
+  box-shadow: inset -3px -3px 0 rgba(0,230,118,0.2), inset 3px 3px 0 rgba(0,230,118,0.2);
+  border-radius: 2px;
+  padding: 8px 16px;
+  margin-left: 8px;
+  text-shadow: 2px 2px 0 #000;
+
+  &:hover {
+    background-color: rgba(0, 230, 118, 0.15);
+    transform: translateY(-2px);
+    box-shadow: inset -3px -3px 0 rgba(0,230,118,0.3), inset 3px 3px 0 rgba(0,230,118,0.3), 0 4px 0 #000;
+    color: #fff;
+  }
+  
+  &:active {
+    transform: translateY(2px);
+    box-shadow: inset 3px 3px 0 rgba(0,230,118,0.3), inset -3px -3px 0 rgba(0,230,118,0.3);
+  }
+  
+  &.is-active { background-color: #00E676; color: #000; text-shadow: none; }
+}
+
 .fcbar--desktop .fcbar__link--store {
   background-color: #fbbf24;
   color: #000;

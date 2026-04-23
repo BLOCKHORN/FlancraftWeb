@@ -53,6 +53,7 @@
     "react-pageflip": "^2.0.3",
     "react-quill": "^2.0.0",
     "react-router-dom": "^7.6.0",
+    "recharts": "^3.8.1",
     "sass": "^1.86.3",
     "tree": "^0.1.3"
   },

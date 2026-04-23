@@ -1,0 +1,148 @@
+@font-face {
+  font-family: 'MinecraftBold';
+  src: url('/fonts/MinecraftBold.otf') format('opentype');
+}
+
+.mc-market-teaser-widget {
+  position: absolute;
+  bottom: 30px;
+  right: 30px;
+  background: rgba(13, 15, 20, 0.85);
+  border: 2px solid #5EE034; /* Verde neón */
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), inset 0 0 15px rgba(94, 224, 52, 0.15);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 50;
+  overflow: hidden;
+  cursor: default;
+  transition: all 0.3s ease;
+  border-radius: 4px;
+
+  &.cta {
+    cursor: pointer;
+    background: rgba(13, 15, 20, 0.95);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), inset 0 0 25px rgba(94, 224, 52, 0.3);
+    
+    &:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.9), inset 0 0 35px rgba(94, 224, 52, 0.5);
+    }
+  }
+
+  .mc-teaser-scanline {
+    position: absolute;
+    width: 100%;
+    height: 4px;
+    background: rgba(94, 224, 52, 0.2); /* Efecto scanline en verde */
+    animation: scanline 3s linear infinite;
+    pointer-events: none;
+  }
+
+  .widget-content {
+    padding: 14px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    text-align: center;
+  }
+
+  .widget-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-family: 'MinecraftBold', sans-serif;
+    font-size: 0.85rem;
+    color: #5EE034;
+    letter-spacing: 1px;
+
+    .color-green { 
+      color: #5EE034; 
+      text-shadow: 0 0 5px rgba(94, 224, 52, 0.5); 
+    }
+
+    .blink-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #5EE034; 
+      box-shadow: 0 0 8px #5EE034;
+      animation: blink 1s step-end infinite;
+    }
+  }
+
+  .widget-timer {
+    font-family: 'MinecraftBold', sans-serif;
+    font-size: 1.4rem;
+    color: #fff;
+    display: flex;
+    gap: 6px;
+    text-shadow: 2px 2px 0 #000;
+    
+    .sep { 
+      color: #5EE034; 
+      /* Parpadeo eliminado para no saturar la vista */
+    }
+  }
+
+  .widget-title {
+    font-family: 'MinecraftBold', sans-serif;
+    font-size: 1.6rem;
+    color: #fbbf24;
+    text-shadow: 2px 2px 0 #000;
+    margin: 4px 0;
+  }
+
+  .widget-footer {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.8rem;
+    color: #64748b;
+    font-weight: bold;
+    letter-spacing: 1px;
+    
+    /* Nuevo estilo tipo Botón para "Recarga tus bolsas" */
+    &.highlight { 
+      display: inline-block;
+      margin-top: 6px;
+      padding: 6px 14px;
+      background: rgba(94, 224, 52, 0.15);
+      border: 1px solid #5EE034;
+      color: #fff; 
+      border-radius: 4px;
+      text-shadow: 1px 1px 0 #000;
+      transition: all 0.2s ease;
+      box-shadow: 0 0 10px rgba(94, 224, 52, 0.1);
+      
+      &:hover {
+        background: rgba(94, 224, 52, 0.3);
+        box-shadow: 0 0 15px rgba(94, 224, 52, 0.4);
+        transform: translateY(-2px);
+        color: #fff;
+      }
+
+      &:active {
+        transform: translateY(0);
+        box-shadow: 0 0 5px rgba(94, 224, 52, 0.2);
+      }
+    }
+
+    &.intrigue {
+      color: #5EE034;
+      opacity: 0.8;
+      margin-top: 2px;
+    }
+  }
+}
+
+@keyframes scanline { 0% { top: -10%; } 100% { top: 110%; } }
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+@media (max-width: 768px) {
+  .mc-market-teaser-widget {
+    bottom: auto;
+    top: 80px;
+    right: 15px;
+    transform: scale(0.85);
+    transform-origin: top right;
+  }
+}

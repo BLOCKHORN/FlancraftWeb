@@ -1,0 +1,262 @@
+@use "sass:color";
+
+@font-face {
+  font-family: 'MinecraftBold';
+  src: url('/fonts/MinecraftBold.otf') format('opentype');
+  font-weight: bold;
+  font-style: normal;
+}
+
+$mc-bg: #262626;
+$mc-border-light: #555555;
+$mc-border-dark: #111111;
+$mc-border-outer: #000000;
+$sans-font: "Inter", "Montserrat", sans-serif;
+
+.mc-pixelated { 
+  image-rendering: pixelated; 
+  image-rendering: crisp-edges; 
+}
+
+.mc-guide-wrapper {
+  background-color: #0f1115;
+  background-image: 
+    linear-gradient(rgba(255, 255, 255, 0.02) 2px, transparent 2px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 2px, transparent 2px);
+  background-size: 64px 64px;
+  background-position: center top;
+  min-height: 100vh;
+  padding: 4rem 2rem;
+  color: #fff;
+  font-family: $sans-font;
+}
+
+.mc-guide-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4rem;
+}
+
+.mc-btn-back {
+  display: inline-block;
+  color: #fbbf24;
+  font-family: 'MinecraftBold';
+  text-decoration: none;
+  margin-bottom: 2rem;
+  transition: color 0.2s;
+  text-shadow: 1px 1px 0 #000;
+  &:hover { color: #fcd34d; text-decoration: underline; }
+}
+
+.mc-guide-title-box {
+  text-align: center;
+  background: $mc-bg;
+  border: 4px solid $mc-border-outer;
+  box-shadow: inset 4px 4px 0 $mc-border-light, inset -4px -4px 0 $mc-border-dark, 10px 10px 0 rgba(0,0,0,0.5);
+  padding: 3rem 2rem;
+  
+  img {
+    width: 64px;
+    height: 64px;
+    margin-bottom: 1rem;
+    filter: drop-shadow(4px 4px 0 rgba(0,0,0,0.5));
+  }
+
+  h1 {
+    font-family: 'MinecraftBold';
+    font-size: 2.5rem;
+    color: #fbbf24;
+    text-shadow: 3px 3px 0 #000;
+    margin: 0 0 1rem 0;
+  }
+
+  p {
+    color: #ccc;
+    font-size: 1.1rem;
+    line-height: 1.6;
+    max-width: 800px;
+    margin: 0 auto;
+    font-weight: 500;
+  }
+}
+
+.mc-section-title {
+  font-family: 'MinecraftBold';
+  font-size: 1.8rem;
+  color: #fff;
+  text-shadow: 2px 2px 0 #000;
+  text-align: center;
+  margin-bottom: 2rem;
+  border-bottom: 4px solid #333;
+  padding-bottom: 1rem;
+}
+
+.mc-laws-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+
+  .law-card {
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    overflow: hidden;
+    background: $mc-bg;
+    border: 4px solid $mc-border-outer;
+    box-shadow: inset 4px 4px 0 $mc-border-light, inset -4px -4px 0 $mc-border-dark, 10px 10px 0 rgba(0,0,0,0.5);
+
+    &.full-width {
+      grid-column: 1 / -1;
+      flex-direction: row;
+      @media (max-width: 768px) { flex-direction: column; }
+    }
+
+    .law-icon-area {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      border-bottom: 4px solid #000;
+      gap: 1rem;
+      min-width: 250px;
+
+      @media (max-width: 768px) { border-bottom: 4px solid #000; border-right: none; }
+
+      img { width: 64px; height: 64px; filter: drop-shadow(4px 4px 0 rgba(0,0,0,0.6)); }
+
+      &.bg-red-dim { background: #3a1616; }
+      &.bg-green-dim { background: #163a1c; }
+      &.bg-gold-dim { background: #3a3216; }
+      
+      .trend-indicator {
+        font-family: 'MinecraftBold';
+        font-size: 1.2rem;
+        text-shadow: 2px 2px 0 #000;
+      }
+    }
+
+    .law-content {
+      padding: 2rem;
+      
+      h3 {
+        font-family: 'MinecraftBold';
+        font-size: 1.3rem;
+        color: #fff;
+        margin: 0 0 1rem 0;
+        text-shadow: 2px 2px 0 #000;
+      }
+      p {
+        color: #aaa;
+        line-height: 1.6;
+        margin-bottom: 1.5rem;
+        font-weight: 500;
+        
+        em { color: #FF5555; font-style: normal; font-weight: bold; }
+      }
+      .mc-tip {
+        background: #111;
+        border: 2px solid #333;
+        padding: 1rem;
+        color: #fbbf24;
+        font-size: 0.95rem;
+        box-shadow: inset 2px 2px 0 #000;
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        
+        .inline-tip-icon { width: 20px; height: 20px; transform: translateY(-2px); }
+        strong { color: #fff; font-family: 'MinecraftBold'; }
+      }
+    }
+  }
+}
+
+.mc-mechanics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 2rem;
+
+  .mechanic-item {
+    background: $mc-bg;
+    border: 4px solid $mc-border-outer;
+    box-shadow: inset 4px 4px 0 $mc-border-light, inset -4px -4px 0 $mc-border-dark, 6px 6px 0 rgba(0,0,0,0.5);
+    padding: 2rem;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    .mech-icon { width: 48px; height: 48px; margin-bottom: 1.5rem; filter: drop-shadow(2px 2px 0 #000); }
+    h4 { font-family: 'MinecraftBold'; font-size: 1.1rem; color: #5EE034; margin: 0 0 1rem 0; text-shadow: 2px 2px 0 #000; }
+    p { color: #ccc; line-height: 1.5; font-size: 0.95rem; font-weight: 500; }
+  }
+}
+
+.mc-guide-footer {
+  text-align: center;
+  margin-top: 2rem;
+  p { font-family: 'MinecraftBold'; color: #888; margin-bottom: 1.5rem; font-size: 1.2rem; }
+  
+  .mc-btn-solid {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 4px solid $mc-border-outer;
+    font-family: 'MinecraftBold';
+    cursor: pointer;
+    transition: filter 0.1s;
+    user-select: none;
+    font-size: 1.3rem;
+    padding: 16px 32px;
+    text-decoration: none;
+    
+    &.mc-btn-gold {
+      background: #fbbf24;
+      color: #000;
+      box-shadow: inset 4px 4px 0 #fde68a, inset -4px -4px 0 #b45309;
+      text-shadow: none;
+    }
+
+    &:hover { filter: brightness(1.2); }
+    
+    &:active { 
+      box-shadow: inset 4px 4px 0 rgba(0,0,0,0.5), inset -4px -4px 0 rgba(255,255,255,0.1) !important; 
+      transform: translate(4px, 4px);
+    }
+  }
+}
+
+.bounce-down { animation: bounceD 2s infinite; }
+.bounce-up { animation: bounceU 2s infinite; }
+.pulse { animation: pulseAnim 2s infinite alternate; }
+
+@keyframes bounceD {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(15px); }
+}
+
+@keyframes bounceU {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-15px); }
+}
+
+@keyframes pulseAnim {
+  0% { transform: scale(1); filter: drop-shadow(0 0 5px rgba(251, 191, 36, 0.2)); }
+  100% { transform: scale(1.1); filter: drop-shadow(0 0 15px rgba(251, 191, 36, 0.8)); }
+}
+
+.text-red { color: #FF5555; }
+.text-green { color: #5EE034; }
+.text-yellow { color: #fbbf24; }
+
+.badge-icon-img { width: 20px; height: 20px; filter: drop-shadow(2px 2px 0 rgba(0,0,0,0.5)); margin-right: 8px;}
+.btn-inline-icon { width: 24px; height: 24px; margin-right: 8px; filter: drop-shadow(2px 2px 0 rgba(0,0,0,0.5)); }
+.alert-icon-img { width: 36px; height: 36px; filter: drop-shadow(2px 2px 0 rgba(0,0,0,0.5)); animation: pulseAnim 1.5s infinite alternate; }

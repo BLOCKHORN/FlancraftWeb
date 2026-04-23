@@ -29,6 +29,7 @@ const monedasRoutes = require("./routes/monedas.routes");
 const walletRoutes = require("./routes/wallet.routes");
 const dailyClaimRoutes = require("./routes/dailyClaim.routes");
 const webLogrosRoutes = require("./routes/webLogros.routes");
+const bolsaRoutes = require("./routes/bolsa.routes");
 
 const app = express();
 
@@ -108,6 +109,7 @@ app.use("/api/noticias", noticiasRoutes);
 app.use("/api/tebex", tiendaTebexRoutes);
 app.use("/api/minecraft", minecraftRoutes);
 app.use("/api/votos", votosRoutes);
+app.use("/api/bolsa", bolsaRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ error: "Ruta no encontrada" });

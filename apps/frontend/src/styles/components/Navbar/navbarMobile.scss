@@ -371,6 +371,17 @@ $mc-font: 'MinecraftSeven', 'Montserrat', sans-serif;
       .nav-icon-img { width: 24px; height: 24px; image-rendering: pixelated; filter: drop-shadow(0 4px 0 #000); }
     }
 
+    /* NUEVO ENLACE BOLSA (MOBILE) */
+    .mobile-nav-item.nav-bolsa {
+      background-color: #06080a;
+      color: #00E676;
+      border-color: #00E676;
+      box-shadow: inset -3px -3px 0 rgba(0,230,118,0.2), inset 3px 3px 0 rgba(0,230,118,0.2);
+
+      &:active { box-shadow: inset 3px 3px 0 rgba(0,230,118,0.2), inset -3px -3px 0 rgba(0,230,118,0.2); }
+      &.active { border-color: #00E676; background-color: #00E676; color: #000; text-shadow: none; }
+    }
+
     .mobile-nav-item.nav-store {
       background-color: #fbbf24;
       color: #000;
