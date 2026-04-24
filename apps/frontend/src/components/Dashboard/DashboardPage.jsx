@@ -463,29 +463,27 @@ export default function DashboardPage() {
                     </a>
                   </div>
 
-                  {/* NUEVO PANEL DE FLANITE (EL NEXO) */}
-<div className="nexo-premium-card">
-  <div className="nexo-bg" />
-  <div className="nexo-content">
-    <div className="nexo-crystal-wrap">
-      <img src="/tienda/assets/flanite.webp" className="nexo-crystal" alt="Flanite" draggable="false" />
-    </div>
-    <div className="nexo-info">
-      <h3>EL NEXO</h3>
-      <div className="nexo-balance">
-        <span>{user.flanpoints || 0}</span> FLT
-      </div>
-    </div>
-    {/* Botón deshabilitado con estética de progreso */}
-    <button 
-      className="mc-btn mc-btn--nexo is-locked" 
-      disabled 
-      style={{ cursor: 'not-allowed', opacity: 0.8 }}
-    >
-      FORJANDO ACCESO...
-    </button>
-  </div>
-</div>
+                  {/* NUEVO PANEL DE FLANITE (EL NEXO) - DESBLOQUEADO */}
+                  <div className="nexo-premium-card">
+                    <div className="nexo-bg" />
+                    <div className="nexo-content">
+                      <div className="nexo-crystal-wrap">
+                        <img src="/tienda/assets/flanite.webp" className="nexo-crystal" alt="Flanite" draggable="false" />
+                      </div>
+                      <div className="nexo-info">
+                        <h3>EL NEXO</h3>
+                        <div className="nexo-balance">
+                          <span>{user.flanpoints || 0}</span> FLT
+                        </div>
+                      </div>
+                      <button 
+                        className="mc-btn mc-btn--nexo" 
+                        onClick={() => navigate("/nexo")}
+                      >
+                        ENTRAR AL NEXO
+                      </button>
+                    </div>
+                  </div>
 
                 </main>
               </div>
@@ -539,7 +537,6 @@ export default function DashboardPage() {
 
           <div className="dashboard-epic-body">
             <div className="dashboard-secciones">
-              {/* Le quitamos todo lo de la wallet al RewardList */}
               <RewardList user={user} xpData={xpData} />
               <LogroList user={user} onXpClaimed={handleXpClaimed} />
             </div>
