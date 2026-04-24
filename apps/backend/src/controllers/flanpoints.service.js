@@ -166,10 +166,14 @@ async function canjearRecompensa(uuidJugador, nombreJugador, servidor, idRecompe
     meta: { item: recompensa.nombre, server: servidor }
   });
 
-  for (const cmdTpl of recompensa.comandos) {
+  // Bucle corregido: Solo el primer comando lleva feedback
+  for (let i = 0; i < recompensa.comandos.length; i++) {
+    const cmdTpl = recompensa.comandos[i];
     const cmdFinal = cmdTpl
       .replace(/{player}/g, nombreJugador)
       .replace(/{server}/g, servidor);
+
+    const esPrimerComando = (i === 0);
 
     await db.from("comandos_pendientes").insert({
       uuid_jugador: uuidJugador,
@@ -177,9 +181,9 @@ async function canjearRecompensa(uuidJugador, nombreJugador, servidor, idRecompe
       servidor: servidor,
       comando: cmdFinal,
       tipo: "comando",
-      feedback_title: "El Nexo",
-      feedback_subtitle: recompensa.nombre,
-      feedback_chat: `&dHas forjado el artefacto: &5${recompensa.nombre}`
+      feedback_title: esPrimerComando ? "El Nexo" : "",
+      feedback_subtitle: esPrimerComando ? recompensa.nombre : "",
+      feedback_chat: esPrimerComando ? `&dHas forjado el artefacto: &5${recompensa.nombre}` : ""
     });
   }
 
