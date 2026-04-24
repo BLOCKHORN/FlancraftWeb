@@ -8,7 +8,7 @@ export const NEXO_CATALOG = [
     precio: 3500,
     categoria: "permanente",
     rareza: "legendario",
-    imagen: "/tienda/assets/nexo/keepinv.png"
+    imagen: "/tienda/assets/nexo/keepinv.webp"
   },
   {
     id: "keepxp",
@@ -18,7 +18,7 @@ export const NEXO_CATALOG = [
     precio: 2500,
     categoria: "permanente",
     rareza: "legendario",
-    imagen: "/tienda/assets/nexo/keepxp.png"
+    imagen: "/tienda/assets/nexo/keepxp.webp"
   },
 
   // --- TEMPORALES ---
@@ -30,7 +30,7 @@ export const NEXO_CATALOG = [
     precio: 300,
     categoria: "temporal",
     rareza: "epico",
-    imagen: "/tienda/assets/nexo/potion_inv.png"
+    imagen: "/tienda/assets/nexo/potion_inv.webp"
   },
   {
     id: "keepxp_24h",
@@ -40,7 +40,7 @@ export const NEXO_CATALOG = [
     precio: 200,
     categoria: "temporal",
     rareza: "epico",
-    imagen: "/tienda/assets/nexo/potion_xp.png"
+    imagen: "/tienda/assets/nexo/potion_xp.webp"
   },
 
   // --- ECONOMÍA ---
@@ -52,7 +52,7 @@ export const NEXO_CATALOG = [
     precio: 500,
     categoria: "consumible",
     rareza: "raro",
-    imagen: "/tienda/assets/nexo/bag_money.png"
+    imagen: "/tienda/assets/nexo/bag_money.webp"
   },
 
   // --- XP MINECRAFT (Orbes) ---
@@ -64,7 +64,7 @@ export const NEXO_CATALOG = [
     precio: 150,
     categoria: "consumible",
     rareza: "comun",
-    imagen: "/tienda/assets/nexo/orb_xp_minor.png"
+    imagen: "/tienda/assets/nexo/orb_xp_minor.webp"
   },
   {
     id: "xp_100",
@@ -74,7 +74,7 @@ export const NEXO_CATALOG = [
     precio: 300,
     categoria: "consumible",
     rareza: "raro",
-    imagen: "/tienda/assets/nexo/orb_xp_major.png"
+    imagen: "/tienda/assets/nexo/orb_xp_major.webp"
   },
   {
     id: "xp_150",
@@ -84,7 +84,7 @@ export const NEXO_CATALOG = [
     precio: 500,
     categoria: "consumible",
     rareza: "epico",
-    imagen: "/tienda/assets/nexo/orb_xp_supreme.png"
+    imagen: "/tienda/assets/nexo/orb_xp_supreme.webp"
   },
 
   // --- NIVELES GLOBALES DEL SERVIDOR (Cristales) ---
@@ -96,7 +96,7 @@ export const NEXO_CATALOG = [
     precio: 300,
     categoria: "consumible",
     rareza: "comun",
-    imagen: "/tienda/assets/nexo/crystal_minor.png"
+    imagen: "/tienda/assets/nexo/crystal_minor.webp"
   },
   {
     id: "nivel_300",
@@ -106,7 +106,7 @@ export const NEXO_CATALOG = [
     precio: 800,
     categoria: "consumible",
     rareza: "raro",
-    imagen: "/tienda/assets/nexo/crystal_major.png"
+    imagen: "/tienda/assets/nexo/crystal_major.webp"
   },
   {
     id: "nivel_700",
@@ -116,7 +116,7 @@ export const NEXO_CATALOG = [
     precio: 1800,
     categoria: "consumible",
     rareza: "epico",
-    imagen: "/tienda/assets/nexo/crystal_supreme.png"
+    imagen: "/tienda/assets/nexo/crystal_supreme.webp"
   },
 
   // --- INVESTIGACIÓN DE FÁBRICAS (Códices) ---
@@ -128,7 +128,7 @@ export const NEXO_CATALOG = [
     precio: 100,
     categoria: "consumible",
     rareza: "comun",
-    imagen: "/tienda/assets/nexo/codex_basic.png"
+    imagen: "/tienda/assets/nexo/codex_basic.webp"
   },
   {
     id: "research_15",
@@ -138,7 +138,7 @@ export const NEXO_CATALOG = [
     precio: 250,
     categoria: "consumible",
     rareza: "raro",
-    imagen: "/tienda/assets/nexo/codex_advanced.png"
+    imagen: "/tienda/assets/nexo/codex_advanced.webp"
   },
   {
     id: "research_25",
@@ -148,6 +148,6 @@ export const NEXO_CATALOG = [
     precio: 400,
     categoria: "consumible",
     rareza: "epico",
-    imagen: "/tienda/assets/nexo/codex_master.png"
+    imagen: "/tienda/assets/nexo/codex_master.webp"
   }
 ];

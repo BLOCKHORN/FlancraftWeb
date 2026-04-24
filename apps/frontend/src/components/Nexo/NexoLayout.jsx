@@ -6,6 +6,7 @@ import { apiUrl } from "../../lib/env";
 import { getAuthToken } from "../../lib/auth/storage";
 import Seo from "../SEO/Seo";
 import { NEXO_CATALOG } from "./nexo.constants";
+import NexoCard from "./NexoCard";
 import "../../styles/components/Nexo/_nexo.scss";
 
 const FLANITE_SRC = "/tienda/assets/flanite.webp";
@@ -188,46 +189,8 @@ export default function NexoLayout() {
     return NEXO_CATALOG.filter(i => i.categoria === activeFilter);
   }, [activeFilter]);
 
-  const isOwned = (item) => item.categoria === "permanente" && artefactosUsuario.includes(item.id);
-
-  const ItemCard = ({ item, isMajor }) => {
-    const owned = isOwned(item);
-    return (
-      <article className={`nx-card is-${item.rareza} ${isMajor ? "is-major-card" : ""} ${owned ? "is-owned" : ""}`} onClick={() => handleOpenModal(item)}>
-        <div className="nx-card-header">
-          <div className="nx-card-rarity-tag">{item.rareza.toUpperCase()}</div>
-          <h3 className="nx-card-name">{item.nombre}</h3>
-          <div className="nx-card-efecto">{item.efecto}</div>
-        </div>
-        
-        <div className="nx-card-art">
-          <div className="nx-card-aura" />
-          <img src={item.imagen} alt="" className="nx-card-img" draggable="false" />
-        </div>
-
-        <div className="nx-card-price-container">
-          <div className="nx-card-price-pill">
-            {owned ? (
-              <span className="nx-owned-text">ADQUIRIDO</span>
-            ) : (
-              <>
-                <img src={FLANITE_SRC} alt="" className="nx-mini-flt" />
-                <span>{formatInt(item.precio)}</span>
-              </>
-            )}
-          </div>
-        </div>
-
-        <div className="nx-card-footer">
-          <button className="nx-card-forge-btn" disabled={owned}>
-            {owned ? "EN POSESIÓN" : "FORJAR"}
-          </button>
-        </div>
-      </article>
-    );
-  };
-
-  const selectedIsOwned = selectedItem && isOwned(selectedItem);
+  const checkIsOwned = (item) => item.categoria === "permanente" && artefactosUsuario.includes(item.id);
+  const selectedIsOwned = selectedItem && checkIsOwned(selectedItem);
 
   const modalNode = selectedItem && createPortal(
     <div className="nx-overlay" onClick={handleCloseModal}>
@@ -238,24 +201,24 @@ export default function NexoLayout() {
           <div className="nx-modal-success-view">
             <h2 className="nx-success-title">¡ARTEFACTO FORJADO!</h2>
             <div className={`nx-success-art is-${selectedItem.rareza}`}>
-              <div className="nx-success-aura" />
+              <div className="nx-success-slot-bg" />
               <img src={selectedItem.imagen} alt="" className="nx-success-img" draggable="false" />
             </div>
-            <p className="nx-success-text">El poder de <strong>{selectedItem.nombre}</strong> ya está disponible en tu cuenta del servidor.</p>
-            <button className="nx-btn-action is-continue" onClick={handleCloseModal}>CONTINUAR</button>
+            <p className="nx-success-text">El poder de <strong className={`is-${selectedItem.rareza}-text`}>{selectedItem.nombre}</strong> está en tu cuenta.</p>
+            <button className="nx-btn nx-btn-success" onClick={handleCloseModal}>CONTINUAR</button>
           </div>
         ) : (
           <div className="nx-modal-content">
             <div className="nx-modal-left">
               <div className={`nx-item-showcase is-${selectedItem.rareza} ${forgeState === "forging" || forgeState === "deducting" ? "is-forging" : ""}`}>
-                <div className="nx-showcase-aura" />
+                <div className="nx-showcase-slot-bg" />
                 <img src={selectedItem.imagen} alt="" className="nx-showcase-img" draggable="false" />
               </div>
             </div>
             
             <div className="nx-modal-right">
               <h2 className="nx-modal-title">{selectedItem.nombre}</h2>
-              <div className={`nx-modal-rarity is-${selectedItem.rareza}`}>
+              <div className={`nx-modal-rarity is-${selectedItem.rareza}-text`}>
                 {selectedIsOwned ? "EN TU POSESIÓN" : selectedItem.rareza}
               </div>
               
@@ -264,7 +227,7 @@ export default function NexoLayout() {
               
               <div className={`nx-modal-cost-box ${forgeState === "success" ? "is-success-box" : ""}`}>
                 <div className="nx-cost-row">
-                  <span className="nx-cost-label">Coste de Forja:</span>
+                  <span className="nx-cost-label">Coste:</span>
                   <span className="nx-cost-value">{formatInt(selectedItem.precio)} <img src={FLANITE_SRC} alt="" className="nx-inline-flt" /></span>
                 </div>
                 <div className="nx-cost-row is-balance">
@@ -277,10 +240,10 @@ export default function NexoLayout() {
 
               <div className="nx-modal-actions">
                 {forgeState === "forging" || forgeState === "deducting" ? (
-                  <button className="nx-btn-action is-forging" disabled>CANALIZANDO ENERGÍA...</button>
+                  <button className="nx-btn nx-btn-forging" disabled>CANALIZANDO...</button>
                 ) : (
                   <button 
-                    className="nx-btn-action is-forge" 
+                    className="nx-btn nx-btn-forge-modal" 
                     onClick={handleForge} 
                     disabled={balanceActual < selectedItem.precio || selectedIsOwned}
                   >
@@ -304,23 +267,22 @@ export default function NexoLayout() {
         
         <div className="nx-container">
           
-          <div className="nx-top-bar">
-            <button className="nx-back-btn" onClick={() => navigate("/dashboard")}>← VOLVER</button>
-            <div className="nx-balance-box">
-              <span className="nx-balance-label">SALDO FLANITE</span>
-              <div className="nx-balance-amount">
-                <img src={FLANITE_SRC} alt="" className="nx-balance-icon" draggable="false" />
+          <div className="nx-top-hud">
+            <button className="nx-btn-hud is-back" onClick={() => navigate("/dashboard")}>← VOLVER</button>
+            <div className="nx-hud-balance">
+              <span className="nx-hud-label">FLANITE</span>
+              <div className="nx-hud-amount">
                 <span>{formatInt(balanceActual)}</span>
+                <img src={FLANITE_SRC} alt="" className="nx-hud-icon" draggable="false" />
               </div>
             </div>
           </div>
 
           <div className="nx-hero">
             <h1 className="nx-title">EL NEXO</h1>
-            <p className="nx-subtitle">La forja de fragmentos. Imbuye tu destino con energía ancestral.</p>
           </div>
           
-          <div className="nx-board">
+          <div className="nx-gui-panel">
             
             <div className="nx-board-tabs">
               <button className={`nx-tab ${activeFilter === "todos" ? "is-active" : ""}`} onClick={() => setActiveFilter("todos")}>CATÁLOGO</button>
@@ -334,12 +296,16 @@ export default function NexoLayout() {
               {activeFilter === "todos" ? (
                 <>
                   <h2 className="nx-section-title">ARTEFACTOS MAYORES</h2>
-                  <div className="nx-grid is-major">{majorItems.map(i => <ItemCard key={i.id} item={i} isMajor />)}</div>
+                  <div className="nx-grid">
+                    {majorItems.map(i => <NexoCard key={i.id} item={i} isOwned={checkIsOwned(i)} onOpenModal={handleOpenModal} />)}
+                  </div>
                   
                   <div className="nx-divider" />
                   
                   <h2 className="nx-section-title">FRAGMENTOS CONSUMIBLES</h2>
-                  <div className="nx-grid is-minor">{minorItems.map(i => <ItemCard key={i.id} item={i} isMajor={false} />)}</div>
+                  <div className="nx-grid">
+                    {minorItems.map(i => <NexoCard key={i.id} item={i} isOwned={checkIsOwned(i)} onOpenModal={handleOpenModal} />)}
+                  </div>
                 </>
               ) : activeFilter === "historial" ? (
                 <div className="nx-historial-wrap">
@@ -370,8 +336,8 @@ export default function NexoLayout() {
                   )}
                 </div>
               ) : (
-                <div className="nx-grid is-minor">
-                  {filteredItems.map(i => <ItemCard key={i.id} item={i} isMajor={i.categoria === "permanente"} />)}
+                <div className="nx-grid">
+                  {filteredItems.map(i => <NexoCard key={i.id} item={i} isOwned={checkIsOwned(i)} onOpenModal={handleOpenModal} />)}
                 </div>
               )}
             </div>
