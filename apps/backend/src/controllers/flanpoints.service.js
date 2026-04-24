@@ -1,7 +1,6 @@
 const db = require("../models/db");
 
 const CATALOGO_FLANPOINTS = {
-  // Permanentes
   keepinventory: {
     id: "keepinventory",
     nombre: "El Vínculo del Alma",
@@ -17,23 +16,27 @@ const CATALOGO_FLANPOINTS = {
     comandos: ["lp user {player} permission set essentials.keepxp"]
   },
 
-  // Temporales
-  keepinv_24h: {
+keepinv_24h: {
     id: "keepinv_24h",
     nombre: "Frasco de Retorno (24h)",
     precio: 300,
     categoria: "temporal",
-    comandos: ["lp user {player} permission settemp essentials.keepinv true 24h"]
+    comandos: [
+      "lp user {player} permission settemp essentials.keepinv true 24h accumulate",
+      "lp user {player} permission settemp nexo.hud.keepinv true 24h accumulate"
+    ]
   },
   keepxp_24h: {
     id: "keepxp_24h",
     nombre: "Frasco de Memoria (24h)",
     precio: 200,
     categoria: "temporal",
-    comandos: ["lp user {player} permission settemp essentials.keepxp true 24h"]
+    comandos: [
+      "lp user {player} permission settemp essentials.keepxp true 24h accumulate",
+      "lp user {player} permission settemp nexo.hud.keepxp true 24h accumulate"
+    ]
   },
 
-  // Economía
   money_10k: {
     id: "money_10k",
     nombre: "Bolsa de Contrabandista",
@@ -42,7 +45,6 @@ const CATALOGO_FLANPOINTS = {
     comandos: ["eco give {player} 10000"]
   },
 
-  // XP Minecraft (Orbes)
   xp_50: {
     id: "xp_50",
     nombre: "Orbe de Sabiduría Menor",
@@ -65,7 +67,6 @@ const CATALOGO_FLANPOINTS = {
     comandos: ["xp give {player} 150L"]
   },
 
-  // Niveles Globales (Cristales)
   nivel_100: {
     id: "nivel_100",
     nombre: "Cristal de Ascensión Menor",
@@ -88,7 +89,6 @@ const CATALOGO_FLANPOINTS = {
     comandos: ["levelxp give {player} 700"]
   },
 
-  // Investigación Fábricas (Códices)
   research_5: {
     id: "research_5",
     nombre: "Códice de Fábrica Básico",
@@ -123,7 +123,6 @@ async function canjearRecompensa(uuidJugador, nombreJugador, servidor, idRecompe
     throw new Error("RECOMPENSA_NO_EXISTE");
   }
 
-  // Prevención robusta en backend para no comprar permanentes repetidos
   if (recompensa.categoria === "permanente") {
     const { data: historial, error: historialError } = await db
       .from("flanpoints_movimientos")
