@@ -23,9 +23,7 @@ const Footer = lazy(() => import("./Footer"));
 const pickDisplayName = (source) =>
   source?.uid || source?.username || source?.nombre_minecraft || source?.nick || source?.name || null;
 
-// Lunes 27/04/2026 a las 18:00 (Hora Peninsular Española, UTC+2)
 const TARGET_DATE = new Date("2026-04-27T18:00:00+02:00").getTime();
-// 24 horas después para ocultar el teaser
 const HIDE_TEASER_DATE = TARGET_DATE + (24 * 60 * 60 * 1000);
 
 const Home = () => {
@@ -36,7 +34,6 @@ const Home = () => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [playerName, setPlayerName] = useState(null);
   
-  // Fases: "COUNTDOWN" (antes de abrir), "CTA" (primeras 24h abierto), "RELEASED" (>24h abierto)
   const [marketPhase, setMarketPhase] = useState("COUNTDOWN");
 
   const isLoggedIn = Boolean(user?.loggedIn);
@@ -75,7 +72,6 @@ const Home = () => {
       .catch(() => setPlayerName("Aventurero"));
   }, [isLoggedIn, user]);
 
-  // Controlador de tiempo global
   useEffect(() => {
     const checkPhase = () => {
       const now = new Date().getTime();
@@ -88,7 +84,7 @@ const Home = () => {
       }
     };
     
-    checkPhase(); // Check inicial
+    checkPhase();
     const interval = setInterval(checkPhase, 1000);
     return () => clearInterval(interval);
   }, []);
@@ -177,7 +173,6 @@ const Home = () => {
             </div>
           </div>
 
-          {/* El widget del teaser inyectado dentro del header para que flote en la esquina */}
           {marketPhase !== "RELEASED" && (
             <MarketTeaser phase={marketPhase} targetDate={TARGET_DATE} />
           )}
@@ -187,8 +182,7 @@ const Home = () => {
 
         <WelcomePackPromo />
 
-        {/* Solo se renderiza el mercado si ya ha pasado el tiempo de cuenta regresiva */}
-        {marketPhase !== "COUNTDOWN" && <BlockStreetPromo />}
+        <BlockStreetPromo />
 
         <Suspense fallback={<div style={{ minHeight: "100vh" }}></div>}>
           <NewsHighlight />

@@ -202,6 +202,90 @@ const BolsaLayout = () => {
     return `/tienda/assets/minerals/${map[id] || id + '.png'}`;
   };
 
+  const processOrderWithPolling = async (mineralId, amount, type, toastId) => {
+    try {
+      const actualName = user.nombre_minecraft || user.username || user.nombre || "Inversor";
+      const orderRes = await apiPost("/api/bolsa/trade", {
+        playerName: actualName,
+        mineralId: mineralId,
+        type: type,
+        amount: amount
+      });
+
+      let attempts = 0;
+      const poll = setInterval(async () => {
+        attempts++;
+        try {
+          const statusRes = await apiGet(`/api/bolsa/order-status/${orderRes.id}`);
+          
+          if (statusRes.status === 'COMPLETED') {
+            clearInterval(poll);
+            setIsTrading(false);
+            setLiquidatingAsset(null);
+            playTradeSound(type, true);
+            lastTradeTime.current = Date.now();
+            
+            await fetchUserData();
+            await fetchMarketData();
+            
+            toast.custom((t) => (
+              <div className={`mc-toast-success ${t.visible ? 'animate-enter' : 'animate-leave'}`}>
+                <div className="mc-advancement-toast-inner">
+                  <div className="toast-icon-wrapper">
+                    <img src={getAssetIconPath(mineralId)} className="mc-pixelated" alt="mineral" style={{width: '36px', height: '36px'}}/>
+                  </div>
+                  <div className="toast-texts">
+                    <span className="toast-title" style={{ color: '#5EE034' }}>{type === 'BUY' ? 'COMPRA EJECUTADA' : 'VENTA EJECUTADA'}</span>
+                    <span className="toast-sub">Transacción validada por el servidor.</span>
+                  </div>
+                </div>
+              </div>
+            ), { id: toastId, duration: 4000 });
+            
+          } else if (statusRes.status !== 'PENDING') {
+            clearInterval(poll);
+            setIsTrading(false);
+            setLiquidatingAsset(null);
+            
+            let errorMsg = "Operación rechazada.";
+            if (statusRes.status === 'INSUFFICIENT_FUNDS') errorMsg = "Coins insuficientes in-game.";
+            if (statusRes.status === 'INSUFFICIENT_SHARES') errorMsg = "No posees esas acciones.";
+            if (statusRes.status === 'MARKET_FROZEN') errorMsg = "El mercado está congelado.";
+            
+            toast.custom((t) => (
+              <div className={`mc-toast-error ${t.visible ? 'animate-enter' : 'animate-leave'}`}>
+                <span className="toast-title">OPERACION DENEGADA</span>
+                <span className="toast-sub">{errorMsg}</span>
+              </div>
+            ), { id: toastId });
+          }
+          
+          if (attempts > 30) {
+            clearInterval(poll);
+            setIsTrading(false);
+            setLiquidatingAsset(null);
+            toast.custom((t) => (
+              <div className={`mc-toast-error ${t.visible ? 'animate-enter' : 'animate-leave'}`}>
+                <span className="toast-title">TIEMPO AGOTADO</span>
+                <span className="toast-sub">El servidor está saturado.</span>
+              </div>
+            ), { id: toastId });
+          }
+        } catch(e) {}
+      }, 500);
+
+    } catch (error) {
+      setIsTrading(false);
+      setLiquidatingAsset(null);
+      toast.custom((t) => (
+        <div className={`mc-toast-error ${t.visible ? 'animate-enter' : 'animate-leave'}`}>
+          <span className="toast-title">ERROR DE CONEXIÓN</span>
+          <span className="toast-sub">El broker no responde.</span>
+        </div>
+      ), { id: toastId });
+    }
+  };
+
   const handleTrade = async (type) => {
     if (!user?.loggedIn) { openAuthModal(); return; }
     if (isTrading) return;
@@ -219,196 +303,57 @@ const BolsaLayout = () => {
       return;
     }
 
-    const assetPrice = livePrices.find(p => p.mineral_id === mineralId)?.current_coin_price || 0;
-    
-    let estimatedCost = 0;
-    let tempPrice = assetPrice;
-    for(let i=0; i<amount; i++){
-      if(type === 'BUY'){
-        estimatedCost += tempPrice;
-        tempPrice = tempPrice * 1.005;
-      } else {
-        tempPrice = tempPrice / 1.005;
-        estimatedCost += tempPrice;
-      }
-    }
-    
-    const finalValue = type === 'BUY' ? estimatedCost * 1.02 : estimatedCost * 0.98;
-
-    if (type === 'BUY' && liquidCoins < finalValue) {
-      toast.custom((t) => (
-        <div className={`mc-toast-error ${t.visible ? 'animate-enter' : 'animate-leave'}`}>
-          <span className="toast-title">OPERACION DENEGADA</span>
-          <span className="toast-sub">Saldo insuficiente.</span>
-        </div>
-      ));
-      return;
-    }
-    
-    const ownedAsset = portfolio.find(p => p.mineral_id === mineralId);
-    const ownedShares = ownedAsset?.shares || 0;
-    
-    if (type === 'SELL' && ownedShares < amount) {
-      toast.custom((t) => (
-        <div className={`mc-toast-error ${t.visible ? 'animate-enter' : 'animate-leave'}`}>
-          <span className="toast-title">OPERACION DENEGADA</span>
-          <span className="toast-sub">No posees suficientes acciones.</span>
-        </div>
-      ));
-      return;
-    }
-
-    let pnl = 0;
-    let isProfit = true;
-    if (type === 'SELL') {
-      const avgPrice = ownedAsset?.average_purchase_price || assetPrice;
-      pnl = finalValue - (avgPrice * amount);
-      isProfit = pnl >= 0;
-    }
-
     setIsTrading(true);
     const toastId = toast.custom((t) => (
       <div className={`mc-toast-loading ${t.visible ? 'animate-enter' : 'animate-leave'}`}>
         <span className="toast-title">PROCESANDO...</span>
-        <span className="toast-sub">Enviando orden a Block Street...</span>
+        <span className="toast-sub">Validando con Block Street...</span>
       </div>
     ));
     
-    try {
-      const actualName = user.nombre_minecraft || user.username || user.nombre || "Inversor";
-      await apiPost("/api/bolsa/trade", {
-        uuid: user.uuid,
-        playerName: actualName,
-        mineralId: mineralId,
-        type: type,
-        amount: amount
-      });
-      
-      playTradeSound(type, isProfit);
-      lastTradeTime.current = Date.now();
-      
-      if (type === 'BUY') {
-        setLiquidCoins(prev => Math.max(0, prev - finalValue));
-        setPortfolio(prev => {
-          const exists = prev.find(p => p.mineral_id === mineralId);
-          if (exists) {
-            const newAvg = ((exists.average_purchase_price * exists.shares) + finalValue) / (exists.shares + amount);
-            return prev.map(p => p.mineral_id === mineralId ? { ...p, shares: p.shares + amount, average_purchase_price: newAvg } : p);
-          }
-          return [...prev, { mineral_id: mineralId, shares: amount, average_purchase_price: finalValue / amount }];
-        });
-      } else {
-        setLiquidCoins(prev => prev + finalValue);
-        setPortfolio(prev => prev.map(p => p.mineral_id === mineralId ? { ...p, shares: Math.max(0, p.shares - amount) } : p));
-      }
-      
-      const actionTitle = type === 'BUY' ? 'COMPRA EJECUTADA' : (isProfit ? 'PROFIT REALIZADO' : 'LIQUIDACION');
-      const titleColor = type === 'BUY' ? '#5EE034' : (isProfit ? '#5EE034' : '#FF5555');
-
-      toast.custom((t) => (
-        <div className={`mc-toast-success ${t.visible ? 'animate-enter' : 'animate-leave'}`}>
-          <div className="mc-advancement-toast-inner">
-            <div className="toast-icon-wrapper">
-              <img src={getAssetIconPath(mineralId)} className="mc-pixelated" alt="mineral" style={{width: '36px', height: '36px'}}/>
-            </div>
-            <div className="toast-texts">
-              <span className="toast-title" style={{ color: titleColor }}>{actionTitle}</span>
-              <span className="toast-sub">
-                {type === 'BUY' ? (
-                  <span>{amount}x {getAssetDisplayName(mineralId)} por ~{finalValue.toFixed(2)} <img src="/tienda/assets/coin.png" className="inline-coin mc-pixelated" alt="coins" style={{width:'14px', height:'14px'}}/></span>
-                ) : (
-                  <span>{isProfit ? '+' : ''}{pnl.toFixed(2)} <img src="/tienda/assets/coin.png" className="inline-coin mc-pixelated" alt="coins" style={{width:'14px', height:'14px'}}/></span>
-                )}
-              </span>
-            </div>
-          </div>
-        </div>
-      ), { id: toastId, duration: 4000 });
-      
-    } catch (error) {
-      toast.custom((t) => (
-        <div className={`mc-toast-error ${t.visible ? 'animate-enter' : 'animate-leave'}`}>
-          <span className="toast-title">ERROR DE CONEXIÓN</span>
-          <span className="toast-sub">El broker no responde.</span>
-        </div>
-      ), { id: toastId });
-    } finally {
-      setTimeout(() => setIsTrading(false), 1000);
-    }
+    await processOrderWithPolling(mineralId, amount, type, toastId);
   };
 
   const handleLiquidate = async (mineralId, amount) => {
-      if (!user?.loggedIn || isTrading || amount <= 0) return;
-      setIsTrading(true);
-      setLiquidatingAsset(mineralId);
+    if (!user?.loggedIn || isTrading || amount <= 0) return;
+    setIsTrading(true);
+    setLiquidatingAsset(mineralId);
 
-      const toastId = toast.custom((t) => (
-        <div className={`mc-toast-loading ${t.visible ? 'animate-enter' : 'animate-leave'}`}>
-          <span className="toast-title">PROCESANDO...</span>
-          <span className="toast-sub">Liquidando posicion...</span>
-        </div>
-      ));
-      
-      try {
-        const actualName = user.nombre_minecraft || user.username || user.nombre || "Inversor";
-        await apiPost("/api/bolsa/trade", {
-          uuid: user.uuid,
-          playerName: actualName,
-          mineralId: mineralId,
-          type: 'SELL',
-          amount: amount
-        });
-        
-        playTradeSound('SELL', true);
-        lastTradeTime.current = Date.now();
-        await fetchUserData();
-
-        toast.custom((t) => (
-          <div className={`mc-toast-success ${t.visible ? 'animate-enter' : 'animate-leave'}`}>
-            <div className="mc-advancement-toast-inner">
-              <div className="toast-icon-wrapper">
-                <img src={getAssetIconPath(mineralId)} className="mc-pixelated" alt="mineral" style={{width: '36px', height: '36px'}}/>
-              </div>
-              <div className="toast-texts">
-                <span className="toast-title" style={{ color: '#5EE034' }}>POSICION LIQUIDADA</span>
-                <span className="toast-sub">Se han vendido {amount} acciones.</span>
-              </div>
-            </div>
-          </div>
-        ), { id: toastId, duration: 4000 });
-
-      } catch (error) {
-        toast.custom((t) => (
-          <div className={`mc-toast-error ${t.visible ? 'animate-enter' : 'animate-leave'}`}>
-            <span className="toast-title">ERROR DE CONEXIÓN</span>
-            <span className="toast-sub">No se pudo liquidar.</span>
-          </div>
-        ), { id: toastId });
-      } finally {
-        setTimeout(() => {
-          setIsTrading(false);
-          setLiquidatingAsset(null);
-        }, 1000);
-      }
+    const toastId = toast.custom((t) => (
+      <div className={`mc-toast-loading ${t.visible ? 'animate-enter' : 'animate-leave'}`}>
+        <span className="toast-title">PROCESANDO...</span>
+        <span className="toast-sub">Liquidando posicion...</span>
+      </div>
+    ));
+    
+    await processOrderWithPolling(mineralId, amount, 'SELL', toastId);
   };
+
+  const currentAssetData = livePrices.find(p => p.mineral_id === selectedAsset);
+  const currentPrice = currentAssetData?.current_coin_price || 0;
+  const safeAmount = Math.min(1000, Math.max(1, parseInt(tradeAmount, 10) || 1));
+  
+  const feePercent = 0.02;
+  const slippageRate = 0.00005;
+
+  const buySlippageFactor = 1.0 + (safeAmount * slippageRate);
+  const finalBuyPrice = currentPrice * buySlippageFactor;
+  const avgBuyPrice = (currentPrice + finalBuyPrice) / 2.0;
+  const totalBuyCostRaw = safeAmount * avgBuyPrice;
+  const estBuyCost = totalBuyCostRaw + (totalBuyCostRaw * feePercent);
+
+  const sellSlippageFactor = 1.0 - (safeAmount * slippageRate);
+  const finalSellPrice = currentPrice * Math.max(0.1, sellSlippageFactor);
+  const avgSellPrice = (currentPrice + finalSellPrice) / 2.0;
+  const totalSellValueRaw = safeAmount * avgSellPrice;
+  const estSellValue = totalSellValueRaw - (totalSellValueRaw * feePercent);
 
   const portfolioValue = portfolio.reduce((acc, item) => acc + (item.shares * (livePrices.find(p => p.mineral_id === item.mineral_id)?.current_coin_price || 0)), 0);
   const totalNetWorth = liquidCoins + portfolioValue;
   
-  const currentAssetData = livePrices.find(p => p.mineral_id === selectedAsset);
   const isUp = currentAssetData ? currentAssetData.trend_arrow !== "DOWN" : true;
   const chartColor = isUp ? "#5EE034" : "#FF5555";
   const glowClass = isUp ? "glow-green" : "glow-red";
-
-  const safeAmount = Math.min(1000, Math.max(1, parseInt(tradeAmount, 10) || 1));
-  let estBuyCost = 0, estSellValue = 0, tempP = currentAssetData?.current_coin_price || 0;
-  
-  for(let i=0; i<safeAmount; i++) { estBuyCost += tempP; tempP *= 1.005; }
-  estBuyCost *= 1.02;
-  
-  tempP = currentAssetData?.current_coin_price || 0;
-  for(let i=0; i<safeAmount; i++) { tempP /= 1.005; estSellValue += tempP; }
-  estSellValue *= 0.98;
 
   const selectedOwnedShares = getOwnedShares(selectedAsset);
   const canAffordBuy = liquidCoins >= estBuyCost;

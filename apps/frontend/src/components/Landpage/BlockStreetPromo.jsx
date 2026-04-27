@@ -1,7 +1,9 @@
-import React, { useRef } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion, useInView } from "framer-motion";
 import "../../styles/components/Landpage/_blockStreetPromo.scss";
+
+const TARGET_DATE = new Date("2026-04-27T18:00:00+02:00").getTime();
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -23,6 +25,33 @@ const itemVariants = {
 const BlockStreetPromo = () => {
   const sectionRef = useRef(null);
   const isInView = useInView(sectionRef, { once: true, amount: 0.15 });
+  
+  const [isMarketOpen, setIsMarketOpen] = useState(Date.now() >= TARGET_DATE);
+  const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+
+  useEffect(() => {
+    if (isMarketOpen) return;
+
+    const interval = setInterval(() => {
+      const now = Date.now();
+      const distance = TARGET_DATE - now;
+
+      if (distance <= 0) {
+        setIsMarketOpen(true);
+        clearInterval(interval);
+        return;
+      }
+
+      setTimeLeft({
+        days: Math.floor(distance / (1000 * 60 * 60 * 24)),
+        hours: Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+        minutes: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
+        seconds: Math.floor((distance % (1000 * 60)) / 1000)
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [isMarketOpen]);
 
   return (
     <motion.section 
@@ -97,9 +126,15 @@ const BlockStreetPromo = () => {
           </motion.div>
 
           <motion.div variants={itemVariants} className="bsp-action">
-            <Link to="/bolsa" className="bsp-btn-mc">
-              ENTRAR AL MERCADO <span className="arrow">&gt;</span>
-            </Link>
+            {isMarketOpen ? (
+              <Link to="/bolsa" className="bsp-btn-mc">
+                ENTRAR AL MERCADO <span className="arrow">&gt;</span>
+              </Link>
+            ) : (
+              <div className="bsp-btn-mc disabled-timer">
+                APERTURA EN: {timeLeft.days}D {String(timeLeft.hours).padStart(2, '0')}H {String(timeLeft.minutes).padStart(2, '0')}M {String(timeLeft.seconds).padStart(2, '0')}S
+              </div>
+            )}
             <Link to="/bolsa/guia" className="bsp-btn-mc bsp-btn-secondary flex-center">
               <img src="/tienda/assets/icons/guide_book.png" className="mc-pixelated btn-inline-icon" alt="Guia" />
               <span>CÓMO FUNCIONA</span>
@@ -108,7 +143,6 @@ const BlockStreetPromo = () => {
         </div>
 
         <motion.div variants={itemVariants} className="bsp-visual">
-          
           <div className="mc-gui-window">
             <div className="mc-gui-header">
               <span className="gui-title">Terminal del Broker</span>
@@ -171,7 +205,6 @@ const BlockStreetPromo = () => {
             
             <div className="mc-gui-body">
               <div className="whale-feed">
-                
                 <div className="whale-item type-pump">
                   <div className="w-icon">
                     <img src="/tienda/assets/minerals/oro.png" className="mc-pixelated" alt="Oro" />
@@ -201,11 +234,9 @@ const BlockStreetPromo = () => {
                     <span className="w-desc">Fuga de capital detectada hacia la <strong>Esmeralda</strong>.</span>
                   </div>
                 </div>
-
               </div>
             </div>
           </div>
-
         </motion.div>
       </div>
     </motion.section>

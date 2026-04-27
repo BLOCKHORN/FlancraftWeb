@@ -14,6 +14,22 @@ exports.getLivePrices = async (req, res) => {
   }
 };
 
+exports.getOrderStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { data, error } = await supabase
+      .from("web_pending_orders")
+      .select("status")
+      .eq("id", id)
+      .single();
+
+    if (error) throw error;
+    res.status(200).json(data);
+  } catch (error) {
+    res.status(500).json({ error: "Error consultando estado." });
+  }
+};
+
 exports.getPortfolio = async (req, res) => {
   try {
     const { uuid } = req.params;
@@ -79,7 +95,9 @@ exports.getTopTraders = async (req, res) => {
     if (error) {
        const { data: fallbackData, error: fallbackError } = await supabase
         .from('market_transactions_ledger')
-        .select('uuid, player_name, transaction_type, total_coins_exchanged');
+        .select('uuid, player_name, transaction_type, total_coins_exchanged')
+        .order('timestamp', { ascending: false })
+        .limit(5000);
         
        if (fallbackError) throw fallbackError;
 
@@ -106,10 +124,11 @@ exports.getTopTraders = async (req, res) => {
 
 exports.createOrder = async (req, res) => {
   try {
-    const { uuid, playerName, mineralId, type, amount } = req.body;
+    const uuid = req.user?.uuid;
+    const { playerName, mineralId, type, amount } = req.body;
 
     if (!uuid || !playerName || !mineralId || !type || !amount) {
-      return res.status(400).json({ error: "Faltan parámetros en la orden." });
+      return res.status(400).json({ error: "Faltan parámetros en la orden o sesión inválida." });
     }
 
     if (type !== "BUY" && type !== "SELL") {
@@ -141,10 +160,9 @@ exports.createOrder = async (req, res) => {
   }
 };
 
-
 exports.getMarketAnalytics = async (req, res) => {
   try {
-const MINERALES_BOLSA = [
+    const MINERALES_BOLSA = [
         "DIAMOND", "GOLD_INGOT", "IRON_INGOT", "EMERALD", "NETHERITE_INGOT", "COAL",
         "RAW_COPPER", "CHORUS_FRUIT", "FLINT", "QUARTZ"
     ];
@@ -166,7 +184,7 @@ const MINERALES_BOLSA = [
     });
 
     const topCandidates = Object.values(aggregation)
-      .filter(item => item.cash > 2000) // Solo items con impacto real (>2k coins)
+      .filter(item => item.cash > 2000)
       .sort((a, b) => b.cash - a.cash)
       .slice(0, 8);
 
