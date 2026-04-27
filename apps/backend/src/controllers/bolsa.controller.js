@@ -37,7 +37,8 @@ exports.getPortfolio = async (req, res) => {
 
     const [portfolioRes, liquidRes] = await Promise.all([
       supabase.from("market_portfolios").select("*").eq("uuid", uuid),
-      supabase.from("monedas_actuales").select("coins").eq("uuid", uuid).limit(1)
+      // Añadido el filtro eq("servidor", "survival") para evitar lecturas cruzadas
+      supabase.from("monedas_actuales").select("coins").eq("uuid", uuid).eq("servidor", "survival").limit(1)
     ]);
 
     if (portfolioRes.error) throw portfolioRes.error;
