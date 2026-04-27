@@ -124,8 +124,7 @@ exports.getTopTraders = async (req, res) => {
 
 exports.createOrder = async (req, res) => {
   try {
-    const uuid = req.user?.uuid;
-    const { playerName, mineralId, type, amount } = req.body;
+    const { uuid, playerName, mineralId, type, amount } = req.body;
 
     if (!uuid || !playerName || !mineralId || !type || !amount) {
       return res.status(400).json({ error: "Faltan parámetros en la orden o sesión inválida." });

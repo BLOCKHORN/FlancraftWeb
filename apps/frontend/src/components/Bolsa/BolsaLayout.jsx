@@ -206,6 +206,7 @@ const BolsaLayout = () => {
     try {
       const actualName = user.nombre_minecraft || user.username || user.nombre || "Inversor";
       const orderRes = await apiPost("/api/bolsa/trade", {
+        uuid: user.uuid,
         playerName: actualName,
         mineralId: mineralId,
         type: type,
