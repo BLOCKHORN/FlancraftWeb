@@ -37,7 +37,6 @@ exports.getPortfolio = async (req, res) => {
 
     const [portfolioRes, liquidRes] = await Promise.all([
       supabase.from("market_portfolios").select("*").eq("uuid", uuid),
-      // Añadido el filtro eq("servidor", "survival") para evitar lecturas cruzadas
       supabase.from("monedas_actuales").select("coins").eq("uuid", uuid).eq("servidor", "survival").limit(1)
     ]);
 
@@ -57,14 +56,25 @@ exports.getPortfolio = async (req, res) => {
 
 exports.getLedger = async (req, res) => {
   try {
-    const { data, error } = await supabase
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 15;
+    const start = (page - 1) * limit;
+    const end = start + limit - 1;
+
+    const { data, error, count } = await supabase
       .from("market_transactions_ledger")
-      .select("*")
+      .select("*", { count: "exact" })
       .order("timestamp", { ascending: false })
-      .limit(50);
+      .range(start, end);
 
     if (error) throw error;
-    res.status(200).json(data);
+    
+    res.status(200).json({
+      transactions: data,
+      total: count,
+      page: page,
+      totalPages: Math.ceil(count / limit)
+    });
   } catch (error) {
     res.status(500).json({ error: "Error obteniendo transacciones." });
   }
@@ -98,7 +108,7 @@ exports.getTopTraders = async (req, res) => {
         .from('market_transactions_ledger')
         .select('uuid, player_name, transaction_type, total_coins_exchanged')
         .order('timestamp', { ascending: false })
-        .limit(5000);
+        .limit(1000);
         
        if (fallbackError) throw fallbackError;
 

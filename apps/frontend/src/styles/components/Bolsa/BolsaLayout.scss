@@ -26,6 +26,7 @@ $sans-font: "Inter", "Montserrat", sans-serif;
 .bg-gray { background-color: #333333; color: #aaaaaa; border: 2px solid #aaaaaa; }
 .font-bold { font-family: 'MinecraftBold', sans-serif; }
 .flex-center { display: flex; align-items: center; gap: 8px; }
+.flex-column-between { display: flex; flex-direction: column; justify-content: space-between; height: 100%; }
 
 .coin-icon { width: 16px; height: 16px; vertical-align: middle; }
 .coin-icon-small { width: 12px; height: 12px; vertical-align: middle; margin-left: 4px;}
@@ -89,6 +90,7 @@ $sans-font: "Inter", "Montserrat", sans-serif;
     display: flex; 
     flex-direction: column; 
     gap: 2rem; 
+    min-width: 0;
   }
   
   .mc-side-column {
@@ -144,19 +146,19 @@ $sans-font: "Inter", "Montserrat", sans-serif;
 .mc-btn-green-block { 
   background: #4caf50; color: #fff; 
   box-shadow: inset 4px 4px 0 #a5d6a7, inset -4px -4px 0 #2e7d32; 
-  min-width: 170px;
+  min-width: 180px;
   &:disabled { background: #2b2b2b; color: #555; box-shadow: inset 4px 4px 0 #333, inset -4px -4px 0 #111; cursor: not-allowed;}
 }
 .mc-btn-red-block { 
   background: #ef5350; color: #fff; 
   box-shadow: inset 4px 4px 0 #ef9a9a, inset -4px -4px 0 #c62828; 
-  min-width: 170px;
+  min-width: 180px;
   &:disabled{ background: #2b2b2b; color: #555; box-shadow: inset 4px 4px 0 #333, inset -4px -4px 0 #111; cursor:not-allowed;} 
 }
 .mc-btn-gold-block { 
   background: #fbbf24; color: #000; 
   box-shadow: inset 4px 4px 0 #fde68a, inset -4px -4px 0 #b45309; 
-  min-width: 170px;
+  min-width: 180px;
   .title {text-shadow: none;} 
 }
 .mc-btn-gold { 
@@ -167,7 +169,7 @@ $sans-font: "Inter", "Montserrat", sans-serif;
 
 .mc-wallet-hud {
   display: flex; justify-content: space-around; padding: 1.2rem;
-  @media (max-width: 600px) { flex-direction: column; gap: 1.5rem; align-items: center; }
+  @media (max-width: 600px) { flex-direction: column; gap: 1.5rem; align-items: center; text-align: center;}
 
   .hud-item {
     display: flex; flex-direction: column; align-items: center; gap: 6px;
@@ -317,6 +319,12 @@ $sans-font: "Inter", "Montserrat", sans-serif;
   100% { text-shadow: 0 0 10px rgba(255, 85, 85, 1); }
 }
 
+@keyframes processingBlink {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+
 .mc-news-panel {
   padding: 1.5rem;
   
@@ -358,6 +366,7 @@ $sans-font: "Inter", "Montserrat", sans-serif;
     margin-left: 8px; 
     position: relative;
     z-index: 2; 
+    flex-wrap: wrap;
     
     .mc-tab {
       background: #2b2b2b; 
@@ -370,6 +379,7 @@ $sans-font: "Inter", "Montserrat", sans-serif;
       cursor: pointer;
       box-shadow: inset 4px 4px 0 #4f4f4f, inset -4px 0 0 #141414; 
       margin-bottom: -4px; 
+      flex-grow: 1;
       
       &:hover { color: #ccc; }
       
@@ -405,12 +415,16 @@ $sans-font: "Inter", "Montserrat", sans-serif;
       border: 4px solid #000; 
       box-shadow: inset 4px 4px 0 #000, inset -4px -4px 0 #222; 
       padding: 1.5rem; 
-      max-height: 400px; 
-      overflow-y: auto;
+      min-height: 400px;
       
-      &::-webkit-scrollbar { width: 14px; }
-      &::-webkit-scrollbar-track { background: #111; border-left: 2px solid #000; }
-      &::-webkit-scrollbar-thumb { background: #8b8b8b; border: 2px solid #000; border-top-color: #fff; border-left-color: #fff;}
+      .mc-table-responsive {
+        width: 100%;
+        overflow-x: auto;
+        
+        &::-webkit-scrollbar { height: 10px; }
+        &::-webkit-scrollbar-track { background: #111; border-top: 2px solid #000; }
+        &::-webkit-scrollbar-thumb { background: #8b8b8b; border: 2px solid #000; border-top-color: #fff; border-left-color: #fff;}
+      }
 
       .mc-empty-state { 
         text-align: center; padding: 4rem 1rem; font-family: 'MinecraftBold'; color: #666; 
@@ -420,15 +434,36 @@ $sans-font: "Inter", "Montserrat", sans-serif;
       }
       
       .mc-ledger-table {
-        width: 100%; border-collapse: collapse; font-family: $sans-font; font-weight: bold;
-        th { text-align: left; font-family: 'MinecraftBold'; font-size: 0.9rem; color: #aaa; padding: 12px; border-bottom: 4px solid #333; position: sticky; top: -1.5rem; background: #111; z-index:5;}
+        width: 100%; border-collapse: collapse; font-family: $sans-font; font-weight: bold; white-space: nowrap;
+        th { text-align: left; font-family: 'MinecraftBold'; font-size: 0.9rem; color: #aaa; padding: 12px; border-bottom: 4px solid #333; background: #111; }
         td { padding: 16px 12px; border-bottom: 2px solid #222; font-size: 1rem;}
         
         .mc-btn-sell-small { 
           background: #551a1a; color: #FF5555; border: 2px solid #000; font-family: 'MinecraftBold'; font-size: 0.8rem; padding: 6px 16px; cursor: pointer; box-shadow: inset 2px 2px 0 #882222; 
           &:hover:not(:disabled) { background:#772222; color:#fff;} 
           &:active:not(:disabled) { box-shadow: inset 2px 2px 0 #111; transform: translate(2px,2px);}
-          &:disabled { opacity: 0.5; cursor: wait; }
+          &:disabled { opacity: 0.5; cursor: not-allowed; }
+          &.processing { background: #666600; color: #ffff00; box-shadow: inset 2px 2px 0 #888800; animation: processingBlink 1.5s infinite; }
+        }
+      }
+
+      .mc-pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 16px;
+        margin-top: 24px;
+        padding-top: 16px;
+        border-top: 2px solid #222;
+
+        button {
+          background: #333; color: #fff; border: 2px solid #000; font-family: 'MinecraftBold'; padding: 8px 16px; cursor: pointer; box-shadow: inset 2px 2px 0 #555, inset -2px -2px 0 #111;
+          &:hover:not(:disabled) { background: #444; }
+          &:disabled { opacity: 0.5; cursor: not-allowed; }
+        }
+
+        span {
+          font-family: 'MinecraftBold'; color: #888; font-size: 0.9rem; text-shadow: 1px 1px 0 #000;
         }
       }
     }
@@ -519,7 +554,7 @@ $sans-font: "Inter", "Montserrat", sans-serif;
   }
   
   .toast-texts { 
-    display: flex; flex-direction: column; gap: 4px;
+    display: flex; flex-direction: column; gap: 6px;
     .toast-title { font-family: 'MinecraftBold'; font-size: 1.1rem; text-shadow: 2px 2px 0 #000; } 
     .toast-sub { 
       font-family: 'MinecraftBold'; color: #fff; font-size: 0.9rem; text-shadow: 2px 2px 0 #000;
@@ -530,14 +565,14 @@ $sans-font: "Inter", "Montserrat", sans-serif;
 
 .mc-toast-error { 
   background: #551a1a !important; color: #FF5555 !important; border: 4px solid #000 !important; border-radius: 0 !important; font-family: 'MinecraftBold' !important; box-shadow: inset 4px 4px 0 #882222, inset -4px -4px 0 #220000, 10px 10px 0 rgba(0,0,0,0.5) !important; padding: 16px 24px !important; font-size: 1.1rem !important; text-shadow: 2px 2px 0 #000 !important; pointer-events: auto;
-  display: flex; flex-direction: column; gap: 4px;
+  display: flex; flex-direction: column; gap: 6px;
   .toast-title { font-size: 1.1rem; text-shadow: 2px 2px 0 #000; display: block; }
   .toast-sub { font-family: $sans-font; color: #fff; font-size: 0.9rem; text-shadow: none; font-weight: bold; display: block; }
 }
 
 .mc-toast-loading { 
   background: #111 !important; color: #fbbf24 !important; border: 4px solid #000 !important; border-radius: 0 !important; font-family: 'MinecraftBold' !important; box-shadow: inset 4px 4px 0 #333, inset -4px -4px 0 #000, 10px 10px 0 rgba(0,0,0,0.5) !important; padding: 16px 24px !important; font-size: 1.1rem !important; text-shadow: 2px 2px 0 #000 !important; pointer-events: auto;
-  display: flex; flex-direction: column; gap: 4px;
+  display: flex; flex-direction: column; gap: 6px;
   .toast-title { font-size: 1.1rem; text-shadow: 2px 2px 0 #000; display: block; }
-  .toast-sub { font-family: $sans-font; color: #fff; font-size: 0.9rem; text-shadow: none; font-weight: bold; display: block; }
+  .toast-sub { font-family: $sans-font; color: #aaa; font-size: 0.9rem; text-shadow: none; font-weight: bold; display: block; }
 }
