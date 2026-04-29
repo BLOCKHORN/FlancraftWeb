@@ -163,7 +163,6 @@ const BolsaLayout = () => {
     fetchNews();
   }, [ledger]);
 
-  // RELOJ ABSOLUTO Y MATEMÁTICO (Sincronizado con Java)
   useEffect(() => {
     const timerInterval = setInterval(() => {
       const now = new Date();
@@ -188,7 +187,7 @@ const BolsaLayout = () => {
     return () => clearInterval(timerInterval);
   }, []);
 
-  // INICIALIZACIÓN DEL GRÁFICO (Con purga de React 18)
+  // INICIALIZACIÓN DEL GRÁFICO (CON TOOLTIP INTERACTIVO)
   useEffect(() => {
     if (!chartContainerRef.current) return;
 
@@ -214,8 +213,8 @@ const BolsaLayout = () => {
       },
       crosshair: {
         mode: 1,
-        vertLine: { color: '#555', style: 3 },
-        horzLine: { color: '#555', style: 3 }
+        vertLine: { color: '#555', style: 3, labelBackgroundColor: '#111' },
+        horzLine: { color: '#555', style: 3, labelBackgroundColor: '#111' }
       }
     });
 
@@ -237,6 +236,38 @@ const BolsaLayout = () => {
       scaleMargins: { top: 0.8, bottom: 0 },
     });
 
+    // SUSCRIPCIÓN DEL RATÓN (HOVER)
+    chart.subscribeCrosshairMove((param) => {
+      const legend = document.getElementById('chart-legend-overlay');
+      const lo = document.getElementById('leg-o');
+      const lh = document.getElementById('leg-h');
+      const ll = document.getElementById('leg-l');
+      const lc = document.getElementById('leg-c');
+
+      if (!legend) return;
+
+      if (
+        param.point === undefined ||
+        !param.time ||
+        param.point.x < 0 ||
+        param.point.x > chartContainerRef.current.clientWidth ||
+        param.point.y < 0 ||
+        param.point.y > chartContainerRef.current.clientHeight
+      ) {
+        legend.style.display = 'none';
+      } else {
+        const data = param.seriesData.get(candlestickSeries);
+        if (data) {
+          legend.style.display = 'flex';
+          lo.innerText = data.open.toFixed(2);
+          lh.innerText = data.high.toFixed(2);
+          ll.innerText = data.low.toFixed(2);
+          lc.innerText = data.close.toFixed(2);
+          lc.style.color = data.close >= data.open ? '#5EE034' : '#FF5555';
+        }
+      }
+    });
+
     chartInstance.current = chart;
     candleSeries.current = candlestickSeries;
     volumeSeries.current = histogramSeries;
@@ -253,6 +284,7 @@ const BolsaLayout = () => {
     };
   }, []);
 
+  // INYECCIÓN DE DATOS Y AUTO-ZOOM
   useEffect(() => {
     if (candleSeries.current && volumeSeries.current && chartData.length > 0) {
       candleSeries.current.setData(chartData);
@@ -263,6 +295,9 @@ const BolsaLayout = () => {
         color: d.close >= d.open ? 'rgba(94, 224, 52, 0.4)' : 'rgba(255, 85, 85, 0.4)'
       }));
       volumeSeries.current.setData(volumeFormatted);
+
+      // Obliga al gráfico a adaptar la vista al nuevo tamaño de los datos
+      chartInstance.current.timeScale().fitContent();
     }
   }, [chartData]);
 
@@ -734,7 +769,25 @@ const BolsaLayout = () => {
                 </div>
               </div>
 
-              <div className="mc-chart-screen">
+              <div className="mc-chart-screen" style={{ position: 'relative' }}>
+                <div 
+                  id="chart-legend-overlay" 
+                  style={{ 
+                    position: 'absolute', top: '12px', left: '12px', zIndex: 10, display: 'none', 
+                    flexDirection: 'column', gap: '4px', background: 'rgba(8, 8, 8, 0.85)', 
+                    padding: '8px 12px', border: '2px solid #333', pointerEvents: 'none',
+                    fontFamily: 'MinecraftBold, sans-serif', fontSize: '0.85rem'
+                  }}
+                >
+                  <span style={{ color: '#fff', fontSize: '1rem', borderBottom: '1px solid #333', paddingBottom: '4px', marginBottom: '4px' }}>
+                    {getAssetDisplayName(selectedAsset)}
+                  </span>
+                  <div><span style={{ color: '#888' }}>O </span> <span id="leg-o" style={{ color: '#fbbf24' }}>0.00</span></div>
+                  <div><span style={{ color: '#888' }}>H </span> <span id="leg-h" style={{ color: '#fbbf24' }}>0.00</span></div>
+                  <div><span style={{ color: '#888' }}>L </span> <span id="leg-l" style={{ color: '#fbbf24' }}>0.00</span></div>
+                  <div><span style={{ color: '#888' }}>C </span> <span id="leg-c">0.00</span></div>
+                </div>
+                
                 <div ref={chartContainerRef} style={{ width: '100%', height: '350px' }} />
                 {chartData.length === 0 && (
                   <div className="chart-empty" style={{position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', alignItems:'center', justifyContent: 'center', pointerEvents: 'none'}}>

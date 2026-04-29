@@ -90,22 +90,24 @@ exports.getChartData = async (req, res) => {
     if (!mineral) return res.status(400).json({ error: "Mineral requerido." });
 
     let timeLimit = new Date();
-    if (tf === '1H') timeLimit.setHours(timeLimit.getHours() - 1);
-    else if (tf === '24H') timeLimit.setHours(timeLimit.getHours() - 24);
-    else if (tf === '7D') timeLimit.setDate(timeLimit.getDate() - 7);
-    else timeLimit = new Date(0); 
+    let limitCount = 1000;
+    
+    // Calculamos el límite histórico
+    if (tf === '1H') { timeLimit.setHours(timeLimit.getHours() - 1); limitCount = 60; }
+    else if (tf === '24H') { timeLimit.setHours(timeLimit.getHours() - 24); limitCount = 200; }
+    else if (tf === '7D') { timeLimit.setDate(timeLimit.getDate() - 7); limitCount = 1000; }
+    else { timeLimit = new Date(0); limitCount = 5000; } // ALL
 
     const { data, error } = await supabase
       .from("market_ohlc_data")
       .select("open_price, high_price, low_price, close_price, volume, timestamp")
       .eq("mineral_id", mineral.toUpperCase())
       .gte("timestamp", timeLimit.toISOString())
-      .order("timestamp", { ascending: true })
-      .limit(1000);
+      .order("timestamp", { ascending: false }) // [!] CLAVE: Traer siempre los más nuevos primero
+      .limit(limitCount);
 
     if (error) throw error;
 
-    // FILTRO ANTI-CRASH OBLIGATORIO PARA LIGHTWEIGHT CHARTS
     const uniqueDataMap = new Map();
 
     data.forEach(candle => {
@@ -122,6 +124,7 @@ exports.getChartData = async (req, res) => {
       }
     });
 
+    // Reordenamos de más viejo a más nuevo para que el gráfico fluya hacia la derecha
     const formattedData = Array.from(uniqueDataMap.values()).sort((a, b) => a.time - b.time);
 
     res.status(200).json(formattedData);
