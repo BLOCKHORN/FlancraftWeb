@@ -66,6 +66,9 @@ const BolsaLayout = () => {
   const chartInstance = useRef(null);
   const candleSeries = useRef(null);
   const volumeSeries = useRef(null);
+  
+  // Guardamos el contexto previo para evitar reseteos de zoom al recargar datos
+  const prevContext = useRef({ asset: null, tf: null });
 
   const fetchLedger = async (page = 1) => {
     try {
@@ -187,7 +190,6 @@ const BolsaLayout = () => {
     return () => clearInterval(timerInterval);
   }, []);
 
-  // INICIALIZACIÓN DEL GRÁFICO (CON TOOLTIP INTERACTIVO)
   useEffect(() => {
     if (!chartContainerRef.current) return;
 
@@ -206,7 +208,10 @@ const BolsaLayout = () => {
       timeScale: {
         timeVisible: true,
         secondsVisible: false,
-        borderColor: '#333'
+        borderColor: '#333',
+        barSpacing: 15, // Esto previene el zoom extremo cuando hay pocas velas
+        rightOffset: 12, // Deja margen a la derecha para la vela actual
+        fixLeftEdge: false,
       },
       rightPriceScale: {
         borderColor: '#333'
@@ -236,7 +241,6 @@ const BolsaLayout = () => {
       scaleMargins: { top: 0.8, bottom: 0 },
     });
 
-    // SUSCRIPCIÓN DEL RATÓN (HOVER)
     chart.subscribeCrosshairMove((param) => {
       const legend = document.getElementById('chart-legend-overlay');
       const lo = document.getElementById('leg-o');
@@ -284,7 +288,6 @@ const BolsaLayout = () => {
     };
   }, []);
 
-  // INYECCIÓN DE DATOS Y AUTO-ZOOM
   useEffect(() => {
     if (candleSeries.current && volumeSeries.current && chartData.length > 0) {
       candleSeries.current.setData(chartData);
@@ -296,10 +299,13 @@ const BolsaLayout = () => {
       }));
       volumeSeries.current.setData(volumeFormatted);
 
-      // Obliga al gráfico a adaptar la vista al nuevo tamaño de los datos
-      chartInstance.current.timeScale().fitContent();
+      // Si cambiamos explícitamente de mineral o de temporalidad, centramos a la derecha sin deformar
+      if (prevContext.current.asset !== selectedAsset || prevContext.current.tf !== timeframe) {
+        chartInstance.current.timeScale().scrollToRealTime();
+        prevContext.current = { asset: selectedAsset, tf: timeframe };
+      }
     }
-  }, [chartData]);
+  }, [chartData, selectedAsset, timeframe]);
 
   const getOwnedShares = (mineralId) => {
     const asset = portfolio.find(p => p.mineral_id === mineralId);
