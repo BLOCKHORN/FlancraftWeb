@@ -10,5 +10,6 @@ router.get("/top-traders", bolsaController.getTopTraders);
 router.get("/order-status/:id", bolsaController.getOrderStatus);
 router.post("/trade", bolsaController.createOrder);
 router.get("/admin/analytics", bolsaController.getMarketAnalytics);
+router.get("/news", bolsaController.getMarketNews);
 
 module.exports = router;

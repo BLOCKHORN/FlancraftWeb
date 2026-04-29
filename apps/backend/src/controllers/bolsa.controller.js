@@ -35,7 +35,6 @@ exports.getPortfolio = async (req, res) => {
     let { uuid } = req.params;
     if (!uuid) return res.status(400).json({ error: "UUID requerido." });
     
-    // Normalizamos el UUID para garantizar compatibilidad con PostgreSQL y Java
     uuid = uuid.trim().toLowerCase(); 
 
     const [portfolioRes, liquidRes] = await Promise.all([
@@ -97,17 +96,27 @@ exports.getChartData = async (req, res) => {
     else timeLimit = new Date(0); 
 
     const { data, error } = await supabase
-      .from("market_transactions_ledger")
-      .select("price_per_share, timestamp")
+      .from("market_ohlc_data")
+      .select("open_price, high_price, low_price, close_price, volume, timestamp")
       .eq("mineral_id", mineral.toUpperCase())
       .gte("timestamp", timeLimit.toISOString())
       .order("timestamp", { ascending: true })
-      .limit(500);
+      .limit(1000);
 
     if (error) throw error;
-    res.status(200).json(data);
+
+    const formattedData = data.map(candle => ({
+      time: Math.floor(new Date(candle.timestamp).getTime() / 1000),
+      open: candle.open_price,
+      high: candle.high_price,
+      low: candle.low_price,
+      close: candle.close_price,
+      value: candle.volume
+    }));
+
+    res.status(200).json(formattedData);
   } catch (error) {
-    res.status(500).json({ error: "Error obteniendo datos del gráfico." });
+    res.status(500).json({ error: "Error obteniendo datos OHLC." });
   }
 };
 
@@ -153,7 +162,6 @@ exports.createOrder = async (req, res) => {
       return res.status(400).json({ error: "Faltan parámetros en la orden o sesión inválida." });
     }
 
-    // Normalizamos el UUID antes de meterlo a la cola
     uuid = uuid.trim().toLowerCase();
 
     if (type !== "BUY" && type !== "SELL") {
@@ -237,5 +245,24 @@ exports.getMarketAnalytics = async (req, res) => {
     res.status(200).json({ candidates: topCandidates, whales: whales });
   } catch (error) {
     res.status(500).json({ error: "Error en inteligencia de mercado." });
+  }
+};
+
+exports.getMarketNews = async (req, res) => {
+  try {
+    const timeLimit = new Date();
+    timeLimit.setHours(timeLimit.getHours() - 12);
+
+    const { data, error } = await supabase
+      .from("market_news")
+      .select("*")
+      .gte("execute_at", timeLimit.toISOString())
+      .order("execute_at", { ascending: false })
+      .limit(20);
+
+    if (error) throw error;
+    res.status(200).json(data);
+  } catch (error) {
+    res.status(500).json({ error: "Error obteniendo noticias del mercado." });
   }
 };

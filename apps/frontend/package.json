@@ -39,6 +39,7 @@
     "framer-motion": "^12.10.4",
     "howler": "^2.2.4",
     "js-yaml": "^4.1.0",
+    "lightweight-charts": "^4.2.1",
     "lucide-react": "^0.487.0",
     "ngrok": "^5.0.0-beta.2",
     "phosphor-react": "^1.4.1",

@@ -326,7 +326,7 @@ $sans-font: "Inter", "Montserrat", sans-serif;
     box-shadow: inset 4px 4px 0 #000, inset -4px -4px 0 #333; 
     margin-bottom: 2rem; 
     position: relative;
-    padding: 10px 10px 0 0;
+    overflow: hidden;
     
     @media (max-width: 600px) { height: 250px; min-height: 250px; margin-bottom: 1.5rem;}
     .chart-empty { height: 100%; display: flex; align-items: center; justify-content: center; font-family: 'MinecraftBold'; color: #444; font-size: 1.2rem;}
@@ -442,8 +442,8 @@ $sans-font: "Inter", "Montserrat", sans-serif;
       font-family: 'MinecraftBold', sans-serif; font-size: 0.8rem; line-height: 1.4; border-bottom: 1px dashed #222; padding-bottom: 8px; display: flex; align-items: center;
       .news-tag { 
         margin-right: 8px; text-shadow: 1px 1px 0 #000;
-        &.UP { color: #5EE034; }
-        &.DOWN { color: #FF5555; }
+        &.PUMP { color: #5EE034; }
+        &.CRASH { color: #FF5555; }
         &.INFO { color: #fbbf24; }
         &.WHALE { color: #d946ef; }
       }
@@ -624,27 +624,6 @@ $sans-font: "Inter", "Montserrat", sans-serif;
 @keyframes hotPulse {
   0% { opacity: 0.7; text-shadow: 0 0 4px rgba(255, 85, 85, 0.5); }
   100% { text-shadow: 0 0 10px rgba(255, 85, 85, 1); }
-}
-
-.mc-chart-tooltip {
-  background: rgba(16, 0, 16, 0.95);
-  border: 4px solid #280154; 
-  box-shadow: inset 0 0 0 2px rgba(16, 0, 16, 1), 0 0 0 4px #000;
-  padding: 10px 14px;
-  
-  .mc-tooltip-time { margin: 0 0 6px 0; color: #aaa; font-family: 'MinecraftBold'; font-size: 0.85rem; }
-  .mc-tooltip-price { margin: 0; color: #5EE034; font-family: 'MinecraftBold'; font-size: 1.2rem; display: flex; align-items: center; gap: 6px; text-shadow: 2px 2px 0 #000; }
-}
-
-.recharts-brush {
-  .recharts-brush-slide { fill: #111; fill-opacity: 0.8; }
-  .recharts-brush-traveller {
-    cursor: col-resize;
-    rect { fill: #8b8b8b; stroke: #000; stroke-width: 2px; }
-    line { display: none; }
-    &:hover rect { fill: #aaaaaa; }
-    &:active rect { fill: #777777; }
-  }
 }
 
 .mc-toast-success {
