@@ -325,7 +325,6 @@ const BolsaLayout = () => {
     }
   };
 
-  // --- CALCULOS MATEMATICOS Y FINANCIEROS (REORDENADOS) ---
   const currentAssetData = livePrices.find(p => p.mineral_id === selectedAsset);
   const currentPrice = currentAssetData?.current_coin_price || 0;
   
@@ -335,7 +334,6 @@ const BolsaLayout = () => {
   const selectedOwnedShares = getOwnedShares(selectedAsset);
   const safeAmount = Math.min(1000, Math.max(1, parseInt(tradeAmount, 10) || 1));
   
-  // Costes y Slippage
   const buySlippageFactor = 1.0 + (safeAmount * slippageRate);
   const finalBuyPrice = currentPrice * buySlippageFactor;
   const avgBuyPrice = (currentPrice + finalBuyPrice) / 2.0;
@@ -348,23 +346,19 @@ const BolsaLayout = () => {
   const totalSellValueRaw = safeAmount * avgSellPrice;
   const estSellValue = totalSellValueRaw - (totalSellValueRaw * feePercent);
 
-  // Verificaciones y limites (CEX Slider)
   const canAffordBuy = liquidCoins >= estBuyCost;
   const rawCostPerUnit = currentPrice * (1 + slippageRate) * (1 + feePercent);
   const maxBuyAmount = Math.max(0, Math.floor(liquidCoins / rawCostPerUnit));
   const maxSellAmount = selectedOwnedShares;
   const activeMaxLimit = tradeMode === 'BUY' ? maxBuyAmount : maxSellAmount;
 
-  // Valor Global
   const portfolioValue = portfolio.reduce((acc, item) => acc + (item.shares * (livePrices.find(p => p.mineral_id === item.mineral_id)?.current_coin_price || 0)), 0);
   const totalNetWorth = liquidCoins + portfolioValue;
   
-  // Interfaz
   const isUp = currentAssetData ? currentAssetData.trend_arrow !== "DOWN" : true;
   const chartColor = isUp ? "#5EE034" : "#FF5555";
   const glowClass = isUp ? "glow-green" : "glow-red";
 
-  // --- FUNCIONES INTERACTIVAS ---
   const handlePercentageSelect = (pct) => {
     let calculated = Math.floor(activeMaxLimit * (pct / 100));
     if (calculated < 1 && activeMaxLimit > 0) calculated = 1;
@@ -587,34 +581,56 @@ const BolsaLayout = () => {
       </div>
 
       <div className="mc-bolsa-layout">
-        <div className="mc-bolsa-grid">
-          
-          <div className="mc-main-panel">
-            {user?.loggedIn && (
-              <div className="mc-gui-window mc-wallet-hud">
-                <div className="hud-item">
-                  <span className="hud-label">RIQUEZA TOTAL ESTIMADA</span>
-                  <span className="hud-value highlight">
-                    {totalNetWorth.toFixed(2)} <img src="/tienda/assets/coin.png" className="coin-icon mc-pixelated" alt="coins" />
-                  </span>
-                </div>
-                <div className="hud-item">
-                  <span className="hud-label">LIQUIDEZ DISPONIBLE (IN-GAME)</span>
-                  <div className="hud-value-group">
-                    <span className="hud-value">
-                      {liquidCoins.toFixed(2)} <img src="/tienda/assets/coin.png" className="coin-icon mc-pixelated" alt="coins" />
-                    </span>
-                    <button className="mc-btn-add" onClick={() => navigate('/tienda')} title="Comprar Coins">+</button>
-                  </div>
-                </div>
-                <div className="hud-item">
-                  <span className="hud-label">VALOR DEL PORTAFOLIO EN VIVO</span>
-                  <span className="hud-value">
-                    {portfolioValue.toFixed(2)} <img src="/tienda/assets/coin.png" className="coin-icon mc-pixelated" alt="coins" />
+        
+        {user?.loggedIn && (
+          <div className="mc-gui-window mc-wallet-hud">
+            <div className="hud-item">
+              <span className="hud-label">RIQUEZA TOTAL ESTIMADA</span>
+              <span className="hud-value highlight">
+                {totalNetWorth.toFixed(2)} <img src="/tienda/assets/coin.png" className="coin-icon mc-pixelated" alt="coins" />
+              </span>
+            </div>
+            <div className="hud-item">
+              <span className="hud-label">LIQUIDEZ DISPONIBLE (IN-GAME)</span>
+              <div className="hud-value-group">
+                <span className="hud-value">
+                  {liquidCoins.toFixed(2)} <img src="/tienda/assets/coin.png" className="coin-icon mc-pixelated" alt="coins" />
+                </span>
+                <button className="mc-btn-add" onClick={() => navigate('/tienda')} title="Comprar Coins">+</button>
+              </div>
+            </div>
+            <div className="hud-item desktop-only">
+              <span className="hud-label">VALOR DEL PORTAFOLIO EN VIVO</span>
+              <span className="hud-value">
+                {portfolioValue.toFixed(2)} <img src="/tienda/assets/coin.png" className="coin-icon mc-pixelated" alt="coins" />
+              </span>
+            </div>
+          </div>
+        )}
+
+        <div className="mc-mobile-asset-strip">
+          {livePrices.map((asset) => {
+            const isHot = Math.abs(asset.last_percent) >= 0.05;
+            return (
+              <div 
+                key={asset.mineral_id} 
+                className={`mobile-asset-card ${selectedAsset === asset.mineral_id ? 'active' : ''}`}
+                onClick={() => setSelectedAsset(asset.mineral_id)}
+              >
+                <img src={getAssetIconPath(asset.mineral_id)} className="mc-pixelated" alt="m" />
+                <div className="mobile-asset-data">
+                  <span className="name">{getAssetDisplayName(asset.mineral_id)} {isHot && <span className="mc-hot-badge">HOT</span>}</span>
+                  <span className={`price ${asset.last_percent > 0 ? 'text-green' : asset.last_percent < 0 ? 'text-red' : 'text-gray'}`}>
+                    {asset.current_coin_price.toFixed(2)}
                   </span>
                 </div>
               </div>
-            )}
+            );
+          })}
+        </div>
+
+        <div className="mc-bolsa-grid">
+          <div className="mc-main-panel">
 
             <div className="mc-gui-window mc-trading-terminal">
               {!user?.loggedIn && (
@@ -661,7 +677,7 @@ const BolsaLayout = () => {
 
               <div className="mc-chart-screen">
                 {chartData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height="100%">
+                  <ResponsiveContainer width="99%" height="100%" minHeight={300}>
                     <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#222" vertical={false} />
                       <XAxis 
@@ -797,27 +813,6 @@ const BolsaLayout = () => {
 
           <div className="mc-side-column">
             
-            <div className="mc-gui-window mc-news-panel">
-              <div className="mc-news-header">BLOCK STREET JOURNAL</div>
-              <div className="mc-news-content">
-                {newsFeed.length === 0 ? (
-                  <div className="mc-news-empty">Buscando rumores en las tabernas de MC-500...</div>
-                ) : (
-                  newsFeed.map(news => (
-                    <div key={news.id} className="mc-news-item">
-                      <span className={`news-tag ${news.type}`}>{news.type === 'WHALE' ? '[BALLENA]' : news.type === 'UP' ? '[PUMP]' : news.type === 'DOWN' ? '[CRASH]' : '[RUMOR]'}</span>
-                      <span className="news-text">
-                        {news.type === 'UP' && <>¡ESCASEZ EXTREMA! <img src={getAssetIconPath(news.mineralId)} className="inline-icon mc-pixelated" alt="i"/> {getAssetDisplayName(news.mineralId)} estalla un +{news.percent}%</>}
-                        {news.type === 'DOWN' && <>¡PÁNICO DE VENTAS! <img src={getAssetIconPath(news.mineralId)} className="inline-icon mc-pixelated" alt="i"/> {getAssetDisplayName(news.mineralId)} se hunde un {news.percent}%</>}
-                        {news.type === 'INFO' && <>RUMOR: Movimientos institucionales impulsan <img src={getAssetIconPath(news.mineralId)} className="inline-icon mc-pixelated" alt="i"/> {getAssetDisplayName(news.mineralId)}.</>}
-                        {news.type === 'WHALE' && <>BALLENA INSTITUCIONAL: {news.playerName} ha {news.action} {news.amount}x <img src={getAssetIconPath(news.mineralId)} className="inline-icon mc-pixelated" alt="i"/> {getAssetDisplayName(news.mineralId)}.</>}
-                      </span>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-
             <div className="mc-gui-window mc-side-panel">
               <div className="mc-side-header">ÍNDICE DE COTIZACIONES</div>
               <div className="mc-assets-list">
@@ -849,6 +844,27 @@ const BolsaLayout = () => {
                     </div>
                   );
                 })}
+              </div>
+            </div>
+
+            <div className="mc-gui-window mc-news-panel">
+              <div className="mc-news-header">BLOCK STREET JOURNAL</div>
+              <div className="mc-news-content">
+                {newsFeed.length === 0 ? (
+                  <div className="mc-news-empty">Buscando rumores en las tabernas de MC-500...</div>
+                ) : (
+                  newsFeed.map(news => (
+                    <div key={news.id} className="mc-news-item">
+                      <span className={`news-tag ${news.type}`}>{news.type === 'WHALE' ? '[BALLENA]' : news.type === 'UP' ? '[PUMP]' : news.type === 'DOWN' ? '[CRASH]' : '[RUMOR]'}</span>
+                      <span className="news-text">
+                        {news.type === 'UP' && <>¡ESCASEZ EXTREMA! <img src={getAssetIconPath(news.mineralId)} className="inline-icon mc-pixelated" alt="i"/> {getAssetDisplayName(news.mineralId)} estalla un +{news.percent}%</>}
+                        {news.type === 'DOWN' && <>¡PÁNICO DE VENTAS! <img src={getAssetIconPath(news.mineralId)} className="inline-icon mc-pixelated" alt="i"/> {getAssetDisplayName(news.mineralId)} se hunde un {news.percent}%</>}
+                        {news.type === 'INFO' && <>RUMOR: Movimientos institucionales impulsan <img src={getAssetIconPath(news.mineralId)} className="inline-icon mc-pixelated" alt="i"/> {getAssetDisplayName(news.mineralId)}.</>}
+                        {news.type === 'WHALE' && <>BALLENA INSTITUCIONAL: {news.playerName} ha {news.action} {news.amount}x <img src={getAssetIconPath(news.mineralId)} className="inline-icon mc-pixelated" alt="i"/> {getAssetDisplayName(news.mineralId)}.</>}
+                      </span>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
             

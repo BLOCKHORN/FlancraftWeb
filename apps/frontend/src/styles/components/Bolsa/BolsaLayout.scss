@@ -44,6 +44,7 @@ $sans-font: "Inter", "Montserrat", sans-serif;
   background-position: center top;
   min-height: calc(100vh - 80px);
   padding-bottom: 4rem;
+  overflow-x: hidden;
 }
 
 .mc-ticker-wrap {
@@ -54,7 +55,7 @@ $sans-font: "Inter", "Montserrat", sans-serif;
   height: 40px;
   display: flex;
   align-items: center;
-  margin-bottom: 2.5rem;
+  margin-bottom: 1.5rem;
   box-shadow: 0 4px 10px rgba(0,0,0,0.5);
 
   .mc-ticker {
@@ -78,34 +79,38 @@ $sans-font: "Inter", "Montserrat", sans-serif;
   max-width: 1280px; 
   margin: 0 auto; 
   padding: 0 2rem;
-  
-  .mc-bolsa-grid {
-    display: grid; 
-    grid-template-columns: 1fr 360px; 
-    gap: 2rem;
-    align-items: start;
-    
-    @media (max-width: 1024px) { 
-      grid-template-columns: 1fr; 
-      gap: 1.5rem;
-    }
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+
+  @media (max-width: 1024px) {
+    padding: 0 1rem;
   }
+}
+
+.mc-bolsa-grid {
+  display: grid; 
+  grid-template-columns: 1fr 360px; 
+  gap: 2rem;
+  align-items: start;
   
-  .mc-main-panel { 
-    display: flex; 
-    flex-direction: column; 
-    gap: 2rem; 
-    min-width: 0;
-  }
-  
-  .mc-side-column {
-    display: flex;
-    flex-direction: column;
+  @media (max-width: 1024px) { 
+    grid-template-columns: 1fr; 
     gap: 1.5rem;
-    @media (max-width: 1024px) {
-      grid-row: 2;
-    }
   }
+}
+
+.mc-main-panel { 
+  display: flex; 
+  flex-direction: column; 
+  gap: 2rem; 
+  min-width: 0;
+}
+
+.mc-side-column {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
 .mc-gui-window {
@@ -129,6 +134,7 @@ $sans-font: "Inter", "Montserrat", sans-serif;
   border: 4px solid #000; 
   box-shadow: inset 4px 4px 0 #111, inset -4px -4px 0 #333;
   display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
   img { width: 40px; height: 40px; filter: drop-shadow(2px 2px 0 rgba(0,0,0,0.6)); }
   
   @media (max-width: 600px) {
@@ -150,7 +156,6 @@ $sans-font: "Inter", "Montserrat", sans-serif;
   user-select: none;
   
   .title { font-size: 1.1rem; margin-bottom: 4px; text-shadow: 2px 2px 0 rgba(0,0,0,0.5); }
-  .subtitle { font-family: $sans-font; font-size: 0.8rem; font-weight: 800; display: flex; align-items: center; gap: 4px; text-shadow: none;}
   
   &:hover:not(:disabled) { filter: brightness(1.2); }
   
@@ -170,11 +175,6 @@ $sans-font: "Inter", "Montserrat", sans-serif;
   box-shadow: inset 4px 4px 0 #ef9a9a, inset -4px -4px 0 #c62828; 
   &:disabled{ background: #2b2b2b; color: #555; box-shadow: inset 4px 4px 0 #333, inset -4px -4px 0 #111; cursor:not-allowed;} 
 }
-.mc-btn-gold-block { 
-  background: #fbbf24; color: #000; 
-  box-shadow: inset 4px 4px 0 #fde68a, inset -4px -4px 0 #b45309; 
-  .title {text-shadow: none;} 
-}
 .mc-btn-gold { 
   background: #fbbf24; color: #000; 
   box-shadow: inset 4px 4px 0 #fde68a, inset -4px -4px 0 #b45309; 
@@ -182,8 +182,13 @@ $sans-font: "Inter", "Montserrat", sans-serif;
 }
 
 .mc-wallet-hud {
-  display: flex; justify-content: space-around; padding: 1.2rem;
-  @media (max-width: 600px) { flex-direction: column; gap: 1.5rem; align-items: center; text-align: center;}
+  display: flex; justify-content: space-around; padding: 1rem;
+  margin-bottom: 0;
+
+  @media (max-width: 600px) { 
+    padding: 0.8rem;
+    .hud-item.desktop-only { display: none; }
+  }
 
   .hud-item {
     display: flex; flex-direction: column; align-items: center; gap: 6px;
@@ -192,6 +197,7 @@ $sans-font: "Inter", "Montserrat", sans-serif;
     .hud-value { 
       font-family: 'MinecraftBold', sans-serif; font-size: 1.4rem; text-shadow: 2px 2px 0 #000; display: flex; align-items: center; gap: 6px;
       &.highlight { color: #fbbf24; }
+      @media (max-width: 600px) { font-size: 1.1rem; }
     }
     .mc-btn-add {
       background: #333; color: #5EE034; border: 4px solid #000; 
@@ -199,6 +205,49 @@ $sans-font: "Inter", "Montserrat", sans-serif;
       width: 28px; height: 28px; font-family: 'MinecraftBold'; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; padding-bottom: 2px;
       &:hover { background: #444; color: #fff; }
       &:active { box-shadow: inset 2px 2px 0 #111, inset -2px -2px 0 #666; transform: translate(2px, 2px); }
+    }
+  }
+}
+
+.mc-mobile-asset-strip {
+  display: none;
+  @media (max-width: 1024px) {
+    display: flex;
+    overflow-x: auto;
+    gap: 12px;
+    padding-bottom: 8px;
+    scroll-snap-type: x mandatory;
+    
+    &::-webkit-scrollbar { height: 6px; }
+    &::-webkit-scrollbar-track { background: #111; border-top: 2px solid #000; }
+    &::-webkit-scrollbar-thumb { background: #555; border: 2px solid #000; }
+  }
+
+  .mobile-asset-card {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #1a1a1a;
+    border: 4px solid #000;
+    box-shadow: inset 2px 2px 0 #333, inset -2px -2px 0 #0a0a0a;
+    padding: 8px 12px;
+    cursor: pointer;
+    scroll-snap-align: start;
+
+    &.active {
+      background: #333;
+      border-color: #fbbf24;
+      box-shadow: inset 2px 2px 0 #555, inset -2px -2px 0 #111;
+    }
+
+    img { width: 24px; height: 24px; }
+
+    .mobile-asset-data {
+      display: flex; flex-direction: column; gap: 2px;
+      .name { font-family: 'MinecraftBold'; font-size: 0.8rem; color: #fff; display: flex; align-items: center; gap: 4px;}
+      .mc-hot-badge { color: #ff5555; font-size: 0.6rem; animation: hotPulse 1s infinite alternate; }
+      .price { font-family: 'MinecraftBold'; font-size: 0.9rem; }
     }
   }
 }
@@ -220,16 +269,19 @@ $sans-font: "Inter", "Montserrat", sans-serif;
 
   .mc-gui-header-inner {
     display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;
-    @media (max-width: 768px) { flex-direction: column; align-items: stretch; gap: 1.5rem; }
+    @media (max-width: 768px) { flex-direction: column; align-items: stretch; gap: 1rem; }
 
     .asset-title-area {
       display: flex; align-items: center; gap: 16px;
       .title-texts {
         h2 { font-family: 'MinecraftBold'; font-size: 1.8rem; margin: 0 0 6px 0; text-shadow: 2px 2px 0 #000; color: #fff;}
+        @media (max-width: 600px) { h2 { font-size: 1.3rem; } }
+        
         .terminal-current-price { 
           font-family: 'MinecraftBold'; font-size: 1.3rem; display: flex; align-items: center; gap: 6px; transition: all 0.3s;
           &.glow-green { color: #5EE034; text-shadow: 0 0 10px rgba(94, 224, 52, 0.5); }
           &.glow-red { color: #FF5555; text-shadow: 0 0 10px rgba(255, 85, 85, 0.5); }
+          @media (max-width: 600px) { font-size: 1.1rem; }
           
           .price-percent {
             font-size: 0.85rem;
@@ -244,7 +296,7 @@ $sans-font: "Inter", "Montserrat", sans-serif;
     .mc-terminal-right-header {
       display: flex; flex-direction: column; align-items: flex-end; gap: 10px;
       @media (max-width: 768px) { flex-direction: row; justify-content: space-between; align-items: center; }
-      @media (max-width: 480px) { flex-direction: column; align-items: stretch; }
+      @media (max-width: 480px) { flex-direction: column; align-items: stretch; gap: 8px;}
 
       .mc-market-clock {
         display: flex; align-items: center; gap: 8px; background: #111; border: 4px solid #000; padding: 4px 12px; box-shadow: inset 2px 2px 0 #222;
@@ -268,7 +320,7 @@ $sans-font: "Inter", "Montserrat", sans-serif;
   }
 
   .mc-chart-screen {
-    width: 100%; height: 350px; 
+    width: 100%; height: 350px; min-height: 300px;
     background: #080808; 
     border: 4px solid #000; 
     box-shadow: inset 4px 4px 0 #000, inset -4px -4px 0 #333; 
@@ -276,7 +328,7 @@ $sans-font: "Inter", "Montserrat", sans-serif;
     position: relative;
     padding: 10px 10px 0 0;
     
-    @media (max-width: 600px) { height: 250px; }
+    @media (max-width: 600px) { height: 250px; min-height: 250px; margin-bottom: 1.5rem;}
     .chart-empty { height: 100%; display: flex; align-items: center; justify-content: center; font-family: 'MinecraftBold'; color: #444; font-size: 1.2rem;}
   }
 
@@ -288,7 +340,7 @@ $sans-font: "Inter", "Montserrat", sans-serif;
     .mc-trade-mode-toggle {
       display: flex; width: 100%; border-bottom: 4px solid #000;
       button {
-        flex: 1; padding: 12px; font-family: 'MinecraftBold'; font-size: 1.1rem; cursor: pointer; border: none; background: #1a1a1a; color: #888;
+        flex: 1; padding: 14px; font-family: 'MinecraftBold'; font-size: 1.2rem; cursor: pointer; border: none; background: #1a1a1a; color: #888;
         box-shadow: inset 4px 4px 0 #2a2a2a, inset -4px 0 0 #0a0a0a;
         transition: all 0.1s;
         &:hover { color: #ccc; }
@@ -302,6 +354,7 @@ $sans-font: "Inter", "Montserrat", sans-serif;
 
     .mc-trade-body {
       padding: 1.5rem; display: flex; flex-direction: column; gap: 1.2rem;
+      @media (max-width: 600px) { padding: 1rem; }
 
       .trade-balances {
         display: flex; justify-content: flex-end; font-family: $sans-font; font-size: 0.85rem; color: #aaa;
@@ -312,8 +365,11 @@ $sans-font: "Inter", "Montserrat", sans-serif;
         .input-wrapper {
           display: flex; align-items: center; background: #222; border: 4px solid #000; box-shadow: inset 4px 4px 0 #111;
           .prefix { padding: 10px 15px; color: #888; font-family: 'MinecraftBold'; font-size: 0.9rem; border-right: 2px solid #111; }
-          input { flex: 1; background: transparent; border: none; color: #fff; font-family: 'MinecraftBold'; font-size: 1.2rem; text-align: right; padding: 10px; outline: none; }
+          input { flex: 1; background: transparent; border: none; color: #fff; font-family: 'MinecraftBold'; font-size: 1.2rem; text-align: right; padding: 10px; outline: none; width: 100%; min-width: 0;}
           .suffix { padding: 10px 15px; color: #fbbf24; font-family: 'MinecraftBold'; font-size: 0.9rem; }
+          @media (max-width: 480px) { 
+            .prefix, .suffix { padding: 10px; font-size: 0.8rem; }
+          }
         }
       }
 
@@ -324,7 +380,7 @@ $sans-font: "Inter", "Montserrat", sans-serif;
           -webkit-appearance: none; width: 100%; background: transparent;
           &::-webkit-slider-runnable-track { width: 100%; height: 8px; background: #222; border: 2px solid #000; box-shadow: inset 2px 2px 0 #111; }
           &::-webkit-slider-thumb {
-            -webkit-appearance: none; height: 20px; width: 12px; background: #888; border: 2px solid #000; margin-top: -8px; cursor: pointer; box-shadow: inset 2px 2px 0 #aaa;
+            -webkit-appearance: none; height: 24px; width: 16px; background: #888; border: 2px solid #000; margin-top: -10px; cursor: pointer; box-shadow: inset 2px 2px 0 #aaa;
           }
           &.buy::-webkit-slider-thumb { background: #5EE034; box-shadow: inset 2px 2px 0 #a5d6a7; }
           &.sell::-webkit-slider-thumb { background: #FF5555; box-shadow: inset 2px 2px 0 #ef9a9a; }
@@ -334,7 +390,7 @@ $sans-font: "Inter", "Montserrat", sans-serif;
         .pct-buttons {
           display: flex; justify-content: space-between; gap: 8px;
           button {
-            flex: 1; background: #222; border: 2px solid #000; color: #888; font-family: 'MinecraftBold'; font-size: 0.8rem; padding: 6px 0; cursor: pointer; box-shadow: inset 2px 2px 0 #333;
+            flex: 1; background: #222; border: 2px solid #000; color: #888; font-family: 'MinecraftBold'; font-size: 0.8rem; padding: 8px 0; cursor: pointer; box-shadow: inset 2px 2px 0 #333;
             &:hover:not(:disabled) { background: #333; color: #fff; }
             &:active:not(:disabled) { box-shadow: inset 2px 2px 0 #111; }
           }
@@ -345,7 +401,7 @@ $sans-font: "Inter", "Montserrat", sans-serif;
         background: #1a1a1a; padding: 12px; border: 2px dashed #333; display: flex; flex-direction: column; gap: 8px;
         .summary-row {
           display: flex; justify-content: space-between; font-family: $sans-font; font-size: 0.85rem; color: #aaa; font-weight: bold;
-          &.total { font-size: 1rem; color: #fff; border-top: 2px solid #222; padding-top: 8px; font-family: 'MinecraftBold'; }
+          &.total { font-size: 1.1rem; color: #fff; border-top: 2px solid #222; padding-top: 8px; font-family: 'MinecraftBold'; }
         }
       }
     }
@@ -365,6 +421,7 @@ $sans-font: "Inter", "Montserrat", sans-serif;
 
 .mc-news-panel {
   padding: 1.5rem;
+  @media (max-width: 600px) { padding: 1rem; }
   
   .mc-news-header { 
     font-family: 'MinecraftBold'; font-size: 1.1rem; color: #fbbf24; text-shadow: 2px 2px 0 #000; margin-bottom: 1.2rem; border-bottom: 4px solid #000; padding-bottom: 8px;
@@ -404,7 +461,10 @@ $sans-font: "Inter", "Montserrat", sans-serif;
     margin-left: 8px; 
     position: relative;
     z-index: 2; 
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    
+    &::-webkit-scrollbar { display: none; }
     
     .mc-tab {
       background: #2b2b2b; 
@@ -417,7 +477,7 @@ $sans-font: "Inter", "Montserrat", sans-serif;
       cursor: pointer;
       box-shadow: inset 4px 4px 0 #4f4f4f, inset -4px 0 0 #141414; 
       margin-bottom: -4px; 
-      flex-grow: 1;
+      white-space: nowrap;
       
       &:hover { color: #ccc; }
       
@@ -447,7 +507,7 @@ $sans-font: "Inter", "Montserrat", sans-serif;
     position: relative;
     z-index: 1; 
     padding: 1.5rem;
-    @media (max-width: 600px) { padding: 1rem 0.5rem; }
+    @media (max-width: 600px) { padding: 1rem 0; }
     
     .mc-ledger-content {
       background: #111; 
@@ -461,7 +521,7 @@ $sans-font: "Inter", "Montserrat", sans-serif;
         width: 100%;
         overflow-x: auto;
         
-        &::-webkit-scrollbar { height: 10px; }
+        &::-webkit-scrollbar { height: 8px; }
         &::-webkit-scrollbar-track { background: #111; border-top: 2px solid #000; }
         &::-webkit-scrollbar-thumb { background: #8b8b8b; border: 2px solid #000; border-top-color: #fff; border-left-color: #fff;}
       }
@@ -513,6 +573,10 @@ $sans-font: "Inter", "Montserrat", sans-serif;
 .mc-side-panel {
   padding: 1.5rem;
   
+  @media (max-width: 1024px) {
+    display: none; 
+  }
+
   .mc-side-header { 
     font-family: 'MinecraftBold'; font-size: 1.2rem; color: #fff; text-shadow: 2px 2px 0 #000; margin-bottom: 1.5rem; text-align: center; border-bottom: 4px solid #000; padding-bottom: 12px;
   }
