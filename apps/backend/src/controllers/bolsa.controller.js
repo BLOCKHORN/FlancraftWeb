@@ -32,8 +32,11 @@ exports.getOrderStatus = async (req, res) => {
 
 exports.getPortfolio = async (req, res) => {
   try {
-    const { uuid } = req.params;
+    let { uuid } = req.params;
     if (!uuid) return res.status(400).json({ error: "UUID requerido." });
+    
+    // Normalizamos el UUID para garantizar compatibilidad con PostgreSQL y Java
+    uuid = uuid.trim().toLowerCase(); 
 
     const [portfolioRes, liquidRes] = await Promise.all([
       supabase.from("market_portfolios").select("*").eq("uuid", uuid),
@@ -83,14 +86,23 @@ exports.getLedger = async (req, res) => {
 exports.getChartData = async (req, res) => {
   try {
     const { mineral } = req.params;
+    const tf = req.query.tf || '24H';
+    
     if (!mineral) return res.status(400).json({ error: "Mineral requerido." });
+
+    let timeLimit = new Date();
+    if (tf === '1H') timeLimit.setHours(timeLimit.getHours() - 1);
+    else if (tf === '24H') timeLimit.setHours(timeLimit.getHours() - 24);
+    else if (tf === '7D') timeLimit.setDate(timeLimit.getDate() - 7);
+    else timeLimit = new Date(0); 
 
     const { data, error } = await supabase
       .from("market_transactions_ledger")
       .select("price_per_share, timestamp")
       .eq("mineral_id", mineral.toUpperCase())
+      .gte("timestamp", timeLimit.toISOString())
       .order("timestamp", { ascending: true })
-      .limit(100);
+      .limit(500);
 
     if (error) throw error;
     res.status(200).json(data);
@@ -135,11 +147,14 @@ exports.getTopTraders = async (req, res) => {
 
 exports.createOrder = async (req, res) => {
   try {
-    const { uuid, playerName, mineralId, type, amount } = req.body;
+    let { uuid, playerName, mineralId, type, amount } = req.body;
 
     if (!uuid || !playerName || !mineralId || !type || !amount) {
       return res.status(400).json({ error: "Faltan parámetros en la orden o sesión inválida." });
     }
+
+    // Normalizamos el UUID antes de meterlo a la cola
+    uuid = uuid.trim().toLowerCase();
 
     if (type !== "BUY" && type !== "SELL") {
       return res.status(400).json({ error: "Tipo de transacción inválido." });
@@ -155,7 +170,7 @@ exports.createOrder = async (req, res) => {
         {
           uuid_jugador: uuid,
           player_name: playerName,
-          mineral_id: mineralId.toUpperCase(),
+          mineral_id: mineralId.toUpperCase().trim(),
           transaction_type: type,
           amount: amount,
           status: "PENDING",

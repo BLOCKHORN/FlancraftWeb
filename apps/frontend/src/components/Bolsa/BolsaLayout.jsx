@@ -36,9 +36,13 @@ const playTradeSound = (type, isProfit = true) => {
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
+    const date = new Date(label);
+    const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const dateStr = date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    
     return (
       <div className="mc-chart-tooltip">
-        <p className="mc-tooltip-time">{label}</p>
+        <p className="mc-tooltip-time">{dateStr} {timeStr}</p>
         <p className="mc-tooltip-price">
           {payload[0].value.toFixed(2)}
           <img src="/tienda/assets/coin.png" className="coin-icon mc-pixelated" alt="coins" />
@@ -68,6 +72,7 @@ const BolsaLayout = () => {
   const [timeframe, setTimeframe] = useState("24H");
   const [activeTab, setActiveTab] = useState("POSITIONS");
   
+  const [tradeMode, setTradeMode] = useState('BUY');
   const [tradeAmount, setTradeAmount] = useState(1);
   const [isTrading, setIsTrading] = useState(false);
   const [liquidatingAsset, setLiquidatingAsset] = useState(null);
@@ -117,7 +122,7 @@ const BolsaLayout = () => {
     try {
       const chartRes = await apiGet(`/api/bolsa/chart/${selectedAsset}?tf=${timeframe}`);
       setChartData(chartRes.map(item => ({
-        time: new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        timestamp: new Date(item.timestamp).getTime(),
         price: item.price_per_share
       })));
     } catch (error) {}
@@ -255,6 +260,7 @@ const BolsaLayout = () => {
               if (activeTab === "LEDGER") fetchLedger(1);
               setIsTrading(false);
               setLiquidatingAsset(null);
+              setTradeAmount(1); 
               
               toast.custom((t) => (
                 <div className={`mc-toast-success ${t.visible ? 'animate-enter' : 'animate-leave'}`}>
@@ -319,14 +325,57 @@ const BolsaLayout = () => {
     }
   };
 
-  const handleTrade = async (type) => {
+  // --- CALCULOS MATEMATICOS Y FINANCIEROS (REORDENADOS) ---
+  const currentAssetData = livePrices.find(p => p.mineral_id === selectedAsset);
+  const currentPrice = currentAssetData?.current_coin_price || 0;
+  
+  const feePercent = 0.02;
+  const slippageRate = 0.002;
+
+  const selectedOwnedShares = getOwnedShares(selectedAsset);
+  const safeAmount = Math.min(1000, Math.max(1, parseInt(tradeAmount, 10) || 1));
+  
+  // Costes y Slippage
+  const buySlippageFactor = 1.0 + (safeAmount * slippageRate);
+  const finalBuyPrice = currentPrice * buySlippageFactor;
+  const avgBuyPrice = (currentPrice + finalBuyPrice) / 2.0;
+  const totalBuyCostRaw = safeAmount * avgBuyPrice;
+  const estBuyCost = totalBuyCostRaw + (totalBuyCostRaw * feePercent);
+
+  const sellSlippageFactor = 1.0 - (safeAmount * slippageRate);
+  const finalSellPrice = currentPrice * Math.max(0.1, sellSlippageFactor);
+  const avgSellPrice = (currentPrice + finalSellPrice) / 2.0;
+  const totalSellValueRaw = safeAmount * avgSellPrice;
+  const estSellValue = totalSellValueRaw - (totalSellValueRaw * feePercent);
+
+  // Verificaciones y limites (CEX Slider)
+  const canAffordBuy = liquidCoins >= estBuyCost;
+  const rawCostPerUnit = currentPrice * (1 + slippageRate) * (1 + feePercent);
+  const maxBuyAmount = Math.max(0, Math.floor(liquidCoins / rawCostPerUnit));
+  const maxSellAmount = selectedOwnedShares;
+  const activeMaxLimit = tradeMode === 'BUY' ? maxBuyAmount : maxSellAmount;
+
+  // Valor Global
+  const portfolioValue = portfolio.reduce((acc, item) => acc + (item.shares * (livePrices.find(p => p.mineral_id === item.mineral_id)?.current_coin_price || 0)), 0);
+  const totalNetWorth = liquidCoins + portfolioValue;
+  
+  // Interfaz
+  const isUp = currentAssetData ? currentAssetData.trend_arrow !== "DOWN" : true;
+  const chartColor = isUp ? "#5EE034" : "#FF5555";
+  const glowClass = isUp ? "glow-green" : "glow-red";
+
+  // --- FUNCIONES INTERACTIVAS ---
+  const handlePercentageSelect = (pct) => {
+    let calculated = Math.floor(activeMaxLimit * (pct / 100));
+    if (calculated < 1 && activeMaxLimit > 0) calculated = 1;
+    setTradeAmount(Math.min(1000, calculated));
+  };
+
+  const handleAction = async () => {
     if (!user?.loggedIn) { openAuthModal(); return; }
     if (isTrading) return;
 
-    const mineralId = selectedAsset;
-    const amount = parseInt(tradeAmount, 10);
-    
-    if (isNaN(amount) || amount <= 0 || amount > 1000) {
+    if (isNaN(safeAmount) || safeAmount <= 0 || safeAmount > 1000) {
       toast.custom((t) => (
         <div className={`mc-toast-error ${t.visible ? 'animate-enter' : 'animate-leave'}`}>
           <span className="toast-title">VOLUMEN INVALIDO</span>
@@ -336,15 +385,35 @@ const BolsaLayout = () => {
       return;
     }
 
+    if (tradeMode === 'SELL' && safeAmount > selectedOwnedShares) {
+      toast.custom((t) => (
+        <div className={`mc-toast-error ${t.visible ? 'animate-enter' : 'animate-leave'}`}>
+          <span className="toast-title">INSUFICIENTE</span>
+          <span className="toast-sub">No tienes suficientes participaciones.</span>
+        </div>
+      ));
+      return;
+    }
+
+    if (tradeMode === 'BUY' && !canAffordBuy) {
+      toast.custom((t) => (
+        <div className={`mc-toast-error ${t.visible ? 'animate-enter' : 'animate-leave'}`}>
+          <span className="toast-title">SIN LIQUIDEZ</span>
+          <span className="toast-sub">No tienes fondos suficientes in-game.</span>
+        </div>
+      ));
+      return;
+    }
+
     setIsTrading(true);
     const toastId = toast.custom((t) => (
       <div className={`mc-toast-loading ${t.visible ? 'animate-enter' : 'animate-leave'}`}>
-        <span className="toast-title">SINCRONIZANDO BLOCKCHAIN...</span>
-        <span className="toast-sub">Verificando fondos en vivo dentro del servidor. Espere...</span>
+        <span className="toast-title">{tradeMode === 'BUY' ? 'SINCRONIZANDO BLOCKCHAIN...' : 'EJECUTANDO ORDEN DE VENTA...'}</span>
+        <span className="toast-sub">Validando transacción con el servidor. Espere...</span>
       </div>
     ));
     
-    await processOrderWithPolling(mineralId, amount, type, toastId);
+    await processOrderWithPolling(selectedAsset, safeAmount, tradeMode, toastId);
   };
 
   const handleLiquidate = async (mineralId, amount) => {
@@ -361,35 +430,6 @@ const BolsaLayout = () => {
     
     await processOrderWithPolling(mineralId, amount, 'SELL', toastId);
   };
-
-  const currentAssetData = livePrices.find(p => p.mineral_id === selectedAsset);
-  const currentPrice = currentAssetData?.current_coin_price || 0;
-  const safeAmount = Math.min(1000, Math.max(1, parseInt(tradeAmount, 10) || 1));
-  
-  const feePercent = 0.02;
-  const slippageRate = 0.00005;
-
-  const buySlippageFactor = 1.0 + (safeAmount * slippageRate);
-  const finalBuyPrice = currentPrice * buySlippageFactor;
-  const avgBuyPrice = (currentPrice + finalBuyPrice) / 2.0;
-  const totalBuyCostRaw = safeAmount * avgBuyPrice;
-  const estBuyCost = totalBuyCostRaw + (totalBuyCostRaw * feePercent);
-
-  const sellSlippageFactor = 1.0 - (safeAmount * slippageRate);
-  const finalSellPrice = currentPrice * Math.max(0.1, sellSlippageFactor);
-  const avgSellPrice = (currentPrice + finalSellPrice) / 2.0;
-  const totalSellValueRaw = safeAmount * avgSellPrice;
-  const estSellValue = totalSellValueRaw - (totalSellValueRaw * feePercent);
-
-  const portfolioValue = portfolio.reduce((acc, item) => acc + (item.shares * (livePrices.find(p => p.mineral_id === item.mineral_id)?.current_coin_price || 0)), 0);
-  const totalNetWorth = liquidCoins + portfolioValue;
-  
-  const isUp = currentAssetData ? currentAssetData.trend_arrow !== "DOWN" : true;
-  const chartColor = isUp ? "#5EE034" : "#FF5555";
-  const glowClass = isUp ? "glow-green" : "glow-red";
-
-  const selectedOwnedShares = getOwnedShares(selectedAsset);
-  const canAffordBuy = liquidCoins >= estBuyCost;
 
   const renderActiveTabContent = () => {
     if (!user?.loggedIn && activeTab === "POSITIONS") {
@@ -625,8 +665,16 @@ const BolsaLayout = () => {
                     <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#222" vertical={false} />
                       <XAxis 
-                        dataKey="time" 
+                        dataKey="timestamp" 
+                        type="number"
+                        scale="time"
+                        domain={['dataMin', 'dataMax']}
                         stroke="#555" 
+                        tickFormatter={(unixTime) => {
+                           const d = new Date(unixTime);
+                           if (timeframe === '1H' || timeframe === '24H') return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                           return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+                        }}
                         tick={{ fill: '#888', fontSize: 10, fontFamily: 'MinecraftBold' }} 
                         tickLine={false}
                         axisLine={{ stroke: '#333', strokeWidth: 2 }}
@@ -649,7 +697,7 @@ const BolsaLayout = () => {
                         </pattern>
                       </defs>
                       <Brush 
-                        dataKey="time" 
+                        dataKey="timestamp" 
                         height={24} 
                         stroke="#4f4f4f" 
                         fill="#1a1a1a" 
@@ -663,43 +711,71 @@ const BolsaLayout = () => {
                 )}
               </div>
 
-              <div className="mc-action-bar">
-                <div className="mc-trading-info">
-                  <span className="label">EN PROPIEDAD</span>
-                  <span className="value">{selectedOwnedShares}</span>
+              <div className="mc-cex-trading-panel">
+                <div className="mc-trade-mode-toggle">
+                  <button className={tradeMode === 'BUY' ? 'active buy' : ''} onClick={() => setTradeMode('BUY')}>COMPRAR</button>
+                  <button className={tradeMode === 'SELL' ? 'active sell' : ''} onClick={() => setTradeMode('SELL')}>VENDER</button>
                 </div>
                 
-                <div className="mc-trading-controls">
-                  <div className="mc-quantity-selector">
-                    <button onClick={() => setTradeAmount(prev => Math.max(1, prev - 1))} disabled={isTrading}>-</button>
-                    <input 
-                      type="number" 
-                      value={tradeAmount} 
-                      onChange={(e) => setTradeAmount(e.target.value.replace(/[^0-9]/g, ''))}
-                      onBlur={() => setTradeAmount(prev => Math.min(1000, Math.max(1, Number(prev))))}
-                      disabled={isTrading}
-                    />
-                    <button onClick={() => setTradeAmount(prev => Math.min(1000, Number(prev) + 1))} disabled={isTrading}>+</button>
-                    <button className="btn-stack" onClick={() => setTradeAmount(64)} disabled={isTrading}>x64</button>
+                <div className="mc-trade-body">
+                  <div className="trade-balances">
+                    <span className="bal-item">Disponible: <strong>{tradeMode === 'BUY' ? liquidCoins.toFixed(2) + ' ⛃' : selectedOwnedShares + ' ud.'}</strong></span>
                   </div>
 
-                  <div className="mc-trading-buttons">
-                    {!canAffordBuy && user?.loggedIn ? (
-                      <button className="mc-btn-solid mc-btn-gold-block" onClick={() => navigate('/tienda')}>
-                        <span className="title">SIN LIQUIDEZ</span>
-                        <span className="subtitle">COMPRAR COINS &gt;</span>
-                      </button>
-                    ) : (
-                      <button className="mc-btn-solid mc-btn-green-block" onClick={() => handleTrade('BUY')} disabled={isTrading || !user?.loggedIn}>
-                        <span className="title">COMPRAR {safeAmount}</span>
-                        <span className="subtitle">Coste final: ~{estBuyCost.toFixed(2)} <img src="/tienda/assets/coin.png" className="coin-icon-small mc-pixelated" alt="c" /></span>
-                      </button>
-                    )}
-                    <button className="mc-btn-solid mc-btn-red-block" onClick={() => handleTrade('SELL')} disabled={isTrading || !user?.loggedIn || selectedOwnedShares < safeAmount}>
-                      <span className="title">VENDER {safeAmount}</span>
-                      <span className="subtitle">Retorno: ~{estSellValue.toFixed(2)} <img src="/tienda/assets/coin.png" className="coin-icon-small mc-pixelated" alt="c" /></span>
-                    </button>
+                  <div className="trade-input-group">
+                    <div className="input-wrapper">
+                      <span className="prefix">Cantidad</span>
+                      <input 
+                        type="number" 
+                        value={tradeAmount} 
+                        onChange={(e) => setTradeAmount(e.target.value.replace(/[^0-9]/g, ''))}
+                        onBlur={() => setTradeAmount(prev => Math.min(1000, Math.max(1, Number(prev))))}
+                        disabled={isTrading}
+                      />
+                      <span className="suffix">UD</span>
+                    </div>
                   </div>
+
+                  <div className="trade-slider-group">
+                    <input 
+                      type="range" 
+                      className={`mc-range-slider ${tradeMode === 'BUY' ? 'buy' : 'sell'}`}
+                      min="1" 
+                      max={activeMaxLimit > 0 ? Math.min(1000, activeMaxLimit) : 1} 
+                      value={safeAmount} 
+                      onChange={(e) => setTradeAmount(e.target.value)}
+                      disabled={isTrading || activeMaxLimit === 0}
+                    />
+                    <div className="pct-buttons">
+                      <button onClick={() => handlePercentageSelect(25)} disabled={isTrading}>25%</button>
+                      <button onClick={() => handlePercentageSelect(50)} disabled={isTrading}>50%</button>
+                      <button onClick={() => handlePercentageSelect(75)} disabled={isTrading}>75%</button>
+                      <button onClick={() => handlePercentageSelect(100)} disabled={isTrading}>MAX</button>
+                    </div>
+                  </div>
+
+                  <div className="trade-summary">
+                    <div className="summary-row">
+                      <span>Precio ud.</span>
+                      <span>{currentPrice.toFixed(2)} ⛃</span>
+                    </div>
+                    <div className="summary-row total">
+                      <span>{tradeMode === 'BUY' ? 'Coste Estimado' : 'Retorno Estimado'}</span>
+                      <span className={tradeMode === 'BUY' ? 'text-red' : 'text-green'}>
+                        {tradeMode === 'BUY' ? estBuyCost.toFixed(2) : estSellValue.toFixed(2)} ⛃
+                      </span>
+                    </div>
+                  </div>
+
+                  {tradeMode === 'BUY' ? (
+                     <button className="mc-btn-solid mc-btn-green-block full-width" onClick={handleAction} disabled={isTrading || !user?.loggedIn || !canAffordBuy}>
+                       <span className="title">{canAffordBuy ? `COMPRAR ${getAssetDisplayName(selectedAsset)}` : 'FONDOS INSUFICIENTES'}</span>
+                     </button>
+                  ) : (
+                     <button className="mc-btn-solid mc-btn-red-block full-width" onClick={handleAction} disabled={isTrading || !user?.loggedIn || selectedOwnedShares < safeAmount}>
+                       <span className="title">{selectedOwnedShares >= safeAmount ? `VENDER ${getAssetDisplayName(selectedAsset)}` : 'INVENTARIO INSUFICIENTE'}</span>
+                     </button>
+                  )}
                 </div>
               </div>
             </div>
