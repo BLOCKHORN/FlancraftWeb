@@ -50,7 +50,7 @@ const BolsaLayout = () => {
   const [topTraders, setTopTraders] = useState([]);
   const [chartData, setChartData] = useState([]);
   const [selectedAsset, setSelectedAsset] = useState("DIAMOND");
-  const [timeframe, setTimeframe] = useState("24H");
+  const [timeframe, setTimeframe] = useState("15m");
   const [activeTab, setActiveTab] = useState("POSITIONS");
   
   const [tradeMode, setTradeMode] = useState('BUY');
@@ -66,8 +66,6 @@ const BolsaLayout = () => {
   const chartInstance = useRef(null);
   const candleSeries = useRef(null);
   const volumeSeries = useRef(null);
-  
-  // Guardamos el contexto previo para evitar reseteos de zoom al recargar datos
   const prevContext = useRef({ asset: null, tf: null });
 
   const fetchLedger = async (page = 1) => {
@@ -166,30 +164,30 @@ const BolsaLayout = () => {
     fetchNews();
   }, [ledger]);
 
+  // [!] MOTOR DE RELOJ INFALIBLE
   useEffect(() => {
     const timerInterval = setInterval(() => {
       const now = new Date();
       const next = new Date(now);
       
-      next.setMinutes(Math.ceil(now.getMinutes() / 15) * 15);
-      next.setSeconds(0);
       next.setMilliseconds(0);
-
-      if (now.getMinutes() % 15 === 0 && now.getSeconds() === 0) {
-        next.setMinutes(next.getMinutes() + 15);
-      }
+      next.setSeconds(0);
+      
+      // Avanza matemáticamente al siguiente múltiplo de 15, evitando ir al pasado
+      next.setMinutes((Math.floor(now.getMinutes() / 15) + 1) * 15);
 
       const distance = next.getTime() - now.getTime();
       const m = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
       const s = Math.floor((distance % (1000 * 60)) / 1000);
 
       setNextUpdateTimer(`${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`);
-      setIsTimerCritical(m === 0);
+      setIsTimerCritical(m === 0 && s <= 59);
     }, 1000);
 
     return () => clearInterval(timerInterval);
   }, []);
 
+  // INICIALIZACIÓN DEL GRÁFICO (CON TOOLTIP INTERACTIVO)
   useEffect(() => {
     if (!chartContainerRef.current) return;
 
@@ -209,8 +207,8 @@ const BolsaLayout = () => {
         timeVisible: true,
         secondsVisible: false,
         borderColor: '#333',
-        barSpacing: 15, // Esto previene el zoom extremo cuando hay pocas velas
-        rightOffset: 12, // Deja margen a la derecha para la vela actual
+        barSpacing: 15,
+        rightOffset: 12,
         fixLeftEdge: false,
       },
       rightPriceScale: {
@@ -299,7 +297,6 @@ const BolsaLayout = () => {
       }));
       volumeSeries.current.setData(volumeFormatted);
 
-      // Si cambiamos explícitamente de mineral o de temporalidad, centramos a la derecha sin deformar
       if (prevContext.current.asset !== selectedAsset || prevContext.current.tf !== timeframe) {
         chartInstance.current.timeScale().scrollToRealTime();
         prevContext.current = { asset: selectedAsset, tf: timeframe };
@@ -766,7 +763,7 @@ const BolsaLayout = () => {
                     <span className="clock-time">{nextUpdateTimer}</span>
                   </div>
                   <div className="mc-timeframe-tabs">
-                    {["1H", "24H", "7D", "ALL"].map(tf => (
+                    {["15m", "1H", "4H", "1D"].map(tf => (
                       <button key={tf} className={timeframe === tf ? "active" : ""} onClick={() => setTimeframe(tf)}>
                         {tf}
                       </button>

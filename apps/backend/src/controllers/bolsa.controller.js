@@ -82,50 +82,63 @@ exports.getLedger = async (req, res) => {
   }
 };
 
+// [!] MOTOR DE AGRUPACIÓN DE TEMPORALIDADES
 exports.getChartData = async (req, res) => {
   try {
     const { mineral } = req.params;
-    const tf = req.query.tf || '24H';
+    const tf = req.query.tf || '15m';
     
     if (!mineral) return res.status(400).json({ error: "Mineral requerido." });
 
+    const tfConfig = {
+      '15m': { hoursBack: 48, groupMs: 15 * 60 * 1000 },
+      '1H':  { hoursBack: 24 * 14, groupMs: 60 * 60 * 1000 },
+      '4H':  { hoursBack: 24 * 60, groupMs: 4 * 60 * 60 * 1000 },
+      '1D':  { hoursBack: 24 * 365, groupMs: 24 * 60 * 60 * 1000 }
+    };
+
+    const config = tfConfig[tf] || tfConfig['15m'];
+
     let timeLimit = new Date();
-    let limitCount = 1000;
-    
-    // Calculamos el límite histórico
-    if (tf === '1H') { timeLimit.setHours(timeLimit.getHours() - 1); limitCount = 60; }
-    else if (tf === '24H') { timeLimit.setHours(timeLimit.getHours() - 24); limitCount = 200; }
-    else if (tf === '7D') { timeLimit.setDate(timeLimit.getDate() - 7); limitCount = 1000; }
-    else { timeLimit = new Date(0); limitCount = 5000; } // ALL
+    timeLimit.setHours(timeLimit.getHours() - config.hoursBack);
 
     const { data, error } = await supabase
       .from("market_ohlc_data")
       .select("open_price, high_price, low_price, close_price, volume, timestamp")
       .eq("mineral_id", mineral.toUpperCase())
       .gte("timestamp", timeLimit.toISOString())
-      .order("timestamp", { ascending: false }) // [!] CLAVE: Traer siempre los más nuevos primero
-      .limit(limitCount);
+      .order("timestamp", { ascending: false }) // Carga los más nuevos primero
+      .limit(5000); 
 
     if (error) throw error;
 
-    const uniqueDataMap = new Map();
+    const groupedData = new Map();
 
     data.forEach(candle => {
-      const timeInSeconds = Math.floor(new Date(candle.timestamp).getTime() / 1000);
-      if (!isNaN(timeInSeconds)) {
-        uniqueDataMap.set(timeInSeconds, {
-          time: timeInSeconds,
+      const candleTime = new Date(candle.timestamp).getTime();
+      if (isNaN(candleTime)) return;
+
+      const groupTime = Math.floor(candleTime / config.groupMs) * config.groupMs;
+
+      if (!groupedData.has(groupTime)) {
+        groupedData.set(groupTime, {
+          time: groupTime / 1000, 
           open: candle.open_price,
           high: candle.high_price,
           low: candle.low_price,
           close: candle.close_price,
           value: candle.volume
         });
+      } else {
+        const existing = groupedData.get(groupTime);
+        existing.high = Math.max(existing.high, candle.high_price);
+        existing.low = Math.min(existing.low, candle.low_price);
+        existing.open = candle.open_price; // Al ir en orden descendente, la vela más vieja establece la apertura
+        existing.value += candle.volume;
       }
     });
 
-    // Reordenamos de más viejo a más nuevo para que el gráfico fluya hacia la derecha
-    const formattedData = Array.from(uniqueDataMap.values()).sort((a, b) => a.time - b.time);
+    const formattedData = Array.from(groupedData.values()).sort((a, b) => a.time - b.time);
 
     res.status(200).json(formattedData);
   } catch (error) {
