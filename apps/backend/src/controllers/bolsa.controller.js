@@ -105,14 +105,24 @@ exports.getChartData = async (req, res) => {
 
     if (error) throw error;
 
-    const formattedData = data.map(candle => ({
-      time: Math.floor(new Date(candle.timestamp).getTime() / 1000),
-      open: candle.open_price,
-      high: candle.high_price,
-      low: candle.low_price,
-      close: candle.close_price,
-      value: candle.volume
-    }));
+    // FILTRO ANTI-CRASH OBLIGATORIO PARA LIGHTWEIGHT CHARTS
+    const uniqueDataMap = new Map();
+
+    data.forEach(candle => {
+      const timeInSeconds = Math.floor(new Date(candle.timestamp).getTime() / 1000);
+      if (!isNaN(timeInSeconds)) {
+        uniqueDataMap.set(timeInSeconds, {
+          time: timeInSeconds,
+          open: candle.open_price,
+          high: candle.high_price,
+          low: candle.low_price,
+          close: candle.close_price,
+          value: candle.volume
+        });
+      }
+    });
+
+    const formattedData = Array.from(uniqueDataMap.values()).sort((a, b) => a.time - b.time);
 
     res.status(200).json(formattedData);
   } catch (error) {

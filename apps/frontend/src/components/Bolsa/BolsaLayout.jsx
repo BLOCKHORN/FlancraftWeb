@@ -163,40 +163,32 @@ const BolsaLayout = () => {
     fetchNews();
   }, [ledger]);
 
+  // RELOJ ABSOLUTO Y MATEMÁTICO (Sincronizado con Java)
   useEffect(() => {
-    if (livePrices.length === 0 || !livePrices[0].last_updated) return;
-
     const timerInterval = setInterval(() => {
-      let safeDateStr = livePrices[0].last_updated;
-      if (safeDateStr.includes(" ") && !safeDateStr.includes("T")) {
-        safeDateStr = safeDateStr.replace(" ", "T");
-      }
+      const now = new Date();
+      const next = new Date(now);
       
-      const lastUpdateDate = new Date(safeDateStr).getTime();
-      
-      if (isNaN(lastUpdateDate)) {
-        setNextUpdateTimer("--:--");
-        return;
+      next.setMinutes(Math.ceil(now.getMinutes() / 15) * 15);
+      next.setSeconds(0);
+      next.setMilliseconds(0);
+
+      if (now.getMinutes() % 15 === 0 && now.getSeconds() === 0) {
+        next.setMinutes(next.getMinutes() + 15);
       }
 
-      const nextUpdateDate = lastUpdateDate + (15 * 60 * 1000);
-      const now = Date.now();
-      const distance = nextUpdateDate - now;
+      const distance = next.getTime() - now.getTime();
+      const m = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+      const s = Math.floor((distance % (1000 * 60)) / 1000);
 
-      if (distance <= 0) {
-        setNextUpdateTimer("00:00");
-        setIsTimerCritical(true);
-      } else {
-        const m = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-        const s = Math.floor((distance % (1000 * 60)) / 1000);
-        setNextUpdateTimer(`${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`);
-        setIsTimerCritical(m === 0);
-      }
+      setNextUpdateTimer(`${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`);
+      setIsTimerCritical(m === 0);
     }, 1000);
 
     return () => clearInterval(timerInterval);
-  }, [livePrices]);
+  }, []);
 
+  // INICIALIZACIÓN DEL GRÁFICO (Con purga de React 18)
   useEffect(() => {
     if (!chartContainerRef.current) return;
 
