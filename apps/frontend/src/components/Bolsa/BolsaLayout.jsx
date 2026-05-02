@@ -9,30 +9,36 @@ import "../../styles/components/Bolsa/BolsaLayout.scss";
 
 const playTradeSound = (type, isProfit = true) => {
   try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    
+    let audioSrc = "";
     if (type === 'BUY') {
-      osc.frequency.setValueAtTime(880, ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(1760, ctx.currentTime + 0.1);
+      audioSrc = "/tienda/assets/sounds/cash_register.mp3";
     } else {
       if (isProfit) {
-        osc.frequency.setValueAtTime(600, ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.2);
+        audioSrc = "/tienda/assets/sounds/jackpot.mp3";
       } else {
-        osc.frequency.setValueAtTime(300, ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.3);
+        audioSrc = "/tienda/assets/sounds/rekt.mp3";
       }
     }
-    gain.gain.setValueAtTime(0.1, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
-    osc.start(); 
-    osc.stop(ctx.currentTime + 0.3);
+    
+    const audio = new Audio(audioSrc);
+    audio.volume = 0.6;
+    audio.play().catch(e => {});
   } catch (e) {}
 };
+
+const renderMessageWithCoins = (msg) => {
+  if (!msg) return null;
+  const parts = msg.split('⛃');
+  return parts.map((part, i) => (
+    <React.Fragment key={i}>
+      {part}
+      {i < parts.length - 1 && <img src="/tienda/assets/coin.png" className="inline-icon mc-pixelated" alt="coins" />}
+    </React.Fragment>
+  ));
+};
+
+const FIRE_GIF_SRC = "/tienda/assets/fire.gif";
+const FLANITE_SRC = "/tienda/assets/flanite.webp";
 
 const BolsaLayout = () => {
   const { user } = useContext(UserContext);
@@ -49,7 +55,7 @@ const BolsaLayout = () => {
   
   const [topTraders, setTopTraders] = useState([]);
   const [chartData, setChartData] = useState([]);
-  const [selectedAsset, setSelectedAsset] = useState("DIAMOND");
+  const [selectedAsset, setSelectedAsset] = useState("NETHERITE_INGOT");
   const [timeframe, setTimeframe] = useState("15m");
   const [activeTab, setActiveTab] = useState("POSITIONS");
   
@@ -60,6 +66,7 @@ const BolsaLayout = () => {
   const [newsFeed, setNewsFeed] = useState([]);
   const [nextUpdateTimer, setNextUpdateTimer] = useState("--:--");
   const [isTimerCritical, setIsTimerCritical] = useState(false);
+  const [airdropInfo, setAirdropStatus] = useState({ pot: 0, winner: 'Nadie', lastPayout: null });
   
   const lastTradeTime = useRef(0);
   const chartContainerRef = useRef();
@@ -68,9 +75,49 @@ const BolsaLayout = () => {
   const volumeSeries = useRef(null);
   const prevContext = useRef({ asset: null, tf: null });
 
+  const getFeePercentForAsset = (mineralId) => {
+    if (mineralId === 'NETHERITE_INGOT') return 0.01;
+    if (mineralId === 'DIAMOND') return 0.02;
+    return 0.05; 
+  };
+
+  const simulateAMMTrade = (mineralId, amount, type, customPricesArray) => {
+    const arrayToUse = customPricesArray || livePrices;
+    const asset = arrayToUse.find(p => p.mineral_id === mineralId);
+    
+    if (!asset || !asset.coin_pool || !asset.share_pool || amount <= 0) {
+      return { finalAmount: 0, executionPrice: 0, priceImpact: 0 };
+    }
+
+    const coinPool = asset.coin_pool;
+    const sharePool = asset.share_pool;
+    const feePercent = getFeePercentForAsset(mineralId);
+    const k = coinPool * sharePool;
+    const oldPrice = coinPool / sharePool;
+
+    if (type === 'BUY') {
+      if (amount >= sharePool) return { finalAmount: 0, executionPrice: 0, priceImpact: 0 };
+      const newSharePool = sharePool - amount;
+      const newCoinPool = k / newSharePool;
+      const coinsRequired = newCoinPool - coinPool;
+      const finalAmount = coinsRequired * (1 + feePercent);
+      const newPrice = newCoinPool / newSharePool;
+      const priceImpact = (newPrice - oldPrice) / oldPrice;
+      return { finalAmount, executionPrice: coinsRequired / amount, priceImpact };
+    } else {
+      const newSharePool = sharePool + amount;
+      const newCoinPool = k / newSharePool;
+      const coinsReturned = coinPool - newCoinPool;
+      const finalAmount = Math.floor(coinsReturned * (1 - feePercent));
+      const newPrice = newCoinPool / newSharePool;
+      const priceImpact = (newPrice - oldPrice) / oldPrice;
+      return { finalAmount, executionPrice: coinsReturned / amount, priceImpact };
+    }
+  };
+
   const fetchLedger = async (page = 1) => {
     try {
-      const res = await apiGet(`/api/bolsa/ledger?page=${page}&limit=12`);
+      const res = await apiGet(`/api/bolsa/ledger?page=${page}&limit=15`);
       if (res && res.transactions) {
         setLedger(res.transactions);
         setLedgerTotalPages(res.totalPages);
@@ -97,7 +144,7 @@ const BolsaLayout = () => {
     if (!user?.uuid) return;
     try {
       const res = await apiGet(`/api/bolsa/portfolio/${user.uuid}`);
-      if (Date.now() - lastTradeTime.current > 8000) {
+      if (Date.now() - lastTradeTime.current > 4000) {
         setPortfolio(res.portfolio || []);
         setLiquidCoins(res.liquidCoins || 0);
       }
@@ -115,40 +162,75 @@ const BolsaLayout = () => {
 
   const fetchNews = async () => {
     try {
-      const serverNews = await apiGet("/api/bolsa/news");
-      const formattedServerNews = (serverNews || []).map(n => ({
-        id: n.id,
-        type: n.type,
-        mineralId: n.mineral_id,
-        message: n.message,
-        time: new Date(n.created_at).getTime()
-      }));
+      let dbNews = [];
+      try {
+        const res = await apiGet("/api/bolsa/news");
+        if (res && Array.isArray(res)) {
+          dbNews = res.map(n => ({
+            id: n.id,
+            type: n.type,
+            mineralId: n.mineral_id,
+            message: n.message,
+            time: new Date(n.execute_at || n.created_at).getTime()
+          }));
+        }
+      } catch (e) {}
 
-      const whales = ledger.filter(tx => tx.shares >= 32).map(w => ({
-        id: `whale-${w.id}`,
-        type: 'WHALE',
-        mineralId: w.mineral_id,
-        playerName: w.player_name,
-        action: w.transaction_type === 'BUY' ? 'comprado' : 'liquidado',
-        amount: w.shares,
-        time: new Date(w.timestamp).getTime()
-      }));
+      const ledgerEvents = (ledger || []).map(tx => {
+        const total = tx.total_coins_exchanged;
+        let type = 'INFO';
+        let message = '';
+        
+        if (tx.transaction_type === 'BUY' && total >= 150) {
+          type = 'PUMP';
+          message = `¡${tx.player_name} ha inyectado ${total.toFixed(0)} ⛃ en ${getAssetDisplayName(tx.mineral_id)}!`;
+        } else if (tx.transaction_type === 'SELL' && total >= 150) {
+          type = 'CRASH';
+          message = `¡${tx.player_name} liquidó ${total.toFixed(0)} ⛃ de ${getAssetDisplayName(tx.mineral_id)}!`;
+        } else if (tx.shares >= 20) {
+          type = 'WHALE';
+          message = `Movimiento inusual: ${tx.player_name} movió ${tx.shares} ud de ${getAssetDisplayName(tx.mineral_id)}.`;
+        }
 
-      const combined = [...formattedServerNews, ...whales].sort((a, b) => b.time - a.time).slice(0, 8);
+        if (type !== 'INFO') {
+          return { id: `ev-${tx.id}`, type, mineralId: tx.mineral_id, message, time: new Date(tx.timestamp).getTime() };
+        }
+        return null;
+      }).filter(Boolean);
+
+      const allEvents = [...dbNews, ...ledgerEvents];
+      const uniqueEvents = Array.from(new Map(allEvents.map(item => [item.id, item])).values());
+      const combined = uniqueEvents.sort((a, b) => b.time - a.time).slice(0, 15);
+      
       setNewsFeed(combined);
     } catch (error) {}
+  };
+
+  const fetchAirdrop = async () => {
+    try {
+      const res = await apiGet("/api/bolsa/airdrop-status");
+      if (res && res.current_pot !== undefined) {
+        setAirdropStatus({ 
+          pot: Number(res.current_pot) || 0, 
+          winner: res.last_winner_name || 'Nadie', 
+          lastPayout: res.last_payout 
+        });
+      }
+    } catch (e) {}
   };
 
   useEffect(() => {
     fetchMarketData();
     fetchUserData();
     fetchChart();
+    fetchAirdrop();
     
     const interval = setInterval(() => {
       fetchMarketData();
       fetchUserData();
       fetchChart();
       fetchNews();
+      fetchAirdrop();
     }, 5000);
     
     return () => clearInterval(interval);
@@ -164,30 +246,23 @@ const BolsaLayout = () => {
     fetchNews();
   }, [ledger]);
 
-  // [!] MOTOR DE RELOJ INFALIBLE
   useEffect(() => {
     const timerInterval = setInterval(() => {
       const now = new Date();
-      const next = new Date(now);
-      
-      next.setMilliseconds(0);
-      next.setSeconds(0);
-      
-      // Avanza matemáticamente al siguiente múltiplo de 15, evitando ir al pasado
-      next.setMinutes((Math.floor(now.getMinutes() / 15) + 1) * 15);
+      const nextHour = new Date(now);
+      nextHour.setHours(now.getHours() + 1, 0, 0, 0);
 
-      const distance = next.getTime() - now.getTime();
-      const m = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-      const s = Math.floor((distance % (1000 * 60)) / 1000);
+      const distance = nextHour.getTime() - now.getTime();
+      const m = Math.floor((distance / (1000 * 60)) % 60);
+      const s = Math.floor((distance / 1000) % 60);
 
       setNextUpdateTimer(`${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`);
-      setIsTimerCritical(m === 0 && s <= 59);
+      setIsTimerCritical(m === 0);
     }, 1000);
 
     return () => clearInterval(timerInterval);
   }, []);
 
-  // INICIALIZACIÓN DEL GRÁFICO (CON TOOLTIP INTERACTIVO)
   useEffect(() => {
     if (!chartContainerRef.current) return;
 
@@ -284,7 +359,7 @@ const BolsaLayout = () => {
       window.removeEventListener('resize', handleResize);
       chart.remove();
     };
-  }, []);
+  }, [selectedAsset]);
 
   useEffect(() => {
     if (candleSeries.current && volumeSeries.current && chartData.length > 0) {
@@ -311,18 +386,20 @@ const BolsaLayout = () => {
 
   const getAssetDisplayName = (id) => {
     const map = { 
-      DIAMOND: "Diamante", GOLD_INGOT: "Oro", IRON_INGOT: "Hierro", 
-      EMERALD: "Esmeralda", NETHERITE_INGOT: "Netherite", COAL: "Carbon",
-      RAW_COPPER: "Cobre Bruto", CHORUS_FRUIT: "Fruta del End", FLINT: "Pedernal", QUARTZ: "Cuarzo"
+      NETHERITE_INGOT: "Netherite", 
+      DIAMOND: "Diamante", 
+      COAL: "Carbon",
+      RAW_COPPER: "Cobre Bruto"
     };
     return map[id] || id;
   };
 
   const getAssetIconPath = (id) => {
     const map = { 
-      DIAMOND: "diamante.png", GOLD_INGOT: "oro.png", IRON_INGOT: "plata.png",
-      EMERALD: "esmeralda.webp", NETHERITE_INGOT: "netherite.webp", COAL: "carbon.webp",
-      RAW_COPPER: "cobre.png", CHORUS_FRUIT: "frunta.webp", FLINT: "Pedernal.png", QUARTZ: "cuarzo.webp"
+      NETHERITE_INGOT: "netherite.webp", 
+      DIAMOND: "diamante.png", 
+      COAL: "carbon.webp",
+      RAW_COPPER: "cobre.png"
     };
     return `/tienda/assets/minerals/${map[id] || id + '.png'}`;
   };
@@ -346,45 +423,54 @@ const BolsaLayout = () => {
           
           if (statusRes.status === 'COMPLETED') {
             clearInterval(poll);
-            playTradeSound(type, true);
+            
+            try {
+              const portRes = await apiGet(`/api/bolsa/portfolio/${user.uuid}`);
+              if (portRes) {
+                setPortfolio(portRes.portfolio || []);
+                setLiquidCoins(portRes.liquidCoins || 0);
+              }
+              await fetchMarketData();
+            } catch(e) {}
+
+            if (activeTab === "LEDGER") fetchLedger(1);
+            
+            setIsTrading(false);
+            setLiquidatingAsset(null);
+            setTradeAmount(1); 
             lastTradeTime.current = Date.now();
             
-            setTimeout(async () => {
-              await fetchUserData();
-              await fetchMarketData();
-              if (activeTab === "LEDGER") fetchLedger(1);
-              setIsTrading(false);
-              setLiquidatingAsset(null);
-              setTradeAmount(1); 
-              
-              toast.custom((t) => (
-                <div className={`mc-toast-success ${t.visible ? 'animate-enter' : 'animate-leave'}`}>
-                  <div className="mc-advancement-toast-inner">
-                    <div className="toast-icon-wrapper">
-                      <img src={getAssetIconPath(mineralId)} className="mc-pixelated" alt="mineral" style={{width: '36px', height: '36px'}}/>
-                    </div>
-                    <div className="toast-texts">
-                      <span className="toast-title" style={{ color: type === 'BUY' ? '#5EE034' : '#fbbf24' }}>
-                        {type === 'BUY' ? 'ORDEN DE COMPRA EJECUTADA' : 'LIQUIDACION COMPLETADA'}
-                      </span>
-                      <span className="toast-sub">
-                        {type === 'BUY' ? 'Has adquirido' : 'Has vendido'} {amount}x participaciones de {getAssetDisplayName(mineralId)}.
-                      </span>
-                    </div>
+            playTradeSound(type, true);
+
+            toast.custom((t) => (
+              <div className={`mc-toast-success ${t.visible ? 'animate-enter' : 'animate-leave'}`}>
+                <div className="mc-advancement-toast-inner">
+                  <div className="toast-icon-wrapper">
+                    <img src={getAssetIconPath(mineralId)} className="mc-pixelated" alt="mineral" style={{width: '36px', height: '36px'}}/>
+                  </div>
+                  <div className="toast-texts">
+                    <span className="toast-title" style={{ color: type === 'BUY' ? '#5EE034' : '#fbbf24' }}>
+                      {type === 'BUY' ? 'ORDEN EJECUTADA' : 'LIQUIDACION EXITOSA'}
+                    </span>
+                    <span className="toast-sub">
+                      {type === 'BUY' ? 'Adquiriste' : 'Vendiste'} {amount}x participaciones de {getAssetDisplayName(mineralId)}.
+                    </span>
                   </div>
                 </div>
-              ), { id: toastId, duration: 5000 });
-            }, 800);
+              </div>
+            ), { id: toastId, duration: 5000 });
             
           } else if (statusRes.status !== 'PENDING') {
             clearInterval(poll);
             setIsTrading(false);
             setLiquidatingAsset(null);
+            playTradeSound(type, false);
             
             let errorMsg = "Operacion rechazada por el Gremio.";
-            if (statusRes.status === 'INSUFFICIENT_FUNDS') errorMsg = "Fondos in-game insuficientes para procesar la orden.";
-            if (statusRes.status === 'INSUFFICIENT_SHARES') errorMsg = "No posees la cantidad requerida en tu inventario.";
-            if (statusRes.status === 'MARKET_FROZEN') errorMsg = "El mercado de valores ha sido congelado por la corona.";
+            if (statusRes.status === 'INSUFFICIENT_FUNDS') errorMsg = "Fondos insuficientes en el servidor.";
+            if (statusRes.status === 'INSUFFICIENT_SHARES') errorMsg = "Inventario insuficiente.";
+            if (statusRes.status === 'MARKET_FROZEN') errorMsg = "Mercado congelado por la corona.";
+            if (statusRes.status === 'LIQUIDITY_ERROR') errorMsg = "Liquidez AMM insuficiente.";
             
             toast.custom((t) => (
               <div className={`mc-toast-error ${t.visible ? 'animate-enter' : 'animate-leave'}`}>
@@ -400,8 +486,8 @@ const BolsaLayout = () => {
             setLiquidatingAsset(null);
             toast.custom((t) => (
               <div className={`mc-toast-error ${t.visible ? 'animate-enter' : 'animate-leave'}`}>
-                <span className="toast-title">TIEMPO DE ESPERA AGOTADO</span>
-                <span className="toast-sub">Las rutas comerciales están colapsadas. Intenta de nuevo.</span>
+                <span className="toast-title">TIMEOUT</span>
+                <span className="toast-sub">Rutas colapsadas. Intenta de nuevo.</span>
               </div>
             ), { id: toastId, duration: 5000 });
           }
@@ -411,10 +497,18 @@ const BolsaLayout = () => {
     } catch (error) {
       setIsTrading(false);
       setLiquidatingAsset(null);
+      
+      let errorMsg = "Fallo al conectar con Block Street.";
+      const errorType = error?.response?.data?.error || error?.message || "";
+      
+      if (errorType === "MARKET_OFFLINE") {
+         errorMsg = "Mercado cerrado temporalmente por reinicio del servidor.";
+      }
+
       toast.custom((t) => (
         <div className={`mc-toast-error ${t.visible ? 'animate-enter' : 'animate-leave'}`}>
-          <span className="toast-title">ERROR DE ENRUTAMIENTO</span>
-          <span className="toast-sub">Block Street no ha podido enlazar tu orden. Intenta nuevamente.</span>
+          <span className="toast-title">{errorType === "MARKET_OFFLINE" ? "MERCADO CERRADO" : "ERROR DE ENRUTAMIENTO"}</span>
+          <span className="toast-sub">{errorMsg}</span>
         </div>
       ), { id: toastId, duration: 5000 });
     }
@@ -422,38 +516,35 @@ const BolsaLayout = () => {
 
   const currentAssetData = livePrices.find(p => p.mineral_id === selectedAsset);
   const currentPrice = currentAssetData?.current_coin_price || 0;
+  const currentPct = currentAssetData?.percent_24h !== undefined ? currentAssetData.percent_24h : (currentAssetData?.last_percent || 0);
+  const volume24h = currentAssetData?.volume_24h || 0;
   
-  const feePercent = 0.02;
-  const slippageRate = 0.002;
-
-  const selectedOwnedShares = getOwnedShares(selectedAsset);
+  const feePercent = getFeePercentForAsset(selectedAsset);
   const safeAmount = Math.min(1000, Math.max(1, parseInt(tradeAmount, 10) || 1));
   
-  const buySlippageFactor = 1.0 + (safeAmount * slippageRate);
-  const finalBuyPrice = currentPrice * buySlippageFactor;
-  const avgBuyPrice = (currentPrice + finalBuyPrice) / 2.0;
-  const totalBuyCostRaw = safeAmount * avgBuyPrice;
-  const feeValueBuy = totalBuyCostRaw * feePercent;
-  const estBuyCost = totalBuyCostRaw + feeValueBuy;
-
-  const sellSlippageFactor = 1.0 - (safeAmount * slippageRate);
-  const finalSellPrice = currentPrice * Math.max(0.1, sellSlippageFactor);
-  const avgSellPrice = (currentPrice + finalSellPrice) / 2.0;
-  const totalSellValueRaw = safeAmount * avgSellPrice;
-  const feeValueSell = totalSellValueRaw * feePercent;
-  const estSellValue = totalSellValueRaw - feeValueSell;
-
-  const canAffordBuy = liquidCoins >= estBuyCost;
-  const rawCostPerUnit = currentPrice * (1 + slippageRate) * (1 + feePercent);
-  const maxBuyAmount = Math.max(0, Math.floor(liquidCoins / rawCostPerUnit));
+  const tradeSimulation = simulateAMMTrade(selectedAsset, safeAmount, tradeMode);
+  
+  const canAffordBuy = liquidCoins >= tradeSimulation.finalAmount;
+  
+  let maxBuyAmount = 0;
+  if (currentAssetData && currentAssetData.coin_pool) {
+    let testAmt = 1;
+    while(simulateAMMTrade(selectedAsset, testAmt, 'BUY').finalAmount <= liquidCoins && testAmt <= 1000) {
+       maxBuyAmount = testAmt;
+       testAmt++;
+    }
+  }
+  
+  const selectedOwnedShares = getOwnedShares(selectedAsset);
   const maxSellAmount = selectedOwnedShares;
   const activeMaxLimit = tradeMode === 'BUY' ? maxBuyAmount : maxSellAmount;
 
-  const portfolioValue = portfolio.reduce((acc, item) => acc + (item.shares * (livePrices.find(p => p.mineral_id === item.mineral_id)?.current_coin_price || 0)), 0);
-  const totalNetWorth = liquidCoins + portfolioValue;
+  const portfolioValueReal = portfolio.reduce((acc, item) => {
+    return acc + simulateAMMTrade(item.mineral_id, item.shares, 'SELL', livePrices).finalAmount;
+  }, 0);
+  const totalNetWorth = liquidCoins + portfolioValueReal;
   
-  const isUp = currentAssetData ? currentAssetData.trend_arrow !== "DOWN" : true;
-  const chartColor = isUp ? "#5EE034" : "#FF5555";
+  const isUp = currentAssetData ? currentPct >= 0 : true;
   const glowClass = isUp ? "glow-green" : "glow-red";
 
   const handlePercentageSelect = (pct) => {
@@ -470,7 +561,7 @@ const BolsaLayout = () => {
       toast.custom((t) => (
         <div className={`mc-toast-error ${t.visible ? 'animate-enter' : 'animate-leave'}`}>
           <span className="toast-title">VOLUMEN INVALIDO</span>
-          <span className="toast-sub">El Gremio permite transacciones entre 1 y 1000 unidades.</span>
+          <span className="toast-sub">Transacciones permitidas: 1 - 1000 ud.</span>
         </div>
       ));
       return;
@@ -480,7 +571,7 @@ const BolsaLayout = () => {
       toast.custom((t) => (
         <div className={`mc-toast-error ${t.visible ? 'animate-enter' : 'animate-leave'}`}>
           <span className="toast-title">INSUFICIENTE</span>
-          <span className="toast-sub">No posees suficientes recursos en tu cartera.</span>
+          <span className="toast-sub">No tienes esos recursos.</span>
         </div>
       ));
       return;
@@ -490,7 +581,7 @@ const BolsaLayout = () => {
       toast.custom((t) => (
         <div className={`mc-toast-error ${t.visible ? 'animate-enter' : 'animate-leave'}`}>
           <span className="toast-title">SIN LIQUIDEZ</span>
-          <span className="toast-sub">Fondos insuficientes en el servidor de juego.</span>
+          <span className="toast-sub">Fondos insuficientes.</span>
         </div>
       ));
       return;
@@ -499,8 +590,8 @@ const BolsaLayout = () => {
     setIsTrading(true);
     const toastId = toast.custom((t) => (
       <div className={`mc-toast-loading ${t.visible ? 'animate-enter' : 'animate-leave'}`}>
-        <span className="toast-title">{tradeMode === 'BUY' ? 'FIRMANDO CONTRATO COMERCIAL...' : 'PREPARANDO CARAVANAS DE VENTA...'}</span>
-        <span className="toast-sub">Asegurando la operacion con el servidor. Espere...</span>
+        <span className="toast-title">{tradeMode === 'BUY' ? 'FIRMANDO CONTRATO...' : 'PREPARANDO VENTA...'}</span>
+        <span className="toast-sub">Asegurando operacion con el servidor...</span>
       </div>
     ));
     
@@ -515,7 +606,7 @@ const BolsaLayout = () => {
     const toastId = toast.custom((t) => (
       <div className={`mc-toast-loading ${t.visible ? 'animate-enter' : 'animate-leave'}`}>
         <span className="toast-title">LIQUIDANDO ACTIVOS...</span>
-        <span className="toast-sub">Vendiendo participaciones a los mercaderes. Espere...</span>
+        <span className="toast-sub">Vendiendo a precio de mercado...</span>
       </div>
     ));
     
@@ -524,7 +615,7 @@ const BolsaLayout = () => {
 
   const renderActiveTabContent = () => {
     if (!user?.loggedIn && activeTab === "POSITIONS") {
-      return (<div className="mc-empty-state">Identificate en el sistema para acceder a tus bóvedas.</div>);
+      return (<div className="mc-empty-state">Identifícate para acceder a tus bóvedas.</div>);
     }
 
     if (activeTab === "POSITIONS") {
@@ -533,37 +624,53 @@ const BolsaLayout = () => {
         return (
           <div className="mc-empty-state">
             <img src="/tienda/assets/minerals/diamante.png" className="empty-icon mc-pixelated" alt="tip" />
-            <h3>Tus bóvedas están vacías</h3>
-            <p>Adquiere recursos en el mercado para empezar a generar riqueza.</p>
+            <h3>Bóvedas Vacías</h3>
+            <p>Adquiere recursos para generar riqueza.</p>
           </div>
         );
       }
       return (
         <div className="mc-table-responsive">
-          <table className="mc-ledger-table">
+          <table className="mc-ledger-table mc-portfolio-table">
             <thead>
               <tr>
                 <th>ACTIVO</th>
-                <th>CANTIDAD</th>
-                <th className="flex-center">ROI</th>
-                <th></th>
+                <th>POSICIÓN</th>
+                <th>LIQUIDACIÓN (REAL)</th>
+                <th>ACCIÓN</th>
               </tr>
             </thead>
             <tbody>
               {activePositions.map((pos) => {
                 const live = livePrices.find(l => l.mineral_id === pos.mineral_id)?.current_coin_price || 0;
-                const pnl = (live - (pos.average_purchase_price || live)) * pos.shares;
+                const paperValue = live * pos.shares;
+                const invested = pos.average_purchase_price * pos.shares;
+                
+                const realSaleSim = simulateAMMTrade(pos.mineral_id, pos.shares, 'SELL', livePrices);
+                const currentValReal = realSaleSim.finalAmount;
+                const pnl = currentValReal - invested;
+                const pctDiff = invested > 0 ? ((pnl / invested) * 100).toFixed(1) : "0.0";
+                
                 const isLiquidating = liquidatingAsset === pos.mineral_id;
 
                 return (
-                  <tr key={pos.mineral_id}>
+                  <tr key={pos.mineral_id} style={isLiquidating ? { opacity: 0.5 } : {}}>
                     <td className="flex-center font-bold cursor-pointer" onClick={() => setSelectedAsset(pos.mineral_id)}>
                       <img src={getAssetIconPath(pos.mineral_id)} className="mineral-icon-small mc-pixelated" alt="icon" />
                       {getAssetDisplayName(pos.mineral_id)}
                     </td>
-                    <td>{pos.shares}</td>
-                    <td className={`flex-center ${pnl >= 0 ? 'text-green' : 'text-red'}`}>
-                      {pnl >= 0 ? '+' : ''}{pnl.toFixed(2)} <img src="/tienda/assets/coin.png" className="coin-icon mc-pixelated" alt="coins" />
+                    <td>
+                      <div style={{ color: '#fff' }}>{pos.shares} ud.</div>
+                      <div style={{ fontSize: '0.8rem', color: '#888' }}>Avg: {pos.average_purchase_price?.toFixed(2)} <img src="/tienda/assets/coin.png" className="inline-icon mc-pixelated" alt="coins" /></div>
+                    </td>
+                    <td className="portfolio-value-col">
+                      <div className="total-val">
+                        {currentValReal.toFixed(0)} <img src="/tienda/assets/coin.png" className="coin-icon-small mc-pixelated" alt="coins" />
+                        <span style={{fontSize: '0.75rem', color: '#666', marginLeft: '6px', fontWeight: 'normal'}}>(Papel: {paperValue.toFixed(0)})</span>
+                      </div>
+                      <div className={`pnl-val ${pnl >= 0 ? 'text-green' : 'text-red'}`}>
+                        {pnl >= 0 ? '+' : ''}{pnl.toFixed(2)} <img src="/tienda/assets/coin.png" className="inline-icon mc-pixelated" alt="coins" /> ({pnl >= 0 ? '+' : ''}{pctDiff}%)
+                      </div>
                     </td>
                     <td className="text-right">
                       <button 
@@ -571,7 +678,7 @@ const BolsaLayout = () => {
                         onClick={() => handleLiquidate(pos.mineral_id, pos.shares)}
                         disabled={isTrading || isLiquidating}
                       >
-                        {isLiquidating ? 'Vendiendo...' : 'Vender Todo'}
+                        {isLiquidating ? 'VENDIENDO...' : 'LIQUIDAR'}
                       </button>
                     </td>
                   </tr>
@@ -588,7 +695,7 @@ const BolsaLayout = () => {
         <div className="mc-table-responsive flex-column-between">
           <table className="mc-ledger-table">
             <thead>
-              <tr><th>COMERCIANTE</th><th>TIPO</th><th>RECURSO</th><th>UD</th><th>PRECIO/U</th><th>LIQUIDEZ MOVIDA</th></tr>
+              <tr><th>COMERCIANTE</th><th>TIPO</th><th>RECURSO</th><th>UD</th><th>PRECIO/U</th><th>LIQUIDEZ</th></tr>
             </thead>
             <tbody>
               {ledger.map((tx) => (
@@ -602,7 +709,7 @@ const BolsaLayout = () => {
                     {getAssetDisplayName(tx.mineral_id)}
                   </td>
                   <td>{tx.shares}</td>
-                  <td>{tx.price_per_share.toFixed(2)}</td>
+                  <td>{tx.price_per_share.toFixed(2)} <img src="/tienda/assets/coin.png" className="inline-icon mc-pixelated" alt="coins" /></td>
                   <td className="flex-center font-bold">
                     {tx.total_coins_exchanged.toFixed(2)} <img src="/tienda/assets/coin.png" className="coin-icon mc-pixelated" alt="coins" />
                   </td>
@@ -612,19 +719,9 @@ const BolsaLayout = () => {
           </table>
           
           <div className="mc-pagination">
-            <button 
-              onClick={() => setLedgerPage(p => Math.max(1, p - 1))} 
-              disabled={ledgerPage === 1}
-            >
-              &#171; ANTERIOR
-            </button>
-            <span>PÁGINA {ledgerPage} DE {ledgerTotalPages}</span>
-            <button 
-              onClick={() => setLedgerPage(p => Math.min(ledgerTotalPages, p + 1))} 
-              disabled={ledgerPage === ledgerTotalPages}
-            >
-              SIGUIENTE &#187;
-            </button>
+            <button onClick={() => setLedgerPage(p => Math.max(1, p - 1))} disabled={ledgerPage === 1}>&lt; ANT</button>
+            <span>PÁG {ledgerPage} DE {ledgerTotalPages}</span>
+            <button onClick={() => setLedgerPage(p => Math.min(ledgerTotalPages, p + 1))} disabled={ledgerPage === ledgerTotalPages}>SIG &gt;</button>
           </div>
         </div>
       );
@@ -634,12 +731,12 @@ const BolsaLayout = () => {
       <div className="mc-table-responsive">
         <table className="mc-ledger-table">
           <thead>
-            <tr><th>RANGO</th><th>COMERCIANTE EXPERTO</th><th>BENEFICIO NETO REALIZADO</th></tr>
+            <tr><th>#</th><th>COMERCIANTE</th><th>PNL NETO</th></tr>
           </thead>
           <tbody>
             {topTraders.map((trader, i) => (
               <tr key={i}>
-                <td className="font-bold">#{i + 1}</td>
+                <td className="font-bold">{i + 1}</td>
                 <td className="font-bold">{trader.name}</td>
                 <td className={`flex-center font-bold ${trader.profit > 0 ? 'text-green' : 'text-red'}`}>
                   {trader.profit > 0 ? '+' : ''}{trader.profit.toFixed(2)} 
@@ -655,21 +752,23 @@ const BolsaLayout = () => {
 
   return (
     <div className="mc-bolsa-wrapper">
+      
       <div className="mc-ticker-wrap">
         <div className="mc-ticker">
           {[...livePrices, ...livePrices].map((p, i) => {
-            const isHot = Math.abs(p.last_percent) >= 0.05;
-            const priceColor = p.last_percent > 0 ? 'text-green' : p.last_percent < 0 ? 'text-red' : 'text-gray';
-            const arrow = p.last_percent > 0 ? '▲' : p.last_percent < 0 ? '▼' : '—';
+            const pct = p.percent_24h !== undefined ? p.percent_24h : (p.last_percent || 0);
+            const isHot = Math.abs(pct) >= 0.05;
+            const priceColor = pct > 0 ? 'text-green' : pct < 0 ? 'text-red' : 'text-gray';
+            const arrow = pct > 0 ? '▲' : pct < 0 ? '▼' : '—';
             
             return (
               <div key={i} className="mc-ticker-item">
-                {isHot && <span className="mc-hot-badge">[ALERTA]</span>}
+                {isHot && <span className="mc-hot-badge">[HOT]</span>}
                 <img src={getAssetIconPath(p.mineral_id)} className="mc-pixelated" alt="icon" />
                 <span className="name">{getAssetDisplayName(p.mineral_id)}</span>
                 <span className={`price ${priceColor}`}>
                   {p.current_coin_price.toFixed(2)} <img src="/tienda/assets/coin.png" className="coin-icon-small mc-pixelated" alt="coins" /> 
-                  ({p.last_percent > 0 ? '+' : ''}{(p.last_percent * 100).toFixed(1)}%) {arrow}
+                  ({pct > 0 ? '+' : ''}{(pct * 100).toFixed(1)}%) {arrow}
                 </span>
               </div>
             );
@@ -682,273 +781,268 @@ const BolsaLayout = () => {
         {user?.loggedIn && (
           <div className="mc-gui-window mc-wallet-hud">
             <div className="hud-item">
-              <span className="hud-label">PATRIMONIO TOTAL ESTIMADO</span>
-              <span className="hud-value highlight">
-                {totalNetWorth.toFixed(2)} <img src="/tienda/assets/coin.png" className="coin-icon mc-pixelated" alt="coins" />
+              <span className="hud-label">PATRIMONIO TOTAL</span>
+              <span className={`hud-value highlight ${isTrading ? 'syncing' : ''}`}>
+                {isTrading ? 'SYNC...' : <>{totalNetWorth.toFixed(2)} <img src="/tienda/assets/coin.png" className="coin-icon mc-pixelated" alt="coins" /></>}
               </span>
             </div>
             <div className="hud-item">
-              <span className="hud-label">LIQUIDEZ EN BÓVEDA (JUEGO)</span>
+              <span className="hud-label">LIQUIDEZ EN JUEGO</span>
               <div className="hud-value-group">
-                <span className="hud-value">
-                  {liquidCoins.toFixed(2)} <img src="/tienda/assets/coin.png" className="coin-icon mc-pixelated" alt="coins" />
+                <span className={`hud-value ${isTrading ? 'syncing' : ''}`}>
+                  {isTrading ? 'SYNC...' : <>{liquidCoins.toFixed(2)} <img src="/tienda/assets/coin.png" className="coin-icon mc-pixelated" alt="coins" /></>}
                 </span>
-                <button className="mc-btn-add" onClick={() => navigate('/tienda')} title="Conseguir Coins">+</button>
+                <button className="mc-btn-add" onClick={() => navigate('/tienda')} disabled={isTrading}>+</button>
               </div>
             </div>
             <div className="hud-item desktop-only">
-              <span className="hud-label">VALOR DE RECURSOS EN VENTA</span>
-              <span className="hud-value">
-                {portfolioValue.toFixed(2)} <img src="/tienda/assets/coin.png" className="coin-icon mc-pixelated" alt="coins" />
+              <span className="hud-label">VALOR BÓVEDA (REAL)</span>
+              <span className={`hud-value ${isTrading ? 'syncing' : ''}`}>
+                {isTrading ? 'SYNC...' : <>{portfolioValueReal.toFixed(2)} <img src="/tienda/assets/coin.png" className="coin-icon mc-pixelated" alt="coins" /></>}
               </span>
             </div>
           </div>
         )}
 
-        <div className="mc-mobile-asset-strip">
+        <div className="mc-asset-strip">
           {livePrices.map((asset) => {
-            const isHot = Math.abs(asset.last_percent) >= 0.05;
+            const owned = getOwnedShares(asset.mineral_id);
+            const pct = asset.percent_24h !== undefined ? asset.percent_24h : (asset.last_percent || 0);
+            const isHot = Math.abs(pct) >= 0.05;
             return (
               <div 
                 key={asset.mineral_id} 
-                className={`mobile-asset-card ${selectedAsset === asset.mineral_id ? 'active' : ''}`}
+                className={`asset-card-horiz ${selectedAsset === asset.mineral_id ? 'active' : ''}`}
                 onClick={() => setSelectedAsset(asset.mineral_id)}
               >
-                <img src={getAssetIconPath(asset.mineral_id)} className="mc-pixelated" alt="m" />
-                <div className="mobile-asset-data">
+                <img src={getAssetIconPath(asset.mineral_id)} className="mc-pixelated main-icon" alt="m" />
+                <div className="card-data">
                   <span className="name">{getAssetDisplayName(asset.mineral_id)} {isHot && <span className="mc-hot-badge">!</span>}</span>
-                  <span className={`price ${asset.last_percent > 0 ? 'text-green' : asset.last_percent < 0 ? 'text-red' : 'text-gray'}`}>
-                    {asset.current_coin_price.toFixed(2)}
-                  </span>
+                  <div className="price-row">
+                     <span className={`price ${pct > 0 ? 'text-green' : pct < 0 ? 'text-red' : 'text-gray'}`}>
+                       {asset.current_coin_price.toFixed(2)} <img src="/tienda/assets/coin.png" className="inline-icon mc-pixelated" alt="c" />
+                     </span>
+                     <span className={`pct ${pct > 0 ? 'bg-green' : pct < 0 ? 'bg-red' : 'bg-gray'}`}>
+                       {pct > 0 ? '+' : ''}{(pct * 100).toFixed(1)}%
+                     </span>
+                  </div>
+                  {owned > 0 && <span className="owned-tag">{owned} en bóveda</span>}
                 </div>
               </div>
             );
           })}
         </div>
 
-        <div className="mc-bolsa-grid">
-          <div className="mc-main-panel">
+        {selectedAsset === 'NETHERITE_INGOT' && user?.loggedIn && getOwnedShares('NETHERITE_INGOT') > 0 && (
+          <div className="mc-burn-banner">
+            <div className="burn-info">
+              <img src={FIRE_GIF_SRC} className="fire-gif-icon mc-pixelated" alt="fire" />
+              <div>
+                <strong>TIENES {getOwnedShares('NETHERITE_INGOT')} NETHERITES</strong>
+                <p>Puedes forjarlos en la Forja para obtener Flanites <img src={FLANITE_SRC} className="inline-icon mc-pixelated" alt="flanite" /> instantáneos.</p>
+              </div>
+            </div>
+            <button className="mc-btn-burn" onClick={() => navigate('/forja')}>IR A LA FORJA</button>
+          </div>
+        )}
+        
+        {selectedAsset === 'DIAMOND' && (
+          <div className="mc-diamond-info">
+             <div className="diamond-header">
+               <img src={getAssetIconPath('DIAMOND')} className="mc-pixelated" alt="d"/>
+               <span>DIVIDENDOS DE LA CORONA</span>
+             </div>
+             <div className="diamond-body">
+               <p>Retener Diamantes te otorga <strong>Poder de Influencia</strong> para reclamar el Tributo del Gremio cada hora.</p>
+               <p>Si la influencia general no supera a la banca, el Gremio retiene los fondos y <strong>el bote se acumula</strong>.</p>
+               {user?.loggedIn && (
+                 <p className="diamond-status">
+                   Tu Nivel de Influencia actual: <strong>{getOwnedShares('DIAMOND')}</strong>
+                 </p>
+               )}
+             </div>
+          </div>
+        )}
 
-            <div className="mc-gui-window mc-trading-terminal">
-              {!user?.loggedIn && (
-                <div className="mc-overlay-lock">
-                  <div className="lock-box">
-                    <h3>ACCESO RESTRINGIDO</h3>
-                    <p>Identifícate ante el Gremio para comerciar en Block Street.</p>
-                    <button className="mc-btn-solid mc-btn-gold" onClick={openAuthModal}>INICIAR SESIÓN</button>
+        <div className="mc-cex-terminal">
+          {!user?.loggedIn && (
+            <div className="mc-overlay-lock">
+              <div className="lock-box">
+                <h3>ACCESO RESTRINGIDO</h3>
+                <p>Identifícate ante el Gremio para comerciar.</p>
+                <button className="mc-btn-solid mc-btn-gold" onClick={openAuthModal}>INICIAR SESIÓN</button>
+              </div>
+            </div>
+          )}
+
+          <div className="terminal-header">
+            <div className="asset-title">
+              <img src={getAssetIconPath(selectedAsset)} className="mineral-icon-large mc-pixelated" alt="a" />
+              <div className="title-texts">
+                <div className="title-header-row">
+                  <h2>{getAssetDisplayName(selectedAsset)}</h2>
+                  <span className="vol-24h">Vol 24h: <span className="text-green">{volume24h.toFixed(0)}</span> <img src="/tienda/assets/coin.png" className="inline-icon mc-pixelated" alt="c" /></span>
+                </div>
+                <span className={`terminal-current-price ${glowClass}`}>
+                  {currentPrice.toFixed(2)} <img src="/tienda/assets/coin.png" className="coin-icon-small mc-pixelated" alt="coins" />
+                  <span className={`price-percent ${currentPct > 0 ? 'text-green' : currentPct < 0 ? 'text-red' : 'text-gray'}`}>
+                    ({currentPct > 0 ? '+' : ''}{(currentPct * 100).toFixed(1)}%)
+                  </span>
+                </span>
+              </div>
+            </div>
+
+            <div className="header-controls">
+              <div className="mc-timeframe-tabs">
+                {['15m', '1H', '4H', '1D'].map((tf) => (
+                  <button key={tf} className={timeframe === tf ? 'active' : ''} onClick={() => setTimeframe(tf)}>{tf}</button>
+                ))}
+              </div>
+              <div className="airdrop-mini">
+                <span className="label">TRIBUTO (⏱ {nextUpdateTimer})</span>
+                <span className="pot">{airdropInfo.pot ? airdropInfo.pot.toFixed(0) : '0'} <img src="/tienda/assets/coin.png" className="coin-icon-small mc-pixelated" alt="coins" /></span>
+              </div>
+            </div>
+          </div>
+
+          <div className="terminal-body-grid">
+            <div className="mc-chart-area">
+              <div id="chart-legend-overlay" className="chart-legend">
+                <span className="legend-title">{getAssetDisplayName(selectedAsset)}</span>
+                <div><span>O</span> <span id="leg-o">0.00</span></div>
+                <div><span>H</span> <span id="leg-h">0.00</span></div>
+                <div><span>L</span> <span id="leg-l">0.00</span></div>
+                <div><span>C</span> <span id="leg-c">0.00</span></div>
+              </div>
+              
+              <div ref={chartContainerRef} className="chart-container" />
+              {chartData.length === 0 && (
+                <div className="chart-empty">ENVIANDO EXPLORADORES...</div>
+              )}
+            </div>
+
+            <div className="mc-trade-area">
+              <div className="mc-trade-mode-toggle">
+                <button className={tradeMode === 'BUY' ? 'active buy' : ''} onClick={() => setTradeMode('BUY')}>COMPRAR</button>
+                <button className={tradeMode === 'SELL' ? 'active sell' : ''} onClick={() => setTradeMode('SELL')}>VENDER</button>
+              </div>
+              
+              <div className="trade-inner">
+                <div className="trade-balances">
+                  <span>Disponible:</span>
+                  <strong>
+                    {tradeMode === 'BUY' ? (
+                      <>{liquidCoins.toFixed(2)} <img src="/tienda/assets/coin.png" className="coin-icon-small mc-pixelated" alt="c" /></>
+                    ) : (
+                      selectedOwnedShares + ' ud.'
+                    )}
+                  </strong>
+                </div>
+
+                <div className="input-wrapper">
+                  <span className="prefix">Cant.</span>
+                  <input 
+                    type="number" 
+                    value={tradeAmount} 
+                    onChange={(e) => setTradeAmount(e.target.value.replace(/[^0-9]/g, ''))}
+                    onBlur={() => setTradeAmount(prev => Math.min(1000, Math.max(1, Number(prev))))}
+                    disabled={isTrading}
+                  />
+                  <span className="suffix">UD</span>
+                </div>
+
+                <div className="trade-slider-group">
+                  <input 
+                    type="range" 
+                    className={`mc-range-slider ${tradeMode === 'BUY' ? 'buy' : 'sell'}`}
+                    min="1" 
+                    max={activeMaxLimit > 0 ? Math.min(1000, activeMaxLimit) : 1} 
+                    value={safeAmount} 
+                    onChange={(e) => setTradeAmount(e.target.value)}
+                    disabled={isTrading || activeMaxLimit === 0}
+                  />
+                  <div className="pct-buttons">
+                    <button onClick={() => handlePercentageSelect(25)} disabled={isTrading}>25%</button>
+                    <button onClick={() => handlePercentageSelect(50)} disabled={isTrading}>50%</button>
+                    <button onClick={() => handlePercentageSelect(75)} disabled={isTrading}>75%</button>
+                    <button onClick={() => handlePercentageSelect(100)} disabled={isTrading}>MAX</button>
                   </div>
                 </div>
-              )}
-              
-              <div className="mc-gui-header-inner">
-                <div className="asset-title-area">
-                  <div className="mc-item-slot">
-                    <img src={getAssetIconPath(selectedAsset)} className="mineral-icon-large mc-pixelated" alt="a" />
+
+                <div className="trade-summary">
+                  <div className="summary-row">
+                    <span>Precio / ud.</span>
+                    <span>{currentPrice.toFixed(2)} <img src="/tienda/assets/coin.png" className="inline-icon mc-pixelated" alt="c" /></span>
                   </div>
-                  <div className="title-texts">
-                    <h2>{getAssetDisplayName(selectedAsset)}</h2>
-                    <span className={`terminal-current-price ${glowClass}`}>
-                      {currentAssetData?.current_coin_price.toFixed(2) || "0.00"} <img src="/tienda/assets/coin.png" className="coin-icon-small mc-pixelated" alt="coins" />
-                      {currentAssetData && (
-                        <span className={`price-percent ${currentAssetData.last_percent > 0 ? 'text-green' : currentAssetData.last_percent < 0 ? 'text-red' : 'text-gray'}`}>
-                          ({currentAssetData.last_percent > 0 ? '+' : ''}{(currentAssetData.last_percent * 100).toFixed(1)}%)
-                        </span>
-                      )}
+                  <div className="summary-row">
+                    <span>Slippage</span>
+                    <span className={Math.abs(tradeSimulation.priceImpact) > 0.05 ? 'text-red' : 'text-gray'}>
+                       {tradeMode === 'SELL' && tradeSimulation.priceImpact < 0 ? '' : (tradeMode === 'BUY' && tradeSimulation.priceImpact > 0 ? '+' : '')}{(tradeSimulation.priceImpact * 100).toFixed(2)}%
+                    </span>
+                  </div>
+                  <div className="summary-row">
+                    <span>Tasa ({(feePercent * 100).toFixed(0)}%)</span>
+                    <span className="text-gray">{(tradeSimulation.finalAmount / (1 + (tradeMode === 'BUY' ? feePercent : -feePercent)) * feePercent).toFixed(2)} <img src="/tienda/assets/coin.png" className="inline-icon mc-pixelated" alt="c" /></span>
+                  </div>
+                  <div className="summary-row total">
+                    <span>{tradeMode === 'BUY' ? 'Coste Total' : 'Recibes'}</span>
+                    <span className={tradeMode === 'BUY' ? 'text-red' : 'text-green'}>
+                      {tradeMode === 'BUY' ? tradeSimulation.finalAmount.toFixed(2) : tradeSimulation.finalAmount.toFixed(0)} <img src="/tienda/assets/coin.png" className="inline-icon mc-pixelated" alt="c" />
                     </span>
                   </div>
                 </div>
-                <div className="mc-terminal-right-header">
-                  <div className={`mc-market-clock ${isTimerCritical ? 'critical' : ''}`}>
-                    <span className="clock-label">PRÓXIMO REAJUSTE COMERCIAL:</span>
-                    <span className="clock-time">{nextUpdateTimer}</span>
-                  </div>
-                  <div className="mc-timeframe-tabs">
-                    {["15m", "1H", "4H", "1D"].map(tf => (
-                      <button key={tf} className={timeframe === tf ? "active" : ""} onClick={() => setTimeframe(tf)}>
-                        {tf}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
 
-              <div className="mc-chart-screen" style={{ position: 'relative' }}>
-                <div 
-                  id="chart-legend-overlay" 
-                  style={{ 
-                    position: 'absolute', top: '12px', left: '12px', zIndex: 10, display: 'none', 
-                    flexDirection: 'column', gap: '4px', background: 'rgba(8, 8, 8, 0.85)', 
-                    padding: '8px 12px', border: '2px solid #333', pointerEvents: 'none',
-                    fontFamily: 'MinecraftBold, sans-serif', fontSize: '0.85rem'
-                  }}
-                >
-                  <span style={{ color: '#fff', fontSize: '1rem', borderBottom: '1px solid #333', paddingBottom: '4px', marginBottom: '4px' }}>
-                    {getAssetDisplayName(selectedAsset)}
-                  </span>
-                  <div><span style={{ color: '#888' }}>O </span> <span id="leg-o" style={{ color: '#fbbf24' }}>0.00</span></div>
-                  <div><span style={{ color: '#888' }}>H </span> <span id="leg-h" style={{ color: '#fbbf24' }}>0.00</span></div>
-                  <div><span style={{ color: '#888' }}>L </span> <span id="leg-l" style={{ color: '#fbbf24' }}>0.00</span></div>
-                  <div><span style={{ color: '#888' }}>C </span> <span id="leg-c">0.00</span></div>
-                </div>
-                
-                <div ref={chartContainerRef} style={{ width: '100%', height: '350px' }} />
-                {chartData.length === 0 && (
-                  <div className="chart-empty" style={{position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', alignItems:'center', justifyContent: 'center', pointerEvents: 'none'}}>
-                    ENVIANDO EXPLORADORES...
-                  </div>
-                )}
-              </div>
-
-              <div className="mc-cex-trading-panel">
-                <div className="mc-trade-mode-toggle">
-                  <button className={tradeMode === 'BUY' ? 'active buy' : ''} onClick={() => setTradeMode('BUY')}>COMPRAR</button>
-                  <button className={tradeMode === 'SELL' ? 'active sell' : ''} onClick={() => setTradeMode('SELL')}>VENDER</button>
-                </div>
-                
-                <div className="mc-trade-body">
-                  <div className="trade-balances">
-                    <span className="bal-item">Disponible: <strong>{tradeMode === 'BUY' ? liquidCoins.toFixed(2) + ' ⛃' : selectedOwnedShares + ' ud.'}</strong></span>
-                  </div>
-
-                  <div className="trade-input-group">
-                    <div className="input-wrapper">
-                      <span className="prefix">Cantidad</span>
-                      <input 
-                        type="number" 
-                        value={tradeAmount} 
-                        onChange={(e) => setTradeAmount(e.target.value.replace(/[^0-9]/g, ''))}
-                        onBlur={() => setTradeAmount(prev => Math.min(1000, Math.max(1, Number(prev))))}
-                        disabled={isTrading}
-                      />
-                      <span className="suffix">UD</span>
-                    </div>
-                  </div>
-
-                  <div className="trade-slider-group">
-                    <input 
-                      type="range" 
-                      className={`mc-range-slider ${tradeMode === 'BUY' ? 'buy' : 'sell'}`}
-                      min="1" 
-                      max={activeMaxLimit > 0 ? Math.min(1000, activeMaxLimit) : 1} 
-                      value={safeAmount} 
-                      onChange={(e) => setTradeAmount(e.target.value)}
-                      disabled={isTrading || activeMaxLimit === 0}
-                    />
-                    <div className="pct-buttons">
-                      <button onClick={() => handlePercentageSelect(25)} disabled={isTrading}>25%</button>
-                      <button onClick={() => handlePercentageSelect(50)} disabled={isTrading}>50%</button>
-                      <button onClick={() => handlePercentageSelect(75)} disabled={isTrading}>75%</button>
-                      <button onClick={() => handlePercentageSelect(100)} disabled={isTrading}>MAX</button>
-                    </div>
-                  </div>
-
-                  <div className="trade-summary">
-                    <div className="summary-row">
-                      <span>Precio Base / ud.</span>
-                      <span>{currentPrice.toFixed(2)} ⛃</span>
-                    </div>
-                    <div className="summary-row">
-                      <span title="Impacto de escasez por gran volumen">Impacto de Mercado</span>
-                      <span className="text-gray">{tradeMode === 'BUY' ? '+' : '-'}{Math.abs(currentPrice - avgBuyPrice).toFixed(2)} ⛃</span>
-                    </div>
-                    <div className="summary-row">
-                      <span title="Tasa de la Corona (2%)">Impuesto Comercial</span>
-                      <span className="text-gray">{tradeMode === 'BUY' ? feeValueBuy.toFixed(2) : feeValueSell.toFixed(2)} ⛃</span>
-                    </div>
-                    <div className="summary-row total">
-                      <span>{tradeMode === 'BUY' ? 'Coste Total' : 'Recibes'}</span>
-                      <span className={tradeMode === 'BUY' ? 'text-red' : 'text-green'}>
-                        {tradeMode === 'BUY' ? estBuyCost.toFixed(2) : estSellValue.toFixed(2)} ⛃
-                      </span>
-                    </div>
-                  </div>
-
-                  {tradeMode === 'BUY' ? (
-                     <button className="mc-btn-solid mc-btn-green-block full-width" onClick={handleAction} disabled={isTrading || !user?.loggedIn || !canAffordBuy}>
-                       <span className="title">{canAffordBuy ? `COMPRAR ${getAssetDisplayName(selectedAsset)}` : 'RECURSOS INSUFICIENTES'}</span>
-                     </button>
-                  ) : (
-                     <button className="mc-btn-solid mc-btn-red-block full-width" onClick={handleAction} disabled={isTrading || !user?.loggedIn || selectedOwnedShares < safeAmount}>
-                       <span className="title">{selectedOwnedShares >= safeAmount ? `VENDER ${getAssetDisplayName(selectedAsset)}` : 'INVENTARIO VACÍO'}</span>
-                     </button>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="mc-ledger-wrapper">
-              <div className="mc-ledger-tabs-row">
-                <button className={`mc-tab ${activeTab === "POSITIONS" ? "active" : ""}`} onClick={() => setActiveTab("POSITIONS")}>Mis Bóvedas</button>
-                <button className={`mc-tab ${activeTab === "LEDGER" ? "active" : ""}`} onClick={() => setActiveTab("LEDGER")}>Libro Mayor</button>
-                <button className={`mc-tab ${activeTab === "TOP" ? "active" : ""}`} onClick={() => setActiveTab("TOP")}>Mercaderes Top</button>
-              </div>
-              <div className="mc-gui-window mc-ledger-body">
-                <div className="mc-ledger-content">
-                  {renderActiveTabContent()}
-                </div>
-              </div>
-            </div>
-
-          </div>
-
-          <div className="mc-side-column">
-            
-            <div className="mc-gui-window mc-side-panel">
-              <div className="mc-side-header">TASAS COMERCIALES</div>
-              <div className="mc-assets-list">
-                {livePrices.map((asset) => {
-                  const owned = getOwnedShares(asset.mineral_id);
-                  const isHot = Math.abs(asset.last_percent) >= 0.05;
-                  
-                  return (
-                    <div key={asset.mineral_id} className={`mc-asset-row ${selectedAsset === asset.mineral_id ? 'active' : ''}`} onClick={() => setSelectedAsset(asset.mineral_id)}>
-                      <div className="asset-left">
-                        <img src={getAssetIconPath(asset.mineral_id)} className="mc-pixelated" alt="m" />
-                        <div className="asset-names">
-                          <h4>
-                            {getAssetDisplayName(asset.mineral_id)}
-                            {isHot && <span className="mc-hot-badge">[ALERTA]</span>}
-                          </h4>
-                          <span className="asset-owned">{owned > 0 ? `${owned} en bóveda` : ''}</span>
-                        </div>
-                      </div>
-                      <div className="asset-right">
-                        <span className={`asset-price ${asset.last_percent > 0 ? 'text-green' : asset.last_percent < 0 ? 'text-red' : 'text-gray'}`}>
-                          {asset.current_coin_price.toFixed(2)}
-                          <img src="/tienda/assets/coin.png" className="coin-icon-small mc-pixelated" alt="c" />
-                        </span>
-                        <span className={`asset-percent ${asset.last_percent > 0 ? 'bg-green' : asset.last_percent < 0 ? 'bg-red' : 'bg-gray'}`}>
-                          {asset.last_percent > 0 ? '+' : ''}{(asset.last_percent * 100).toFixed(1)}%
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="mc-gui-window mc-news-panel">
-              <div className="mc-news-header">RUMORES Y EVENTOS</div>
-              <div className="mc-news-content">
-                {newsFeed.length === 0 ? (
-                  <div className="mc-news-empty">Las calles están tranquilas. No hay rumores comerciales...</div>
+                {tradeMode === 'BUY' ? (
+                   <button className="mc-btn-solid mc-btn-green-block full-width" onClick={handleAction} disabled={isTrading || !user?.loggedIn || !canAffordBuy}>
+                     <span className="title">{canAffordBuy ? `COMPRAR` : 'SIN FONDOS'}</span>
+                   </button>
                 ) : (
-                  newsFeed.map(news => (
-                    <div key={news.id} className="mc-news-item">
-                      <span className={`news-tag ${news.type}`}>{news.type === 'WHALE' ? '[BALLENA]' : news.type === 'PUMP' ? '[ALERTA]' : news.type === 'CRASH' ? '[PELIGRO]' : '[RUMOR]'}</span>
-                      <span className="news-text">
-                        {news.type === 'PUMP' && <><img src={getAssetIconPath(news.mineralId)} className="inline-icon mc-pixelated" alt="i"/> {news.message}</>}
-                        {news.type === 'CRASH' && <><img src={getAssetIconPath(news.mineralId)} className="inline-icon mc-pixelated" alt="i"/> {news.message}</>}
-                        {news.type === 'WHALE' && <>Un noble ({news.playerName}) ha {news.action} {news.amount}x <img src={getAssetIconPath(news.mineralId)} className="inline-icon mc-pixelated" alt="i"/> {getAssetDisplayName(news.mineralId)}.</>}
-                      </span>
-                    </div>
-                  ))
+                   <button className="mc-btn-solid mc-btn-red-block full-width" onClick={handleAction} disabled={isTrading || !user?.loggedIn || selectedOwnedShares < safeAmount}>
+                     <span className="title">{selectedOwnedShares >= safeAmount ? `VENDER` : 'SIN STOCK'}</span>
+                   </button>
                 )}
               </div>
             </div>
-            
           </div>
         </div>
+
+        <div className="mc-bottom-grid">
+          
+          <div className="mc-ledger-wrapper">
+            <div className="mc-ledger-tabs-row">
+              <button className={`mc-tab ${activeTab === "POSITIONS" ? "active" : ""}`} onClick={() => setActiveTab("POSITIONS")}>Mis Bóvedas</button>
+              <button className={`mc-tab ${activeTab === "LEDGER" ? "active" : ""}`} onClick={() => setActiveTab("LEDGER")}>Libro Mayor</button>
+              <button className={`mc-tab ${activeTab === "TOP" ? "active" : ""}`} onClick={() => setActiveTab("TOP")}>Mercaderes Top</button>
+            </div>
+            <div className="mc-gui-window mc-ledger-body">
+              <div className="mc-ledger-content">
+                {renderActiveTabContent()}
+              </div>
+            </div>
+          </div>
+
+          <div className="mc-gui-window mc-news-panel">
+            <div className="mc-news-header">RUMORES Y EVENTOS</div>
+            <div className="mc-news-content">
+              {newsFeed.length === 0 ? (
+                <div className="mc-news-empty">Las calles están tranquilas. No hay rumores comerciales...</div>
+              ) : (
+                newsFeed.map(news => (
+                  <div key={news.id} className="mc-news-item">
+                    <span className={`news-tag ${news.type}`}>
+                      {news.type === 'WHALE' ? '[BALLENA]' : news.type === 'PUMP' ? '[PUMP]' : news.type === 'CRASH' ? '[DUMP]' : '[RUMOR]'}
+                    </span>
+                    <span className="news-text">
+                      {renderMessageWithCoins(news.message)}
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+        </div>
+
       </div>
     </div>
   );

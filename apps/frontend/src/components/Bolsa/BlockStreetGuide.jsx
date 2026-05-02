@@ -22,7 +22,7 @@ const BlockStreetGuide = () => {
           <div className="mc-guide-title-box">
             <img src="/tienda/assets/minerals/diamante.png" alt="Diamond" className="mc-pixelated drop-shadow" />
             <h1>CÓMO NO ARRUINARTE EN MC-500</h1>
-            <p>Block Street no es un casino aleatorio. Es un reflejo exacto de lo que hacéis dentro del servidor. Si entiendes estas reglas, ganarás dinero. Si juegas a ciegas, serás la liquidez de los demás.</p>
+            <p>Block Street no es un casino. Es un PVP financiero despiadado. El servidor nunca imprime dinero; lo que tú ganas, otro lo acaba de perder. Aprende las leyes o serás la liquidez de los clanes rivales.</p>
           </div>
         </motion.div>
 
@@ -34,46 +34,46 @@ const BlockStreetGuide = () => {
           <div className="mc-laws-grid">
             <motion.div className="mc-gui-window law-card" initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
               <div className="law-icon-area bg-red-dim">
-                <img src="/tienda/assets/minerals/plata.png" alt="Hierro" className="mc-pixelated bounce-down" />
-                <div className="trend-indicator text-red">PRECIO CAE</div>
+                <img src="/tienda/assets/minerals/carbon.webp" alt="Shitcoins" className="mc-pixelated bounce-down" />
+                <div className="trend-indicator text-red">PUMP & DUMP</div>
               </div>
               <div className="law-content">
-                <h3>1. Ley de la Tienda (Sobreoferta)</h3>
-                <p>El mercado está conectado al servidor. Si todo el mundo está minando Hierro y vendiéndolo al NPC de la tienda, <strong>el mercado se inunda de Hierro</strong>. Mucha oferta equivale a que el precio en bolsa se desplome.</p>
+                <h3>1. Las Shitcoins (Cobre y Carbón)</h3>
+                <p>Activos de alto riesgo. Su precio sube si la gente compra y colapsa si venden de golpe. No hay valor real, solo especulación pura en tiempo real mediante AMM.</p>
                 <div className="mc-tip">
                   <img src="/tienda/assets/icons/redstone_torch.png" className="mc-pixelated inline-tip-icon" alt="Tip" />
-                  <strong>CONSEJO:</strong> No compres acciones de algo que todo el servidor está farmeando fácilmente en ese momento.
+                  <strong>CONSEJO:</strong> Compra barato, crea FOMO en el chat global, y cuando los demás inflen el precio... vende todas tus acciones en su cara.
                 </div>
               </div>
             </motion.div>
 
             <motion.div className="mc-gui-window law-card" initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
               <div className="law-icon-area bg-green-dim">
-                <img src="/tienda/assets/minerals/frunta.webp" alt="Fruta" className="mc-pixelated bounce-up" />
-                <div className="trend-indicator text-green">PRECIO SUBE</div>
+                <img src="/tienda/assets/minerals/diamante.png" alt="Diamante" className="mc-pixelated bounce-up" />
+                <div className="trend-indicator text-green">AIRDROP HORARIO</div>
               </div>
               <div className="law-content">
-                <h3>2. Ley de la Escasez (Crecimiento)</h3>
-                <p>Si hay jugadores conectados haciendo cosas, pero nadie está vendiendo un material a la tienda, el algoritmo asume que escasea. Por ejemplo, si nadie vende Fruta del End <em>(ESTO ES SOLO UN EJEMPLO, NO VAYAS A COMPRARLA A CIEGAS)</em>, su valor en bolsa subirá de forma constante.</p>
+                <h3>2. El Diamante (La Lotería de los Ricos)</h3>
+                <p>Las comisiones que pagan los novatos perdiendo dinero en las Shitcoins alimentan un bote global. Cada hora, el servidor sortea ese capital masivo.</p>
                 <div className="mc-tip">
                   <img src="/tienda/assets/icons/redstone_torch.png" className="mc-pixelated inline-tip-icon" alt="Tip" />
-                  <strong>CONSEJO:</strong> Anticípate. Busca materiales olvidados que nadie esté vendiendo hoy.
+                  <strong>CONSEJO:</strong> El Diamante son tus papeletas. Cuantas más acciones poseas, más probabilidades tendrás de llevarte el premio cada hora.
                 </div>
               </div>
             </motion.div>
 
             <motion.div className="mc-gui-window law-card full-width" initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
               <div className="law-icon-area bg-gold-dim">
-                <img src="/tienda/assets/minerals/esmeralda.webp" alt="Esmeralda" className="mc-pixelated pulse" />
-                <div className="trend-indicator text-yellow">MOMENTUM</div>
+                <img src="/tienda/assets/minerals/netherite.webp" alt="Netherite" className="mc-pixelated pulse" />
+                <div className="trend-indicator text-yellow">EL AGUJERO NEGRO</div>
               </div>
               <div className="law-content">
-                <h3>3. El Volumen de Trading (Juego Social)</h3>
-                <p>Puedes operar dentro del juego con <strong>/bolsa</strong> o desde la <strong>Web y Móvil</strong> estando desconectado. Tus compras afectan al precio en tiempo real. Si tú y tu clan compráis masivamente acciones de un mineral, su precio se disparará al instante para todo el mundo.</p>
-                <p>Además, el <strong>Block Street Journal</strong> chivará en directo lo que ha pasado en los últimos 15 minutos, alertando a todo el servidor de las compras masivas o desplomes.</p>
+                <h3>3. El Netherite (La Quema de Estatus)</h3>
+                <p>El Netherite se compra para destruirse. Al quemar tus acciones in-game con <strong>/bolsa burn</strong>, reduces la oferta global y disparas el precio del mineral.</p>
+                <p>A cambio, obtienes <strong>Puntos de Flanite</strong>, la moneda exclusiva necesaria para <a href="https://www.flancraft.com/forja" target="_blank" rel="noreferrer" className="mc-link-yellow">forjar en la Forja</a> artefactos únicos y cosméticos de prestigio.</p>
                 <div className="mc-tip">
                   <img src="/tienda/assets/icons/redstone_torch.png" className="mc-pixelated inline-tip-icon" alt="Tip" />
-                  <strong>CONSEJO:</strong> El PvP Financiero existe. Compra barato, convence por el chat a los demás de que compren porque "va a subir", y cuando ellos inflen el precio... véndeles tus acciones en la cara.
+                  <strong>IMPORTANTE:</strong> Para quemar Netherite debes estar vinculado. Usa <strong>/vincular</strong> en el chat del juego para registrarte en 2 segundos.
                 </div>
               </div>
             </motion.div>
@@ -82,26 +82,26 @@ const BlockStreetGuide = () => {
 
         <div className="mc-guide-section">
           <motion.h2 className="mc-section-title" initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
-            MECÁNICAS ANTI-TRAMPAS
+            MECÁNICAS ANTI-MANOS DE GELATINA
           </motion.h2>
 
           <div className="mc-mechanics-grid">
             <motion.div className="mechanic-item" initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
               <img src="/tienda/assets/icons/fee_shears.png" className="mech-icon mc-pixelated" alt="Fee" />
-              <h4>El Muro del 2% (Comisión)</h4>
-              <p>Cada compra o venta quema un 2% del capital para el Broker. Tu inversión debe subir al menos un +4% bruto para que empieces a ver ganancias. No hagas trading de un minuto. Ten paciencia.</p>
+              <h4>Impuesto al Novato</h4>
+              <p>El Carbón paga un 5% de comisión, el Diamante un 2% y el Netherite solo un 1%. Si tradeas cada minuto como un loco, el banco te dejará a cero.</p>
             </motion.div>
 
             <motion.div className="mechanic-item" initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
               <img src="/tienda/assets/icons/bedrock_lock.png" className="mech-icon mc-pixelated" alt="Aislamiento" />
-              <h4>Aislamiento Estricto</h4>
-              <p>Si un clan intenta dumpear toneladas de Cobre para hundirlo, solo bajará el Cobre. Los demás índices del mercado no se inmutarán en absoluto. No hay atajos mágicos cruzados.</p>
+              <h4>Liquidez Estanca</h4>
+              <p>Si el Cobre se hunde, el Diamante no se mueve. Cada pool de dinero es independiente; no hay contagios cruzados ni atajos mágicos.</p>
             </motion.div>
 
             <motion.div className="mechanic-item" initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
               <img src="/tienda/assets/icons/phantom_face.png" className="mech-icon mc-pixelated" alt="Fantasma" />
-              <h4>El Pueblo Fantasma</h4>
-              <p>El mercado sabe cuánta gente hay online. Si el servidor está vacío de madrugada, la economía entra en letargo. Nadie se hará rico durmiendo ni aprovechándose de la inactividad nocturna.</p>
+              <h4>Economía Real</h4>
+              <p>Si ganas 10,000 Coins, es porque otro clan los ha perdido. No hay inflación de la bolsa, es un enfrentamiento directo por el control de la liquidez.</p>
             </motion.div>
           </div>
         </div>

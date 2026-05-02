@@ -471,16 +471,16 @@ export default function DashboardPage() {
                         <img src="/tienda/assets/flanite.webp" className="nexo-crystal" alt="Flanite" draggable="false" />
                       </div>
                       <div className="nexo-info">
-                        <h3>EL NEXO</h3>
+                        <h3>LA FORJA</h3>
                         <div className="nexo-balance">
                           <span>{user.flanpoints || 0}</span> FLT
                         </div>
                       </div>
                       <button 
                         className="mc-btn mc-btn--nexo" 
-                        onClick={() => navigate("/nexo")}
+                        onClick={() => navigate("/forja")}
                       >
-                        ENTRAR AL NEXO
+                        ENTRAR A LA FORJA
                       </button>
                     </div>
                   </div>

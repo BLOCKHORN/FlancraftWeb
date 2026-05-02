@@ -4,37 +4,27 @@ import { useNavigate } from "react-router-dom";
 import { UserContext } from "../../context/UserContext";
 import { apiUrl } from "../../lib/env";
 import { getAuthToken } from "../../lib/auth/storage";
+import { apiGet, apiPost } from "../../lib/api/client";
 import Seo from "../SEO/Seo";
 import { NEXO_CATALOG } from "./nexo.constants";
 import NexoCard from "./NexoCard";
+import toast from "react-hot-toast";
 import "../../styles/components/Nexo/_nexo.scss";
 
 const FLANITE_SRC = "/tienda/assets/flanite.webp";
+const NETHERITE_SRC = "/tienda/assets/minerals/netherite.webp";
+const FIRE_GIF_SRC = "/tienda/assets/fire.gif";
 
-function easeOutCubic(t) {
-  return 1 - Math.pow(1 - t, 3);
-}
-
-function clamp(n, a, b) {
-  return Math.max(a, Math.min(b, n));
-}
-
-function formatInt(n) {
-  const v = Number(n);
-  if (!Number.isFinite(v)) return "0";
-  return new Intl.NumberFormat("es-ES", { maximumFractionDigits: 0 }).format(Math.round(v));
-}
+function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+function clamp(n, a, b) { return Math.max(a, Math.min(b, n)); }
+function formatInt(n) { const v = Number(n); if (!Number.isFinite(v)) return "0"; return new Intl.NumberFormat("es-ES", { maximumFractionDigits: 0 }).format(Math.round(v)); }
 
 function useCountTransition(active, startVal, endVal, duration = 800) {
   const [val, setVal] = useState(startVal);
   const rafRef = useRef(null);
 
   useEffect(() => {
-    if (!active) {
-      setVal(startVal);
-      return;
-    }
-    
+    if (!active) { setVal(startVal); return; }
     let start = null;
     const tick = (ts) => {
       if (!start) start = ts;
@@ -43,12 +33,8 @@ function useCountTransition(active, startVal, endVal, duration = 800) {
       setVal(Math.round(startVal - (startVal - endVal) * eased));
       if (t < 1) rafRef.current = requestAnimationFrame(tick);
     };
-
     rafRef.current = requestAnimationFrame(tick);
-
-    return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    };
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
   }, [active, startVal, endVal, duration]);
 
   return val;
@@ -69,6 +55,12 @@ export default function NexoLayout() {
   const [historial, setHistorial] = useState([]);
   const [loadingHistorial, setLoadingHistorial] = useState(false);
 
+  const [netheriteShares, setNetheriteShares] = useState(0);
+  const [netheritePrice, setNetheritePrice] = useState(350);
+  
+  // Nuevo estado para la animación visual del Altar
+  const [isBurning, setIsBurning] = useState(false);
+
   useEffect(() => {
     if (!user?.uuid) return;
     let active = true;
@@ -80,10 +72,31 @@ export default function NexoLayout() {
           if (data?.flanpoints !== undefined) setBalanceActual(Number(data.flanpoints));
           if (Array.isArray(data?.artefactos_nexo)) setArtefactosUsuario(data.artefactos_nexo);
         }
-      })
-      .catch(() => {});
+      }).catch(() => {});
 
-    return () => { active = false; };
+    const fetchMarketData = async () => {
+      try {
+        const [pricesRes, portRes] = await Promise.all([
+          apiGet("/api/bolsa/live"),
+          apiGet(`/api/bolsa/portfolio/${user.uuid}`)
+        ]);
+        
+        if (active && pricesRes) {
+           const netherite = pricesRes.find(p => p.mineral_id === "NETHERITE_INGOT");
+           if (netherite) setNetheritePrice(netherite.current_coin_price);
+        }
+        
+        if (active && portRes && portRes.portfolio) {
+           const nPort = portRes.portfolio.find(p => p.mineral_id === "NETHERITE_INGOT");
+           if (nPort) setNetheriteShares(nPort.shares);
+        }
+      } catch (e) {}
+    };
+
+    fetchMarketData();
+    const interval = setInterval(fetchMarketData, 10000); 
+
+    return () => { active = false; clearInterval(interval); };
   }, [user?.uuid]);
 
   useEffect(() => {
@@ -91,18 +104,10 @@ export default function NexoLayout() {
       const fetchHistorial = async () => {
         setLoadingHistorial(true);
         try {
-          const res = await fetch(apiUrl('/api/nexo/historial'), {
-            headers: { Authorization: `Bearer ${token}` }
-          });
+          const res = await fetch(apiUrl('/api/nexo/historial'), { headers: { Authorization: `Bearer ${token}` } });
           const data = await res.json();
-          if (res.ok && Array.isArray(data)) {
-            setHistorial(data);
-          }
-        } catch (err) {
-          console.error(err);
-        } finally {
-          setLoadingHistorial(false);
-        }
+          if (res.ok && Array.isArray(data)) setHistorial(data);
+        } catch (err) {} finally { setLoadingHistorial(false); }
       };
       fetchHistorial();
     }
@@ -110,7 +115,6 @@ export default function NexoLayout() {
 
   const isDeducting = forgeState === "deducting";
   const targetBalance = selectedItem ? Math.max(0, balanceActual - selectedItem.precio) : balanceActual;
-  
   const animatedBalance = useCountTransition(isDeducting, balanceActual, targetBalance, 1000);
   const displayBalance = forgeState === "success" ? targetBalance : (isDeducting ? animatedBalance : balanceActual);
 
@@ -142,10 +146,7 @@ export default function NexoLayout() {
 
   const handleForge = async () => {
     if (!selectedItem || forgeState !== "idle") return;
-    if (balanceActual < selectedItem.precio) {
-      setErrorMsg("No tienes suficiente Flanite.");
-      return;
-    }
+    if (balanceActual < selectedItem.precio) { setErrorMsg("No tienes suficiente Flanite."); return; }
 
     setForgeState("forging");
     setErrorMsg("");
@@ -167,14 +168,11 @@ export default function NexoLayout() {
 
       setTimeout(() => {
         setBalanceActual(data.nuevoSaldo);
-        if (selectedItem.categoria === "permanente") {
-          setArtefactosUsuario(prev => [...prev, selectedItem.id]);
-        }
+        if (selectedItem.categoria === "permanente") setArtefactosUsuario(prev => [...prev, selectedItem.id]);
         setUser({ ...user, flanpoints: data.nuevoSaldo }, token);
         setHistorial([]);
         setForgeState("success");
       }, 1100);
-
     } catch (err) {
       setErrorMsg(err.message);
       setForgeState("idle");
@@ -183,7 +181,6 @@ export default function NexoLayout() {
 
   const majorItems = useMemo(() => NEXO_CATALOG.filter(i => i.categoria === "permanente"), []);
   const minorItems = useMemo(() => NEXO_CATALOG.filter(i => i.categoria !== "permanente"), []);
-  
   const filteredItems = useMemo(() => {
     if (activeFilter === "todos" || activeFilter === "historial") return [];
     return NEXO_CATALOG.filter(i => i.categoria === activeFilter);
@@ -191,6 +188,67 @@ export default function NexoLayout() {
 
   const checkIsOwned = (item) => item.categoria === "permanente" && artefactosUsuario.includes(item.id);
   const selectedIsOwned = selectedItem && checkIsOwned(selectedItem);
+
+  const flaniteReward = Math.round(netheritePrice / 4);
+
+  const handleSacrifice = async () => {
+    if (netheriteShares < 1 || forgeState !== "idle") return;
+    setForgeState("forging");
+    setIsBurning(true);
+
+    try {
+      const actualName = user.nombre_minecraft || user.username || "Inversor";
+      const orderRes = await apiPost("/api/bolsa/trade", {
+        uuid: user.uuid,
+        playerName: actualName,
+        mineralId: "NETHERITE_INGOT",
+        type: "BURN",
+        amount: 1
+      });
+
+      let attempts = 0;
+      const poll = setInterval(async () => {
+        attempts++;
+        try {
+          const statusRes = await apiGet(`/api/bolsa/order-status/${orderRes.id}`);
+          if (statusRes.status === 'COMPLETED') {
+            clearInterval(poll);
+            
+            try { const audio = new Audio("/tienda/assets/sounds/jackpot.mp3"); audio.volume = 0.6; audio.play().catch(()=>{}); } catch(e){}
+
+            setNetheriteShares(prev => prev - 1);
+            setBalanceActual(prev => prev + flaniteReward);
+            setUser({ ...user, flanpoints: balanceActual + flaniteReward }, token);
+            
+            // Retrasamos un pelín el fin de la animación del fuego para dar efecto
+            setTimeout(() => {
+               setForgeState("idle");
+               setIsBurning(false);
+            }, 800);
+
+          } else if (statusRes.status !== 'PENDING') {
+            clearInterval(poll);
+            setForgeState("idle");
+            setIsBurning(false);
+            toast.custom((t) => (
+              <div className={`mc-toast-error ${t.visible ? 'animate-enter' : 'animate-leave'}`}>
+                <span className="toast-title">RITUAL RECHAZADO</span>
+                <span className="toast-sub">Faltan recursos en bóveda.</span>
+              </div>
+            ), { duration: 5000 });
+          }
+          if (attempts > 40) {
+            clearInterval(poll);
+            setForgeState("idle");
+            setIsBurning(false);
+          }
+        } catch(e) {}
+      }, 500);
+    } catch (error) {
+      setForgeState("idle");
+      setIsBurning(false);
+    }
+  };
 
   const modalNode = selectedItem && createPortal(
     <div className="nx-overlay" onClick={handleCloseModal}>
@@ -227,7 +285,7 @@ export default function NexoLayout() {
               
               <div className={`nx-modal-cost-box ${forgeState === "success" ? "is-success-box" : ""}`}>
                 <div className="nx-cost-row">
-                  <span className="nx-cost-label">Coste:</span>
+                  <span className="nx-cost-label">Coste de Forja:</span>
                   <span className="nx-cost-value">{formatInt(selectedItem.precio)} <img src={FLANITE_SRC} alt="" className="nx-inline-flt" /></span>
                 </div>
                 <div className="nx-cost-row is-balance">
@@ -240,7 +298,7 @@ export default function NexoLayout() {
 
               <div className="nx-modal-actions">
                 {forgeState === "forging" || forgeState === "deducting" ? (
-                  <button className="nx-btn nx-btn-forging" disabled>CANALIZANDO...</button>
+                  <button className="nx-btn nx-btn-forging" disabled>CANALIZANDO ENERGÍA...</button>
                 ) : (
                   <button 
                     className="nx-btn nx-btn-forge-modal" 
@@ -261,7 +319,7 @@ export default function NexoLayout() {
 
   return (
     <>
-      <Seo title="El Nexo | Flancraft" noindex />
+      <Seo title="La Forja | Flancraft" noindex />
       <section className="nx-layout no-tap-highlight">
         <div className="nx-background-temple" />
         
@@ -270,7 +328,7 @@ export default function NexoLayout() {
           <div className="nx-top-hud">
             <button className="nx-btn-hud is-back" onClick={() => navigate("/dashboard")}>← VOLVER</button>
             <div className="nx-hud-balance">
-              <span className="nx-hud-label">FLANITE</span>
+              <span className="nx-hud-label">FLANITE DISPONIBLE</span>
               <div className="nx-hud-amount">
                 <span>{formatInt(balanceActual)}</span>
                 <img src={FLANITE_SRC} alt="" className="nx-hud-icon" draggable="false" />
@@ -279,7 +337,40 @@ export default function NexoLayout() {
           </div>
 
           <div className="nx-hero">
-            <h1 className="nx-title">EL NEXO</h1>
+            <h1 className="nx-title">LA FORJA</h1>
+            <p className="nx-subtitle">Destruye la materia. Obtén poder divino.</p>
+          </div>
+
+          <div className="nx-sacrificial-altar">
+             <div className="altar-info">
+                <h3>EL ALTAR DE QUEMA</h3>
+                <p>Sacrifica Netherites de tu bóveda bursátil (BlockStreet) para obtener energía cósmica pura <strong>(Flanite)</strong>. Al quemarlos, desaparecen del mercado para siempre, aumentando el valor de la moneda global.</p>
+                <div className="altar-rates">
+                  <span>Recompensa de forja hoy:</span>
+                  <div className="rate-badge">
+                     <strong>1</strong> <img src={NETHERITE_SRC} className="mc-pixelated inline-icon" alt="neth"/> 
+                     <span> = </span> 
+                     <strong style={{color: '#ffaa00'}}>+{flaniteReward}</strong> <img src={FLANITE_SRC} className="mc-pixelated inline-icon" alt="flanite"/>
+                  </div>
+                </div>
+             </div>
+             
+             <div className="altar-action">
+                <div className={`altar-stock-visual ${isBurning ? 'is-burning' : ''}`}>
+                  {/* Animación del Fuego superpuesta al item */}
+                  <img src={FIRE_GIF_SRC} className="fire-overlay" alt="fire" />
+                  <img src={NETHERITE_SRC} className="mc-pixelated stock-item" alt="neth" />
+                  <div className="stock-count">{netheriteShares}</div>
+                </div>
+                
+                <button 
+                  className={`nx-btn-sacrifice ${isBurning ? 'disabled-burn' : ''}`} 
+                  disabled={netheriteShares < 1 || forgeState !== "idle"}
+                  onClick={handleSacrifice}
+                >
+                  {isBurning ? "QUEMANDO MATERIA..." : "SACRIFICAR 1 NETHERITE"}
+                </button>
+             </div>
           </div>
           
           <div className="nx-gui-panel">
@@ -302,14 +393,14 @@ export default function NexoLayout() {
                   
                   <div className="nx-divider" />
                   
-                  <h2 className="nx-section-title">FRAGMENTOS CONSUMIBLES</h2>
+                  <h2 className="nx-section-title">FRAGMENTOS DE PODER</h2>
                   <div className="nx-grid">
                     {minorItems.map(i => <NexoCard key={i.id} item={i} isOwned={checkIsOwned(i)} onOpenModal={handleOpenModal} />)}
                   </div>
                 </>
               ) : activeFilter === "historial" ? (
                 <div className="nx-historial-wrap">
-                  <h2 className="nx-section-title">REGISTRO AKÁSHICO</h2>
+                  <h2 className="nx-section-title">REGISTRO DE LA FORJA</h2>
                   {loadingHistorial ? (
                     <div className="nx-historial-empty">Conectando con la forja...</div>
                   ) : historial.length === 0 ? (

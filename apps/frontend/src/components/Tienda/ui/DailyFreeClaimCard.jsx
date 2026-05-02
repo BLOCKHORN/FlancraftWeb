@@ -258,7 +258,7 @@ export default function DailyFreeClaimCard() {
                   </div>
                   
                   <p className="fc-daily-text mt-16">
-                    Tus <strong>Coins</strong> han sido enviadas al Survival y la <strong>Flanite</strong> ya está en El Nexo.
+                    Tus <strong>Coins</strong> han sido enviadas al Survival y la <strong>Flanite</strong> ya está en La Forja.
                   </p>
                   
                   <button className="fc-daily-btn-green w-full" onClick={handleContinue}>

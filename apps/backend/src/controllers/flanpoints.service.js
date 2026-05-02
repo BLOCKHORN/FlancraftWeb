@@ -166,7 +166,6 @@ async function canjearRecompensa(uuidJugador, nombreJugador, servidor, idRecompe
     meta: { item: recompensa.nombre, server: servidor }
   });
 
-  // Bucle corregido: Solo el primer comando lleva feedback
   for (let i = 0; i < recompensa.comandos.length; i++) {
     const cmdTpl = recompensa.comandos[i];
     const cmdFinal = cmdTpl
@@ -181,7 +180,7 @@ async function canjearRecompensa(uuidJugador, nombreJugador, servidor, idRecompe
       servidor: servidor,
       comando: cmdFinal,
       tipo: "comando",
-      feedback_title: esPrimerComando ? "El Nexo" : "",
+      feedback_title: esPrimerComando ? "La Forja" : "",
       feedback_subtitle: esPrimerComando ? recompensa.nombre : "",
       feedback_chat: esPrimerComando ? `&dHas forjado el artefacto: &5${recompensa.nombre}` : ""
     });

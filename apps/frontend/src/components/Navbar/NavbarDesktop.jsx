@@ -188,7 +188,7 @@ const NavbarDesktop = ({
     window.location.reload();
   };
 
-  const flaniteTip = "La Flanite (FLT) es la moneda premium de Flancraft. Consíguela en la tienda y fórjala en El Nexo.";
+  const flaniteTip = "La Flanite (FLT) es la moneda premium de Flancraft. Consíguela en la tienda y fórjala en La Forja.";
   const storeSaleActive = useMemo(() => isSaleValid(saleNav), [saleNav?.active, saleNav?.expire]);
   const storeSalePercent = toInt(saleNav?.percent || 0);
   const storeSaleText = storeSalePercent > 0 ? `-${storeSalePercent}%` : "OFERTA";

@@ -3,7 +3,6 @@
 $mc-font: "MinecraftBold", "Minecraft Seven", sans-serif;
 $sans-font: "Inter", "Montserrat", sans-serif;
 
-/* COLORES NATIVOS GUI MINECRAFT */
 $mc-gui-bg: #c6c6c6; 
 $mc-gui-dark-bg: #2b2b2b;
 $mc-gui-light-border: #4f4f4f;
@@ -414,7 +413,6 @@ $mc-gui-dark-border: #141414;
   90%, 100% { transform: translateY(-10px); opacity: 0; }
 }
 
-/* Radar de Ballenas GUI */
 .whale-radar-gui {
   background-color: #212121;
   
@@ -439,8 +437,10 @@ $mc-gui-dark-border: #141414;
       .w-text {
         display: flex; flex-direction: column; gap: 4px;
         
-        .w-tag { font-family: $mc-font; font-size: 0.8rem; color: #d946ef; text-shadow: 1px 1px 0 #000;}
+        .w-tag { font-family: $mc-font; font-size: 0.8rem; text-shadow: 1px 1px 0 #000;}
         .text-red { color: #ff5555; }
+        .text-green { color: #5EE034; }
+        .text-red-dark { color: #ef4444; }
         .color-yellow { color: #fbbf24; }
 
         .w-desc {
@@ -451,4 +451,3 @@ $mc-gui-dark-border: #141414;
     }
   }
 }
-

@@ -151,7 +151,7 @@ const App = () => {
             />
             
             <Route
-              path="/nexo"
+              path="/forja"
               element={
                 ENABLE_NEXO ? (
                   <ProtectedRoute>

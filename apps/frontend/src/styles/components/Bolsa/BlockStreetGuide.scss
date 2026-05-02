@@ -1,17 +1,12 @@
-@use "sass:color";
+@use "../../base/variables" as *;
 
-@font-face {
-  font-family: 'MinecraftBold';
-  src: url('/fonts/MinecraftBold.otf') format('opentype');
-  font-weight: bold;
-  font-style: normal;
-}
+$mc-font: "MinecraftBold", "Minecraft Seven", sans-serif;
+$sans-font: "Inter", "Montserrat", sans-serif;
 
 $mc-bg: #262626;
 $mc-border-light: #555555;
 $mc-border-dark: #111111;
 $mc-border-outer: #000000;
-$sans-font: "Inter", "Montserrat", sans-serif;
 
 .mc-pixelated { 
   image-rendering: pixelated; 
@@ -237,6 +232,15 @@ $sans-font: "Inter", "Montserrat", sans-serif;
 .bounce-down { animation: bounceD 2s infinite; }
 .bounce-up { animation: bounceU 2s infinite; }
 .pulse { animation: pulseAnim 2s infinite alternate; }
+
+.inline-coin {
+  width: 14px; height: 14px;
+  image-rendering: pixelated;
+  vertical-align: middle;
+  display: inline-block;
+  margin: 0 2px;
+  transform: translateY(-2px);
+}
 
 @keyframes bounceD {
   0%, 100% { transform: translateY(0); }

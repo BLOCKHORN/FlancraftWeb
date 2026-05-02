@@ -2,13 +2,53 @@ const supabase = require("../models/db");
 
 exports.getLivePrices = async (req, res) => {
   try {
-    const { data, error } = await supabase
+    const { data: liveData, error: liveError } = await supabase
       .from("market_live_prices")
       .select("*")
       .order("current_coin_price", { ascending: false });
 
-    if (error) throw error;
-    res.status(200).json(data);
+    if (liveError) throw liveError;
+
+    const timeLimit24h = new Date();
+    timeLimit24h.setHours(timeLimit24h.getHours() - 24);
+
+    const [ohlcRes, poolsRes] = await Promise.all([
+      supabase.from("market_ohlc_data").select("mineral_id, open_price, volume").gte("timestamp", timeLimit24h.toISOString()).order("timestamp", { ascending: true }),
+      supabase.from("market_amm_pools").select("mineral_id, coin_pool, share_pool")
+    ]);
+
+    if (ohlcRes.error) throw ohlcRes.error;
+    if (poolsRes.error) throw poolsRes.error;
+
+    const ohlcData = ohlcRes.data || [];
+    const poolsData = poolsRes.data || [];
+
+    const enrichedData = liveData.map(asset => {
+      const assetOhlc = ohlcData.filter(d => d.mineral_id === asset.mineral_id);
+      const pool = poolsData.find(p => p.mineral_id === asset.mineral_id) || { coin_pool: 0, share_pool: 0 };
+      
+      let volume24h = 0;
+      let percent24h = asset.last_percent;
+
+      if (assetOhlc.length > 0) {
+        volume24h = assetOhlc.reduce((sum, d) => sum + (d.volume * d.open_price), 0);
+        
+        const price24hAgo = assetOhlc[0].open_price;
+        if (price24hAgo > 0) {
+            percent24h = (asset.current_coin_price - price24hAgo) / price24hAgo;
+        }
+      }
+
+      return {
+        ...asset,
+        volume_24h: volume24h,
+        percent_24h: percent24h,
+        coin_pool: pool.coin_pool,
+        share_pool: pool.share_pool
+      };
+    });
+
+    res.status(200).json(enrichedData);
   } catch (error) {
     res.status(500).json({ error: "Error obteniendo precios de mercado." });
   }
@@ -82,7 +122,6 @@ exports.getLedger = async (req, res) => {
   }
 };
 
-// [!] MOTOR DE AGRUPACIÓN DE TEMPORALIDADES
 exports.getChartData = async (req, res) => {
   try {
     const { mineral } = req.params;
@@ -107,7 +146,7 @@ exports.getChartData = async (req, res) => {
       .select("open_price, high_price, low_price, close_price, volume, timestamp")
       .eq("mineral_id", mineral.toUpperCase())
       .gte("timestamp", timeLimit.toISOString())
-      .order("timestamp", { ascending: false }) // Carga los más nuevos primero
+      .order("timestamp", { ascending: false })
       .limit(5000); 
 
     if (error) throw error;
@@ -133,7 +172,7 @@ exports.getChartData = async (req, res) => {
         const existing = groupedData.get(groupTime);
         existing.high = Math.max(existing.high, candle.high_price);
         existing.low = Math.min(existing.low, candle.low_price);
-        existing.open = candle.open_price; // Al ir en orden descendente, la vela más vieja establece la apertura
+        existing.open = candle.open_price;
         existing.value += candle.volume;
       }
     });
@@ -188,9 +227,19 @@ exports.createOrder = async (req, res) => {
       return res.status(400).json({ error: "Faltan parámetros en la orden o sesión inválida." });
     }
 
+    const { data: stateData, error: stateError } = await supabase
+      .from("market_state")
+      .select("is_active")
+      .eq("id", 1)
+      .single();
+
+    if (stateError || !stateData || !stateData.is_active) {
+      return res.status(403).json({ error: "MARKET_OFFLINE" }); 
+    }
+
     uuid = uuid.trim().toLowerCase();
 
-    if (type !== "BUY" && type !== "SELL") {
+    if (type !== "BUY" && type !== "SELL" && type !== "BURN") {
       return res.status(400).json({ error: "Tipo de transacción inválido." });
     }
 
@@ -222,8 +271,7 @@ exports.createOrder = async (req, res) => {
 exports.getMarketAnalytics = async (req, res) => {
   try {
     const MINERALES_BOLSA = [
-        "DIAMOND", "GOLD_INGOT", "IRON_INGOT", "EMERALD", "NETHERITE_INGOT", "COAL",
-        "RAW_COPPER", "CHORUS_FRUIT", "FLINT", "QUARTZ"
+        "NETHERITE_INGOT", "DIAMOND", "COAL", "RAW_COPPER"
     ];
     
     const { data: logData, error: logError } = await supabase
@@ -290,5 +338,29 @@ exports.getMarketNews = async (req, res) => {
     res.status(200).json(data);
   } catch (error) {
     res.status(500).json({ error: "Error obteniendo noticias del mercado." });
+  }
+};
+
+exports.getAirdropStatus = async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from("market_airdrop_pot")
+      .select("current_pot, last_payout, last_winner_name")
+      .eq("id", 1)
+      .maybeSingle();
+
+    if (error) throw error;
+
+    if (!data) {
+      return res.status(200).json({
+        current_pot: 0,
+        last_payout: null,
+        last_winner_name: "Nadie aún"
+      });
+    }
+
+    res.status(200).json(data);
+  } catch (error) {
+    res.status(500).json({ error: "Error obteniendo status del airdrop." });
   }
 };
