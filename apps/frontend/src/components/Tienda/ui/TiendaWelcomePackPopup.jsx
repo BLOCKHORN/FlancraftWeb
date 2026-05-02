@@ -76,7 +76,8 @@ export default function TiendaWelcomePackPopup({
         setStatus(data);
         setVisible(true);
         
-        const isMinimized = localStorage.getItem(`minimized:${jugador}`) === "true";
+        const isMobile = window.innerWidth <= 768;
+        const isMinimized = localStorage.getItem(`minimized:${jugador}`) === "true" || isMobile;
         setMinimized(isMinimized);
       }
     } catch (e) {

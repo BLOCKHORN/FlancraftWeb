@@ -102,7 +102,7 @@ $sans-font: "Nunito", sans-serif;
   padding: 0 16px;
   
   .fc-banner-title {
-    font-family: $mc-font;
+    font-family: $mc-font !important;
     font-size: 1.2rem;
     color: #fff;
     text-shadow: 2px 2px 0 #000;

@@ -38,7 +38,7 @@ const BonusArrowUp = ({ className }) => (
 );
 
 export const FlaniteIcon = ({ className = "flanite-img" }) => (
-  <img src="/tienda/assets/flanite.webp" alt="Flanite" className={className} />
+  <img src="/tienda/assets/flanite.webp" alt="Flanite" className={className} style={{ width: "16px", height: "16px", imageRendering: "pixelated", verticalAlign: "middle", marginRight: "4px" }} />
 );
 
 export const FlanCoinIcon = ({ size = 18, className = "inline-coin" }) => (
@@ -247,10 +247,10 @@ export default function TiendaStorefront({
                         <div className="rank-header">
                           <span className="rank-name">{r.label}</span>
                           {pkg && getPackageFlanpoints(pkg) > 0 && (
-                            <div className="flanite-reward">
+                            <span className="flanite-text-clean">
                               <FlaniteIcon />
-                              <span className="flanite-val">+{getPackageFlanpoints(pkg)} FLT</span>
-                            </div>
+                              +{getPackageFlanpoints(pkg)} FLT
+                            </span>
                           )}
                         </div>
 
@@ -272,9 +272,6 @@ export default function TiendaStorefront({
                           <span className="new-price">{priceInfo?.price != null ? formatUSD(priceInfo.price) : "—"}</span>
                         </button>
                       </div>
-                    </div>
-                    <div className="rank-info-text">
-                      <span className="info-icon">i</span> Haz Clic para Ver Beneficios
                     </div>
                   </div>
                 );
@@ -329,10 +326,10 @@ export default function TiendaStorefront({
                           (x{amount != null ? fmtInt(amount) : "—"}&nbsp;<img src="/tienda/assets/coin.png" alt="Coin" className="inline-coin" />)
                         </div>
                         {p && getPackageFlanpoints(p) > 0 && (
-                          <div className="flanite-reward">
+                          <span className="flanite-text-clean">
                             <FlaniteIcon />
-                            <span className="flanite-val">+{getPackageFlanpoints(p)} FLT</span>
-                          </div>
+                            +{getPackageFlanpoints(p)} FLT
+                          </span>
                         )}
                       </div>
 

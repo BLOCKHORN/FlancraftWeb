@@ -312,7 +312,10 @@ $mc-font: 'MinecraftSeven', 'Montserrat', sans-serif;
 }
 
 .mobile-menu {
-  position: fixed; top: 0; left: 0; height: 100vh; width: min(290px, 86vw); 
+  position: fixed; top: 0; left: 0; 
+  height: 100vh; /* Fallback estándar */
+  height: 100dvh; /* Altura dinámica para resolver el corte de navegadores móviles */
+  width: min(290px, 86vw); 
   z-index: 110;
   background-color: #151923;
   border-right: 4px solid #000;
@@ -371,7 +374,6 @@ $mc-font: 'MinecraftSeven', 'Montserrat', sans-serif;
       .nav-icon-img { width: 24px; height: 24px; image-rendering: pixelated; filter: drop-shadow(0 4px 0 #000); }
     }
 
-    /* NUEVO ENLACE BOLSA (MOBILE) */
     .mobile-nav-item.nav-bolsa {
       background-color: #06080a;
       color: #00E676;
@@ -431,7 +433,8 @@ $mc-font: 'MinecraftSeven', 'Montserrat', sans-serif;
     }
 
     .mobile-bottom-spacer {
-      height: 60px;
+      /* Ampliado significativamente para que los últimos elementos no queden tapados */
+      height: 120px; 
       width: 100%;
     }
   }

@@ -72,6 +72,11 @@ const NavbarMobile = ({
 }) => {
   const dropdownRef = useRef(null);
   const profileButtonRef = useRef(null);
+  
+  // Refs para detectar clics fuera del menú lateral
+  const menuRef = useRef(null);
+  const burgerRef = useRef(null);
+  
   const location = useLocation();
   const isHome = location.pathname === "/";
   const { openAuthModal } = useAuthModal();
@@ -103,11 +108,22 @@ const NavbarMobile = ({
 
   useEffect(() => {
     const onPointerDown = (e) => {
-      if (!profileOpen) return;
-      const dd = dropdownRef.current;
-      const btn = profileButtonRef.current;
-      if (dd && !dd.contains(e.target) && btn && !btn.contains(e.target)) {
-        setProfileOpen(false);
+      // Manejar cierre del perfil
+      if (profileOpen) {
+        const dd = dropdownRef.current;
+        const btn = profileButtonRef.current;
+        if (dd && !dd.contains(e.target) && btn && !btn.contains(e.target)) {
+          setProfileOpen(false);
+        }
+      }
+      
+      // Manejar cierre del menú lateral (hamburguesa)
+      if (menuOpen) {
+        const menu = menuRef.current;
+        const burger = burgerRef.current;
+        if (menu && !menu.contains(e.target) && burger && !burger.contains(e.target)) {
+          setMenuOpen(false);
+        }
       }
     };
 
@@ -182,7 +198,6 @@ const NavbarMobile = ({
   const xpPercent = userData?.xpPercent ?? 0;
   const nivelNavbar = userData?.userLevel ?? 1;
   
-  // AQUI CALCULAMOS LOS FLANITES
   const flanpointsFormatted = useMemo(() => formatInt(userData?.flanpoints ?? 0), [userData?.flanpoints]);
 
   const QuestIcon = () => (
@@ -195,7 +210,7 @@ const NavbarMobile = ({
           </linearGradient>
         </defs>
         <path
-          d="M12 2.2c-3.6 0-6.4 2.1-6.4 5.2 0 1.6.8 2.9 2 3.8.7.5 1.1 1 .9 1.8l-.3 1.2c-.1.5.3 1 .8 1.1l1.7.3c.5.1 1-.3 1.1-.8l.2-1.2c.2-1.1.7-1.8 1.8-2.5 1.2-.8 2.1-1.9 2.1-3.7 0-3.1-2.9-5.2-6.3-5.2Zm0 2.1c2.1 0 3.8 1.1 3.8 3 0 1-.5 1.6-1.4 2.2-1.4.9-2.3 2-2.6 3.6l-.1.7-1.2-.2.1-.6c.3-1.8-.4-3-1.8-4-.8-.6-1.2-1.2-1.2-1.9 0-1.9 1.7-3 3.8-3Zm0 14.5a1.6 1.6 0 1 0 0 3.2 1.6 1.6 0 0 0 0-3.2Z"
+          d="M12 2.2c-3.6 0-6.4 2.1-6.4 5.2 0 1.6.8 2.9 2 3.8.7.5 1.1 1 .9 1.8l-.3 1.2c-.1.5.3 1 .8 1.1l1.7.3c.5.1 1-.3 1.1-.8l.2-1.2c.2-1.1.7-1.8 1.8-2.5 1.2-.8 2.1-1.9 2.1-3.7 0-3.1-2.9-5.2-6.3-5.2Zm0 2.1c2.1 0 3.8 1.1 3.8 3 0 1-.5 1.6-1.4 2.2-1.4.9-2.3 2-2.6 3.6l-.1.7-1.2-.2.1-.6c.3-1.8-.4-3-1.8-4-.8-.6-1.2-1.2-1.9 0-1.9 1.7-3 3.8-3Zm0 14.5a1.6 1.6 0 1 0 0 3.2 1.6 1.6 0 0 0 0-3.2Z"
           fill="url(#qmGoldM)" stroke="#000" strokeWidth="1.5" strokeLinejoin="round"
         />
       </svg>
@@ -212,6 +227,7 @@ const NavbarMobile = ({
       <div className={`navbar-inner mobile-only no-tap-highlight ${menuOpen ? "menu-open" : ""}`}>
         <div className="left-wrapper">
           <button
+            ref={burgerRef}
             className={`burger ${menuOpen ? "open" : ""}`}
             onClick={() => setMenuOpen(!menuOpen)}
             aria-label={menuOpen ? "Cerrar menú" : "Abrir menú"}
@@ -317,9 +333,11 @@ const NavbarMobile = ({
         </div>
       )}
 
+      {/* Overlay optimizado para cubrir toda la pantalla al abrir */}
       <div className={`mobile-menu-overlay no-tap-highlight ${menuOpen ? "open" : ""}`} onClick={() => setMenuOpen(false)} />
 
-      <div id="mobile-menu" className={`mobile-menu no-tap-highlight ${menuOpen ? "open" : ""}`}>
+      {/* Aplicado el ref="menuRef" para el click outside */}
+      <div id="mobile-menu" ref={menuRef} className={`mobile-menu no-tap-highlight ${menuOpen ? "open" : ""}`}>
         <div className="mobile-logo-header">
           <button className="close-menu-button" onClick={() => setMenuOpen(false)} type="button" aria-label="Cerrar menú">
             <span /><span />
