@@ -14,6 +14,23 @@ $mc-border-outer: #000000;
 $mc-text: #ffffff;
 $sans-font: "Inter", "Montserrat", sans-serif;
 
+.mc-bolsa-wrapper {
+  background-color: #0f1115;
+  background-image: 
+    linear-gradient(rgba(255, 255, 255, 0.02) 2px, transparent 2px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 2px, transparent 2px);
+  background-size: 64px 64px;
+  background-position: center top;
+  min-height: calc(100vh - 80px);
+  padding-bottom: 4rem;
+  overflow-x: hidden;
+  max-width: 100vw;
+
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+}
+
 .mc-pixelated { 
   image-rendering: pixelated; 
   image-rendering: crisp-edges; 
@@ -105,18 +122,6 @@ $sans-font: "Inter", "Montserrat", sans-serif;
   height: 18px; 
 }
 
-.mc-bolsa-wrapper {
-  background-color: #0f1115;
-  background-image: 
-    linear-gradient(rgba(255, 255, 255, 0.02) 2px, transparent 2px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 2px, transparent 2px);
-  background-size: 64px 64px;
-  background-position: center top;
-  min-height: calc(100vh - 80px);
-  padding-bottom: 4rem;
-  overflow-x: hidden;
-}
-
 .mc-ticker-wrap {
   width: 100%;
   overflow: hidden;
@@ -178,6 +183,7 @@ $sans-font: "Inter", "Montserrat", sans-serif;
   display: flex; 
   flex-direction: column; 
   gap: 1.5rem;
+  width: 100%;
 
   @media (max-width: 1024px) { 
     padding: 0 1rem; 
@@ -193,6 +199,8 @@ $sans-font: "Inter", "Montserrat", sans-serif;
     10px 10px 0 rgba(0,0,0,0.6);
   padding: 1.5rem;
   color: $mc-text;
+  max-width: 100%;
+  min-width: 0;
   
   @media (max-width: 600px) {
     padding: 1rem;
@@ -358,6 +366,7 @@ $sans-font: "Inter", "Montserrat", sans-serif;
   gap: 12px; 
   padding-bottom: 8px; 
   margin-bottom: 0.5rem;
+  max-width: 100%;
 
   &::-webkit-scrollbar { 
     height: 8px; 
@@ -464,6 +473,7 @@ $sans-font: "Inter", "Montserrat", sans-serif;
   display: flex; 
   flex-direction: column; 
   box-shadow: inset 4px 4px 0 rgba(0,255,255,0.1), inset -4px -4px 0 rgba(0,0,0,0.5);
+  max-width: 100%;
   
   .diamond-header { 
     background: #080808; 
@@ -603,6 +613,8 @@ $sans-font: "Inter", "Montserrat", sans-serif;
   display: flex; 
   flex-direction: column; 
   position: relative;
+  max-width: 100%;
+  min-width: 0;
 
   .mc-overlay-lock {
     position: absolute; 
@@ -779,6 +791,8 @@ $sans-font: "Inter", "Montserrat", sans-serif;
     display: grid; 
     grid-template-columns: 1fr 340px; 
     min-height: 500px;
+    min-width: 0;
+    max-width: 100%;
 
     @media (max-width: 1024px) { 
       grid-template-columns: 1fr; 
@@ -789,6 +803,7 @@ $sans-font: "Inter", "Montserrat", sans-serif;
       position: relative; 
       background: #080808; 
       border-right: 4px solid #000;
+      min-width: 0;
 
       @media (max-width: 1024px) { 
         border-right: none; 
@@ -852,6 +867,7 @@ $sans-font: "Inter", "Montserrat", sans-serif;
       background: #111; 
       display: flex; 
       flex-direction: column;
+      min-width: 0;
       
       .mc-trade-mode-toggle {
         display: flex; 
@@ -1073,6 +1089,8 @@ $sans-font: "Inter", "Montserrat", sans-serif;
   grid-template-columns: 2fr 1fr; 
   gap: 1.5rem; 
   align-items: start;
+  min-width: 0;
+  max-width: 100%;
 
   @media (max-width: 1024px) { 
     grid-template-columns: 1fr; 
@@ -1082,6 +1100,8 @@ $sans-font: "Inter", "Montserrat", sans-serif;
 .mc-news-panel {
   padding: 1.5rem; 
   height: 100%;
+  min-width: 0;
+  max-width: 100%;
 
   @media (max-width: 600px) { 
     padding: 1rem; 
@@ -1189,6 +1209,8 @@ $sans-font: "Inter", "Montserrat", sans-serif;
 .mc-ledger-wrapper {
   position: relative; 
   height: 100%;
+  min-width: 0;
+  max-width: 100%;
   
   .mc-ledger-tabs-row {
     display: flex; 
@@ -1198,6 +1220,7 @@ $sans-font: "Inter", "Montserrat", sans-serif;
     z-index: 2; 
     flex-wrap: nowrap; 
     overflow-x: auto;
+    max-width: 100%;
 
     &::-webkit-scrollbar { 
       display: none; 
@@ -1259,6 +1282,8 @@ $sans-font: "Inter", "Montserrat", sans-serif;
       box-shadow: inset 4px 4px 0 #000, inset -4px -4px 0 #222; 
       padding: 1.5rem; 
       min-height: 400px;
+      max-width: 100%;
+      min-width: 0;
 
       @media (max-width: 600px) { 
         padding: 1rem; 
