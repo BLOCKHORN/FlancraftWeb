@@ -10,7 +10,6 @@ import "../../styles/components/Navbar/navbar.scss";
 
 const TARGET_DATE = new Date("2026-04-27T18:00:00+02:00").getTime();
 
-// Quitamos Mercado de la lista base, se insertará dinámicamente si es la hora.
 const BASE_NAV_ITEMS = [
   { key: "home", to: "/", label: "Inicio" },
   { key: "news", to: "/news", label: "Noticias" },
@@ -273,7 +272,7 @@ const Navbar = ({ onLoginClick }) => {
       // Inyecta el botón Mercado entre Rankings y Tienda (posición 3)
       return [
         ...BASE_NAV_ITEMS.slice(0, 3),
-        { key: "bolsa", to: "/bolsa", label: "Mercado" },
+        { key: "bolsa", to: "/bolsa", label: "BlockStreet" },
         ...BASE_NAV_ITEMS.slice(3)
       ];
     }

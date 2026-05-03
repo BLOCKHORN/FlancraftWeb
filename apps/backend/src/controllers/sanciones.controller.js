@@ -1,7 +1,7 @@
 const db = require("../models/db");
 
 const DEFAULT_LIMIT = 50;
-const MAX_LIMIT = 200;
+const MAX_LIMIT = 2000; // Incrementado el límite[cite: 7]
 
 const STAFF_ORDER = ["builder", "helper", "srhelper", "mod", "srmod", "admin", "owner"];
 
@@ -33,6 +33,14 @@ const safeId = (id) => {
 const safeBigint = (v) => {
   const n = Number(v);
   return Number.isFinite(n) ? Math.trunc(n) : null;
+};
+
+// Función para validar direcciones IP[cite: 7]
+const isIPAddress = (str) => {
+  if (!str) return false;
+  const ipv4 = /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/;
+  const ipv6 = /^([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)$/;
+  return ipv4.test(str) || ipv6.test(str);
 };
 
 const hasMinRole = (currentRole, minRole) => {
@@ -122,7 +130,7 @@ exports.registrarSancion = async (req, res) => {
 
   try {
     const uuid = normalizeText(req.body.uuid) || null;
-    const name = normalizeText(req.body.name);
+    let name = normalizeText(req.body.name);
     const moderator = normalizeText(req.body.moderator);
     const duration = normalizeText(req.body.duration) || null;
     const server = normalizeLower(req.body.server) || null;
@@ -133,6 +141,11 @@ exports.registrarSancion = async (req, res) => {
     if (!name) return res.status(400).json({ error: "Missing field: name" });
     if (!moderator) return res.status(400).json({ error: "Missing field: moderator" });
     if (!bantype) return res.status(400).json({ error: "Missing field: banType" });
+
+    // Enmascarar la IP antes de insertar a la DB[cite: 7]
+    if (isIPAddress(name)) {
+      name = "Dirección IP";
+    }
 
     const payload = {
       uuid,
@@ -170,8 +183,17 @@ exports.obtenerSanciones = async (req, res) => {
     const { data, error, count } = await q;
     if (error) throw error;
 
+    // Enmascaramiento por seguridad en la lectura de la tabla[cite: 7]
+    const safeData = (data || []).map(s => {
+      let safeName = s.name;
+      if (isIPAddress(safeName)) {
+        safeName = "Dirección IP";
+      }
+      return { ...s, name: safeName };
+    });
+
     return res.status(200).json({
-      data,
+      data: safeData,
       page: {
         limit,
         offset,
@@ -202,8 +224,16 @@ exports.obtenerSancionesPorJugador = async (req, res) => {
     const { data, error, count } = await q;
     if (error) throw error;
 
+    const safeData = (data || []).map(s => {
+      let safeName = s.name;
+      if (isIPAddress(safeName)) {
+        safeName = "Dirección IP";
+      }
+      return { ...s, name: safeName };
+    });
+
     return res.status(200).json({
-      data,
+      data: safeData,
       page: {
         limit,
         offset,
@@ -269,5 +299,48 @@ exports.eliminarSancion = async (req, res) => {
   } catch (err) {
     console.error("[DELETE SANCION]", err);
     return res.status(500).json({ error: "Error al eliminar sanción" });
+  }
+};
+
+// Se delegan las estadísticas a Supabase para evitar ineficiencia en el frontend[cite: 7]
+exports.obtenerEstadisticas = async (req, res) => {
+  try {
+    // Cuenta el total exacto desde la base de datos[cite: 7]
+    const { count: total, error: errTotal } = await db
+      .from("jails")
+      .select("*", { count: "exact", head: true })
+      .eq("server", "survival");
+      
+    if (errTotal) throw errTotal;
+
+    // Cuenta el total de permabans exactos desde la base de datos[cite: 7]
+    const { count: permabans, error: errPerma } = await db
+      .from("jails")
+      .select("*", { count: "exact", head: true })
+      .eq("server", "survival")
+      .or('bantype.ilike.%ban%,duration.ilike.%perma%,duration.ilike.%perm%');
+
+    if (errPerma) throw errPerma;
+
+    // Cuenta el total de sanciones activas desde la base de datos[cite: 7]
+    const { count: activas, error: errActivas } = await db
+      .from("jails")
+      .select("*", { count: "exact", head: true })
+      .eq("server", "survival")
+      .eq("estado", "pendiente");
+
+    if (errActivas) throw errActivas;
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        total: total || 0,
+        jugadoresPerma: permabans || 0,
+        sancionesActivas: activas || 0,
+      }
+    });
+  } catch (err) {
+    console.error("[GET ESTADISTICAS SANCIONES]", err);
+    return res.status(500).json({ error: "Error al obtener estadísticas" });
   }
 };

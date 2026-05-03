@@ -22,7 +22,6 @@ import {
   POR_PAGINA,
   parseTimestamp,
   obtenerFechaFin,
-  esPerma,
   esSancionActiva,
   calcularSituacion,
   situacionLabel,
@@ -37,7 +36,7 @@ import {
 } from "./tribunalUtils";
 
 export default function Sanciones() {
-  const { sanciones, loading, errorMsg } = useTribunalSanciones();
+  const { sanciones, estadisticas, loading, errorMsg } = useTribunalSanciones();
 
   const [filtroJugador, setFiltroJugador] = useState("");
   const [leyendaAbierta, setLeyendaAbierta] = useState(false);
@@ -78,19 +77,6 @@ export default function Sanciones() {
     (rowIndex) => getStrikeFromMap(strikesMap, rowIndex),
     [strikesMap]
   );
-
-  const resumen = useMemo(() => {
-    const total = sancionesConMeta.length;
-    const permabans = new Set();
-    let activas = 0;
-
-    for (const s of sancionesConMeta) {
-      if (esPerma(s) && s.name) permabans.add(String(s.name).toLowerCase());
-      if (esSancionActiva(s, nowMs)) activas++;
-    }
-
-    return { total, jugadoresPerma: permabans.size, sancionesActivas: activas };
-  }, [sancionesConMeta, nowMs]);
 
   const sancionesFiltradas = useMemo(() => {
     return sancionesConMeta.filter((s) => {
@@ -146,15 +132,15 @@ export default function Sanciones() {
             <div className="resumen-panel mc-block">
               <div className="resumen-item">
                 <span className="label">SANCIONES REGISTRADAS</span>
-                <span className="valor">{resumen.total}</span>
+                <span className="valor">{estadisticas.total}</span>
               </div>
               <div className="resumen-item">
                 <span className="label">SANCIONES ACTIVAS AHORA</span>
-                <span className="valor destacado">{resumen.sancionesActivas}</span>
+                <span className="valor destacado">{estadisticas.sancionesActivas}</span>
               </div>
               <div className="resumen-item">
                 <span className="label">JUGADORES CON PERMABAN</span>
-                <span className="valor">{resumen.jugadoresPerma}</span>
+                <span className="valor">{estadisticas.jugadoresPerma}</span>
               </div>
             </div>
 
@@ -307,12 +293,15 @@ export default function Sanciones() {
                       const fechaMs = parseTimestamp(s.timestamp);
                       const fechaTexto = fechaMs ? new Date(fechaMs).toLocaleString("es-ES") : "-";
 
+                      const displayName = s.name === "Dirección IP" ? "Dirección IP" : s.name;
+                      const avatarSrc = s.name === "Dirección IP" ? avatarUrl("MHF_Question", 40) : avatarUrl(s.name, 40);
+
                       return (
                         <div className={`sancion-card mc-element-tr ${situacion}`} key={`${s.name}-${s.timestamp}-${index}`}>
                           <div className="header">
                             <img
-                              src={avatarUrl(s.name, 40)}
-                              alt={s.name}
+                              src={avatarSrc}
+                              alt={displayName}
                               className="avatar mc-pixelated"
                               width={40}
                               height={40}
@@ -320,9 +309,13 @@ export default function Sanciones() {
                               decoding="async"
                             />
                             <div className="player-info">
-                              <strong onClick={() => navigate(`/perfil/${s.name}`)} title={`Ver perfil de ${s.name}`}>
-                                {s.name}
-                              </strong>
+                              {s.name === "Dirección IP" ? (
+                                <strong>{displayName}</strong>
+                              ) : (
+                                <strong onClick={() => navigate(`/perfil/${s.name}`)} title={`Ver perfil de ${s.name}`}>
+                                  {displayName}
+                                </strong>
+                              )}
                             </div>
                             <span className={`situacion-dot ${situacion}`} aria-hidden />
                           </div>
@@ -398,26 +391,35 @@ export default function Sanciones() {
                           const fechaMs = parseTimestamp(s.timestamp);
                           const fechaTexto = fechaMs ? new Date(fechaMs).toLocaleString("es-ES") : "-";
 
+                          const displayName = s.name === "Dirección IP" ? "Dirección IP" : s.name;
+                          const avatarSrc = s.name === "Dirección IP" ? avatarUrl("MHF_Question", 32) : avatarUrl(s.name, 32);
+
                           return (
                             <tr key={`${s.name}-${s.timestamp}-${index}`} className={`mc-element-tr ${situacion}`}>
                               <td data-label="Jugador">
                                 <div className="jugador-info">
                                   <img
-                                    src={avatarUrl(s.name, 32)}
+                                    src={avatarSrc}
                                     className="avatar-head mc-pixelated"
-                                    alt={s.name}
+                                    alt={displayName}
                                     width={32}
                                     height={32}
                                     loading="lazy"
                                     decoding="async"
                                   />
-                                  <span
-                                    onClick={() => navigate(`/perfil/${s.name}`)}
-                                    className="jugador-link"
-                                    title={`Ver perfil de ${s.name}`}
-                                  >
-                                    {s.name}
-                                  </span>
+                                  {s.name === "Dirección IP" ? (
+                                    <span className="jugador-link" style={{ pointerEvents: 'none', color: '#aaa' }}>
+                                      {displayName}
+                                    </span>
+                                  ) : (
+                                    <span
+                                      onClick={() => navigate(`/perfil/${s.name}`)}
+                                      className="jugador-link"
+                                      title={`Ver perfil de ${s.name}`}
+                                    >
+                                      {displayName}
+                                    </span>
+                                  )}
                                 </div>
                               </td>
 
@@ -468,8 +470,8 @@ export default function Sanciones() {
                 {sancionesFiltradas.length > 0 && (
                   <div className="tribunal-pagination mc-block">
                     <div className="page-meta">
-                      MOSTRANDO <strong style={{color: '#fbbf24'}}>{indiceInicio + 1}</strong>–<strong style={{color: '#fbbf24'}}>{indiceFin}</strong> DE{" "}
-                      <strong style={{color: '#fbbf24'}}>{sancionesFiltradas.length}</strong>
+                      MOSTRANDO <strong style={{ color: '#fbbf24' }}>{indiceInicio + 1}</strong>–<strong style={{ color: '#fbbf24' }}>{indiceFin}</strong> DE{" "}
+                      <strong style={{ color: '#fbbf24' }}>{sancionesFiltradas.length}</strong>
                     </div>
 
                     <div className="page-controls" role="navigation" aria-label="Paginación del tribunal">
@@ -517,7 +519,7 @@ export default function Sanciones() {
                     </div>
 
                     <div className="page-indicator" aria-live="polite">
-                      PÁGINA <strong style={{color: '#fbbf24'}}>{paginaActual}</strong> DE <strong style={{color: '#fbbf24'}}>{totalPaginas}</strong>
+                      PÁGINA <strong style={{ color: '#fbbf24' }}>{paginaActual}</strong> DE <strong style={{ color: '#fbbf24' }}>{totalPaginas}</strong>
                     </div>
                   </div>
                 )}

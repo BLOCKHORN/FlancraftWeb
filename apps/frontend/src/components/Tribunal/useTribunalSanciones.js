@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { supabase } from "../../lib/supabaseClient";
+import { apiUrl } from "../../lib/env";
 
 export default function useTribunalSanciones() {
   const [sanciones, setSanciones] = useState([]);
+  const [estadisticas, setEstadisticas] = useState({ total: 0, jugadoresPerma: 0, sancionesActivas: 0 });
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
 
@@ -14,14 +15,24 @@ export default function useTribunalSanciones() {
         setLoading(true);
         setErrorMsg("");
 
-        const { data, error } = await supabase
-          .from("jails")
-          .select("id, uuid, name, moderator, duration, timestamp, server, type, bantype, estado, observacion, revisado_por")
-          .eq("server", "survival")
-          .order("timestamp", { ascending: false });
+        const statsRes = await fetch(apiUrl("/api/sanciones/estadisticas"));
+        let statsData = { total: 0, jugadoresPerma: 0, sancionesActivas: 0 };
+        if (statsRes.ok) {
+          const statsJson = await statsRes.json();
+          statsData = statsJson.data || statsData;
+        }
 
-        if (error) throw error;
-        if (!cancel) setSanciones(data || []);
+        const dataRes = await fetch(apiUrl("/api/sanciones?limit=2000&server=survival"));
+        if (!dataRes.ok) {
+           throw new Error("Error de red");
+        }
+
+        const dataJson = await dataRes.json();
+
+        if (!cancel) {
+          setEstadisticas(statsData);
+          setSanciones(dataJson.data || []);
+        }
       } catch (e) {
         if (!cancel) setErrorMsg("No se pudo cargar el historial de sanciones.");
       } finally {
@@ -34,5 +45,5 @@ export default function useTribunalSanciones() {
     };
   }, []);
 
-  return { sanciones, loading, errorMsg };
+  return { sanciones, estadisticas, loading, errorMsg };
 }

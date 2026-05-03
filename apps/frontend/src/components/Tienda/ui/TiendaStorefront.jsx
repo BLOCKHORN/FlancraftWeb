@@ -285,7 +285,7 @@ export default function TiendaStorefront({
               <div className="header-text-group">
                 <h2 className="pixel-section-title">COINS Y RECOMPENSAS</h2>
                 <p className="pixel-section-desc">
-                  ¡Acumula el <strong>Regalo Diario</strong> para conseguir objetos o rangos <strong>GRATIS</strong>!
+                  ¡Acumula el <strong>Regalo Diario</strong> para conseguir objetos <strong>GRATIS</strong>!
                 </p>
               </div>
               <button className="pixel-btn-gray open-shop-btn" onClick={openCoinshopFromEvent}>

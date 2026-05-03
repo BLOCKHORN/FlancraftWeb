@@ -6,6 +6,7 @@ const requireRole = require("../middlewares/requireRole");
 r.post("/jails", c.registrarSancion);
 r.post("/", c.registrarSancion);
 
+r.get("/estadisticas", c.obtenerEstadisticas); // Ruta agregada
 r.get("/", c.obtenerSanciones);
 r.get("/jugador/:nombre", c.obtenerSancionesPorJugador);
 
