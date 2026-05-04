@@ -50,6 +50,15 @@ const renderMessageWithCoins = (msg) => {
 const FIRE_GIF_SRC = "/tienda/assets/fire.gif";
 const FLANITE_SRC = "/tienda/assets/flanite.webp";
 
+const getRankClass = (rango) => {
+  if (!rango) return 'rango-none';
+  const r = rango.toLowerCase();
+  if (r.includes('inmortal')) return 'rango-inmortal';
+  if (r.includes('alpha')) return 'rango-alpha';
+  if (r.includes('nova')) return 'rango-nova';
+  return 'rango-none';
+};
+
 const BolsaLayout = () => {
   const { user } = useContext(UserContext);
   const { openAuthModal } = useAuthModal();
@@ -62,13 +71,12 @@ const BolsaLayout = () => {
   const [ledger, setLedger] = useState([]);
   const [ledgerPage, setLedgerPage] = useState(1);
   const [ledgerTotalPages, setLedgerTotalPages] = useState(1);
-  const [ledgerFilter, setLedgerFilter] = useState('ALL');
   
   const [topTraders, setTopTraders] = useState([]);
   const [chartData, setChartData] = useState([]);
   const [selectedAsset, setSelectedAsset] = useState("NETHERITE_INGOT");
   const [timeframe, setTimeframe] = useState("15m");
-  const [activeTab, setActiveTab] = useState("POSITIONS");
+  const [activeTab, setActiveTab] = useState("LEDGER");
   
   const [tradeMode, setTradeMode] = useState('BUY');
   const [tradeAmount, setTradeAmount] = useState(1);
@@ -86,11 +94,11 @@ const BolsaLayout = () => {
   const volumeSeries = useRef(null);
   const prevContext = useRef({ asset: null, tf: null });
 
-  const stateRef = useRef({ activeTab: "POSITIONS", ledgerPage: 1, ledgerFilter: 'ALL', ledger: [] });
+  const stateRef = useRef({ activeTab: "LEDGER", ledgerPage: 1, selectedAsset: "NETHERITE_INGOT" });
 
   useEffect(() => {
-    stateRef.current = { activeTab, ledgerPage, ledgerFilter, ledger };
-  }, [activeTab, ledgerPage, ledgerFilter, ledger]);
+    stateRef.current = { activeTab, ledgerPage, selectedAsset };
+  }, [activeTab, ledgerPage, selectedAsset]);
 
   const getFeePercentForAsset = (mineralId) => {
     if (mineralId === 'NETHERITE_INGOT') return 0.01;
@@ -132,9 +140,9 @@ const BolsaLayout = () => {
     }
   };
 
-  const fetchLedger = async (page = 1, filter = 'ALL') => {
+  const fetchLedger = async (page = 1, assetId) => {
     try {
-      const res = await apiGet(`/api/bolsa/ledger?page=${page}&limit=15&mineralId=${filter}`);
+      const res = await apiGet(`/api/bolsa/ledger?page=${page}&limit=15&mineralId=${assetId}`);
       if (res && res.transactions) {
         setLedger(res.transactions);
         setLedgerTotalPages(res.totalPages);
@@ -154,7 +162,7 @@ const BolsaLayout = () => {
       
       const current = stateRef.current;
       if (current.activeTab === "LEDGER" && current.ledgerPage === 1) {
-        fetchLedger(1, current.ledgerFilter);
+        fetchLedger(1, current.selectedAsset);
       }
     } catch (error) {}
   };
@@ -179,6 +187,62 @@ const BolsaLayout = () => {
     } catch (error) {}
   };
 
+  const getAssetDisplayName = (id) => {
+    const map = { 
+      NETHERITE_INGOT: "Netherite", 
+      DIAMOND: "Diamante", 
+      COAL: "Carbon",
+      RAW_COPPER: "Cobre Bruto"
+    };
+    return map[id] || id;
+  };
+
+  const getAssetIconPath = (id) => {
+    const map = { 
+      NETHERITE_INGOT: "netherite.webp", 
+      DIAMOND: "diamante.png", 
+      COAL: "carbon.webp",
+      RAW_COPPER: "cobre.png"
+    };
+    return `/tienda/assets/minerals/${map[id] || id + '.png'}`;
+  };
+
+  const groupNewsEvents = (events) => {
+    if (!events.length) return [];
+    const grouped = [];
+    let current = null;
+
+    events.forEach(ev => {
+      if (ev.isParsed && (ev.type === 'PUMP' || ev.type === 'CRASH')) {
+        if (current && current.type === ev.type && current.playerName === ev.playerName && current.mineralId === ev.mineralId) {
+          current.count += 1;
+          current.vol += ev.vol;
+          current.time = Math.max(current.time, ev.time); 
+        } else {
+          if (current) grouped.push(current);
+          current = { ...ev };
+        }
+      } else {
+        if (current) { grouped.push(current); current = null; }
+        grouped.push(ev);
+      }
+    });
+
+    if (current) grouped.push(current);
+
+    return grouped.map(g => {
+      if (g.isParsed) {
+        return {
+          ...g,
+          avatar: `https://minotar.net/helm/${g.playerName.replace(/^\./, '')}/32.png`,
+          isBurst: g.count > 1,
+          verbDisplay: g.type === 'PUMP' ? 'comprado' : (g.type === 'CRASH' ? 'liquidado' : g.verb)
+        };
+      }
+      return g;
+    });
+  };
+
   const fetchNews = async () => {
     try {
       let dbNews = [];
@@ -190,38 +254,61 @@ const BolsaLayout = () => {
             type: n.type,
             mineralId: n.mineral_id,
             message: n.message,
-            time: new Date(n.execute_at || n.created_at).getTime()
+            time: new Date(n.execute_at || n.created_at).getTime(),
+            isParsed: false
           }));
         }
       } catch (e) {}
 
-      const ledgerEvents = (stateRef.current.ledger || []).map(tx => {
+      let globalTransactions = [];
+      try {
+        const res = await apiGet("/api/bolsa/ledger?page=1&limit=30&mineralId=ALL");
+        if (res && res.transactions) {
+          globalTransactions = res.transactions;
+        }
+      } catch (e) {}
+
+      const ledgerEvents = globalTransactions.map(tx => {
         const total = tx.total_coins_exchanged;
         let type = 'INFO';
-        let message = '';
+        let isParsed = false;
+        let verb = '';
+        let vol = 0;
+        let isShares = false;
         
         if (tx.transaction_type === 'BUY' && total >= 150) {
           type = 'PUMP';
-          message = `¡${tx.player_name} ha inyectado ${total.toFixed(0)} ⛃ en ${getAssetDisplayName(tx.mineral_id)}!`;
+          isParsed = true; verb = 'inyectado'; vol = total;
         } else if (tx.transaction_type === 'SELL' && total >= 150) {
           type = 'CRASH';
-          message = `¡${tx.player_name} liquidó ${total.toFixed(0)} ⛃ de ${getAssetDisplayName(tx.mineral_id)}!`;
+          isParsed = true; verb = 'liquidado'; vol = total;
         } else if (tx.shares >= 20) {
           type = 'WHALE';
-          message = `Movimiento inusual: ${tx.player_name} movió ${tx.shares} ud de ${getAssetDisplayName(tx.mineral_id)}.`;
+          isParsed = true; verb = 'movido'; vol = tx.shares; isShares = true;
         }
 
         if (type !== 'INFO') {
-          return { id: `ev-${tx.id}`, type, mineralId: tx.mineral_id, message, time: new Date(tx.timestamp).getTime() };
+          return {
+            id: `ev-${tx.id}`,
+            type,
+            mineralId: tx.mineral_id,
+            mineral: getAssetDisplayName(tx.mineral_id),
+            time: new Date(tx.timestamp).getTime(),
+            playerName: tx.player_name,
+            uuid: tx.uuid,
+            rango: tx.rango,
+            isParsed, verb, vol, isShares, count: 1
+          };
         }
         return null;
       }).filter(Boolean);
 
       const allEvents = [...dbNews, ...ledgerEvents];
       const uniqueEvents = Array.from(new Map(allEvents.map(item => [item.id, item])).values());
-      const combined = uniqueEvents.sort((a, b) => b.time - a.time).slice(0, 15);
+      const sortedEvents = uniqueEvents.sort((a, b) => b.time - a.time);
       
-      setNewsFeed(combined);
+      const groupedFeed = groupNewsEvents(sortedEvents).slice(0, 15);
+      setNewsFeed(groupedFeed);
     } catch (error) {}
   };
 
@@ -243,6 +330,7 @@ const BolsaLayout = () => {
     fetchUserData();
     fetchChart();
     fetchAirdrop();
+    fetchNews();
     
     const interval = setInterval(() => {
       fetchMarketData();
@@ -257,13 +345,15 @@ const BolsaLayout = () => {
 
   useEffect(() => {
     if (activeTab === "LEDGER") {
-      fetchLedger(ledgerPage, ledgerFilter);
+      fetchLedger(ledgerPage, selectedAsset);
     }
-  }, [ledgerPage, activeTab, ledgerFilter]);
+  }, [ledgerPage, activeTab, selectedAsset]);
 
   useEffect(() => {
-    fetchNews();
-  }, [ledger]);
+    if (activeTab === "LEDGER") {
+       setLedgerPage(1);
+    }
+  }, [selectedAsset]);
 
   useEffect(() => {
     const timerInterval = setInterval(() => {
@@ -403,26 +493,6 @@ const BolsaLayout = () => {
     return asset ? asset.shares : 0;
   };
 
-  const getAssetDisplayName = (id) => {
-    const map = { 
-      NETHERITE_INGOT: "Netherite", 
-      DIAMOND: "Diamante", 
-      COAL: "Carbon",
-      RAW_COPPER: "Cobre Bruto"
-    };
-    return map[id] || id;
-  };
-
-  const getAssetIconPath = (id) => {
-    const map = { 
-      NETHERITE_INGOT: "netherite.webp", 
-      DIAMOND: "diamante.png", 
-      COAL: "carbon.webp",
-      RAW_COPPER: "cobre.png"
-    };
-    return `/tienda/assets/minerals/${map[id] || id + '.png'}`;
-  };
-
   const processOrderWithPolling = async (mineralId, amount, type, toastId) => {
     try {
       const actualName = user.nombre_minecraft || user.username || user.nombre || "Inversor";
@@ -452,7 +522,8 @@ const BolsaLayout = () => {
               await fetchMarketData();
             } catch(e) {}
 
-            if (activeTab === "LEDGER") fetchLedger(1, ledgerFilter);
+            if (activeTab === "LEDGER") fetchLedger(1, selectedAsset);
+            fetchNews(); 
             
             setIsTrading(false);
             setLiquidatingAsset(null);
@@ -632,14 +703,9 @@ const BolsaLayout = () => {
     await processOrderWithPolling(mineralId, amount, 'SELL', toastId);
   };
 
-  const handleFilterChange = (filter) => {
-    setLedgerFilter(filter);
-    setLedgerPage(1);
-  };
-
   const renderActiveTabContent = () => {
     if (!user?.loggedIn && activeTab === "POSITIONS") {
-      return (<div className="mc-empty-state">Identifícate para acceder a tus bóvedas.</div>);
+      return (<div className="mc-empty-state">Identifícate para acceder a tu cartera.</div>);
     }
 
     if (activeTab === "POSITIONS") {
@@ -648,7 +714,7 @@ const BolsaLayout = () => {
         return (
           <div className="mc-empty-state">
             <img src="/tienda/assets/minerals/diamante.png" className="empty-icon mc-pixelated" alt="tip" />
-            <h3>Bóvedas Vacías</h3>
+            <h3>Cartera Vacía</h3>
             <p>Adquiere recursos para generar riqueza.</p>
           </div>
         );
@@ -685,7 +751,7 @@ const BolsaLayout = () => {
                     </td>
                     <td>
                       <div style={{ color: '#fff' }}>{pos.shares} ud.</div>
-                      <div style={{ fontSize: '0.8rem', color: '#888' }}>Avg: {pos.average_purchase_price?.toFixed(2)} <img src="/tienda/assets/coin.png" className="inline-icon mc-pixelated" alt="coins" /></div>
+                      <div style={{ fontSize: '0.8rem', color: '#888' }}>Avg: {pos.average_purchase_price?.toFixed(2)}</div>
                     </td>
                     <td className="portfolio-value-col">
                       <div className="total-val">
@@ -717,22 +783,15 @@ const BolsaLayout = () => {
     if (activeTab === "LEDGER") {
       return (
         <div className="mc-table-responsive flex-column-between">
-          <div style={{ display: 'flex', gap: '10px', marginBottom: '15px', overflowX: 'auto', paddingBottom: '5px' }}>
-            <button style={{ padding: '6px 12px', background: ledgerFilter === 'ALL' ? '#333' : 'transparent', color: ledgerFilter === 'ALL' ? '#fff' : '#888', border: '1px solid #444', cursor: 'pointer', fontFamily: 'MinecraftRegular' }} onClick={() => handleFilterChange('ALL')}>Todos</button>
-            <button style={{ padding: '6px 12px', background: ledgerFilter === 'NETHERITE_INGOT' ? '#333' : 'transparent', color: ledgerFilter === 'NETHERITE_INGOT' ? '#fff' : '#888', border: '1px solid #444', cursor: 'pointer', fontFamily: 'MinecraftRegular' }} onClick={() => handleFilterChange('NETHERITE_INGOT')}>Netherite</button>
-            <button style={{ padding: '6px 12px', background: ledgerFilter === 'DIAMOND' ? '#333' : 'transparent', color: ledgerFilter === 'DIAMOND' ? '#fff' : '#888', border: '1px solid #444', cursor: 'pointer', fontFamily: 'MinecraftRegular' }} onClick={() => handleFilterChange('DIAMOND')}>Diamante</button>
-            <button style={{ padding: '6px 12px', background: ledgerFilter === 'COAL' ? '#333' : 'transparent', color: ledgerFilter === 'COAL' ? '#fff' : '#888', border: '1px solid #444', cursor: 'pointer', fontFamily: 'MinecraftRegular' }} onClick={() => handleFilterChange('COAL')}>Carbón</button>
-            <button style={{ padding: '6px 12px', background: ledgerFilter === 'RAW_COPPER' ? '#333' : 'transparent', color: ledgerFilter === 'RAW_COPPER' ? '#fff' : '#888', border: '1px solid #444', cursor: 'pointer', fontFamily: 'MinecraftRegular' }} onClick={() => handleFilterChange('RAW_COPPER')}>Cobre</button>
-          </div>
-          <table className="mc-ledger-table" style={{ fontSize: '0.9rem' }}>
+          <table className="mc-ledger-table">
             <thead>
               <tr>
-                <th style={{ color: '#888' }}>FECHA</th>
-                <th style={{ color: '#888' }}>TIPO</th>
-                <th style={{ color: '#888' }}>TOTAL</th>
-                <th style={{ color: '#888' }}>CANTIDAD</th>
-                <th style={{ color: '#888' }}>PRECIO/U</th>
-                <th style={{ color: '#888', textAlign: 'right' }}>MERCADER</th>
+                <th>FECHA</th>
+                <th>TIPO</th>
+                <th>TOTAL</th>
+                <th>CANTIDAD</th>
+                <th>PRECIO/U</th>
+                <th style={{ textAlign: 'right' }}>MERCADER</th>
               </tr>
             </thead>
             <tbody>
@@ -743,7 +802,7 @@ const BolsaLayout = () => {
                     {tx.transaction_type === 'BUY' ? 'Buy' : 'Sell'}
                   </td>
                   <td className="font-bold">
-                    <span className={tx.transaction_type === 'BUY' ? 'text-green' : 'text-red'}>{tx.total_coins_exchanged.toFixed(2)}</span> <img src="/tienda/assets/coin.png" className="inline-icon mc-pixelated" alt="coins" />
+                    <span className={tx.transaction_type === 'BUY' ? 'text-green' : 'text-red'}>{tx.total_coins_exchanged.toFixed(0)}</span>
                   </td>
                   <td style={{ color: tx.transaction_type === 'BUY' ? '#5EE034' : '#FF5555' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -751,10 +810,21 @@ const BolsaLayout = () => {
                       <img src={getAssetIconPath(tx.mineral_id)} className="mc-pixelated" alt="asset" style={{ width: '16px', height: '16px' }} title={getAssetDisplayName(tx.mineral_id)} />
                     </div>
                   </td>
-                  <td>{tx.price_per_share.toFixed(2)} <img src="/tienda/assets/coin.png" className="inline-icon mc-pixelated" alt="coins" /></td>
+                  <td>{tx.price_per_share.toFixed(2)}</td>
                   <td style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px' }}>
-                    <span style={{ color: '#fbbf24' }}>{tx.player_name}</span>
-                    <img src={`https://minotar.net/helm/${tx.player_name.replace(/^\./, '')}/16.png`} className="mc-pixelated" alt="avatar" style={{ width: '16px', height: '16px', borderRadius: '2px' }} />
+                    <span 
+                      className={`player-link ${getRankClass(tx.rango)}`} 
+                      onClick={() => navigate(`/perfil/${tx.player_name}`)}
+                    >
+                      {tx.player_name}
+                    </span>
+                    <img 
+                      src={`https://minotar.net/helm/${tx.player_name.replace(/^\./, '')}/16.png`} 
+                      className="mc-pixelated cursor-pointer" 
+                      alt="avatar" 
+                      style={{ width: '16px', height: '16px', borderRadius: '2px' }} 
+                      onClick={() => navigate(`/perfil/${tx.player_name}`)}
+                    />
                   </td>
                 </tr>
               ))}
@@ -774,15 +844,26 @@ const BolsaLayout = () => {
       <div className="mc-table-responsive">
         <table className="mc-ledger-table">
           <thead>
-            <tr><th>#</th><th>COMERCIANTE</th><th>PNL NETO</th></tr>
+            <tr>
+              <th>#</th>
+              <th>COMERCIANTE</th>
+              <th>PNL NETO</th>
+            </tr>
           </thead>
           <tbody>
             {topTraders.map((trader, i) => (
               <tr key={i}>
                 <td className="font-bold">{i + 1}</td>
-                <td className="font-bold">{trader.name}</td>
-                <td className={`flex-center font-bold ${trader.profit > 0 ? 'text-green' : 'text-red'}`}>
-                  {trader.profit > 0 ? '+' : ''}{trader.profit.toFixed(2)} 
+                <td className="font-bold">
+                  <span 
+                    className={`player-link ${getRankClass(trader.rango)}`}
+                    onClick={() => navigate(`/perfil/${trader.name}`)}
+                  >
+                    {trader.name}
+                  </span>
+                </td>
+                <td className={`flex-center font-bold ${trader.profit >= 0 ? 'text-green' : 'text-red'}`}>
+                  {trader.profit >= 0 ? '+' : ''}{trader.profit.toFixed(0)} 
                   <img src="/tienda/assets/coin.png" className="coin-icon mc-pixelated" alt="coins" />
                 </td>
               </tr>
@@ -801,8 +882,8 @@ const BolsaLayout = () => {
           {[...livePrices, ...livePrices].map((p, i) => {
             const pct = p.percent_24h !== undefined ? p.percent_24h : (p.last_percent || 0);
             const isHot = Math.abs(pct) >= 0.05;
-            const priceColor = pct > 0 ? 'text-green' : pct < 0 ? 'text-red' : 'text-gray';
-            const arrow = pct > 0 ? '▲' : pct < 0 ? '▼' : '—';
+            const priceColor = pct >= 0 ? 'text-green' : 'text-red';
+            const arrow = pct >= 0 ? '▲' : '▼';
             
             return (
               <div key={i} className="mc-ticker-item">
@@ -810,8 +891,8 @@ const BolsaLayout = () => {
                 <img src={getAssetIconPath(p.mineral_id)} className="mc-pixelated" alt="icon" />
                 <span className="name">{getAssetDisplayName(p.mineral_id)}</span>
                 <span className={`price ${priceColor}`}>
-                  {p.current_coin_price.toFixed(2)} <img src="/tienda/assets/coin.png" className="coin-icon-small mc-pixelated" alt="coins" /> 
-                  ({pct > 0 ? '+' : ''}{(pct * 100).toFixed(1)}%) {arrow}
+                  {p.current_coin_price.toFixed(2)} 
+                  ({pct >= 0 ? '+' : ''}{(pct * 100).toFixed(1)}%) {arrow}
                 </span>
               </div>
             );
@@ -821,150 +902,136 @@ const BolsaLayout = () => {
 
       <div className="mc-bolsa-layout">
         
-        {user?.loggedIn && (
-          <div className="mc-gui-window mc-wallet-hud">
-            <div className="hud-item">
-              <span className="hud-label">PATRIMONIO TOTAL</span>
-              <span className={`hud-value highlight ${isTrading ? 'syncing' : ''}`}>
-                {isTrading ? 'SYNC...' : <>{totalNetWorth.toFixed(2)} <img src="/tienda/assets/coin.png" className="coin-icon mc-pixelated" alt="coins" /></>}
-              </span>
-            </div>
-            <div className="hud-item">
-              <span className="hud-label">LIQUIDEZ EN JUEGO</span>
-              <div className="hud-value-group">
-                <span className={`hud-value ${isTrading ? 'syncing' : ''}`}>
-                  {isTrading ? 'SYNC...' : <>{liquidCoins.toFixed(2)} <img src="/tienda/assets/coin.png" className="coin-icon mc-pixelated" alt="coins" /></>}
-                </span>
-                <button className="mc-btn-add" onClick={() => navigate('/tienda')} disabled={isTrading}>+</button>
-              </div>
-            </div>
-            <div className="hud-item desktop-only">
-              <span className="hud-label">VALOR BÓVEDA (REAL)</span>
-              <span className={`hud-value ${isTrading ? 'syncing' : ''}`}>
-                {isTrading ? 'SYNC...' : <>{portfolioValueReal.toFixed(2)} <img src="/tienda/assets/coin.png" className="coin-icon mc-pixelated" alt="coins" /></>}
-              </span>
-            </div>
-          </div>
-        )}
-
-        <div className="mc-asset-strip">
+        <div className="mc-asset-tabs-nav">
           {livePrices.map((asset) => {
-            const owned = getOwnedShares(asset.mineral_id);
             const pct = asset.percent_24h !== undefined ? asset.percent_24h : (asset.last_percent || 0);
-            const isHot = Math.abs(pct) >= 0.05;
             return (
               <div 
                 key={asset.mineral_id} 
-                className={`asset-card-horiz ${selectedAsset === asset.mineral_id ? 'active' : ''}`}
+                className={`asset-tab ${selectedAsset === asset.mineral_id ? 'active' : ''}`}
                 onClick={() => setSelectedAsset(asset.mineral_id)}
               >
-                <img src={getAssetIconPath(asset.mineral_id)} className="mc-pixelated main-icon" alt="m" />
-                <div className="card-data">
-                  <span className="name">{getAssetDisplayName(asset.mineral_id)} {isHot && <span className="mc-hot-badge">!</span>}</span>
-                  <div className="price-row">
-                     <span className={`price ${pct > 0 ? 'text-green' : pct < 0 ? 'text-red' : 'text-gray'}`}>
-                       {asset.current_coin_price.toFixed(2)} <img src="/tienda/assets/coin.png" className="inline-icon mc-pixelated" alt="c" />
-                     </span>
-                     <span className={`pct ${pct > 0 ? 'bg-green' : pct < 0 ? 'bg-red' : 'bg-gray'}`}>
-                       {pct > 0 ? '+' : ''}{(pct * 100).toFixed(1)}%
-                     </span>
-                  </div>
-                  {owned > 0 && <span className="owned-tag">{owned} en bóveda</span>}
+                <img src={getAssetIconPath(asset.mineral_id)} className="mc-pixelated" alt="m" />
+                <div className="tab-info">
+                  <span className="n">{getAssetDisplayName(asset.mineral_id)}</span>
+                  <span className={`p ${pct >= 0 ? 'text-green' : 'text-red'}`}>
+                    {asset.current_coin_price.toFixed(1)} {pct !== 0 && (pct > 0 ? '+' : '')}{(pct * 100).toFixed(1)}%
+                  </span>
                 </div>
               </div>
             );
           })}
         </div>
 
-        {selectedAsset === 'NETHERITE_INGOT' && user?.loggedIn && getOwnedShares('NETHERITE_INGOT') > 0 && (
-          <div className="mc-burn-banner">
-            <div className="burn-info">
-              <img src={FIRE_GIF_SRC} className="fire-gif-icon mc-pixelated" alt="fire" />
-              <div>
-                <strong>TIENES {getOwnedShares('NETHERITE_INGOT')} NETHERITES</strong>
-                <p>Puedes forjarlos en la Forja para obtener Flanites <img src={FLANITE_SRC} className="inline-icon mc-pixelated" alt="flanite" /> instantáneos.</p>
-              </div>
-            </div>
-            <button className="mc-btn-burn" onClick={() => navigate('/forja')}>IR A LA FORJA</button>
-          </div>
-        )}
-        
-        {selectedAsset === 'DIAMOND' && (
-          <div className="mc-diamond-info">
-             <div className="diamond-header">
-               <img src={getAssetIconPath('DIAMOND')} className="mc-pixelated" alt="d"/>
-               <span>DIVIDENDOS DE LA CORONA</span>
-             </div>
-             <div className="diamond-body">
-               <p>Retener Diamantes te otorga <strong>Poder de Influencia</strong> para reclamar el Tributo del Gremio cada hora.</p>
-               <p>Si la influencia general no supera a la banca, el Gremio retiene los fondos y <strong>el bote se acumula</strong>.</p>
-               {user?.loggedIn && (
-                 <p className="diamond-status">
-                   Tu Nivel de Influencia actual: <strong>{getOwnedShares('DIAMOND')}</strong>
-                 </p>
-               )}
-             </div>
-          </div>
-        )}
-
-        <div className="mc-cex-terminal">
-          {!user?.loggedIn && (
-            <div className="mc-overlay-lock">
-              <div className="lock-box">
-                <h3>ACCESO RESTRINGIDO</h3>
-                <p>Identifícate ante el Gremio para comerciar.</p>
-                <button className="mc-btn-solid mc-btn-gold" onClick={openAuthModal}>INICIAR SESIÓN</button>
-              </div>
-            </div>
-          )}
-
-          <div className="terminal-header">
-            <div className="asset-title">
-              <img src={getAssetIconPath(selectedAsset)} className="mineral-icon-large mc-pixelated" alt="a" />
-              <div className="title-texts">
-                <div className="title-header-row">
-                  <h2>{getAssetDisplayName(selectedAsset)}</h2>
-                  <span className="vol-24h">Vol 24h: <span className="text-green">{volume24h.toFixed(0)}</span> <img src="/tienda/assets/coin.png" className="inline-icon mc-pixelated" alt="c" /></span>
+        <div className="mc-dex-layout">
+          
+          <div className="mc-dex-left">
+            <div className="mc-cex-terminal mc-cex-header-standalone">
+              <div className="terminal-header">
+                <div className="asset-title">
+                  <img src={getAssetIconPath(selectedAsset)} className="mineral-icon-large mc-pixelated" alt="a" />
+                  <div className="title-texts">
+                    <div className="title-header-row">
+                      <h2>{getAssetDisplayName(selectedAsset)}</h2>
+                      <span className="vol-24h">Vol 24h: <span className="text-green">{volume24h.toFixed(0)}</span></span>
+                    </div>
+                    <span className={`terminal-current-price ${glowClass}`}>
+                      {currentPrice.toFixed(2)} <img src="/tienda/assets/coin.png" className="coin-icon-small mc-pixelated" alt="coins" />
+                      <span className={`price-percent ${currentPct >= 0 ? 'text-green' : 'text-red'}`}>
+                        ({currentPct >= 0 ? '+' : ''}{(currentPct * 100).toFixed(1)}%)
+                      </span>
+                    </span>
+                  </div>
                 </div>
-                <span className={`terminal-current-price ${glowClass}`}>
-                  {currentPrice.toFixed(2)} <img src="/tienda/assets/coin.png" className="coin-icon-small mc-pixelated" alt="coins" />
-                  <span className={`price-percent ${currentPct > 0 ? 'text-green' : currentPct < 0 ? 'text-red' : 'text-gray'}`}>
-                    ({currentPct > 0 ? '+' : ''}{(currentPct * 100).toFixed(1)}%)
-                  </span>
-                </span>
+
+                <div className="header-controls">
+                  <div className="mc-timeframe-tabs">
+                    {['15m', '1H', '4H', '1D'].map((tf) => (
+                      <button key={tf} className={timeframe === tf ? 'active' : ''} onClick={() => setTimeframe(tf)}>{tf}</button>
+                    ))}
+                  </div>
+                  <div className="airdrop-mini">
+                    <span className="label">TRIBUTO (⏱ {nextUpdateTimer})</span>
+                    <span className="pot">{airdropInfo.pot ? airdropInfo.pot.toFixed(0) : '0'} <img src="/tienda/assets/coin.png" className="coin-icon-small mc-pixelated" alt="coins" /></span>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div className="header-controls">
-              <div className="mc-timeframe-tabs">
-                {['15m', '1H', '4H', '1D'].map((tf) => (
-                  <button key={tf} className={timeframe === tf ? 'active' : ''} onClick={() => setTimeframe(tf)}>{tf}</button>
-                ))}
+            <div className="mc-cex-terminal mc-cex-chart-standalone">
+              <div className="mc-chart-area">
+                <div id="chart-legend-overlay" className="chart-legend">
+                  <span className="legend-title">{getAssetDisplayName(selectedAsset)}</span>
+                  <div><span>O</span> <span id="leg-o">0.00</span></div>
+                  <div><span>H</span> <span id="leg-h">0.00</span></div>
+                  <div><span>L</span> <span id="leg-l">0.00</span></div>
+                  <div><span>C</span> <span id="leg-c">0.00</span></div>
+                </div>
+                
+                <div ref={chartContainerRef} className="chart-container" />
+                {chartData.length === 0 && (
+                  <div className="chart-empty">ENVIANDO EXPLORADORES...</div>
+                )}
               </div>
-              <div className="airdrop-mini">
-                <span className="label">TRIBUTO (⏱ {nextUpdateTimer})</span>
-                <span className="pot">{airdropInfo.pot ? airdropInfo.pot.toFixed(0) : '0'} <img src="/tienda/assets/coin.png" className="coin-icon-small mc-pixelated" alt="coins" /></span>
+            </div>
+
+            <div className="mc-cex-terminal mc-cex-ledger-standalone">
+              <div className="mc-ledger-wrapper">
+                <div className="mc-ledger-tabs-row">
+                  <button className={`mc-tab ${activeTab === "LEDGER" ? "active" : ""}`} onClick={() => setActiveTab("LEDGER")}>Libro Mayor</button>
+                  <button className={`mc-tab ${activeTab === "POSITIONS" ? "active" : ""}`} onClick={() => setActiveTab("POSITIONS")}>Mis Posiciones</button>
+                  <button className={`mc-tab ${activeTab === "TOP" ? "active" : ""}`} onClick={() => setActiveTab("TOP")}>Mercaderes Top</button>
+                </div>
+                <div className="mc-ledger-content">
+                  {renderActiveTabContent()}
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="terminal-body-grid">
-            <div className="mc-chart-area">
-              <div id="chart-legend-overlay" className="chart-legend">
-                <span className="legend-title">{getAssetDisplayName(selectedAsset)}</span>
-                <div><span>O</span> <span id="leg-o">0.00</span></div>
-                <div><span>H</span> <span id="leg-h">0.00</span></div>
-                <div><span>L</span> <span id="leg-l">0.00</span></div>
-                <div><span>C</span> <span id="leg-c">0.00</span></div>
+          <div className="mc-dex-right">
+            
+            {selectedAsset === 'NETHERITE_INGOT' && user?.loggedIn && getOwnedShares('NETHERITE_INGOT') > 0 && (
+              <div className="mc-burn-banner">
+                <div className="burn-info">
+                  <img src={FIRE_GIF_SRC} className="fire-gif-icon mc-pixelated" alt="fire" />
+                  <div>
+                    <strong>TIENES {getOwnedShares('NETHERITE_INGOT')} NETHERITES</strong>
+                    <p>Puedes forjarlos para obtener Flanites <img src={FLANITE_SRC} className="inline-icon mc-pixelated" alt="flanite" /> instantáneos.</p>
+                  </div>
+                </div>
+                <button className="mc-btn-burn" onClick={() => navigate('/forja')}>FORJAR</button>
               </div>
-              
-              <div ref={chartContainerRef} className="chart-container" />
-              {chartData.length === 0 && (
-                <div className="chart-empty">ENVIANDO EXPLORADORES...</div>
-              )}
-            </div>
+            )}
+            
+            {selectedAsset === 'DIAMOND' && (
+              <div className="mc-diamond-info">
+                 <div className="diamond-header">
+                   <img src={getAssetIconPath('DIAMOND')} className="mc-pixelated" alt="d"/>
+                   <span>DIVIDENDOS DE LA CORONA</span>
+                 </div>
+                 <div className="diamond-body">
+                   <p>Retener Diamantes te otorga <strong>Poder de Influencia</strong> para reclamar el Tributo del Gremio cada hora.</p>
+                   {user?.loggedIn && (
+                     <p className="diamond-status">
+                       Tu Influencia actual: <strong>{getOwnedShares('DIAMOND')}</strong>
+                     </p>
+                   )}
+                 </div>
+              </div>
+            )}
 
-            <div className="mc-trade-area">
+            <div className="mc-trade-window">
+              {!user?.loggedIn && (
+                <div className="mc-overlay-lock">
+                  <div className="lock-box">
+                    <h3>ACCESO RESTRINGIDO</h3>
+                    <p>Identifícate ante el Gremio para comerciar.</p>
+                    <button className="mc-btn-solid mc-btn-gold" onClick={openAuthModal}>INICIAR SESIÓN</button>
+                  </div>
+                </div>
+              )}
+
               <div className="mc-trade-mode-toggle">
                 <button className={tradeMode === 'BUY' ? 'active buy' : ''} onClick={() => setTradeMode('BUY')}>COMPRAR</button>
                 <button className={tradeMode === 'SELL' ? 'active sell' : ''} onClick={() => setTradeMode('SELL')}>VENDER</button>
@@ -975,7 +1042,7 @@ const BolsaLayout = () => {
                   <span>Disponible:</span>
                   <strong>
                     {tradeMode === 'BUY' ? (
-                      <>{liquidCoins.toFixed(2)} <img src="/tienda/assets/coin.png" className="coin-icon-small mc-pixelated" alt="c" /></>
+                      <>{liquidCoins.toFixed(0)} <img src="/tienda/assets/coin.png" className="coin-icon-small mc-pixelated" alt="c" /></>
                     ) : (
                       selectedOwnedShares + ' ud.'
                     )}
@@ -1015,7 +1082,7 @@ const BolsaLayout = () => {
                 <div className="trade-summary">
                   <div className="summary-row">
                     <span>Precio / ud.</span>
-                    <span>{currentPrice.toFixed(2)} <img src="/tienda/assets/coin.png" className="inline-icon mc-pixelated" alt="c" /></span>
+                    <span>{currentPrice.toFixed(2)}</span>
                   </div>
                   <div className="summary-row">
                     <span>Slippage</span>
@@ -1025,12 +1092,12 @@ const BolsaLayout = () => {
                   </div>
                   <div className="summary-row">
                     <span>Tasa ({(feePercent * 100).toFixed(0)}%)</span>
-                    <span className="text-gray">{(tradeSimulation.finalAmount / (1 + (tradeMode === 'BUY' ? feePercent : -feePercent)) * feePercent).toFixed(2)} <img src="/tienda/assets/coin.png" className="inline-icon mc-pixelated" alt="c" /></span>
+                    <span className="text-gray">{(tradeSimulation.finalAmount / (1 + (tradeMode === 'BUY' ? feePercent : -feePercent)) * feePercent).toFixed(2)}</span>
                   </div>
                   <div className="summary-row total">
                     <span>{tradeMode === 'BUY' ? 'Coste Total' : 'Recibes'}</span>
                     <span className={tradeMode === 'BUY' ? 'text-red' : 'text-green'}>
-                      {tradeMode === 'BUY' ? tradeSimulation.finalAmount.toFixed(2) : tradeSimulation.finalAmount.toFixed(0)} <img src="/tienda/assets/coin.png" className="inline-icon mc-pixelated" alt="c" />
+                      {tradeMode === 'BUY' ? tradeSimulation.finalAmount.toFixed(0) : tradeSimulation.finalAmount.toFixed(0)} <img src="/tienda/assets/coin.png" className="inline-icon mc-pixelated" alt="c" />
                     </span>
                   </div>
                 </div>
@@ -1045,43 +1112,70 @@ const BolsaLayout = () => {
                    </button>
                 )}
               </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="mc-bottom-grid">
-          
-          <div className="mc-ledger-wrapper">
-            <div className="mc-ledger-tabs-row">
-              <button className={`mc-tab ${activeTab === "POSITIONS" ? "active" : ""}`} onClick={() => setActiveTab("POSITIONS")}>Mis Bóvedas</button>
-              <button className={`mc-tab ${activeTab === "LEDGER" ? "active" : ""}`} onClick={() => setActiveTab("LEDGER")}>Libro Mayor</button>
-              <button className={`mc-tab ${activeTab === "TOP" ? "active" : ""}`} onClick={() => setActiveTab("TOP")}>Mercaderes Top</button>
-            </div>
-            <div className="mc-gui-window mc-ledger-body">
-              <div className="mc-ledger-content">
-                {renderActiveTabContent()}
-              </div>
-            </div>
-          </div>
-
-          <div className="mc-gui-window mc-news-panel">
-            <div className="mc-news-header">REGISTRO DE ACTIVIDAD</div>
-            <div className="mc-news-content">
-              {newsFeed.length === 0 ? (
-                <div className="mc-news-empty">Las calles están tranquilas. No hay actividad documentada...</div>
-              ) : (
-                newsFeed.map(news => (
-                  <div key={news.id} className="mc-news-item">
-                    <span className={`news-tag ${news.type}`}>
-                      {news.type === 'WHALE' ? '[BALLENA]' : news.type === 'PUMP' ? '[PUMP]' : news.type === 'CRASH' ? '[DUMP]' : '[INFO]'}
-                    </span>
-                    <span className="news-text">
-                      {renderMessageWithCoins(news.message)}
-                    </span>
+              
+              {user?.loggedIn && (
+                <div className="trade-hud-mini">
+                  <div className="hud-row main">
+                    <span className="label">PATRIMONIO TOTAL</span>
+                    <span className="val">{totalNetWorth.toFixed(0)} <img src="/tienda/assets/coin.png" className="coin-icon mc-pixelated" alt="coins" /></span>
                   </div>
-                ))
+                  <div className="hud-row">
+                    <span className="label">VALOR INVERTIDO</span>
+                    <span className="val">{portfolioValueReal.toFixed(0)} <img src="/tienda/assets/coin.png" className="coin-icon-small mc-pixelated" alt="coins" /></span>
+                  </div>
+                  <div className="hud-row">
+                    <span className="label">DISPONIBLE</span>
+                    <span className="val">{liquidCoins.toFixed(0)} <img src="/tienda/assets/coin.png" className="coin-icon-small mc-pixelated" alt="coins" /></span>
+                  </div>
+                </div>
               )}
             </div>
+
+            <div className="mc-gui-window mc-news-panel">
+              <div className="mc-news-header">REGISTRO DE ACTIVIDAD</div>
+              <div className="mc-news-content">
+                {newsFeed.length === 0 ? (
+                  <div className="mc-news-empty">Las calles están tranquilas. No hay actividad documentada...</div>
+                ) : (
+                  newsFeed.map(news => (
+                    <div key={news.id} className={`mc-news-card mc-event-${news.type}`}>
+                      {news.isParsed ? (
+                        <>
+                          <div className="news-slot" onClick={() => navigate(`/perfil/${news.playerName}`)}>
+                            <img src={news.avatar} className="mc-pixelated" alt="avatar" />
+                          </div>
+                          <div className="news-content">
+                            <div className="news-message">
+                              <span className={`news-tag ${news.type}`}>
+                                {news.type === 'WHALE' ? '[BALLENA!]' : (news.type === 'PUMP' ? '[PUMP!]' : '[DUMP!]')}
+                              </span>
+                              <span 
+                                className={`player player-link ${getRankClass(news.rango)}`} 
+                                onClick={() => navigate(`/perfil/${news.playerName}`)}
+                              >
+                                {news.playerName}
+                              </span>
+                              {' '}ha {news.verbDisplay}{' '}
+                              <span className="vol">{Number(news.vol || news.totalVol).toFixed(0)}</span>
+                              {' '}{news.isShares ? 'ud. de' : <img src="/tienda/assets/coin.png" className="inline-icon mc-pixelated" alt="coins"/>}
+                              {' '}en <img src={getAssetIconPath(news.mineralId)} className="inline-icon mc-pixelated" alt="mineral"/> <span className="asset">{news.mineral}</span>
+                            </div>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="news-content full-width">
+                          <div className="news-message">
+                            <span className={`news-tag ${news.type}`}>[{news.type}]</span>
+                            {' '}{renderMessageWithCoins(news.message)}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
           </div>
 
         </div>

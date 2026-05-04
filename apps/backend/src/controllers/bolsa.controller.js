@@ -117,9 +117,30 @@ exports.getLedger = async (req, res) => {
     const { data, error, count } = await query;
 
     if (error) throw error;
+
+    const uuids = [...new Set(data.map(tx => tx.uuid))];
+    const userMap = {};
+
+    if (uuids.length > 0) {
+      const { data: usersData } = await supabase
+        .from("usuarios")
+        .select("uuid, rango_usuario, rango_staff")
+        .in("uuid", uuids);
+
+      if (usersData) {
+        usersData.forEach(u => {
+          userMap[u.uuid] = u.rango_usuario || u.rango_staff || null;
+        });
+      }
+    }
+
+    const enrichedData = data.map(tx => ({
+      ...tx,
+      rango: userMap[tx.uuid] || null
+    }));
     
     res.status(200).json({
-      transactions: data,
+      transactions: enrichedData,
       total: count,
       page: page,
       totalPages: Math.ceil(count / limit)
@@ -194,33 +215,80 @@ exports.getChartData = async (req, res) => {
 
 exports.getTopTraders = async (req, res) => {
   try {
-    const { data, error } = await supabase.rpc('get_top_traders');
+    const { data: pricesData, error: pricesError } = await supabase
+      .from('market_live_prices')
+      .select('mineral_id, current_coin_price');
+      
+    if (pricesError) throw pricesError;
     
-    if (error) {
-       const { data: fallbackData, error: fallbackError } = await supabase
-        .from('market_transactions_ledger')
-        .select('uuid, player_name, transaction_type, total_coins_exchanged')
-        .order('timestamp', { ascending: false })
-        .limit(1000);
-        
-       if (fallbackError) throw fallbackError;
+    const prices = {};
+    (pricesData || []).forEach(p => prices[p.mineral_id] = p.current_coin_price);
 
-       const traders = {};
-       fallbackData.forEach(tx => {
-         if (!traders[tx.uuid]) traders[tx.uuid] = { name: tx.player_name, profit: 0 };
-         if (tx.transaction_type === 'SELL') traders[tx.uuid].profit += tx.total_coins_exchanged;
-         if (tx.transaction_type === 'BUY') traders[tx.uuid].profit -= tx.total_coins_exchanged;
-       });
+    const { data: ledgerData, error: ledgerError } = await supabase
+      .from('market_transactions_ledger')
+      .select('uuid, player_name, transaction_type, total_coins_exchanged');
+      
+    if (ledgerError) throw ledgerError;
 
-       const sorted = Object.values(traders)
-         .filter(t => t.profit !== 0)
-         .sort((a, b) => b.profit - a.profit)
-         .slice(0, 10);
-         
-       return res.status(200).json(sorted);
+    const traders = {};
+
+    (ledgerData || []).forEach(tx => {
+        if (!traders[tx.uuid]) {
+            traders[tx.uuid] = { name: tx.player_name, cashflow: 0, paperValue: 0 };
+        }
+        if (tx.transaction_type === 'BUY') {
+            traders[tx.uuid].cashflow -= tx.total_coins_exchanged;
+        } else if (tx.transaction_type === 'SELL') {
+            traders[tx.uuid].cashflow += tx.total_coins_exchanged;
+        }
+    });
+
+    const { data: portfoliosData, error: portfoliosError } = await supabase
+      .from('market_portfolios')
+      .select('uuid, mineral_id, shares');
+
+    if (portfoliosError) throw portfoliosError;
+
+    (portfoliosData || []).forEach(pos => {
+       if (traders[pos.uuid] && pos.shares > 0) {
+           const currentPrice = prices[pos.mineral_id] || 0;
+           traders[pos.uuid].paperValue += (pos.shares * currentPrice);
+       }
+    });
+
+    const sorted = Object.entries(traders).map(([uuid, t]) => {
+        return {
+            uuid,
+            name: t.name,
+            profit: t.cashflow + t.paperValue
+        };
+    })
+    .filter(t => t.profit !== 0)
+    .sort((a, b) => b.profit - a.profit)
+    .slice(0, 10);
+
+    const uuids = sorted.map(t => t.uuid);
+    const userMap = {};
+
+    if (uuids.length > 0) {
+      const { data: usersData } = await supabase
+        .from("usuarios")
+        .select("uuid, rango_usuario, rango_staff")
+        .in("uuid", uuids);
+
+      if (usersData) {
+        usersData.forEach(u => {
+          userMap[u.uuid] = u.rango_usuario || u.rango_staff || null;
+        });
+      }
     }
 
-    res.status(200).json(data);
+    const topWithRank = sorted.map(t => ({
+      ...t,
+      rango: userMap[t.uuid] || null
+    }));
+
+    res.status(200).json(topWithRank);
   } catch (error) {
     res.status(500).json({ error: "Error calculando Top Traders." });
   }
