@@ -100,14 +100,21 @@ exports.getLedger = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 15;
+    const mineralId = req.query.mineralId;
     const start = (page - 1) * limit;
     const end = start + limit - 1;
 
-    const { data, error, count } = await supabase
+    let query = supabase
       .from("market_transactions_ledger")
       .select("*", { count: "exact" })
       .order("timestamp", { ascending: false })
       .range(start, end);
+
+    if (mineralId && mineralId !== 'ALL') {
+      query = query.eq("mineral_id", mineralId);
+    }
+
+    const { data, error, count } = await query;
 
     if (error) throw error;
     

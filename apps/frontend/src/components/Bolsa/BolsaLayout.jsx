@@ -7,6 +7,16 @@ import { createChart } from "lightweight-charts";
 import toast from "react-hot-toast";
 import "../../styles/components/Bolsa/BolsaLayout.scss";
 
+const getTimeAgo = (timestamp) => {
+  const seconds = Math.floor((new Date() - new Date(timestamp)) / 1000);
+  if (seconds < 60) return `${seconds}s ago`;
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  return `${Math.floor(hours / 24)}d ago`;
+};
+
 const playTradeSound = (type, isProfit = true) => {
   try {
     let audioSrc = "";
@@ -52,6 +62,7 @@ const BolsaLayout = () => {
   const [ledger, setLedger] = useState([]);
   const [ledgerPage, setLedgerPage] = useState(1);
   const [ledgerTotalPages, setLedgerTotalPages] = useState(1);
+  const [ledgerFilter, setLedgerFilter] = useState('ALL');
   
   const [topTraders, setTopTraders] = useState([]);
   const [chartData, setChartData] = useState([]);
@@ -74,6 +85,12 @@ const BolsaLayout = () => {
   const candleSeries = useRef(null);
   const volumeSeries = useRef(null);
   const prevContext = useRef({ asset: null, tf: null });
+
+  const stateRef = useRef({ activeTab: "POSITIONS", ledgerPage: 1, ledgerFilter: 'ALL', ledger: [] });
+
+  useEffect(() => {
+    stateRef.current = { activeTab, ledgerPage, ledgerFilter, ledger };
+  }, [activeTab, ledgerPage, ledgerFilter, ledger]);
 
   const getFeePercentForAsset = (mineralId) => {
     if (mineralId === 'NETHERITE_INGOT') return 0.01;
@@ -115,9 +132,9 @@ const BolsaLayout = () => {
     }
   };
 
-  const fetchLedger = async (page = 1) => {
+  const fetchLedger = async (page = 1, filter = 'ALL') => {
     try {
-      const res = await apiGet(`/api/bolsa/ledger?page=${page}&limit=15`);
+      const res = await apiGet(`/api/bolsa/ledger?page=${page}&limit=15&mineralId=${filter}`);
       if (res && res.transactions) {
         setLedger(res.transactions);
         setLedgerTotalPages(res.totalPages);
@@ -134,8 +151,10 @@ const BolsaLayout = () => {
       ]);
       setLivePrices(pricesRes || []);
       setTopTraders(topRes || []);
-      if (activeTab === "LEDGER" && ledgerPage === 1) {
-        fetchLedger(1);
+      
+      const current = stateRef.current;
+      if (current.activeTab === "LEDGER" && current.ledgerPage === 1) {
+        fetchLedger(1, current.ledgerFilter);
       }
     } catch (error) {}
   };
@@ -176,7 +195,7 @@ const BolsaLayout = () => {
         }
       } catch (e) {}
 
-      const ledgerEvents = (ledger || []).map(tx => {
+      const ledgerEvents = (stateRef.current.ledger || []).map(tx => {
         const total = tx.total_coins_exchanged;
         let type = 'INFO';
         let message = '';
@@ -238,9 +257,9 @@ const BolsaLayout = () => {
 
   useEffect(() => {
     if (activeTab === "LEDGER") {
-      fetchLedger(ledgerPage);
+      fetchLedger(ledgerPage, ledgerFilter);
     }
-  }, [ledgerPage, activeTab]);
+  }, [ledgerPage, activeTab, ledgerFilter]);
 
   useEffect(() => {
     fetchNews();
@@ -433,7 +452,7 @@ const BolsaLayout = () => {
               await fetchMarketData();
             } catch(e) {}
 
-            if (activeTab === "LEDGER") fetchLedger(1);
+            if (activeTab === "LEDGER") fetchLedger(1, ledgerFilter);
             
             setIsTrading(false);
             setLiquidatingAsset(null);
@@ -613,6 +632,11 @@ const BolsaLayout = () => {
     await processOrderWithPolling(mineralId, amount, 'SELL', toastId);
   };
 
+  const handleFilterChange = (filter) => {
+    setLedgerFilter(filter);
+    setLedgerPage(1);
+  };
+
   const renderActiveTabContent = () => {
     if (!user?.loggedIn && activeTab === "POSITIONS") {
       return (<div className="mc-empty-state">Identifícate para acceder a tus bóvedas.</div>);
@@ -693,25 +717,44 @@ const BolsaLayout = () => {
     if (activeTab === "LEDGER") {
       return (
         <div className="mc-table-responsive flex-column-between">
-          <table className="mc-ledger-table">
+          <div style={{ display: 'flex', gap: '10px', marginBottom: '15px', overflowX: 'auto', paddingBottom: '5px' }}>
+            <button style={{ padding: '6px 12px', background: ledgerFilter === 'ALL' ? '#333' : 'transparent', color: ledgerFilter === 'ALL' ? '#fff' : '#888', border: '1px solid #444', cursor: 'pointer', fontFamily: 'MinecraftRegular' }} onClick={() => handleFilterChange('ALL')}>Todos</button>
+            <button style={{ padding: '6px 12px', background: ledgerFilter === 'NETHERITE_INGOT' ? '#333' : 'transparent', color: ledgerFilter === 'NETHERITE_INGOT' ? '#fff' : '#888', border: '1px solid #444', cursor: 'pointer', fontFamily: 'MinecraftRegular' }} onClick={() => handleFilterChange('NETHERITE_INGOT')}>Netherite</button>
+            <button style={{ padding: '6px 12px', background: ledgerFilter === 'DIAMOND' ? '#333' : 'transparent', color: ledgerFilter === 'DIAMOND' ? '#fff' : '#888', border: '1px solid #444', cursor: 'pointer', fontFamily: 'MinecraftRegular' }} onClick={() => handleFilterChange('DIAMOND')}>Diamante</button>
+            <button style={{ padding: '6px 12px', background: ledgerFilter === 'COAL' ? '#333' : 'transparent', color: ledgerFilter === 'COAL' ? '#fff' : '#888', border: '1px solid #444', cursor: 'pointer', fontFamily: 'MinecraftRegular' }} onClick={() => handleFilterChange('COAL')}>Carbón</button>
+            <button style={{ padding: '6px 12px', background: ledgerFilter === 'RAW_COPPER' ? '#333' : 'transparent', color: ledgerFilter === 'RAW_COPPER' ? '#fff' : '#888', border: '1px solid #444', cursor: 'pointer', fontFamily: 'MinecraftRegular' }} onClick={() => handleFilterChange('RAW_COPPER')}>Cobre</button>
+          </div>
+          <table className="mc-ledger-table" style={{ fontSize: '0.9rem' }}>
             <thead>
-              <tr><th>COMERCIANTE</th><th>TIPO</th><th>RECURSO</th><th>UD</th><th>PRECIO/U</th><th>LIQUIDEZ</th></tr>
+              <tr>
+                <th style={{ color: '#888' }}>FECHA</th>
+                <th style={{ color: '#888' }}>TIPO</th>
+                <th style={{ color: '#888' }}>TOTAL</th>
+                <th style={{ color: '#888' }}>CANTIDAD</th>
+                <th style={{ color: '#888' }}>PRECIO/U</th>
+                <th style={{ color: '#888', textAlign: 'right' }}>MERCADER</th>
+              </tr>
             </thead>
             <tbody>
               {ledger.map((tx) => (
                 <tr key={tx.id}>
-                  <td className="font-bold">{tx.player_name}</td>
+                  <td style={{ color: '#888' }}>{getTimeAgo(tx.timestamp)}</td>
                   <td className={tx.transaction_type === 'BUY' ? 'text-green' : 'text-red'}>
-                    {tx.transaction_type === 'BUY' ? 'COMPRA' : 'VENTA'}
+                    {tx.transaction_type === 'BUY' ? 'Buy' : 'Sell'}
                   </td>
-                  <td className="flex-center">
-                    <img src={getAssetIconPath(tx.mineral_id)} className="mineral-icon-small mc-pixelated" alt="icon" />
-                    {getAssetDisplayName(tx.mineral_id)}
+                  <td className="font-bold">
+                    <span className={tx.transaction_type === 'BUY' ? 'text-green' : 'text-red'}>{tx.total_coins_exchanged.toFixed(2)}</span> <img src="/tienda/assets/coin.png" className="inline-icon mc-pixelated" alt="coins" />
                   </td>
-                  <td>{tx.shares}</td>
+                  <td style={{ color: tx.transaction_type === 'BUY' ? '#5EE034' : '#FF5555' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      {tx.shares}
+                      <img src={getAssetIconPath(tx.mineral_id)} className="mc-pixelated" alt="asset" style={{ width: '16px', height: '16px' }} title={getAssetDisplayName(tx.mineral_id)} />
+                    </div>
+                  </td>
                   <td>{tx.price_per_share.toFixed(2)} <img src="/tienda/assets/coin.png" className="inline-icon mc-pixelated" alt="coins" /></td>
-                  <td className="flex-center font-bold">
-                    {tx.total_coins_exchanged.toFixed(2)} <img src="/tienda/assets/coin.png" className="coin-icon mc-pixelated" alt="coins" />
+                  <td style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px' }}>
+                    <span style={{ color: '#fbbf24' }}>{tx.player_name}</span>
+                    <img src={`https://minotar.net/helm/${tx.player_name.replace(/^\./, '')}/16.png`} className="mc-pixelated" alt="avatar" style={{ width: '16px', height: '16px', borderRadius: '2px' }} />
                   </td>
                 </tr>
               ))}
@@ -1022,15 +1065,15 @@ const BolsaLayout = () => {
           </div>
 
           <div className="mc-gui-window mc-news-panel">
-            <div className="mc-news-header">RUMORES Y EVENTOS</div>
+            <div className="mc-news-header">REGISTRO DE ACTIVIDAD</div>
             <div className="mc-news-content">
               {newsFeed.length === 0 ? (
-                <div className="mc-news-empty">Las calles están tranquilas. No hay rumores comerciales...</div>
+                <div className="mc-news-empty">Las calles están tranquilas. No hay actividad documentada...</div>
               ) : (
                 newsFeed.map(news => (
                   <div key={news.id} className="mc-news-item">
                     <span className={`news-tag ${news.type}`}>
-                      {news.type === 'WHALE' ? '[BALLENA]' : news.type === 'PUMP' ? '[PUMP]' : news.type === 'CRASH' ? '[DUMP]' : '[RUMOR]'}
+                      {news.type === 'WHALE' ? '[BALLENA]' : news.type === 'PUMP' ? '[PUMP]' : news.type === 'CRASH' ? '[DUMP]' : '[INFO]'}
                     </span>
                     <span className="news-text">
                       {renderMessageWithCoins(news.message)}
