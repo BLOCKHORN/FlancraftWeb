@@ -1,0 +1,126 @@
+{
+  "skills": [
+    {
+      "id": "farming",
+      "name": "Agricultura",
+      "description": "Cosecha semillas para ganar XP de Agricultura"
+    },
+    {
+      "id": "foraging",
+      "name": "Forrajeo",
+      "description": "Corta árboles para ganar XP de Forrajeo"
+    },
+    {
+      "id": "mining",
+      "name": "Minería",
+      "description": "Mina piedra y minerales para ganar XP de Minería"
+    },
+    {
+      "id": "fishing",
+      "name": "Pescadería",
+      "description": "Captura pescados para ganar XP de Pescadería"
+    },
+    {
+      "id": "excavation",
+      "name": "Excavación",
+      "description": "Cava con una pala para ganar XP de Excavación"
+    },
+    {
+      "id": "archery",
+      "name": "Arquería",
+      "description": "Dispara a los mobs y jugadores con arco para ganar XP de Arquería"
+    },
+    {
+      "id": "defense",
+      "name": "Defensa",
+      "description": "Recibe daño de las entidades para ganar XP de Defensa"
+    },
+    {
+      "id": "fighting",
+      "name": "Lucha",
+      "description": "Lucha con armas cuerpo a cuerpo para ganar XP de Lucha"
+    },
+    {
+      "id": "endurance",
+      "name": "Resistencia",
+      "description": "Camina y corre para ganar XP de Resistencia"
+    },
+    {
+      "id": "agility",
+      "name": "Agilidad",
+      "description": "Moverse y tomar daño de caída para ganar  de agilidad"
+    },
+    {
+      "id": "alchemy",
+      "name": "Alquimia",
+      "description": "Hacer y salpicar pociones para ganar  de Alquimia"
+    },
+    {
+      "id": "enchanting",
+      "name": "Encantador",
+      "description": "Encantar, combinar, y objetos de la afiladora ganan  de Encantador"
+    },
+    {
+      "id": "sorcery",
+      "name": "Brujería",
+      "description": "Usa habilidades de maná para ganar  de Hechicería"
+    },
+    {
+      "id": "healing",
+      "name": "Curación",
+      "description": "Bebe y salpica pociones para ganar XP de Curación"
+    },
+    {
+      "id": "forging",
+      "name": "Forjar",
+      "description": "Combina y aplica libros en un yunque para ganar XP de Forja"
+    }
+  ],
+  "stats": [
+    {
+      "id": "strength",
+      "name": "Fuerza",
+      "description": "La fuerza incrementa tu daño de ataque con diferentes armas."
+    },
+    {
+      "id": "health",
+      "name": "Vida",
+      "description": "La salud incrementa la cantidad de {hp_unit} que tienes y te permite durar más tiempo en peleas."
+    },
+    {
+      "id": "regeneration",
+      "name": "Regeneración",
+      "description": "La regeneración incrementa la rapidez con la que recuperas salud y maná."
+    },
+    {
+      "id": "luck",
+      "name": "Suerte",
+      "description": "La suerte aumenta la probabilidad de botín extra de bloques en habilidades recolectoras."
+    },
+    {
+      "id": "wisdom",
+      "name": "Sabiduría",
+      "description": "La sabiduría incrementa tu maná máximo, incrementa la experiencia ganada y reduce el costo del yunque."
+    },
+    {
+      "id": "toughness",
+      "name": "Resistencia",
+      "description": "La Resistencia incrementa la cantidad de de daño reducido de los ataques enemigos."
+    },
+    {
+      "id": "crit_chance",
+      "name": "Chansa de Critía",
+      "description": "Chansa de crítica es tu probabilidad de causar un golpe crítico."
+    },
+    {
+      "id": "crit_damage",
+      "name": "Daño Crítico",
+      "description": "Daño Crítico es el porcentaje de aumento el daño cuando infliges un golpe crítico."
+    },
+    {
+      "id": "speed",
+      "name": "Velocidad",
+      "description": "La velocidad aumenta con la rapidez que puedes caminar y correr."
+    }
+  ]
+}

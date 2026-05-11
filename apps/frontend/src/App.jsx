@@ -34,6 +34,7 @@ const VotoPage = lazy(() => import("./components/Voto/VotoPage"));
 const ServerMinecraftLanding = lazy(() => import("./components/Landpage/ServerMinecraftLanding"));
 const BolsaLayout = lazy(() => import("./components/Bolsa/BolsaLayout")); 
 const BlockStreetGuide = lazy(() => import("./components/Bolsa/BlockStreetGuide"));
+const WikiLayout = lazy(() => import("./components/Wiki/WikiLayout"));
 
 function RouteEffects() {
   const location = useLocation();
@@ -126,6 +127,7 @@ const App = () => {
             <Route path="/voto" element={<VotoPage />} />
             <Route path="/vote" element={<VotoPage />} />
             <Route path="/servidor-minecraft-espanol" element={<ServerMinecraftLanding />} />
+            <Route path="/wiki/*" element={<WikiLayout />} />
             
             {/* Control estricto de rutas del mercado */}
             {isMarketOpen ? (

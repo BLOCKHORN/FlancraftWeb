@@ -31,6 +31,54 @@ $sans-font: "Inter", "Montserrat", sans-serif;
   }
 }
 
+.mc-global-status-bar {
+  width: 100%;
+  background: #000;
+  border-bottom: 2px solid #333;
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  padding: 8px;
+  flex-wrap: wrap;
+
+  .status-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'MinecraftBold';
+    font-size: 0.85rem;
+
+    .label { color: #888; }
+    .value { color: #fff; }
+
+    img { width: 16px; height: 16px; }
+
+    &.climate {
+      &.bull .value { color: #5EE034; text-shadow: 0 0 8px rgba(94, 224, 52, 0.4); }
+      &.bear .value { color: #FF5555; text-shadow: 0 0 8px rgba(255, 85, 85, 0.4); }
+    }
+
+    &.pulse-red {
+      color: #FF5555;
+      animation: neonPulseRed 1s infinite alternate;
+      padding: 2px 10px;
+      border: 1px solid #FF5555;
+    }
+
+    &.pulse-gold {
+      color: #fbbf24;
+      animation: neonPulseGold 1.5s infinite alternate;
+      padding: 2px 10px;
+      border: 1px solid #fbbf24;
+    }
+  }
+}
+
+@keyframes neonPulseGold {
+  0% { box-shadow: 0 0 2px #fbbf24; }
+  100% { box-shadow: 0 0 10px #fbbf24; background: rgba(251, 191, 36, 0.1); }
+}
+
 .mc-pixelated { 
   image-rendering: pixelated; 
   image-rendering: crisp-edges; 
@@ -603,6 +651,36 @@ $sans-font: "Inter", "Montserrat", sans-serif;
     display: flex;
     flex-direction: column;
     gap: 12px;
+
+    .hud-tier-row {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      background: #111;
+      border: 2px solid #333;
+      padding: 10px;
+      margin-bottom: 8px;
+      box-shadow: inset 2px 2px 0 #000;
+
+      .tier-badge, .tier-perks {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-family: 'MinecraftBold';
+        font-size: 0.8rem;
+      }
+
+      .tier-label, .perks-label { color: #666; }
+      
+      .tier-name {
+        &.magnate { color: #fbbf24; text-shadow: 1px 1px 0 #000; }
+        &.inversor { color: #e5e7eb; }
+        &.accionista { color: #94a3b8; }
+        &.ciudadano { color: #64748b; }
+      }
+
+      .perks-value { color: #5EE034; font-size: 0.75rem; }
+    }
 
     .hud-row {
       display: flex;

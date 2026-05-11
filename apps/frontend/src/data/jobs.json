@@ -1,0 +1,160 @@
+[
+  {
+    "id": "brewer",
+    "name": "Alquimista",
+    "description": "Gana dinero elaborando pociones.",
+    "maxLevel": 200,
+    "topActions": []
+  },
+  {
+    "id": "builder",
+    "name": "Constructor",
+    "description": "Gana dinero construyendo estructuras.",
+    "maxLevel": 200,
+    "topActions": []
+  },
+  {
+    "id": "crafter",
+    "name": "Artesano",
+    "description": "Gana dinero crafteando objetos.",
+    "maxLevel": 200,
+    "topActions": []
+  },
+  {
+    "id": "digger",
+    "name": "Excavador",
+    "description": "Gana dinero terraformando el mundo.",
+    "maxLevel": 200,
+    "topActions": [
+      {
+        "item": "red_sand",
+        "income": 1
+      },
+      {
+        "item": "coarse_dirt",
+        "income": 1
+      },
+      {
+        "item": "gravel",
+        "income": 1
+      },
+      {
+        "item": "clay",
+        "income": 1
+      },
+      {
+        "item": "sand",
+        "income": 0.4
+      }
+    ]
+  },
+  {
+    "id": "enchanter",
+    "name": "Encantador",
+    "description": "Gana dinero encantando armas.",
+    "maxLevel": 200,
+    "topActions": []
+  },
+  {
+    "id": "explorer",
+    "name": "Explorador",
+    "description": "Gana dinero explorando el mapa.",
+    "maxLevel": 200,
+    "topActions": []
+  },
+  {
+    "id": "farmer",
+    "name": "Granjero",
+    "description": "Gana dinero cultivando cosechas.",
+    "maxLevel": 200,
+    "topActions": [
+      {
+        "item": "cocoa-2",
+        "income": 4
+      },
+      {
+        "item": "oak_sapling",
+        "income": 2
+      },
+      {
+        "item": "spruce_sapling",
+        "income": 2
+      },
+      {
+        "item": "birch_sapling",
+        "income": 2
+      },
+      {
+        "item": "jungle_sapling",
+        "income": 2
+      }
+    ]
+  },
+  {
+    "id": "fisherman",
+    "name": "Pescador",
+    "description": "Gana dinero pescando.",
+    "maxLevel": 200,
+    "topActions": []
+  },
+  {
+    "id": "hunter",
+    "name": "Cazador",
+    "description": "Gana dinero matando animales y monstruos.",
+    "maxLevel": 200,
+    "topActions": []
+  },
+  {
+    "id": "miner",
+    "name": "Minero",
+    "description": "Gana dinero minando minerales y menas.",
+    "maxLevel": 200,
+    "topActions": [
+      {
+        "item": "deepslate_emerald_ore",
+        "income": 17.5
+      },
+      {
+        "item": "emerald_ore",
+        "income": 15
+      },
+      {
+        "item": "deepslate_diamond_ore",
+        "income": 12.5
+      },
+      {
+        "item": "diamond_ore",
+        "income": 10
+      },
+      {
+        "item": "deepslate_lapis_ore",
+        "income": 8.5
+      }
+    ]
+  },
+  {
+    "id": "none",
+    "name": "None",
+    "description": "Sin descripción",
+    "maxLevel": 100,
+    "topActions": []
+  },
+  {
+    "id": "weaponsmith",
+    "name": "Armero",
+    "description": "Gana dinero crafteando y reparando armas.",
+    "maxLevel": 200,
+    "topActions": []
+  },
+  {
+    "id": "woodcutter",
+    "name": "Leñador",
+    "description": "Gana dinero talando y plantando árboles",
+    "maxLevel": 200,
+    "topActions": [
+      {
+        "item": "materials"
+      }
+    ]
+  }
+]

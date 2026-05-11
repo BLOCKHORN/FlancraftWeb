@@ -1,0 +1,142 @@
+[
+  {
+    "id": "arrow",
+    "name": "arrow",
+    "material": "ARROW",
+    "production": "50x Flecha",
+    "command": "factoriesarrow"
+  },
+  {
+    "id": "book",
+    "name": "book",
+    "material": "BOOK",
+    "production": "50x Libro",
+    "command": "factoriesbook"
+  },
+  {
+    "id": "brick",
+    "name": "brick",
+    "material": "BRICK",
+    "production": "250x Ladrillo",
+    "command": "factoriesbrick"
+  },
+  {
+    "id": "charcoal",
+    "name": "charcoal",
+    "material": "CHARCOAL",
+    "production": "50x Carbón vegetal",
+    "command": "factoriescharcoal"
+  },
+  {
+    "id": "copperingot",
+    "name": "copperingot",
+    "material": "COPPER_INGOT",
+    "production": "25x Lingote de Cobre",
+    "command": "factoriescopperingot"
+  },
+  {
+    "id": "diamond",
+    "name": "diamond",
+    "material": "DIAMOND",
+    "production": "5x Diamante",
+    "command": "factoriesdiamond"
+  },
+  {
+    "id": "firework",
+    "name": "firework",
+    "material": "FIREWORK_ROCKET",
+    "production": "100x Cohete de Fuegos Artificiales",
+    "command": "factoriesfirework"
+  },
+  {
+    "id": "gasoline",
+    "name": "gasoline",
+    "material": "PAPER",
+    "production": "10x Gasolina",
+    "command": "factoriesgasoline"
+  },
+  {
+    "id": "goldingot",
+    "name": "goldingot",
+    "material": "GOLD_INGOT",
+    "production": "25x Lingote de Oro",
+    "command": "factoriesgoldingot"
+  },
+  {
+    "id": "hydrogen",
+    "name": "hydrogen",
+    "material": "PAPER",
+    "production": "5x Hidrógeno",
+    "command": "factorieshydrogen"
+  },
+  {
+    "id": "ironingot",
+    "name": "ironingot",
+    "material": "IRON_INGOT",
+    "production": "25x Lingote de Hierro",
+    "command": "factoriesironingot"
+  },
+  {
+    "id": "itemframe",
+    "name": "itemframe",
+    "material": "ITEM_FRAME",
+    "production": "25x Marco",
+    "command": "factoriesitemframe"
+  },
+  {
+    "id": "netheriteingot",
+    "name": "netheriteingot",
+    "material": "NETHERITE_INGOT",
+    "production": "2x Lingote de Netherita",
+    "command": "factoriesnetheriteingot"
+  },
+  {
+    "id": "netherstar",
+    "name": "netherstar",
+    "material": "NETHER_STAR",
+    "production": "1x Estrella del Nether",
+    "command": "factoriesnetherstar"
+  },
+  {
+    "id": "oil",
+    "name": "oil",
+    "material": "PAPER",
+    "production": "15x Petróleo",
+    "command": "factoriesoil"
+  },
+  {
+    "id": "quartz",
+    "name": "quartz",
+    "material": "QUARTZ",
+    "production": "50x Cuarzo",
+    "command": "factoriesquartz"
+  },
+  {
+    "id": "string",
+    "name": "string",
+    "material": "STRING",
+    "production": "100x Hilo",
+    "command": "factoriesstring"
+  },
+  {
+    "id": "uranium",
+    "name": "ᴘʀᴏᴅᴜᴄᴛɪᴏɴ ᴏɴɢᴏɪɴɢ",
+    "material": "PAPER",
+    "production": "Desconocida",
+    "command": "factoriesuranium"
+  },
+  {
+    "id": "wheat",
+    "name": "wheat",
+    "material": "WHEAT",
+    "production": "100x Trigo",
+    "command": "factorieswheat"
+  },
+  {
+    "id": "wood",
+    "name": "wood",
+    "material": "OAK_LOG",
+    "production": "100x Tronco de roble",
+    "command": "factorieswood"
+  }
+]

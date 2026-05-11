@@ -12,5 +12,6 @@ router.post("/trade", bolsaController.createOrder);
 router.get("/admin/analytics", bolsaController.getMarketAnalytics);
 router.get("/news", bolsaController.getMarketNews);
 router.get("/airdrop-status", bolsaController.getAirdropStatus);
+router.get("/global-status", bolsaController.getGlobalStatus);
 
 module.exports = router;

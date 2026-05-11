@@ -439,3 +439,22 @@ exports.getAirdropStatus = async (req, res) => {
     res.status(500).json({ error: "Error obteniendo status del airdrop." });
   }
 };
+
+exports.getGlobalStatus = async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from("market_global_status")
+      .select("climate, boss_active, current_influencer")
+      .eq("id", 1)
+      .single();
+
+    if (error) throw error;
+    res.status(200).json({
+      climate: data.climate,
+      bossActive: data.boss_active,
+      influencer: data.current_influencer
+    });
+  } catch (error) {
+    res.status(500).json({ error: "Error obteniendo estado global del mercado." });
+  }
+};

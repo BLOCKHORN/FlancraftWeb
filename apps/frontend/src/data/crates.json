@@ -1,0 +1,332 @@
+[
+  {
+    "id": "common",
+    "name": "Caja Comun",
+    "rewards": [
+      {
+        "id": "10000_in-game_cash",
+        "name": "$10,000 Dinero",
+        "chance": 7.41,
+        "rarity": "common"
+      },
+      {
+        "id": "50_coins",
+        "name": "50 Coins",
+        "chance": 7.41,
+        "rarity": "common"
+      },
+      {
+        "id": "500_exp",
+        "name": "500 XP",
+        "chance": 7.41,
+        "rarity": "common"
+      },
+      {
+        "id": "2_research_point",
+        "name": "2 Puntos de Investigación",
+        "chance": 7.41,
+        "rarity": "common"
+      },
+      {
+        "id": "25000_in-game_cash",
+        "name": "$25,000 Dinero",
+        "chance": 4.44,
+        "rarity": "common"
+      },
+      {
+        "id": "80_coins",
+        "name": "80 Coins",
+        "chance": 4.44,
+        "rarity": "common"
+      },
+      {
+        "id": "750_exp",
+        "name": "750 XP",
+        "chance": 4.44,
+        "rarity": "common"
+      },
+      {
+        "id": "3_research_point",
+        "name": "3 Puntos de Investigación",
+        "chance": 4.44,
+        "rarity": "common"
+      },
+      {
+        "id": "_random_toolskin_",
+        "name": "⛏ Skin de herramienta aleatoria ⛏",
+        "chance": 4.44,
+        "rarity": "common"
+      },
+      {
+        "id": "1x_rare_key",
+        "name": "1x Llave Rara",
+        "chance": 4.44,
+        "rarity": "common"
+      }
+    ]
+  },
+  {
+    "id": "epic",
+    "name": "Caja Epica",
+    "rewards": [
+      {
+        "id": "50000_in-game_cash",
+        "name": "$50,000 Dinero",
+        "chance": 7.25,
+        "rarity": "common"
+      },
+      {
+        "id": "125_coins",
+        "name": "125 Coins",
+        "chance": 7.25,
+        "rarity": "common"
+      },
+      {
+        "id": "1000_exp",
+        "name": "1,000 XP",
+        "chance": 7.25,
+        "rarity": "common"
+      },
+      {
+        "id": "4_research_point",
+        "name": "4 Puntos de Investigación",
+        "chance": 7.25,
+        "rarity": "common"
+      },
+      {
+        "id": "100000_in-game_cash",
+        "name": "$100,000 Dinero",
+        "chance": 4.35,
+        "rarity": "common"
+      },
+      {
+        "id": "200_coins",
+        "name": "200 Coins",
+        "chance": 4.35,
+        "rarity": "common"
+      },
+      {
+        "id": "1500_exp",
+        "name": "1,500 XP",
+        "chance": 4.35,
+        "rarity": "common"
+      },
+      {
+        "id": "5_research_point",
+        "name": "5 Puntos de Investigación",
+        "chance": 4.35,
+        "rarity": "common"
+      },
+      {
+        "id": "1x_superior_key",
+        "name": "1x Llave Superior",
+        "chance": 4.35,
+        "rarity": "common"
+      },
+      {
+        "id": "1x_epic_key",
+        "name": "1x Llave Epica",
+        "chance": 2.9,
+        "rarity": "common"
+      }
+    ]
+  },
+  {
+    "id": "rare",
+    "name": "Caja Rara",
+    "rewards": [
+      {
+        "id": "25000_in-game_cash",
+        "name": "$25,000 Dinero",
+        "chance": 6.76,
+        "rarity": "common"
+      },
+      {
+        "id": "80_coins",
+        "name": "80 Coins",
+        "chance": 6.76,
+        "rarity": "common"
+      },
+      {
+        "id": "750_exp",
+        "name": "750 XP",
+        "chance": 6.76,
+        "rarity": "common"
+      },
+      {
+        "id": "3_research_point",
+        "name": "3 Puntos de Investigación",
+        "chance": 6.76,
+        "rarity": "common"
+      },
+      {
+        "id": "_random_toolskin_",
+        "name": "⛏ Skin de herramienta aleatoria ⛏",
+        "chance": 5.41,
+        "rarity": "common"
+      },
+      {
+        "id": "50000_in-game_cash",
+        "name": "$50,000 Dinero",
+        "chance": 4.05,
+        "rarity": "common"
+      },
+      {
+        "id": "125_coins",
+        "name": "125 Coins",
+        "chance": 4.05,
+        "rarity": "common"
+      },
+      {
+        "id": "1000_exp",
+        "name": "1,000 XP",
+        "chance": 4.05,
+        "rarity": "common"
+      },
+      {
+        "id": "4_research_point",
+        "name": "4 Puntos de Investigación",
+        "chance": 4.05,
+        "rarity": "common"
+      },
+      {
+        "id": "1x_epic_key",
+        "name": "1x Llave Epica",
+        "chance": 4.05,
+        "rarity": "common"
+      }
+    ]
+  },
+  {
+    "id": "superior",
+    "name": "Caja Superior",
+    "rewards": [
+      {
+        "id": "120000_in-game_cash",
+        "name": "$120,000 Dinero",
+        "chance": 8.2,
+        "rarity": "common"
+      },
+      {
+        "id": "200_coins",
+        "name": "200 Coins",
+        "chance": 8.2,
+        "rarity": "common"
+      },
+      {
+        "id": "1500_exp",
+        "name": "1,500 XP",
+        "chance": 8.2,
+        "rarity": "common"
+      },
+      {
+        "id": "5_research_point",
+        "name": "5 Puntos de Investigación",
+        "chance": 8.2,
+        "rarity": "common"
+      },
+      {
+        "id": "200000_in-game_cash",
+        "name": "$200,000 Dinero",
+        "chance": 4.92,
+        "rarity": "common"
+      },
+      {
+        "id": "350_coins",
+        "name": "350 Coins",
+        "chance": 4.92,
+        "rarity": "common"
+      },
+      {
+        "id": "2000_exp",
+        "name": "2,000 XP",
+        "chance": 4.92,
+        "rarity": "common"
+      },
+      {
+        "id": "7_research_point",
+        "name": "7 Puntos de Investigación",
+        "chance": 4.92,
+        "rarity": "common"
+      },
+      {
+        "id": "1x_superior_key",
+        "name": "1x Llave Superior",
+        "chance": 4.92,
+        "rarity": "common"
+      },
+      {
+        "id": "ᴍᴀᴢᴀ_ᴄᴀᴏꜱ",
+        "name": "ᴍᴀᴢᴀ_ᴄᴀᴏꜱ",
+        "chance": 3.28,
+        "rarity": "common"
+      }
+    ]
+  },
+  {
+    "id": "vote",
+    "name": "Caja Voto",
+    "rewards": [
+      {
+        "id": "5000_in-game_cash",
+        "name": "$5,000 Dinero",
+        "chance": 8.2,
+        "rarity": "common"
+      },
+      {
+        "id": "25_coins",
+        "name": "25 Coins",
+        "chance": 8.2,
+        "rarity": "common"
+      },
+      {
+        "id": "300_exp",
+        "name": "300 XP",
+        "chance": 8.2,
+        "rarity": "common"
+      },
+      {
+        "id": "1_research_point",
+        "name": "1 Puntos de Investigación",
+        "chance": 8.2,
+        "rarity": "common"
+      },
+      {
+        "id": "10000_in-game_cash",
+        "name": "$10,000 Dinero",
+        "chance": 4.92,
+        "rarity": "common"
+      },
+      {
+        "id": "500_exp",
+        "name": "500 XP",
+        "chance": 4.92,
+        "rarity": "common"
+      },
+      {
+        "id": "2_research_point",
+        "name": "2 Puntos de Investigación",
+        "chance": 4.92,
+        "rarity": "common"
+      },
+      {
+        "id": "_random_toolskin_",
+        "name": "⛏ Skin de herramienta aleatoria ⛏",
+        "chance": 4.92,
+        "rarity": "common"
+      },
+      {
+        "id": "50_coins",
+        "name": "50 Coins",
+        "chance": 3.28,
+        "rarity": "common"
+      },
+      {
+        "id": "1x_rare_key",
+        "name": "1x Llave Rara",
+        "chance": 3.28,
+        "rarity": "common"
+      }
+    ]
+  }
+]

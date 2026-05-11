@@ -86,6 +86,8 @@ const BolsaLayout = () => {
   const [nextUpdateTimer, setNextUpdateTimer] = useState("--:--");
   const [isTimerCritical, setIsTimerCritical] = useState(false);
   const [airdropInfo, setAirdropStatus] = useState({ pot: 0, winner: 'Nadie', lastPayout: null });
+  const [globalStatus, setGlobalStatus] = useState({ climate: 'NEUTRAL', bossActive: false, influencer: 'Nadie' });
+  const [userTier, setUserTier] = useState({ name: 'Ciudadano', benefits: 'Ninguno' });
   
   const lastTradeTime = useRef(0);
   const chartContainerRef = useRef();
@@ -174,8 +176,32 @@ const BolsaLayout = () => {
       if (Date.now() - lastTradeTime.current > 4000) {
         setPortfolio(res.portfolio || []);
         setLiquidCoins(res.liquidCoins || 0);
+
+        // Calcular Tier dinámicamente en el front para feedback instantáneo
+        const portfolioValue = (res.portfolio || []).reduce((acc, item) => {
+          const price = livePrices.find(p => p.mineral_id === item.mineral_id)?.current_coin_price || 0;
+          return acc + (item.shares * price);
+        }, 0);
+
+        if (portfolioValue >= 5000) setUserTier({ name: 'Magnate', benefits: 'Haste II + Luck' });
+        else if (portfolioValue >= 1500) setUserTier({ name: 'Inversor', benefits: 'Haste II' });
+        else if (portfolioValue >= 300) setUserTier({ name: 'Accionista', benefits: 'Haste I' });
+        else setUserTier({ name: 'Ciudadano', benefits: 'Ninguno' });
       }
     } catch (error) {}
+  };
+
+  const fetchGlobalStatus = async () => {
+    try {
+      const res = await apiGet("/api/bolsa/global-status");
+      if (res) {
+        setGlobalStatus({
+          climate: res.climate || 'NEUTRAL',
+          bossActive: res.bossActive || false,
+          influencer: res.influencer || 'Nadie'
+        });
+      }
+    } catch (e) {}
   };
 
   const fetchChart = async () => {

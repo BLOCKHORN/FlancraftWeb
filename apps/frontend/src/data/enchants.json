@@ -1,0 +1,704 @@
+[
+  {
+    "id": "auto_reel",
+    "name": "Auto Reel",
+    "description": "Automaticamente regresa al picar.",
+    "maxLevel": 1,
+    "weight": 1,
+    "applicableTo": "Varios",
+    "rarityClass": "rarity-legendary"
+  },
+  {
+    "id": "bane_of_netherspawn",
+    "name": "Bane of Netherspawn",
+    "description": "Hace daño extra extra a los mobs del nether.",
+    "maxLevel": 5,
+    "weight": 10,
+    "applicableTo": "Varios",
+    "rarityClass": "rarity-common"
+  },
+  {
+    "id": "blast_mining",
+    "name": "Blast Mining",
+    "description": "Probabilidad de minar explotando.",
+    "maxLevel": 5,
+    "weight": 2,
+    "applicableTo": "Herramientas",
+    "rarityClass": "rarity-legendary"
+  },
+  {
+    "id": "blindness",
+    "name": "Blindness",
+    "description": "Probabilidad de aplicar efecto (unos segundoss.) al golpear.",
+    "maxLevel": 2,
+    "weight": 10,
+    "applicableTo": "Varios",
+    "rarityClass": "rarity-common"
+  },
+  {
+    "id": "cold_steel",
+    "name": "Cold Steel",
+    "description": "Probabilidad de aplicar efecto (unos segundoss.) al enemigo.",
+    "maxLevel": 3,
+    "weight": 5,
+    "applicableTo": "Varios",
+    "rarityClass": "rarity-epic"
+  },
+  {
+    "id": "confusing_arrows",
+    "name": "Confusing Arrows",
+    "description": "Probabilidad de tener una flecha con efecto (unos segundoss.)",
+    "maxLevel": 3,
+    "weight": 10,
+    "applicableTo": "Arcos",
+    "rarityClass": "rarity-common"
+  },
+  {
+    "id": "confusion",
+    "name": "Confusion",
+    "description": "Probabilidad de aplicar efecto (unos segundoss.) al golpear.",
+    "maxLevel": 2,
+    "weight": 10,
+    "applicableTo": "Espadas",
+    "rarityClass": "rarity-common"
+  },
+  {
+    "id": "cure",
+    "name": "Cure",
+    "description": "Probabilidad de curar un Piglins y/o Aldeano zombificado al golpear.",
+    "maxLevel": 3,
+    "weight": 10,
+    "applicableTo": "Varios",
+    "rarityClass": "rarity-common"
+  },
+  {
+    "id": "curse_of_breaking",
+    "name": "Curse of Breaking",
+    "description": "Probabilidad de consumir X puntos de durabilidad extra.",
+    "maxLevel": 3,
+    "weight": 10,
+    "applicableTo": "Varios",
+    "rarityClass": "rarity-common"
+  },
+  {
+    "id": "curse_of_death",
+    "name": "Curse of Death",
+    "description": "Cuando mata a un jugador tiene la posibilidad de morir tambien.",
+    "maxLevel": 3,
+    "weight": 2,
+    "applicableTo": "Varios",
+    "rarityClass": "rarity-legendary"
+  },
+  {
+    "id": "curse_of_drowned",
+    "name": "Curse of Drowned",
+    "description": "Probabilidad de pescar un ahogado",
+    "maxLevel": 3,
+    "weight": 5,
+    "applicableTo": "Varios",
+    "rarityClass": "rarity-epic"
+  },
+  {
+    "id": "curse_of_fragility",
+    "name": "Curse of Fragility",
+    "description": "Evita que un item sea usado en la piedra de afilar o en el yunque.",
+    "maxLevel": 1,
+    "weight": 10,
+    "applicableTo": "Varios",
+    "rarityClass": "rarity-common"
+  },
+  {
+    "id": "curse_of_mediocrity",
+    "name": "Curse of Mediocrity",
+    "description": "Probabilidad de desencantar un drops.",
+    "maxLevel": 3,
+    "weight": 5,
+    "applicableTo": "Varios",
+    "rarityClass": "rarity-epic"
+  },
+  {
+    "id": "curse_of_misfortune",
+    "name": "Curse of Misfortune",
+    "description": "Probabilidad% posibilidad de no generar drop.",
+    "maxLevel": 3,
+    "weight": 5,
+    "applicableTo": "Varios",
+    "rarityClass": "rarity-epic"
+  },
+  {
+    "id": "cutter",
+    "name": "Cutter",
+    "description": "Probabilidad de tirar de la armadura del enemigo y dañarla un un porcentaje.",
+    "maxLevel": 3,
+    "weight": 2,
+    "applicableTo": "Varios",
+    "rarityClass": "rarity-legendary"
+  },
+  {
+    "id": "darkness_arrows",
+    "name": "Darkness Arrows",
+    "description": "Probabilidad% que una flecha tenga efecto (unos segundoss.)",
+    "maxLevel": 3,
+    "weight": 10,
+    "applicableTo": "Arcos",
+    "rarityClass": "rarity-common"
+  },
+  {
+    "id": "darkness_cloak",
+    "name": "Darkness Cloak",
+    "description": "Probabilidad de aplicar efecto (unos segundoss.) al enemigo.",
+    "maxLevel": 3,
+    "weight": 5,
+    "applicableTo": "Varios",
+    "rarityClass": "rarity-epic"
+  },
+  {
+    "id": "decapitator",
+    "name": "Decapitator",
+    "description": "Probabilidad de obtener una cabeza",
+    "maxLevel": 2,
+    "weight": 2,
+    "applicableTo": "Varios",
+    "rarityClass": "rarity-legendary"
+  },
+  {
+    "id": "double_catch",
+    "name": "Double Catch",
+    "description": "Incrementa la cantidad atrapada x2 con Probabilidad de probabilidad.",
+    "maxLevel": 3,
+    "weight": 2,
+    "applicableTo": "Pesca",
+    "rarityClass": "rarity-legendary"
+  },
+  {
+    "id": "double_strike",
+    "name": "Double Strike",
+    "description": "Probabilidad de hacer el doble de daño",
+    "maxLevel": 2,
+    "weight": 1,
+    "applicableTo": "Espadas",
+    "rarityClass": "rarity-legendary"
+  },
+  {
+    "id": "dragon_heart",
+    "name": "Dragon Heart",
+    "description": "Grants permanent efecto effect.",
+    "maxLevel": 5,
+    "weight": 2,
+    "applicableTo": "Varios",
+    "rarityClass": "rarity-legendary"
+  },
+  {
+    "id": "dragonfire_arrows",
+    "name": "Dragonfire Arrows",
+    "description": "Probabilidad de la flecha tener el efecto Dragonfire (R=X, unos segundoss).",
+    "maxLevel": 3,
+    "weight": 2,
+    "applicableTo": "Arcos",
+    "rarityClass": "rarity-legendary"
+  },
+  {
+    "id": "electrified_arrows",
+    "name": "Electrified Arrows",
+    "description": "Probabilidad de la flecha hacer daño electrico extra por daño extra.",
+    "maxLevel": 3,
+    "weight": 5,
+    "applicableTo": "Arcos",
+    "rarityClass": "rarity-epic"
+  },
+  {
+    "id": "elemental_protection",
+    "name": "Elemental Protection",
+    "description": "Reduce el daño de pociones y elementos en un un porcentaje.",
+    "maxLevel": 4,
+    "weight": 10,
+    "applicableTo": "Armadura",
+    "rarityClass": "rarity-common"
+  },
+  {
+    "id": "ender_bow",
+    "name": "Ender Bow",
+    "description": "Dispara Ender pearls en vez de flechas.",
+    "maxLevel": 1,
+    "weight": 1,
+    "applicableTo": "Arcos",
+    "rarityClass": "rarity-legendary"
+  },
+  {
+    "id": "exhaust",
+    "name": "Exhaust",
+    "description": "Probabilidad de aplicar efecto (unos segundoss.) al golpear.",
+    "maxLevel": 4,
+    "weight": 10,
+    "applicableTo": "Varios",
+    "rarityClass": "rarity-common"
+  },
+  {
+    "id": "explosive_arrows",
+    "name": "Explosive Arrows",
+    "description": "Probabilidad de disparar una flecha explosiva.",
+    "maxLevel": 3,
+    "weight": 5,
+    "applicableTo": "Arcos",
+    "rarityClass": "rarity-epic"
+  },
+  {
+    "id": "fire_shield",
+    "name": "Fire Shield",
+    "description": "Probabilidad de incendiar atacantes por unos segundoss.",
+    "maxLevel": 4,
+    "weight": 2,
+    "applicableTo": "Armadura",
+    "rarityClass": "rarity-legendary"
+  },
+  {
+    "id": "flame_walker",
+    "name": "Flame Walker",
+    "description": "Habilidad para caminar en lava, inmune al daño de magma.",
+    "maxLevel": 2,
+    "weight": 1,
+    "applicableTo": "Varios",
+    "rarityClass": "rarity-legendary"
+  },
+  {
+    "id": "flare",
+    "name": "Flare",
+    "description": "Probabilidad de crear una antorcha donde aterrice la flecha.",
+    "maxLevel": 1,
+    "weight": 5,
+    "applicableTo": "Varios",
+    "rarityClass": "rarity-epic"
+  },
+  {
+    "id": "ghast",
+    "name": "Ghast",
+    "description": "Dispara bolas de fuego y no flechas.",
+    "maxLevel": 1,
+    "weight": 1,
+    "applicableTo": "Varios",
+    "rarityClass": "rarity-legendary"
+  },
+  {
+    "id": "glassbreaker",
+    "name": "Glass Breaker",
+    "description": "Rompe vidrio al instante",
+    "maxLevel": 1,
+    "weight": 10,
+    "applicableTo": "Varios",
+    "rarityClass": "rarity-common"
+  },
+  {
+    "id": "hardened",
+    "name": "Hardened",
+    "description": "Probabilidad de obtener efecto (unos segundoss.) al recibir daño.",
+    "maxLevel": 2,
+    "weight": 5,
+    "applicableTo": "Armadura",
+    "rarityClass": "rarity-epic"
+  },
+  {
+    "id": "haste",
+    "name": "Haste",
+    "description": "Obtiene el efecto efecto permanentemente.",
+    "maxLevel": 3,
+    "weight": 2,
+    "applicableTo": "Varios",
+    "rarityClass": "rarity-legendary"
+  },
+  {
+    "id": "hover",
+    "name": "Hover",
+    "description": "Probabilidad de tener flecha con efecto (unos segundoss.)",
+    "maxLevel": 3,
+    "weight": 10,
+    "applicableTo": "Varios",
+    "rarityClass": "rarity-common"
+  },
+  {
+    "id": "ice_aspect",
+    "name": "Ice Aspect",
+    "description": "Congela y aplica efecto (unos segundoss.) al golpear.",
+    "maxLevel": 3,
+    "weight": 10,
+    "applicableTo": "Varios",
+    "rarityClass": "rarity-common"
+  },
+  {
+    "id": "ice_shield",
+    "name": "Ice Shield",
+    "description": "Probabilidad de congelar y aplicar efecto (unos segundoss.) al atacante.",
+    "maxLevel": 3,
+    "weight": 10,
+    "applicableTo": "Armadura",
+    "rarityClass": "rarity-common"
+  },
+  {
+    "id": "jumping",
+    "name": "Jumping",
+    "description": "Da el efecto efecto permanentemente.",
+    "maxLevel": 2,
+    "weight": 2,
+    "applicableTo": "Varios",
+    "rarityClass": "rarity-legendary"
+  },
+  {
+    "id": "kamikadze",
+    "name": "Kamikadze",
+    "description": "Probabilidad de explotar al morir.",
+    "maxLevel": 3,
+    "weight": 5,
+    "applicableTo": "Varios",
+    "rarityClass": "rarity-epic"
+  },
+  {
+    "id": "lightweight",
+    "name": "Lightweight",
+    "description": "You can safely jump on turtle eggs, farmlands and big dripleaf.",
+    "maxLevel": 1,
+    "weight": 10,
+    "applicableTo": "Varios",
+    "rarityClass": "rarity-common"
+  },
+  {
+    "id": "lingering",
+    "name": "Lingering",
+    "description": "Probabilidad de las tipped arrows de dar el efecto de lingering.",
+    "maxLevel": 3,
+    "weight": 2,
+    "applicableTo": "Varios",
+    "rarityClass": "rarity-legendary"
+  },
+  {
+    "id": "lucky_miner",
+    "name": "Lucky Miner",
+    "description": "Probabilidad de obtener un un porcentaje mas de EXP de los ores.",
+    "maxLevel": 3,
+    "weight": 5,
+    "applicableTo": "Herramientas",
+    "rarityClass": "rarity-epic"
+  },
+  {
+    "id": "night_vision",
+    "name": "Night Vision",
+    "description": "Da el efecto efecto permanentemente.",
+    "maxLevel": 1,
+    "weight": 1,
+    "applicableTo": "Varios",
+    "rarityClass": "rarity-legendary"
+  },
+  {
+    "id": "nimble",
+    "name": "Nimble",
+    "description": "Mueve todos los drops de los mobs al inventario directamente.",
+    "maxLevel": 1,
+    "weight": 2,
+    "applicableTo": "Varios",
+    "rarityClass": "rarity-legendary"
+  },
+  {
+    "id": "paralyze",
+    "name": "Paralyze",
+    "description": "Probabilidad de aplicar efecto (unos segundoss.) al golpear.",
+    "maxLevel": 5,
+    "weight": 5,
+    "applicableTo": "Varios",
+    "rarityClass": "rarity-epic"
+  },
+  {
+    "id": "poisoned_arrows",
+    "name": "Poisoned Arrows",
+    "description": "Probabilidad de que una flecha tenga efecto (unos segundoss.)",
+    "maxLevel": 3,
+    "weight": 5,
+    "applicableTo": "Arcos",
+    "rarityClass": "rarity-epic"
+  },
+  {
+    "id": "rage",
+    "name": "Rage",
+    "description": "Probabilidad de obtener efecto (unos segundoss.) al golpear.",
+    "maxLevel": 2,
+    "weight": 5,
+    "applicableTo": "Varios",
+    "rarityClass": "rarity-epic"
+  },
+  {
+    "id": "rebound",
+    "name": "Rebound",
+    "description": "Efecto de aterrizar en un bloque de slime.",
+    "maxLevel": 1,
+    "weight": 2,
+    "applicableTo": "Varios",
+    "rarityClass": "rarity-legendary"
+  },
+  {
+    "id": "regrowth",
+    "name": "Regrowth",
+    "description": "Regenera daño extra cada pocos segundos.",
+    "maxLevel": 4,
+    "weight": 2,
+    "applicableTo": "Varios",
+    "rarityClass": "rarity-legendary"
+  },
+  {
+    "id": "replanter",
+    "name": "Replanter",
+    "description": "Automaticamente vuelve a plantar los cultivos con el click derecho.",
+    "maxLevel": 1,
+    "weight": 1,
+    "applicableTo": "Varios",
+    "rarityClass": "rarity-legendary"
+  },
+  {
+    "id": "restore",
+    "name": "Restore",
+    "description": "Probabilidad de que el item no se rompa y su durabilidad suba a un un porcentaje",
+    "maxLevel": 3,
+    "weight": 2,
+    "applicableTo": "Varios",
+    "rarityClass": "rarity-legendary"
+  },
+  {
+    "id": "river_master",
+    "name": "River Master",
+    "description": "Aumenta la distancia de casteo.",
+    "maxLevel": 5,
+    "weight": 10,
+    "applicableTo": "Pesca",
+    "rarityClass": "rarity-common"
+  },
+  {
+    "id": "rocket",
+    "name": "Rocket",
+    "description": "Probabilidad de lanzar al enemigo al espacio.",
+    "maxLevel": 3,
+    "weight": 5,
+    "applicableTo": "Varios",
+    "rarityClass": "rarity-epic"
+  },
+  {
+    "id": "saturation",
+    "name": "Saturation",
+    "description": "Regenera X puntos de saturacion cada pocos segundos.",
+    "maxLevel": 2,
+    "weight": 2,
+    "applicableTo": "Varios",
+    "rarityClass": "rarity-legendary"
+  },
+  {
+    "id": "seasoned_angler",
+    "name": "Seasoned Angler",
+    "description": "Incrementa la EXP al pescar por un un porcentaje.",
+    "maxLevel": 3,
+    "weight": 5,
+    "applicableTo": "Pesca",
+    "rarityClass": "rarity-epic"
+  },
+  {
+    "id": "silk_chest",
+    "name": "Silk Chest",
+    "description": "Dropea cofres y salva el contenido.",
+    "maxLevel": 1,
+    "weight": 1,
+    "applicableTo": "Varios",
+    "rarityClass": "rarity-legendary"
+  },
+  {
+    "id": "smelter",
+    "name": "Smelter",
+    "description": "Probabilidad de fundir el ore al picarlo.",
+    "maxLevel": 5,
+    "weight": 5,
+    "applicableTo": "Varios",
+    "rarityClass": "rarity-epic"
+  },
+  {
+    "id": "sniper",
+    "name": "Sniper",
+    "description": "Incrementa la velocidad de los projectiles un un porcentaje",
+    "maxLevel": 2,
+    "weight": 10,
+    "applicableTo": "Varios",
+    "rarityClass": "rarity-common"
+  },
+  {
+    "id": "soulbound",
+    "name": "Soulbound",
+    "description": "Protege el item de dropearlo al morir.",
+    "maxLevel": 1,
+    "weight": 2,
+    "applicableTo": "Varios",
+    "rarityClass": "rarity-legendary"
+  },
+  {
+    "id": "speed",
+    "name": "Speed",
+    "description": "Da el efecto efecto permanentemente.",
+    "maxLevel": 2,
+    "weight": 2,
+    "applicableTo": "Varios",
+    "rarityClass": "rarity-legendary"
+  },
+  {
+    "id": "stopping_force",
+    "name": "Stopping Force",
+    "description": "Probabilidad de reducir el knockback en un un porcentaje.",
+    "maxLevel": 3,
+    "weight": 5,
+    "applicableTo": "Varios",
+    "rarityClass": "rarity-epic"
+  },
+  {
+    "id": "survivalist",
+    "name": "Survivalist",
+    "description": "Automaticamente cocina el pesacado si esta crudo al pescarlo.",
+    "maxLevel": 1,
+    "weight": 2,
+    "applicableTo": "Varios",
+    "rarityClass": "rarity-legendary"
+  },
+  {
+    "id": "swiper",
+    "name": "Swiper",
+    "description": "Probabilidad de robar un X EXP de los jugadores.",
+    "maxLevel": 3,
+    "weight": 2,
+    "applicableTo": "Varios",
+    "rarityClass": "rarity-legendary"
+  },
+  {
+    "id": "telekinesis",
+    "name": "Telekinesis",
+    "description": "Mueve todos los drops de bloques al inventario",
+    "maxLevel": 1,
+    "weight": 1,
+    "applicableTo": "Varios",
+    "rarityClass": "rarity-legendary"
+  },
+  {
+    "id": "temper",
+    "name": "Temper",
+    "description": "Infringe un un porcentaje por cada daño extra perdido.",
+    "maxLevel": 5,
+    "weight": 1,
+    "applicableTo": "Varios",
+    "rarityClass": "rarity-legendary"
+  },
+  {
+    "id": "thrifty",
+    "name": "Thrifty",
+    "description": "Probabilidad de que un mob dropee un huevo.",
+    "maxLevel": 3,
+    "weight": 2,
+    "applicableTo": "Varios",
+    "rarityClass": "rarity-legendary"
+  },
+  {
+    "id": "thunder",
+    "name": "Thunder",
+    "description": "Probabilidad de golpear con un trueno y hacer daño extra mas de daño.",
+    "maxLevel": 5,
+    "weight": 5,
+    "applicableTo": "Varios",
+    "rarityClass": "rarity-epic"
+  },
+  {
+    "id": "treefeller",
+    "name": "Treefeller",
+    "description": "Tala un arbol completo.",
+    "maxLevel": 1,
+    "weight": 2,
+    "applicableTo": "Varios",
+    "rarityClass": "rarity-legendary"
+  },
+  {
+    "id": "tunnel",
+    "name": "Tunnel",
+    "description": "Mina varios bloques al mismo tiempo en una forma determinada",
+    "maxLevel": 3,
+    "weight": 1,
+    "applicableTo": "Varios",
+    "rarityClass": "rarity-legendary"
+  },
+  {
+    "id": "vampire",
+    "name": "Vampire",
+    "description": "Probabilidad de curarse daño extra al golpear.",
+    "maxLevel": 3,
+    "weight": 2,
+    "applicableTo": "Espadas",
+    "rarityClass": "rarity-legendary"
+  },
+  {
+    "id": "vampiric_arrows",
+    "name": "Vampiric Arrows",
+    "description": "Probabilidad de restaurar daño extra al golpear con la flecha.",
+    "maxLevel": 3,
+    "weight": 2,
+    "applicableTo": "Arcos",
+    "rarityClass": "rarity-legendary"
+  },
+  {
+    "id": "veinminer",
+    "name": "Veinminer",
+    "description": "Mina hasta X de una vena de ore al mismo tiempo.",
+    "maxLevel": 3,
+    "weight": 2,
+    "applicableTo": "Herramientas",
+    "rarityClass": "rarity-legendary"
+  },
+  {
+    "id": "venom",
+    "name": "Venom",
+    "description": "Probabilidad de aplicar efecto (unos segundoss.) al golpear.",
+    "maxLevel": 2,
+    "weight": 10,
+    "applicableTo": "Varios",
+    "rarityClass": "rarity-common"
+  },
+  {
+    "id": "village_defender",
+    "name": "Village Defender",
+    "description": "Infringe daño extra mas de daño a los pillagers.",
+    "maxLevel": 5,
+    "weight": 10,
+    "applicableTo": "Varios",
+    "rarityClass": "rarity-common"
+  },
+  {
+    "id": "water_breathing",
+    "name": "Water Breathing",
+    "description": "Da el efecto efecto de forma permanente.",
+    "maxLevel": 1,
+    "weight": 1,
+    "applicableTo": "Varios",
+    "rarityClass": "rarity-legendary"
+  },
+  {
+    "id": "wisdom",
+    "name": "Wisdom",
+    "description": "Mobs dan xX mas de EXP.",
+    "maxLevel": 5,
+    "weight": 5,
+    "applicableTo": "Varios",
+    "rarityClass": "rarity-epic"
+  },
+  {
+    "id": "wither",
+    "name": "Wither",
+    "description": "Probabilidad de aplicar efecto (unos segundoss.) al golpear.",
+    "maxLevel": 2,
+    "weight": 5,
+    "applicableTo": "Varios",
+    "rarityClass": "rarity-epic"
+  },
+  {
+    "id": "withered_arrows",
+    "name": "Withered Arrows",
+    "description": "Probabilidad de que una flecha tenga efecto (unos segundoss.)",
+    "maxLevel": 3,
+    "weight": 5,
+    "applicableTo": "Arcos",
+    "rarityClass": "rarity-epic"
+  }
+]
